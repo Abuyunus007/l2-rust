@@ -123,7 +123,11 @@ impl World {
             return;
         };
         if let Some(spawn) = self.death.runtime_spawns.get_mut(base) {
-            let ms = if delay_s != 0 { delay_s.max(1).saturating_mul(1000) } else { 0 };
+            let ms = if delay_s != 0 {
+                delay_s.max(1).saturating_mul(1000)
+            } else {
+                0
+            };
             spawn.respawn_min_ms = ms;
             spawn.respawn_max_ms = ms;
         }
@@ -156,12 +160,17 @@ impl World {
         let doomed: Vec<(ObjectId, i32)> = self
             .effect_list(owner)
             .map(|list| {
-                [ListKind::Buffs, ListKind::Triggered, ListKind::Toggles, ListKind::Debuffs]
-                    .into_iter()
-                    .flat_map(|kind| list.queue(kind).iter())
-                    .filter(|info| !info.facts.stay_after_death && !keep.contains(&info.skill().id))
-                    .map(|info| (info.effected, info.skill().id))
-                    .collect()
+                [
+                    ListKind::Buffs,
+                    ListKind::Triggered,
+                    ListKind::Toggles,
+                    ListKind::Debuffs,
+                ]
+                .into_iter()
+                .flat_map(|kind| list.queue(kind).iter())
+                .filter(|info| !info.facts.stay_after_death && !keep.contains(&info.skill().id))
+                .map(|info| (info.effected, info.skill().id))
+                .collect()
             })
             .unwrap_or_default();
         for (effected, skill_id) in doomed {

@@ -31,6 +31,7 @@
 pub mod api;
 pub mod ctx;
 pub mod globals;
+mod instance_api;
 pub mod link;
 pub mod notify;
 pub mod packets;
@@ -38,7 +39,6 @@ pub mod qs;
 pub mod setup;
 pub mod sound;
 mod spawn;
-mod instance_api;
 pub mod state;
 pub mod timers;
 

@@ -307,7 +307,10 @@ mod tests {
         assert!(!dropped.is_empty());
         for id in dropped {
             let item = t.world.ground_item(id).unwrap().data.item_id;
-            assert!([WATER_ENHANCER, SHIELD_POTION, HEAL_POTION].contains(&item), "{item}");
+            assert!(
+                [WATER_ENHANCER, SHIELD_POTION, HEAL_POTION].contains(&item),
+                "{item}"
+            );
         }
         t.ticks(59);
         assert!(bottles.iter().all(|b| t.world.npc(*b).is_some()));

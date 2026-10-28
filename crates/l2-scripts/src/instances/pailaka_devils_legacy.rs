@@ -132,7 +132,8 @@ impl Script for PailakaDevilsLegacy {
                     }
                 }
                 "LEMATAN_GROUND_SKILLS" => {
-                    if ctx.world().is_dead(npc.object_id) || !ctx.state::<State>().values.is(npc.object_id, 0) {
+                    if ctx.world().is_dead(npc.object_id) || !ctx.state::<State>().values.is(npc.object_id, 0)
+                    {
                         return htmltext;
                     }
 
@@ -167,7 +168,11 @@ impl Script for PailakaDevilsLegacy {
                     // Half the ticks cast, and that cast is an even split between the two ship skills.
                     if let Some(target) = ship_target {
                         if ctx.get_random(100) < 50 {
-                            let skill = if ctx.get_random(2) == 0 { WHIRLPOOL } else { TRIPLE_SWORD };
+                            let skill = if ctx.get_random(2) == 0 {
+                                WHIRLPOOL
+                            } else {
+                                TRIPLE_SWORD
+                            };
                             ctx.cast_skill(npc, target, skill);
                         }
                     }
@@ -175,7 +180,8 @@ impl Script for PailakaDevilsLegacy {
                     ctx.start_quest_timer("LEMATAN_SHIP_SKILLS", 15000, Some(npc), None, false);
                 }
                 "LEMATAN_MOVE_RETRY" => {
-                    if !ctx.world().is_dead(npc.object_id) && ctx.state::<State>().values.is(npc.object_id, 1) {
+                    if !ctx.world().is_dead(npc.object_id) && ctx.state::<State>().values.is(npc.object_id, 1)
+                    {
                         let world = ctx.world_mut();
                         world.set_npc_running(npc.object_id);
                         world.npc_move_to_location(
@@ -196,8 +202,12 @@ impl Script for PailakaDevilsLegacy {
                     ctx.world_mut().set_core_ai_disabled(npc.object_id, false);
                     tele_npc(ctx, npc, LEMATAN_PORT, instance_id);
                     // `npc.getVariables().set("ON_SHIP", 1)`: nothing in the datapack reads it.
-                    ctx.world_mut()
-                        .set_npc_spawn_point(npc.object_id, LEMATAN_PORT.0, LEMATAN_PORT.1, LEMATAN_PORT.2);
+                    ctx.world_mut().set_npc_spawn_point(
+                        npc.object_id,
+                        LEMATAN_PORT.0,
+                        LEMATAN_PORT.1,
+                        LEMATAN_PORT.2,
+                    );
                     ctx.cast_skill(npc, npc.object_id, SUMMON_PRESENTATION);
                     let mut followers = followers_of(ctx, instance_id);
                     for loc in FOLLOWERS_LOC {
@@ -530,7 +540,9 @@ fn enter_instance(ctx: &mut ScriptCtx<'_>, player: ObjectId) {
                     0,
                     instance_id,
                 );
-                if let (Some(lematan), Some(instance_world)) = (lematan, world.instance_world_mut(instance_id)) {
+                if let (Some(lematan), Some(instance_world)) =
+                    (lematan, world.instance_world_mut(instance_id))
+                {
                     instance_world
                         .parameters
                         .insert("lematanNpc".to_owned(), lematan.0.to_string());

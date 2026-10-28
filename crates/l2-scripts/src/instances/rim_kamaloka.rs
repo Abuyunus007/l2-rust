@@ -76,15 +76,60 @@ const KANABIONS: [[i32; 3]; 11] = [
 ];
 
 const SPAWNLIST: [&[(i32, i32, i32)]; 11] = [
-    &[(8971, -219546, -8021), (9318, -219644, -8021), (9266, -220208, -8021), (9497, -220054, -8024)],
-    &[(16107, -219574, -8021), (16769, -219885, -8021), (16363, -220219, -8021), (16610, -219523, -8021)],
-    &[(23019, -219730, -7803), (23351, -220455, -7803), (23900, -219864, -7803), (23851, -220294, -7803)],
-    &[(9514, -212478, -7803), (9236, -213348, -7803), (8868, -212683, -7803), (9719, -213042, -7803)],
-    &[(16925, -212811, -7803), (16885, -213199, -7802), (16487, -213339, -7803), (16337, -212529, -7803)],
-    &[(23958, -213282, -8009), (23292, -212782, -8012), (23844, -212781, -8009), (23533, -213301, -8009)],
-    &[(8828, -205518, -8009), (8895, -205989, -8009), (9398, -205967, -8009), (9393, -205409, -8009)],
-    &[(16185, -205472, -8009), (16808, -205929, -8009), (16324, -206042, -8009), (16782, -205454, -8009)],
-    &[(23476, -206310, -7991), (23230, -205861, -7991), (22644, -205888, -7994), (23078, -206714, -7991)],
+    &[
+        (8971, -219546, -8021),
+        (9318, -219644, -8021),
+        (9266, -220208, -8021),
+        (9497, -220054, -8024),
+    ],
+    &[
+        (16107, -219574, -8021),
+        (16769, -219885, -8021),
+        (16363, -220219, -8021),
+        (16610, -219523, -8021),
+    ],
+    &[
+        (23019, -219730, -7803),
+        (23351, -220455, -7803),
+        (23900, -219864, -7803),
+        (23851, -220294, -7803),
+    ],
+    &[
+        (9514, -212478, -7803),
+        (9236, -213348, -7803),
+        (8868, -212683, -7803),
+        (9719, -213042, -7803),
+    ],
+    &[
+        (16925, -212811, -7803),
+        (16885, -213199, -7802),
+        (16487, -213339, -7803),
+        (16337, -212529, -7803),
+    ],
+    &[
+        (23958, -213282, -8009),
+        (23292, -212782, -8012),
+        (23844, -212781, -8009),
+        (23533, -213301, -8009),
+    ],
+    &[
+        (8828, -205518, -8009),
+        (8895, -205989, -8009),
+        (9398, -205967, -8009),
+        (9393, -205409, -8009),
+    ],
+    &[
+        (16185, -205472, -8009),
+        (16808, -205929, -8009),
+        (16324, -206042, -8009),
+        (16782, -205454, -8009),
+    ],
+    &[
+        (23476, -206310, -7991),
+        (23230, -205861, -7991),
+        (22644, -205888, -7994),
+        (23078, -206714, -7991),
+    ],
     &[
         (42981, -219308, -8759),
         (42320, -220160, -8759),
@@ -296,8 +341,12 @@ impl Script for RimKamaloka {
         let (npc, player) = (npc?, player?);
 
         match event {
-            "npc_rim_maker001.htm" | "npc_rim_maker001a.htm" | "npc_rim_maker001b.htm"
-            | "npc_rim_maker001ba.htm" | "npc_rim_maker007.htm" | "npc_rim_maker010.htm"
+            "npc_rim_maker001.htm"
+            | "npc_rim_maker001a.htm"
+            | "npc_rim_maker001b.htm"
+            | "npc_rim_maker001ba.htm"
+            | "npc_rim_maker007.htm"
+            | "npc_rim_maker010.htm"
             | "npc_rim_maker011.htm" => {
                 return Some(event.to_owned());
             }
@@ -332,7 +381,10 @@ impl Script for RimKamaloka {
                 let castle = ctx.world().npc_castle(npc.object_id).map_or(0, |c| c.0);
                 if let Some(mut htmltext) = ctx.get_htm(player, &format!("npc_rim_maker002_{castle}.htm")) {
                     if !ctx.world().pc_cafe_enabled() {
-                        htmltext = htmltext.replace("; <font color=\"LEVEL\">1000 PC Cafe points</font> are required", "");
+                        htmltext = htmltext.replace(
+                            "; <font color=\"LEVEL\">1000 PC Cafe points</font> are required",
+                            "",
+                        );
                     }
 
                     if let Some(packet) = NpcHtmlMessage::new(npc.object_id.0, &htmltext) {
@@ -642,10 +694,7 @@ fn enter_instance(ctx: &mut ScriptCtx<'_>, player: ObjectId, npc: ScriptNpc, ind
 
         // Creating new instanceWorld, using our instanceId and templateId.
         let instance_id = ctx.world_mut().create_dynamic_instance(template_id);
-        let created_template = ctx
-            .world()
-            .instance(instance_id)
-            .map_or(-1, |i| i.template_id);
+        let created_template = ctx.world().instance(instance_id).map_or(-1, |i| i.template_id);
         ctx.world_mut()
             .add_instance_world(InstanceWorld::new(instance_id, created_template));
 
@@ -716,7 +765,13 @@ fn spawn_kama(ctx: &mut ScriptCtx<'_>, instance_id: i32) {
     }
 }
 
-fn spawn_next_mob(ctx: &mut ScriptCtx<'_>, instance_id: i32, old_npc: ScriptNpc, npc_id: i32, player: ObjectId) {
+fn spawn_next_mob(
+    ctx: &mut ScriptCtx<'_>,
+    instance_id: i32,
+    old_npc: ScriptNpc,
+    npc_id: i32,
+    player: ObjectId,
+) {
     if ctx
         .state::<State>()
         .worlds
@@ -844,7 +899,8 @@ fn finish_task(ctx: &mut ScriptCtx<'_>, instance_id: i32) {
     // Destroy instance after EXIT_TIME.
     if ctx.world().instance(instance_id).is_some() {
         ctx.world_mut().remove_instance_npcs(instance_id);
-        ctx.world_mut().set_instance_duration(instance_id, EXIT_TIME * 60000);
+        ctx.world_mut()
+            .set_instance_duration(instance_id, EXIT_TIME * 60000);
         let empty = ctx
             .world()
             .instance(instance_id)
@@ -853,7 +909,8 @@ fn finish_task(ctx: &mut ScriptCtx<'_>, instance_id: i32) {
             ctx.world_mut()
                 .set_instance_duration(instance_id, EMPTY_DESTROY_TIME * 60000);
         } else {
-            ctx.world_mut().set_instance_duration(instance_id, EXIT_TIME * 60000);
+            ctx.world_mut()
+                .set_instance_duration(instance_id, EXIT_TIME * 60000);
             ctx.world_mut()
                 .set_instance_empty_destroy_time(instance_id, i64::from(EMPTY_DESTROY_TIME) * 60000);
         }
@@ -864,7 +921,8 @@ fn finish_task(ctx: &mut ScriptCtx<'_>, instance_id: i32) {
         if world.kanabions_count < 10 {
             world.grade = 0;
         } else {
-            world.grade = (((world.dopplers_count + (2 * world.voiders_count)) / world.kanabions_count) + 1).min(5);
+            world.grade =
+                (((world.dopplers_count + (2 * world.voiders_count)) / world.kanabions_count) + 1).min(5);
         }
     }
 
@@ -879,11 +937,18 @@ fn finish_task(ctx: &mut ScriptCtx<'_>, instance_id: i32) {
 fn despawn_task(ctx: &mut ScriptCtx<'_>, instance_id: i32) {
     let time = ctx.now_ms();
     let doomed: Vec<ObjectId> = match ctx.state::<State>().worlds.get(&instance_id) {
-        Some(world) if !world.is_finished && !world.last_attack.is_empty() && !world.spawned_mobs.is_empty() => {
+        Some(world)
+            if !world.is_finished && !world.last_attack.is_empty() && !world.spawned_mobs.is_empty() =>
+        {
             world
                 .spawned_mobs
                 .iter()
-                .filter(|mob| world.last_attack.get(mob).is_some_and(|t| (time - t) > DESPAWN_DELAY))
+                .filter(|mob| {
+                    world
+                        .last_attack
+                        .get(mob)
+                        .is_some_and(|t| (time - t) > DESPAWN_DELAY)
+                })
                 .copied()
                 .collect()
         }
@@ -1032,8 +1097,18 @@ mod tests {
         t.take();
         enter(&mut t, maker, 0);
         let out = t.take();
-        assert_eq!(names_to(&out, 1).iter().filter(|n| *n == "SYSTEM_MESSAGE").count(), 1);
-        assert!(pages_to(&out, 1).iter().any(|p| p.contains("npc_rim_maker004.htm")));
+        assert_eq!(
+            names_to(&out, 1)
+                .iter()
+                .filter(|n| *n == "SYSTEM_MESSAGE")
+                .count(),
+            1
+        );
+        assert!(
+            pages_to(&out, 1)
+                .iter()
+                .any(|p| p.contains("npc_rim_maker004.htm"))
+        );
         assert!(t.world.instances().all(|i| i.id <= 0));
 
         // The other Rim Kamaloka (47) has the same name: its time keeps him out of this one.
@@ -1042,7 +1117,13 @@ mod tests {
         t.world.set_instance_time(Oid(1), 47, now() + 60_000);
         t.take();
         enter(&mut t, maker, 0);
-        assert_eq!(names_to(&t.take(), 1).iter().filter(|n| *n == "SYSTEM_MESSAGE").count(), 1);
+        assert_eq!(
+            names_to(&t.take(), 1)
+                .iter()
+                .filter(|n| *n == "SYSTEM_MESSAGE")
+                .count(),
+            1
+        );
         assert!(t.world.instances().all(|i| i.id <= 0));
     }
 
@@ -1066,7 +1147,10 @@ mod tests {
         }
         let dopplers = npcs_of(&t, id, 22453);
         assert!(!dopplers.is_empty() && dopplers.len() < 30, "{}", dopplers.len());
-        assert_eq!(state(&mut t, |s| s.worlds[&id].spawned_mobs.len()), dopplers.len());
+        assert_eq!(
+            state(&mut t, |s| s.worlds[&id].spawned_mobs.len()),
+            dopplers.len()
+        );
         // A weak hit does nothing.
         let before = dopplers.len();
         t.world.run_as_script("RimKamaloka", |ctx| {
@@ -1101,14 +1185,20 @@ mod tests {
         // spawn list stay). The task reads the wall clock, so the last attack is moved back.
         let doppler = state(&mut t, |s| {
             let w = s.worlds.get_mut(&id).unwrap();
-            let mob = *w.spawned_mobs.iter().find(|m| w.last_attack.contains_key(*m)).unwrap();
+            let mob = *w
+                .spawned_mobs
+                .iter()
+                .find(|m| w.last_attack.contains_key(*m))
+                .unwrap();
             *w.last_attack.get_mut(&mob).unwrap() -= 11_000;
             mob
         });
         assert!(t.world.npc(doppler).is_some());
         t.ticks(40);
         assert!(t.world.npc(doppler).is_none());
-        assert!(state(&mut t, |s| !s.worlds[&id].last_attack.contains_key(&doppler)));
+        assert!(state(&mut t, |s| !s.worlds[&id]
+            .last_attack
+            .contains_key(&doppler)));
         assert_eq!(npcs_of(&t, id, 22452).len(), 4);
     }
 
@@ -1133,7 +1223,10 @@ mod tests {
         // `kamaloka_reset_time`: only the write is checked.)
         assert!(t.world.instance_time(Oid(1), 46) > 0);
         assert_eq!(
-            names_to(&t.take(), 1).iter().filter(|n| *n == "SYSTEM_MESSAGE").count(),
+            names_to(&t.take(), 1)
+                .iter()
+                .filter(|n| *n == "SYSTEM_MESSAGE")
+                .count(),
             1
         );
 
@@ -1158,7 +1251,10 @@ mod tests {
                 object_id: rewarder,
                 id: REWARDER,
             };
-            assert_eq!(RimKamaloka.on_talk(ctx, npc, Oid(1)).as_deref(), Some("GradeC.htm"));
+            assert_eq!(
+                RimKamaloka.on_talk(ctx, npc, Oid(1)).as_deref(),
+                Some("GradeC.htm")
+            );
             // "Reward": 2 of item 13002 and 1 of 10838, once.
             for _ in 0..2 {
                 assert_eq!(

@@ -140,7 +140,12 @@ impl Script for PailakaInjuredDragon {
     }
 
     fn setup(&self, s: &mut ScriptSetup) {
-        s.add_spawn_id(&[LATANA, LATANA_SKILL_USE, INJURED_DRAGON_CAMERA_1, INJURED_DRAGON_CAMERA_2]);
+        s.add_spawn_id(&[
+            LATANA,
+            LATANA_SKILL_USE,
+            INJURED_DRAGON_CAMERA_1,
+            INJURED_DRAGON_CAMERA_2,
+        ]);
         s.add_creature_see_id(&[LATANA, INJURED_DRAGON_CAMERA_1]);
         s.add_attack_id(&[LATANA]);
         s.add_kill_id(&[LATANA]);
@@ -280,7 +285,16 @@ impl Script for PailakaInjuredDragon {
             "LATANA_9000" => {
                 let instance_id = ctx.world().instance_id_of(npc.object_id);
                 if let Some((x, y, z)) = ctx.world().position_of(npc.object_id) {
-                    ctx.add_spawn(KETRA_ORC_SUPPORTER_2, x + 100, y + 100, z, 0, false, 0, instance_id);
+                    ctx.add_spawn(
+                        KETRA_ORC_SUPPORTER_2,
+                        x + 100,
+                        y + 100,
+                        z,
+                        0,
+                        false,
+                        0,
+                        instance_id,
+                    );
                 }
                 ctx.world_mut().decay(npc.object_id);
             }
@@ -381,9 +395,7 @@ impl Script for PailakaInjuredDragon {
             }
             "SCE_RATANA_CAMERA_START" => {
                 let instance_id = ctx.world().instance_id_of(npc.object_id);
-                if ctx.world().instance_world(instance_id).is_none() {
-                    return None;
-                }
+                ctx.world().instance_world(instance_id)?;
 
                 // The shots are framed from the camera NPC, which stands still, not from the moving boss.
                 let camera = ctx
@@ -393,16 +405,26 @@ impl Script for PailakaInjuredDragon {
                         object_id,
                         id: INJURED_DRAGON_CAMERA_1,
                     });
-                let Some(camera) = camera else {
-                    return None;
-                };
+                let camera = camera?;
 
                 match ctx.state::<State>().values.get(npc.object_id) {
                     1 => {
-                        ctx.start_quest_timer("INJURED_DRAGON_CAMERA_1_1000", 10, Some(camera), player, false);
+                        ctx.start_quest_timer(
+                            "INJURED_DRAGON_CAMERA_1_1000",
+                            10,
+                            Some(camera),
+                            player,
+                            false,
+                        );
                     }
                     2 => {
-                        ctx.start_quest_timer("INJURED_DRAGON_CAMERA_1_2000", 10, Some(camera), player, false);
+                        ctx.start_quest_timer(
+                            "INJURED_DRAGON_CAMERA_1_2000",
+                            10,
+                            Some(camera),
+                            player,
+                            false,
+                        );
                     }
                     _ => {}
                 }
@@ -428,7 +450,13 @@ impl Script for PailakaInjuredDragon {
                     } else {
                         ctx.play_sound(player, QuestSound::Bs08A);
                         ctx.state::<State>().values.set(npc.object_id, 1);
-                        ctx.start_quest_timer("SCE_RATANA_CAMERA_START", 2000, Some(npc), Some(player), false);
+                        ctx.start_quest_timer(
+                            "SCE_RATANA_CAMERA_START",
+                            2000,
+                            Some(npc),
+                            Some(player),
+                            false,
+                        );
                         ctx.start_quest_timer("LATANA_500", 1000, Some(npc), Some(player), false);
                         ctx.state::<State>().vars(npc.object_id).i_ai2 = true;
                     }
@@ -493,7 +521,10 @@ impl Script for PailakaInjuredDragon {
                 .map(|w| w.instance_id);
             if let Some(instance_id) = instance_id {
                 // If a player wants to go by a mob wall without kill it, he will be returned back to a spawn point.
-                let zone_teleport = NOEXIT_ZONES.iter().find(|(id, _)| *id == zone_id).map(|(_, to)| *to);
+                let zone_teleport = NOEXIT_ZONES
+                    .iter()
+                    .find(|(id, _)| *id == zone_id)
+                    .map(|(_, to)| *to);
                 if let Some(zone_teleport) = zone_teleport {
                     let near = ctx.world().visible_objects_in_range(creature, 700);
                     for other in near {
@@ -501,7 +532,10 @@ impl Script for PailakaInjuredDragon {
                         if world.npc(other).is_none() {
                             continue;
                         }
-                        if world.is_dead(other) || world.is_object_invisible(other) || !world.is_monster_npc(other) {
+                        if world.is_dead(other)
+                            || world.is_object_invisible(other)
+                            || !world.is_monster_npc(other)
+                        {
                             continue;
                         }
 
@@ -554,9 +588,27 @@ impl Script for PailakaInjuredDragon {
         match npc.id {
             LATANA => {
                 let instance_id = ctx.world().instance_id_of(npc.object_id);
-                ctx.add_spawn(INJURED_DRAGON_CAMERA_2, 105974, -41794, -1784, 32768, false, 0, instance_id);
+                ctx.add_spawn(
+                    INJURED_DRAGON_CAMERA_2,
+                    105974,
+                    -41794,
+                    -1784,
+                    32768,
+                    false,
+                    0,
+                    instance_id,
+                );
                 if let Some((x, y, z)) = ctx.world().position_of(npc.object_id) {
-                    ctx.add_spawn(KETRA_ORC_SUPPORTER_2, x + 100, y + 100, z, 0, false, 0, instance_id);
+                    ctx.add_spawn(
+                        KETRA_ORC_SUPPORTER_2,
+                        x + 100,
+                        y + 100,
+                        z,
+                        0,
+                        false,
+                        0,
+                        instance_id,
+                    );
                 }
             }
             GRAZING_ANTELOPE | GRAZING_BANDERSNATCH | GRAZING_FLAVA | GRAZING_ELDER_ANTELOPE => {
@@ -668,7 +720,19 @@ fn distance_2d(ctx: &ScriptCtx<'_>, a: ObjectId, b: ObjectId) -> f64 {
 /// isWide, relAngle, unk]` (the `range` the constructor ignores is left out).
 fn camera(ctx: &mut ScriptCtx<'_>, player: Option<ObjectId>, npc: ScriptNpc, a: [i32; 10]) {
     if let Some(player) = player {
-        let packet = SpecialCamera::new(npc.object_id.0, a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7], a[8], a[9]);
+        let packet = SpecialCamera::new(
+            npc.object_id.0,
+            a[0],
+            a[1],
+            a[2],
+            a[3],
+            a[4],
+            a[5],
+            a[6],
+            a[7],
+            a[8],
+            a[9],
+        );
         ctx.world().send(player, &packet);
     }
 }
@@ -699,7 +763,8 @@ fn cast_on_intro_target(ctx: &mut ScriptCtx<'_>, latana: ScriptNpc, skill: Skill
         return;
     }
 
-    ctx.world_mut().set_creature_target(latana.object_id, Some(target));
+    ctx.world_mut()
+        .set_creature_target(latana.object_id, Some(target));
     let hit_time = ctx.world().skill_hit_time(skill.id, skill.level);
     if let (Some(from), Some(to)) = (
         ctx.world().position_of(latana.object_id),
@@ -790,7 +855,11 @@ fn spawn_mage_behind(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, 
 fn wall_of(id: i32) -> Option<(&'static [i32], &'static [i32])> {
     match id {
         VARKA_SILENOS_FOOTMAN | VARKA_SILENOS_RECRUIT | VARKA_SILENOS_WARRIOR => Some((
-            &[VARKA_SILENOS_FOOTMAN, VARKA_SILENOS_RECRUIT, VARKA_SILENOS_WARRIOR],
+            &[
+                VARKA_SILENOS_FOOTMAN,
+                VARKA_SILENOS_RECRUIT,
+                VARKA_SILENOS_WARRIOR,
+            ],
             &[VARKA_SILENOS_MEDIUM, VARKA_SILENOS_PRIEST],
         )),
         VARKA_ELITE_GUARD | VARKA_COMMANDER | VARKA_SILENOS_OFFICER => Some((
@@ -933,8 +1002,9 @@ mod tests {
 
     fn state<R>(t: &mut ScriptTest, f: impl FnOnce(&mut State) -> R) -> R {
         let mut result = None;
-        t.world
-            .run_as_script("PailakaInjuredDragon", |ctx| result = Some(f(ctx.state::<State>())));
+        t.world.run_as_script("PailakaInjuredDragon", |ctx| {
+            result = Some(f(ctx.state::<State>()))
+        });
         result.unwrap()
     }
 
@@ -950,7 +1020,10 @@ mod tests {
         let world = t.world.instance_world(300_000).unwrap();
         assert_eq!((world.template_id, world.allowed.clone()), (45, vec![Oid(1)]));
         // `teleportPlayer(.., false)`: exactly the entry point (the teleport lifts z by 5).
-        assert_eq!(t.world.position_of(Oid(1)).map(|p| (p.0, p.1)), Some((ENTRY_POINT.0, ENTRY_POINT.1)));
+        assert_eq!(
+            t.world.position_of(Oid(1)).map(|p| (p.0, p.1)),
+            Some((ENTRY_POINT.0, ENTRY_POINT.1))
+        );
     }
 
     #[test]
@@ -984,7 +1057,10 @@ mod tests {
         // Four seconds in the camera NPC frames the four shots of path 2; they are packets to the player.
         t.ticks(20 * 14);
         let out = t.take();
-        let shots = names_to(&out, 1).iter().filter(|n| *n == "SPECIAL_CAMERA").count();
+        let shots = names_to(&out, 1)
+            .iter()
+            .filter(|n| *n == "SPECIAL_CAMERA")
+            .count();
         assert_eq!(shots, 4);
         // The cinematic is over and she was handed the fight; the camera is deleted after 3 s.
         assert!(!state(&mut t, |s| s.vars(latana.object_id).cinematic));
@@ -1012,7 +1088,10 @@ mod tests {
                 .unwrap()
                 .npcs
                 .keys()
-                .filter(|n| t.world.npc(**n).is_some_and(|n| n.npc_id == KETRA_ORC_SUPPORTER_2))
+                .filter(|n| t
+                    .world
+                    .npc(**n)
+                    .is_some_and(|n| n.npc_id == KETRA_ORC_SUPPORTER_2))
                 .count(),
             1
         );
@@ -1066,9 +1145,17 @@ mod tests {
         t.world.set_dead(a.object_id, true);
         t.world.set_dead(b.object_id, true);
         run(&mut t, |ctx| PailakaInjuredDragon.on_kill(ctx, b, Oid(1), false));
-        assert!(mages.iter().all(|m| t.world.npc(*m).is_none() || t.world.is_dead(*m)));
+        assert!(
+            mages
+                .iter()
+                .all(|m| t.world.npc(*m).is_none() || t.world.is_dead(*m))
+        );
         // The second kill spawned its own mage behind B, which the same check removed as well.
-        assert!(medium(&t).iter().all(|m| !t.world.is_object_spawned(*m) || t.world.is_dead(*m)));
+        assert!(
+            medium(&t)
+                .iter()
+                .all(|m| !t.world.is_object_spawned(*m) || t.world.is_dead(*m))
+        );
     }
 
     #[test]
@@ -1078,7 +1165,9 @@ mod tests {
         let mut given = 0;
         for i in 0..40 {
             let footman = spawn(&mut t, VARKA_SILENOS_FOOTMAN, 100 + i);
-            run(&mut t, |ctx| PailakaInjuredDragon.on_kill(ctx, footman, Oid(1), false));
+            run(&mut t, |ctx| {
+                PailakaInjuredDragon.on_kill(ctx, footman, Oid(1), false)
+            });
             if t.count(1, WEAPON_UPGRADE_STAGE_1) > 0 {
                 given = t.count(1, WEAPON_UPGRADE_STAGE_1);
                 break;
@@ -1088,7 +1177,9 @@ mod tests {
         assert_eq!(given, 1);
         for i in 0..20 {
             let footman = spawn(&mut t, VARKA_SILENOS_FOOTMAN, 200 + i);
-            run(&mut t, |ctx| PailakaInjuredDragon.on_kill(ctx, footman, Oid(1), false));
+            run(&mut t, |ctx| {
+                PailakaInjuredDragon.on_kill(ctx, footman, Oid(1), false)
+            });
         }
         assert_eq!(t.count(1, WEAPON_UPGRADE_STAGE_1), 1);
     }
@@ -1098,7 +1189,9 @@ mod tests {
         let mut t = setup();
         enter(&mut t, Some(3));
         let antelope = spawn(&mut t, GRAZING_ANTELOPE, 100);
-        run(&mut t, |ctx| PailakaInjuredDragon.on_kill(ctx, antelope, Oid(1), false));
+        run(&mut t, |ctx| {
+            PailakaInjuredDragon.on_kill(ctx, antelope, Oid(1), false)
+        });
         let items = t.world.ground_item_ids();
         assert!(!items.is_empty());
         let id = t.world.ground_item(items[0]).unwrap().data.item_id;
@@ -1112,17 +1205,24 @@ mod tests {
         t.input(1, ClientInput::Appearing);
         let zone = NOEXIT_ZONES[0];
         // Nobody near: nothing happens.
-        run(&mut t, |ctx| PailakaInjuredDragon.on_enter_zone(ctx, Oid(1), zone.0));
+        run(&mut t, |ctx| {
+            PailakaInjuredDragon.on_enter_zone(ctx, Oid(1), zone.0)
+        });
         t.ticks(60);
         t.input(1, ClientInput::Appearing);
-        assert_eq!(t.world.position_of(Oid(1)).map(|p| (p.0, p.1)), Some((ENTRY_POINT.0, ENTRY_POINT.1)));
+        assert_eq!(
+            t.world.position_of(Oid(1)).map(|p| (p.0, p.1)),
+            Some((ENTRY_POINT.0, ENTRY_POINT.1))
+        );
         // A live monster near him: sent to the zone's point (within the random offset).
         t.world
             .tele_to_location(Oid(1), TeleportTarget::at(X, Y, Z).with_instance(300_000));
         t.ticks(60);
         t.input(1, ClientInput::Appearing);
         let footman = spawn(&mut t, VARKA_SILENOS_FOOTMAN, 100);
-        run(&mut t, |ctx| PailakaInjuredDragon.on_enter_zone(ctx, Oid(1), zone.0));
+        run(&mut t, |ctx| {
+            PailakaInjuredDragon.on_enter_zone(ctx, Oid(1), zone.0)
+        });
         t.ticks(60);
         let (x, y, _) = t.world.position_of(Oid(1)).unwrap();
         let offset = t.world.max_offset_on_teleport();
@@ -1134,7 +1234,9 @@ mod tests {
         t.ticks(60);
         t.input(1, ClientInput::Appearing);
         t.world.set_dead(footman.object_id, true);
-        run(&mut t, |ctx| PailakaInjuredDragon.on_enter_zone(ctx, Oid(1), zone.0));
+        run(&mut t, |ctx| {
+            PailakaInjuredDragon.on_enter_zone(ctx, Oid(1), zone.0)
+        });
         t.ticks(60);
         assert_eq!(t.world.position_of(Oid(1)).map(|p| (p.0, p.1)), Some((X, Y)));
     }

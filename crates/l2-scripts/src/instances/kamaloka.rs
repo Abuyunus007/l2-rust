@@ -339,9 +339,7 @@ impl Script for Kamaloka {
         player: Option<ObjectId>,
     ) -> Option<String> {
         if npc.is_some() {
-            let Some(player) = player else {
-                return None;
-            };
+            let player = player?;
             // A bad event is a `NumberFormatException` Java logs and goes on; scripts do not log.
             if let Ok(index) = event.parse::<i32>() {
                 enter_kamaloka_instance(ctx, player, index);
@@ -357,10 +355,7 @@ impl Script for Kamaloka {
             // only party leader can talk with escape teleporter
             if ctx.world().is_party_leader(player) {
                 let instance_id = ctx.world().instance_id_of(npc.object_id);
-                let allowed = ctx
-                    .state::<State>()
-                    .worlds
-                    .contains_key(&instance_id)
+                let allowed = ctx.state::<State>().worlds.contains_key(&instance_id)
                     && ctx
                         .world()
                         .instance_world(instance_id)
@@ -509,8 +504,10 @@ fn apply_to_boss(ctx: &mut ScriptCtx<'_>, boss: ObjectId, skill_id: i32, skill_l
 fn check_party_conditions(ctx: &mut ScriptCtx<'_>, player: ObjectId, index: usize) -> bool {
     let Some(party) = ctx.world().party_of(player) else {
         // player must be in party
-        ctx.world()
-            .send(player, &SystemMessage::new(SystemMessageId::YouAreNotCurrentlyInAPartySoYouCannotEnter));
+        ctx.world().send(
+            player,
+            &SystemMessage::new(SystemMessageId::YouAreNotCurrentlyInAPartySoYouCannotEnter),
+        );
         return false;
     };
 
@@ -670,10 +667,7 @@ fn enter_kamaloka_instance(ctx: &mut ScriptCtx<'_>, player: ObjectId, index: i32
 
     // Creating new instanceWorld, using our instanceId and templateId
     let instance_id = ctx.world_mut().create_dynamic_instance(template_id);
-    let created_template = ctx
-        .world()
-        .instance(instance_id)
-        .map_or(-1, |i| i.template_id);
+    let created_template = ctx.world().instance(instance_id).map_or(-1, |i| i.template_id);
     ctx.world_mut()
         .add_instance_world(InstanceWorld::new(instance_id, created_template));
 
@@ -767,7 +761,8 @@ fn spawn_kama(ctx: &mut ScriptCtx<'_>, instance_id: i32, index: usize) {
                     }
                     ctx.world_mut().set_npc_random_walking(npc.object_id, false);
                 }
-            } else if let Some(npc) = ctx.add_spawn(npcs[1], spawn.0, spawn.1, spawn.2, 0, false, 0, instance_id)
+            } else if let Some(npc) =
+                ctx.add_spawn(npcs[1], spawn.0, spawn.1, spawn.2, 0, false, 0, instance_id)
             {
                 // `spawn.setRespawnDelay(25); spawn.setAmount(1); spawn.startRespawn()`.
                 if let Some(spawn_index) = ctx.world().npc_spawn_index(npc.object_id) {
@@ -893,7 +888,8 @@ mod tests {
 
     fn state<R>(t: &mut ScriptTest, f: impl FnOnce(&mut State) -> R) -> R {
         let mut result = None;
-        t.world.run_as_script("Kamaloka", |ctx| result = Some(f(ctx.state::<State>())));
+        t.world
+            .run_as_script("Kamaloka", |ctx| result = Some(f(ctx.state::<State>())));
         result.unwrap()
     }
 
@@ -917,7 +913,10 @@ mod tests {
 
     /// How many system messages went to `player` in `out`.
     fn messages_to(out: &crate::testing::Sent, player: i32) -> usize {
-        names_to(out, player).iter().filter(|n| *n == "SYSTEM_MESSAGE").count()
+        names_to(out, player)
+            .iter()
+            .filter(|n| *n == "SYSTEM_MESSAGE")
+            .count()
     }
 
     fn kill(t: &mut ScriptTest, npc: Oid, id: i32) {
@@ -937,7 +936,10 @@ mod tests {
         assert_eq!(id, 300_000);
         assert_eq!(t.world.instance_id_of(Oid(2)), id);
         let world = t.world.instance_world(id).unwrap();
-        assert_eq!((world.template_id, world.allowed.clone()), (73, vec![Oid(1), Oid(2)]));
+        assert_eq!(
+            (world.template_id, world.allowed.clone()),
+            (73, vec![Oid(1), Oid(2)])
+        );
         let instance = t.world.instance(id).unwrap();
         assert!(!instance.allow_summon);
         assert_eq!(instance.exit_location, Some((X, Y, Z)));
@@ -1026,7 +1028,10 @@ mod tests {
         assert_eq!(state(&mut t, |s| s.worlds[&id].shaman), 0);
 
         // A minion of the first room is no shaman: nothing happens.
-        let minion = npcs_of(&t, id, 22486).into_iter().find(|n| n.0 != shaman).unwrap();
+        let minion = npcs_of(&t, id, 22486)
+            .into_iter()
+            .find(|n| n.0 != shaman)
+            .unwrap();
         kill(&mut t, minion, 22486);
 
         // The second room: only the fifth kill ends it.
@@ -1083,9 +1088,17 @@ mod tests {
 
         // The leader gets the leader's page, the member the other one.
         t.talk(1, exit);
-        assert!(pages_to(&t.take(), 1).last().is_some_and(|p| p.contains("32496.htm")));
+        assert!(
+            pages_to(&t.take(), 1)
+                .last()
+                .is_some_and(|p| p.contains("32496.htm"))
+        );
         t.talk(2, exit);
-        assert!(pages_to(&t.take(), 2).last().is_some_and(|p| p.contains("32496-no.htm")));
+        assert!(
+            pages_to(&t.take(), 2)
+                .last()
+                .is_some_and(|p| p.contains("32496-no.htm"))
+        );
 
         // The member's bypass does nothing; the leader's takes both out to the exit point.
         t.bypass(2, "Script Kamaloka 2");

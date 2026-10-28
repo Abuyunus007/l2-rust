@@ -134,7 +134,10 @@ mod tests {
 
     #[test]
     fn rolling_the_date_does_not_leave_the_month() {
-        assert_eq!(kamaloka_reset_time(WED, 0, true), kamaloka_reset_time(WED, 0, false));
+        assert_eq!(
+            kamaloka_reset_time(WED, 0, true),
+            kamaloka_reset_time(WED, 0, false)
+        );
         // 2026-10-31 12:00: the 1st of October, 06:30, in the past.
         let last_day = MIDNIGHT + 3 * DAY_MS + 12 * 3_600_000;
         let rolled = kamaloka_reset_time(last_day, 0, true);
@@ -173,7 +176,10 @@ pub(crate) mod testing {
             .collect();
         data.add_names(&format!("<list>{list}</list>")).unwrap();
         for (id, body) in templates {
-            data.add_template(&format!(r#"<instance id="{id}">{body}</instance>"#), &format!("T{id}.xml"));
+            data.add_template(
+                &format!(r#"<instance id="{id}">{body}</instance>"#),
+                &format!("T{id}.xml"),
+            );
         }
         Arc::new(data)
     }
