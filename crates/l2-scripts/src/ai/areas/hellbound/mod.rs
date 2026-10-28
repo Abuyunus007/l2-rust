@@ -25,6 +25,13 @@ pub(crate) mod testing {
         });
     }
 
+    /// Spawns an NPC like `ScriptTest::spawn` and lets the queued `on_spawn` run.
+    pub(crate) fn spawn(t: &mut ScriptTest, npc_id: i32, dx: i32) -> l2_util::ObjectId {
+        let npc = t.spawn(npc_id, dx);
+        t.ticks(2);
+        npc
+    }
+
     /// The last page `player` was sent in `out`.
     pub(crate) fn last_page(out: &crate::testing::Sent, player: i32) -> String {
         crate::testing::pages_to(out, player).pop().unwrap_or_default()

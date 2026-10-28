@@ -125,6 +125,57 @@ impl World {
         }
     }
 
+    /// Java `DecayTaskManager.getInstance().add(creature)`: the NPC decays after its corpse time
+    /// even when it is alive.
+    pub fn script_add_decay_task(&mut self, npc: ObjectId) {
+        self.add_decay_task(npc);
+    }
+
+    /// Java `player.getPlayerClass().equalsOrChildOf(PlayerClass.X)` (`class_id` is `X.getId()`).
+    pub fn player_class_equals_or_child_of(&self, player: ObjectId, class_id: i32) -> bool {
+        let Some(p) = self.player(player) else {
+            return false;
+        };
+        let (Ok(mine), Ok(other)) = (u16::try_from(p.data.class_id), u16::try_from(class_id)) else {
+            return false;
+        };
+        l2_data::ClassId(mine).equals_or_child_of(l2_data::ClassId(other))
+    }
+
+    /// Java `npc.getSpawn().getRespawnDelay()`: `(min + max) / 2` in milliseconds; 0 without a spawn.
+    pub fn npc_spawn_respawn_delay_ms(&self, npc: ObjectId) -> i32 {
+        self.npc_spawn_index(npc)
+            .and_then(|index| self.spawn_def(index))
+            .map_or(0, |spawn| (spawn.respawn_min_ms + spawn.respawn_max_ms) / 2)
+    }
+
+    /// Java `creature.stopSkillEffects(SkillFinishType.REMOVED, skillId)`.
+    pub fn script_stop_skill_effects_removed(&mut self, owner: ObjectId, skill_id: i32) {
+        self.stop_skill_effects(owner, crate::effects::SkillFinishType::Removed, skill_id);
+    }
+
+    /// Java `ZoneManager.getZones(creature)` contains the zone `zone_id`.
+    pub fn is_inside_zone_id(&self, creature: ObjectId, zone_id: i32) -> bool {
+        let Some((x, y, z)) = self.position_of(creature) else {
+            return false;
+        };
+        self.zoning
+            .zones
+            .as_ref()
+            .is_some_and(|zones| zones.zones_at(x, y, z).iter().any(|zone| zone.id == zone_id))
+    }
+
+    /// Java `npc.getAI().getIntention() == Intention.FOLLOW`: here, that the NPC has a follow task
+    /// (`script_start_follow` does not change the intention value, it starts the task).
+    pub fn is_intention_follow(&self, npc: ObjectId) -> bool {
+        self.pawn_of(npc).is_some_and(|pawn| pawn.follow.is_some())
+    }
+
+    /// Java `npc.scheduleDespawn(delay)`: the NPC is deleted after `delay_ms`.
+    pub fn script_schedule_despawn(&mut self, npc: ObjectId, delay_ms: i64) {
+        self.schedule_script_despawn(npc, delay_ms);
+    }
+
     /// Java `Monster.getLeader()`: the master of a minion.
     pub fn script_leader_of(&self, npc: ObjectId) -> Option<ObjectId> {
         self.leader_of(npc)

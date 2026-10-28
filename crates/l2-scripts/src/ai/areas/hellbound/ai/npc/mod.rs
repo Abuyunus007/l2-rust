@@ -9,7 +9,11 @@ pub mod hude;
 pub mod jude;
 pub mod kanaf;
 pub mod kief;
+pub mod natives;
+pub mod quarry;
+pub mod shadai;
 pub mod solomon;
+pub mod warpgate;
 
 use l2_world::ScriptRegistry;
 
@@ -24,5 +28,9 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(jude::Jude);
     r.add(kanaf::Kanaf);
     r.add(kief::Kief);
+    r.add(natives::Natives);
+    r.add(quarry::Quarry);
+    r.add(shadai::Shadai);
     r.add(solomon::Solomon);
+    r.add(warpgate::Warpgate);
 }
