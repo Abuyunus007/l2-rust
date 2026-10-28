@@ -15,6 +15,7 @@
 use l2_util::ObjectId;
 
 use super::ctx::ScriptCtx;
+use super::events::{DamageInfo, TerminateReturn, TrapAction};
 use super::qs::Qs;
 use super::setup::ScriptSetup;
 use super::timer_executor::TimerParams;
@@ -62,6 +63,15 @@ pub trait Script: Send + Sync + 'static {
     /// Java `isCustomQuest()`: a custom quest shows its path instead of a client string.
     fn is_custom(&self) -> bool {
         false
+    }
+
+    /// Whether Java creates this script at all. Some scripts' `main` (or constructor) tests a
+    /// config key first (`if (OlympiadConfig.OLYMPIAD_ENABLED)`, `ENABLE_BLOCK_CHECKER_EVENT`);
+    /// when this is `false` at [`World::install_scripts`](crate::World::install_scripts) the
+    /// script is not installed: no listeners, no name, no `on_load` (S-API-04). The world's
+    /// settings must be in before the scripts are installed.
+    fn enabled(&self, world: &crate::World) -> bool {
+        true
     }
 
     /// The Java constructor: registers the listeners and the quest items.
@@ -295,6 +305,212 @@ pub trait Script: Send + Sync + 'static {
         player: ObjectId,
         npc: ScriptNpc,
         is_summon: bool,
+    ) {
+    }
+
+    // ------------------------------------------------------------------ S-API-04 events
+
+    /// A [`ScriptCtx::reread_global_variables`] could not read the rows (D-50): the action that
+    /// waited for them is refused. The default only logs it.
+    fn on_global_variables_reread_failed(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        event: &str,
+        npc: Option<ScriptNpc>,
+        player: Option<ObjectId>,
+    ) {
+        tracing::warn!(
+            "[{}]: the global variables could not be read for '{event}'; the action is refused.",
+            ctx.script_name()
+        );
+    }
+
+    /// The entry of every event of [`super::ScriptEvent`] for a listener of this script:
+    /// `tag` is the owner given to [`ScriptCtx::add_listener`] (`None` for a global or NPC
+    /// template listener). The default calls the typed hook below. The answer matters for the
+    /// events whose Java call asks for a `TerminateReturn`.
+    fn on_listener_event(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        tag: Option<i64>,
+        event: &super::ScriptEvent,
+    ) -> Option<TerminateReturn> {
+        event.call_hook(self, ctx)
+    }
+
+    /// `ON_CREATURE_DEATH` with the answer `Playable.doDie` reads (`terminate` keeps the playable
+    /// alive; `Creature.doDie` ignores the answer). The default calls
+    /// [`Script::on_creature_death`], so a script that does not need the answer overrides that.
+    fn on_creature_death_terminate(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        killer: Option<ObjectId>,
+        victim: ObjectId,
+    ) -> Option<TerminateReturn> {
+        self.on_creature_death(ctx, killer, victim);
+        None
+    }
+
+    /// `ON_CREATURE_ATTACK` (synchronous): `attacker` starts to attack. `terminate` cancels it.
+    fn on_creature_attack(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        attacker: ObjectId,
+        target: ObjectId,
+    ) -> Option<TerminateReturn> {
+        None
+    }
+
+    /// `ON_CREATURE_ATTACKED` (synchronous, container: the target). `terminate` cancels the attack.
+    fn on_creature_attacked(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        attacker: ObjectId,
+        target: ObjectId,
+    ) -> Option<TerminateReturn> {
+        None
+    }
+
+    /// `ON_CREATURE_ATTACK_AVOID` (synchronous, container: the target that avoided).
+    fn on_creature_attack_avoid(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        attacker: ObjectId,
+        target: ObjectId,
+        damage_over_time: bool,
+    ) {
+    }
+
+    /// `ON_CREATURE_SKILL_USE` (synchronous, container: the caster). `terminate` cancels the cast.
+    fn on_creature_skill_use(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        caster: ObjectId,
+        skill: SkillKey,
+        simultaneously: bool,
+        target: ObjectId,
+    ) -> Option<TerminateReturn> {
+        None
+    }
+
+    /// `ON_CREATURE_DAMAGE_DEALT` (synchronous, container: the attacker).
+    fn on_creature_damage_dealt(&self, ctx: &mut ScriptCtx<'_>, info: &DamageInfo) {}
+
+    /// `ON_CREATURE_DAMAGE_RECEIVED` (queued, container: the target).
+    fn on_creature_damage_received(&self, ctx: &mut ScriptCtx<'_>, info: &DamageInfo) {}
+
+    /// `ON_CREATURE_KILLED` (synchronous, container: the victim), fired by `Creature.doDie` right
+    /// after `ON_CREATURE_DEATH`. `terminate` keeps the creature from finishing its death (it
+    /// stays dead at 0 hp: Java returns before the rewards).
+    fn on_creature_killed(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        attacker: Option<ObjectId>,
+        target: ObjectId,
+    ) -> Option<TerminateReturn> {
+        None
+    }
+
+    /// `ON_PLAYER_SIT` (queued, container: the player).
+    fn on_player_sit(&self, ctx: &mut ScriptCtx<'_>, player: ObjectId) {}
+
+    /// `ON_PLAYER_LEVEL_CHANGED` (queued, container: the player).
+    fn on_player_level_changed(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        player: ObjectId,
+        old_level: i32,
+        new_level: i32,
+    ) {
+    }
+
+    /// `ON_PLAYER_ITEM_ADD` (queued, container: the player).
+    fn on_player_item_add(&self, ctx: &mut ScriptCtx<'_>, player: ObjectId, item: ScriptItem) {}
+
+    /// `ON_PLAYER_ITEM_PICKUP` (queued, container: the player).
+    fn on_player_item_pickup(&self, ctx: &mut ScriptCtx<'_>, player: ObjectId, item: ScriptItem) {}
+
+    /// `ON_PLAYER_PROFESSION_CHANGE` (queued, container: the player).
+    fn on_player_profession_change(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        player: ObjectId,
+        class_id: i32,
+        is_sub_class: bool,
+    ) {
+    }
+
+    /// `ON_PLAYER_SUMMON_TALK` (queued, container: the summon).
+    fn on_player_summon_talk(&self, ctx: &mut ScriptCtx<'_>, summon: ObjectId) {}
+
+    /// `ON_PLAYABLE_EXP_CHANGED` (synchronous, container: the playable). `terminate` refuses
+    /// the experience.
+    fn on_playable_exp_changed(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        playable: ObjectId,
+        old_exp: i64,
+        new_exp: i64,
+    ) -> Option<TerminateReturn> {
+        None
+    }
+
+    /// `ON_NPC_MANOR_BYPASS` (`add_npc_manor_bypass_id`, queued): the player pressed a
+    /// `manor_menu_select` button at the NPC.
+    fn on_npc_manor_bypass(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        player: ObjectId,
+        npc: ScriptNpc,
+        request: i32,
+        manor_id: i32,
+        next_period: bool,
+    ) {
+    }
+
+    /// `ON_TRAP_ACTION` (queued, container: the trap).
+    fn on_trap_action(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        trap: ScriptNpc,
+        trigger: ObjectId,
+        action: TrapAction,
+    ) {
+    }
+
+    /// `ON_DAILY_RESET` (synchronous).
+    fn on_daily_reset(&self, ctx: &mut ScriptCtx<'_>) {}
+
+    /// `ON_CLAN_WAR_START` (queued).
+    fn on_clan_war_start(&self, ctx: &mut ScriptCtx<'_>, clan1: i32, clan2: i32) {}
+
+    /// `ON_CLAN_WAR_FINISH` (queued).
+    fn on_clan_war_finish(&self, ctx: &mut ScriptCtx<'_>, clan1: i32, clan2: i32) {}
+
+    /// `ON_CASTLE_SIEGE_START` (queued).
+    fn on_castle_siege_start(&self, ctx: &mut ScriptCtx<'_>, castle_id: i32) {}
+
+    /// `ON_CASTLE_SIEGE_FINISH` (queued).
+    fn on_castle_siege_finish(&self, ctx: &mut ScriptCtx<'_>, castle_id: i32) {}
+
+    /// `ON_CASTLE_SIEGE_OWNER_CHANGE` (queued).
+    fn on_castle_siege_owner_change(&self, ctx: &mut ScriptCtx<'_>, castle_id: i32) {}
+
+    /// `ON_FORT_SIEGE_START` (queued).
+    fn on_fort_siege_start(&self, ctx: &mut ScriptCtx<'_>, fort_id: i32) {}
+
+    /// `ON_FORT_SIEGE_FINISH` (queued).
+    fn on_fort_siege_finish(&self, ctx: &mut ScriptCtx<'_>, fort_id: i32) {}
+
+    /// `ON_OLYMPIAD_MATCH_RESULT` (queued): the fighters are character ids (`Participant`
+    /// object ids; `winner` is `None` where Java passes `null`); `competition_type` is the
+    /// `CompetitionType` ordinal (0 classed, 1 non-classed, 2 teams).
+    fn on_olympiad_match_result(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        winner: Option<i32>,
+        loser: i32,
+        competition_type: i32,
     ) {
     }
 }

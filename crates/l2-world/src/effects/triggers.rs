@@ -133,6 +133,15 @@ impl World {
                 listener.on_avoid(self, attacker, target, is_dot);
             }
         }
+        // The script listeners (S-API-04).
+        self.script_fire(
+            crate::script::ScriptEvent::CreatureAttackAvoid {
+                attacker,
+                target,
+                damage_over_time: is_dot,
+            },
+            Some(target),
+        );
     }
 
     /// Java `target.notifyDamageReceived(damage, attacker, skill, critical, damageOverTime)`: a
@@ -171,6 +180,26 @@ impl World {
                 listener.on_damage_received(self, &event);
             }
         }
+        // The script listeners (S-API-04): the attacker's `ON_CREATURE_DAMAGE_DEALT` at once, the
+        // target's `ON_CREATURE_DAMAGE_RECEIVED` queued (Java `notifyEventAsync`).
+        let info = crate::script::DamageInfo {
+            attacker,
+            target,
+            damage,
+            skill,
+            critical,
+            damage_over_time,
+        };
+        if let Some(attacker) = attacker {
+            self.script_fire(
+                crate::script::ScriptEvent::CreatureDamageDealt(info),
+                Some(attacker),
+            );
+        }
+        self.script_fire_async(
+            crate::script::ScriptEvent::CreatureDamageReceived(info),
+            Some(target),
+        );
     }
 
     /// Java `ON_CREATURE_SKILL_USE` (`OnCreatureSkillUse`): `caster` starts to cast `skill` at

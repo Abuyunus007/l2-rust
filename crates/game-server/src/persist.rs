@@ -600,6 +600,15 @@ pub trait PlayerStore: Send + 'static {
         async { Ok(()) }
     }
 
+    /// The named `global_variables` rows read again (D-50, D-54, S-API-04). A store without a
+    /// database has no rows.
+    fn load_global_variable_rows(
+        &mut self,
+        _names: &[String],
+    ) -> impl Future<Output = Result<Vec<(String, Option<String>)>, PersistError>> + Send {
+        async { Ok(Vec::new()) }
+    }
+
     /// Every `seven_signs` row and the status row read again (D-50, M8-SS-01). A store without a
     /// database has none.
     fn load_seven_signs(
@@ -1429,6 +1438,21 @@ async fn run<S: PlayerStore>(
                 // Java logs a failed statement and goes on (no retry).
                 if let Err(e) = store.store_boss_write(&write).await {
                     error!("Boss data could NOT be stored ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::GlobalVariablesRereadRequest { token, names }) => {
+                // Not a write: the answer goes back to the world (D-15). A failed read is reported
+                // as a failure; the script's action is then refused (D-50).
+                let result = match store.load_global_variable_rows(&names).await {
+                    Ok(rows) => Ok(rows),
+                    Err(e) => {
+                        warn!("Could not read the global variables {names:?} again: {e}");
+                        Err(())
+                    }
+                };
+                let answer = l2_world::WorldCommand::GlobalVariablesReread { token, result };
+                if !acks.send_to_world(answer) {
+                    warn!("The global variables {names:?} could not be handed to the world.");
                 }
             }
             OutboxMessage::Persist(PersistCommand::BossRereadRequest { kind, then }) => {
@@ -5560,6 +5584,13 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn load_global_variable_rows(
+        &mut self,
+        names: &[String],
+    ) -> Result<Vec<(String, Option<String>)>, PersistError> {
+        Ok(self.global_variables.load_variables(names).await?)
+    }
+
     async fn store_instance_time(&mut self, write: &InstanceTimeWrite) -> Result<(), PersistError> {
         match *write {
             InstanceTimeWrite::Set {
@@ -6420,6 +6451,8 @@ mod tests {
         Boss(BossWrite),
         /// A read of boss rows (M8-BOSS-01).
         BossRead(BossReadKind),
+        /// A `global_variables` re-read (S-API-04).
+        GlobalRead(Vec<String>),
         /// A `character_instance_time` write (M8-INST-01).
         InstanceTime(InstanceTimeWrite),
         /// An Underground Coliseum write (M8-GAMES-01).
@@ -6660,6 +6693,14 @@ mod tests {
                     rows: Vec::new(),
                 },
             })
+        }
+
+        async fn load_global_variable_rows(
+            &mut self,
+            names: &[String],
+        ) -> Result<Vec<(String, Option<String>)>, PersistError> {
+            self.calls.lock().unwrap().push(Call::GlobalRead(names.to_vec()));
+            Ok(vec![("Respawn".to_owned(), Some("999".to_owned()))])
         }
 
         async fn store_instance_time(&mut self, write: &InstanceTimeWrite) -> Result<(), PersistError> {
@@ -7087,6 +7128,45 @@ mod tests {
                     })
                 );
                 assert_eq!(then, l2_world::BossReadThen::Nothing);
+            }
+            other => panic!("{other:?}"),
+        }
+    }
+
+    /// The global variable re-read of the scripts (S-API-04, D-50) comes after the writes sent
+    /// before it and goes back to the world as `WorldCommand::GlobalVariablesReread`.
+    #[tokio::test]
+    async fn the_global_variable_reread_is_answered_to_the_world_in_order() {
+        let (world_tx, world_rx) = std::sync::mpsc::channel();
+        let acks = LeftAcks::default();
+        acks.set_world(crate::state::WorldHandle::new(world_tx));
+        let store = Recording::default();
+        let calls = Arc::clone(&store.calls);
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
+        let task = spawn(store, rx, notice_tx, NO_WAIT, acks);
+        let send = |command: PersistCommand| tx.send(OutboxMessage::Persist(command)).unwrap();
+        send(PersistCommand::Boss(BossWrite::RaidPointsDeleteAll));
+        send(PersistCommand::GlobalVariablesRereadRequest {
+            token: 4,
+            names: vec!["Respawn".to_owned()],
+        });
+        drop(tx);
+        tokio::time::timeout(Duration::from_secs(10), task)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            *calls.lock().unwrap(),
+            vec![
+                Call::Boss(BossWrite::RaidPointsDeleteAll),
+                Call::GlobalRead(vec!["Respawn".to_owned()]),
+            ]
+        );
+        match world_rx.try_recv().unwrap() {
+            l2_world::WorldCommand::GlobalVariablesReread { token, result } => {
+                assert_eq!(token, 4);
+                assert_eq!(result, Ok(vec![("Respawn".to_owned(), Some("999".to_owned()))]));
             }
             other => panic!("{other:?}"),
         }

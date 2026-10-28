@@ -62,7 +62,7 @@ impl crate::world::World {
     pub fn script_npc_var(&self, script: &str, npc: ObjectId, key: &str) -> i64 {
         // The script value is the NPC's own (`quest_helpers.rs`), shared by every script as in Java.
         if key == "@scriptValue" {
-            return i64::from(self.scripts.npc_script_values.get(&npc).copied().unwrap_or(0));
+            return i64::from(self.npc_script_value(npc));
         }
         self.scripts
             .by_name(script)

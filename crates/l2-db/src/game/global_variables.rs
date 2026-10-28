@@ -11,6 +11,9 @@ use sqlx::FromRow;
 use crate::error::Result;
 use crate::pool::Pool;
 
+// The re-read of named variables before a script decides (D-50, S-API-04): Java's `SELECT_QUERY`
+// restricted to one name.
+const SELECT_ONE: &str = "SELECT * FROM global_variables WHERE var = ?";
 // Java: GlobalVariablesManager.SELECT_QUERY
 const SELECT_ALL: &str = "SELECT * FROM global_variables";
 // The delete of one removed variable. Java's `storeMe` deletes the whole table
@@ -45,6 +48,20 @@ impl GlobalVariableRepository {
     pub async fn load_all(&self) -> Result<Vec<(String, Option<String>)>> {
         let rows: Vec<GlobalVariableDbRow> = sqlx::query_as(SELECT_ALL).fetch_all(&self.pool).await?;
         Ok(rows.into_iter().map(|r| (r.var, r.value)).collect())
+    }
+
+    /// The rows of the named variables as `(var, value)`; a name without a row is not in the
+    /// answer. A NULL value is `None`. Used to re-read the rows the Java GS changes (D-50).
+    pub async fn load_variables(&self, names: &[String]) -> Result<Vec<(String, Option<String>)>> {
+        let mut out = Vec::new();
+        for name in names {
+            let rows: Vec<GlobalVariableDbRow> = sqlx::query_as(SELECT_ONE)
+                .bind(name)
+                .fetch_all(&self.pool)
+                .await?;
+            out.extend(rows.into_iter().map(|r| (r.var, r.value)));
+        }
+        Ok(out)
     }
 
     /// Writes one variable.

@@ -1101,7 +1101,11 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                 Out::Persist(PersistCommand::BotReport(_)) => "bot report",
                 Out::Persist(PersistCommand::OfflineTrade(_)) => "offline trade",
                 Out::Persist(PersistCommand::Manor(_)) => "manor",
-                Out::Persist(PersistCommand::Boss(_) | PersistCommand::BossRereadRequest { .. }) => "boss",
+                Out::Persist(
+                    PersistCommand::Boss(_)
+                    | PersistCommand::BossRereadRequest { .. }
+                    | PersistCommand::GlobalVariablesRereadRequest { .. },
+                ) => "boss",
                 Out::Persist(PersistCommand::Cursed(_)) => "cursed",
                 Out::Persist(PersistCommand::Olympiad(_) | PersistCommand::OlympiadRereadRequest { .. }) => {
                     "olympiad"

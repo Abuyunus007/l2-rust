@@ -237,6 +237,20 @@ impl World {
         };
         // `Item.pickupMe`: a mercenary ticket takes its hire with it (M7-SIEGE-01).
         self.merc_on_pickup(&taken);
+        // `ON_PLAYER_ITEM_PICKUP` (S-API-04, queued).
+        // NOTE(java-quirk): Java asks the item template's listeners first and the player's only
+        // when the template has none; the engine has no template listeners for items, so the
+        // player's and the global ones hear it.
+        self.script_fire_async(
+            crate::script::ScriptEvent::PlayerItemPickup {
+                player: id,
+                item: crate::script::ScriptItem {
+                    object_id: object,
+                    id: item_id,
+                },
+            },
+            Some(id),
+        );
 
         let Some(template) = template else {
             // Unknown item: it cannot be told what it is, so it just joins the inventory.

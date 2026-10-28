@@ -113,7 +113,7 @@ impl EffectHandler for Lethal {
 
 /// Java `Creature.isLethalable()`: true unless the class or a script made it false. Raid and
 /// grand bosses and doors set it false in their constructors (`NonLethalableNpcs` and the
-/// instance scripts are not modelled).
+/// instance scripts are not modelled). A script's `setLethalable(false)` counts (S-API-04).
 fn is_lethalable(world: &World, id: ObjectId) -> bool {
-    !world.is_raid(id) && !world.doors.contains_key(&id)
+    !world.is_raid(id) && !world.doors.contains_key(&id) && world.is_lethalable_by_script(id)
 }

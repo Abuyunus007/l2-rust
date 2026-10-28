@@ -364,15 +364,38 @@ test loops "kill until the count is reached" instead of guessing the number of k
   (`ctx.play_movie_for(&players, id)`, `World::is_playing_movie`); `add_spawn` slots are reused once the NPC is gone;
   `//show_quests` and `//quest_info` exist (`script/admin.rs`).
 
+## Added by S-API-04
+
+- **Config-gated scripts:** `Script::enabled(&World)` (default true). A script whose Java `main` tests a config key
+  (`MonumentOfHeroes`: `OlympiadEnabled`, `HandysBlockCheckerEvent`: `EnableBlockCheckerEvent`) returns it there; when false it is not
+  installed (no listeners, no `on_load`). The settings are in the world before `install_scripts`.
+- **D-50 re-read of `global_variables`:** `ctx.reread_global_variables(&["Name"], "event", npc, player)`. With `CycleDatabaseWrites` off the
+  rows are read again (`PersistCommand::GlobalVariablesRereadRequest`, `WorldCommand::GlobalVariablesReread`), the copy is replaced (a row
+  the other server deleted is removed, nothing is written back) and then the script's own `on_event("event", npc, player)` runs. A failed
+  read does not run it: `on_global_variables_reread_failed` is called instead. With the switch on it runs at once (queued).
+- **More events** (`events.rs`, `ScriptEvent`, `TerminateReturn`): `ON_CREATURE_ATTACK/ATTACKED/ATTACK_AVOID/SKILL_USE/DAMAGE_DEALT/
+  DAMAGE_RECEIVED/KILLED`, `ON_PLAYER_SIT/LEVEL_CHANGED/ITEM_ADD/ITEM_PICKUP/PROFESSION_CHANGE/SUMMON_TALK`, `ON_PLAYABLE_EXP_CHANGED`,
+  `ON_NPC_MANOR_BYPASS`, `ON_TRAP_ACTION`, `ON_DAILY_RESET`, `ON_CLAN_WAR_START/FINISH`, `ON_CASTLE_SIEGE_START/FINISH/OWNER_CHANGE`,
+  `ON_FORT_SIEGE_START/FINISH`, `ON_OLYMPIAD_MATCH_RESULT`. Global registration: `s.set_on_<event>()` (the NPC-id one is
+  `s.add_npc_manor_bypass_id`). Each has a typed hook (`on_creature_attacked`, ...); the ones Java asks a `TerminateReturn` of return
+  `Option<TerminateReturn>` (`TerminateReturn::new(true)` stops the attack / cast / death / exp). `on_creature_death_terminate` is the
+  answer-returning twin of `on_creature_death` (read by `Playable.doDie`).
+- **Per-object listeners:** `ctx.add_listener(object, EventKind::PlayerSit, tag)`, `ctx.remove_listener_if(object, kind, tag)` (Java
+  `removeListenerIf(owner == tag)`), `ctx.remove_listeners`, `ctx.has_listener`. The listener is the running script; `tag` is Java's
+  owner. The default `Script::on_listener_event(ctx, tag, &ScriptEvent)` calls the typed hook; override it to read the tag. Listeners die
+  with the object (player leaves, NPC decays).
+- **NPC extras:** `world.npc_variables_mut(npc)` / `npc_variables(npc)` (`NpcVariables`: `get_int`, `set_int`, ...), `npc_script_value` /
+  `set_npc_script_value` / `is_npc_script_value`, `set_lethalable(id, false)` (the lethal effect respects it), `is_overhit`,
+  `overhit_attacker`, `overhit_damage`, `overhit_enabled`, `set_overhit_values` (the over-hit skill flag and the over-hit exp bonus work).
+
+Not fired yet (no Rust counterpart): `ON_TRAP_ACTION` (no trap NPC in the world), the `OnPlayerClan*` events, template-level
+(item) listeners of `ON_PLAYER_ITEM_PICKUP`, `ON_CREATURE_ATTACK/ATTACKED` for NPC attacks outside `do_attack`.
+
 ## Not in the engine yet (follow-ups)
 
-Annotation listeners with per-player registration (`player.addListener(..)` of the event scripts), the other
-`EventType`s (`ON_CREATURE_ATTACKED/SKILL_USE/DAMAGE_*`, `ON_PLAYER_SIT/LEVEL_CHANGED/ITEM_*`, clan, siege, olympiad,
-trap, `ON_DAILY_RESET`), the D-50 re-read of `global_variables` (needs the game server DB task), summon spawn/talk,
-premium rates (M9), the multilingual chooser strings (M9).
+Summon spawn, premium rates (M9), the multilingual chooser strings (M9), the remaining `EventType`s listed above as not fired.
 
-Found by S-PILOT-01: the tutorial's player listeners (`ON_PLAYER_LEVEL_CHANGED`, `ON_PLAYER_ITEM_PICKUP`,
-`ON_PLAYER_SIT`, `ON_CREATURE_ATTACKED`: kept in its state, with `pub` entry points for the engine); `setup` cannot read the
+Found by S-PILOT-01: the tutorial's player listeners (now engine events since S-API-04: wire its `pub` entry points to them); `setup` cannot read the
 configuration (Java constructors do: `if (!PlayerConfig.DISABLE_TUTORIAL) addStartNpc(..)`), so such
 scripts check `ctx.script_settings()` in their hooks; the client ground location of a player's
 `MagicSkillUse` in `broadcast_magic_skill_use` (always none).

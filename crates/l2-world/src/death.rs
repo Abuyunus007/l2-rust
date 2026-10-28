@@ -139,8 +139,22 @@ impl World {
         if !self.kill(id) {
             return false;
         }
-        // ON_CREATURE_DEATH (S-API-03); ON_CREATURE_KILLED is not fired yet.
+        // ON_CREATURE_DEATH (S-API-03); `Creature.doDie` ignores the answer.
         self.script_on_creature_death(id, killer);
+        // ON_CREATURE_KILLED: a `terminate` answer ends the death here, before the rewards; the
+        // creature stays dead (S-API-04).
+        if self
+            .script_fire(
+                crate::script::ScriptEvent::CreatureKilled {
+                    attacker: killer,
+                    target: id,
+                },
+                Some(id),
+            )
+            .is_some_and(|r| r.terminate)
+        {
+            return false;
+        }
 
         // Calculate rewards for main damage dealer.
         let main_damage_dealer = if self.is_monster(id) {
@@ -185,12 +199,17 @@ impl World {
 
     /// Java `Playable.doDie(killer)` for a player.
     fn playable_do_die(&mut self, id: ObjectId, killer: Option<ObjectId>) -> bool {
-        // ON_CREATURE_DEATH (S-API-03): Java asks before the "already dead" check, a dead
-        // playable cannot die again here, so the order only matters for a double death.
+        // ON_CREATURE_DEATH (S-API-03): Java asks before the "already dead" check and before the
+        // playable is dead, and a `terminate` answer keeps it alive (S-API-04).
+        if self
+            .script_on_creature_death(id, killer)
+            .is_some_and(|r| r.terminate)
+        {
+            return false;
+        }
         if !self.kill(id) {
             return false;
         }
-        self.script_on_creature_death(id, killer);
 
         // Set target to null and cancel Attack or Cast.
         self.set_creature_target(id, None);

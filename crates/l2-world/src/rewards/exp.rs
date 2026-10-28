@@ -307,7 +307,7 @@ impl World {
             }
             // If there's a party in progress: share with its members.
             if let Some(party) = self.party_of(attacker) {
-                self.reward_party_share(dying, party, at, total_damage, &mut rewards);
+                self.reward_party_share(dying, party, attacker, at, total_damage, &mut rewards);
                 continue;
             }
             // Penalty applied to the attacker's XP: "If this attacker have servitor, get Exp
@@ -321,8 +321,12 @@ impl World {
             let (exp, sp) = self.calculate_exp_and_sp(dying, level, damage, total_damage);
             // Champions: see the module comment.
             // `exp *= penalty` (a float widened to double).
-            let exp = exp * f64::from(penalty);
-            // The over-hit bonus: see the module comment.
+            let mut exp = exp * f64::from(penalty);
+            // Check for an over-hit enabled strike.
+            if self.overhit_bonus_applies(dying, attacker) {
+                self.send(attacker, &SystemMessage::new(SystemMessageId::OverHit));
+                exp += self.calculate_overhit_exp(dying, exp);
+            }
 
             // Distribute the Exp and SP between the Player and its Summon.
             if self.is_dead(attacker) {
@@ -354,6 +358,7 @@ impl World {
         &mut self,
         dying: ObjectId,
         party: crate::party::PartyId,
+        attacker: ObjectId,
         at: (i32, i32, i32),
         total_damage: i64,
         rewards: &mut Vec<(ObjectId, i64)>,
@@ -411,9 +416,15 @@ impl World {
         // NOTE(java-quirk): `calculateExpAndSp` already takes `partyDmg / totalDamage` of the
         // reward, and `partyMul` takes the same share once more.
         let (mut exp, mut sp) = self.calculate_exp_and_sp(dying, party_level, party_damage, total_damage);
-        // Champions and the over-hit bonus: see the module comment.
+        // Champions: see the module comment.
         exp *= party_mul;
         sp *= party_mul;
+        // Check for an over-hit enabled strike. (When in party, the over-hit exp bonus is given
+        // to the whole party and split proportionally through the party members.)
+        if self.overhit_bonus_applies(dying, attacker) {
+            self.send(attacker, &SystemMessage::new(SystemMessageId::OverHit));
+            exp += self.calculate_overhit_exp(dying, exp);
+        }
         // Distribute Experience and SP rewards to Player Party members in the known area of the
         // last attacker.
         if party_damage > 0 {
@@ -422,6 +433,15 @@ impl World {
     }
 
     // ------------------------------------------------------------------ PlayerStat
+
+    /// `_overhit && overhitAttacker != null && overhitAttacker.asPlayer() == attacker`.
+    fn overhit_bonus_applies(&self, dying: ObjectId, attacker: ObjectId) -> bool {
+        self.is_overhit(dying)
+            && self
+                .overhit_attacker(dying)
+                .and_then(|o| self.acting_player(o))
+                .is_some_and(|p| p == attacker)
+    }
 
     /// Java `AccessLevel.canGainExp()` of the player.
     fn can_gain_exp(&self, id: ObjectId) -> bool {
@@ -604,6 +624,21 @@ impl World {
         }
         // ON_PLAYABLE_EXP_CHANGED: the `SoulEating` listeners hear the gain first.
         self.soul_eating_on_exp_changed(id, amount);
+        // The script listeners (S-API-04): a `terminate` answer refuses the gain.
+        let old_exp = self.players.get(&id).map_or(0, |p| p.data.exp);
+        if self
+            .script_fire(
+                crate::script::ScriptEvent::PlayableExpChanged {
+                    playable: id,
+                    old_exp,
+                    new_exp: old_exp.wrapping_add(amount),
+                },
+                Some(id),
+            )
+            .is_some_and(|r| r.terminate)
+        {
+            return false;
+        }
         let (Some(max_level), Some(player)) = (self.java_max_level(), self.players.get(&id)) else {
             return false;
         };
@@ -826,7 +861,15 @@ impl World {
         if level + amount > max_level - 1 {
             return false;
         }
-        // ON_PLAYER_LEVEL_CHANGED: script event (D-05).
+        // ON_PLAYER_LEVEL_CHANGED (S-API-04, queued).
+        self.script_fire_async(
+            crate::script::ScriptEvent::PlayerLevelChanged {
+                player: id,
+                old_level: level,
+                new_level: level + amount,
+            },
+            Some(id),
+        );
         let level_increased = self.playable_add_level(id, amount);
         if level_increased {
             // The tutorial quest event "CE40" is a script (D-05).

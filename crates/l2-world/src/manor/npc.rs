@@ -125,15 +125,31 @@ impl World {
         manor_id: i32,
         next_period: bool,
     ) {
-        if self.is_manor_manager(npc) {
+        // A script with an `ON_NPC_MANOR_BYPASS` listener for the NPC takes the event (Java
+        // `hasListener(ON_NPC_MANOR_BYPASS, lastNpc)` and `notifyEventAsync`, S-API-04): the
+        // `ManorManager` script. Without one the bypass is answered from here.
+        if let Some(script_npc) = self.script_npc_with_listener(crate::script::EventKind::NpcManorBypass, npc)
+        {
+            self.script_fire_async(
+                crate::script::ScriptEvent::NpcManorBypass {
+                    player,
+                    npc: script_npc,
+                    request,
+                    manor_id,
+                    next_period,
+                },
+                Some(npc),
+            );
+        } else if self.is_manor_manager(npc) {
             self.manor_manager_bypass(player, npc, request, manor_id, next_period);
         } else if self.is_chamberlain(npc) {
             self.chamberlain_manor_bypass(player, npc, request, manor_id, next_period);
         }
     }
 
-    /// `ManorManager.onNpcManorBypass`.
-    fn manor_manager_bypass(
+    /// `ManorManager.onNpcManorBypass`, called by the `ManorManager` script's
+    /// `ON_NPC_MANOR_BYPASS` hook (S-API-04).
+    pub fn manor_manager_bypass(
         &mut self,
         player: ObjectId,
         npc: ObjectId,

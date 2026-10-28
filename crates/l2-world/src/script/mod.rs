@@ -32,6 +32,9 @@ pub mod admin;
 pub mod ai_help;
 pub mod api;
 pub mod ctx;
+pub mod events;
+#[cfg(test)]
+mod events_tests;
 pub mod globals;
 mod instance_api;
 pub mod link;
@@ -39,9 +42,11 @@ mod movie;
 pub mod notify;
 #[cfg(test)]
 mod notify_tests;
+pub mod npc_extra;
 pub mod packets;
 pub mod qs;
 pub mod quest_helpers;
+pub mod reread;
 mod see;
 pub mod setup;
 pub mod sound;
@@ -59,7 +64,9 @@ use tracing::{info, warn};
 
 pub use api::{Script, ScriptItem, ScriptNpc};
 pub use ctx::ScriptCtx;
+pub use events::{DamageInfo, ScriptEvent, TerminateReturn, TrapAction};
 pub use globals::{GlobalVariables, GlobalVariablesWrite};
+pub use npc_extra::NpcVariables;
 pub use packets::QuestInput;
 pub use qs::Qs;
 pub use quest_helpers::{class_race, player_class, race};
@@ -179,6 +186,12 @@ pub(crate) struct ScriptWorld {
     /// Java `ScriptManager._quests` + `_scripts` by name (case sensitive).
     by_name: HashMap<String, ScriptId>,
     pub(crate) listeners: setup::Listeners,
+    /// NPC variables, script values, lethalable and over-hit values (S-API-04).
+    pub(crate) npc_extras: npc_extra::NpcExtras,
+    /// The listeners added to single objects (S-API-04).
+    pub(crate) object_listeners: events::ObjectListeners,
+    /// The global variable re-reads waiting for their rows (S-API-04).
+    pub(crate) rereads: reread::Rereads,
     /// The quest states of every online player (Java `Player._quests`).
     pub(crate) players: HashMap<ObjectId, PlayerQuests>,
     pub(crate) timers: timers::QuestTimers,
@@ -196,8 +209,6 @@ pub(crate) struct ScriptWorld {
     pub(crate) settings: ScriptSettings,
     /// Java `Attackable._onKillDelay` where a script changed it.
     pub(crate) kill_delays: HashMap<ObjectId, i32>,
-    /// Java `Npc._scriptValue` where it is not 0.
-    pub(crate) npc_script_values: HashMap<ObjectId, i32>,
     /// Java `static` fields shared by a family of scripts ([`ScriptCtx::shared_state`]).
     pub(crate) shared_states: quest_helpers::SharedStates,
     /// Slots of `death.runtime_spawns` whose script spawn ended, for the next `add_spawn`
@@ -263,6 +274,14 @@ impl World {
         let has_templates = self.npc_world.has_templates();
         let (mut quests, mut scripts) = (0, 0);
         for script in registry.scripts {
+            // Java's `main` does not create the script when its config key is off (S-API-04).
+            if !script.enabled(self) {
+                info!(
+                    "ScriptManager: {} is not enabled by the config, not loaded.",
+                    script.name()
+                );
+                continue;
+            }
             let id = ScriptId(self.scripts.installed.len() as u32);
             let name = script.name();
             let mut setup = ScriptSetup::default();

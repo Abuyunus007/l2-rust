@@ -25,6 +25,11 @@ impl Script for HandysBlockCheckerEvent {
         "ai/areas/FantasyIsle"
     }
 
+    /// Java's `main` creates the script only with `GeneralConfig.ENABLE_BLOCK_CHECKER_EVENT`.
+    fn enabled(&self, world: &l2_world::World) -> bool {
+        world.block_checker_event_enabled()
+    }
+
     fn setup(&self, s: &mut ScriptSetup) {
         s.add_first_talk_id(&[A_MANAGER_1, A_MANAGER_2, A_MANAGER_3, A_MANAGER_4]);
         // `HandysBlockCheckerManager.getInstance().startUpParticipantsQueue()` is
@@ -32,14 +37,6 @@ impl Script for HandysBlockCheckerEvent {
     }
 
     fn on_first_talk(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId) -> Option<String> {
-        // NOTE(java-quirk): Java's `main` creates the script only with
-        // `GeneralConfig.ENABLE_BLOCK_CHECKER_EVENT`; without it the managers have no first-talk
-        // listener and show their own page. `setup` cannot read the config, so the listener is
-        // always there and gives the click back to the NPC's page.
-        if !ctx.world().block_checker_event_enabled() {
-            ctx.world_mut().show_chat_window(npc.object_id, player, 0);
-            return None;
-        }
         let arena = npc.id - A_MANAGER_1;
         ctx.world_mut().block_checker_first_talk(player, arena);
         None
@@ -64,10 +61,12 @@ mod tests {
             "<html><body>Own page</body></html>".to_owned(),
         )];
         let pages: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
-        let mut t = ScriptTest::new(registry, NPCS_XML, "", &pages);
-        t.world.set_minigame_settings(MinigameSettings {
-            enable_block_checker_event: enabled,
-            ..MinigameSettings::default()
+        // The settings come first: the script is created only with the event (`Script::enabled`).
+        let mut t = ScriptTest::new_with(registry, NPCS_XML, "", &pages, |world, _| {
+            world.set_minigame_settings(MinigameSettings {
+                enable_block_checker_event: enabled,
+                ..MinigameSettings::default()
+            });
         });
         t.world.start_minigames(MinigameLoad::default());
         t

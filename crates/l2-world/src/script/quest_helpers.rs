@@ -308,12 +308,7 @@ impl ScriptCtx<'_> {
 
     /// Java `npc.getScriptValue()`.
     pub fn get_script_value(&self, npc: ScriptNpc) -> i32 {
-        self.world
-            .scripts
-            .npc_script_values
-            .get(&npc.object_id)
-            .copied()
-            .unwrap_or(0)
+        self.world.npc_script_value(npc.object_id)
     }
 
     /// Java `npc.setScriptValue(value)`. `Npc.onDecay` sets it back to 0.
@@ -321,11 +316,7 @@ impl ScriptCtx<'_> {
         if !self.world.npcs.contains_key(&npc.object_id) {
             return;
         }
-        if value == 0 {
-            self.world.scripts.npc_script_values.remove(&npc.object_id);
-        } else {
-            self.world.scripts.npc_script_values.insert(npc.object_id, value);
-        }
+        self.world.set_npc_script_value(npc.object_id, value);
     }
 
     /// Java `npc.isScriptValue(value)`.
@@ -395,13 +386,6 @@ impl ScriptCtx<'_> {
             // Unreachable: the slot is keyed by the type.
             None => unreachable!("script shared state of the wrong type"),
         }
-    }
-}
-
-impl crate::world::World {
-    /// Java `npc.getScriptValue()` read from outside a script (tests, GM pages).
-    pub fn npc_script_value(&self, npc: ObjectId) -> i32 {
-        self.scripts.npc_script_values.get(&npc).copied().unwrap_or(0)
     }
 }
 

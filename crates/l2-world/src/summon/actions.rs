@@ -790,7 +790,11 @@ impl World {
             self.send(player, &PetStatusShow { summon_type });
             self.update_not_move_until(player);
             self.send(player, &ActionFailed);
-            // ON_PLAYER_SUMMON_TALK: script event (D-05).
+            // ON_PLAYER_SUMMON_TALK (S-API-04, queued).
+            self.script_fire_async(
+                crate::script::ScriptEvent::PlayerSummonTalk { summon },
+                Some(summon),
+            );
         } else if self.target_of(player) != Some(summon) {
             self.set_target(player, Some(summon));
         } else if interact {
