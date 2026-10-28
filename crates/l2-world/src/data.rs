@@ -428,6 +428,8 @@ pub struct WorldSettings {
     pub daily_reset_database_writes: bool,
     /// The values of the L-02 packets (the wear shop, the dispel of dances), see `leftover.rs`.
     pub leftover: crate::leftover::LeftoverSettings,
+    /// The subclass values of `Player.ini` (S-SUB-01).
+    pub subclass: crate::subclass::SubclassSettings,
 }
 
 impl Default for WorldSettings {
@@ -494,6 +496,7 @@ impl Default for WorldSettings {
             fishing: crate::fishing::FishingSettings::default(),
             daily_reset_database_writes: false,
             leftover: crate::leftover::LeftoverSettings::default(),
+            subclass: crate::subclass::SubclassSettings::default(),
         }
     }
 }

@@ -200,6 +200,9 @@ pub struct PlayerProfile {
     pub item_reuse_to_store: Option<Vec<SavedItemReuse>>,
     /// Java `_classIndex`: the class index the saved buffs are stored under (0 for the base class).
     pub class_index: i32,
+    /// `character_subclasses` (Java `_subClasses`) and the base class values while a subclass is
+    /// active (S-SUB-01, `subclass/`).
+    pub subclasses: crate::subclass::PlayerSubclasses,
     /// The `character_summon_skills_save` rows of the character's active class index: the buffs
     /// its servitors had when they were last unsummoned (Java `Servitor.restoreEffects` reads them
     /// when a servitor of the same skill spawns). The world takes them at enter world
@@ -261,6 +264,10 @@ pub struct PlayerProfile {
     /// `character_instance_time` (template id, time) as the session read it at `CharacterSelect`;
     /// the world takes them at enter (M8-INST-01, `instance/times.rs`).
     pub instance_times: Vec<(i32, i64)>,
+    /// The `character_quests` rows as the session read them at `CharacterSelect` (S-API-01,
+    /// Java `Quest.playerEnter`); the world takes them at enter world, so snapshots never carry
+    /// them.
+    pub quests: crate::script::QuestLoad,
 }
 
 impl Default for PlayerProfile {
@@ -292,6 +299,7 @@ impl Default for PlayerProfile {
             item_reuse_to_restore: Vec::new(),
             item_reuse_to_store: None,
             class_index: 0,
+            subclasses: crate::subclass::PlayerSubclasses::default(),
             summon_effects: Vec::new(),
             pet_rows: Vec::new(),
             pet_effects: Vec::new(),
@@ -309,6 +317,7 @@ impl Default for PlayerProfile {
             seven_signs_refresh: None,
             seven_signs_to_store: None,
             instance_times: Vec::new(),
+            quests: crate::script::QuestLoad::default(),
         }
     }
 }
@@ -426,6 +435,8 @@ pub struct Player {
     pub olympiad: crate::olympiad::PlayerOlympiad,
     /// The macro revision, the published items (L-02, see `leftover.rs`).
     pub leftover: crate::leftover::LeftoverState,
+    /// Java `_subclassLock` and a class switch that waits for its rows (S-SUB-01, `subclass/`).
+    pub subclass: crate::subclass::SubclassState,
 }
 
 impl Player {
@@ -488,6 +499,7 @@ impl Player {
             cursed_weapon_equipped_id: 0,
             olympiad: crate::olympiad::PlayerOlympiad::default(),
             leftover: crate::leftover::LeftoverState::default(),
+            subclass: crate::subclass::SubclassState::default(),
         }
     }
 

@@ -1483,7 +1483,7 @@ impl World {
     }
 
     /// Java `Creature.completeMagicFinalizer(skill, target)`.
-    fn complete_magic_finalizer(&mut self, caster: ObjectId, key: SkillKey, _target: Option<ObjectId>) {
+    fn complete_magic_finalizer(&mut self, caster: ObjectId, key: SkillKey, target: Option<ObjectId>) {
         let Some(table) = self.skill_table() else {
             return;
         };
@@ -1495,7 +1495,12 @@ impl World {
         }
         // Notify the AI of the Creature with FINISH_CASTING.
         self.notify_action_finish_casting(caster);
-        // Notify DP Scripts (`notifyQuestEventSkillFinished`): D-05.
+        // Notify DP Scripts (`Npc.notifyQuestEventSkillFinished`: a playable target, S-API-01).
+        if self.npcs.contains_key(&caster)
+            && let Some(player) = target.and_then(|t| self.acting_player(t))
+        {
+            self.script_on_spell_finished(caster, Some(player), key);
+        }
 
         // If character is a player, then wipe their current cast state and check if a skill is
         // queued. If there is a queued skill, launch it and wipe the queue.
@@ -1789,10 +1794,11 @@ impl World {
                 .collect();
             let not_static = !skill.is_static();
             for npc in watchers {
-                // ON_NPC_SKILL_SEE: the clan hall scripts (M7-CHSIEGE-01) and the outpost's of
-                // `TerritoryWarSuperClass` (M7-TW-01); the others are D-05.
+                // ON_NPC_SKILL_SEE: the clan hall scripts (M7-CHSIEGE-01), the outpost's of
+                // `TerritoryWarSuperClass` (M7-TW-01) and the script engine (S-API-01).
                 self.hall_script_on_skill_see(npc, caster, skill.id, &targets);
                 self.territory_on_skill_see(npc, player, skill.id, &targets);
+                self.script_on_skill_see(npc, caster, key, targets.clone());
                 if !self.is_attackable_npc(npc) {
                     continue;
                 }

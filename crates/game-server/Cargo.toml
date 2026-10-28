@@ -19,6 +19,7 @@ l2-protocol-game.workspace = true
 l2-protocol-login.workspace = true
 l2-util.workspace = true
 l2-world.workspace = true
+l2-scripts.workspace = true
 clap.workspace = true
 quick-xml.workspace = true
 rand.workspace = true

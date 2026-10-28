@@ -1758,6 +1758,7 @@ dependencies = [
  "l2-protocol-game",
  "l2-protocol-login",
  "l2-proxy",
+ "l2-scripts",
  "l2-testkit",
  "l2-util",
  "l2-world",
@@ -2534,6 +2535,18 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+]
+
+[[package]]
+name = "l2-scripts"
+version = "0.1.0"
+dependencies = [
+ "l2-data",
+ "l2-net",
+ "l2-protocol-game",
+ "l2-util",
+ "l2-world",
+ "tempfile",
 ]
 
 [[package]]

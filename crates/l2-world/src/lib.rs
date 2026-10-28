@@ -77,6 +77,7 @@ pub mod residence;
 pub mod respawn;
 pub mod rewards;
 pub mod runner;
+pub mod script;
 pub mod script_handlers;
 pub mod sevensigns;
 pub mod shiftclick;
@@ -87,6 +88,7 @@ pub mod skills;
 pub mod snapshot;
 pub mod stats;
 pub mod status;
+pub mod subclass;
 pub mod summon;
 pub mod target;
 pub mod teleport;
@@ -228,6 +230,10 @@ pub use rewards::drop::{DropSettings, ItemHolder};
 pub use rewards::exp::{ExpSettings, ExpWorld};
 pub use rewards::nevit::NevitSettings;
 pub use rewards::vitality::VitalitySettings;
+pub use script::{
+    PlayerQuests, Qs, QuestLoad, QuestSound, QuestState, QuestType, QuestWrite, Script, ScriptCtx,
+    ScriptItem, ScriptNpc, ScriptRegistry, ScriptSettings, ScriptSetup,
+};
 pub use shop::{ProductRow, ShopInput, ShopSettings, ShopState, ShopTimer, buy_handler};
 pub use siege::{
     CastleSiegeConfig, Siege, SiegeClan, SiegeClanRecord, SiegeClanType, SiegeGuardRecord, SiegeInput,
@@ -241,6 +247,10 @@ pub use stats::{
     StatView,
 };
 pub use status::RegenSettings;
+pub use subclass::{
+    ClassIndexLoad, ClassStats, PlayerSubclasses, SubClassHolder, SubclassSettings, SubclassWrite,
+    base_class_stats, stored_subclasses,
+};
 pub use summon::pet::{PetRowData, PetRowWrite, PetSettings, PetState, SavedPet, SavedPetEffect};
 pub use summon::pet_items::PetInput;
 pub use summon::pet_offline::OfflinePetRows;

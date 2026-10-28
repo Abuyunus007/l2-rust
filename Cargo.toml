@@ -24,6 +24,7 @@ l2-protocol-game = { path = "crates/l2-protocol-game" }
 l2-geo = { path = "crates/l2-geo" }
 l2-db = { path = "crates/l2-db" }
 l2-world = { path = "crates/l2-world" }
+l2-scripts = { path = "crates/l2-scripts" }
 l2-protocol-login = { path = "crates/l2-protocol-login" }
 l2-proxy = { path = "crates/l2-proxy" }
 

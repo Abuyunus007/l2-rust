@@ -258,6 +258,11 @@ impl NpcWorld {
         self.templates.as_ref()?.get(npc_id)
     }
 
+    /// Whether NPC templates are loaded (the script engine checks its NPC ids only then).
+    pub(crate) fn has_templates(&self) -> bool {
+        self.templates.is_some()
+    }
+
     /// `ZoneManager.getZone(x, y, z, WaterZone.class) != null`, when the check was handed over.
     pub(crate) fn is_water_at(&self, x: i32, y: i32, z: i32) -> bool {
         self.water.as_ref().is_some_and(|f| f(x, y, z))

@@ -61,6 +61,7 @@ use l2_protocol_game::server::gm_windows::{
     GmHennaInfo, GmViewCharacterInfo, GmViewQuestInfo, GmViewSkillInfo, GmViewWarehouseWithdrawList,
 };
 use l2_protocol_game::server::ground_item::{DropItem, GetItem, SpawnItem};
+use l2_protocol_game::server::handler_windows::{ExShowQuestInfo, TutorialCloseHtml};
 use l2_protocol_game::server::handshake::{KeyPacket, LoginFail};
 use l2_protocol_game::server::henna::{
     HennaEquipList, HennaItemInfo, HennaItemRemoveInfo, HennaPreview, HennaRemoveList,
@@ -109,6 +110,10 @@ use l2_protocol_game::server::pledge::{
     PledgeReceiveWarList, PledgeShowInfoUpdate, PledgeShowMemberListAdd, PledgeShowMemberListAll,
     PledgeShowMemberListDelete, PledgeShowMemberListDeleteAll, PledgeShowMemberListUpdate, PledgeSkillList,
     PledgeSkillListAdd, PledgeStatusChanged, StartPledgeWar, StopPledgeWar, SurrenderPledgeWar,
+};
+use l2_protocol_game::server::quest::{
+    ExQuestNpcLogList, ExShowQuestMark, NpcQuestHtmlMessage, RadarControl, TutorialEnableClientEvent,
+    TutorialShowHtml, TutorialShowQuestionMark,
 };
 use l2_protocol_game::server::recipe::{
     RecipeBookItemList, RecipeItemMakeInfo, RecipeShopItemInfo, RecipeShopManageList, RecipeShopMsg,
@@ -629,6 +634,12 @@ fn client_fields(packet: &ClientPacket) -> Option<Value> {
         | ClientPacket::RequestCursedWeaponLocation(_) => json!({}),
         ClientPacket::RequestWriteHeroWords(p) => object!(p => hero_words),
         ClientPacket::RequestSsqStatus(p) => object!(p => page),
+        ClientPacket::RequestQuestList(_) => json!({}),
+        ClientPacket::RequestQuestAbort(p) => object!(p => quest_id),
+        ClientPacket::RequestTutorialLinkHtml(p) => object!(p => bypass),
+        ClientPacket::RequestTutorialPassCmdToServer(p) => object!(p => bypass),
+        ClientPacket::RequestTutorialQuestionMark(p) => object!(p => number),
+        ClientPacket::RequestTutorialClientEvent(p) => object!(p => event_id),
         ClientPacket::RequestGetBossRecord(p) => object!(p => boss_id),
         ClientPacket::RequestGetOnVehicle(p) => object!(p => boat_id, x, y, z),
         ClientPacket::RequestGetOffVehicle(p) => object!(p => boat_id, x, y, z),
@@ -938,6 +949,21 @@ fn describe_server(ex_opcode: Option<u16>, raw: &[u8]) -> Option<Value> {
         ServerOpcode::PetStatusShow => decoded::<PetStatusShow>(&mut r, pet_status_show_fields),
         ServerOpcode::PetStatusUpdate => decoded::<PetStatusUpdate>(&mut r, pet_status_update_fields),
         ServerOpcode::PlaySound => decoded::<PlaySound>(&mut r, play_sound_fields),
+        ServerOpcode::ExNpcQuestHtmlMessage => {
+            decoded::<NpcQuestHtmlMessage>(&mut r, npc_quest_html_message_fields)
+        }
+        ServerOpcode::TutorialShowHtml => decoded::<TutorialShowHtml>(&mut r, tutorial_show_html_fields),
+        ServerOpcode::TutorialCloseHtml => decoded::<TutorialCloseHtml>(&mut r, no_fields),
+        ServerOpcode::ShowTutorialMark => {
+            decoded::<TutorialShowQuestionMark>(&mut r, tutorial_question_mark_fields)
+        }
+        ServerOpcode::TutorialEnableClientEvent => {
+            decoded::<TutorialEnableClientEvent>(&mut r, tutorial_client_event_fields)
+        }
+        ServerOpcode::ExShowQuestMark => decoded::<ExShowQuestMark>(&mut r, show_quest_mark_fields),
+        ServerOpcode::ExShowQuestInfo => decoded::<ExShowQuestInfo>(&mut r, no_fields),
+        ServerOpcode::RadarControl => decoded::<RadarControl>(&mut r, radar_control_fields),
+        ServerOpcode::ExQuestNpcLogList => decoded::<ExQuestNpcLogList>(&mut r, quest_npc_log_list_fields),
         ServerOpcode::Earthquake => decoded::<Earthquake>(&mut r, earthquake_fields),
         ServerOpcode::Sunrise => decoded::<SunRise>(&mut r, no_fields),
         ServerOpcode::Sunset => decoded::<SunSet>(&mut r, no_fields),
@@ -2685,6 +2711,39 @@ fn play_sound_fields(p: &PlaySound) -> Value {
     object!(p => unknown1, sound_file, unknown3, unknown4, unknown5, unknown6, unknown7, unknown8)
 }
 
+fn npc_quest_html_message_fields(p: &NpcQuestHtmlMessage) -> Value {
+    object!(p => npc_obj_id, html, quest_id)
+}
+
+fn tutorial_show_html_fields(p: &TutorialShowHtml) -> Value {
+    object!(p => html)
+}
+
+fn tutorial_question_mark_fields(p: &TutorialShowQuestionMark) -> Value {
+    object!(p => mark_id)
+}
+
+fn tutorial_client_event_fields(p: &TutorialEnableClientEvent) -> Value {
+    object!(p => event_id)
+}
+
+fn show_quest_mark_fields(p: &ExShowQuestMark) -> Value {
+    object!(p => quest_id)
+}
+
+fn radar_control_fields(p: &RadarControl) -> Value {
+    object!(p => show_radar, radar_type, x, y, z)
+}
+
+fn quest_npc_log_list_fields(p: &ExQuestNpcLogList) -> Value {
+    let npcs: Vec<Value> = p
+        .npcs
+        .iter()
+        .map(|n| json!({ "npc_id": n.npc_id, "unknown": n.unknown, "count": n.count }))
+        .collect();
+    json!({ "quest_id": p.quest_id, "npcs": npcs })
+}
+
 fn earthquake_fields(p: &Earthquake) -> Value {
     object!(p => x, y, z, intensity, duration)
 }
@@ -3212,6 +3271,15 @@ mod tests {
         ServerOpcode::PetStatusShow,
         ServerOpcode::PetStatusUpdate,
         ServerOpcode::PlaySound,
+        ServerOpcode::ExNpcQuestHtmlMessage,
+        ServerOpcode::TutorialShowHtml,
+        ServerOpcode::TutorialCloseHtml,
+        ServerOpcode::ShowTutorialMark,
+        ServerOpcode::TutorialEnableClientEvent,
+        ServerOpcode::ExShowQuestMark,
+        ServerOpcode::ExShowQuestInfo,
+        ServerOpcode::RadarControl,
+        ServerOpcode::ExQuestNpcLogList,
         ServerOpcode::Earthquake,
         ServerOpcode::Sunrise,
         ServerOpcode::Sunset,

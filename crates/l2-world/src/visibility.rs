@@ -140,6 +140,12 @@ impl World {
         self.npc_on_spawn(id);
         // `ON_NPC_SPAWN` of the clan hall scripts (M7-CHSIEGE-01).
         self.hall_script_on_spawn(id);
+        // `Npc.onSpawn`: `ON_NPC_TELEPORT` while teleporting, else `ON_NPC_SPAWN` (S-API-01).
+        if self.is_teleporting(id) {
+            self.script_on_npc_teleport(id);
+        } else {
+            self.script_on_npc_spawn(id);
+        }
         // The `onSpawn` listeners of the castle scripts (M7-NPC-01).
         self.residence_npc_on_spawn(id);
         // Java `Summon.onSpawn()` / `Servitor.onSpawn()`.

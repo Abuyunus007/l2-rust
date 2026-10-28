@@ -1094,6 +1094,16 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             wear_price: config.general.wear_price,
             wear_delay: config.general.wear_delay,
         },
+        // S-SUB-01: `MaxSubclass`, `BaseSubclassLevel`, `MaxSubclassLevel`, the quest-free and
+        // everywhere switches and `SubclassStoreSkillCooltime`.
+        subclass: l2_world::SubclassSettings {
+            max_subclass: i32::from(p.max_subclass),
+            base_subclass_level: i32::from(p.base_subclass_level),
+            max_subclass_level: i32::from(p.max_subclass_level),
+            alt_game_subclass_without_quests: p.alt_game_subclass_without_quests,
+            alt_game_subclass_everywhere: p.alt_game_subclass_everywhere,
+            subclass_store_skill_cooltime: p.subclass_store_skill_cooltime,
+        },
         effects: l2_world::EffectSettings {
             buffs_max_amount: i32::from(p.buffs_max_amount),
             triggered_buffs_max_amount: i32::from(p.triggered_buffs_max_amount),

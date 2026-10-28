@@ -43,9 +43,15 @@ impl World {
     /// The snapshot of a player in the world for the persistence task: its data with the live
     /// values (`snapshot_for_store`) and its buffs (Java `storeMe` -> `store(true)`).
     pub(crate) fn store_snapshot(&self, id: ObjectId) -> Option<PlayerData> {
+        self.store_snapshot_with(id, true)
+    }
+
+    /// [`World::store_snapshot`] with Java's `store(storeActiveEffects)` flag: `false` keeps only
+    /// the reuse timers (`setActiveClass` stores with `SubclassStoreSkillCooltime`, S-SUB-01).
+    pub(crate) fn store_snapshot_with(&self, id: ObjectId, store_effects: bool) -> Option<PlayerData> {
         let player = self.players.get(&id)?;
         let mut snapshot = snapshot_for_store(player, self.tick);
-        snapshot.profile.effects_to_store = self.saved_effects(id);
+        snapshot.profile.effects_to_store = self.saved_effects_with(id, store_effects);
         // Java `Player.store` -> `storeItemReuseDelay()` runs on every store, with no setting.
         snapshot.profile.item_reuse_to_store = Some(self.saved_item_reuse(id));
         // `storeRecipeShopList()` (only with `StoreRecipeShopList` and a shop).
@@ -70,9 +76,12 @@ impl World {
     /// Java `Player.storeEffect(true)`: the rows the character's buffs are saved as, in Java's
     /// order (buffs, triggered, dances, toggles, debuffs). `None` when `StoreSkillCooltime` is off:
     /// Java then returns before it touches the table.
+    ///
+    /// With `store_effects` false (`storeEffect(false)`) the buffs are skipped and only the reuse
+    /// timers are kept (`restore_type` 1).
     // Java skips a buff whose reuse hash (`SkillData.getSkillHashCode`: the skill id and level) is
     // already stored, so one row per skill level.
-    pub(crate) fn saved_effects(&self, id: ObjectId) -> Option<Vec<SavedEffect>> {
+    pub(crate) fn saved_effects_with(&self, id: ObjectId, store_effects: bool) -> Option<Vec<SavedEffect>> {
         let settings = self.settings.effects;
         if !settings.store_skill_cooltime {
             return None;
@@ -90,7 +99,7 @@ impl World {
                 .find(|t| t.hash_code == hash && t.remaining_ms > 0)
                 .map_or((0, 0), |t| (t.reuse_ms, now_wall + t.remaining_ms))
         };
-        if let Some(list) = self.effect_list(id) {
+        if let Some(list) = self.effect_list(id).filter(|_| store_effects) {
             for info in list.effects() {
                 // Do not save heals.
                 if info.abnormal_type() == AbnormalType::LifeForceOthers {
@@ -149,6 +158,13 @@ impl World {
         if !self.settings.effects.store_skill_cooltime {
             return;
         }
+        self.apply_saved_effect_rows(id, rows);
+    }
+
+    /// The loop of Java `Player.restoreEffects`: the reuse timers and the buffs of `rows`. The
+    /// subclass switch calls it without the `StoreSkillCooltime` check (Java's `setActiveClass`
+    /// calls `restoreEffects()` directly, S-SUB-01).
+    pub(crate) fn apply_saved_effect_rows(&mut self, id: ObjectId, rows: Vec<SavedEffect>) {
         let Some(skills) = self.skill_table() else {
             return;
         };

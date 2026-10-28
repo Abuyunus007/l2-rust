@@ -15,9 +15,10 @@
 // "no" page instead. The commands on those pages are `npc_<id>_create_clan ...` and so on; they
 // are `village_master.rs`.
 //
-// D-05: the script API (quests, event listeners) comes last. Until then `ScriptLink` knows these
-// two scripts by name; any other name gets the "no quest" page Java shows when the script does
-// not exist, and the quest list (`bypass Script` alone) is empty.
+// The script engine (S-API-01, `script/`) answers first: its scripts by name, and the quest list
+// of `bypass Script` alone. These two built-in scripts (and the others `process_script_event`
+// lists) stay until S-API-02 moves them onto the engine; any other name gets the "no quest" page
+// Java shows when the script does not exist.
 
 use l2_protocol_game::server::{ActionFailed, NpcHtmlMessage};
 use l2_util::ObjectId;
@@ -96,10 +97,9 @@ pub(crate) fn script_link_handler(
     // `command.substring(6).trim()`; a shorter command throws and leaves the name empty.
     let script_name = command.get(6..).unwrap_or("").trim_matches(|c: char| c <= ' ');
     if script_name.is_empty() {
-        // `showQuestWindow(player, target.asNpc())`: no quests exist yet (D-05), so the player
-        // is told there is none for this NPC.
+        // `showQuestWindow(player, target.asNpc())`: the engine's quests of the NPC (S-API-01).
         if let Some(npc) = target.filter(|t| world.npcs.contains_key(t)) {
-            world.show_no_quest_window(player, npc);
+            world.engine_show_quest_window(player, npc);
         }
         return true;
     }
@@ -120,6 +120,10 @@ pub(crate) fn script_link_handler(
 impl World {
     /// Java `ScriptLink.showQuestWindow(player, npc, questId)`.
     fn script_show_quest_window(&mut self, player: ObjectId, npc: ObjectId, script_name: &str) {
+        // The scripts of the engine (S-API-01).
+        if self.script_show_quest_window_named(player, npc, script_name) {
+            return;
+        }
         match MasterScript::by_name(script_name) {
             Some(script) => {
                 self.notify_talk(script, player, npc);
@@ -153,6 +157,10 @@ impl World {
 
     /// Java `Player.processScriptEvent(scriptName, event)`.
     fn process_script_event(&mut self, player: ObjectId, script_name: &str, event: &str) {
+        // The scripts of the engine (S-API-01).
+        if self.script_process_event(player, script_name, event) {
+            return;
+        }
         // `SymbolMaker` (L-01, `henna.rs`).
         if self.symbol_maker_script_event(player, script_name, event) {
             return;

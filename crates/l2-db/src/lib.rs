@@ -53,6 +53,7 @@ pub use game::{DoorUpgradeRow, NewSiegeGuard, SiegeClanRow, SiegeGuardRow, Siege
 pub use game::{FISH_CHAMPIONSHIP_END, FishingChampionshipRepository, FishingChampionshipRow};
 pub use game::{FlagWarClanRow, HallSiegeGuardRow, HallSiegeRepository, RainbowAttackerRow};
 pub use game::{FortSiegeGuardRow, FortSiegeRepository, FortSpawnRow};
+pub use game::{GlobalVariableRepository, QUEST_STATE_VAR, QuestRepository, QuestStateRow, QuestVariableRow};
 pub use game::{GroundItemRecord, GroundItemRepository};
 pub use game::{HennaRepository, HennaRow};
 pub use game::{HeroDbRow, HeroDiaryRow, HeroFightRow, HeroRepository};

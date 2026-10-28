@@ -40,8 +40,6 @@
 // - `isSellingBuffs` (`SellBuffsManager`). (The Olympiad exists since M8-OLY-01.)
 // - Offline craft (`OfflineCraftEnable`).
 // - `ItemProcessType` logging (`LogItems`).
-// - The subclass change that re-reads the dwarven book (`restoreRecipeBook(false)`): there is no
-//   subclass switching yet.
 
 mod book;
 mod maker;

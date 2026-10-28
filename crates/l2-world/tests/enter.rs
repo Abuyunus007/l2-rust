@@ -1079,6 +1079,8 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                     "item auction"
                 }
                 Out::Persist(PersistCommand::InstanceTime(_)) => "instance time",
+                Out::Persist(PersistCommand::Quest(_)) => "quest",
+                Out::Persist(PersistCommand::GlobalVariables(_)) => "global variables",
                 Out::Persist(PersistCommand::Bookmark(_)) => "bookmark",
                 Out::Persist(PersistCommand::BbsFavorite(_) | PersistCommand::BbsFavoriteRequest { .. }) => {
                     "community board"
@@ -1109,6 +1111,9 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                 Out::Persist(
                     PersistCommand::SevenSigns(_) | PersistCommand::SevenSignsReadRequest { .. },
                 ) => "seven signs",
+                Out::Persist(PersistCommand::Subclass(_) | PersistCommand::ClassIndexRequest { .. }) => {
+                    "subclass"
+                }
                 Out::Persist(
                     PersistCommand::Announcement(_)
                     | PersistCommand::PetitionFeedback { .. }

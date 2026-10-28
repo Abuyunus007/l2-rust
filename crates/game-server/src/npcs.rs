@@ -91,15 +91,35 @@ pub fn spawn_npcs(
     config: &GameConfig,
     config_dir: &Path,
 ) {
+    spawn_npcs_with_scripts(world, datapack, ids, config, config_dir, None);
+}
+
+/// [`spawn_npcs`] with the scripts installed between the NPC templates and the spawns (Java
+/// `GameServer`: the "Scripts" section, then `SpawnData`), so `ON_NPC_SPAWN` hears the first
+/// spawns (S-API-01).
+pub fn spawn_npcs_with_scripts(
+    world: &mut World,
+    datapack: &Arc<Datapack>,
+    ids: Arc<IdFactory>,
+    config: &GameConfig,
+    config_dir: &Path,
+    scripts: Option<l2_world::ScriptRegistry>,
+) {
     world.set_npc_settings(npc_settings(config, config_dir));
     world.set_ai_settings(ai_settings(config));
     world.set_water_check(water_check(datapack));
     world.set_id_factory(ids);
     if config.development.no_spawns {
         // Java: nothing is loaded and nothing is logged.
+        if let Some(scripts) = scripts {
+            world.install_scripts(scripts);
+        }
         return;
     }
     world.set_npc_data(Arc::clone(&datapack.npcs), Arc::clone(&datapack.spawns));
+    if let Some(scripts) = scripts {
+        world.install_scripts(scripts);
+    }
     let started = Instant::now();
     let report = world.spawn_all_npcs(World::is_night_now());
     // Java GameTimeTaskManager: the day/night spawns switch while the server runs.

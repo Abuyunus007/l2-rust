@@ -241,8 +241,8 @@ impl World {
         let Some(p) = self.players.get(&player) else {
             return false;
         };
-        // `isSubClassActive()`: the active class is not the base class.
-        let subclass_active = p.data.class_id != p.data.base_class;
+        // `isSubClassActive()` (S-SUB-01).
+        let subclass_active = p.data.profile.class_index > 0;
         (p.core.level > self.settings.talk.max_free_teleport_level || subclass_active)
             && (location.fee_id != 0 && location.fee_count > 0)
     }
@@ -254,7 +254,7 @@ impl World {
             let Some(p) = self.players.get(&player) else {
                 return location.fee_count;
             };
-            let subclass_active = p.data.class_id != p.data.base_class;
+            let subclass_active = p.data.profile.class_index > 0;
             if !subclass_active && p.core.level <= self.settings.talk.max_free_teleport_level {
                 return 0;
             }

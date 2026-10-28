@@ -26,6 +26,7 @@ use l2_protocol_game::client::EnterWorld;
 use l2_protocol_game::server::LeaveWorld;
 use l2_protocol_game::{ClientPacket, ConnectionState};
 use l2_util::ObjectId;
+use l2_world::script::packets::QuestInput;
 use l2_world::{
     AugmentInput, BookmarkInput, ClanInput, ClientInput, ContactsInput, CraftInput, CursedInput,
     EnchantInput, FortInput, FriendEntry, HennaInput, ItemData, LeaveReason, LeftoverInput, MacroCmdData,
@@ -100,6 +101,7 @@ pub struct DbPlayerLoader {
     recipes: l2_db::RecipeRepository,
     seven_signs: l2_db::SevenSignsRepository,
     instance_times: l2_db::InstanceTimeRepository,
+    quests: l2_db::QuestRepository,
 }
 
 impl DbPlayerLoader {
@@ -125,7 +127,8 @@ impl DbPlayerLoader {
             messages: MessageRepository::new(pool.clone()),
             recipes: l2_db::RecipeRepository::new(pool.clone()),
             seven_signs: l2_db::SevenSignsRepository::new(pool.clone()),
-            instance_times: l2_db::InstanceTimeRepository::new(pool),
+            instance_times: l2_db::InstanceTimeRepository::new(pool.clone()),
+            quests: l2_db::QuestRepository::new(pool),
         }
     }
 
@@ -143,12 +146,31 @@ impl DbPlayerLoader {
 
         // Java: restoreSubClassData. A subclass that is active shows its own level, exp and sp
         // (`PlayerStat.getLevel` etc.); one that does not exist is dropped for the base class.
+        // Every subclass becomes a holder of the profile (S-SUB-01); the base class values wait
+        // there while a subclass is active.
         let mut class_index = 0;
+        let subs = self.subclasses.subclasses_of(char_id).await?;
+        for sub in &subs {
+            data.profile.subclasses.subs.insert(
+                sub.class_index,
+                l2_world::SubClassHolder {
+                    class_id: sub.class_id,
+                    exp: sub.exp,
+                    sp: sub.sp,
+                    level: sub.level,
+                    class_index: sub.class_index,
+                },
+            );
+        }
         if data.class_id != data.base_class {
-            let subs = self.subclasses.subclasses_of(char_id).await?;
             match subs.iter().find(|s| s.class_id == data.class_id) {
                 Some(sub) => {
                     class_index = sub.class_index;
+                    data.profile.subclasses.base = Some(l2_world::ClassStats {
+                        level: data.level,
+                        exp: data.exp,
+                        sp: data.sp,
+                    });
                     data.level = sub.level;
                     data.exp = sub.exp;
                     data.sp = sub.sp;
@@ -398,6 +420,17 @@ impl DbPlayerLoader {
             }
         };
 
+        // Java: Quest.playerEnter (from EnterWorld; here before the character enters, D-15): the
+        // quest states and variables (S-API-01). Java logs a failed read and goes on without
+        // them.
+        data.profile.quests = match load_quests(&self.quests, char_id).await {
+            Ok(load) => load,
+            Err(e) => {
+                warn!("could not insert char quest: {e}");
+                l2_world::QuestLoad::default()
+            }
+        };
+
         // Java: ClanTable.getClan(clanid). Side by side (D-39) the Java game server may have made
         // the clan or the membership after this server loaded its clans: the clan is read here
         // (the startup queries) and the world adds it when its table does not know it. A failed
@@ -588,7 +621,7 @@ fn contact_names_of_rows(rows: Vec<ContactLink>, own_id: i32, own_name: &str) ->
 /// The slot keeps its 0 then, which is an empty slot. A dye id the datapack does not know is
 /// kept here and dropped when the world uses it.
 // Java: Player.restoreHenna
-fn henna_slots(rows: &[HennaRow]) -> [i32; 3] {
+pub(crate) fn henna_slots(rows: &[HennaRow]) -> [i32; 3] {
     let mut slots = [0; 3];
     for row in rows {
         if !(1..=3).contains(&row.slot) {
@@ -1672,6 +1705,23 @@ impl ClientSession {
             ClientPacket::RequestShowMiniMap(_) => ClientInput::Leftover(LeftoverInput::ShowMiniMap),
             // Java: RequestSSQStatus (M8-SS-01)
             ClientPacket::RequestSsqStatus(p) => ClientInput::SsqStatus { page: p.page },
+            // Java: RequestQuestList, RequestQuestAbort, RequestTutorial* (S-API-01)
+            ClientPacket::RequestQuestList(_) => ClientInput::Quest(QuestInput::List),
+            ClientPacket::RequestQuestAbort(p) => {
+                ClientInput::Quest(QuestInput::Abort { quest_id: p.quest_id })
+            }
+            ClientPacket::RequestTutorialLinkHtml(p) => {
+                ClientInput::Quest(QuestInput::TutorialLinkHtml { bypass: p.bypass })
+            }
+            ClientPacket::RequestTutorialPassCmdToServer(p) => {
+                ClientInput::Quest(QuestInput::TutorialPassCmd { bypass: p.bypass })
+            }
+            ClientPacket::RequestTutorialQuestionMark(p) => {
+                ClientInput::Quest(QuestInput::TutorialQuestionMark { number: p.number })
+            }
+            ClientPacket::RequestTutorialClientEvent(p) => {
+                ClientInput::Quest(QuestInput::TutorialClientEvent { event_id: p.event_id })
+            }
             ClientPacket::RequestRecordInfo(_) => ClientInput::Leftover(LeftoverInput::RecordInfo),
             ClientPacket::StartRotating(p) => ClientInput::Leftover(LeftoverInput::StartRotating {
                 degree: p.degree,
@@ -1767,6 +1817,26 @@ impl ClientSession {
 /// Logs a failed load like Java (`Could not restore in slot: n`).
 pub fn log_load_failure(char_id: i32, error: &LoadError) {
     error!("Could not restore character {char_id}: {error}");
+}
+
+/// The `character_quests` rows of a character in the two reads of Java's `Quest.playerEnter`.
+async fn load_quests(
+    repo: &l2_db::QuestRepository,
+    char_id: i32,
+) -> Result<l2_world::QuestLoad, l2_db::DbError> {
+    let states = repo
+        .quest_states_of(char_id)
+        .await?
+        .into_iter()
+        .map(|r| (r.name, r.value))
+        .collect();
+    let variables = repo
+        .quest_variables_of(char_id)
+        .await?
+        .into_iter()
+        .map(|r| (r.name, r.var, r.value))
+        .collect();
+    Ok(l2_world::QuestLoad { states, variables })
 }
 
 #[cfg(test)]

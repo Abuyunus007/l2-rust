@@ -537,6 +537,26 @@ pub fn siege_database_writes(config_dir: &Path) -> bool {
     on
 }
 
+/// The `Rates.ini` and `General.ini` values the script helpers read, and `CycleDatabaseWrites`
+/// of `SideBySide.ini` (D-54, [`cycle_database_writes`]).
+pub fn script_settings(config: &GameConfig, config_dir: &Path) -> l2_world::ScriptSettings {
+    let rates = &config.rates;
+    l2_world::ScriptSettings {
+        rate_quest_reward: rates.rate_quest_reward,
+        rate_quest_reward_xp: rates.rate_quest_reward_xp,
+        rate_quest_reward_sp: rates.rate_quest_reward_sp,
+        rate_quest_reward_adena: rates.rate_quest_reward_adena,
+        rate_quest_reward_use_multipliers: rates.rate_quest_reward_use_multipliers,
+        rate_quest_reward_potion: rates.rate_quest_reward_potion,
+        rate_quest_reward_scroll: rates.rate_quest_reward_scroll,
+        rate_quest_reward_recipe: rates.rate_quest_reward_recipe,
+        rate_quest_reward_material: rates.rate_quest_reward_material,
+        quest_item_drop_amount_multiplier: rates.quest_item_drop_amount_multiplier,
+        autodelete_invalid_quest_data: config.general.autodelete_invalid_quest_data,
+        cycle_database_writes: cycle_database_writes(config_dir),
+    }
+}
+
 /// The Seven Signs values of `Feature.ini` and `Npc.ini`, and `CycleDatabaseWrites` of
 /// `SideBySide.ini` (D-53, [`cycle_database_writes`]).
 pub fn seven_signs_settings(
@@ -848,6 +868,10 @@ impl Server {
         } else {
             None
         };
+        // Java: GlobalVariablesManager.getInstance (GameServer, section "World"): every row, read
+        // here; the scripts write them only with `CycleDatabaseWrites` (D-54, S-API-01).
+        let global_variables = persist::load_global_variables(&pool).await;
+        let script_settings = script_settings(&config, &paths.config_dir);
         // Java: CoupleManager.getInstance (GameServer, only with AllowWedding): the couples of
         // `mods_wedding`, read only here.
         let wedding_settings = world_data::wedding_settings(&config);
@@ -1127,7 +1151,12 @@ impl Server {
                     // `isTargeted` and starts its route).
                     world.set_walking_routes(Arc::clone(&datapack.routes));
                     // Java: GameServer, after the managers: SpawnData, then the day/night start.
-                    npcs::spawn_npcs(world, &datapack, ids, &config, &config_dir);
+                    // Java: GameServer's "Scripts" section (`ScriptEngine.executeScriptList`,
+                    // skipped with `NoQuests`) comes before `SpawnData` (S-API-01).
+                    world.set_script_settings(script_settings);
+                    world.set_global_variables(global_variables);
+                    let scripts = (!config.development.no_quests).then(l2_scripts::all);
+                    npcs::spawn_npcs_with_scripts(world, &datapack, ids, &config, &config_dir, scripts);
                     // Java: RaidBossPointsManager (GameServer, early), GrandBossManager.initZones (after
                     // the zones) and RaidBossSpawnManager (right after SpawnData; M8-BOSS-01).
                     world.set_boss_settings(boss_settings);
