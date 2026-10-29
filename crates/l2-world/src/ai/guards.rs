@@ -132,7 +132,7 @@ impl World {
             }
             Some(NpcClass::FortCommander) => self.npc_class(attacker).is_some_and(NpcClass::is_defender),
             // `!_isPassive && !attacker.isPlayer()`; `setPassive` is a script call.
-            Some(NpcClass::QuestGuard) => self.is_player(attacker),
+            Some(NpcClass::QuestGuard) => self.is_player(attacker) || self.is_quest_guard_passive(npc),
             _ => false,
         }
     }
@@ -169,7 +169,7 @@ impl World {
             // the faction rule, then `Npc._isAutoAttackable`, false for a guard.
             NpcClass::Guard => attacker_class.is_monster(),
             // `_isAutoAttackable && !attacker.isPlayer()`; `setAutoAttackable` is a script call.
-            NpcClass::QuestGuard => true,
+            NpcClass::QuestGuard => self.is_quest_guard_auto_attackable(target),
             // `FriendlyMob`: only players with karma. `Defender` / `FortCommander`: only players
             // (and only in a siege).
             NpcClass::FriendlyMob
@@ -230,8 +230,12 @@ impl World {
                 if let Some(p) = self.players.get_mut(&player) {
                     p.talk.last_folk_npc = Some(npc);
                 }
-                // Open a chat window on client with the text of the GuardInstance.
-                self.show_chat_window_default(npc, player);
+                // Open a chat window on client with the text of the GuardInstance, unless a script
+                // listens for `ON_NPC_FIRST_TALK` (S-AI-02: Hellbound's Quarry slaves are
+                // `QuestGuard`s with a first talk).
+                if !self.script_on_npc_click(npc, player) {
+                    self.show_chat_window_default(npc, player);
+                }
             }
             return true;
         }
