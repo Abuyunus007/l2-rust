@@ -41,6 +41,8 @@ const DEFAULT_REUSE_MS: i64 = 5000;
 pub enum ZoneTimer {
     /// `DamageZone.ApplyDamage` of the zone with this id.
     DamageZone(i32),
+    /// `EffectZone.ApplySkill` of the zone with this id (`zones.rs`, S-AI-07).
+    EffectZone(i32),
 }
 
 /// The parameters `DamageZone.setParameter` keeps, read from the zone's raw `<stat>` list.
@@ -196,7 +198,7 @@ impl World {
         inside
     }
 
-    fn schedule_zone_timer(&mut self, timer: ZoneTimer, delay_ms: i64) -> TimerId {
+    pub(crate) fn schedule_zone_timer(&mut self, timer: ZoneTimer, delay_ms: i64) -> TimerId {
         let delay = u64::try_from(delay_ms.max(0)).unwrap_or(0);
         let due = self.tick + TimerWheel::ms_to_ticks(delay);
         self.timers.schedule_at(due, TimerKind::Zone(timer))
@@ -235,6 +237,7 @@ impl World {
     pub(crate) fn on_zone_timer(&mut self, timer: ZoneTimer) {
         match timer {
             ZoneTimer::DamageZone(zone_id) => self.on_damage_zone_run(zone_id),
+            ZoneTimer::EffectZone(zone_id) => self.on_effect_zone_run(zone_id),
         }
     }
 

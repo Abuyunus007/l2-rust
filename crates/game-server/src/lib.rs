@@ -563,6 +563,28 @@ pub fn script_settings(config: &GameConfig, config_dir: &Path) -> l2_world::Scri
         rate_hb_trust_decrease: rates.rate_hb_trust_decrease,
         rate_death_drop_amount_multiplier: rates.rate_death_drop_amount_multiplier,
         hellbound_without_quest: config.general.hellbound_without_quest,
+        gracia_seeds: gracia_seeds_settings(config),
+    }
+}
+
+/// The `GraciaSeeds.ini` values of the seed managers and the Gracia instances (S-AI-07).
+pub fn gracia_seeds_settings(config: &GameConfig) -> l2_world::script::GraciaSeedsSettings {
+    let g = &config.gracia_seeds;
+    l2_world::script::GraciaSeedsSettings {
+        sod_tiat_kill_count: g.sod_tiat_kill_count,
+        sod_stage_2_length: config.manual.core.gracia_seeds.sod_stage_2_length,
+        min_tiat_players: g.min_tiat_players,
+        max_tiat_players: g.max_tiat_players,
+        min_tiat_level: g.min_tiat_level,
+        soi_ekimus_kill_count: g.soi_ekimus_kill_count,
+        erosion_attack_min_players: g.erosion_attack_min_players,
+        erosion_attack_max_players: g.erosion_attack_max_players,
+        erosion_defence_min_players: g.erosion_defence_min_players,
+        erosion_defence_max_players: g.erosion_defence_max_players,
+        heart_attack_min_players: g.heart_attack_min_players,
+        heart_attack_max_players: g.heart_attack_max_players,
+        heart_defence_min_players: g.heart_defence_min_players,
+        heart_defence_max_players: g.heart_defence_max_players,
     }
 }
 
