@@ -126,6 +126,8 @@ pub mod q00166_mass_of_darkness;
 pub mod q00167_dwarven_kinship;
 pub mod q00168_deliver_supplies;
 pub mod q00182_new_recruits;
+pub mod q00212_trial_of_duty;
+pub mod q00215_trial_of_the_pilgrim;
 pub mod q00255_tutorial;
 pub mod q00275_dark_winged_spies;
 pub mod q00295_dreaming_of_the_skies;
@@ -258,6 +260,8 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00167_dwarven_kinship::Q00167DwarvenKinship);
     r.add(q00168_deliver_supplies::Q00168DeliverSupplies);
     r.add(q00182_new_recruits::Q00182NewRecruits);
+    r.add(q00212_trial_of_duty::Q00212TrialOfDuty);
+    r.add(q00215_trial_of_the_pilgrim::Q00215TrialOfThePilgrim);
     r.add(q00255_tutorial::Q00255Tutorial);
     r.add(q00275_dark_winged_spies::Q00275DarkWingedSpies);
     r.add(q00295_dreaming_of_the_skies::Q00295DreamingOfTheSkies);
