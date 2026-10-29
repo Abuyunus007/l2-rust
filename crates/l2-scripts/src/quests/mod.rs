@@ -104,6 +104,7 @@ pub mod q00240_im_the_only_one_you_can_trust;
 pub mod q00247_possessor_of_a_precious_soul4;
 pub mod q00249_poisoned_plains_of_the_lizardmen;
 pub mod q00251_no_secrets;
+pub mod q00252_it_smells_delicious;
 pub mod q00255_tutorial;
 pub mod q00258_bring_wolf_pelts;
 pub mod q00275_dark_winged_spies;
@@ -215,6 +216,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00247_possessor_of_a_precious_soul4::Q00247PossessorOfAPreciousSoul4);
     r.add(q00249_poisoned_plains_of_the_lizardmen::Q00249PoisonedPlainsOfTheLizardmen);
     r.add(q00251_no_secrets::Q00251NoSecrets);
+    r.add(q00252_it_smells_delicious::Q00252ItSmellsDelicious);
     r.add(q00255_tutorial::Q00255Tutorial);
     r.add(q00258_bring_wolf_pelts::Q00258BringWolfPelts);
     r.add(q00275_dark_winged_spies::Q00275DarkWingedSpies);
