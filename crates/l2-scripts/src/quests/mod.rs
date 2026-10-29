@@ -104,6 +104,7 @@ pub mod q00222_test_of_the_duelist;
 pub mod q00223_test_of_the_champion;
 pub mod q00224_test_of_sagittarius;
 pub mod q00225_test_of_the_searcher;
+pub mod q00226_test_of_the_healer;
 pub mod q00228_test_of_magus;
 pub mod q00231_test_of_the_maestro;
 pub mod q00255_tutorial;
@@ -216,6 +217,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00223_test_of_the_champion::Q00223TestOfTheChampion);
     r.add(q00224_test_of_sagittarius::Q00224TestOfSagittarius);
     r.add(q00225_test_of_the_searcher::Q00225TestOfTheSearcher);
+    r.add(q00226_test_of_the_healer::Q00226TestOfTheHealer);
     r.add(q00228_test_of_magus::Q00228TestOfMagus);
     r.add(q00231_test_of_the_maestro::Q00231TestOfTheMaestro);
     r.add(q00255_tutorial::Q00255Tutorial);
