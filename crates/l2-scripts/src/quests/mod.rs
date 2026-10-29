@@ -100,6 +100,7 @@ pub mod q00108_jumble_tumble_diamond_fuss;
 pub mod q00153_deliver_goods;
 pub mod q00158_seed_of_evil;
 pub mod q00182_new_recruits;
+pub mod q00222_test_of_the_duelist;
 pub mod q00231_test_of_the_maestro;
 pub mod q00255_tutorial;
 pub mod q00275_dark_winged_spies;
@@ -207,6 +208,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00153_deliver_goods::Q00153DeliverGoods);
     r.add(q00158_seed_of_evil::Q00158SeedOfEvil);
     r.add(q00182_new_recruits::Q00182NewRecruits);
+    r.add(q00222_test_of_the_duelist::Q00222TestOfTheDuelist);
     r.add(q00231_test_of_the_maestro::Q00231TestOfTheMaestro);
     r.add(q00255_tutorial::Q00255Tutorial);
     r.add(q00275_dark_winged_spies::Q00275DarkWingedSpies);
