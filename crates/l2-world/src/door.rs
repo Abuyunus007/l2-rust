@@ -847,6 +847,13 @@ impl World {
         self.broadcast_door_status(id);
     }
 
+    /// Java `Door.setIsAttackableDoor(value)` (S-AI-07): only the flag.
+    pub fn set_door_attackable(&mut self, id: ObjectId, value: bool) {
+        if let Some(door) = self.doors.get_mut(&id) {
+            door.attackable_door = value;
+        }
+    }
+
     /// The dead flag of a door alone (Java `Creature.setDead`), without the rest of `doDie` or
     /// `doRevive`: what the geodata checks read, since a dead door does not block. The world's
     /// [`World::set_dead`] writes the same flag; kill and revive a door with

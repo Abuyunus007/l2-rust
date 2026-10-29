@@ -201,6 +201,8 @@ pub struct PlayerQuests {
     pub(crate) states: BTreeMap<String, QuestState>,
     /// Java `_notifyQuestOfDeathList`: the names of the quests, in the order they asked.
     pub(crate) notify_of_death: Vec<String>,
+    /// Java `Player._minimapAllowed` (the Hellbound minimap, `UserInfo`).
+    pub(crate) minimap_allowed: bool,
 }
 
 impl PlayerQuests {

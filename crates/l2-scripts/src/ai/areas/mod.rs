@@ -2,6 +2,7 @@
 
 pub mod fantasy_isle;
 pub mod gracia;
+pub mod hellbound;
 
 use l2_world::ScriptRegistry;
 
@@ -9,4 +10,5 @@ use l2_world::ScriptRegistry;
 pub(crate) fn register(r: &mut ScriptRegistry) {
     fantasy_isle::register(r);
     gracia::register(r);
+    hellbound::register(r);
 }
