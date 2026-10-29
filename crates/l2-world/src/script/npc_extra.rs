@@ -392,11 +392,6 @@ impl World {
         self.settings.cast.raid_disable_curse
     }
 
-    /// Java `Monster.getLeader()`: the master of a minion.
-    pub fn npc_leader(&self, npc: ObjectId) -> Option<ObjectId> {
-        self.leader_of(npc)
-    }
-
     /// Java `master.getMinionList().onMinionDie(minion, respawnDelay)`: the minion leaves the
     /// list and comes back after `respawn_ms` (`-1` the default, `0` never).
     pub fn minion_died(&mut self, master: ObjectId, minion: ObjectId, respawn_ms: i32) {

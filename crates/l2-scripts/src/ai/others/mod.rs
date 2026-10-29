@@ -33,9 +33,6 @@ pub mod kier;
 pub mod manor_manager;
 pub mod monument_of_heroes;
 pub mod muscle_bomber;
-<<<<<<< HEAD
-pub mod steel_citadel_teleport;
-=======
 pub mod nevits_herald;
 pub mod newbie_guide;
 pub mod non_lethalable_npcs;
@@ -54,8 +51,8 @@ pub mod shadow_summoner;
 pub mod sin_eater;
 pub mod sin_wardens;
 pub mod soul_trader;
+pub mod steel_citadel_teleport;
 pub mod strongholds_teleports;
->>>>>>> main
 pub mod subclass_certification;
 pub mod support_unit_captain;
 pub mod survivor;
