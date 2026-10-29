@@ -124,6 +124,7 @@ pub mod q00281_head_for_the_hills;
 pub mod q00283_the_few_the_proud_the_brave;
 pub mod q00284_muertos_feather;
 pub mod q00286_fabulous_feathers;
+pub mod q00287_figuring_it_out;
 pub mod q00291_revenge_of_the_redbonnet;
 pub mod q00294_covert_business;
 pub mod q00295_dreaming_of_the_skies;
@@ -258,6 +259,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00283_the_few_the_proud_the_brave::Q00283TheFewTheProudTheBrave);
     r.add(q00284_muertos_feather::Q00284MuertosFeather);
     r.add(q00286_fabulous_feathers::Q00286FabulousFeathers);
+    r.add(q00287_figuring_it_out::Q00287FiguringItOut);
     r.add(q00291_revenge_of_the_redbonnet::Q00291RevengeOfTheRedbonnet);
     r.add(q00294_covert_business::Q00294CovertBusiness);
     r.add(q00295_dreaming_of_the_skies::Q00295DreamingOfTheSkies);
