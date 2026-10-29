@@ -149,7 +149,9 @@ impl Script for Q00168DeliverSupplies {
                             qs.set_cond(ctx, 4, true);
                         }
                         htmltext = format!("{}-01.html", npc.id);
-                    } else if !ctx.has_quest_items(player, blade) && ctx.has_quest_items(player, OLD_BRONZE_SWORD) {
+                    } else if !ctx.has_quest_items(player, blade)
+                        && ctx.has_quest_items(player, OLD_BRONZE_SWORD)
+                    {
                         htmltext = format!("{}-02.html", npc.id);
                     }
                 }

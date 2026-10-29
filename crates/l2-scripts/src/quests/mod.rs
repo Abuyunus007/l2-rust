@@ -80,6 +80,7 @@ pub mod q00156_millennium_love;
 pub mod q00157_recover_smuggled_goods;
 pub mod q00158_seed_of_evil;
 pub mod q00161_fruit_of_the_mother_tree;
+pub mod q00162_curse_of_the_underground_fortress;
 pub mod q00164_blood_fiend;
 pub mod q00165_shilens_hunt;
 pub mod q00166_mass_of_darkness;
@@ -172,6 +173,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00157_recover_smuggled_goods::Q00157RecoverSmuggledGoods);
     r.add(q00158_seed_of_evil::Q00158SeedOfEvil);
     r.add(q00161_fruit_of_the_mother_tree::Q00161FruitOfTheMotherTree);
+    r.add(q00162_curse_of_the_underground_fortress::Q00162CurseOfTheUndergroundFortress);
     r.add(q00164_blood_fiend::Q00164BloodFiend);
     r.add(q00165_shilens_hunt::Q00165ShilensHunt);
     r.add(q00166_mass_of_darkness::Q00166MassOfDarkness);

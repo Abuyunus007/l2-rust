@@ -65,7 +65,10 @@ impl Script for Q00132MatrasCuriosity {
             return Some(ctx.get_no_quest_msg(player));
         };
         let mut htmltext = event.to_owned();
-        if event.eq_ignore_ascii_case("32245-03.htm") && ctx.player_level(player) >= MIN_LEVEL && !qs.is_completed(ctx) {
+        if event.eq_ignore_ascii_case("32245-03.htm")
+            && ctx.player_level(player) >= MIN_LEVEL
+            && !qs.is_completed(ctx)
+        {
             if qs.is_created(ctx) {
                 qs.start_quest(ctx);
                 qs.set(ctx, "rewarded_prince", "1");
@@ -125,7 +128,9 @@ impl Script for Q00132MatrasCuriosity {
         } else if qs.is_started(ctx) {
             match qs.get_cond(ctx) {
                 1 | 2 => {
-                    if ctx.has_quest_items(player, BLUEPRINT_RANKU) && ctx.has_quest_items(player, BLUEPRINT_PRINCE) {
+                    if ctx.has_quest_items(player, BLUEPRINT_RANKU)
+                        && ctx.has_quest_items(player, BLUEPRINT_PRINCE)
+                    {
                         ctx.take_items(player, BLUEPRINT_RANKU, -1);
                         ctx.take_items(player, BLUEPRINT_PRINCE, -1);
                         qs.set_cond(ctx, 3, true);

@@ -263,11 +263,7 @@ mod tests {
             states: vec![(NAME.to_owned(), Some("Started".to_owned()))],
             variables: vec![(NAME.to_owned(), "cond".to_owned(), Some("4".to_owned()))],
         };
-        t.enter_with(second_class(
-            1,
-            quests,
-            vec![item(5, ELITE_CERTIFICATE, 1)],
-        ));
+        t.enter_with(second_class(1, quests, vec![item(5, ELITE_CERTIFICATE, 1)]));
         assert!(t.quest_page(1, merc).contains("exalted-05.htm"));
         assert_eq!(t.count(1, ELITE_CERTIFICATE), 0);
         assert_eq!(t.count(1, TOP_ELITE_CERTIFICATE), 1);

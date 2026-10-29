@@ -113,7 +113,9 @@ impl Script for Q00151CureForFever {
                                     5000,
                                     &[],
                                 );
-                            } else if (ctx.get_nr_memo_state(guide, GUIDE_MISSION) % 100_000_000) / 10_000_000 != 1 {
+                            } else if (ctx.get_nr_memo_state(guide, GUIDE_MISSION) % 100_000_000) / 10_000_000
+                                != 1
+                            {
                                 ctx.set_nr_memo(guide, GUIDE_MISSION);
                                 let state = ctx.get_nr_memo_state(guide, GUIDE_MISSION);
                                 ctx.set_nr_memo_state(guide, GUIDE_MISSION, state + 10_000_000);
@@ -259,10 +261,22 @@ mod tests {
         assert!(t.quest_page(1, elias).contains("30050-06.html"));
         assert_eq!(t.count(1, ROUND_SHIELD), 1);
         let writes = t.take_writes();
-        assert!(writes.contains(&rows::insert(NEWBIE_GUIDE, "NRmemo", "41")), "{writes:?}");
-        assert!(writes.contains(&rows::insert(NEWBIE_GUIDE, "NRmemoState41", "100000")), "{writes:?}");
-        assert!(writes.contains(&rows::insert(NEWBIE_GUIDE, "<state>", "Completed")), "{writes:?}");
+        assert!(
+            writes.contains(&rows::insert(NEWBIE_GUIDE, "NRmemo", "41")),
+            "{writes:?}"
+        );
+        assert!(
+            writes.contains(&rows::insert(NEWBIE_GUIDE, "NRmemoState41", "100000")),
+            "{writes:?}"
+        );
+        assert!(
+            writes.contains(&rows::insert(NEWBIE_GUIDE, "<state>", "Completed")),
+            "{writes:?}"
+        );
         assert!(writes.contains(&rows::delete(NAME, false)), "{writes:?}");
-        assert!(writes.contains(&rows::update(NAME, "<state>", "Completed")), "{writes:?}");
+        assert!(
+            writes.contains(&rows::update(NAME, "<state>", "Completed")),
+            "{writes:?}"
+        );
     }
 }

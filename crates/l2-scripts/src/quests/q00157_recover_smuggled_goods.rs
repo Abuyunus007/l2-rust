@@ -132,12 +132,7 @@ mod tests {
         let pages = Pages::of(&Q00157RecoverSmuggledGoods)
             .page("30005-02.htm", &["30005-03.htm"])
             .page("30005-03.htm", &["30005-04.htm"])
-            .plain(&[
-                "30005-01.htm",
-                "30005-04.htm",
-                "30005-05.html",
-                "30005-06.html",
-            ])
+            .plain(&["30005-01.htm", "30005-04.htm", "30005-05.html", "30005-06.html"])
             .npcs(&[WILFORD]);
         let mut t = ScriptTest::with_pages(registry, NPCS, ITEMS, pages);
         let wilford = t.spawn(WILFORD, 20);

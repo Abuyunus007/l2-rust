@@ -293,9 +293,18 @@ mod tests {
         assert!(t.quest_page(1, npcs.undrias).contains("30130-05.html"));
         assert_eq!(t.count(1, ADENA), 2_966);
         let writes = t.take_writes();
-        assert!(writes.contains(&rows::insert(NEWBIE_GUIDE, "NRmemo", "41")), "{writes:?}");
-        assert!(writes.contains(&rows::insert(NEWBIE_GUIDE, "NRmemoState41", "1")), "{writes:?}");
+        assert!(
+            writes.contains(&rows::insert(NEWBIE_GUIDE, "NRmemo", "41")),
+            "{writes:?}"
+        );
+        assert!(
+            writes.contains(&rows::insert(NEWBIE_GUIDE, "NRmemoState41", "1")),
+            "{writes:?}"
+        );
         assert!(writes.contains(&rows::delete(NAME, false)), "{writes:?}");
-        assert!(writes.contains(&rows::update(NAME, "<state>", "Completed")), "{writes:?}");
+        assert!(
+            writes.contains(&rows::update(NAME, "<state>", "Completed")),
+            "{writes:?}"
+        );
     }
 }

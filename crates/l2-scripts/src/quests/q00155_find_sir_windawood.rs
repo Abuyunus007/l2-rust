@@ -117,12 +117,7 @@ mod tests {
         registry.add(Q00155FindSirWindawood);
         let pages = Pages::of(&Q00155FindSirWindawood)
             .page("30042-02.htm", &["30042-03.htm"])
-            .plain(&[
-                "30042-01.htm",
-                "30042-03.htm",
-                "30042-04.html",
-                "30311-01.html",
-            ])
+            .plain(&["30042-01.htm", "30042-03.htm", "30042-04.html", "30311-01.html"])
             .npcs(&[ABELLOS, SIR_COLLIN_WINDAWOOD]);
         let mut t = ScriptTest::with_pages(registry, NPCS, ITEMS, pages);
         let npcs = Npcs {
