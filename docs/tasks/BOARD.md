@@ -418,7 +418,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-AI-04](S/S-AI-04.md) | Area AIs part 2 | sonnet | spot | API-01 | ready |
 | [S-AI-05](S/S-AI-05.md) | Other AIs part 1 (A..M) | sonnet | spot | API-01 | merged |
 | [S-AI-06](S/S-AI-06.md) | Other AIs part 2 (N..Z) | sonnet | spot | API-01 | merged |
-| [S-AI-07](S/S-AI-07.md) | Gracia instances and the seed managers | opus | full | AI-01 | in-progress |
+| [S-AI-07](S/S-AI-07.md) | Gracia instances and the seed managers | opus | full | AI-01 | merged |
 | [S-HAND-04](S/S-HAND-04.md) | Decoys, traps and the drop search board | sonnet | full | HAND-03 | ready |
 | [S-BOSS-01](S/S-BOSS-01.md) | Antharas, Valakas, Baium | opus | full | API-01 | merged |
 | [S-BOSS-02](S/S-BOSS-02.md) | Beleth, Frintezza, Core, Orfen, Queen Ant | sonnet | full | API-01 | in-progress |
