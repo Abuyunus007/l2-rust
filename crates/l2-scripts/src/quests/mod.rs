@@ -107,6 +107,7 @@ pub mod q00267_wrath_of_verdure;
 pub mod q00268_traces_of_evil;
 pub mod q00271_proof_of_valor;
 pub mod q00272_wrath_of_ancestors;
+pub mod q00274_skirmish_with_the_werewolves;
 pub mod q00275_dark_winged_spies;
 pub mod q00277_gatekeepers_offering;
 pub mod q00284_muertos_feather;
@@ -225,6 +226,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00268_traces_of_evil::Q00268TracesOfEvil);
     r.add(q00271_proof_of_valor::Q00271ProofOfValor);
     r.add(q00272_wrath_of_ancestors::Q00272WrathOfAncestors);
+    r.add(q00274_skirmish_with_the_werewolves::Q00274SkirmishWithTheWerewolves);
     r.add(q00275_dark_winged_spies::Q00275DarkWingedSpies);
     r.add(q00277_gatekeepers_offering::Q00277GatekeepersOffering);
     r.add(q00284_muertos_feather::Q00284MuertosFeather);
