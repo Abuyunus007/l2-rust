@@ -112,6 +112,7 @@ pub mod q00268_traces_of_evil;
 pub mod q00269_invention_ambition;
 pub mod q00271_proof_of_valor;
 pub mod q00272_wrath_of_ancestors;
+pub mod q00273_invaders_of_the_holy_land;
 pub mod q00274_skirmish_with_the_werewolves;
 pub mod q00275_dark_winged_spies;
 pub mod q00277_gatekeepers_offering;
@@ -241,6 +242,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00269_invention_ambition::Q00269InventionAmbition);
     r.add(q00271_proof_of_valor::Q00271ProofOfValor);
     r.add(q00272_wrath_of_ancestors::Q00272WrathOfAncestors);
+    r.add(q00273_invaders_of_the_holy_land::Q00273InvadersOfTheHolyLand);
     r.add(q00274_skirmish_with_the_werewolves::Q00274SkirmishWithTheWerewolves);
     r.add(q00275_dark_winged_spies::Q00275DarkWingedSpies);
     r.add(q00277_gatekeepers_offering::Q00277GatekeepersOffering);
