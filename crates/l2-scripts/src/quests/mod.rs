@@ -101,6 +101,7 @@ pub mod q00153_deliver_goods;
 pub mod q00158_seed_of_evil;
 pub mod q00182_new_recruits;
 pub mod q00249_poisoned_plains_of_the_lizardmen;
+pub mod q00251_no_secrets;
 pub mod q00255_tutorial;
 pub mod q00275_dark_winged_spies;
 pub mod q00295_dreaming_of_the_skies;
@@ -208,6 +209,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00158_seed_of_evil::Q00158SeedOfEvil);
     r.add(q00182_new_recruits::Q00182NewRecruits);
     r.add(q00249_poisoned_plains_of_the_lizardmen::Q00249PoisonedPlainsOfTheLizardmen);
+    r.add(q00251_no_secrets::Q00251NoSecrets);
     r.add(q00255_tutorial::Q00255Tutorial);
     r.add(q00275_dark_winged_spies::Q00275DarkWingedSpies);
     r.add(q00295_dreaming_of_the_skies::Q00295DreamingOfTheSkies);
