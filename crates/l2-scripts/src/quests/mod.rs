@@ -71,6 +71,7 @@ pub mod q00107_merciless_punishment;
 pub mod q00108_jumble_tumble_diamond_fuss;
 pub mod q00153_deliver_goods;
 pub mod q00158_seed_of_evil;
+pub mod q00169_offspring_of_nightmares;
 pub mod q00170_dangerous_seduction;
 pub mod q00172_new_horizons;
 pub mod q00173_to_the_isle_of_souls;
@@ -154,6 +155,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00108_jumble_tumble_diamond_fuss::Q00108JumbleTumbleDiamondFuss);
     r.add(q00153_deliver_goods::Q00153DeliverGoods);
     r.add(q00158_seed_of_evil::Q00158SeedOfEvil);
+    r.add(q00169_offspring_of_nightmares::Q00169OffspringOfNightmares);
     r.add(q00170_dangerous_seduction::Q00170DangerousSeduction);
     r.add(q00172_new_horizons::Q00172NewHorizons);
     r.add(q00173_to_the_isle_of_souls::Q00173ToTheIsleOfSouls);
