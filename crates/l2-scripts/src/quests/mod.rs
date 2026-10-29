@@ -104,6 +104,7 @@ pub mod q00255_tutorial;
 pub mod q00262_trade_with_the_ivory_tower;
 pub mod q00267_wrath_of_verdure;
 pub mod q00268_traces_of_evil;
+pub mod q00271_proof_of_valor;
 pub mod q00272_wrath_of_ancestors;
 pub mod q00275_dark_winged_spies;
 pub mod q00277_gatekeepers_offering;
@@ -220,6 +221,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00262_trade_with_the_ivory_tower::Q00262TradeWithTheIvoryTower);
     r.add(q00267_wrath_of_verdure::Q00267WrathOfVerdure);
     r.add(q00268_traces_of_evil::Q00268TracesOfEvil);
+    r.add(q00271_proof_of_valor::Q00271ProofOfValor);
     r.add(q00272_wrath_of_ancestors::Q00272WrathOfAncestors);
     r.add(q00275_dark_winged_spies::Q00275DarkWingedSpies);
     r.add(q00277_gatekeepers_offering::Q00277GatekeepersOffering);
