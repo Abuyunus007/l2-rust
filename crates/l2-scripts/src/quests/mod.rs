@@ -129,6 +129,7 @@ pub mod q00288_handle_with_care;
 pub mod q00289_no_more_soup_for_you;
 pub mod q00290_threat_removal;
 pub mod q00291_revenge_of_the_redbonnet;
+pub mod q00292_brigands_sweep;
 pub mod q00294_covert_business;
 pub mod q00295_dreaming_of_the_skies;
 pub mod q00297_gatekeepers_favor;
@@ -267,6 +268,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00289_no_more_soup_for_you::Q00289NoMoreSoupForYou);
     r.add(q00290_threat_removal::Q00290ThreatRemoval);
     r.add(q00291_revenge_of_the_redbonnet::Q00291RevengeOfTheRedbonnet);
+    r.add(q00292_brigands_sweep::Q00292BrigandsSweep);
     r.add(q00294_covert_business::Q00294CovertBusiness);
     r.add(q00295_dreaming_of_the_skies::Q00295DreamingOfTheSkies);
     r.add(q00297_gatekeepers_favor::Q00297GatekeepersFavor);
