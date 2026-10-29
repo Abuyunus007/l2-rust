@@ -105,6 +105,7 @@ pub mod q00267_wrath_of_verdure;
 pub mod q00268_traces_of_evil;
 pub mod q00275_dark_winged_spies;
 pub mod q00277_gatekeepers_offering;
+pub mod q00291_revenge_of_the_redbonnet;
 pub mod q00295_dreaming_of_the_skies;
 pub mod q00297_gatekeepers_favor;
 pub mod q00303_collect_arrowheads;
@@ -215,6 +216,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00268_traces_of_evil::Q00268TracesOfEvil);
     r.add(q00275_dark_winged_spies::Q00275DarkWingedSpies);
     r.add(q00277_gatekeepers_offering::Q00277GatekeepersOffering);
+    r.add(q00291_revenge_of_the_redbonnet::Q00291RevengeOfTheRedbonnet);
     r.add(q00295_dreaming_of_the_skies::Q00295DreamingOfTheSkies);
     r.add(q00297_gatekeepers_favor::Q00297GatekeepersFavor);
     r.add(q00303_collect_arrowheads::Q00303CollectArrowheads);
