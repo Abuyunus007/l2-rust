@@ -100,6 +100,7 @@ pub mod q00108_jumble_tumble_diamond_fuss;
 pub mod q00153_deliver_goods;
 pub mod q00158_seed_of_evil;
 pub mod q00182_new_recruits;
+pub mod q00237_winds_of_change;
 pub mod q00238_success_failure_of_business;
 pub mod q00239_wont_you_join_us;
 pub mod q00240_im_the_only_one_you_can_trust;
@@ -219,6 +220,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00153_deliver_goods::Q00153DeliverGoods);
     r.add(q00158_seed_of_evil::Q00158SeedOfEvil);
     r.add(q00182_new_recruits::Q00182NewRecruits);
+    r.add(q00237_winds_of_change::Q00237WindsOfChange);
     r.add(q00238_success_failure_of_business::Q00238SuccessFailureOfBusiness);
     r.add(q00239_wont_you_join_us::Q00239WontYouJoinUs);
     r.add(q00240_im_the_only_one_you_can_trust::Q00240ImTheOnlyOneYouCanTrust);
