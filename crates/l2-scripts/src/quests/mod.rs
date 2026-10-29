@@ -115,6 +115,7 @@ pub mod q00272_wrath_of_ancestors;
 pub mod q00273_invaders_of_the_holy_land;
 pub mod q00274_skirmish_with_the_werewolves;
 pub mod q00275_dark_winged_spies;
+pub mod q00276_totem_of_the_hestui;
 pub mod q00277_gatekeepers_offering;
 pub mod q00279_target_of_opportunity;
 pub mod q00283_the_few_the_proud_the_brave;
@@ -245,6 +246,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00273_invaders_of_the_holy_land::Q00273InvadersOfTheHolyLand);
     r.add(q00274_skirmish_with_the_werewolves::Q00274SkirmishWithTheWerewolves);
     r.add(q00275_dark_winged_spies::Q00275DarkWingedSpies);
+    r.add(q00276_totem_of_the_hestui::Q00276TotemOfTheHestui);
     r.add(q00277_gatekeepers_offering::Q00277GatekeepersOffering);
     r.add(q00279_target_of_opportunity::Q00279TargetOfOpportunity);
     r.add(q00283_the_few_the_proud_the_brave::Q00283TheFewTheProudTheBrave);
