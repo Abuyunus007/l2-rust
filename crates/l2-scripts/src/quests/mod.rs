@@ -100,6 +100,7 @@ pub mod q00108_jumble_tumble_diamond_fuss;
 pub mod q00153_deliver_goods;
 pub mod q00158_seed_of_evil;
 pub mod q00182_new_recruits;
+pub mod q00240_im_the_only_one_you_can_trust;
 pub mod q00249_poisoned_plains_of_the_lizardmen;
 pub mod q00251_no_secrets;
 pub mod q00255_tutorial;
@@ -209,6 +210,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00153_deliver_goods::Q00153DeliverGoods);
     r.add(q00158_seed_of_evil::Q00158SeedOfEvil);
     r.add(q00182_new_recruits::Q00182NewRecruits);
+    r.add(q00240_im_the_only_one_you_can_trust::Q00240ImTheOnlyOneYouCanTrust);
     r.add(q00249_poisoned_plains_of_the_lizardmen::Q00249PoisonedPlainsOfTheLizardmen);
     r.add(q00251_no_secrets::Q00251NoSecrets);
     r.add(q00255_tutorial::Q00255Tutorial);
