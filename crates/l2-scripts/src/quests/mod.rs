@@ -108,6 +108,7 @@ pub mod q00249_poisoned_plains_of_the_lizardmen;
 pub mod q00250_watch_what_you_eat;
 pub mod q00251_no_secrets;
 pub mod q00252_it_smells_delicious;
+pub mod q00254_legendary_tales;
 pub mod q00255_tutorial;
 pub mod q00257_the_guard_is_busy;
 pub mod q00258_bring_wolf_pelts;
@@ -226,6 +227,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00250_watch_what_you_eat::Q00250WatchWhatYouEat);
     r.add(q00251_no_secrets::Q00251NoSecrets);
     r.add(q00252_it_smells_delicious::Q00252ItSmellsDelicious);
+    r.add(q00254_legendary_tales::Q00254LegendaryTales);
     r.add(q00255_tutorial::Q00255Tutorial);
     r.add(q00258_bring_wolf_pelts::Q00258BringWolfPelts);
     r.add(q00257_the_guard_is_busy::Q00257TheGuardIsBusy);
