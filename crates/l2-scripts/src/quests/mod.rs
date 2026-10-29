@@ -80,6 +80,7 @@ pub mod q00176_steps_for_honor;
 pub mod q00179_into_the_large_cavern;
 pub mod q00182_new_recruits;
 pub mod q00183_relic_exploration;
+pub mod q00186_contract_execution;
 pub mod q00187_nikolas_heart;
 pub mod q00188_seal_removal;
 pub mod q00189_contract_completion;
@@ -170,6 +171,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00179_into_the_large_cavern::Q00179IntoTheLargeCavern);
     r.add(q00182_new_recruits::Q00182NewRecruits);
     r.add(q00183_relic_exploration::Q00183RelicExploration);
+    r.add(q00186_contract_execution::Q00186ContractExecution);
     r.add(q00187_nikolas_heart::Q00187NikolasHeart);
     r.add(q00188_seal_removal::Q00188SealRemoval);
     r.add(q00189_contract_completion::Q00189ContractCompletion);
