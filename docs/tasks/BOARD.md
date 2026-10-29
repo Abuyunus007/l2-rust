@@ -424,7 +424,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-BOSS-02](S/S-BOSS-02.md) | Beleth, Frintezza, Core, Orfen, Queen Ant | sonnet | full | API-01 | in-progress |
 | [S-BOSS-03](S/S-BOSS-03.md) | Sailren, Seer Ugoros, Dr. Chaos, Anais, Queen Shyeed | sonnet | full | API-01 | ready |
 | [S-INST-01](S/S-INST-01.md) | Kamaloka and Pailaka instances | sonnet | full | API-01 | merged |
-| [S-INST-02](S/S-INST-02.md) | Crystal Caverns, Dark Cloud Mansion, Chambers of Delusion | sonnet | full | API-01 | in-progress |
+| [S-INST-02](S/S-INST-02.md) | Crystal Caverns, Dark Cloud Mansion, Chambers of Delusion | sonnet | full | API-01 | merged |
 | [S-INST-03](S/S-INST-03.md) | Ice Queen, Nornil, Jinia and the small instances | sonnet | full | API-01 | ready |
 | [S-INST-04](S/S-INST-04.md) | Seven Signs instances | sonnet | full | API-01 | ready |
 | [S-TW-01](S/S-TW-01.md) | Territory War quests | sonnet | full | API-01 | ready |
@@ -436,9 +436,9 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-Q-05](S/S-Q-05.md) | Quests Q00129..Q00168 (35 quests) | haiku | spot | PILOT-01 | in-progress |
 | [S-Q-06](S/S-Q-06.md) | Quests Q00169..Q00211 (27 quests) | haiku | spot | PILOT-01 | in-progress |
 | [S-Q-07](S/S-Q-07.md) | Quests Q00212..Q00221 (10 quests) | haiku | spot | PILOT-01 | in-progress |
-| [S-Q-08](S/S-Q-08.md) | Quests Q00222..Q00232 (11 quests) | haiku | spot | PILOT-01 | ready |
-| [S-Q-09](S/S-Q-09.md) | Quests Q00233..Q00260 (21 quests) | haiku | spot | PILOT-01 | ready |
-| [S-Q-10](S/S-Q-10.md) | Quests Q00261..Q00309 (40 quests) | haiku | spot | PILOT-01 | ready |
+| [S-Q-08](S/S-Q-08.md) | Quests Q00222..Q00232 (11 quests) | haiku | spot | PILOT-01 | in-progress |
+| [S-Q-09](S/S-Q-09.md) | Quests Q00233..Q00260 (21 quests) | haiku | spot | PILOT-01 | in-progress |
+| [S-Q-10](S/S-Q-10.md) | Quests Q00261..Q00309 (40 quests) | haiku | spot | PILOT-01 | in-progress |
 | [S-Q-11](S/S-Q-11.md) | Quests Q00310..Q00335 (18 quests) | haiku | spot | PILOT-01 | ready |
 | [S-Q-12](S/S-Q-12.md) | Quests Q00336..Q00352 (13 quests) | haiku | spot | PILOT-01 | ready |
 | [S-Q-13](S/S-Q-13.md) | Quests Q00354..Q00385 (29 quests) | haiku | spot | PILOT-01 | ready |
