@@ -104,6 +104,7 @@ pub mod q00255_tutorial;
 pub mod q00261_collectors_dream;
 pub mod q00262_trade_with_the_ivory_tower;
 pub mod q00263_orc_subjugation;
+pub mod q00264_keen_claws;
 pub mod q00267_wrath_of_verdure;
 pub mod q00268_traces_of_evil;
 pub mod q00269_invention_ambition;
@@ -227,6 +228,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00261_collectors_dream::Q00261CollectorsDream);
     r.add(q00262_trade_with_the_ivory_tower::Q00262TradeWithTheIvoryTower);
     r.add(q00263_orc_subjugation::Q00263OrcSubjugation);
+    r.add(q00264_keen_claws::Q00264KeenClaws);
     r.add(q00267_wrath_of_verdure::Q00267WrathOfVerdure);
     r.add(q00268_traces_of_evil::Q00268TracesOfEvil);
     r.add(q00269_invention_ambition::Q00269InventionAmbition);
