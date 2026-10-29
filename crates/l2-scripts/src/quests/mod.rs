@@ -90,6 +90,7 @@ pub mod q00188_seal_removal;
 pub mod q00189_contract_completion;
 pub mod q00190_lost_dream;
 pub mod q00191_vain_conclusion;
+pub mod q00197_seven_signs_the_sacred_book_of_seal;
 pub mod q00198_seven_signs_embryo;
 pub mod q00255_tutorial;
 pub mod q00275_dark_winged_spies;
@@ -187,6 +188,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00189_contract_completion::Q00189ContractCompletion);
     r.add(q00190_lost_dream::Q00190LostDream);
     r.add(q00191_vain_conclusion::Q00191VainConclusion);
+    r.add(q00197_seven_signs_the_sacred_book_of_seal::Q00197SevenSignsTheSacredBookOfSeal);
     r.add(q00198_seven_signs_embryo::Q00198SevenSignsEmbryo);
     r.add(q00255_tutorial::Q00255Tutorial);
     r.add(q00275_dark_winged_spies::Q00275DarkWingedSpies);
