@@ -129,8 +129,8 @@ impl World {
             let current = self.core_of(id).map_or(0.0, |c| c.cur_hp);
             self.set_current_hp(id, (current - amount).max(0.0), true);
         }
-        // `isMortal()`: nothing makes a creature immortal before scripts.
-        if self.core_of(id).is_some_and(|c| c.cur_hp < 0.5) {
+        // `isMortal()`: only scripts make a creature immortal.
+        if self.core_of(id).is_some_and(|c| c.cur_hp < 0.5) && self.is_mortal(id) {
             self.abort_attack(id);
             self.abort_cast(id);
             self.do_die(id, attacker);

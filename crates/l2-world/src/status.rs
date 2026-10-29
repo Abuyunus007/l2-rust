@@ -488,7 +488,7 @@ impl World {
             let current = self.core_of(id).map_or(0.0, |c| c.cur_hp);
             self.set_current_hp(id, (current - value).max(0.0), true);
         }
-        // `isMortal()`: a script can make an NPC immortal (`setMortal(false)`, S-BOSS-02).
+        // `isMortal()`: only scripts make a creature immortal.
         if self.core_of(id).is_some_and(|c| c.cur_hp < 0.5) && self.is_mortal(id) {
             self.abort_attack(id);
             self.abort_cast(id);

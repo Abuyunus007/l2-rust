@@ -594,6 +594,7 @@ impl World {
         // scripts make an NPC see through, and a raid boss always does).
         if is_player
             && !self.is_raid_or_minion(me)
+            && !self.can_see_through_silent_move(me)
             && self.is_affected(target, crate::effects::effect_flag::SILENT_MOVE)
         {
             return false;

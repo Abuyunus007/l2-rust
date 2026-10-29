@@ -115,9 +115,15 @@ pub(crate) struct NpcExtra {
     script_value: i32,
     /// `!_lethalable` (Java's default is lethalable, so the default here is false).
     not_lethalable: bool,
-    /// `!_isMortal` (Java's default is mortal).
-    immortal: bool,
     overhit: Overhit,
+    /// `Attackable.setSeeThroughSilentMove(true)`.
+    see_through_silent_move: bool,
+    /// `!_isMortal` (the default is mortal).
+    immortal: bool,
+    /// `!QuestGuard._isAutoAttackable` (Java's default is true).
+    quest_guard_not_auto_attackable: bool,
+    /// `QuestGuard._isPassive`.
+    quest_guard_passive: bool,
 }
 
 /// The extras of every NPC that has some.
@@ -171,6 +177,137 @@ impl World {
         self.npc_script_value(npc) == value
     }
 
+    /// Java `Monster.getLeader()`: the master of a minion.
+    pub fn npc_leader(&self, npc: ObjectId) -> Option<ObjectId> {
+        self.leader_of(npc)
+    }
+
+    /// Java `npc.getTemplate().getParameters().getMinionList(name)`: the ids of the minions.
+    pub fn npc_template_minion_ids(&self, npc: ObjectId, name: &str) -> Vec<i32> {
+        self.npc_template(npc)
+            .map_or_else(Vec::new, |t| t.minion_list(name).iter().map(|m| m.id).collect())
+    }
+
+    /// Java `Npc.getAIValue(name)` for `hasAIValue(name)`: the `AIData` value of the NPC's
+    /// spawn; `None` when the spawn has none.
+    pub fn npc_ai_value(&self, npc: ObjectId, name: &str) -> Option<i32> {
+        self.spawn_ai_value(npc, name)
+    }
+
+    /// Java `Npc.staysInSpawnLoc()`: the spawn point's x and y are the NPC's.
+    pub fn npc_stays_in_spawn_loc(&self, npc: ObjectId) -> bool {
+        let Some(n) = self.npcs.get(&npc) else {
+            return false;
+        };
+        n.spawn.is_some()
+            && self
+                .position_of(npc)
+                .is_some_and(|(x, y, _)| n.spawn_point.0 == x && n.spawn_point.1 == y)
+    }
+
+    /// Java `Npc.broadcastEvent(eventName, radius, reference)`: `ON_NPC_EVENT_RECEIVED` to every
+    /// NPC with the listener within `radius` of the sender.
+    pub fn broadcast_event(
+        &mut self,
+        sender: ObjectId,
+        event: &str,
+        radius: i32,
+        reference: Option<ObjectId>,
+    ) {
+        for obj in self.visible_objects_in_range(sender, radius) {
+            if self.npcs.contains_key(&obj) {
+                self.script_send_event(event, sender, obj, reference);
+            }
+        }
+    }
+
+    /// Java `Npc.addAttackerToAttackByList(attacker)`.
+    pub fn add_attacker_to_attack_by(&mut self, npc: ObjectId, attacker: ObjectId) {
+        self.add_attacker_to_attack_by_list(npc, attacker);
+    }
+
+    /// Java `Npc.scheduleDespawn(delay)`.
+    pub fn schedule_npc_despawn(&mut self, npc: ObjectId, delay_ms: i64) {
+        self.schedule_script_despawn(npc, delay_ms);
+    }
+
+    /// Java `npc.getWorldRegion().isActive()`.
+    pub fn npc_region_is_active(&self, npc: ObjectId) -> bool {
+        self.objects
+            .get(&npc)
+            .and_then(|e| e.region)
+            .is_some_and(|r| self.is_region_active(r))
+    }
+
+    /// Java `GeoEngine.getValidLocation(npc.getX(), npc.getY(), npc.getZ(), x, y, npc.getZ(), 0)`:
+    /// how far toward (x, y) the NPC can go.
+    pub fn npc_valid_location_toward(&self, npc: ObjectId, x: i32, y: i32) -> Option<(i32, i32, i32)> {
+        let (nx, ny, nz) = self.position_of(npc)?;
+        let instance = self.instance_id_of(npc);
+        let to = self.geo_valid_location(
+            l2_geo::Location::new(nx, ny, nz),
+            l2_geo::Location::new(x, y, nz),
+            instance,
+        );
+        Some((to.x, to.y, to.z))
+    }
+
+    /// Java `npc.getFort().getOwnerClan().getId()`; 0 without a fortress or an owner.
+    pub fn npc_fort_owner_clan_id(&self, npc: ObjectId) -> i32 {
+        self.npc_fort(npc)
+            .and_then(|f| self.fort(f))
+            .map_or(0, |f| f.owner_id)
+    }
+
+    /// Java `player.getAllActiveQuests().size()`.
+    pub fn active_quest_count(&self, player: ObjectId) -> usize {
+        self.all_active_quests(player).len()
+    }
+
+    /// Java `npc.getRace()` as the `Race` ordinal of the six player races (`script::race`);
+    /// -1 for any other race.
+    pub fn npc_race_ordinal(&self, npc: ObjectId) -> i32 {
+        use l2_data::npc::NpcRace;
+        match self.npc_template(npc).map(|t| t.race) {
+            Some(NpcRace::Human) => 0,
+            Some(NpcRace::Elf) => 1,
+            Some(NpcRace::DarkElf) => 2,
+            Some(NpcRace::Orc) => 3,
+            Some(NpcRace::Dwarf) => 4,
+            Some(NpcRace::Kamael) => 5,
+            _ => -1,
+        }
+    }
+
+    /// Java `Creature.setMortal(value)`.
+    pub fn set_mortal(&mut self, id: ObjectId, value: bool) {
+        self.npc_extra_mut(id).immortal = !value;
+    }
+
+    /// Java `Creature.isMortal()`.
+    pub fn is_mortal(&self, id: ObjectId) -> bool {
+        !self
+            .scripts
+            .npc_extras
+            .by_npc
+            .get(&id)
+            .is_some_and(|e| e.immortal)
+    }
+
+    /// Java `Attackable.setSeeThroughSilentMove(value)`.
+    pub fn set_see_through_silent_move(&mut self, id: ObjectId, value: bool) {
+        self.npc_extra_mut(id).see_through_silent_move = value;
+    }
+
+    /// Java `Attackable.canSeeThroughSilentMove()`.
+    pub fn can_see_through_silent_move(&self, id: ObjectId) -> bool {
+        self.scripts
+            .npc_extras
+            .by_npc
+            .get(&id)
+            .is_some_and(|e| e.see_through_silent_move)
+    }
+
     /// Java `Creature.setLethalable(value)`.
     pub fn set_lethalable(&mut self, id: ObjectId, value: bool) {
         self.npc_extra_mut(id).not_lethalable = !value;
@@ -187,20 +324,33 @@ impl World {
             .is_some_and(|e| e.not_lethalable)
     }
 
-    /// Java `Creature.setMortal(value)` (S-BOSS-02): an immortal creature does not die when its
-    /// HP reaches 0.
-    pub fn set_mortal(&mut self, id: ObjectId, value: bool) {
-        self.npc_extra_mut(id).immortal = !value;
+    /// Java `QuestGuard.setAutoAttackable(value)`.
+    pub fn set_quest_guard_auto_attackable(&mut self, id: ObjectId, value: bool) {
+        self.npc_extra_mut(id).quest_guard_not_auto_attackable = !value;
     }
 
-    /// Java `Creature.isMortal()`.
-    pub fn is_mortal(&self, id: ObjectId) -> bool {
+    /// Java `QuestGuard._isAutoAttackable`.
+    pub fn is_quest_guard_auto_attackable(&self, id: ObjectId) -> bool {
         !self
             .scripts
             .npc_extras
             .by_npc
             .get(&id)
-            .is_some_and(|e| e.immortal)
+            .is_some_and(|e| e.quest_guard_not_auto_attackable)
+    }
+
+    /// Java `QuestGuard.setPassive(value)`.
+    pub fn set_quest_guard_passive(&mut self, id: ObjectId, value: bool) {
+        self.npc_extra_mut(id).quest_guard_passive = value;
+    }
+
+    /// Java `QuestGuard.isPassive()`.
+    pub fn is_quest_guard_passive(&self, id: ObjectId) -> bool {
+        self.scripts
+            .npc_extras
+            .by_npc
+            .get(&id)
+            .is_some_and(|e| e.quest_guard_passive)
     }
 
     /// Java `skill.hasEffectType(EffectType.HEAL)` of a skill a script names by id and level;
