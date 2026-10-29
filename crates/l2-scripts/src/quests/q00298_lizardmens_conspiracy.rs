@@ -7,7 +7,7 @@
 // moment both are complete sets cond 3 and Rohmer pays 42000 exp and ends the quest.
 
 use l2_util::ObjectId;
-use l2_world::script::{CREATED, STARTED};
+use l2_world::script::STARTED;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
 
 // NPCs

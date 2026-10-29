@@ -7,7 +7,7 @@
 // one of five reward items; the quest repeats.
 
 use l2_util::ObjectId;
-use l2_world::script::{CREATED, race};
+use l2_world::script::{CREATED, STARTED};
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
 
 // NPC

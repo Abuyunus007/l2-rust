@@ -120,6 +120,7 @@ pub mod q00277_gatekeepers_offering;
 pub mod q00278_home_security;
 pub mod q00279_target_of_opportunity;
 pub mod q00280_the_food_chain;
+pub mod q00281_head_for_the_hills;
 pub mod q00283_the_few_the_proud_the_brave;
 pub mod q00284_muertos_feather;
 pub mod q00286_fabulous_feathers;
@@ -253,6 +254,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00278_home_security::Q00278HomeSecurity);
     r.add(q00279_target_of_opportunity::Q00279TargetOfOpportunity);
     r.add(q00280_the_food_chain::Q00280TheFoodChain);
+    r.add(q00281_head_for_the_hills::Q00281HeadForTheHills);
     r.add(q00283_the_few_the_proud_the_brave::Q00283TheFewTheProudTheBrave);
     r.add(q00284_muertos_feather::Q00284MuertosFeather);
     r.add(q00286_fabulous_feathers::Q00286FabulousFeathers);
