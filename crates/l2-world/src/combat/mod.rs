@@ -281,7 +281,7 @@ impl World {
 
     /// Java `GeoEngine.canSeeTarget(creature, target)`: doors are always visible; otherwise the
     /// same instance, no door or fence on the line, and the geodata lets sight through.
-    pub(crate) fn can_see_target(&self, id: ObjectId, target: ObjectId) -> bool {
+    pub fn can_see_target(&self, id: ObjectId, target: ObjectId) -> bool {
         use l2_geo::DynamicObstacles;
 
         let Some(kind) = self.objects.get(&target).map(|e| e.kind) else {

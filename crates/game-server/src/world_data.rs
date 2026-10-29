@@ -1280,6 +1280,15 @@ fn grand_boss_settings(g: &l2_config::generated::game::GrandBossConfig) -> l2_wo
         baium_spawn_interval: g.baium_spawn_interval,
         baium_spawn_random: g.baium_spawn_random,
         baium_recognize_hero: g.baium_recognize_hero,
+        core_spawn_interval: g.core_spawn_interval,
+        core_spawn_random: g.core_spawn_random,
+        orfen_spawn_interval: g.orfen_spawn_interval,
+        orfen_spawn_random: g.orfen_spawn_random,
+        queen_ant_spawn_interval: g.queen_ant_spawn_interval,
+        queen_ant_spawn_random: g.queen_ant_spawn_random,
+        beleth_spawn_interval: g.beleth_spawn_interval,
+        beleth_spawn_random: g.beleth_spawn_random,
+        beleth_min_players: g.beleth_min_players,
     }
 }
 
