@@ -126,6 +126,7 @@ pub mod q00297_gatekeepers_favor;
 pub mod q00298_lizardmens_conspiracy;
 pub mod q00300_hunting_leto_lizardman;
 pub mod q00303_collect_arrowheads;
+pub mod q00306_crystal_of_fire_and_ice;
 pub mod q00317_catch_the_wind;
 pub mod q00450_grave_robber_rescue;
 
@@ -254,6 +255,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00298_lizardmens_conspiracy::Q00298LizardmensConspiracy);
     r.add(q00300_hunting_leto_lizardman::Q00300HuntingLetoLizardman);
     r.add(q00303_collect_arrowheads::Q00303CollectArrowheads);
+    r.add(q00306_crystal_of_fire_and_ice::Q00306CrystalOfFireAndIce);
     r.add(q00317_catch_the_wind::Q00317CatchTheWind);
     r.add(q00450_grave_robber_rescue::Q00450GraveRobberRescue);
 }
