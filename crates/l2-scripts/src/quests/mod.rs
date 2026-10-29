@@ -104,6 +104,7 @@ pub mod q00255_tutorial;
 pub mod q00275_dark_winged_spies;
 pub mod q00277_gatekeepers_offering;
 pub mod q00295_dreaming_of_the_skies;
+pub mod q00297_gatekeepers_favor;
 pub mod q00303_collect_arrowheads;
 pub mod q00317_catch_the_wind;
 pub mod q00450_grave_robber_rescue;
@@ -211,6 +212,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00275_dark_winged_spies::Q00275DarkWingedSpies);
     r.add(q00277_gatekeepers_offering::Q00277GatekeepersOffering);
     r.add(q00295_dreaming_of_the_skies::Q00295DreamingOfTheSkies);
+    r.add(q00297_gatekeepers_favor::Q00297GatekeepersFavor);
     r.add(q00303_collect_arrowheads::Q00303CollectArrowheads);
     r.add(q00317_catch_the_wind::Q00317CatchTheWind);
     r.add(q00450_grave_robber_rescue::Q00450GraveRobberRescue);
