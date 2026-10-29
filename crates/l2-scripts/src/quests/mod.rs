@@ -81,6 +81,7 @@ pub mod q00182_new_recruits;
 pub mod q00183_relic_exploration;
 pub mod q00187_nikolas_heart;
 pub mod q00188_seal_removal;
+pub mod q00190_lost_dream;
 pub mod q00255_tutorial;
 pub mod q00275_dark_winged_spies;
 pub mod q00295_dreaming_of_the_skies;
@@ -168,6 +169,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00183_relic_exploration::Q00183RelicExploration);
     r.add(q00187_nikolas_heart::Q00187NikolasHeart);
     r.add(q00188_seal_removal::Q00188SealRemoval);
+    r.add(q00190_lost_dream::Q00190LostDream);
     r.add(q00255_tutorial::Q00255Tutorial);
     r.add(q00275_dark_winged_spies::Q00275DarkWingedSpies);
     r.add(q00295_dreaming_of_the_skies::Q00295DreamingOfTheSkies);
