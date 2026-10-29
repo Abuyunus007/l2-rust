@@ -77,6 +77,7 @@ pub mod q00172_new_horizons;
 pub mod q00173_to_the_isle_of_souls;
 pub mod q00176_steps_for_honor;
 pub mod q00179_into_the_large_cavern;
+pub mod q00187_nikolas_heart;
 pub mod q00182_new_recruits;
 pub mod q00255_tutorial;
 pub mod q00275_dark_winged_spies;
@@ -161,6 +162,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00173_to_the_isle_of_souls::Q00173ToTheIsleOfSouls);
     r.add(q00176_steps_for_honor::Q00176StepsForHonor);
     r.add(q00179_into_the_large_cavern::Q00179IntoTheLargeCavern);
+    r.add(q00187_nikolas_heart::Q00187NikolasHeart);
     r.add(q00182_new_recruits::Q00182NewRecruits);
     r.add(q00255_tutorial::Q00255Tutorial);
     r.add(q00275_dark_winged_spies::Q00275DarkWingedSpies);
