@@ -102,6 +102,7 @@ pub mod q00158_seed_of_evil;
 pub mod q00182_new_recruits;
 pub mod q00255_tutorial;
 pub mod q00262_trade_with_the_ivory_tower;
+pub mod q00263_orc_subjugation;
 pub mod q00267_wrath_of_verdure;
 pub mod q00268_traces_of_evil;
 pub mod q00271_proof_of_valor;
@@ -219,6 +220,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00182_new_recruits::Q00182NewRecruits);
     r.add(q00255_tutorial::Q00255Tutorial);
     r.add(q00262_trade_with_the_ivory_tower::Q00262TradeWithTheIvoryTower);
+    r.add(q00263_orc_subjugation::Q00263OrcSubjugation);
     r.add(q00267_wrath_of_verdure::Q00267WrathOfVerdure);
     r.add(q00268_traces_of_evil::Q00268TracesOfEvil);
     r.add(q00271_proof_of_valor::Q00271ProofOfValor);
