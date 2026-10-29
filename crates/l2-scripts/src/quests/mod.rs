@@ -81,6 +81,7 @@ pub mod q00179_into_the_large_cavern;
 pub mod q00182_new_recruits;
 pub mod q00183_relic_exploration;
 pub mod q00184_art_of_persuasion;
+pub mod q00185_nikolas_cooperation;
 pub mod q00186_contract_execution;
 pub mod q00187_nikolas_heart;
 pub mod q00188_seal_removal;
@@ -174,6 +175,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00182_new_recruits::Q00182NewRecruits);
     r.add(q00183_relic_exploration::Q00183RelicExploration);
     r.add(q00184_art_of_persuasion::Q00184ArtOfPersuasion);
+    r.add(q00185_nikolas_cooperation::Q00185NikolasCooperation);
     r.add(q00186_contract_execution::Q00186ContractExecution);
     r.add(q00187_nikolas_heart::Q00187NikolasHeart);
     r.add(q00188_seal_removal::Q00188SealRemoval);
