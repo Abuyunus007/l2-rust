@@ -88,7 +88,8 @@ impl Script for Q00266PleasOfPixies {
             for &(fangs, threshold) in fang_drops(npc.id) {
                 if chance < threshold {
                     // Java's 7-argument overload: `fangs` at a time, limit 100, always dropped.
-                    if ctx.give_item_randomly(killer, Some(npc), PREDATORS_FANG, fangs, fangs, 100, 1.0, true) {
+                    if ctx.give_item_randomly(killer, Some(npc), PREDATORS_FANG, fangs, fangs, 100, 1.0, true)
+                    {
                         // `setCond(2)`: no sound of its own.
                         qs.set_cond(ctx, 2, false);
                     }
