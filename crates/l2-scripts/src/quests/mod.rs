@@ -133,6 +133,7 @@ pub mod q00292_brigands_sweep;
 pub mod q00293_the_hidden_veins;
 pub mod q00294_covert_business;
 pub mod q00295_dreaming_of_the_skies;
+pub mod q00296_tarantulas_spider_silk;
 pub mod q00297_gatekeepers_favor;
 pub mod q00298_lizardmens_conspiracy;
 pub mod q00300_hunting_leto_lizardman;
@@ -273,6 +274,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00293_the_hidden_veins::Q00293TheHiddenVeins);
     r.add(q00294_covert_business::Q00294CovertBusiness);
     r.add(q00295_dreaming_of_the_skies::Q00295DreamingOfTheSkies);
+    r.add(q00296_tarantulas_spider_silk::Q00296TarantulasSpiderSilk);
     r.add(q00297_gatekeepers_favor::Q00297GatekeepersFavor);
     r.add(q00298_lizardmens_conspiracy::Q00298LizardmensConspiracy);
     r.add(q00300_hunting_leto_lizardman::Q00300HuntingLetoLizardman);
