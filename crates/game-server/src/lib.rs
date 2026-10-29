@@ -1175,7 +1175,11 @@ impl Server {
                     // their own sections below (S-API-04).
                     world.set_olympiad_settings(olympiad_settings.clone());
                     world.set_minigame_settings(minigame_settings.clone());
-                    let scripts = (!config.development.no_quests).then(l2_scripts::all);
+                    // Java: CategoryData (GameServer constructor, before the scripts: `isInCategory`).
+                    world.set_category_data(Arc::clone(&datapack.categories));
+                    // Java: the ClassMaster script reads `config/ClassMaster.xml` in its constructor.
+                    let scripts = (!config.development.no_quests)
+                        .then(|| l2_scripts::all_with(l2_data::ClassMasterConfig::load(&datapack.root)));
                     npcs::spawn_npcs_with_scripts(world, &datapack, ids, &config, &config_dir, scripts);
                     // Java: RaidBossSpawnManager (right after SpawnData; M8-BOSS-01).
                     if !config.development.no_spawns {

@@ -147,6 +147,9 @@ pub struct SkillTrees {
     /// Java `_subClassSkillTree` (the certification skills), in the order of Java's
     /// `ConcurrentHashMap`.
     sub_class: Vec<SkillLearn>,
+    /// Java `_transformSkillTree` (AvantGarde's transformation skills), in the order of Java's
+    /// `ConcurrentHashMap`.
+    transform: Vec<SkillLearn>,
 }
 
 impl SkillTrees {
@@ -180,6 +183,7 @@ impl SkillTrees {
         );
         log_loaded(Self::LOADER, gathered.sub_pledge.len(), "sub-pledge skills");
         log_loaded(Self::LOADER, gathered.sub_class.len(), "sub-class skills");
+        log_loaded(Self::LOADER, gathered.transform.len(), "transform skills");
         let dwarven_only = gathered
             .fishing
             .values()
@@ -229,6 +233,8 @@ impl SkillTrees {
             game_master_aura_order,
             sub_class,
             sub_class_order,
+            transform,
+            transform_order,
         } = gathered;
         let mut complete = BTreeMap::new();
         let mut java_order = BTreeMap::new();
@@ -274,6 +280,7 @@ impl SkillTrees {
             game_master: in_java_order(game_master, game_master_order),
             game_master_aura: in_java_order(game_master_aura, game_master_aura_order),
             sub_class: in_java_order(sub_class, sub_class_order),
+            transform: in_java_order(transform, transform_order),
         }
     }
 
@@ -423,6 +430,19 @@ impl SkillTrees {
     /// Java `getSubClassSkill(id, lvl)`.
     pub fn sub_class_skill(&self, skill_id: i32, skill_level: i32) -> Option<&SkillLearn> {
         self.sub_class
+            .iter()
+            .find(|l| l.skill_id == skill_id && l.skill_level == skill_level)
+    }
+
+    /// Java `getTransformSkillTree().values()`: the transformation skills, in the order of Java's
+    /// `ConcurrentHashMap`.
+    pub fn transform_skills(&self) -> &[SkillLearn] {
+        &self.transform
+    }
+
+    /// Java `getTransformSkill(id, lvl)`.
+    pub fn transform_skill(&self, skill_id: i32, skill_level: i32) -> Option<&SkillLearn> {
+        self.transform
             .iter()
             .find(|l| l.skill_id == skill_id && l.skill_level == skill_level)
     }
@@ -586,6 +606,9 @@ struct Gathered {
     /// Java `_subClassSkillTree` and the keys in the order they were first put.
     sub_class: BTreeMap<(i32, i32), SkillLearn>,
     sub_class_order: Vec<(i32, i32)>,
+    /// Java `_transformSkillTree` and the keys in the order they were first put.
+    transform: BTreeMap<(i32, i32), SkillLearn>,
+    transform_order: Vec<(i32, i32)>,
 }
 
 impl Gathered {
@@ -615,6 +638,7 @@ impl Gathered {
                     | "gameMasterSkillTree"
                     | "gameMasterAuraSkillTree"
                     | "subClassSkillTree"
+                    | "transformSkillTree"
             ) {
                 let (map, order) = match tree.kind.as_str() {
                     "pledgeSkillTree" => (&mut self.pledge, &mut self.pledge_order),
@@ -627,6 +651,7 @@ impl Gathered {
                         (&mut self.game_master_aura, &mut self.game_master_aura_order)
                     }
                     "subClassSkillTree" => (&mut self.sub_class, &mut self.sub_class_order),
+                    "transformSkillTree" => (&mut self.transform, &mut self.transform_order),
                     _ => (&mut self.fishing, &mut self.fishing_order),
                 };
                 for skill in tree.skills {
@@ -1297,5 +1322,41 @@ mod tests {
         );
         assert_eq!(trees.sub_class_skills().len(), 1);
         assert!(trees.sub_class_skill(631, 2).is_none());
+    }
+
+    #[test]
+    fn the_transform_tree_is_kept() {
+        let trees = SkillTrees::from_xml(
+            r#"<list><skillTree type="transformSkillTree">
+                <skill skillName="Transform Onyx Beast" skillId="617" skillLevel="1" getLevel="50">
+                    <item id="9648" count="1" />
+                </skill>
+                <skill skillName="Transform Death Blader" skillId="618" skillLevel="1" getLevel="55">
+                    <preRequisiteSkill id="617" lvl="1" />
+                    <race>HUMAN</race>
+                </skill>
+            </skillTree></list>"#,
+        )
+        .unwrap();
+        assert_eq!(trees.transform_skills().len(), 2);
+        let line = trees.transform_skill(618, 1).unwrap();
+        assert_eq!(line.get_level, 55);
+        assert_eq!(line.pre_req_skills, [(617, 1)]);
+        assert_eq!(line.races, [Race::Human]);
+        assert!(trees.transform_skill(618, 2).is_none());
+        // Not mixed into the other trees.
+        assert!(trees.sub_class_skills().is_empty());
+    }
+
+    #[test]
+    fn the_shipped_transform_tree_loads() {
+        let root = std::path::Path::new(r"C:\l2-rust\l2jmobius\dist\game");
+        if !root.is_dir() {
+            eprintln!("skipped: {} does not exist", root.display());
+            return;
+        }
+        let trees = SkillTrees::load(root);
+        assert!(trees.transform_skill(617, 1).is_some_and(|l| l.get_level == 50));
+        assert!(trees.transform_skills().len() > 20);
     }
 }

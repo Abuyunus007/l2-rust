@@ -45,6 +45,7 @@ pub mod notify;
 mod notify_tests;
 pub mod npc_extra;
 pub mod packets;
+pub mod player_help;
 pub mod qs;
 pub mod quest_helpers;
 pub mod reread;
@@ -222,6 +223,8 @@ pub(crate) struct ScriptWorld {
     /// `Player._movieHolder`: the movie (client id) each player is watching (S-API-03).
     pub(crate) movies: HashMap<ObjectId, i32>,
     pub(crate) hit_skill: Option<crate::effects::SkillKey>,
+    /// `CategoryData` (`data/CategoryData.xml`), read by `isInCategory` (S-DATA-01).
+    pub(crate) categories: std::sync::Arc<l2_data::CategoryData>,
 }
 
 impl ScriptWorld {
