@@ -117,6 +117,7 @@ pub mod q00274_skirmish_with_the_werewolves;
 pub mod q00275_dark_winged_spies;
 pub mod q00276_totem_of_the_hestui;
 pub mod q00277_gatekeepers_offering;
+pub mod q00278_home_security;
 pub mod q00279_target_of_opportunity;
 pub mod q00283_the_few_the_proud_the_brave;
 pub mod q00284_muertos_feather;
@@ -248,6 +249,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00275_dark_winged_spies::Q00275DarkWingedSpies);
     r.add(q00276_totem_of_the_hestui::Q00276TotemOfTheHestui);
     r.add(q00277_gatekeepers_offering::Q00277GatekeepersOffering);
+    r.add(q00278_home_security::Q00278HomeSecurity);
     r.add(q00279_target_of_opportunity::Q00279TargetOfOpportunity);
     r.add(q00283_the_few_the_proud_the_brave::Q00283TheFewTheProudTheBrave);
     r.add(q00284_muertos_feather::Q00284MuertosFeather);
