@@ -204,7 +204,13 @@ mod tests {
         registry.add(Q00190LostDream);
         let pages = Pages::of(&Q00190LostDream)
             .page("30512-01.htm", &["30512-03.htm"])
-            .plain(&["30512-02.htm", "30512-03.htm", "30512-04.html", "30512-07.html", "30512-08.html"])
+            .plain(&[
+                "30512-02.htm",
+                "30512-03.htm",
+                "30512-04.html",
+                "30512-07.html",
+                "30512-08.html",
+            ])
             .page("30512-05.html", &["30512-06.html"])
             .plain(&["30512-06.html"])
             .page("30113-01.html", &["30113-02.html"])
@@ -255,7 +261,11 @@ mod tests {
         assert!(t.event(1, NAME, "30512-03.htm").contains("30512-03.htm"));
         assert_eq!(
             t.take_writes(),
-            [rows::insert(NAME, "cond", "1"), rows::insert(NAME, "<state>", "Started"), rows::insert(NAME, "memoState", "1")]
+            [
+                rows::insert(NAME, "cond", "1"),
+                rows::insert(NAME, "<state>", "Started"),
+                rows::insert(NAME, "memoState", "1")
+            ]
         );
         assert!(t.quest_page(1, npcs.kusto).contains("30512-04.html"));
 
@@ -265,7 +275,10 @@ mod tests {
         assert!(t.event(1, NAME, "30113-03.html").contains("30113-03.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "2"), rows::update(NAME, "cond", "2")]
+            [
+                rows::update(NAME, "memoState", "2"),
+                rows::update(NAME, "cond", "2")
+            ]
         );
         assert!(t.quest_page(1, npcs.juris).contains("30113-04.html"));
 
@@ -274,7 +287,10 @@ mod tests {
         assert!(t.event(1, NAME, "30512-06.html").contains("30512-06.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "3"), rows::update(NAME, "cond", "3")]
+            [
+                rows::update(NAME, "memoState", "3"),
+                rows::update(NAME, "cond", "3")
+            ]
         );
         assert!(t.quest_page(1, npcs.kusto).contains("30512-07.html"));
 
@@ -282,7 +298,10 @@ mod tests {
         assert!(t.quest_page(1, npcs.lorain).contains("30673-01.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "4"), rows::update(NAME, "cond", "4")]
+            [
+                rows::update(NAME, "memoState", "4"),
+                rows::update(NAME, "cond", "4")
+            ]
         );
         assert!(t.quest_page(1, npcs.lorain).contains("30673-02.html"));
 
@@ -290,7 +309,10 @@ mod tests {
         assert!(t.quest_page(1, npcs.nikola).contains("30621-01.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "5"), rows::update(NAME, "cond", "5")]
+            [
+                rows::update(NAME, "memoState", "5"),
+                rows::update(NAME, "cond", "5")
+            ]
         );
 
         // Kusto pays on talk: adena, exp and sp (level 42 < 48), `exitQuest(false, true)`.
@@ -298,7 +320,10 @@ mod tests {
         assert_eq!(t.count(1, 57), 109_427);
         assert_eq!(
             t.take_writes(),
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
         assert!(t.quest_page(1, npcs.kusto).contains("already been completed"));
     }

@@ -76,8 +76,7 @@ impl Script for Q00169OffspringOfNightmares {
                                     5000,
                                     &[],
                                 );
-                            } else if (ctx.get_nr_memo_state(guide, GUIDE_MISSION) % 100_000_000)
-                                / 10_000_000
+                            } else if (ctx.get_nr_memo_state(guide, GUIDE_MISSION) % 100_000_000) / 10_000_000
                                 != 1
                             {
                                 ctx.set_nr_memo(guide, GUIDE_MISSION);
@@ -196,7 +195,14 @@ mod tests {
         let pages = Pages::of(&Q00169OffspringOfNightmares)
             .page("30145-02.htm", &["30145-03.htm"])
             .page("30145-06.html", &["30145-07.html"])
-            .plain(&["30145-00.htm", "30145-01.htm", "30145-03.htm", "30145-04.html", "30145-05.html", "30145-07.html"])
+            .plain(&[
+                "30145-00.htm",
+                "30145-01.htm",
+                "30145-03.htm",
+                "30145-04.html",
+                "30145-05.html",
+                "30145-07.html",
+            ])
             .npcs(&[VLASTY]);
         let mut t = ScriptTest::with_pages(registry, NPCS, ITEMS, pages);
         let vlasty = t.spawn(VLASTY, 20);
@@ -241,7 +247,10 @@ mod tests {
         assert!(t.event(1, NAME, "30145-03.htm").contains("30145-03.htm"));
         assert_eq!(
             t.take_writes(),
-            [rows::insert(NAME, "cond", "1"), rows::insert(NAME, "<state>", "Started")]
+            [
+                rows::insert(NAME, "cond", "1"),
+                rows::insert(NAME, "<state>", "Started")
+            ]
         );
 
         let shown = hunt(&mut t, vlasty);
@@ -260,11 +269,18 @@ mod tests {
         let writes = t.take_writes();
         assert_eq!(
             writes[..3],
-            [guide("NRmemo", "41"), guide("NRmemoState41", "100000"), guide("<state>", "Completed")]
+            [
+                guide("NRmemo", "41"),
+                guide("NRmemoState41", "100000"),
+                guide("<state>", "Completed")
+            ]
         );
         assert_eq!(
             writes[3..],
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
         assert!(t.quest_page(1, vlasty).contains("already been completed"));
     }

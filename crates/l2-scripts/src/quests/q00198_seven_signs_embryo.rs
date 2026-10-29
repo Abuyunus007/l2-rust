@@ -73,7 +73,12 @@ impl Script for Q00198SevenSignsEmbryo {
         {
             if !ctx.is_dead(monster.object_id) {
                 ctx.state::<EmbryoState>().is_busy = false;
-                ctx.broadcast_npc_say(monster, ChatType::NpcGeneral, NpcStringId::NextTimeYouWillNotEscape, &[]);
+                ctx.broadcast_npc_say(
+                    monster,
+                    ChatType::NpcGeneral,
+                    NpcStringId::NextTimeYouWillNotEscape,
+                    &[],
+                );
                 ctx.delete_npc(monster);
             }
             // Java `super.onEvent(...)`: the base quest has no answer.
@@ -122,7 +127,12 @@ impl Script for Q00198SevenSignsEmbryo {
                         0,
                         instance,
                     ) {
-                        ctx.broadcast_npc_say(monster, ChatType::NpcGeneral, NpcStringId::YouAreNotTheOwnerOfThatItem, &[]);
+                        ctx.broadcast_npc_say(
+                            monster,
+                            ChatType::NpcGeneral,
+                            NpcStringId::YouAreNotTheOwnerOfThatItem,
+                            &[],
+                        );
                         ctx.set_running(monster);
                         ctx.add_attack_desire(monster, player, 999);
                         ctx.set_intention_attack(monster, player);
@@ -162,7 +172,12 @@ impl Script for Q00198SevenSignsEmbryo {
                     qs.set_cond(ctx, 3, true);
                     htmltext = Some(event.to_owned());
                     if let Some(franz) = npc {
-                        ctx.broadcast_npc_say(franz, ChatType::NpcGeneral, NpcStringId::WeWillBeWithYouAlways, &[]);
+                        ctx.broadcast_npc_say(
+                            franz,
+                            ChatType::NpcGeneral,
+                            NpcStringId::WeWillBeWithYouAlways,
+                            &[],
+                        );
                     }
                 }
             }
@@ -306,7 +321,13 @@ mod tests {
         registry.add(Q00198SevenSignsEmbryo);
         let pages = Pages::of(&Q00198SevenSignsEmbryo)
             .page("32593-01.htm", &["32593-02.html"])
-            .plain(&["32593-02.html", "32593-03.html", "32593-04.html", "32593-05.html", "level_check.html"])
+            .plain(&[
+                "32593-02.html",
+                "32593-03.html",
+                "32593-04.html",
+                "32593-05.html",
+                "level_check.html",
+            ])
             .page("32597-01.html", &["32597-02.html"])
             .page("32597-02.html", &["32597-03.html"])
             .page("32597-03.html", &["32597-04.html"])
@@ -356,7 +377,10 @@ mod tests {
         assert!(t.event(1, NAME, "32593-02.html").contains("32593-02.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::insert(NAME, "cond", "1"), rows::insert(NAME, "<state>", "Started")]
+            [
+                rows::insert(NAME, "cond", "1"),
+                rows::insert(NAME, "<state>", "Started")
+            ]
         );
         assert!(t.quest_page(1, npcs.franz).contains("32597-01.html"));
         assert!(t.event(1, NAME, "32597-02.html").contains("32597-02.html"));
@@ -390,7 +414,10 @@ mod tests {
         assert_eq!(t.count(1, ANCIENT_ADENA), 1_500_000);
         assert_eq!(
             t.take_writes(),
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
         assert!(t.quest_page(1, npcs.wood).contains("already been completed"));
     }

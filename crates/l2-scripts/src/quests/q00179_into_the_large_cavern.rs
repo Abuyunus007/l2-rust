@@ -118,8 +118,8 @@ impl Script for Q00179IntoTheLargeCavern {
 #[cfg(test)]
 mod tests {
     use l2_util::ObjectId as Oid;
-    use l2_world::script::COMPLETED;
     use l2_world::ScriptRegistry;
+    use l2_world::script::COMPLETED;
 
     use super::*;
     use crate::testing::{Pages, ScriptTest, rows};
@@ -159,7 +159,12 @@ mod tests {
             .page("32138-01.htm", &["32138-02.htm"])
             .page("32138-02.htm", &["32138-03.html"])
             .page("32138-03.html", &["32138-04.html"])
-            .plain(&["32138-00.html", "32138-00b.html", "32138-00c.html", "32138-04.html"])
+            .plain(&[
+                "32138-00.html",
+                "32138-00b.html",
+                "32138-00c.html",
+                "32138-04.html",
+            ])
             .page("32258-01.html", &["32258-02.html"])
             .page("32258-02.html", &["32258-03.html"])
             .page("32258-03.html", &["32258-04.html"])
@@ -189,10 +194,20 @@ mod tests {
         assert!(t.event(1, NAME, "32138-03.html").contains("32138-03.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::insert(NAME, "cond", "1"), rows::insert(NAME, "<state>", "Started")]
+            [
+                rows::insert(NAME, "cond", "1"),
+                rows::insert(NAME, "<state>", "Started")
+            ]
         );
         assert!(t.quest_page(1, machine).contains("32258-01.html"));
-        for page in ["32258-02.html", "32258-03.html", "32258-04.html", "32258-05.html", "32258-06.html", "32258-07.html"] {
+        for page in [
+            "32258-02.html",
+            "32258-03.html",
+            "32258-04.html",
+            "32258-05.html",
+            "32258-06.html",
+            "32258-07.html",
+        ] {
             assert!(t.event(1, NAME, page).contains(page));
         }
         t.take();
@@ -228,7 +243,10 @@ mod tests {
         assert_eq!((t.count(1, 391), t.count(1, 413)), (1, 1));
         assert_eq!(
             t.take_writes(),
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
         assert!(t.quest_page(1, kekropus).contains("already been completed"));
     }
@@ -242,13 +260,13 @@ mod tests {
         to_the_machine(&mut t, kekropus, machine);
 
         assert!(t.event(1, NAME, "32258-09.html").contains("32258-09.html"));
-        assert_eq!(
-            (t.count(1, 847), t.count(1, 890), t.count(1, 910)),
-            (2, 2, 1)
-        );
+        assert_eq!((t.count(1, 847), t.count(1, 890), t.count(1, 910)), (2, 2, 1));
         assert_eq!(
             t.take_writes(),
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
     }
 }

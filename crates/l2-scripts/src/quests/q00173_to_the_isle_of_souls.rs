@@ -202,7 +202,10 @@ mod tests {
         assert!(t.event(1, NAME, "30097-03.htm").contains("30097-03.htm"));
         assert_eq!(
             t.take_writes(),
-            [rows::insert(NAME, "cond", "1"), rows::insert(NAME, "<state>", "Started")]
+            [
+                rows::insert(NAME, "cond", "1"),
+                rows::insert(NAME, "<state>", "Started")
+            ]
         );
         assert_eq!(t.count(1, GALLADUCCIS_ORDER), 1);
         assert!(t.quest_page(1, galladucci).contains("30097-04.html"));
@@ -210,17 +213,29 @@ mod tests {
         // Gentler takes the order and gives the hilt; cond 2 (`setCond(2, true)`).
         assert!(t.quest_page(1, gentler).contains("30094-01.html"));
         assert!(t.event(1, NAME, "30094-02.html").contains("30094-02.html"));
-        assert_eq!((t.count(1, GALLADUCCIS_ORDER), t.count(1, MAGIC_SWORD_HILT)), (0, 1));
+        assert_eq!(
+            (t.count(1, GALLADUCCIS_ORDER), t.count(1, MAGIC_SWORD_HILT)),
+            (0, 1)
+        );
         assert_eq!(t.take_writes(), [rows::update(NAME, "cond", "2")]);
         assert!(t.quest_page(1, gentler).contains("30094-03.html"));
 
         // Galladucci: the scroll, the mark goes, `exitQuest(false, true)`.
         assert!(t.quest_page(1, galladucci).contains("30097-05.html"));
         assert!(t.event(1, NAME, "30097-06.html").contains("30097-06.html"));
-        assert_eq!((t.count(1, SCROLL_OF_ESCAPE_KAMAEL_VILLAGE), t.count(1, MARK_OF_TRAVELER)), (1, 0));
+        assert_eq!(
+            (
+                t.count(1, SCROLL_OF_ESCAPE_KAMAEL_VILLAGE),
+                t.count(1, MARK_OF_TRAVELER)
+            ),
+            (1, 0)
+        );
         assert_eq!(
             t.take_writes(),
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
         assert!(t.quest_page(1, galladucci).contains("already been completed"));
     }

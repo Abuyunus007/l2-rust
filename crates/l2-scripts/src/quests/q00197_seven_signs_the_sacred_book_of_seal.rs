@@ -70,7 +70,12 @@ impl Script for Q00197SevenSignsTheSacredBookOfSeal {
         {
             if !ctx.is_dead(monster.object_id) {
                 ctx.state::<SacredBookState>().is_busy = false;
-                ctx.broadcast_npc_say(monster, ChatType::NpcGeneral, NpcStringId::NextTimeYouWillNotEscape, &[]);
+                ctx.broadcast_npc_say(
+                    monster,
+                    ChatType::NpcGeneral,
+                    NpcStringId::NextTimeYouWillNotEscape,
+                    &[],
+                );
                 ctx.delete_npc(monster);
             }
             // Java `super.onEvent(...)`: the base quest has no answer.
@@ -147,8 +152,22 @@ impl Script for Q00197SevenSignsTheSacredBookOfSeal {
                         NpcStringId::S1ThatStrangerMustBeDefeatedHereIsTheUltimateHelp,
                         &[&name],
                     );
-                    if let Some(monster) = ctx.add_spawn(SHILENS_EVIL_THOUGHTS, SHILEN_X, SHILEN_Y, SHILEN_Z, 0, false, 0, 0) {
-                        ctx.broadcast_npc_say(monster, ChatType::NpcGeneral, NpcStringId::YouAreNotTheOwnerOfThatItem, &[]);
+                    if let Some(monster) = ctx.add_spawn(
+                        SHILENS_EVIL_THOUGHTS,
+                        SHILEN_X,
+                        SHILEN_Y,
+                        SHILEN_Z,
+                        0,
+                        false,
+                        0,
+                        0,
+                    ) {
+                        ctx.broadcast_npc_say(
+                            monster,
+                            ChatType::NpcGeneral,
+                            NpcStringId::YouAreNotTheOwnerOfThatItem,
+                            &[],
+                        );
                         ctx.set_running(monster);
                         ctx.add_attack_desire(monster, player, 999);
                         ctx.set_intention_attack(monster, player);
@@ -346,7 +365,12 @@ mod tests {
             .page("32593-01.htm", &["32593-02.htm"])
             .page("32593-02.htm", &["32593-03.htm"])
             .page("32593-03.htm", &["32593-04.html"])
-            .plain(&["32593-04.html", "32593-05.html", "32593-06.html", "level_check.html"])
+            .plain(&[
+                "32593-04.html",
+                "32593-05.html",
+                "32593-06.html",
+                "level_check.html",
+            ])
             .page("32593-07.html", &["32593-08.html"])
             .page("32593-08.html", &["32593-09.html"])
             .plain(&["32593-09.html"])
@@ -414,7 +438,10 @@ mod tests {
         assert!(t.event(1, NAME, "32593-04.html").contains("32593-04.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::insert(NAME, "cond", "1"), rows::insert(NAME, "<state>", "Started")]
+            [
+                rows::insert(NAME, "cond", "1"),
+                rows::insert(NAME, "<state>", "Started")
+            ]
         );
 
         // Orven: cond 2.
@@ -464,7 +491,10 @@ mod tests {
         assert!(t.event(1, NAME, "32593-09.html").contains("32593-09.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
         assert!(t.quest_page(1, npcs.wood).contains("already been completed"));
     }

@@ -130,7 +130,13 @@ mod tests {
         registry.add(Q00170DangerousSeduction);
         let pages = Pages::of(&Q00170DangerousSeduction)
             .page("30305-01.htm", &["30305-04.htm"])
-            .plain(&["30305-02.htm", "30305-03.htm", "30305-04.htm", "30305-05.html", "30305-06.html"])
+            .plain(&[
+                "30305-02.htm",
+                "30305-03.htm",
+                "30305-04.htm",
+                "30305-05.html",
+                "30305-06.html",
+            ])
             .npcs(&[VELIOR]);
         let mut t = ScriptTest::with_pages(registry, NPCS, ITEMS, pages);
         let velior = t.spawn(VELIOR, 20);
@@ -157,7 +163,10 @@ mod tests {
         assert!(t.event(1, NAME, "30305-04.htm").contains("30305-04.htm"));
         assert_eq!(
             t.take_writes(),
-            [rows::insert(NAME, "cond", "1"), rows::insert(NAME, "<state>", "Started")]
+            [
+                rows::insert(NAME, "cond", "1"),
+                rows::insert(NAME, "<state>", "Started")
+            ]
         );
         assert!(t.quest_page(1, velior).contains("30305-05.html"));
 
@@ -172,7 +181,10 @@ mod tests {
         assert_eq!(t.count(1, 57), 102_680);
         assert_eq!(
             t.take_writes(),
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
         assert!(t.quest_page(1, velior).contains("already been completed"));
     }

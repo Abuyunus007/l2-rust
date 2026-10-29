@@ -2,7 +2,6 @@
 // Java: dist/game/data/scripts/quests/Q00188_SealRemoval/Q00188_SealRemoval.java
 
 use l2_util::ObjectId;
-use l2_world::script::COMPLETED;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
 
 // NPCs
@@ -109,7 +108,10 @@ impl Script for Q00188SealRemoval {
         if qs.is_created(ctx) {
             if npc.id == RESEARCHER_LORAIN && !ctx.has_quest_items(player, LORAINES_CERTIFICATE) {
                 // Java reads the four quest states by name: read only, a missing state is `null`.
-                let done = |name: &str| ctx.player_quest_state(player, name).is_some_and(|q| q.is_completed());
+                let done = |name: &str| {
+                    ctx.player_quest_state(player, name)
+                        .is_some_and(|q| q.is_completed())
+                };
                 let missing = |name: &str| ctx.player_quest_state(player, name).is_none();
                 let q184_done = done(ART_OF_PERSUASION);
                 let q185_done = done(NIKOLAS_COOPERATION);
@@ -152,7 +154,7 @@ impl Script for Q00188SealRemoval {
 mod tests {
     use l2_util::ObjectId as Oid;
     use l2_world::ScriptRegistry;
-    use l2_world::script::race;
+    use l2_world::script::{COMPLETED, race};
 
     use super::*;
     use crate::testing::{Pages, ScriptTest, rows};
@@ -184,7 +186,12 @@ mod tests {
 
     fn setup() -> (ScriptTest, Oid, Oid, Oid) {
         let mut registry = ScriptRegistry::new();
-        for name in [ART_OF_PERSUASION, NIKOLAS_COOPERATION, CONTRACT_EXECUTION, NIKOLAS_HEART] {
+        for name in [
+            ART_OF_PERSUASION,
+            NIKOLAS_COOPERATION,
+            CONTRACT_EXECUTION,
+            NIKOLAS_HEART,
+        ] {
             registry.add(StandIn(name));
         }
         registry.add(Q00188SealRemoval);
@@ -258,7 +265,10 @@ mod tests {
         assert!(t.event(1, NAME, "30621-03.html").contains("30621-03.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "2"), rows::update(NAME, "cond", "2")]
+            [
+                rows::update(NAME, "memoState", "2"),
+                rows::update(NAME, "cond", "2")
+            ]
         );
         assert!(t.quest_page(1, nikola).contains("30621-05.html"));
 
@@ -269,7 +279,10 @@ mod tests {
         assert_eq!(t.count(1, 57), 98_583);
         assert_eq!(
             t.take_writes(),
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
         assert!(t.quest_page(1, lorain).contains("already been completed"));
     }

@@ -69,7 +69,8 @@ impl Script for Q00186ContractExecution {
         let mut htmltext = None;
         match event {
             "30673-03.htm" => {
-                if ctx.player_level(player) >= MIN_LEVEL && ctx.has_quest_items(player, LORAINES_CERTIFICATE) {
+                if ctx.player_level(player) >= MIN_LEVEL && ctx.has_quest_items(player, LORAINES_CERTIFICATE)
+                {
                     qs.start_quest(ctx);
                     qs.set_memo_state(ctx, 1);
                     ctx.give_items(player, METALLOGRAPH_RESEARCH_REPORT, 1);
@@ -120,7 +121,10 @@ impl Script for Q00186ContractExecution {
             && qs.is_memo_state(ctx, 2)
             && ctx.check_if_in_range(ctx.alt_party_range(), npc.object_id, killer, false)
         {
-            let chance = MONSTERS.iter().find(|(id, _)| *id == npc.id).map_or(0, |(_, chance)| *chance);
+            let chance = MONSTERS
+                .iter()
+                .find(|(id, _)| *id == npc.id)
+                .map_or(0, |(_, chance)| *chance);
             if ctx.get_random(100) < chance && !ctx.has_quest_items(killer, LETO_LIZARDMAN_ACCESSORY) {
                 ctx.give_items(killer, LETO_LIZARDMAN_ACCESSORY, 1);
                 ctx.play_sound(killer, QuestSound::ItemsoundQuestItemget);
@@ -305,7 +309,13 @@ mod tests {
                 rows::insert(NAME, "memoState", "1"),
             ]
         );
-        assert_eq!((t.count(1, LORAINES_CERTIFICATE), t.count(1, METALLOGRAPH_RESEARCH_REPORT)), (0, 1));
+        assert_eq!(
+            (
+                t.count(1, LORAINES_CERTIFICATE),
+                t.count(1, METALLOGRAPH_RESEARCH_REPORT)
+            ),
+            (0, 1)
+        );
 
         // Nikola: memo state 2 and cond 2.
         assert!(t.quest_page(1, npcs.nikola).contains("30621-01.html"));
@@ -313,7 +323,10 @@ mod tests {
         assert!(t.event(1, NAME, "30621-03.html").contains("30621-03.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "2"), rows::update(NAME, "cond", "2")]
+            [
+                rows::update(NAME, "memoState", "2"),
+                rows::update(NAME, "cond", "2")
+            ]
         );
         assert!(t.quest_page(1, npcs.nikola).contains("30621-04.html"));
 
@@ -336,7 +349,10 @@ mod tests {
         assert_eq!(t.count(1, 57), 105_083);
         assert_eq!(
             t.take_writes(),
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
         assert!(t.quest_page(1, npcs.lorain).contains("already been completed"));
     }

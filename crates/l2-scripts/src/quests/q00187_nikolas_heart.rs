@@ -244,7 +244,10 @@ mod tests {
                 rows::insert(NAME, "memoState", "1"),
             ]
         );
-        assert_eq!((t.count(1, METALLOGRAPH), t.count(1, LORAINES_CERTIFICATE)), (1, 0));
+        assert_eq!(
+            (t.count(1, METALLOGRAPH), t.count(1, LORAINES_CERTIFICATE)),
+            (1, 0)
+        );
         assert!(t.quest_page(1, lorain).contains("30673-04.html"));
 
         // Nikola: the memo state 2 and cond 2.
@@ -253,7 +256,10 @@ mod tests {
         assert!(t.event(1, NAME, "30621-03.html").contains("30621-03.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "2"), rows::update(NAME, "cond", "2")]
+            [
+                rows::update(NAME, "memoState", "2"),
+                rows::update(NAME, "cond", "2")
+            ]
         );
         assert!(t.quest_page(1, nikola).contains("30621-04.html"));
 
@@ -264,7 +270,10 @@ mod tests {
         assert_eq!(t.count(1, 57), 93_383);
         assert_eq!(
             t.take_writes(),
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
         assert!(t.quest_page(1, lorain).contains("already been completed"));
     }

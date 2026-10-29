@@ -258,7 +258,13 @@ mod tests {
             .page("30676-02.htm", &["30676-03.html"])
             .page("30676-03.html", &["video"])
             .page("30676-06.html", &["video"])
-            .plain(&["30676-04.html", "30676-05.html", "30676-07.html", "30676-08.html", "30676-09.html"])
+            .plain(&[
+                "30676-04.html",
+                "30676-05.html",
+                "30676-07.html",
+                "30676-08.html",
+                "30676-09.html",
+            ])
             .page("30676-09.html", &["30676-10.html"])
             .page("30676-10.html", &["30676-11.html"])
             .page("30676-11.html", &["30676-12.html"])
@@ -308,7 +314,10 @@ mod tests {
         assert!(t.event(1, NAME, "30676-03.html").contains("30676-03.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::insert(NAME, "cond", "1"), rows::insert(NAME, "<state>", "Started")]
+            [
+                rows::insert(NAME, "cond", "1"),
+                rows::insert(NAME, "<state>", "Started")
+            ]
         );
 
         // The video: cond 2, and after 32 s the player is taken to the Hideout.
@@ -323,7 +332,14 @@ mod tests {
         );
         // Back to the NPCs for the rest of the test.
         t.world.run_as_script(NAME, |ctx| {
-            ctx.teleport_player(Oid(1), crate::testing::X, crate::testing::Y, crate::testing::Z, -1, false);
+            ctx.teleport_player(
+                Oid(1),
+                crate::testing::X,
+                crate::testing::Y,
+                crate::testing::Z,
+                -1,
+                false,
+            );
         });
         t.take();
 
@@ -354,7 +370,13 @@ mod tests {
 
         // Croop takes the necklace back and gives the letter, cond 7.
         assert!(t.quest_page(1, npcs.croop).contains("30676-09.html"));
-        for page in ["30676-10.html", "30676-11.html", "30676-12.html", "30676-13.html", "30676-14.html"] {
+        for page in [
+            "30676-10.html",
+            "30676-11.html",
+            "30676-12.html",
+            "30676-13.html",
+            "30676-14.html",
+        ] {
             assert!(t.event(1, NAME, page).contains(page));
         }
         assert_eq!((t.count(1, JACOBS_NECKLACE), t.count(1, CROOPS_LETTER)), (0, 1));
@@ -366,7 +388,10 @@ mod tests {
         assert!(t.event(1, NAME, "reward").contains("30191-03.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
         assert!(t.quest_page(1, npcs.croop).contains("30676-05.html"));
     }

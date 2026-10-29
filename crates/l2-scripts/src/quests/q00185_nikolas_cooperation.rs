@@ -49,7 +49,12 @@ impl Script for Q00185NikolasCooperation {
 
     fn setup(&self, s: &mut ScriptSetup) {
         s.add_start_npc(&[MAESTRO_NIKOLA]);
-        s.add_talk_id(&[MAESTRO_NIKOLA, RESEARCHER_LORAIN, DESTROYED_DEVICE, ALARM_OF_GIANT]);
+        s.add_talk_id(&[
+            MAESTRO_NIKOLA,
+            RESEARCHER_LORAIN,
+            DESTROYED_DEVICE,
+            ALARM_OF_GIANT,
+        ]);
         s.register_quest_items(&[METALLOGRAPH, BROKEN_METAL_PIECES, NIKOLAS_MAP]);
     }
 
@@ -74,12 +79,14 @@ impl Script for Q00185NikolasCooperation {
                 }
             }
             "30621-03.htm" => {
-                htmltext = Some(if ctx.player_level(player) >= MIN_LEVEL {
-                    event
-                } else {
-                    "30621-03a.htm"
-                }
-                .to_owned());
+                htmltext = Some(
+                    if ctx.player_level(player) >= MIN_LEVEL {
+                        event
+                    } else {
+                        "30621-03a.htm"
+                    }
+                    .to_owned(),
+                );
             }
             "30621-04.htm" | "30621-05.htm" => htmltext = Some(event.to_owned()),
             "30673-02.html" => {
@@ -127,14 +134,18 @@ impl Script for Q00185NikolasCooperation {
                 // Java `npc.getVariables()` is the NPC's own variables (shared with other scripts).
                 if let Some(npc) = npc
                     && qs.is_memo_state(ctx, 3)
-                    && !ctx.world_mut().npc_variables_mut(npc.object_id).get_bool("SPAWNED", false)
+                    && !ctx
+                        .world_mut()
+                        .npc_variables_mut(npc.object_id)
+                        .get_bool("SPAWNED", false)
                 {
                     let variables = ctx.world_mut().npc_variables_mut(npc.object_id);
                     variables.set_bool("SPAWNED", true);
                     variables.set_int("PLAYER_ID", player.0);
                     // `addSpawn(ALARM, x + 80, y + 60, z, 16384, false, 0)` at the player's place.
                     if let Some((x, y, z)) = ctx.world().position_of(player)
-                        && let Some(alarm) = ctx.add_spawn(ALARM_OF_GIANT, x + 80, y + 60, z, 16384, false, 0, 0)
+                        && let Some(alarm) =
+                            ctx.add_spawn(ALARM_OF_GIANT, x + 80, y + 60, z, 16384, false, 0, 0)
                     {
                         // The alarm's AI reads the player and the device (`player0`, `npc0`).
                         let alarm_vars = ctx.world_mut().npc_variables_mut(alarm.object_id);
@@ -176,7 +187,9 @@ impl Script for Q00185NikolasCooperation {
                         .player_quest_state(player, RELIC_EXPLORATION)
                         .is_some_and(|q183| q183.is_completed());
                     let has_184 = ctx.player_quest_state(player, ART_OF_PERSUASION).is_some();
-                    let has_185 = ctx.player_quest_state(player, "Q00185_NikolasCooperation").is_some();
+                    let has_185 = ctx
+                        .player_quest_state(player, "Q00185_NikolasCooperation")
+                        .is_some();
                     if relic_done && has_184 && has_185 {
                         htmltext = if ctx.player_level(player) >= MIN_LEVEL {
                             "30621-01.htm"
@@ -371,13 +384,19 @@ mod tests {
         assert_eq!(t.count(1, NIKOLAS_MAP), 0);
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "2"), rows::update(NAME, "cond", "2")]
+            [
+                rows::update(NAME, "memoState", "2"),
+                rows::update(NAME, "cond", "2")
+            ]
         );
         assert!(t.quest_page(1, npcs.lorain).contains("30673-04.html"));
         assert!(t.event(1, NAME, "30673-05.html").contains("30673-05.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "3"), rows::update(NAME, "cond", "3")]
+            [
+                rows::update(NAME, "memoState", "3"),
+                rows::update(NAME, "cond", "3")
+            ]
         );
 
         // The device: the alarm at the player's side, once.
@@ -398,7 +417,10 @@ mod tests {
         assert_eq!(t.count(1, METALLOGRAPH), 1);
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "6"), rows::update(NAME, "cond", "4")]
+            [
+                rows::update(NAME, "memoState", "6"),
+                rows::update(NAME, "cond", "4")
+            ]
         );
 
         // Lorain: the metallograph is in the inventory, so the certificate is the reward.
@@ -410,7 +432,10 @@ mod tests {
         assert_eq!(t.count(1, 57), 72_527);
         assert_eq!(
             t.take_writes(),
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
     }
 }

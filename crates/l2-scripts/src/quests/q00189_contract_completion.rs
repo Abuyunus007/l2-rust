@@ -39,7 +39,12 @@ impl Script for Q00189ContractCompletion {
 
     fn setup(&self, s: &mut ScriptSetup) {
         s.add_start_npc(&[BLUEPRINT_SELLER_LUKA]);
-        s.add_talk_id(&[BLUEPRINT_SELLER_LUKA, HEAD_BLACKSMITH_KUSTO, RESEARCHER_LORAIN, SHEGFIELD]);
+        s.add_talk_id(&[
+            BLUEPRINT_SELLER_LUKA,
+            HEAD_BLACKSMITH_KUSTO,
+            RESEARCHER_LORAIN,
+            SHEGFIELD,
+        ]);
         s.register_quest_items(&[SCROLL_OF_DECODING]);
     }
 
@@ -213,7 +218,12 @@ mod tests {
             .plain(&["30068-03.html", "30068-04.html"])
             .page("30512-01.html", &["30512-02.html"])
             .plain(&["30512-02.html"])
-            .npcs(&[SHEGFIELD, HEAD_BLACKSMITH_KUSTO, RESEARCHER_LORAIN, BLUEPRINT_SELLER_LUKA]);
+            .npcs(&[
+                SHEGFIELD,
+                HEAD_BLACKSMITH_KUSTO,
+                RESEARCHER_LORAIN,
+                BLUEPRINT_SELLER_LUKA,
+            ]);
         let mut t = ScriptTest::with_pages(registry, NPCS, ITEMS, pages);
         let npcs = Npcs {
             luka: t.spawn(BLUEPRINT_SELLER_LUKA, 20),
@@ -275,7 +285,10 @@ mod tests {
         assert_eq!(t.count(1, SCROLL_OF_DECODING), 0);
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "2"), rows::update(NAME, "cond", "2")]
+            [
+                rows::update(NAME, "memoState", "2"),
+                rows::update(NAME, "cond", "2")
+            ]
         );
         assert!(t.quest_page(1, npcs.lorain).contains("30673-03.html"));
 
@@ -285,7 +298,10 @@ mod tests {
         assert!(t.event(1, NAME, "30068-03.html").contains("30068-03.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "3"), rows::update(NAME, "cond", "3")]
+            [
+                rows::update(NAME, "memoState", "3"),
+                rows::update(NAME, "cond", "3")
+            ]
         );
         assert!(t.quest_page(1, npcs.shegfield).contains("30068-04.html"));
 
@@ -293,7 +309,10 @@ mod tests {
         assert!(t.quest_page(1, npcs.lorain).contains("30673-04.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "4"), rows::update(NAME, "cond", "4")]
+            [
+                rows::update(NAME, "memoState", "4"),
+                rows::update(NAME, "cond", "4")
+            ]
         );
 
         // Kusto pays: adena, exp and sp (level 42 < 48), `exitQuest(false, true)`.
@@ -302,7 +321,10 @@ mod tests {
         assert_eq!(t.count(1, 57), 121_527);
         assert_eq!(
             t.take_writes(),
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
         assert!(t.quest_page(1, npcs.luka).contains("already been completed"));
     }

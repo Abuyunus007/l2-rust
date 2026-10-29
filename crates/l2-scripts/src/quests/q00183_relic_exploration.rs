@@ -256,7 +256,10 @@ mod tests {
         assert!(t.event(1, NAME, "30673-04.html").contains("30673-04.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "2"), rows::update(NAME, "cond", "2")]
+            [
+                rows::update(NAME, "memoState", "2"),
+                rows::update(NAME, "cond", "2")
+            ]
         );
         assert!(t.quest_page(1, lorain).contains("30673-05.html"));
 
@@ -266,7 +269,10 @@ mod tests {
         assert_eq!(t.count(1, 57), 18_100);
         assert_eq!(
             t.take_writes(),
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
 
         // The choice of the page sends the event to Art of Persuasion (level 40: the "a" page).

@@ -22,12 +22,12 @@ const UNSEALED_ALTAR: SkillKey = SkillKey { id: 4549, level: 1 };
 const WARRIORS_SWORD: i32 = 9720;
 const SOULSHOTS_NO_GRADE_FOR_ROOKIES: (i32, i64) = (5789, 7000);
 const REWARDS: [(i32, i64); 6] = [
-    (1060, 100),  // Lesser Healing Potion
-    (4412, 10),   // Echo Crystal - Theme of Battle
-    (4413, 10),   // Echo Crystal - Theme of Love
-    (4414, 10),   // Echo Crystal - Theme of Solitude
-    (4415, 10),   // Echo Crystal - Theme of Feast
-    (4416, 10),   // Echo Crystal - Theme of Celebration
+    (1060, 100), // Lesser Healing Potion
+    (4412, 10),  // Echo Crystal - Theme of Battle
+    (4413, 10),  // Echo Crystal - Theme of Love
+    (4414, 10),  // Echo Crystal - Theme of Solitude
+    (4415, 10),  // Echo Crystal - Theme of Feast
+    (4416, 10),  // Echo Crystal - Theme of Celebration
 ];
 
 // Monsters
@@ -108,7 +108,11 @@ impl Script for Q00175TheWayOfTheWarrior {
                     ctx.give_items(player, WARRIORS_SWORD, 1);
                     if ctx.player_level(player) < 25 {
                         ctx.play_sound_named(player, "tutorial_voice_026");
-                        ctx.give_items(player, SOULSHOTS_NO_GRADE_FOR_ROOKIES.0, SOULSHOTS_NO_GRADE_FOR_ROOKIES.1);
+                        ctx.give_items(
+                            player,
+                            SOULSHOTS_NO_GRADE_FOR_ROOKIES.0,
+                            SOULSHOTS_NO_GRADE_FOR_ROOKIES.1,
+                        );
                     }
                     // Newbie Guide: the mission counter of the guide, when it is in the game.
                     if let Some(guide) = ctx.quest_state_of(NEWBIE_GUIDE, player, true) {
@@ -172,7 +176,16 @@ impl Script for Q00175TheWayOfTheWarrior {
                 qs.set_cond(ctx, 3, true);
             }
         } else if let Some(qs) = ctx.random_party_member_state(killer, 7, 3, Some(npc))
-            && ctx.give_item_randomly(qs.player(), Some(npc), MUERTOS_CLAW.0, 1, MUERTOS_CLAW.1, 1, 1.0, true)
+            && ctx.give_item_randomly(
+                qs.player(),
+                Some(npc),
+                MUERTOS_CLAW.0,
+                1,
+                MUERTOS_CLAW.1,
+                1,
+                1.0,
+                true,
+            )
         {
             qs.set_cond(ctx, 8, true);
         }
@@ -269,7 +282,6 @@ mod tests {
         <item id="4415" type="EtcItem" name="Echo Crystal D"><set name="is_stackable" val="true"/></item>
         <item id="4416" type="EtcItem" name="Echo Crystal E"><set name="is_stackable" val="true"/></item>"#;
 
-
     /// Java `NewbieGuide` as far as this quest writes it: a script of that name.
     struct NewbieGuide;
 
@@ -301,7 +313,13 @@ mod tests {
             .plain(&["32138-10.html", "32138-11.html"])
             .page("32138-12.html", &["32138-13.html"])
             .plain(&["32138-13.html"])
-            .plain(&["32133-01.html", "32133-02.html", "32133-03.html", "32133-04.html", "32133-07.html"])
+            .plain(&[
+                "32133-01.html",
+                "32133-02.html",
+                "32133-03.html",
+                "32133-04.html",
+                "32133-07.html",
+            ])
             .page("32133-05.html", &["32133-06.html"])
             .plain(&["32133-06.html"])
             .npcs(&[KEKROPUS, PERWAN]);
@@ -355,7 +373,10 @@ mod tests {
         assert!(t.quest_page(1, npcs.perwan).contains("32133-01.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "2"), rows::update(NAME, "cond", "2")]
+            [
+                rows::update(NAME, "memoState", "2"),
+                rows::update(NAME, "cond", "2")
+            ]
         );
 
         // The werewolf drops the tails (cond 3 with the first drop).
@@ -376,20 +397,29 @@ mod tests {
         assert_eq!(t.count(1, WOLF_TAIL.0), 0);
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "3"), rows::update(NAME, "cond", "4")]
+            [
+                rows::update(NAME, "memoState", "3"),
+                rows::update(NAME, "cond", "4")
+            ]
         );
 
         // Kekropus: memo state 4, cond 5; Perwan sends the player on (memo state 5, cond 6, the altar).
         assert!(t.quest_page(1, npcs.kekropus).contains("32138-07.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "4"), rows::update(NAME, "cond", "5")]
+            [
+                rows::update(NAME, "memoState", "4"),
+                rows::update(NAME, "cond", "5")
+            ]
         );
         assert!(t.quest_page(1, npcs.perwan).contains("32133-05.html"));
         assert!(t.event(1, NAME, "32133-06.html").contains("32133-06.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "5"), rows::update(NAME, "cond", "6")]
+            [
+                rows::update(NAME, "memoState", "5"),
+                rows::update(NAME, "cond", "6")
+            ]
         );
 
         // Kekropus: the event to cond 7 (memo state 6).
@@ -397,7 +427,10 @@ mod tests {
         assert!(t.event(1, NAME, "32138-10.html").contains("32138-10.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "6"), rows::update(NAME, "cond", "7")]
+            [
+                rows::update(NAME, "memoState", "6"),
+                rows::update(NAME, "cond", "7")
+            ]
         );
         assert!(t.quest_page(1, npcs.kekropus).contains("32138-11.html"));
 
@@ -413,7 +446,10 @@ mod tests {
 
         // The sword, the rookie soulshots, the guide's mission, the rewards, `exitQuest(false, true)`.
         assert_eq!(t.count(1, WARRIORS_SWORD), 1);
-        assert_eq!(t.count(1, SOULSHOTS_NO_GRADE_FOR_ROOKIES.0), SOULSHOTS_NO_GRADE_FOR_ROOKIES.1);
+        assert_eq!(
+            t.count(1, SOULSHOTS_NO_GRADE_FOR_ROOKIES.0),
+            SOULSHOTS_NO_GRADE_FOR_ROOKIES.1
+        );
         assert_eq!(t.count(1, 57), 8799);
         assert_eq!(t.count(1, MUERTOS_CLAW.0), 0);
         for (item_id, count) in REWARDS {
@@ -423,10 +459,16 @@ mod tests {
         assert!(names_to(&out, 1).contains(&"SOCIAL_ACTION".to_owned()));
         let writes = t.take_writes();
         let guide = |var: &str, value: &str| rows::insert(NEWBIE_GUIDE, var, value);
-        assert_eq!(writes[..2], [guide("NRmemo", "41"), guide("NRmemoState41", "100000")]);
+        assert_eq!(
+            writes[..2],
+            [guide("NRmemo", "41"), guide("NRmemoState41", "100000")]
+        );
         assert_eq!(
             writes[2..],
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
         assert!(t.quest_page(1, npcs.kekropus).contains("already been completed"));
     }

@@ -146,16 +146,25 @@ mod tests {
         assert!(t.event(1, NAME, "32140-04.htm").contains("32140-04.htm"));
         assert_eq!(
             t.take_writes(),
-            [rows::insert(NAME, "cond", "1"), rows::insert(NAME, "<state>", "Started")]
+            [
+                rows::insert(NAME, "cond", "1"),
+                rows::insert(NAME, "<state>", "Started")
+            ]
         );
         assert!(t.quest_page(1, zenya).contains("32140-05.html"));
 
         assert!(t.quest_page(1, ragara).contains("32163-01.html"));
         assert!(t.event(1, NAME, "32163-02.html").contains("32163-02.html"));
-        assert_eq!((t.count(1, SCROLL_OF_ESCAPE_GIRAN), t.count(1, MARK_OF_TRAVELER)), (1, 1));
+        assert_eq!(
+            (t.count(1, SCROLL_OF_ESCAPE_GIRAN), t.count(1, MARK_OF_TRAVELER)),
+            (1, 1)
+        );
         assert_eq!(
             t.take_writes(),
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
         assert!(t.quest_page(1, zenya).contains("already been completed"));
     }

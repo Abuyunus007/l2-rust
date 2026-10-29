@@ -163,8 +163,8 @@ impl Script for Q00174SupplyCheck {
 #[cfg(test)]
 mod tests {
     use l2_util::ObjectId as Oid;
-    use l2_world::script::race;
     use l2_world::ScriptRegistry;
+    use l2_world::script::race;
 
     use super::*;
     use crate::testing::{Pages, ScriptTest, rows};
@@ -253,7 +253,10 @@ mod tests {
         assert!(t.event(1, NAME, "32173-03.htm").contains("32173-03.htm"));
         assert_eq!(
             t.take_writes(),
-            [rows::insert(NAME, "cond", "1"), rows::insert(NAME, "<state>", "Started")]
+            [
+                rows::insert(NAME, "cond", "1"),
+                rows::insert(NAME, "<state>", "Started")
+            ]
         );
         assert!(t.quest_page(1, npcs.marcela).contains("32173-04.html"));
 

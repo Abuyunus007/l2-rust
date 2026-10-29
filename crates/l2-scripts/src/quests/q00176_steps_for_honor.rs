@@ -167,7 +167,10 @@ mod tests {
         assert!(t.event(1, NAME, "36479-04.html").contains("36479-04.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::insert(NAME, "cond", "1"), rows::insert(NAME, "<state>", "Started")]
+            [
+                rows::insert(NAME, "cond", "1"),
+                rows::insert(NAME, "<state>", "Started")
+            ]
         );
         assert!(t.quest_page(1, rapidus).contains("36479-06.html"));
 
@@ -184,7 +187,10 @@ mod tests {
         assert_eq!(t.count(1, CLOAK), 1);
         assert_eq!(
             t.take_writes(),
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
         assert!(t.quest_page(1, rapidus).contains("36479-01.html"));
     }
