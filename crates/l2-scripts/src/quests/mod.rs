@@ -126,6 +126,7 @@ pub mod q00284_muertos_feather;
 pub mod q00286_fabulous_feathers;
 pub mod q00287_figuring_it_out;
 pub mod q00288_handle_with_care;
+pub mod q00289_no_more_soup_for_you;
 pub mod q00290_threat_removal;
 pub mod q00291_revenge_of_the_redbonnet;
 pub mod q00294_covert_business;
@@ -263,6 +264,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00286_fabulous_feathers::Q00286FabulousFeathers);
     r.add(q00287_figuring_it_out::Q00287FiguringItOut);
     r.add(q00288_handle_with_care::Q00288HandleWithCare);
+    r.add(q00289_no_more_soup_for_you::Q00289NoMoreSoupForYou);
     r.add(q00290_threat_removal::Q00290ThreatRemoval);
     r.add(q00291_revenge_of_the_redbonnet::Q00291RevengeOfTheRedbonnet);
     r.add(q00294_covert_business::Q00294CovertBusiness);
