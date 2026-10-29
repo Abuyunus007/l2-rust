@@ -214,6 +214,9 @@ mod tests {
         t.quest_page(1, npcs.torrant);
         t.event(1, NAME, "32016-02.html");
         t.take_writes();
-        assert!(t.quest_page(1, npcs.moira).contains("This quest has already been completed."));
+        assert!(
+            t.quest_page(1, npcs.moira)
+                .contains("This quest has already been completed.")
+        );
     }
 }

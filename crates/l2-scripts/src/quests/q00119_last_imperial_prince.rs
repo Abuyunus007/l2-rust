@@ -97,14 +97,13 @@ impl Script for Q00119LastImperialPrince {
                 }
             }
             CREATED => {
-                htmltext = if ctx.player_level(player) >= MIN_LEVEL
-                    && ctx.has_quest_items(player, ANTIQUE_BROOCH)
-                {
-                    "31453-01.htm"
-                } else {
-                    "31453-05.html"
-                }
-                .to_owned();
+                htmltext =
+                    if ctx.player_level(player) >= MIN_LEVEL && ctx.has_quest_items(player, ANTIQUE_BROOCH) {
+                        "31453-01.htm"
+                    } else {
+                        "31453-05.html"
+                    }
+                    .to_owned();
             }
             STARTED => {
                 if npc.id == NAMELESS_SPIRIT {

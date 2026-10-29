@@ -296,7 +296,13 @@ mod tests {
         registry.add(Q00117TheOceanOfDistantStars);
         let pages = Pages::of(&Q00117TheOceanOfDistantStars)
             .page("32053-01.htm", &["32053-02.htm"])
-            .plain(&["32053-02.htm", "32053-03.htm", "32053-04.html", "32053-07.html", "32053-10.html"])
+            .plain(&[
+                "32053-02.htm",
+                "32053-03.htm",
+                "32053-04.html",
+                "32053-07.html",
+                "32053-10.html",
+            ])
             .page("32053-05.html", &["32053-06.html"])
             .plain(&["32053-06.html"])
             .page("32053-08.html", &["32053-09.html"])
@@ -316,7 +322,13 @@ mod tests {
             .page("32054-01.html", &["32054-02.html"])
             .page("32054-02.html", &["32054-03.html"])
             .plain(&["32054-03.html"])
-            .npcs(&[OBI, ABEY, GHOST_OF_A_RAILROAD_ENGINEER, GHOST_OF_AN_ANCIENT_RAILROAD_ENGINEER, BOX])
+            .npcs(&[
+                OBI,
+                ABEY,
+                GHOST_OF_A_RAILROAD_ENGINEER,
+                GHOST_OF_AN_ANCIENT_RAILROAD_ENGINEER,
+                BOX,
+            ])
             .file("data/html/noquest.htm", "<html><body>noquest</body></html>");
         let mut t = ScriptTest::with_pages(registry, NPCS, ITEMS, pages);
         let npcs = Npcs {
@@ -451,6 +463,9 @@ mod tests {
             [delete(NAME, false), update(NAME, "<state>", "Completed")]
         );
         assert!(t.world.quest_list(Oid(1)).quests.is_empty());
-        assert!(t.quest_page(1, npcs.abey).contains("This quest has already been completed."));
+        assert!(
+            t.quest_page(1, npcs.abey)
+                .contains("This quest has already been completed.")
+        );
     }
 }

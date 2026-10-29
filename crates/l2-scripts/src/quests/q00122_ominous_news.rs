@@ -173,6 +173,9 @@ mod tests {
         assert!(t.world.quest_list(Oid(1)).quests.is_empty());
 
         // Done: the "already completed" page.
-        assert!(t.quest_page(1, npcs.moira).contains("This quest has already been completed."));
+        assert!(
+            t.quest_page(1, npcs.moira)
+                .contains("This quest has already been completed.")
+        );
     }
 }

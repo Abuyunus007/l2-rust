@@ -218,6 +218,9 @@ mod tests {
             [delete(NAME, false), update(NAME, "<state>", "Completed")]
         );
         assert!(t.world.quest_list(Oid(1)).quests.is_empty());
-        assert!(t.quest_page(1, npcs.pierce).contains("This quest has already been completed."));
+        assert!(
+            t.quest_page(1, npcs.pierce)
+                .contains("This quest has already been completed.")
+        );
     }
 }

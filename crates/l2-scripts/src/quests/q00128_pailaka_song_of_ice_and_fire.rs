@@ -153,8 +153,7 @@ impl Script for Q00128PailakaSongOfIceAndFire {
                     // Java `inst.setDuration(EXIT_TIME * 60000)`, `setEmptyDestroyTime(0)`.
                     ctx.world_mut()
                         .set_instance_duration(instance_id, EXIT_TIME * 60_000);
-                    ctx.world_mut()
-                        .set_instance_empty_destroy_time(instance_id, 0);
+                    ctx.world_mut().set_instance_empty_destroy_time(instance_id, 0);
                     let inside = ctx
                         .world()
                         .instance(instance_id)
@@ -440,7 +439,10 @@ mod tests {
         // only `exitQuest(false, true)`.
         t.world.run_as_script(NAME, |ctx| {
             ctx.tele_npc_to(
-                ScriptNpc { object_id: npcs.adler2, id: ADLER2 },
+                ScriptNpc {
+                    object_id: npcs.adler2,
+                    id: ADLER2,
+                },
                 crate::testing::X,
                 crate::testing::Y,
                 crate::testing::Z,

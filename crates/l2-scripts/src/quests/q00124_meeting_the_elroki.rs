@@ -202,7 +202,13 @@ mod tests {
         registry.add(Q00124MeetingTheElroki);
         let pages = Pages::of(&Q00124MeetingTheElroki)
             .page("32113-01.htm", &["32113-02.htm"])
-            .plain(&["32113-01a.htm", "32113-06.html", "32113-07.html", "32114-01.html", "32114-03.html"])
+            .plain(&[
+                "32113-01a.htm",
+                "32113-06.html",
+                "32113-07.html",
+                "32114-01.html",
+                "32114-03.html",
+            ])
             .page("32113-02.htm", &["32113-03.html"])
             .page("32113-03.html", &["32113-04.html"])
             .plain(&["32113-04.html"])
@@ -293,6 +299,9 @@ mod tests {
             [delete(NAME, false), update(NAME, "<state>", "Completed")]
         );
         assert!(t.world.quest_list(Oid(1)).quests.is_empty());
-        assert!(t.quest_page(1, npcs.marquez).contains("This quest has already been completed."));
+        assert!(
+            t.quest_page(1, npcs.marquez)
+                .contains("This quest has already been completed.")
+        );
     }
 }
