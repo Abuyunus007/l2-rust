@@ -123,6 +123,7 @@ pub mod q00291_revenge_of_the_redbonnet;
 pub mod q00294_covert_business;
 pub mod q00295_dreaming_of_the_skies;
 pub mod q00297_gatekeepers_favor;
+pub mod q00298_lizardmens_conspiracy;
 pub mod q00300_hunting_leto_lizardman;
 pub mod q00303_collect_arrowheads;
 pub mod q00317_catch_the_wind;
@@ -250,6 +251,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00294_covert_business::Q00294CovertBusiness);
     r.add(q00295_dreaming_of_the_skies::Q00295DreamingOfTheSkies);
     r.add(q00297_gatekeepers_favor::Q00297GatekeepersFavor);
+    r.add(q00298_lizardmens_conspiracy::Q00298LizardmensConspiracy);
     r.add(q00300_hunting_leto_lizardman::Q00300HuntingLetoLizardman);
     r.add(q00303_collect_arrowheads::Q00303CollectArrowheads);
     r.add(q00317_catch_the_wind::Q00317CatchTheWind);
