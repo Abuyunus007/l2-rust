@@ -106,6 +106,7 @@ pub mod q00268_traces_of_evil;
 pub mod q00272_wrath_of_ancestors;
 pub mod q00275_dark_winged_spies;
 pub mod q00277_gatekeepers_offering;
+pub mod q00284_muertos_feather;
 pub mod q00286_fabulous_feathers;
 pub mod q00291_revenge_of_the_redbonnet;
 pub mod q00295_dreaming_of_the_skies;
@@ -219,6 +220,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00272_wrath_of_ancestors::Q00272WrathOfAncestors);
     r.add(q00275_dark_winged_spies::Q00275DarkWingedSpies);
     r.add(q00277_gatekeepers_offering::Q00277GatekeepersOffering);
+    r.add(q00284_muertos_feather::Q00284MuertosFeather);
     r.add(q00286_fabulous_feathers::Q00286FabulousFeathers);
     r.add(q00291_revenge_of_the_redbonnet::Q00291RevengeOfTheRedbonnet);
     r.add(q00295_dreaming_of_the_skies::Q00295DreamingOfTheSkies);
