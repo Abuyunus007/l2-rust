@@ -559,6 +559,10 @@ pub fn script_settings(config: &GameConfig, config_dir: &Path) -> l2_world::Scri
         knightsepaulette_points: config.feature.knightsepaulette_points,
         ballista_points: config.feature.ballista_points,
         disable_tutorial: config.player.disable_tutorial,
+        rate_hb_trust_increase: rates.rate_hb_trust_increase,
+        rate_hb_trust_decrease: rates.rate_hb_trust_decrease,
+        rate_death_drop_amount_multiplier: rates.rate_death_drop_amount_multiplier,
+        hellbound_without_quest: config.general.hellbound_without_quest,
     }
 }
 

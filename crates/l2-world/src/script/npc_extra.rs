@@ -120,6 +120,10 @@ pub(crate) struct NpcExtra {
     see_through_silent_move: bool,
     /// `!_isMortal` (the default is mortal).
     immortal: bool,
+    /// `!QuestGuard._isAutoAttackable` (Java's default is true).
+    quest_guard_not_auto_attackable: bool,
+    /// `QuestGuard._isPassive`.
+    quest_guard_passive: bool,
 }
 
 /// The extras of every NPC that has some.
@@ -318,6 +322,35 @@ impl World {
             .by_npc
             .get(&id)
             .is_some_and(|e| e.not_lethalable)
+    }
+
+    /// Java `QuestGuard.setAutoAttackable(value)`.
+    pub fn set_quest_guard_auto_attackable(&mut self, id: ObjectId, value: bool) {
+        self.npc_extra_mut(id).quest_guard_not_auto_attackable = !value;
+    }
+
+    /// Java `QuestGuard._isAutoAttackable`.
+    pub fn is_quest_guard_auto_attackable(&self, id: ObjectId) -> bool {
+        !self
+            .scripts
+            .npc_extras
+            .by_npc
+            .get(&id)
+            .is_some_and(|e| e.quest_guard_not_auto_attackable)
+    }
+
+    /// Java `QuestGuard.setPassive(value)`.
+    pub fn set_quest_guard_passive(&mut self, id: ObjectId, value: bool) {
+        self.npc_extra_mut(id).quest_guard_passive = value;
+    }
+
+    /// Java `QuestGuard.isPassive()`.
+    pub fn is_quest_guard_passive(&self, id: ObjectId) -> bool {
+        self.scripts
+            .npc_extras
+            .by_npc
+            .get(&id)
+            .is_some_and(|e| e.quest_guard_passive)
     }
 
     /// Java `Attackable.overhitEnabled(status)`.
