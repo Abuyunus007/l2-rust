@@ -192,9 +192,6 @@ pub struct CreatureStatus {
     /// Java `Creature._isInvul` (`setInvul`): set by the GM `//invul` commands. Read through
     /// [`World::is_invul`], which also reads the teleporting state as Java's `isInvul()` does.
     invul: bool,
-    /// Java `!Creature._isMortal` (`setMortal(false)`, scripts only, S-AI-07): a creature at 0 HP
-    /// does not die.
-    immortal: bool,
     /// Java `_statusListener`: the players who target this creature, sorted for determinism.
     listeners: BTreeSet<ObjectId>,
     /// Java `Player._broadcastStatusUpdateTask`: the pending self update of a player.
@@ -425,19 +422,6 @@ impl World {
             || self.is_affected(id, crate::effects::effect_flag::INVUL)
     }
 
-    /// Java `Creature.setMortal(value)` (S-AI-07): an immortal creature stays alive at 0 HP.
-    pub fn set_mortal(&mut self, id: ObjectId, value: bool) {
-        if !self.is_tracked(id) {
-            return;
-        }
-        self.status_mut(id).immortal = !value;
-    }
-
-    /// Java `Creature.isMortal()`.
-    pub fn is_mortal(&self, id: ObjectId) -> bool {
-        !self.statuses.get(&id).is_some_and(|s| s.immortal)
-    }
-
     /// Java `_isInvul` alone (the field that `setInvul` writes).
     pub fn invul_flag(&self, id: ObjectId) -> bool {
         self.statuses.get(&id).is_some_and(|s| s.invul)
@@ -504,7 +488,7 @@ impl World {
             let current = self.core_of(id).map_or(0.0, |c| c.cur_hp);
             self.set_current_hp(id, (current - value).max(0.0), true);
         }
-        // `isMortal()` (`setMortal`, S-AI-07).
+        // `isMortal()`: only scripts make a creature immortal.
         if self.core_of(id).is_some_and(|c| c.cur_hp < 0.5) && self.is_mortal(id) {
             self.abort_attack(id);
             self.abort_cast(id);
