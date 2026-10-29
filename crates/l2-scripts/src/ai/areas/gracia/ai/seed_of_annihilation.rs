@@ -2,10 +2,8 @@
 //! minions, the Annihilation Furnaces and the guarded teleport zones.
 // Java: dist/game/data/scripts/ai/areas/Gracia/AI/SeedOfAnnihilation/SeedOfAnnihilation.java
 //
-// NOT PORTED: `ZoneManager.getZoneById(buffZone, EffectZone.class).addSkill(..)` / `clearSkills()`.
-// The world's effect zones apply no skills yet (`zones.rs`), so the Strength / Agility / Wisdom
-// buff zones (60006 to 60008) have no effect; the furnaces' display effect, the weekly draw and
-// the global variables are ported.
+// The Strength / Agility / Wisdom buff of each region is a skill of its effect zone (60006 to
+// 60008, `EffectZone.addSkill` / `clearSkills`, S-AI-07).
 
 use l2_util::ObjectId;
 use l2_util::time::local_offset_millis;
@@ -22,7 +20,6 @@ const TELEPORT_ZONES: [(i32, (i32, i32, i32)); 4] = [
 const ANNIHILATION_FURNACE: i32 = 18928;
 
 // Strength, Agility, Wisdom
-#[allow(dead_code)] // for the effect zones, see the top
 const ZONE_BUFFS: [i32; 4] = [0, 6443, 6444, 6442];
 
 const ZONE_BUFFS_LIST: [[i32; 3]; 6] = [[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 2, 1], [3, 1, 2]];
@@ -31,7 +28,6 @@ const ZONE_BUFFS_LIST: [[i32; 3]; 6] = [[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 
 struct SeedRegion {
     elite_mob_ids: &'static [i32],
     minion_lists: &'static [&'static [i32]],
-    #[allow(dead_code)] // for the effect zones, see the top
     buff_zone: i32,
     af_spawns: [(i32, i32, i32, i32); 2],
 }
@@ -148,7 +144,9 @@ impl SeedOfAnnihilation {
                     crate::ai::areas::gracia::util::set_display_effect(ctx, furnace.object_id, active);
                 }
             }
-            // The buff zone `addSkill(ZONE_BUFFS[activeBuff], 1)` is not ported (see the top).
+            let active = ctx.state::<SeedState>().active_buff[i];
+            let buff = ZONE_BUFFS[usize::try_from(active).unwrap_or(0) % ZONE_BUFFS.len()];
+            ctx.world_mut().effect_zone_add_skill(region.buff_zone, buff, 1);
         }
 
         let next = ctx.state::<SeedState>().seeds_next_status_change;
@@ -218,7 +216,10 @@ impl Script for SeedOfAnnihilation {
                 for furnace in furnaces.into_iter().flatten() {
                     crate::ai::areas::gracia::util::set_display_effect(ctx, furnace, active);
                 }
-                // `zone.clearSkills()` and `zone.addSkill(..)` are not ported (see the top).
+                let zone = REGIONS[i].buff_zone;
+                ctx.world_mut().effect_zone_clear_skills(zone);
+                let buff = ZONE_BUFFS[usize::try_from(active).unwrap_or(0) % ZONE_BUFFS.len()];
+                ctx.world_mut().effect_zone_add_skill(zone, buff, 1);
             }
 
             ctx.start_quest_timer("ChangeSeedsStatus", next - ctx.now_ms(), None, None, false);
@@ -305,6 +306,66 @@ mod tests {
         });
         let list = t.world.global_variables().get_int("SeedBuffsList", -1);
         assert!((0..6).contains(&list), "{list}");
+    }
+
+    #[test]
+    fn the_buff_zone_of_a_region_gives_its_drawn_buff() {
+        use crate::ai::areas::gracia::testing::{load_zones, set_items_and_skills, square_zone, zone_file};
+        use crate::testing::{X, Y};
+
+        // The three buffs, as simple self buffs.
+        let skill = |id: i32| {
+            format!(
+                r#"<skill id="{id}" levels="1" name="Efficacy"><operateType>A2</operateType><targetType>ONE</targetType>
+                <abnormalLevel>1</abnormalLevel><abnormalTime>60</abnormalTime><abnormalType>SIGNAL_E</abnormalType>
+                <effects><effect name="Buff"><mul stat="pAtk" val="1.1"/></effect></effects></skill>"#
+            )
+        };
+        let skills: String = ZONE_BUFFS[1..].iter().map(|id| skill(*id)).collect();
+        // Bistakon's buff zone (60006) around the players, with its datapack parameters.
+        let zones = zone_file(&[square_zone(
+            "Seed of Annihilation 1",
+            60006,
+            "EffectZone",
+            (X, Y),
+            500,
+            (-4000, -2000),
+            r#"<stat name="maxDynamicSkillCount" val="1" /><stat name="showDangerIcon" val="false" />
+               <stat name="initialDelay" val="1000" /><stat name="reuse" val="3000" />"#,
+        )]);
+        let mut registry = ScriptRegistry::new();
+        registry.add(SeedOfAnnihilation);
+        let mut t = ScriptTest::new_with(
+            registry,
+            NPCS,
+            "",
+            &[("data/zones/soa.xml", &zones)],
+            |world, root| {
+                load_zones(world, root);
+                set_items_and_skills(world, "", &skills);
+            },
+        );
+        // `startEffectZonesControl` put the drawn buff of the region into its zone.
+        let row =
+            ZONE_BUFFS_LIST[usize::try_from(t.world.global_variables().get_int("SeedBuffsList", 0)).unwrap()];
+        let buff = ZONE_BUFFS[usize::try_from(row[0]).unwrap()];
+        assert_eq!(t.world.effect_zone_skill_level(60006, buff), 1);
+        // A player inside gets it after the initial delay, and not before.
+        t.enter(1, 80, vec![]);
+        assert!(!t.world.is_affected_by_skill(ObjectId(1), buff));
+        t.wait_ms(1_100);
+        assert!(t.world.is_affected_by_skill(ObjectId(1), buff));
+        // The weekly change clears the zone and puts the new buff in.
+        t.world.run_as_script("SeedOfAnnihilation", |ctx| {
+            ctx.notify_event("ChangeSeedsStatus", None, None);
+        });
+        let row =
+            ZONE_BUFFS_LIST[usize::try_from(t.world.global_variables().get_int("SeedBuffsList", 0)).unwrap()];
+        let new_buff = ZONE_BUFFS[usize::try_from(row[0]).unwrap()];
+        for other in ZONE_BUFFS[1..].iter().filter(|b| **b != new_buff) {
+            assert_eq!(t.world.effect_zone_skill_level(60006, *other), 0);
+        }
+        assert_eq!(t.world.effect_zone_skill_level(60006, new_buff), 1);
     }
 
     #[test]

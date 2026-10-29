@@ -1002,7 +1002,7 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         defense_dark: defense(5),
         agathion_id: 0,
         fame: data.profile.fame,
-        minimap_allowed: false,
+        minimap_allowed: world.is_minimap_allowed(core.object_id),
         vitality_points: data.profile.vitality_points,
         abnormal_visual_effect_special: visual_effects_special,
     }
