@@ -487,7 +487,16 @@ impl World {
     /// owners' online members get their war side (and the attacker state during the war), or
     /// lose them.
     pub(crate) fn tw_update_player_state_flags(&mut self, clear: bool) {
-        // D-05: `twQuest.setOnEnterWorld(_isTWInProgress)` of `TerritoryWarSuperClass`.
+        // `twQuest.setOnEnterWorld(_isTWInProgress)` of `TerritoryWarSuperClass` (S-TW-01): the
+        // script "TerritoryWarSuperClass" (when installed) hears it as an event.
+        let event = if self.territory.in_progress {
+            "setOnEnterWorld 1"
+        } else {
+            "setOnEnterWorld 0"
+        };
+        if let Some(script) = self.scripts.by_name("TerritoryWarSuperClass") {
+            self.script_notify_event(script, event, None, None);
+        }
         let min_level = self.territory.settings.player_min_level;
         let clans: Vec<(i32, i32)> = self
             .territory
