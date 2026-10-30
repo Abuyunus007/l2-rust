@@ -17,6 +17,12 @@ pub mod pailaka_devils_legacy;
 pub mod pailaka_injured_dragon;
 pub mod pailaka_song_of_ice_and_fire;
 pub mod rim_kamaloka;
+pub mod ssq_disciples_necropolis_past;
+pub mod ssq_elcadias_tent;
+pub mod ssq_hideout_of_the_dawn;
+pub mod ssq_library_of_sages;
+pub mod ssq_monastery_of_silence;
+pub mod ssq_sanctum_of_the_lords_of_dawn;
 
 use std::collections::HashMap;
 
@@ -174,6 +180,12 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(pailaka_injured_dragon::PailakaInjuredDragon);
     r.add(pailaka_song_of_ice_and_fire::PailakaSongOfIceAndFire);
     r.add(rim_kamaloka::RimKamaloka);
+    r.add(ssq_disciples_necropolis_past::SSQDisciplesNecropolisPast);
+    r.add(ssq_elcadias_tent::SSQElcadiasTent);
+    r.add(ssq_hideout_of_the_dawn::SSQHideoutOfTheDawn);
+    r.add(ssq_library_of_sages::SSQLibraryOfSages);
+    r.add(ssq_monastery_of_silence::SSQMonasteryOfSilence);
+    r.add(ssq_sanctum_of_the_lords_of_dawn::SSQSanctumOfTheLordsOfDawn);
 }
 
 /// Helpers of the instance script tests.
