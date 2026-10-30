@@ -140,6 +140,7 @@ pub mod q00299_gather_ingredients_for_pie;
 pub mod q00300_hunting_leto_lizardman;
 pub mod q00303_collect_arrowheads;
 pub mod q00306_crystal_of_fire_and_ice;
+pub mod q00307_control_device_of_the_giants;
 pub mod q00317_catch_the_wind;
 pub mod q00450_grave_robber_rescue;
 
@@ -282,6 +283,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00300_hunting_leto_lizardman::Q00300HuntingLetoLizardman);
     r.add(q00303_collect_arrowheads::Q00303CollectArrowheads);
     r.add(q00306_crystal_of_fire_and_ice::Q00306CrystalOfFireAndIce);
+    r.add(q00307_control_device_of_the_giants::Q00307ControlDeviceOfTheGiants);
     r.add(q00317_catch_the_wind::Q00317CatchTheWind);
     r.add(q00450_grave_robber_rescue::Q00450GraveRobberRescue);
 }
