@@ -60,6 +60,12 @@ pub trait Script: Send + Sync + 'static {
         -1
     }
 
+    /// Java `getNpcStringId()`: the client string of the quest's name in the quest list (the id,
+    /// less 5000 above 10000). A quest whose Java class overrides it overrides this (S-API-05).
+    fn npc_string_id(&self) -> i32 {
+        super::link::npc_string_id(self.id())
+    }
+
     /// Java `isCustomQuest()`: a custom quest shows its path instead of a client string.
     fn is_custom(&self) -> bool {
         false

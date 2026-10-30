@@ -5,10 +5,6 @@
 // The Java `MinigameRoom` objects and the `ConsumerEventListener`s on the player are the script's
 // state (`ctx.state`): the rooms, and a list of listeners (id, player, room) that the global
 // `on_creature_skill_use` hook walks, since a listener of Java only reaches its own player.
-//
-// FOLLOW-UP(engine): Java's `lastSpawn.setAutoAttackable(true)` on the burners and
-// `Npc.setWalking()` have no counterpart in the engine; the burners are attackable by their
-// template, and walking is only a speed mode of the (never moving) burners.
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;
@@ -79,6 +75,9 @@ fn room_by_participant(ctx: &mut ScriptCtx<'_>, participant: ObjectId) -> Option
 fn burn(ctx: &mut ScriptCtx<'_>, burner: ObjectId) {
     // `setDisplayEffect(1); setWalking();`
     set_display_effect(ctx, burner, 1);
+    if let Some(npc) = ctx.script_npc(burner) {
+        ctx.set_walking(npc);
+    }
 }
 
 /// Java `room.burnThemAll()`.
@@ -130,6 +129,8 @@ fn init_room(ctx: &mut ScriptCtx<'_>, manager: ObjectId) -> MinigameRoom {
             .npc(id)
             .is_some_and(|n| n.npc_id == BURNER && !n.decayed);
         if is_burner && burners.len() <= 8 && ctx.check_if_in_range(1000, manager, id, false) {
+            // `lastSpawn.setAutoAttackable(true)`.
+            ctx.world_mut().set_npc_auto_attackable(id, true);
             burners.push(id);
         }
     }

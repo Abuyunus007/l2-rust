@@ -489,3 +489,29 @@ fn the_beasts_are_lost_when_the_owner_teleports() {
     assert!(!t.in_world(beast));
     assert!(t.world.trained_beasts(Oid(1)).is_empty());
 }
+
+#[test]
+fn scripts_switch_auto_attackable_names_and_the_summon_animation() {
+    let mut t = setup();
+    let npc = t.spawn(NPC_ID, 20);
+    // A plain `Npc` (Folk) is not attackable until a script says so.
+    assert!(!t.world.is_auto_attackable_by(npc, Oid(1)));
+    t.world.set_npc_auto_attackable(npc, true);
+    assert!(t.world.is_auto_attackable_by(npc, Oid(1)));
+    let info = t.world.npc_info(npc, Oid(1)).unwrap();
+    assert!(info.attackable);
+    assert!(!info.show_summon_animation);
+    t.world.set_npc_show_summon_animation(npc, true);
+    assert!(t.world.npc_info(npc, Oid(1)).unwrap().show_summon_animation);
+    t.world.set_npc_name(npc, "Renamed");
+    assert_eq!(t.world.npc_custom_name(npc), Some("Renamed"));
+}
+
+#[test]
+fn the_quest_list_name_is_the_scripts_npc_string_id() {
+    use crate::quests::q00146_the_zero_hour::Q00146TheZeroHour;
+    // Java's default `getNpcStringId()`: the quest id, less 5000 above 10000.
+    assert_eq!(Probe.npc_string_id(), 30_000 - 5_000);
+    // Q00146 overrides it.
+    assert_eq!(Q00146TheZeroHour.npc_string_id(), 640);
+}

@@ -228,7 +228,7 @@ impl World {
                 sb.push_str(state);
             } else {
                 // The multilingual branch (`MULTILANG_ENABLE`) is M9.
-                sb.push_str(&format!("<fstring>{}{state}</fstring>", npc_string_id(quest_id)));
+                sb.push_str(&format!("<fstring>{}{state}</fstring>", script.npc_string_id()));
             }
             sb.push_str("]</a><br>");
             if apprentice_online {

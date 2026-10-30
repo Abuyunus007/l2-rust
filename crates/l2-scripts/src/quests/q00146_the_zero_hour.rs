@@ -42,10 +42,13 @@ impl Script for Q00146TheZeroHour {
         146
     }
 
+    /// NOTE(java-quirk): Java's `getNpcStringId()` returns 640 (the quest's name in the quest
+    /// list), not the quest id.
+    fn npc_string_id(&self) -> i32 {
+        640
+    }
+
     fn setup(&self, s: &mut ScriptSetup) {
-        // NOTE(java-quirk): Java's `getNpcStringId()` returns 640 (the quest's name in the
-        // quest list). The engine has no hook for it yet.
-        // FOLLOW-UP(engine): `getNpcStringId` (quest list name, NpcStringId 640).
         s.add_start_npc(&[KAHMAN]);
         s.add_talk_id(&[KAHMAN]);
         s.add_kill_id(&[QUEEN_SHYEED]);

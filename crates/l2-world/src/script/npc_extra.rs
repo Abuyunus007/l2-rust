@@ -130,6 +130,10 @@ pub(crate) struct NpcExtra {
     quest_guard_passive: bool,
     /// `Npc.setName(name)` of a script (S-API-05): `getName()` instead of the template's.
     custom_name: Option<String>,
+    /// `Npc.setAutoAttackable(flag)` of a script (S-API-05), for a plain `Npc`.
+    auto_attackable: Option<bool>,
+    /// `Npc.setShowSummonAnimation(true)` of a script (S-API-05): later `NpcInfo`s show it.
+    show_summon_animation: bool,
 }
 
 /// The extras of every NPC that has some.
@@ -515,6 +519,35 @@ impl World {
     /// Java `npc.getName()` after a script's `setName`; `None` without one.
     pub fn npc_custom_name(&self, npc: ObjectId) -> Option<&str> {
         self.scripts.npc_extras.by_npc.get(&npc)?.custom_name.as_deref()
+    }
+
+    /// Java `npc.setAutoAttackable(flag)`: a plain `Npc` (not an attackable, whose classes
+    /// override `isAutoAttackable`) is attackable or not without a forced attack.
+    pub fn set_npc_auto_attackable(&mut self, npc: ObjectId, flag: bool) {
+        self.npc_extra_mut(npc).auto_attackable = Some(flag);
+    }
+
+    /// What a script's `setAutoAttackable` set for a plain `Npc`; `None` for the class's own rule.
+    pub(crate) fn npc_auto_attackable_override(&self, npc: ObjectId) -> Option<bool> {
+        let n = self.npcs.get(&npc)?;
+        if n.class != crate::npc::NpcClass::Npc {
+            return None;
+        }
+        self.scripts.npc_extras.by_npc.get(&npc)?.auto_attackable
+    }
+
+    /// Java `npc.setShowSummonAnimation(value)`.
+    pub fn set_npc_show_summon_animation(&mut self, npc: ObjectId, value: bool) {
+        self.npc_extra_mut(npc).show_summon_animation = value;
+    }
+
+    /// Java `npc.isShowSummonAnimation()` of a script's NPC.
+    pub(crate) fn npc_show_summon_animation(&self, npc: ObjectId) -> bool {
+        self.scripts
+            .npc_extras
+            .by_npc
+            .get(&npc)
+            .is_some_and(|e| e.show_summon_animation)
     }
 
     /// Java `Attackable.absorbSoul()`.

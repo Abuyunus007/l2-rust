@@ -114,6 +114,7 @@ impl World {
             // rules (M7-SIEGE-01).
             Some(ObjectKind::Npc) => self
                 .siege_npc_auto_attackable(target, attacker)
+                .or_else(|| self.npc_auto_attackable_override(target))
                 .unwrap_or_else(|| {
                     self.npcs
                         .get(&target)

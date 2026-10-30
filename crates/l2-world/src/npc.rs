@@ -1159,6 +1159,7 @@ impl World {
             display_id: template.display_id,
             attackable: self
                 .siege_npc_auto_attackable(subject, viewer)
+                .or_else(|| self.npc_auto_attackable_override(subject))
                 .unwrap_or_else(|| npc.class.auto_attackable_by(viewer_karma)),
             x: npc.core.x,
             y: npc.core.y,
@@ -1181,7 +1182,8 @@ impl World {
             running: npc.movement.running,
             in_combat: self.is_in_combat(subject),
             alike_dead: self.is_dead(subject),
-            show_summon_animation: false,
+            // `npc.isShowSummonAnimation()`: only a script sets it for an NPC (S-API-05).
+            show_summon_animation: self.npc_show_summon_animation(subject),
             name,
             title,
             // `isInvisible() ? effects | STEALTH : effects`.
