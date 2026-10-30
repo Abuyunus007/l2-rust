@@ -179,8 +179,7 @@ impl Script for Q00508AClansReputation {
                             SystemMessageId::YouHaveSuccessfullyCompletedAClanQuestS1PointsHaveBeenAddedToYourClanSReputationScore,
                             rep,
                         );
-                        // FOLLOW-UP(engine): Java `clan.broadcastToOnlineMembers(new PledgeShowInfoUpdate(clan))`
-                        // (`World::broadcast_clan_info_update` is `pub(crate)`).
+                        ctx.broadcast_clan_info_update(player);
                     } else {
                         htmltext = format!("30868-{raid}a.html");
                     }

@@ -421,7 +421,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-AI-07](S/S-AI-07.md) | Gracia instances and the seed managers | opus | full | AI-01 | merged |
 | [S-HAND-04](S/S-HAND-04.md) | Decoys, traps and the drop search board | sonnet | full | HAND-03 | ready |
 | [S-DATA-01](S/S-DATA-01.md) | Category data, ClassMaster.xml, transformation tree, small script helpers | sonnet | full | VM-01 | merged |
-| [S-API-05](S/S-API-05.md) | Engine gaps the script batches found (soul crystals, traps, tamed beasts, ...) | opus | full | Q batches | in-progress |
+| [S-API-05](S/S-API-05.md) | Engine gaps the script batches found (soul crystals, traps, tamed beasts, ...) | opus | full | Q batches | merged |
 | [S-AI-08](S/S-AI-08.md) | The AI scripts the AI batches left | sonnet | full | AI batches | merged |
 | [S-BOSS-01](S/S-BOSS-01.md) | Antharas, Valakas, Baium | opus | full | API-01 | merged |
 | [S-BOSS-02](S/S-BOSS-02.md) | Beleth, Frintezza, Core, Orfen, Queen Ant | sonnet | full | API-01 | merged |
@@ -455,17 +455,19 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-QR-01](S/S-QR-01.md) | Remaining quests Q00022..Q00064 (7) | sonnet | spot | Q batches | merged |
 | [S-QR-02](S/S-QR-02.md) | Remaining quests Q00065..Q00120 (7) | sonnet | spot | Q batches | merged |
 | [S-QR-03](S/S-QR-03.md) | Remaining quests Q00123..Q00139 (13) | sonnet | spot | Q batches | merged |
-| [S-QR-04](S/S-QR-04.md) | Remaining quests Q00140..Q00194 (14) | sonnet | spot | Q batches | ready |
-| [S-QR-05](S/S-QR-05.md) | Remaining quests Q00195..Q00218 (8) | sonnet | spot | Q batches | ready |
-| [S-QR-06](S/S-QR-06.md) | Remaining quests Q00219..Q00230 (6) | sonnet | spot | Q batches | ready |
-| [S-QR-07](S/S-QR-07.md) | Remaining quests Q00232..Q00241 (5) | sonnet | spot | Q batches | ready |
-| [S-QR-08](S/S-QR-08.md) | Remaining quests Q00242..Q00335 (5) | sonnet | spot | Q batches | ready |
-| [S-QR-09](S/S-QR-09.md) | Remaining quests Q00336..Q00365 (6) | sonnet | spot | Q batches | ready |
-| [S-QR-10](S/S-QR-10.md) | Remaining quests Q00367..Q00417 (8) | sonnet | spot | Q batches | ready |
+| [S-QR-04](S/S-QR-04.md) | Remaining quests Q00140..Q00194 (14) | sonnet | spot | Q batches | merged |
+| [S-QR-05](S/S-QR-05.md) | Remaining quests Q00195..Q00218 (8) | sonnet | spot | Q batches | merged |
+| [S-QR-06](S/S-QR-06.md) | Remaining quests Q00219..Q00230 (6) | sonnet | spot | Q batches | merged |
+| [S-QR-07](S/S-QR-07.md) | Remaining quests Q00232..Q00241 (5) | sonnet | spot | Q batches | merged |
+| [S-QR-08](S/S-QR-08.md) | Remaining quests Q00242..Q00335 (5) | sonnet | spot | Q batches | merged |
+| [S-QR-09](S/S-QR-09.md) | Remaining quests Q00336..Q00365 (6) | sonnet | spot | Q batches | merged |
+| [S-QR-10](S/S-QR-10.md) | Remaining quests Q00367..Q00417 (8) | sonnet | spot | Q batches | merged |
 | [S-QR-11](S/S-QR-11.md) | Remaining quests Q00419..Q00511 (7) | sonnet | spot | Q batches | ready |
-| [S-QR-12](S/S-QR-12.md) | Remaining quests Q00551..Q00692 (10) | sonnet | spot | Q batches | ready |
+| [S-QR-12](S/S-QR-12.md) | Remaining quests Q00551..Q00692 (10) | sonnet | spot | Q batches | merged |
 | [S-QR-13](S/S-QR-13.md) | Remaining quests Q00693..Q10270 (13) | sonnet | spot | Q batches | ready |
-| [S-QR-14](S/S-QR-14.md) | Remaining quests Q10272..Q10285 (4) | sonnet | spot | Q batches | ready |
+| [S-QR-14](S/S-QR-14.md) | Remaining quests Q10272..Q10285 (4) | sonnet | spot | Q batches | merged |
+| [S-QR-15](S/S-QR-15.md) | Leftover quests of S-QR-02 (5) | sonnet | spot | Q batches | running |
+| [S-LEFT-01](S/S-LEFT-01.md) | Script milestone stragglers | sonnet | full | API-05 | running |
 | S-ADMIN-08 | Admin words of the script systems | haiku | review | API-01, VM-01 | ready (card written when API-01 merges) |
 | S-E2E-01 | End to end | sonnet | review | Q, VM-01, BOSS-01, INST-01 | ready (card written when API-01 merges) |
 | S-RUN-01 | Runbook and milestone checks | opus | review | E2E-01 | ready (card written when API-01 merges) |

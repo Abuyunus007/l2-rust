@@ -18,6 +18,7 @@ pub mod clan_trader;
 pub mod class_master;
 pub mod crimson_hatu_otis;
 pub mod delusion_teleport;
+pub mod divine_beast;
 pub mod dorian;
 pub mod dust_rider;
 pub mod emerald_horn;
@@ -96,6 +97,7 @@ pub(crate) fn register_with(r: &mut ScriptRegistry, class_master: ClassMasterCon
     r.add(clan_trader::ClanTrader);
     r.add(crimson_hatu_otis::CrimsonHatuOtis);
     r.add(delusion_teleport::DelusionTeleport);
+    r.add(divine_beast::DivineBeast);
     r.add(dorian::Dorian);
     r.add(dust_rider::DustRider);
     r.add(emerald_horn::EmeraldHorn);

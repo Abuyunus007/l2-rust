@@ -49,20 +49,16 @@ const BLACK_WILLOW: i32 = 27118;
 
 // Misc
 const MIN_LEVEL: i32 = 35;
-/// Java `CategoryType.HEAL_GROUP` (`CategoryData.xml`: cleric, oracle, shillien oracle, orc
-/// shaman).
-// FOLLOW-UP(engine): `l2-world/src/subclass/categories.rs` has no `HEAL_GROUP` row, so
-// `player.isInCategory(HEAL_GROUP)` is checked against these ids here. Move the row into the
-// table and call `ctx.world().is_in_category(player, CategoryType::HealGroup)` instead.
-const HEAL_GROUP: [i32; 4] = [15, 29, 42, 50];
 /// Java `player.getVariables()` key: the second-class diamonds are given once per character.
 const DIAMOND_REWARD_VAR: &str = "2ND_CLASS_DIAMOND_REWARD";
 
 /// Java `Q00215_TrialOfThePilgrim`.
 pub struct Q00215TrialOfThePilgrim;
 
+/// Java `player.isInCategory(CategoryType.HEAL_GROUP)` (the loaded `CategoryData`).
 fn in_heal_group(ctx: &ScriptCtx<'_>, player: ObjectId) -> bool {
-    HEAL_GROUP.contains(&ctx.player_class_id(player))
+    ctx.world()
+        .is_in_category(player, l2_world::subclass::CategoryType::HealGroup)
 }
 
 impl Script for Q00215TrialOfThePilgrim {

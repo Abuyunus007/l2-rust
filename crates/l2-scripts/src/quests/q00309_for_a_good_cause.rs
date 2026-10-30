@@ -6,8 +6,6 @@
 // hide and a second one through the quest rewards; Atra exchanges the hides for one item of a
 // table. Players on Q00308_ReedFieldMaintenance are sent to its own NPC (`player_quest_state`).
 //
-// FOLLOW-UP(engine): the Java radar point of the start (`RadarControl(0, 2, ..)`) has no script
-// helper yet; the page is shown, the radar marker is not sent.
 // NOTE(java-quirk): the exchange answers are the pages `32646-16.htm` and `32646-15.htm` (the
 // pages of Q00308), not this quest's own `32647-*` pages.
 
@@ -139,7 +137,7 @@ impl Script for Q00309ForAGoodCause {
             }
             "32647-05.html" => {
                 qs.start_quest(ctx);
-                // FOLLOW-UP(engine): Java sends `RadarControl(0, 2, 77325, 205773, -3432)` here.
+                ctx.send_radar_control(player, 0, 2, 77_325, 205_773, -3_432);
                 htmltext = Some(event.to_owned());
             }
             "claimreward" => {

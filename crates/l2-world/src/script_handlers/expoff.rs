@@ -71,6 +71,10 @@ impl World {
         if let Some(result) = self.wedding_voiced_handler(player, word) {
             return result;
         }
+        // `HellboundLoader` registers `hellbound` (S-API-05, `script/hellbound_api.rs`).
+        if let Some(result) = self.hellbound_voiced_handler(player, word) {
+            return result;
+        }
         if !matches!(word, "expoff" | "expon") {
             return false;
         }

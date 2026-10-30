@@ -9,6 +9,8 @@ use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};
 // NPC
 const NECROMANCER_OF_THE_VALLEY: i32 = 22858;
 const EXPLODING_ORC_GHOST: i32 = 22818;
+/// Java `SPAWN_ANIMATION`: Scorpion Bones, Drakos Assassin, Parasitic Leech.
+const SPAWN_ANIMATION: [i32; 3] = [22826, 22823, 22828];
 const WRATHFUL_ORC_GHOST: i32 = 22819;
 const DRAKOS_ASSASSIN: i32 = 22823;
 const SUMMON_NPC: [i32; 3] = [
@@ -273,9 +275,10 @@ impl Script for DragonValley {
         ctx.world_mut().set_on_kill_delay(npc.object_id, 0);
         if npc.id == EXPLODING_ORC_GHOST {
             ctx.start_quest_timer("SELF_DESTRUCTION", 3000, Some(npc), None, false);
+        } else if SPAWN_ANIMATION.contains(&npc.id) {
+            // `npc.setShowSummonAnimation(true)` (S-API-05).
+            ctx.world_mut().set_npc_show_summon_animation(npc.object_id, true);
         }
-        // FOLLOW-UP(engine): `npc.setShowSummonAnimation(true)` of the spawn-animation monsters
-        // (22826, 22823, 22828): the world's `NpcInfo` has no such flag a script can set.
     }
 
     fn on_spell_finished(

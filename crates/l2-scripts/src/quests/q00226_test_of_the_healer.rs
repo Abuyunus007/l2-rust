@@ -6,10 +6,6 @@
 // Pattern: the test chain of the "Test of ..." quests (see Q00222) with a long memo state, monsters
 // that spawn helpers at the NPC (`addSpawn(npc, id, npc, ..)`), a random orphan girl and a
 // trader's price of 100000 adena (`takeItems(ADENA, 100000)`).
-// FOLLOW-UP(engine): `npc.getSummonedNpcCount()` (the summoned NPCs are not counted) and the
-// summoner of `addSpawn(npc, id, npc, ..)` (only the place is kept); `player.isInCategory(
-// WHITE_MAGIC_GROUP)` is not kept by the category table yet (`subclass/categories.rs`), so the
-// start page is always "not a healer" until it is.
 
 use l2_protocol_game::server::SocialAction;
 use l2_util::ObjectId;
@@ -175,8 +171,10 @@ impl Script for Q00226TestOfTheHealer {
                 if qs.is_memo_state(ctx, 1) && ctx.has_quest_items(player, REPORT_OF_PERRIN) {
                     qs.set_cond(ctx, 2, true);
                     let perrin = npc?;
-                    if summoned_npc_count(perrin) < 1 {
-                        if let Some(tatoma) = ctx.add_spawn_at(TATOMA, perrin.object_id, true, 200_000) {
+                    if ctx.summoned_npc_count(perrin) < 1 {
+                        if let Some(tatoma) =
+                            ctx.add_spawn_summoned_at(perrin, TATOMA, perrin.object_id, true, 200_000)
+                        {
                             ctx.add_attack_desire(tatoma, player, 999);
                         }
                     }
@@ -252,9 +250,8 @@ impl Script for Q00226TestOfTheHealer {
                     qs.set_cond(ctx, 11, false);
                     ctx.take_items(player, ORDER_OF_SORIUS, 1);
                     let daurin = npc?;
-                    ctx.add_spawn_at(LERO_LIZARDMAN_AGENT, daurin.object_id, true, 200_000);
-                    ctx.add_spawn_at(LERO_LIZARDMAN_AGENT, daurin.object_id, true, 200_000);
-                    ctx.add_spawn_at(LERO_LIZARDMAN_LEADER, daurin.object_id, true, 200_000);
+                    spawn_helpers(ctx, daurin, LERO_LIZARDMAN_AGENT, 2);
+                    spawn_helpers(ctx, daurin, LERO_LIZARDMAN_LEADER, 1);
                     ctx.play_sound(player, QuestSound::ItemsoundQuestBeforeBattle);
                     htmltext = Some(event.to_owned());
                 }
@@ -442,7 +439,7 @@ impl Script for Q00226TestOfTheHealer {
                         if ctx.has_quest_items(player, SECRET_LETTER1)
                             && !ctx.has_quest_items(player, SECRET_LETTER2)
                         {
-                            if summoned_npc_count(npc) < 36 {
+                            if ctx.summoned_npc_count(npc) < 36 {
                                 spawn_helpers(ctx, npc, LERO_LIZARDMAN_ASSASSIN, 3);
                                 ctx.play_sound(player, QuestSound::ItemsoundQuestBeforeBattle);
                             }
@@ -453,7 +450,7 @@ impl Script for Q00226TestOfTheHealer {
                             && ctx.has_quest_items(player, SECRET_LETTER2)
                             && !ctx.has_quest_items(player, SECRET_LETTER3)
                         {
-                            if summoned_npc_count(npc) < 36 {
+                            if ctx.summoned_npc_count(npc) < 36 {
                                 spawn_helpers(ctx, npc, LERO_LIZARDMAN_SNIPER, 3);
                                 ctx.play_sound(player, QuestSound::ItemsoundQuestBeforeBattle);
                             }
@@ -464,7 +461,7 @@ impl Script for Q00226TestOfTheHealer {
                             .has_all_quest_items(player, &[SECRET_LETTER1, SECRET_LETTER2, SECRET_LETTER3])
                             && !ctx.has_quest_items(player, SECRET_LETTER4)
                         {
-                            if summoned_npc_count(npc) < 36 {
+                            if ctx.summoned_npc_count(npc) < 36 {
                                 spawn_helpers(ctx, npc, LERO_LIZARDMAN_WIZARD, 2);
                                 spawn_helpers(ctx, npc, LERO_LIZARDMAN_LORD, 1);
                                 ctx.play_sound(player, QuestSound::ItemsoundQuestBeforeBattle);
@@ -532,9 +529,9 @@ impl Script for Q00226TestOfTheHealer {
                             htmltext = "30674-01.html".to_owned();
                         } else if !ctx.has_at_least_one_quest_item(player, &[SECRET_LETTER1, ORDER_OF_SORIUS])
                         {
-                            if summoned_npc_count(npc) < 4 {
-                                ctx.add_spawn_at(LERO_LIZARDMAN_AGENT, npc.object_id, true, 200_000);
-                                ctx.add_spawn_at(LERO_LIZARDMAN_LEADER, npc.object_id, true, 200_000);
+                            if ctx.summoned_npc_count(npc) < 4 {
+                                spawn_helpers(ctx, npc, LERO_LIZARDMAN_AGENT, 1);
+                                spawn_helpers(ctx, npc, LERO_LIZARDMAN_LEADER, 1);
                             }
                             htmltext = "30674-02a.html".to_owned();
                         } else if ctx.has_quest_items(player, SECRET_LETTER1) {
@@ -555,16 +552,11 @@ impl Script for Q00226TestOfTheHealer {
     }
 }
 
-/// FOLLOW-UP(engine): Java `npc.getSummonedNpcCount()`, the NPCs a monster summoned that are alive.
-/// The world keeps no summoner link yet, so this is 0.
-fn summoned_npc_count(_npc: ScriptNpc) -> i32 {
-    0
-}
-
-/// Java `addSpawn(npc, id, npc, true, 200000)`, `count` times: a helper at the NPC that lives 200 s.
+/// Java `addSpawn(npc, id, npc, true, 200000)`, `count` times: a helper the NPC summons at its
+/// place, for 200 s (it counts in `getSummonedNpcCount`).
 fn spawn_helpers(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, helper_id: i32, count: i32) {
     for _ in 0..count {
-        ctx.add_spawn_at(helper_id, npc.object_id, true, 200_000);
+        ctx.add_spawn_summoned_at(npc, helper_id, npc.object_id, true, 200_000);
     }
 }
 
@@ -651,8 +643,8 @@ mod tests {
         (t, npcs)
     }
 
-    /// The quest started by hand (the class gate is a FOLLOW-UP(engine), see the module comment):
-    /// memo state `memo` and the report of Perrin.
+    /// The quest started by hand (the steps after the class gate): memo state `memo` and the
+    /// report of Perrin.
     fn start_by_hand(t: &mut ScriptTest, memo: i32) {
         t.world.run_as_script(NAME, |ctx| {
             if let Some(qs) = ctx.get_quest_state(Oid(1), true) {

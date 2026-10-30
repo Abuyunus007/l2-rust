@@ -40,3 +40,4 @@ What S-HAND-03 left: the `Decoy` and `Trap` creature kinds (the SummonNpc "Decoy
 ## Notes from the orchestrator
 - Read CLAUDE.md (safety rules), DECISIONS (D-05, D-15, D-16, D-39, D-53, D-54) and `docs/design/scripts.md` first.
 - Up to eight script workers run at the same time, each in its own folder. Shared files (`l2-scripts/src/lib.rs`, the world modules) take only your added lines; run `git merge main` every hour or so.
+- Added after S-API-05 (its trap item was left for this card): the script trap API too — `ctx.add_trap(..)` (Java `AbstractScript.addTrap`), the `ON_TRAP_ACTION` listener with `TrapAction` (triggered, disarmed, detected, ...), and the trap scripts that wait on it: the Crystal Caverns Dolph door trap (`instances/CrystalCaverns`) and the Gracia corridor traps (`gracia/...`, grep the Java for `addTrap`/`onTrapAction`). Read the "Added by S-API-05" section of scripts.md first; it already has the tamed beast and summon-spawn pieces you can follow.

@@ -1,10 +1,8 @@
 //! Beast Farm (Freya): growth-capable mobs polymorph when a character feeds them spice.
 // Java: dist/game/data/scripts/ai/areas/BeastFarm/BeastFarm.java
 //
-// FOLLOW-UP(engine): the last step of the growth, the `TamedBeast` (an NPC of the character that
-// follows it and casts its beast skills), is not modelled by the world (`summon/mod.rs`, "Not
-// modelled: TamedBeast"). That step is ported as far as the world allows: the fed mob goes, the
-// random beast (name and skills) is drawn, and the quest hooks run, but no tamed beast appears.
+// The last step of the growth is a Freya `TamedBeast` of the character (`spawn_tamed_beast`,
+// S-API-05) with a random name and beast skills.
 
 use std::collections::HashMap;
 
@@ -26,8 +24,15 @@ const TAMED_BEASTS: [i32; 4] = [18869, 18870, 18871, 18872];
 const TAME_CHANCE: i32 = 20;
 const SPECIAL_SPICE_CHANCES: [i32; 2] = [33, 75];
 
-/// The number of entries of Java's `TAMED_BEAST_DATA` (the random beast type is drawn from it).
-const TAMED_BEAST_DATA_COUNT: usize = 6;
+/// Java `TAMED_BEAST_DATA`: the name and the beast skills of each kind of tamed beast.
+const TAMED_BEAST_DATA: [(&str, &[(i32, i32)]); 6] = [
+    ("%name% of Focus", &[(6432, 1), (6668, 1)]),
+    ("%name% of Guiding", &[(6433, 1), (6670, 1)]),
+    ("%name% of Swifth", &[(6434, 1), (6667, 1)]),
+    ("Berserker %name%", &[(6671, 1)]),
+    ("%name% of Protect", &[(6669, 1), (6672, 1)]),
+    ("%name% of Vigor", &[(6431, 1), (6666, 1)]),
+];
 
 // all mobs that can eat...
 const FEEDABLE_BEASTS: [i32; 28] = [
@@ -145,12 +150,32 @@ fn spawn_next(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, next_np
     // if this is finally a trained mob, then despawn any other trained mobs that the
     // player might have and initialize the Tamed Beast.
     if TAMED_BEASTS.contains(&next_npc_id) {
-        // Java draws `getRandomEntry(TAMED_BEAST_DATA)` here for the beast's name and skills.
-        let indexes: [usize; TAMED_BEAST_DATA_COUNT] = [0, 1, 2, 3, 4, 5];
-        let _beast = ctx.get_random_entry(&indexes);
-        // FOLLOW-UP(engine): `new TamedBeast(nextNpcId, player, food, x, y, z, true)` with the
-        // name and `addBeastSkill`s, and `broadcastPacket(NpcInfo)`.
-        let _ = food;
+        let next_npc = at.and_then(|(x, y, z, _)| {
+            ctx.world_mut()
+                .spawn_tamed_beast(next_npc_id, player, food, (x, y, z), true)
+        });
+        let Some((name, skills)) = ctx.get_random_entry(&TAMED_BEAST_DATA) else {
+            return;
+        };
+        let name = match next_npc_id {
+            18869 => name.replace("%name%", "Alpine Kookaburra"),
+            18870 => name.replace("%name%", "Alpine Cougar"),
+            18871 => name.replace("%name%", "Alpine Buffalo"),
+            18872 => name.replace("%name%", "Alpine Grendel"),
+            _ => name.to_owned(),
+        };
+        // NOTE(java-quirk): Java goes on with a null `TamedBeast` only if the constructor threw;
+        // here a beast that could not spawn skips its name and skills.
+        if let Some(next_npc) = next_npc {
+            // `nextNpc.setName(name)`, `broadcastPacket(new NpcInfo(nextNpc, player))`.
+            ctx.world_mut().set_npc_name(next_npc, &name);
+            ctx.world_mut().broadcast_npc_info(next_npc);
+            ctx.world_mut().set_running(next_npc, true);
+            for &(id, level) in skills {
+                ctx.world_mut()
+                    .tamed_beast_add_skill(next_npc, SkillKey::new(id, level));
+            }
+        }
 
         check_jewel_of_innocence(ctx, player);
         check_crystal_of_purity(ctx, player);
