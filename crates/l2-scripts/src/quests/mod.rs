@@ -135,6 +135,7 @@ pub mod q00303_collect_arrowheads;
 pub mod q00317_catch_the_wind;
 pub mod q00338_alligator_hunter;
 pub mod q00341_hunting_for_wild_beasts;
+pub mod q00351_black_swan;
 pub mod q00352_help_rood_raise_a_new_pet;
 pub mod q00450_grave_robber_rescue;
 
@@ -272,6 +273,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00317_catch_the_wind::Q00317CatchTheWind);
     r.add(q00338_alligator_hunter::Q00338AlligatorHunter);
     r.add(q00341_hunting_for_wild_beasts::Q00341HuntingForWildBeasts);
+    r.add(q00351_black_swan::Q00351BlackSwan);
     r.add(q00352_help_rood_raise_a_new_pet::Q00352HelpRoodRaiseANewPet);
     r.add(q00450_grave_robber_rescue::Q00450GraveRobberRescue);
 }
