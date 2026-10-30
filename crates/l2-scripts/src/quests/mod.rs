@@ -235,6 +235,7 @@ pub mod q00623_the_finest_food;
 pub mod q00624_the_finest_ingredients_part1;
 pub mod q00626_a_dark_twilight;
 pub mod q00629_clean_up_the_swamp_of_screams;
+pub mod q00632_necromancers_request;
 pub mod q00634_in_search_of_fragments_of_dimension;
 pub mod q00635_into_the_dimensional_rift;
 pub mod q00636_truth_beyond;
@@ -483,6 +484,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00624_the_finest_ingredients_part1::Q00624TheFinestIngredientsPart1);
     r.add(q00626_a_dark_twilight::Q00626ADarkTwilight);
     r.add(q00629_clean_up_the_swamp_of_screams::Q00629CleanUpTheSwampOfScreams);
+    r.add(q00632_necromancers_request::Q00632NecromancersRequest);
     r.add(q00634_in_search_of_fragments_of_dimension::Q00634InSearchOfFragmentsOfDimension);
     r.add(q00635_into_the_dimensional_rift::Q00635IntoTheDimensionalRift);
     r.add(q00636_truth_beyond::Q00636TruthBeyond);
