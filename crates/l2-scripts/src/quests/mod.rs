@@ -140,6 +140,7 @@ pub mod q00317_catch_the_wind;
 pub mod q00319_scent_of_death;
 pub mod q00320_bones_tell_the_future;
 pub mod q00324_sweetest_venom;
+pub mod q00325_grim_collector;
 pub mod q00326_vanquish_remnants;
 pub mod q00328_sense_for_business;
 pub mod q00329_curiosity_of_a_dwarf;
@@ -285,6 +286,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00319_scent_of_death::Q00319ScentOfDeath);
     r.add(q00320_bones_tell_the_future::Q00320BonesTellTheFuture);
     r.add(q00324_sweetest_venom::Q00324SweetestVenom);
+    r.add(q00325_grim_collector::Q00325GrimCollector);
     r.add(q00326_vanquish_remnants::Q00326VanquishRemnants);
     r.add(q00328_sense_for_business::Q00328SenseForBusiness);
     r.add(q00329_curiosity_of_a_dwarf::Q00329CuriosityOfADwarf);
