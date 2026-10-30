@@ -223,6 +223,7 @@ pub mod q00450_grave_robber_rescue;
 pub mod q00451_luciens_altar;
 pub mod q00452_finding_the_lost_soldiers;
 pub mod q00455_wings_of_sand;
+pub mod q00457_lost_and_found;
 
 use l2_world::ScriptRegistry;
 
@@ -446,4 +447,5 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00451_luciens_altar::Q00451LuciensAltar);
     r.add(q00452_finding_the_lost_soldiers::Q00452FindingTheLostSoldiers);
     r.add(q00455_wings_of_sand::Q00455WingsOfSand);
+    r.add(q00457_lost_and_found::Q00457LostAndFound);
 }
