@@ -87,6 +87,16 @@ impl ScriptCtx<'_> {
         }
     }
 
+    /// Java `npc.setWalking()`: the NPC walks (its run flag off, broadcast when it changes).
+    pub fn set_walking(&mut self, npc: ScriptNpc) {
+        self.world_mut().set_running(npc.object_id, false);
+    }
+
+    /// Java `SpawnTable.getInstance().getSpawns(npcId)` with each spawn's `getLastSpawn()`.
+    pub fn spawns_of(&self, npc_id: i32) -> Vec<super::area_spawns::NamedSpawn> {
+        self.world().spawns_of(npc_id)
+    }
+
     /// Java `npc.isMyLord(player)`.
     pub fn is_my_lord(&self, npc: ScriptNpc, player: ObjectId) -> bool {
         self.world().is_my_lord(npc.object_id, player)

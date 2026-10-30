@@ -5,10 +5,8 @@
 // timer ("CHECK") watches the distance and the escort checkers; the timers of the NPC's lines and
 // the time limit are quest timers too. Gumiel can also appear next to a killed Solina (1%).
 //
-// FOLLOW-UP(engine): `npc.setWalking()` (the escort walks instead of running) has no engine call.
-// FOLLOW-UP(engine): `SpawnTable.getSpawns(ESCORT_CHECKER)` and `Spawn.getLastSpawn()` have no
-// engine counterpart. The checkers are the NPCs `on_spawn` reported that are still in the world:
-// the same set as Java's last spawns while the checkers are alive (see `EscortCheckers`).
+// The escort checkers are the spawns of the spawn table (`SpawnTable.getSpawns(ESCORT_CHECKER)`,
+// read when a checker spawns) and their last spawned NPC.
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::{ChatType, CreatureSay, NpcSay, SayBody, SenderField};
@@ -32,9 +30,9 @@ const PACKAGED_BOOK: i32 = 15716;
 const CHANCE_SPAWN: i32 = 1;
 const MIN_LV: i32 = 82;
 
-/// Java `_escortCheckers`: the escort checkers `on_spawn` reported. See the FOLLOW-UP above.
+/// Java `_escortCheckers != null`: `onSpawn` of a checker read the spawn table.
 #[derive(Default)]
-struct EscortCheckers(Vec<ObjectId>);
+struct EscortCheckers(bool);
 
 /// Java `Q00457_LostAndFound`.
 pub struct Q00457LostAndFound;
@@ -61,11 +59,9 @@ impl Script for Q00457LostAndFound {
     }
 
     fn on_spawn(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
+        // `_escortCheckers = SpawnTable.getInstance().getSpawns(ESCORT_CHECKER)`.
         if npc.id == ESCORT_CHECKER {
-            let checkers = &mut ctx.state::<EscortCheckers>().0;
-            if !checkers.contains(&npc.object_id) {
-                checkers.push(npc.object_id);
-            }
+            ctx.state::<EscortCheckers>().0 = true;
         }
     }
 
@@ -90,7 +86,7 @@ impl Script for Q00457LostAndFound {
                 ctx.set_script_value(npc, 0);
                 qs.start_quest(ctx);
                 ctx.world_mut().set_npc_target(npc.object_id, Some(player));
-                // FOLLOW-UP(engine): `npc.setWalking()`.
+                ctx.set_walking(npc);
                 ctx.world_mut().script_start_follow(npc.object_id, player);
                 ctx.start_quest_timer("CHECK", 1_000, Some(npc), Some(player), true);
                 ctx.start_quest_timer("TIME_LIMIT", 600_000, Some(npc), Some(player), false);
@@ -255,16 +251,18 @@ fn npc_say(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, string: Np
     // `WorldObject.sendPacket` does nothing, so the NPC's line is never sent to anybody.
 }
 
-/// The escort checkers that are still in the world, in the order `on_spawn` saw them. The list is
-/// pruned to those (Java's last spawns of the spawns of `ESCORT_CHECKER`).
+/// Java `for (Spawn escortSpawn : _escortCheckers) escortSpawn.getLastSpawn()`: the last spawned
+/// NPC of each checker spawn (none before a checker spawned).
 fn checkers_in_world(ctx: &mut ScriptCtx<'_>) -> Vec<ObjectId> {
-    let known = ctx.state::<EscortCheckers>().0.clone();
-    let alive: Vec<ObjectId> = known
+    // NOTE(java-quirk): Java's loop over a null `_escortCheckers` throws (the timer stops with an
+    // error) until a checker spawned; here the loop is empty.
+    if !ctx.state::<EscortCheckers>().0 {
+        return Vec::new();
+    }
+    ctx.spawns_of(ESCORT_CHECKER)
         .into_iter()
-        .filter(|id| ctx.world().position_of(*id).is_some())
-        .collect();
-    ctx.state::<EscortCheckers>().0.clone_from(&alive);
-    alive
+        .filter_map(|spawn| spawn.last_spawn)
+        .collect()
 }
 
 #[cfg(test)]
@@ -273,7 +271,7 @@ mod tests {
     use l2_world::{QuestLoad, QuestWrite, ScriptRegistry};
 
     use super::*;
-    use crate::testing::{Pages, ScriptTest, pages_to, player_data, rows};
+    use crate::testing::{Pages, ScriptTest, X, Y, Z, pages_to, player_data, rows};
 
     const NAME: &str = "Q00457_LostAndFound";
 
@@ -314,6 +312,13 @@ mod tests {
                 "data/scripts/quests/Q00457_LostAndFound/32759.html",
                 r#"<html><body>32759.html<a action="bypass -h Script Q00457_LostAndFound">Quest</a></body></html>"#,
             )
+            .file(
+                "data/spawns/checker.xml",
+                &format!(
+                    r#"<?xml version="1.0"?><list enabled="true"><spawn name="checker"><npc id="32764" x="{}" y="{Y}" z="{Z}" heading="0" respawnDelay="60" /></spawn></list>"#,
+                    X + 30
+                ),
+            )
             .npcs(&[GUMIEL]);
         let mut t = ScriptTest::with_pages(registry, NPCS, ITEMS, pages);
         let gumiel = t.spawn(GUMIEL, 20);
@@ -349,9 +354,12 @@ mod tests {
         t.talk(1, gumiel);
         assert!(pages_contain(&mut t, "32759-08.html"));
 
-        // A checker next to Gumiel: the next CHECK (one second) ends the escort with the book.
-        let checker = t.spawn(ESCORT_CHECKER, 30);
-        assert!(t.in_world(checker));
+        // A checker of the spawn table next to Gumiel: the next CHECK (one second) ends the
+        // escort with the book.
+        t.world.spawn_all_npcs(false);
+        let checkers = t.npcs_of(ESCORT_CHECKER);
+        assert_eq!(checkers.len(), 1);
+        assert_eq!(t.world.spawns_of(ESCORT_CHECKER)[0].last_spawn, Some(checkers[0]));
         t.wait_ms(1_000);
         assert_eq!(t.count(1, PACKAGED_BOOK), 1);
         let writes = t.take_writes();
