@@ -184,6 +184,7 @@ pub mod q00237_winds_of_change;
 pub mod q00238_success_failure_of_business;
 pub mod q00239_wont_you_join_us;
 pub mod q00240_im_the_only_one_you_can_trust;
+pub mod q00241_possessor_of_a_precious_soul1;
 pub mod q00246_possessor_of_a_precious_soul3;
 pub mod q00247_possessor_of_a_precious_soul4;
 pub mod q00249_poisoned_plains_of_the_lizardmen;
@@ -610,6 +611,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00238_success_failure_of_business::Q00238SuccessFailureOfBusiness);
     r.add(q00239_wont_you_join_us::Q00239WontYouJoinUs);
     r.add(q00240_im_the_only_one_you_can_trust::Q00240ImTheOnlyOneYouCanTrust);
+    r.add(q00241_possessor_of_a_precious_soul1::Q00241PossessorOfAPreciousSoul1);
     r.add(q00246_possessor_of_a_precious_soul3::Q00246PossessorOfAPreciousSoul3);
     r.add(q00247_possessor_of_a_precious_soul4::Q00247PossessorOfAPreciousSoul4);
     r.add(q00249_poisoned_plains_of_the_lizardmen::Q00249PoisonedPlainsOfTheLizardmen);
