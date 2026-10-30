@@ -3,6 +3,8 @@
 //! One module per script, sorted by name; one `add` line per script in [`register`], in the same
 //! order (Java's load order is the folder listing).
 
+pub mod castle_dungeon;
+pub mod cavern_of_the_pirate_captain;
 pub(crate) mod chamber;
 pub mod chamber_of_delusion_east;
 pub mod chamber_of_delusion_north;
@@ -12,11 +14,27 @@ pub mod chamber_of_delusion_tower;
 pub mod chamber_of_delusion_west;
 pub mod crystal_caverns;
 pub mod dark_cloud_mansion;
+pub mod ice_queens_castle;
+pub mod ice_queens_castle_battle;
+pub(crate) mod jinia_guild_hideout;
+pub mod jinia_guild_hideout1;
+pub mod jinia_guild_hideout2;
+pub mod jinia_guild_hideout3;
+pub mod jinia_guild_hideout4;
 pub mod kamaloka;
+pub mod mithril_mine;
+pub mod nornils_garden;
+pub mod nornils_garden_quest;
 pub mod pailaka_devils_legacy;
 pub mod pailaka_injured_dragon;
 pub mod pailaka_song_of_ice_and_fire;
 pub mod rim_kamaloka;
+pub mod ssq_disciples_necropolis_past;
+pub mod ssq_elcadias_tent;
+pub mod ssq_hideout_of_the_dawn;
+pub mod ssq_library_of_sages;
+pub mod ssq_monastery_of_silence;
+pub mod ssq_sanctum_of_the_lords_of_dawn;
 
 use std::collections::HashMap;
 
@@ -161,6 +179,8 @@ mod tests {
 
 /// Registers every instance script, folder by folder in Java's order.
 pub(crate) fn register(r: &mut ScriptRegistry) {
+    r.add(castle_dungeon::CastleDungeon);
+    r.add(cavern_of_the_pirate_captain::CavernOfThePirateCaptain);
     r.add(chamber_of_delusion_east::ChamberOfDelusionEast);
     r.add(chamber_of_delusion_north::ChamberOfDelusionNorth);
     r.add(chamber_of_delusion_south::ChamberOfDelusionSouth);
@@ -169,11 +189,26 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(chamber_of_delusion_west::ChamberOfDelusionWest);
     r.add(crystal_caverns::CrystalCaverns);
     r.add(dark_cloud_mansion::DarkCloudMansion);
+    r.add(ice_queens_castle::IceQueensCastle);
+    r.add(ice_queens_castle_battle::IceQueensCastleBattle);
+    r.add(jinia_guild_hideout1::JiniaGuildHideout1);
+    r.add(jinia_guild_hideout2::JiniaGuildHideout2);
+    r.add(jinia_guild_hideout3::JiniaGuildHideout3);
+    r.add(jinia_guild_hideout4::JiniaGuildHideout4);
     r.add(kamaloka::Kamaloka);
+    r.add(mithril_mine::MithrilMine);
+    r.add(nornils_garden::NornilsGarden);
+    r.add(nornils_garden_quest::NornilsGardenQuest);
     r.add(pailaka_devils_legacy::PailakaDevilsLegacy);
     r.add(pailaka_injured_dragon::PailakaInjuredDragon);
     r.add(pailaka_song_of_ice_and_fire::PailakaSongOfIceAndFire);
     r.add(rim_kamaloka::RimKamaloka);
+    r.add(ssq_disciples_necropolis_past::SSQDisciplesNecropolisPast);
+    r.add(ssq_elcadias_tent::SSQElcadiasTent);
+    r.add(ssq_hideout_of_the_dawn::SSQHideoutOfTheDawn);
+    r.add(ssq_library_of_sages::SSQLibraryOfSages);
+    r.add(ssq_monastery_of_silence::SSQMonasteryOfSilence);
+    r.add(ssq_sanctum_of_the_lords_of_dawn::SSQSanctumOfTheLordsOfDawn);
 }
 
 /// Helpers of the instance script tests.

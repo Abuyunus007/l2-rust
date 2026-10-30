@@ -62,6 +62,12 @@ impl World {
         self.event_drops.drops.remove(event);
     }
 
+    /// The drops an event has registered (S-EVENT-01: what a script test and `LongTimeEvent`
+    /// read; Java reads `EVENT_DROPS` in place). `None` while the event has no list.
+    pub fn event_drops_of(&self, event: &str) -> Option<&[EventDrop]> {
+        self.event_drops.drops.get(event).map(Vec::as_slice)
+    }
+
     /// Java `EventDropManager.doEventDrop(attacker, attackable)`.
     pub fn do_event_drop(&mut self, attacker: Option<ObjectId>, attackable: ObjectId) {
         if self.event_drops.is_empty() {

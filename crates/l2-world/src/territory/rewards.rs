@@ -131,6 +131,35 @@ impl World {
         }
     }
 
+    /// Java `getTerritory(castleId).getQuestDone()[index]++` (the "For the Sake of the Territory"
+    /// quests count the NPCs killed and the wards captured for their territory, S-TW-01).
+    /// Nothing for a castle without a territory.
+    pub fn territory_add_quest_done(&mut self, castle_id: i32, index: usize) {
+        if let Some(count) = self
+            .territory
+            .territories
+            .get_mut(&castle_id)
+            .and_then(|t| t.quest_done.get_mut(index))
+        {
+            *count += 1;
+        }
+    }
+
+    /// Java `announceToParticipants(new ExShowScreenMessage(npcString, position, time), exp, sp)`
+    /// (the catapult kill of the "For the Sake of the Territory" quests, S-TW-01).
+    pub fn territory_announce_screen_message(
+        &mut self,
+        npc_string: l2_protocol_game::NpcStringId,
+        position: i32,
+        time: i32,
+        exp: i64,
+        sp: i64,
+    ) {
+        let message =
+            l2_protocol_game::server::ExShowScreenMessage::npc_string(npc_string, position, time, &[]);
+        self.tw_announce_to_participants(&message, exp, sp);
+    }
+
     /// The points of a player (for tests and the GM pages).
     pub fn territory_points(&self, player: ObjectId) -> Option<[i32; 7]> {
         self.territory.participant_points.get(&player).copied()

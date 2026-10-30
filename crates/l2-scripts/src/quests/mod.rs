@@ -99,10 +99,12 @@ pub mod q00107_merciless_punishment;
 pub mod q00108_jumble_tumble_diamond_fuss;
 pub mod q00109_in_search_of_the_nest;
 pub mod q00110_to_the_primeval_isle;
+pub mod q00111_elrokian_hunters_proof;
 pub mod q00112_walk_of_fate;
 pub mod q00113_status_of_the_beacon_tower;
 pub mod q00116_beyond_the_hills_of_winter;
 pub mod q00117_the_ocean_of_distant_stars;
+pub mod q00118_to_lead_and_be_led;
 pub mod q00119_last_imperial_prince;
 pub mod q00121_pavel_the_giant;
 pub mod q00122_ominous_news;
@@ -401,6 +403,7 @@ pub mod q10502_freya_embroidered_soul_cloak;
 pub mod q10503_frintezza_embroidered_soul_cloak;
 pub mod q10504_jewel_of_antharas;
 pub mod q10505_jewel_of_valakas;
+pub mod territory_war;
 
 use l2_world::ScriptRegistry;
 
@@ -503,7 +506,9 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00113_status_of_the_beacon_tower::Q00113StatusOfTheBeaconTower);
     r.add(q00116_beyond_the_hills_of_winter::Q00116BeyondTheHillsOfWinter);
     r.add(q00117_the_ocean_of_distant_stars::Q00117TheOceanOfDistantStars);
+    r.add(q00118_to_lead_and_be_led::Q00118ToLeadAndBeLed);
     r.add(q00119_last_imperial_prince::Q00119LastImperialPrince);
+    r.add(q00111_elrokian_hunters_proof::Q00111ElrokianHuntersProof);
     r.add(q00112_walk_of_fate::Q00112WalkOfFate);
     r.add(q00121_pavel_the_giant::Q00121PavelTheGiant);
     r.add(q00122_ominous_news::Q00122OminousNews);
@@ -804,4 +809,5 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q10503_frintezza_embroidered_soul_cloak::Q10503FrintezzaEmbroideredSoulCloak);
     r.add(q10504_jewel_of_antharas::Q10504JewelOfAntharas);
     r.add(q10505_jewel_of_valakas::Q10505JewelOfValakas);
+    territory_war::register(r);
 }

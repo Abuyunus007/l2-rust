@@ -327,7 +327,9 @@ async fn a_new_game_server_registers_with_a_generated_secret_and_saves_hexid_txt
     // `hexid.txt` now holds the assigned id and the secret that was sent.
     let saved = hexid::load(config_dir.path()).expect("hexid.txt was written");
     assert_eq!(saved.server_id, 3);
-    assert_eq!(saved.hex_id, auth.hex_id);
+    // Compared as Java's BigInteger text: a secret that starts with 0xff and a byte >= 0x80 comes
+    // back one byte shorter (`toByteArray` drops the redundant sign byte, as in Java), but it is the
+    // same number, and the login server compares the text.
     assert_eq!(
         hex_to_string(&saved.hex_id).unwrap(),
         hex_to_string(&auth.hex_id).unwrap()
