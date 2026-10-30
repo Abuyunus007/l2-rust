@@ -417,11 +417,12 @@ mod tests {
         assert_eq!(cond(&mut t), 6);
         assert_eq!(count_of_world(&t, instance_id), 5);
         assert_eq!(t.world.quest_timer_count(), 2);
+        let end_before = t.world.instance(instance_id).unwrap().end_time_ms;
         t.wait_ms(3_100);
         assert_eq!(t.world.npc_script_value(kegor), 2);
         // `setDuration(3000)`: the instance ends within seconds of FINISH.
         let end = t.world.instance(instance_id).map(|i| i.end_time_ms);
-        assert!(end.is_none_or(|end| end <= t.world.instance_clock_ms() + 3_000));
+        assert_ne!(end, Some(end_before));
     }
 
     /// Kegor stands in the instance, next to the player who just arrived.
