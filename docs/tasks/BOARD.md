@@ -442,7 +442,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-Q-10](S/S-Q-10.md) | Quests Q00261..Q00309 (40 quests) | haiku | spot | PILOT-01 | merged |
 | [S-Q-11](S/S-Q-11.md) | Quests Q00310..Q00335 (18 quests) | haiku | spot | PILOT-01 | merged |
 | [S-Q-12](S/S-Q-12.md) | Quests Q00336..Q00352 (13 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-13](S/S-Q-13.md) | Quests Q00354..Q00385 (29 quests) | haiku | spot | PILOT-01 | in-progress |
+| [S-Q-13](S/S-Q-13.md) | Quests Q00354..Q00385 (29 quests) | haiku | spot | PILOT-01 | merged |
 | [S-Q-14](S/S-Q-14.md) | Quests Q00386..Q00416 (17 quests) | haiku | spot | PILOT-01 | in-progress |
 | [S-Q-15](S/S-Q-15.md) | Quests Q00417..Q00458 (18 quests) | haiku | spot | PILOT-01 | in-progress |
 | [S-Q-16](S/S-Q-16.md) | Quests Q00461..Q00615 (29 quests) | haiku | spot | PILOT-01 | in-progress |
