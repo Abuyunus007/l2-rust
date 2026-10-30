@@ -235,6 +235,7 @@ pub mod q00618_into_the_flame;
 pub mod q00623_the_finest_food;
 pub mod q00624_the_finest_ingredients_part1;
 pub mod q00626_a_dark_twilight;
+pub mod q00628_hunt_golden_ram;
 pub mod q00629_clean_up_the_swamp_of_screams;
 pub mod q00631_delicious_top_choice_meat;
 pub mod q00632_necromancers_request;
@@ -487,6 +488,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00623_the_finest_food::Q00623TheFinestFood);
     r.add(q00624_the_finest_ingredients_part1::Q00624TheFinestIngredientsPart1);
     r.add(q00626_a_dark_twilight::Q00626ADarkTwilight);
+    r.add(q00628_hunt_golden_ram::Q00628HuntGoldenRam);
     r.add(q00629_clean_up_the_swamp_of_screams::Q00629CleanUpTheSwampOfScreams);
     r.add(q00631_delicious_top_choice_meat::Q00631DeliciousTopChoiceMeat);
     r.add(q00632_necromancers_request::Q00632NecromancersRequest);
