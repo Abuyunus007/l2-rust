@@ -28,6 +28,7 @@ pub mod q00020_bring_up_with_love;
 pub mod q00021_hidden_truth;
 pub mod q00022_tragedy_in_von_hellmann_forest;
 pub mod q00023_lidias_heart;
+pub mod q00024_inhabitants_of_the_forest_of_the_dead;
 pub mod q00026_tired_of_waiting;
 pub mod q00027_chest_caught_with_a_bait_of_wind;
 pub mod q00028_chest_caught_with_a_bait_of_icy_air;
@@ -431,6 +432,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00021_hidden_truth::Q00021HiddenTruth);
     r.add(q00022_tragedy_in_von_hellmann_forest::Q00022TragedyInVonHellmannForest);
     r.add(q00023_lidias_heart::Q00023LidiasHeart);
+    r.add(q00024_inhabitants_of_the_forest_of_the_dead::Q00024InhabitantsOfTheForestOfTheDead);
     r.add(q00026_tired_of_waiting::Q00026TiredOfWaiting);
     r.add(q00027_chest_caught_with_a_bait_of_wind::Q00027ChestCaughtWithABaitOfWind);
     r.add(q00028_chest_caught_with_a_bait_of_icy_air::Q00028ChestCaughtWithABaitOfIcyAir);
