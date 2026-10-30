@@ -2,7 +2,7 @@
 // Java: dist/game/data/scripts/quests/Q00213_TrialOfTheSeeker/Q00213_TrialOfTheSeeker.java
 
 use l2_util::ObjectId;
-use l2_world::script::{QuestSound, STARTED, player_class};
+use l2_world::script::{QuestSound, player_class};
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
 
 // NPCs

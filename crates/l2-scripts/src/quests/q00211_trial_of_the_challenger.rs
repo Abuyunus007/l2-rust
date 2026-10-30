@@ -3,7 +3,7 @@
 
 use l2_protocol_game::server::RadarControl;
 use l2_util::ObjectId;
-use l2_world::script::{QuestSound, STARTED};
+use l2_world::script::QuestSound;
 use l2_world::subclass::CategoryType;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
 

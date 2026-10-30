@@ -368,7 +368,12 @@ impl Script for Q00214TrialOfTheScholar {
                 if all(
                     ctx,
                     player,
-                    &[SCRIPTURE_CHAPTER_1, SCRIPTURE_CHAPTER_2, SCRIPTURE_CHAPTER_3, SCRIPTURE_CHAPTER_4],
+                    &[
+                        SCRIPTURE_CHAPTER_1,
+                        SCRIPTURE_CHAPTER_2,
+                        SCRIPTURE_CHAPTER_3,
+                        SCRIPTURE_CHAPTER_4,
+                    ],
                 ) {
                     ctx.take_items(player, CRONOS_SIGIL, 1);
                     ctx.take_items(player, DIETERS_DIARY, 1);
@@ -415,14 +420,18 @@ impl Script for Q00214TrialOfTheScholar {
         let Some(qs) = ctx.get_quest_state(killer, false) else {
             return;
         };
-        if !(qs.is_started(ctx) && ctx.check_if_in_range(ctx.alt_party_range(), npc.object_id, killer, true)) {
+        if !(qs.is_started(ctx) && ctx.check_if_in_range(ctx.alt_party_range(), npc.object_id, killer, true))
+        {
             return;
         }
 
         match npc.id {
             MONSTER_EYE_DESTREOYER => {
-                if all(ctx, killer, &[MIRIENS_2ND_SIGIL, GRAND_MAGISTER_SIGIL, JUREKS_LIST])
-                    && count(ctx, killer, MONSTER_EYE_DESTROYER_SKIN) < 5
+                if all(
+                    ctx,
+                    killer,
+                    &[MIRIENS_2ND_SIGIL, GRAND_MAGISTER_SIGIL, JUREKS_LIST],
+                ) && count(ctx, killer, MONSTER_EYE_DESTROYER_SKIN) < 5
                 {
                     ctx.give_items(killer, MONSTER_EYE_DESTROYER_SKIN, 1);
                     if count(ctx, killer, MONSTER_EYE_DESTROYER_SKIN) == 5
@@ -460,8 +469,11 @@ impl Script for Q00214TrialOfTheScholar {
                 }
             }
             SHACKLE1 | SHACKLE2 => {
-                if all(ctx, killer, &[MIRIENS_2ND_SIGIL, GRAND_MAGISTER_SIGIL, JUREKS_LIST])
-                    && count(ctx, killer, SHACKLES_SCALP) < 2
+                if all(
+                    ctx,
+                    killer,
+                    &[MIRIENS_2ND_SIGIL, GRAND_MAGISTER_SIGIL, JUREKS_LIST],
+                ) && count(ctx, killer, SHACKLES_SCALP) < 2
                 {
                     ctx.give_items(killer, SHACKLES_SCALP, 1);
                     if count(ctx, killer, MONSTER_EYE_DESTROYER_SKIN) >= 5
@@ -475,8 +487,11 @@ impl Script for Q00214TrialOfTheScholar {
                 }
             }
             BREKA_ORC_SHAMAN => {
-                if all(ctx, killer, &[MIRIENS_2ND_SIGIL, GRAND_MAGISTER_SIGIL, JUREKS_LIST])
-                    && count(ctx, killer, SHAMANS_NECKLACE) < 5
+                if all(
+                    ctx,
+                    killer,
+                    &[MIRIENS_2ND_SIGIL, GRAND_MAGISTER_SIGIL, JUREKS_LIST],
+                ) && count(ctx, killer, SHAMANS_NECKLACE) < 5
                 {
                     ctx.give_items(killer, SHAMANS_NECKLACE, 1);
                     if count(ctx, killer, MONSTER_EYE_DESTROYER_SKIN) >= 5
@@ -522,8 +537,11 @@ impl Script for Q00214TrialOfTheScholar {
                 }
             }
             LETO_LIZARDMAN_WARRIOR => {
-                if all(ctx, killer, &[MIRIENS_1ST_SIGIL, HIGH_PRIESTS_SIGIL, CRERAS_PAINTING3])
-                    && count(ctx, killer, BROWN_SCROLL_SCRAP) < 5
+                if all(
+                    ctx,
+                    killer,
+                    &[MIRIENS_1ST_SIGIL, HIGH_PRIESTS_SIGIL, CRERAS_PAINTING3],
+                ) && count(ctx, killer, BROWN_SCROLL_SCRAP) < 5
                 {
                     ctx.give_items(killer, BROWN_SCROLL_SCRAP, 1);
                     if count(ctx, killer, BROWN_SCROLL_SCRAP) == 5 {
@@ -557,7 +575,12 @@ impl Script for Q00214TrialOfTheScholar {
                 }
             }
         } else if qs.is_started(ctx) {
-            let chapters = [SCRIPTURE_CHAPTER_1, SCRIPTURE_CHAPTER_2, SCRIPTURE_CHAPTER_3, SCRIPTURE_CHAPTER_4];
+            let chapters = [
+                SCRIPTURE_CHAPTER_1,
+                SCRIPTURE_CHAPTER_2,
+                SCRIPTURE_CHAPTER_3,
+                SCRIPTURE_CHAPTER_4,
+            ];
             match npc.id {
                 MAGISTER_MIRIEN => {
                     if has(ctx, player, MIRIENS_1ST_SIGIL) {
@@ -607,7 +630,11 @@ impl Script for Q00214TrialOfTheScholar {
                         && all(ctx, player, &[HIGH_PRIESTS_SIGIL, MIRIENS_1ST_SIGIL])
                     {
                         htmltext = "30070-03.html".to_owned();
-                    } else if all(ctx, player, &[HIGH_PRIESTS_SIGIL, MIRIENS_1ST_SIGIL, CRYSTAL_OF_PURITY1]) {
+                    } else if all(
+                        ctx,
+                        player,
+                        &[HIGH_PRIESTS_SIGIL, MIRIENS_1ST_SIGIL, CRYSTAL_OF_PURITY1],
+                    ) {
                         ctx.take_items(player, CRYSTAL_OF_PURITY1, 1);
                         ctx.take_items(player, HIGH_PRIESTS_SIGIL, 1);
                         ctx.give_items(player, SYMBOL_OF_SYLVAIN, 1);
@@ -631,7 +658,13 @@ impl Script for Q00214TrialOfTheScholar {
                         } else if any(
                             ctx,
                             player,
-                            &[MARIAS_2ND_LETTER, CRETAS_1ST_LETTER, LUCILLAS_HANDBAG, CRERAS_PAINTING1, LUCASS_LETTER],
+                            &[
+                                MARIAS_2ND_LETTER,
+                                CRETAS_1ST_LETTER,
+                                LUCILLAS_HANDBAG,
+                                CRERAS_PAINTING1,
+                                LUCASS_LETTER,
+                            ],
                         ) {
                             htmltext = "30071-02.html".to_owned();
                         } else if has(ctx, player, CRERAS_PAINTING2) {
@@ -646,14 +679,23 @@ impl Script for Q00214TrialOfTheScholar {
                     } else if any(
                         ctx,
                         player,
-                        &[SYMBOL_OF_SYLVAIN, MIRIENS_2ND_SIGIL, MIRIENS_3RD_SIGIL, CRYSTAL_OF_PURITY1],
+                        &[
+                            SYMBOL_OF_SYLVAIN,
+                            MIRIENS_2ND_SIGIL,
+                            MIRIENS_3RD_SIGIL,
+                            CRYSTAL_OF_PURITY1,
+                        ],
                     ) {
                         htmltext = "30071-07.html".to_owned();
                     }
                 }
                 WAREHOUSE_KEEPER_VALKON => {
                     if has(ctx, player, TRIFFS_RING) {
-                        if !any(ctx, player, &[VALKONS_REQUEST, CRYSTAL_OF_PURITY2, SCRIPTURE_CHAPTER_2]) {
+                        if !any(
+                            ctx,
+                            player,
+                            &[VALKONS_REQUEST, CRYSTAL_OF_PURITY2, SCRIPTURE_CHAPTER_2],
+                        ) {
                             htmltext = "30103-01.html".to_owned();
                         } else if has(ctx, player, VALKONS_REQUEST)
                             && !any(ctx, player, &[CRYSTAL_OF_PURITY2, SCRIPTURE_CHAPTER_2])
@@ -718,7 +760,8 @@ impl Script for Q00214TrialOfTheScholar {
                                 qs.set_cond(ctx, 18, true);
                                 htmltext = "30115-05.html".to_owned();
                             }
-                        } else if has(ctx, player, SYMBOL_OF_JUREK) && !has(ctx, player, GRAND_MAGISTER_SIGIL) {
+                        } else if has(ctx, player, SYMBOL_OF_JUREK) && !has(ctx, player, GRAND_MAGISTER_SIGIL)
+                        {
                             htmltext = "30115-06.html".to_owned();
                         }
                     } else if any(ctx, player, &[MIRIENS_1ST_SIGIL, MIRIENS_3RD_SIGIL]) {
@@ -821,10 +864,18 @@ impl Script for Q00214TrialOfTheScholar {
                             htmltext = "30609-06.html".to_owned();
                         } else if has(ctx, player, LUCILLAS_HANDBAG) {
                             htmltext = "30609-07.html".to_owned();
-                        } else if any(ctx, player, &[CRERAS_PAINTING1, CRERAS_PAINTING2, CRERAS_PAINTING3]) {
+                        } else if any(
+                            ctx,
+                            player,
+                            &[CRERAS_PAINTING1, CRERAS_PAINTING2, CRERAS_PAINTING3],
+                        ) {
                             htmltext = "30609-10.html".to_owned();
                         }
-                    } else if any(ctx, player, &[CRYSTAL_OF_PURITY1, SYMBOL_OF_SYLVAIN, MIRIENS_2ND_SIGIL]) {
+                    } else if any(
+                        ctx,
+                        player,
+                        &[CRYSTAL_OF_PURITY1, SYMBOL_OF_SYLVAIN, MIRIENS_2ND_SIGIL],
+                    ) {
                         htmltext = "30609-11.html".to_owned();
                     } else if has(ctx, player, MIRIENS_3RD_SIGIL) {
                         if has(ctx, player, DIETERS_KEY) {
@@ -859,7 +910,11 @@ impl Script for Q00214TrialOfTheScholar {
                 ELDER_CASIAN => {
                     if all(ctx, player, &[TRIFFS_RING, POITANS_NOTES]) {
                         if !has(ctx, player, CASIANS_LIST) {
-                            if all(ctx, player, &[SCRIPTURE_CHAPTER_1, SCRIPTURE_CHAPTER_2, SCRIPTURE_CHAPTER_3]) {
+                            if all(
+                                ctx,
+                                player,
+                                &[SCRIPTURE_CHAPTER_1, SCRIPTURE_CHAPTER_2, SCRIPTURE_CHAPTER_3],
+                            ) {
                                 htmltext = "30612-02.html".to_owned();
                             } else {
                                 htmltext = "30612-01.html".to_owned();
@@ -936,7 +991,14 @@ mod tests {
     }
 
     /// Every page links to every event the tests click (the real links are many).
-    const EVENTS: [&str; 6] = ["ACCEPT", "30070-02.html", "30608-02.html", "30071-04.html", "30608-14.html", "30461-10.html"];
+    const EVENTS: [&str; 6] = [
+        "ACCEPT",
+        "30070-02.html",
+        "30608-02.html",
+        "30071-04.html",
+        "30608-14.html",
+        "30461-10.html",
+    ];
 
     const FILES: [&str; 14] = [
         "30461-01.html",
