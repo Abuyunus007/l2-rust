@@ -2,10 +2,8 @@
 //! challenge before Mutated Elpy's chamber.
 // Java: dist/game/data/scripts/ai/areas/Hellbound/AI/Zones/TowerOfNaia/TowerOfNaia.java
 //
-// # Left out
-// - `ZoneManager.getZoneById(200100 / 200101).setEnabled(..)`: the two effect zones of the core
-//   (`18_25_core_naia`, `18_25_naia_pillar_green`) cannot be switched; the world has no
-//   enable switch for an `EffectZone` (only the castle trap zones have one).
+// The two effect zones of the core (200100 `18_25_core_naia`, 200101 `18_25_naia_pillar_green`)
+// are switched with `set_effect_zone_enabled` (Java `ZoneType.setEnabled`).
 
 use std::collections::HashMap;
 
@@ -292,8 +290,9 @@ fn init_spore_challenge(ctx: &mut ScriptCtx<'_>) {
     s.challenge_state = 0;
     s.win_index = -1;
     s.index_count = [0, 0];
-    // `ZoneManager.getZoneById(200100).setEnabled(false)`, `(200101).setEnabled(false)` and then
-    // `(200101).setEnabled(true)`: see "Left out".
+    ctx.world_mut().set_effect_zone_enabled(200_100, false);
+    ctx.world_mut().set_effect_zone_enabled(200_101, false);
+    ctx.world_mut().set_effect_zone_enabled(200_101, true);
 }
 
 /// Java `markElpyRespawn()`.
@@ -711,7 +710,7 @@ impl Script for TowerOfNaia {
             state(ctx).challenge_state = STATE_SPORE_CHALLENGE_IN_PROGRESS;
             mark_elpy_respawn(ctx);
             ctx.close_door(18250025, 0);
-            // `ZoneManager.getZoneById(200100).setEnabled(true)`: see "Left out".
+            ctx.world_mut().set_effect_zone_enabled(200_100, true);
 
             for _ in 0..10 {
                 ctx.add_spawn(SPORE_BASIC, -45464, 246768, -14210, 49152, false, 0, 0);
@@ -806,7 +805,10 @@ impl Script for TowerOfNaia {
         let npc_id = npc.id;
         if npc_id == MUTATED_ELPY {
             ctx.open_door(18250025, 0);
-            // `ZoneManager.getZoneById(200100 / 200101).setEnabled(..)`: see "Left out".
+            ctx.world_mut().set_effect_zone_enabled(200_100, false);
+            // NOTE(java-quirk): 200101 is switched on and at once off again.
+            ctx.world_mut().set_effect_zone_enabled(200_101, true);
+            ctx.world_mut().set_effect_zone_enabled(200_101, false);
         } else if (npc_id == SPORE_BASIC || (SPORE_FIRE..=SPORE_EARTH).contains(&npc_id))
             && state(ctx).challenge_state == STATE_SPORE_CHALLENGE_IN_PROGRESS
         {

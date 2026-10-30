@@ -210,3 +210,84 @@ fn the_clan_info_update_goes_to_the_clan_and_is_my_lord_needs_a_residence() {
     assert_eq!(names_to(&out, 1), ["PLEDGE_SHOW_INFO_UPDATE"]);
     assert!(names_to(&out, 2).is_empty());
 }
+
+/// Hears the zone 70000 (S-API-05: NPCs enter and leave zones for the scripts too).
+struct ZoneProbe;
+
+impl Script for ZoneProbe {
+    fn name(&self) -> &'static str {
+        "ZoneProbe"
+    }
+
+    fn path(&self) -> &'static str {
+        "test/ZoneProbe"
+    }
+
+    fn setup(&self, s: &mut ScriptSetup) {
+        s.add_enter_zone_id(&[70_000]);
+        s.add_exit_zone_id(&[70_000]);
+    }
+
+    fn on_enter_zone(&self, ctx: &mut ScriptCtx<'_>, creature: Oid, zone_id: i32) {
+        ctx.state::<Events>()
+            .0
+            .push(format!("enter {} {zone_id}", creature.0));
+    }
+
+    fn on_exit_zone(&self, ctx: &mut ScriptCtx<'_>, creature: Oid, zone_id: i32) {
+        ctx.state::<Events>()
+            .0
+            .push(format!("exit {} {zone_id}", creature.0));
+    }
+}
+
+fn zone_events(t: &mut ScriptTest) -> Vec<String> {
+    // The zone events are queued (`notifyEventAsync`): a first call delivers them.
+    t.world.run_as_script("ZoneProbe", |_| {});
+    let mut out = Vec::new();
+    t.world.run_as_script("ZoneProbe", |ctx| {
+        out = std::mem::take(&mut ctx.state::<Events>().0);
+    });
+    out
+}
+
+#[test]
+fn npcs_enter_and_leave_the_zones_scripts_listen_to() {
+    use crate::ai::areas::gracia::testing::{load_zones, square_zone, zone_file};
+    let zones = zone_file(&[square_zone(
+        "probe",
+        70_000,
+        "ScriptZone",
+        (X + 2_000, Y),
+        200,
+        (-5_000, 0),
+        "",
+    )]);
+    let mut registry = ScriptRegistry::new();
+    registry.add(ZoneProbe);
+    let mut t = ScriptTest::new_with(
+        registry,
+        NPCS,
+        "",
+        &[("data/zones/probe.xml", &zones)],
+        |world, root| load_zones(world, root),
+    );
+    // Spawned outside: nothing. Spawned inside: the enter.
+    let outside = t.spawn(NPC_ID, 0);
+    let inside = t.spawn(NPC_ID, 2_000);
+    assert_eq!(zone_events(&mut t), [format!("enter {} 70000", inside.0)]);
+    assert_eq!(
+        t.world.npc_script_zones(inside),
+        [(70_000, "ScriptZone".to_owned())]
+    );
+    // The outside NPC is moved in, then out again.
+    let z = crate::testing::Z;
+    t.world.set_position(outside, X + 2_050, Y, z);
+    assert_eq!(zone_events(&mut t), [format!("enter {} 70000", outside.0)]);
+    t.world.set_position(outside, X, Y, z);
+    assert_eq!(zone_events(&mut t), [format!("exit {} 70000", outside.0)]);
+    // A deleted NPC leaves its zones (`removeFromZones`).
+    t.world.delete_npc(inside);
+    assert_eq!(zone_events(&mut t), [format!("exit {} 70000", inside.0)]);
+    assert!(t.world.npc_script_zones(inside).is_empty());
+}

@@ -772,6 +772,8 @@ impl World {
 
     /// `Npc.onDecay`: `stopQuestTimers()`, `_scriptValue = 0`.
     pub(crate) fn script_on_npc_decay(&mut self, npc: ObjectId) {
+        // `ZoneRegion.removeFromZones(this)` (the exits the scripts listen to, S-API-05).
+        self.npc_leave_script_zones(npc);
         self.script_cancel_timers_of(npc);
         self.scripts.kill_delays.remove(&npc);
         // "Clear script value."
