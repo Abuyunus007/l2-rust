@@ -324,3 +324,41 @@ fn point_in_range_walking_region_and_right_hand() {
         assert!(!ctx.is_random_walking_enabled(n));
     });
 }
+
+#[test]
+fn the_test_world_has_clans_with_residences_summons_and_skills() {
+    let npcs = r#"<npc id="31000" type="Folk" level="70" name="Probe"/>
+        <npc id="14001" type="Servitor" level="20" name="Kat the Cat"/>"#;
+    let mut registry = ScriptRegistry::new();
+    registry.add(Probe);
+    let mut t = ScriptTest::new(registry, npcs, "", &[]);
+    t.enter(1, 40, vec![]);
+    t.enter(2, 40, vec![]);
+
+    let clan = t.clan_with_residence(1, "Lords", Some(5), None);
+    let owner = t.world.clan_of(Oid(1)).unwrap();
+    assert_eq!(owner.id, clan);
+    assert_eq!((owner.castle_id, owner.fort_id), (5, 0));
+    assert!(t.world.clan_of(Oid(2)).is_none());
+
+    let mut t2 = ScriptTest::new(ScriptRegistry::new(), npcs, "", &[]);
+    t2.enter(1, 40, vec![]);
+    t2.clan_with_residence(1, "Wardens", None, Some(101));
+    let warden = t2.world.clan_of(Oid(1)).unwrap();
+    assert_eq!((warden.castle_id, warden.fort_id), (0, 101));
+
+    let kat = t.summon(2, 14_001);
+    assert_eq!(t.world.summon_of(Oid(2)), Some(kat));
+
+    t.set_skills(
+        "",
+        r#"<skill id="1177" levels="1" name="Wind Strike"><operateType>A1</operateType><targetType>ONE</targetType></skill>"#,
+    );
+    let wind_strike = l2_world::SkillKey::new(1177, 1);
+    assert!(t.world.script_skill_mp_hp_consume(wind_strike).is_some());
+    assert!(
+        t.world
+            .script_skill_mp_hp_consume(l2_world::SkillKey::new(1178, 1))
+            .is_none()
+    );
+}
