@@ -176,6 +176,7 @@ pub mod q00275_dark_winged_spies;
 pub mod q00295_dreaming_of_the_skies;
 pub mod q00303_collect_arrowheads;
 pub mod q00317_catch_the_wind;
+pub mod q00357_warehouse_keepers_ambition;
 pub mod q00358_illegitimate_child_of_the_goddess;
 pub mod q00359_for_a_sleepless_deadman;
 pub mod q00366_silver_haired_shaman;
@@ -360,6 +361,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00295_dreaming_of_the_skies::Q00295DreamingOfTheSkies);
     r.add(q00303_collect_arrowheads::Q00303CollectArrowheads);
     r.add(q00317_catch_the_wind::Q00317CatchTheWind);
+    r.add(q00357_warehouse_keepers_ambition::Q00357WarehouseKeepersAmbition);
     r.add(q00358_illegitimate_child_of_the_goddess::Q00358IllegitimateChildOfTheGoddess);
     r.add(q00359_for_a_sleepless_deadman::Q00359ForASleeplessDeadman);
     r.add(q00366_silver_haired_shaman::Q00366SilverHairedShaman);
