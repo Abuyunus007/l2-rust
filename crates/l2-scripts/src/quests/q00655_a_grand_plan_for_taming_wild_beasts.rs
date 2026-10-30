@@ -28,8 +28,7 @@ pub struct Q00655AGrandPlanForTamingWildBeasts;
 /// Java `Q00655_AGrandPlanForTamingWildBeasts.checkCrystalofPurity(player)`: a player at cond 1
 /// who has fewer than 10 Crystals of Purity gets one more (called by the beast farm kills).
 ///
-/// FOLLOW-UP(engine): Java calls this from `ai/areas/BeastFarm/BeastFarm.java` and
-/// `FeedableBeasts.java` (the AI batch). Nothing calls it on the Rust side yet.
+/// Called from the last growth step of the beast farm (`BeastFarm`, `FeedableBeasts`).
 pub fn check_crystal_of_purity(ctx: &mut ScriptCtx<'_>, player: ObjectId) {
     let at_cond_one = ctx
         .player_quest_state(player, "Q00655_AGrandPlanForTamingWildBeasts")

@@ -26,8 +26,8 @@ pub struct Q00020BringUpWithLove;
 /// Java `Q00020_BringUpWithLove.checkJewelOfInnocence(player)`: a 5% chance of the Innocence
 /// Jewel for a player at cond 1 who does not have it yet; the jewel moves the quest to cond 2.
 ///
-/// FOLLOW-UP(engine): Java calls this from the beast farm kills (`ai/areas/BeastFarm/BeastFarm.java`
-/// and `FeedableBeasts.java`, the AI batch). Nothing calls it on the Rust side yet.
+/// Called from the last growth step of the beast farm (`ai/areas/BeastFarm/BeastFarm.java` and
+/// `FeedableBeasts.java`, S-AI-03), where Java makes the `TamedBeast`.
 pub fn check_jewel_of_innocence(ctx: &mut ScriptCtx<'_>, player: ObjectId) {
     if let Some(qs) = ctx.get_quest_state(player, false)
         && qs.is_cond(ctx, 1)
