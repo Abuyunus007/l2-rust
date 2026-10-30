@@ -694,6 +694,6 @@ mod tests {
             kills += 1;
             assert!(kills < 5);
         }
-        assert!(t.count(1, SPIRIT_BEAD) >= before + 1);
+        assert!(t.count(1, SPIRIT_BEAD) > before);
     }
 }
