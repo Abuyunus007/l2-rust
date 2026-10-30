@@ -242,6 +242,7 @@ pub mod q00350_enhance_your_weapon;
 pub mod q00351_black_swan;
 pub mod q00352_help_rood_raise_a_new_pet;
 pub mod q00450_grave_robber_rescue;
+pub mod q00655_a_grand_plan_for_taming_wild_beasts;
 
 use l2_world::ScriptRegistry;
 
@@ -484,4 +485,5 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00351_black_swan::Q00351BlackSwan);
     r.add(q00352_help_rood_raise_a_new_pet::Q00352HelpRoodRaiseANewPet);
     r.add(q00450_grave_robber_rescue::Q00450GraveRobberRescue);
+    r.add(q00655_a_grand_plan_for_taming_wild_beasts::Q00655AGrandPlanForTamingWildBeasts);
 }
