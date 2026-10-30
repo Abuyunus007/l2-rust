@@ -218,6 +218,8 @@ pub mod q00309_for_a_good_cause;
 pub mod q00317_catch_the_wind;
 pub mod q00450_grave_robber_rescue;
 pub mod q00504_competition_for_the_bandit_stronghold;
+pub mod q00508_a_clans_reputation;
+pub mod q00509_a_clans_fame;
 pub mod q00510_a_clans_prestige;
 pub mod q00601_watching_eyes;
 pub mod q00602_shadow_of_light;
@@ -445,6 +447,8 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00317_catch_the_wind::Q00317CatchTheWind);
     r.add(q00450_grave_robber_rescue::Q00450GraveRobberRescue);
     r.add(q00504_competition_for_the_bandit_stronghold::Q00504CompetitionForTheBanditStronghold);
+    r.add(q00508_a_clans_reputation::Q00508AClansReputation);
+    r.add(q00509_a_clans_fame::Q00509AClansFame);
     r.add(q00510_a_clans_prestige::Q00510AClansPrestige);
     r.add(q00601_watching_eyes::Q00601WatchingEyes);
     r.add(q00602_shadow_of_light::Q00602ShadowOfLight);
