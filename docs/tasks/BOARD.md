@@ -448,7 +448,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-Q-16](S/S-Q-16.md) | Quests Q00461..Q00615 (29 quests) | haiku | spot | PILOT-01 | merged |
 | [S-Q-17](S/S-Q-17.md) | Quests Q00616..Q00650 (34 quests) | haiku | spot | PILOT-01 | merged |
 | [S-Q-18](S/S-Q-18.md) | Quests Q00651..Q00713 (30 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-19](S/S-Q-19.md) | Quests Q00714..Q10285 (32 quests) | haiku | spot | PILOT-01 | in-progress |
+| [S-Q-19](S/S-Q-19.md) | Quests Q00714..Q10285 (32 quests) | haiku | spot | PILOT-01 | merged |
 | [S-Q-20](S/S-Q-20.md) | Quests Q10286..Q10505 (16 quests) | haiku | spot | PILOT-01 | in-progress |
 | S-ADMIN-08 | Admin words of the script systems | haiku | review | API-01, VM-01 | ready (card written when API-01 merges) |
 | S-E2E-01 | End to end | sonnet | review | Q, VM-01, BOSS-01, INST-01 | ready (card written when API-01 merges) |
