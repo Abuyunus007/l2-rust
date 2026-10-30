@@ -15,6 +15,7 @@
 
 pub mod ai;
 pub mod custom;
+pub mod events;
 pub mod instances;
 pub mod quests;
 pub mod village_master;
@@ -37,6 +38,7 @@ pub fn register_all(r: &mut ScriptRegistry) {
 pub fn register_all_with(r: &mut ScriptRegistry, class_master: ClassMasterConfig) {
     ai::register_with(r, class_master);
     custom::register(r);
+    events::register(r);
     instances::register(r);
     quests::register(r);
     village_master::register(r);
