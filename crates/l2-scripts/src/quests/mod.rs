@@ -231,6 +231,9 @@ pub mod q00328_sense_for_business;
 pub mod q00329_curiosity_of_a_dwarf;
 pub mod q00331_arrow_of_vengeance;
 pub mod q00450_grave_robber_rescue;
+pub mod q00635_into_the_dimensional_rift;
+pub mod q00639_guardians_of_the_holy_grail;
+pub mod q00646_signs_of_revolt;
 
 use l2_world::ScriptRegistry;
 
@@ -462,4 +465,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00329_curiosity_of_a_dwarf::Q00329CuriosityOfADwarf);
     r.add(q00331_arrow_of_vengeance::Q00331ArrowOfVengeance);
     r.add(q00450_grave_robber_rescue::Q00450GraveRobberRescue);
+    r.add(q00635_into_the_dimensional_rift::Q00635IntoTheDimensionalRift);
+    r.add(q00639_guardians_of_the_holy_grail::Q00639GuardiansOfTheHolyGrail);
+    r.add(q00646_signs_of_revolt::Q00646SignsOfRevolt);
 }
