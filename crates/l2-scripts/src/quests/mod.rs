@@ -263,6 +263,7 @@ pub mod q00385_yoke_of_the_past;
 pub mod q00450_grave_robber_rescue;
 pub mod q00903_the_call_of_antharas;
 pub mod q00904_dragon_trophy_antharas;
+pub mod q00907_dragon_trophy_valakas;
 pub mod q00998_fallen_angel_select;
 pub mod q10267_journey_to_gracia;
 pub mod q10268_to_the_seed_of_infinity;
@@ -536,4 +537,5 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q10267_journey_to_gracia::Q10267JourneyToGracia);
     r.add(q00903_the_call_of_antharas::Q00903TheCallOfAntharas);
     r.add(q00904_dragon_trophy_antharas::Q00904DragonTrophyAntharas);
+    r.add(q00907_dragon_trophy_valakas::Q00907DragonTrophyValakas);
 }
