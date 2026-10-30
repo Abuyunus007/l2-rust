@@ -334,6 +334,7 @@ pub mod q00553_olympiad_undefeated;
 pub mod q00601_watching_eyes;
 pub mod q00602_shadow_of_light;
 pub mod q00603_daimon_the_white_eyed_part1;
+pub mod q00604_daimon_the_white_eyed_part2;
 pub mod q00605_alliance_with_ketra_orcs;
 pub mod q00606_battle_against_varka_silenos;
 pub mod q00607_prove_your_courage_ketra;
@@ -755,6 +756,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00553_olympiad_undefeated::Q00553OlympiadUndefeated);
     r.add(q00601_watching_eyes::Q00601WatchingEyes);
     r.add(q00603_daimon_the_white_eyed_part1::Q00603DaimonTheWhiteEyedPart1);
+    r.add(q00604_daimon_the_white_eyed_part2::Q00604DaimonTheWhiteEyedPart2);
     r.add(q00605_alliance_with_ketra_orcs::Q00605AllianceWithKetraOrcs);
     r.add(q00602_shadow_of_light::Q00602ShadowOfLight);
     r.add(q00606_battle_against_varka_silenos::Q00606BattleAgainstVarkaSilenos);
