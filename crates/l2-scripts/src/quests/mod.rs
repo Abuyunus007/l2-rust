@@ -404,6 +404,8 @@ pub mod q00713_path_to_becoming_a_lord_aden;
 pub mod q00714_path_to_becoming_a_lord_schuttgart;
 pub mod q00715_path_to_becoming_a_lord_goddard;
 pub mod q00716_path_to_becoming_a_lord_rune;
+pub mod q00726_light_within_the_darkness;
+pub mod q00727_hope_within_the_darkness;
 pub mod q00901_how_lavasaurus_are_made;
 pub mod q00902_reclaim_our_era;
 pub mod q00903_the_call_of_antharas;
@@ -847,6 +849,8 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00714_path_to_becoming_a_lord_schuttgart::Q00714PathToBecomingALordSchuttgart);
     r.add(q00715_path_to_becoming_a_lord_goddard::Q00715PathToBecomingALordGoddard);
     r.add(q00716_path_to_becoming_a_lord_rune::Q00716PathToBecomingALordRune);
+    r.add(q00726_light_within_the_darkness::Q00726LightWithinTheDarkness);
+    r.add(q00727_hope_within_the_darkness::Q00727HopeWithinTheDarkness);
     r.add(q00901_how_lavasaurus_are_made::Q00901HowLavasaurusesAreMade);
     r.add(q00902_reclaim_our_era::Q00902ReclaimOurEra);
     r.add(q00903_the_call_of_antharas::Q00903TheCallOfAntharas);
