@@ -136,6 +136,7 @@ pub mod q00317_catch_the_wind;
 pub mod q00338_alligator_hunter;
 pub mod q00340_subjugation_of_lizardmen;
 pub mod q00341_hunting_for_wild_beasts;
+pub mod q00343_under_the_shadow_of_the_ivory_tower;
 pub mod q00344_1000_years_the_end_of_lamentation;
 pub mod q00345_method_to_raise_the_dead;
 pub mod q00347_go_get_the_calculator;
@@ -280,6 +281,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00341_hunting_for_wild_beasts::Q00341HuntingForWildBeasts);
     r.add(q00340_subjugation_of_lizardmen::Q00340SubjugationOfLizardmen);
     r.add(q00344_1000_years_the_end_of_lamentation::Q00344ThousandYearsTheEndOfLamentation);
+    r.add(q00343_under_the_shadow_of_the_ivory_tower::Q00343UnderTheShadowOfTheIvoryTower);
     r.add(q00345_method_to_raise_the_dead::Q00345MethodToRaiseTheDead);
     r.add(q00350_enhance_your_weapon::Q00350EnhanceYourWeapon);
     r.add(q00347_go_get_the_calculator::Q00347GoGetTheCalculator);
