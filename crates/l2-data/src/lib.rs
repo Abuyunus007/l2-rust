@@ -10,7 +10,9 @@ pub mod armor_set;
 pub mod augment;
 pub mod augmentation;
 pub mod buylist;
+pub mod category;
 pub mod class_list;
+pub mod class_master;
 pub mod cubic;
 pub mod cursed_weapon;
 pub mod dimensional_rift;
@@ -63,7 +65,9 @@ pub use augmentation::{AugmentationOption, AugmentationOptions};
 pub use buylist::{
     BuyListDef, BuyListOptions, BuyLists, MerchantPriceConfig, MerchantPriceConfigs, ProductDef,
 };
+pub use category::CategoryData;
 pub use class_list::{ClassId, ClassInfo, ClassList, Race};
+pub use class_master::{ClassChangeData, ClassMasterConfig};
 pub use cubic::{
     CubicCondition, CubicData, CubicSelectionMode, CubicSkill, CubicTargetType, CubicTemplate,
     HpConditionType,
@@ -127,6 +131,8 @@ pub struct Datapack {
     pub root: PathBuf,
     /// `data/stats/players/classList.xml`.
     pub class_list: Arc<ClassList>,
+    /// `data/CategoryData.xml`: the ids of every `CategoryType`.
+    pub categories: Arc<CategoryData>,
     /// `data/stats/players/experienceLoss.xml`: the share of a level a death costs.
     pub experience_loss: Arc<ExperienceLoss>,
     /// `data/stats/players/karmaLoss.xml`: the karma modifier per level.
@@ -344,6 +350,7 @@ impl Datapack {
         Ok(Self {
             root: root.to_path_buf(),
             class_list: Arc::new(ClassList::load(root)),
+            categories: Arc::new(CategoryData::load(root)),
             experience_loss: Arc::new(ExperienceLoss::load(root)),
             karma_loss: Arc::new(KarmaLoss::load(root)),
             experience: Arc::new(experience),

@@ -740,6 +740,13 @@ impl World {
             self.send_plain_acquire_skill_info(player, skill_type, &learn);
             return;
         }
+        if skill_type == AcquireSkillType::Transform {
+            let Some(learn) = self.rewards.skill_trees.transform_skill(skill_id, level).cloned() else {
+                return;
+            };
+            self.send_plain_acquire_skill_info(player, skill_type, &learn);
+            return;
+        }
         let Some(learning_class) = self.learning_class_of(player) else {
             return;
         };
@@ -925,6 +932,33 @@ impl World {
             self.acquire_sub_class_skill(player, trainer, &learn, prev_skill_level);
             return;
         }
+        if skill_type == AcquireSkillType::Transform {
+            let Some(learn) = self.rewards.skill_trees.transform_skill(skill_id, level).cloned() else {
+                return;
+            };
+            // Hack check.
+            if !self.can_transform(player) {
+                self.send(
+                    player,
+                    &SystemMessage::new(
+                        SystemMessageId::YouHaveNotCompletedTheNecessaryQuestForSkillAcquisition,
+                    ),
+                );
+                let text = self.player_text(player);
+                self.handle_illegal_player_action(
+                    player,
+                    &format!(
+                        "{text} is requesting skill Id: {skill_id} level {level} without required quests!"
+                    ),
+                    IllegalActionPunishment::None,
+                );
+                return;
+            }
+            if self.check_player_skill(player, trainer, &learn, skill_type) {
+                self.give_skill(player, trainer, skill_id, level, skill_type);
+            }
+            return;
+        }
         // Only the class, clan, fishing and collect trees are loaded: `getSkillLearn` finds
         // nothing for the other types.
         if skill_type != AcquireSkillType::Class {
@@ -1093,6 +1127,86 @@ impl World {
             }
         }
         result
+    }
+
+    /// Java `RequestAcquireSkill.canTransform(player)`: `AltTransformationWithoutQuest`, or the
+    /// quest "More Than Meets the Eye" (136) is completed.
+    pub fn can_transform(&self, player: ObjectId) -> bool {
+        if self.settings.subclass.allow_transform_without_quest {
+            return true;
+        }
+        self.scripts
+            .players
+            .get(&player)
+            .and_then(|quests| quests.get("Q00136_MoreThanMeetsTheEye"))
+            .is_some_and(|qs| qs.is_completed())
+    }
+
+    /// Java `SkillTreeData.getAvailableTransformSkills(player)`: the transformation skills of the
+    /// player's level and race, at the next level the player lacks.
+    pub fn available_transform_skills(&self, player: ObjectId) -> Vec<SkillLearn> {
+        let Some(p) = self.players.get(&player) else {
+            return Vec::new();
+        };
+        let race = u16::try_from(p.data.class_id)
+            .ok()
+            .and_then(|id| ClassId(id).race());
+        let mut result = Vec::new();
+        for skill in self.rewards.skill_trees.transform_skills() {
+            if p.core.level >= skill.get_level
+                && (skill.races.is_empty() || race.is_some_and(|r| skill.races.contains(&r)))
+            {
+                let old = self.known_skill_level(player, skill.skill_id);
+                if old != 0 {
+                    if old == skill.skill_level - 1 {
+                        result.push(skill.clone());
+                    }
+                } else if skill.skill_level == 1 {
+                    result.push(skill.clone());
+                }
+            }
+        }
+        result
+    }
+
+    /// Java `AvantGarde.showTransformSkillList(player)` (a static helper of the script): the
+    /// transformation skills as an `AcquireSkillList` of type `TRANSFORM`, or the level to come
+    /// back at, or "There are no other skills to learn."
+    pub fn show_transform_skill_list(&mut self, player: ObjectId) {
+        let mut list = AcquireSkillList::new(AcquireSkillType::Transform);
+        let mut count = 0;
+        for s in self.available_transform_skills(player) {
+            if self.skill_template_exists(s.skill_id, s.skill_level) {
+                count += 1;
+                list.add_skill(s.skill_id, s.skill_level, s.skill_level, s.level_up_sp, 0);
+            }
+        }
+        if count == 0 {
+            let level = self.core_of(player).map_or(1, |c| c.level);
+            let trees = self.rewards.skill_trees.clone();
+            let all: Vec<&SkillLearn> = trees.transform_skills().iter().collect();
+            if all.is_empty() {
+                warn!("SkillTreeData: SkillTree is not defined for getMinLevelForNewSkill!");
+            }
+            let min_level = min_level_for_new_skill(&all, level);
+            if min_level > 0 {
+                // No more skills to learn, come back when you level.
+                self.send(
+                    player,
+                    &SystemMessage::new(
+                        SystemMessageId::YouDoNotHaveAnyFurtherSkillsToLearnComeBackWhenYouHaveReachedLevelS1,
+                    )
+                    .with(SystemMessageParam::IntNumber(min_level)),
+                );
+            } else {
+                self.send(
+                    player,
+                    &SystemMessage::new(SystemMessageId::ThereAreNoOtherSkillsToLearn),
+                );
+            }
+        } else {
+            self.send(player, &list);
+        }
     }
 
     /// Java `AvantGarde.showSubClassSkillList(player)` (a static helper of the script): the
