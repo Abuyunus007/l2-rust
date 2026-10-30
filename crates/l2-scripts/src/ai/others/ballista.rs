@@ -79,8 +79,7 @@ impl Script for Ballista {
 
     fn on_spawn(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
         ctx.disable_core_ai(npc, true);
-        // `npc.setMortal(false)`: the engine has no immortality flag yet, so the Ballista can
-        // be hurt like any NPC (listed as a follow-up in the card report).
+        ctx.world_mut().set_mortal(npc.object_id, false);
     }
 }
 
@@ -118,6 +117,12 @@ mod tests {
     fn the_core_ai_is_off() {
         let (t, ballista) = setup(false);
         assert!(t.world.npc_core_ai_disabled(ballista));
+    }
+
+    #[test]
+    fn the_ballista_is_not_mortal() {
+        let (t, ballista) = setup(false);
+        assert!(!t.world.is_mortal(ballista));
     }
 
     #[test]
