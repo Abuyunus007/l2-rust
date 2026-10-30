@@ -32,6 +32,7 @@ pub mod admin;
 pub mod ai_help;
 pub mod api;
 pub mod ctx;
+mod event_api;
 pub mod events;
 #[cfg(test)]
 mod events_tests;
