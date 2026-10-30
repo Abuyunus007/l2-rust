@@ -29,6 +29,8 @@ const INSERT_ITEM: &str = "INSERT INTO items (owner_id,item_id,count,loc,loc_dat
 const UPDATE_ITEM: &str = "UPDATE items SET owner_id=?,count=?,loc=?,loc_data=?,enchant_level=?,custom_type1=?,custom_type2=?,mana_left=?,time=? WHERE object_id = ?";
 // Java: Item.removeFromDb
 const DELETE_ITEM: &str = "DELETE FROM items WHERE object_id = ?";
+// Java: LongTimeEvent.destroyItemsOnEnd
+const DELETE_ITEMS_OF_ITEM_ID: &str = "DELETE FROM items WHERE item_id=?";
 // Java: Item.removeFromDb, Item.removeAugmentation
 const DELETE_ITEM_ATTRIBUTES: &str = "DELETE FROM item_attributes WHERE itemId = ?";
 // Java: Item.removeFromDb, Item.updateItemElements, Item.clearElementAttr (element -1)
@@ -291,6 +293,17 @@ impl ItemRepository {
     /// Wraps the pool (cheap to clone).
     pub fn new(pool: Pool) -> Self {
         Self { pool }
+    }
+
+    /// Every row of `items` with this item id, whoever owns it. The event items an event removes
+    /// when it ends (nothing happens when there is none).
+    // Java: LongTimeEvent.destroyItemsOnEnd
+    pub async fn delete_items_of_item_id(&self, item_id: i32) -> Result<()> {
+        sqlx::query(DELETE_ITEMS_OF_ITEM_ID)
+            .bind(item_id)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
     }
 
     /// The items of one location of the owner (warehouses, pets, freight, ...).

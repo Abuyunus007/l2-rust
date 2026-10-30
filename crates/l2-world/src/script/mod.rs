@@ -32,6 +32,7 @@ pub mod admin;
 pub mod ai_help;
 pub mod api;
 mod area_api;
+mod birthday;
 
 mod area_help;
 mod area_spawns;
@@ -161,6 +162,11 @@ pub struct ScriptSettings {
     /// `FeatureConfig.ALLOW_WYVERN_ALWAYS` (`AllowRideWyvernAlways`, WyvernManager).
     /// `PlayerConfig.FEE_DELETE_TRANSFER_SKILLS` (`FeeDeleteTransferSkills`, HealerTrainer).
     pub fee_delete_transfer_skills: i32,
+    /// `GeneralConfig.ALT_BIRTHDAY_GIFT` (`AltBirthdayGift`), `ALT_BIRTHDAY_MAIL_SUBJECT` and
+    /// `ALT_BIRTHDAY_MAIL_TEXT` (CharacterBirthday).
+    pub alt_birthday_gift: i32,
+    pub alt_birthday_mail_subject: String,
+    pub alt_birthday_mail_text: String,
     pub allow_wyvern_always: bool,
     /// `FeatureConfig.ALLOW_WYVERN_DURING_SIEGE` (`AllowRideWyvernDuringSiege`).
     pub allow_wyvern_during_siege: bool,
@@ -245,6 +251,9 @@ impl Default for ScriptSettings {
             quest_item_drop_amount_multiplier: 1.0,
             autodelete_invalid_quest_data: false,
             cycle_database_writes: false,
+            alt_birthday_gift: 22187,
+            alt_birthday_mail_subject: "Happy Birthday!".to_owned(),
+            alt_birthday_mail_text: String::new(),
             bloodalliance_points: 500,
             bloodoath_points: 200,
             knightsepaulette_points: 20,

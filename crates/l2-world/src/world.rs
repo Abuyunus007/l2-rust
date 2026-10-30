@@ -462,6 +462,7 @@ impl World {
             WorldCommand::GlobalVariablesReread { token, result } => {
                 self.on_global_variables_reread(token, result)
             }
+            WorldCommand::BirthdayGiftsLoaded { result } => self.on_birthday_gifts_loaded(result),
             WorldCommand::OfflinePetRowsLoaded {
                 owner,
                 control_object_id,

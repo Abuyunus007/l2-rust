@@ -415,8 +415,16 @@ mod tests {
         t.take_writes();
     }
 
-    /// Player 1 (with the card, cond 3) enters. The transformation 113 cannot be made in the
-    /// test world (no transformation table), so the entrance is called the way `onTalk` does.
+    /// The Dawn's disguise, reduced to what `transformPlayer` needs.
+    const DISGUISE: &str = r#"<transform id="113" type="PURE_STAT" can_swim="0" normal_attackable="0">
+        <Male><common>
+          <base range="20" attackSpeed="300" attackType="SWORD" critRate="5" mAtk="5" pAtk="5" randomDamage="10"/>
+          <collision radius="8" height="23.5"/>
+          <moving walk="50" run="115"/>
+        </common></Male></transform>"#;
+
+    /// Player 1 (with the card, cond 3) enters. The entrance is called the way `onTalk` does, so
+    /// the tests that are not about the disguise need not wear it.
     fn inside(t: &mut ScriptTest) {
         t.enter(1, 80, vec![]);
         cond3(t);
@@ -478,6 +486,43 @@ mod tests {
         assert_eq!(talk(&mut t, devices[0]).as_deref(), Some("32578-02.html"));
         assert!(t.in_world(devices[0]));
         assert_eq!(param_int_of(&t, instance_id, "doorst"), 0);
+    }
+
+    /// Player 1, cond 3 with the card, in the disguise (the transformation table is loaded).
+    fn disguised(t: &mut ScriptTest) {
+        t.set_transformations(DISGUISE);
+        t.enter(1, 80, vec![]);
+        cond3(t);
+        t.world
+            .run_as_script(Q00195, |ctx| ctx.give_items(Oid(1), IDENTITY_CARD, 1));
+        assert!(t.world.transform_player(TRANSFORMATION, Oid(1)));
+        assert_eq!(t.world.transformation_id(Oid(1)), TRANSFORMATION);
+        t.take();
+    }
+
+    #[test]
+    fn in_the_disguise_the_light_of_dawn_lets_the_player_in() {
+        let mut t = setup();
+        let light = t.spawn(LIGHT_OF_DAWN, 20);
+        disguised(&mut t);
+        assert_eq!(talk(&mut t, light).as_deref(), Some("32575-01.html"));
+        let instance_id = t.world.instance_id_of(Oid(1));
+        assert_eq!(instance_id, 300_000);
+        assert_eq!(t.world.instance_world(instance_id).unwrap().template_id, 111);
+    }
+
+    #[test]
+    fn in_the_disguise_the_device_opens_the_first_door() {
+        let mut t = setup();
+        let light = t.spawn(LIGHT_OF_DAWN, 20);
+        disguised(&mut t);
+        talk(&mut t, light);
+        let instance_id = t.world.instance_id_of(Oid(1));
+        let devices = t.npcs_of(IDENTITY_CONFIRM_DEVICE);
+        assert_eq!(param_int_of(&t, instance_id, "doorst"), 0);
+        assert_eq!(talk(&mut t, devices[0]).as_deref(), Some("32578-01.html"));
+        assert!(t.world.is_instance_door_open(instance_id, DOOR_ONE));
+        assert_eq!(param_int_of(&t, instance_id, "doorst"), 1);
     }
 
     fn param_int_of(t: &ScriptTest, instance_id: i32, name: &str) -> i32 {

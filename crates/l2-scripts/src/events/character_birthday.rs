@@ -3,10 +3,9 @@
 //
 // Not a `LongTimeEvent` (it has no `config.xml`): it extends `Script` and is always on.
 //
-// Left out: `onDailyReset` (the birthday mail). It needs a `SELECT .. FROM characters` for the
-// characters whose birthday was in the last 24 hours and `MailManager.sendMessage` with an
-// attached item (Alegria as the sender). The world has neither, and the engine cannot run a
-// database query for a script (D-15): its own card (see the report of S-EVENT-01).
+// `onDailyReset` (the birthday mail): the query goes out through the outbox and the mails are made
+// when the answer comes back (`World::request_birthday_gifts`, `script/birthday.rs`). Only with
+// `DailyResetDatabaseWrites` (D-49).
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
@@ -39,6 +38,13 @@ impl Script for CharacterBirthday {
         s.add_start_npc(&GATEKEEPERS);
         s.add_talk_id(&[ALEGRIA]);
         s.add_talk_id(&GATEKEEPERS);
+        s.set_on_daily_reset();
+    }
+
+    // Java: `@RegisterEvent(ON_DAILY_RESET)`: every character whose birthday was in the last 24
+    // hours gets a mail from Alegria with the birthday gift.
+    fn on_daily_reset(&self, ctx: &mut ScriptCtx<'_>) {
+        ctx.world_mut().request_birthday_gifts();
     }
 
     fn on_event(
@@ -124,6 +130,90 @@ mod tests {
             page = CharacterBirthday.on_talk(ctx, npc, ObjectId(1));
         });
         page
+    }
+
+    // ---- the daily reset mail (S-LEFT-01) ----
+
+    use l2_world::outbox::{ItemRowOp, PersistCommand};
+    use l2_world::script::ScriptSettings;
+    use l2_world::{WorldCommand, WorldSettings};
+
+    fn birthday_world(daily_reset_writes: bool) -> ScriptTest {
+        let mut registry = ScriptRegistry::new();
+        registry.add(CharacterBirthday);
+        let items = r#"<item id="22187" type="EtcItem" name="Birthday Pack"/>"#;
+        ScriptTest::new_with(registry, NPCS, items, &[], |world, _| {
+            world.set_settings(WorldSettings {
+                daily_reset_database_writes: daily_reset_writes,
+                ..WorldSettings::default()
+            });
+            world.set_script_settings(ScriptSettings {
+                alt_birthday_gift: 22187,
+                alt_birthday_mail_subject: "Happy Birthday!".to_owned(),
+                alt_birthday_mail_text: "Hello $c1, you are $s1 now.".to_owned(),
+                ..ScriptSettings::default()
+            });
+        })
+    }
+
+    #[test]
+    fn the_daily_reset_asks_for_the_birthdays_only_with_the_switch_on() {
+        let mut t = birthday_world(false);
+        t.world.daily_reset();
+        assert!(t.take_boss().is_empty());
+
+        let mut t = birthday_world(true);
+        t.world.daily_reset();
+        let asked = t.take_boss();
+        assert!(matches!(
+            asked.as_slice(),
+            [PersistCommand::BirthdayGiftsRequest { since_ms }] if *since_ms > 0
+        ));
+    }
+
+    #[test]
+    fn each_birthday_child_gets_a_mail_from_alegria_with_the_gift() {
+        let mut t = birthday_world(true);
+        t.world.handle(WorldCommand::BirthdayGiftsLoaded {
+            result: Ok(vec![(5, "Birthday".to_owned(), 3), (6, "Other".to_owned(), 1)]),
+        });
+        let sent = t.take_boss();
+        let mails: Vec<_> = sent
+            .iter()
+            .filter_map(|c| match c {
+                PersistCommand::Mail(l2_world::mail::MailWrite::Insert(m)) => Some(m),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(mails.len(), 2);
+        let mail = mails[0];
+        assert_eq!((mail.receiver_id, mail.sender_id), (5, -1));
+        assert_eq!(mail.subject, "Happy Birthday!");
+        assert_eq!(mail.send_by_system, l2_world::mail::SENDER_TYPE_ALEGRIA);
+        // NOTE(java-quirk): `replaceAll("$c1", ..)` is a regular expression where `$` ends the
+        // input, so the text keeps its placeholders.
+        assert_eq!(mail.content, "Hello $c1, you are $s1 now.");
+        assert!(mail.has_attachments && mail.unread && mail.deleted_by_sender);
+        assert_eq!(mail.attachments.len(), 1);
+        let gift = &mail.attachments[0];
+        assert_eq!((gift.item_id, gift.count, gift.loc.as_str()), (22187, 1, "MAIL"));
+        assert_eq!(gift.loc_data, mail.id);
+        // The item row goes out too.
+        assert!(sent.iter().any(|c| matches!(
+            c,
+            PersistCommand::ItemRows { ops, .. }
+                if matches!(ops.as_slice(), [ItemRowOp::Insert { owner_id: -1, item }] if item.item_id == 22187)
+        )));
+        assert_eq!(t.world.mail_inbox_size(5), 1);
+        assert_eq!(t.world.mail_inbox_size(6), 1);
+    }
+
+    #[test]
+    fn a_failed_birthday_query_sends_nothing() {
+        let mut t = birthday_world(true);
+        t.world
+            .handle(WorldCommand::BirthdayGiftsLoaded { result: Err(()) });
+        assert!(t.take_boss().is_empty());
     }
 
     #[test]

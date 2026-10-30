@@ -629,7 +629,8 @@ mod tests {
         <npc id="30557" type="Folk" level="70" name="Torai"/>
         <npc id="31958" type="Folk" level="70" name="Yaseni"/>
         <npc id="20777" type="Monster" level="20" name="Hunter Bear"/>
-        <npc id="27058" type="Monster" level="20" name="Honey Bear"/>"#;
+        <npc id="27058" type="Monster" level="20" name="Honey Bear"/>
+        <npc id="20403" type="Monster" level="20" name="Hunter Tarantula"/>"#;
 
     fn items() -> String {
         let mut out = String::from(
@@ -835,6 +836,69 @@ mod tests {
                 rows::update(NAME, "<state>", "Completed")
             ]
         );
+    }
+
+    /// Player 1 attacks `npc_id` (the attack script runs) after casting Spoil on it, or not.
+    fn attack(t: &mut ScriptTest, npc_id: i32, spoil: bool) -> Oid {
+        let monster = t.spawn(npc_id, 60);
+        if spoil {
+            t.set_last_skill_cast(1, SkillKey::new(SPOIL, 1));
+            t.set_spoiled(monster, 1);
+        }
+        let npc = ScriptNpc {
+            object_id: monster,
+            id: npc_id,
+        };
+        t.world.run_as_script(NAME, |ctx| {
+            Q00417PathOfTheScavenger.on_attack(ctx, npc, Oid(1), 10, false, None);
+        });
+        monster
+    }
+
+    #[test]
+    fn spoiled_honey_bears_give_the_jars_and_the_fifth_moves_the_quest_on() {
+        let (mut t, pipi) = setup();
+        enter_fighter(&mut t, 20, vec![item(100, BEAR_PICTURE, 1)]);
+        accept(&mut t, pipi);
+        // An unspoiled Honey Bear gives nothing.
+        let plain = attack(&mut t, HONEY_BEAR, false);
+        t.kill(1, plain);
+        assert_eq!(t.count(1, HONEY_JAR), 0);
+        for jars in 1..=5 {
+            let bear = attack(&mut t, HONEY_BEAR, true);
+            t.kill(1, bear);
+            assert_eq!(t.count(1, HONEY_JAR), jars);
+        }
+        assert_eq!(writes(&mut t).last(), Some(&rows::update(NAME, "cond", "6")));
+        // The fifth is the last one.
+        let bear = attack(&mut t, HONEY_BEAR, true);
+        t.kill(1, bear);
+        assert_eq!(t.count(1, HONEY_JAR), 5);
+    }
+
+    #[test]
+    fn spoiled_tarantulas_give_twenty_beads_for_the_next_step() {
+        let (mut t, pipi) = setup();
+        enter_fighter(&mut t, 20, vec![item(100, TARANTULA_PICTURE, 1)]);
+        accept(&mut t, pipi);
+        // Spoiled but never cast on by the attacker: no bead (script value stays 1).
+        let monster = t.spawn(HUNTER_TARANTULA, 60);
+        t.set_spoiled(monster, 1);
+        let npc = ScriptNpc {
+            object_id: monster,
+            id: HUNTER_TARANTULA,
+        };
+        t.world.run_as_script(NAME, |ctx| {
+            Q00417PathOfTheScavenger.on_attack(ctx, npc, Oid(1), 10, false, None);
+        });
+        t.kill(1, monster);
+        assert_eq!(t.count(1, BEAD), 0);
+        for beads in 1..=20 {
+            let monster = attack(&mut t, HUNTER_TARANTULA, true);
+            t.kill(1, monster);
+            assert_eq!(t.count(1, BEAD), beads);
+        }
+        assert_eq!(writes(&mut t).last(), Some(&rows::update(NAME, "cond", "8")));
     }
 
     #[test]
