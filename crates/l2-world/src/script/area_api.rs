@@ -117,6 +117,30 @@ impl World {
         self.update_pvp_status_target(player, target);
     }
 
+    /// Java `npc.getAggroRange()`.
+    pub fn script_npc_aggro_range(&self, npc: ObjectId) -> i32 {
+        self.npc_template(npc).map_or(0, |t| t.aggro_range)
+    }
+
+    /// Java `npc.getTemplate().getBaseAttackType()` is `SWORD` or `POLE`.
+    pub fn script_npc_attacks_with_sword_or_pole(&self, npc: ObjectId) -> bool {
+        use l2_data::item::WeaponType;
+        self.npc_template(npc)
+            .is_some_and(|t| matches!(t.base_attack_type, WeaponType::Sword | WeaponType::Pole))
+    }
+
+    /// Java `creature.isInvisible()`.
+    pub fn script_is_invisible(&self, creature: ObjectId) -> bool {
+        self.objects.get(&creature).is_some_and(|e| e.invisible)
+    }
+
+    /// Java `npc.getSpawn().stopRespawn()` (nothing for an NPC without a spawn).
+    pub fn script_stop_npc_respawn(&mut self, npc: ObjectId) {
+        if let Some(index) = self.npcs.get(&npc).and_then(|n| n.spawn) {
+            self.stop_respawn(index);
+        }
+    }
+
     /// Java `GameTimeTaskManager.isNight()`.
     pub fn script_is_night(&self) -> bool {
         Self::is_night_now()

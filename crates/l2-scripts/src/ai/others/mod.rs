@@ -53,6 +53,7 @@ pub mod see_through_silent_move;
 pub mod selina;
 pub mod servitors;
 pub mod shadow_summoner;
+pub mod siege_guards;
 pub mod sin_eater;
 pub mod sin_wardens;
 pub mod soul_trader;
@@ -146,6 +147,7 @@ pub(crate) fn register_with(r: &mut ScriptRegistry, class_master: ClassMasterCon
     r.add(timak_orc_troop_leader::TimakOrcTroopLeader);
     r.add(sin_wardens::SinWardens);
     r.add(shadow_summoner::ShadowSummoner);
+    r.add(siege_guards::SiegeGuards);
     r.add(remnants::Remnants);
     r.add(random_spawn::RandomSpawn);
     r.add(prison_guards::PrisonGuards);
