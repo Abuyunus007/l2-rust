@@ -264,6 +264,7 @@ pub mod q00450_grave_robber_rescue;
 pub mod q00714_path_to_becoming_a_lord_schuttgart;
 pub mod q00715_path_to_becoming_a_lord_goddard;
 pub mod q00901_how_lavasaurus_are_made;
+pub mod q00902_reclaim_our_era;
 pub mod q00903_the_call_of_antharas;
 pub mod q00904_dragon_trophy_antharas;
 pub mod q00905_refined_dragon_blood;
@@ -568,4 +569,5 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00715_path_to_becoming_a_lord_goddard::Q00715PathToBecomingALordGoddard);
     r.add(q00714_path_to_becoming_a_lord_schuttgart::Q00714PathToBecomingALordSchuttgart);
     r.add(q00901_how_lavasaurus_are_made::Q00901HowLavasaurusesAreMade);
+    r.add(q00902_reclaim_our_era::Q00902ReclaimOurEra);
 }
