@@ -20,10 +20,7 @@ const CERTIFIED_SOUL_BREAKER: &str = "Q00065_CertifiedSoulBreaker";
 
 /// Java `npc.getVariables().getObject(name, ...)`: the object id a quest stored (0 = unset).
 fn object_var(ctx: &ScriptCtx<'_>, npc: ObjectId, name: &str) -> Option<ObjectId> {
-    let id = ctx
-        .world()
-        .npc_variables(npc)?
-        .get_long(name, 0);
+    let id = ctx.world().npc_variables(npc)?.get_long(name, 0);
     i32::try_from(id).ok().filter(|id| *id != 0).map(ObjectId)
 }
 
@@ -157,12 +154,8 @@ mod tests {
         let mut registry = ScriptRegistry::new();
         registry.add(Katenar);
         registry.add(CertifiedSoulBreaker);
-        let pages = Pages::of(&Katenar).plain(&[
-            "32242-01.html",
-            "32242-02.html",
-            "32242-03.html",
-            "32242-04.html",
-        ]);
+        let pages =
+            Pages::of(&Katenar).plain(&["32242-01.html", "32242-02.html", "32242-03.html", "32242-04.html"]);
         let mut t = ScriptTest::with_pages(registry, NPCS, ITEMS, pages);
         let katenar = t.spawn(KATENAR, 20);
         (t, katenar)

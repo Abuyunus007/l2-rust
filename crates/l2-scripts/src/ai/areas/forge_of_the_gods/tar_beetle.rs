@@ -12,9 +12,18 @@ use super::tar_beetle_spawn::{
 // Skills
 const TAR_SPITE: i32 = 6142;
 const SKILLS: [SkillKey; 3] = [
-    SkillKey { id: TAR_SPITE, level: 1 },
-    SkillKey { id: TAR_SPITE, level: 2 },
-    SkillKey { id: TAR_SPITE, level: 3 },
+    SkillKey {
+        id: TAR_SPITE,
+        level: 1,
+    },
+    SkillKey {
+        id: TAR_SPITE,
+        level: 2,
+    },
+    SkillKey {
+        id: TAR_SPITE,
+        level: 3,
+    },
 ];
 
 /// Java `ai.areas.ForgeOfTheGods.TarBeetle`.
@@ -60,7 +69,13 @@ impl Script for TarBeetle {
         None
     }
 
-    fn on_aggro_range_enter(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, _is_summon: bool) {
+    fn on_aggro_range_enter(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        player: ObjectId,
+        _is_summon: bool,
+    ) {
         if ctx.get_script_value(npc) > 0 {
             let level = ctx
                 .world()

@@ -73,7 +73,9 @@ pub fn remove_beetle(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
     if let Ok(index) = usize::try_from(index)
         && index < SPAWN_ZONES.len()
     {
-        ctx.state::<TarBeetleZones>().zone(index).retain(|n| *n != npc.object_id);
+        ctx.state::<TarBeetleZones>()
+            .zone(index)
+            .retain(|n| *n != npc.object_id);
     }
     ctx.delete_npc(npc);
 }
