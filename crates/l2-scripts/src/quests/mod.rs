@@ -61,6 +61,7 @@ pub mod q00060_good_works_reward;
 pub mod q00061_law_enforcement;
 pub mod q00062_path_of_the_trooper;
 pub mod q00063_path_of_the_warder;
+pub mod q00064_certified_berserker;
 pub mod q00067_saga_of_the_doombringer;
 pub mod q00068_saga_of_the_soul_hound;
 pub mod q00069_saga_of_the_trickster;
@@ -468,6 +469,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00061_law_enforcement::Q00061LawEnforcement);
     r.add(q00062_path_of_the_trooper::Q00062PathOfTheTrooper);
     r.add(q00063_path_of_the_warder::Q00063PathOfTheWarder);
+    r.add(q00064_certified_berserker::Q00064CertifiedBerserker);
     r.add(q00067_saga_of_the_doombringer::Q00067SagaOfTheDoombringer);
     r.add(q00068_saga_of_the_soul_hound::Q00068SagaOfTheSoulHound);
     r.add(q00069_saga_of_the_trickster::Q00069SagaOfTheTrickster);
