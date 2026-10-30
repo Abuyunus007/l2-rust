@@ -282,6 +282,8 @@ pub mod q10291_fire_dragon_destroyer;
 pub mod q10501_zaken_embroidered_soul_cloak;
 pub mod q10502_freya_embroidered_soul_cloak;
 pub mod q10503_frintezza_embroidered_soul_cloak;
+pub mod q10504_jewel_of_antharas;
+pub mod q10505_jewel_of_valakas;
 
 use l2_world::ScriptRegistry;
 
@@ -564,4 +566,6 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q10501_zaken_embroidered_soul_cloak::Q10501ZakenEmbroideredSoulCloak);
     r.add(q10502_freya_embroidered_soul_cloak::Q10502FreyaEmbroideredSoulCloak);
     r.add(q10503_frintezza_embroidered_soul_cloak::Q10503FrintezzaEmbroideredSoulCloak);
+    r.add(q10504_jewel_of_antharas::Q10504JewelOfAntharas);
+    r.add(q10505_jewel_of_valakas::Q10505JewelOfValakas);
 }
