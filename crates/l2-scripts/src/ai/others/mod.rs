@@ -29,6 +29,7 @@ pub mod gatekeeper_spirit;
 pub mod golem_trader;
 pub mod gordon;
 pub mod hunting_grounds_teleport;
+pub mod katenar;
 pub mod kier;
 pub mod manor_manager;
 pub mod monument_of_heroes;
@@ -99,6 +100,7 @@ pub(crate) fn register_with(r: &mut ScriptRegistry, class_master: ClassMasterCon
     r.add(gatekeeper_spirit::GatekeeperSpirit);
     r.add(gordon::Gordon);
     r.add(hunting_grounds_teleport::HuntingGroundsTeleport);
+    r.add(katenar::Katenar);
     r.add(kier::Kier);
     r.add(manor_manager::ManorManager);
     r.add(monument_of_heroes::MonumentOfHeroes);
