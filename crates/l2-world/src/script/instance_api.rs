@@ -360,6 +360,64 @@ impl World {
         self.set_intention_idle(id);
     }
 
+    /// Java `player.broadcastPacket(packet)`: the player first, then everybody who sees him
+    /// (S-INST-03, Cavern of the Pirate Captain).
+    pub fn broadcast_player_packet(&self, player: ObjectId, packet: &impl l2_net::Encode) {
+        self.broadcast_with_self(player, packet);
+    }
+
+    /// Java `npc.setDisplayEffect(value)`: announced to the players around when it changes
+    /// (S-INST-03, Ice Queen's Castle battle).
+    pub fn set_npc_display_effect(&mut self, npc: ObjectId, value: i32) {
+        let changed = self.npcs.get_mut(&npc).is_some_and(|entry| {
+            let changed = entry.display_effect != value;
+            entry.display_effect = value;
+            changed
+        });
+        if changed {
+            self.broadcast_packet(
+                npc,
+                &l2_protocol_game::server::ExChangeNpcState {
+                    object_id: npc.0,
+                    state: value,
+                },
+            );
+        }
+    }
+
+    /// Java `npc.getTemplate().getParameters().getObject(name, SkillHolder.class)`: the skill of a
+    /// `<skill name="..">` parameter of the NPC's template.
+    pub fn npc_template_skill_param(&self, npc: ObjectId, name: &str) -> Option<crate::effects::SkillKey> {
+        let template = self
+            .npcs
+            .get(&npc)
+            .and_then(|n| self.npc_world.template(n.npc_id))?;
+        match template.parameters.get(name) {
+            Some(l2_data::npc::NpcParam::Skill { id, level }) => Some(crate::effects::SkillKey {
+                id: *id,
+                level: *level,
+            }),
+            _ => None,
+        }
+    }
+
+    /// Java `DecayTaskManager.getInstance().cancel(npc)`.
+    pub fn cancel_npc_decay_task(&mut self, npc: ObjectId) {
+        self.cancel_decay_task(npc);
+    }
+
+    /// Java `door.setMeshIndex(mesh)`: only the field (S-INST-03, Nornil's Garden).
+    pub fn set_door_mesh_index(&mut self, id: ObjectId, mesh_index: i32) {
+        if let Some(door) = self.doors.get_mut(&id) {
+            door.mesh_index = mesh_index;
+        }
+    }
+
+    /// Java `npc.isMyLord(player)` (S-INST-03, Castle Dungeon).
+    pub fn npc_is_my_lord(&self, npc: ObjectId, player: ObjectId) -> bool {
+        self.fort_is_my_lord(npc, player)
+    }
+
     /// `if (instance.getReenterType() == InstanceReenterType.ON_ENTER) handleReenterTime(world)`.
     pub fn handle_reenter_time_on_enter(&mut self, instance_id: i32) {
         if self
