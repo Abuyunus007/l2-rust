@@ -84,7 +84,9 @@ mod status_params;
 mod steal_abnormal;
 mod summon;
 mod summon_cubic;
+mod summon_npc;
 mod summon_pet;
+mod trap_effects;
 mod sweeper;
 mod target_me;
 mod teleport;
@@ -268,6 +270,11 @@ pub(crate) fn register_all(registry: &mut EffectRegistry) {
     registry.register("Summon", summon::Summon::create);
     // M6-PET-01.
     registry.register("SummonPet", summon_pet::SummonPet::create);
+    // S-HAND-04: decoys and traps.
+    registry.register("SummonNpc", summon_npc::SummonNpc::create);
+    registry.register("SummonTrap", trap_effects::SummonTrap::create);
+    registry.register("TrapDetect", trap_effects::TrapDetect::create);
+    registry.register("TrapRemove", trap_effects::TrapRemove::create);
     registry.register("Unsummon", unsummon::Unsummon::create);
     registry.register("ImmobilePetBuff", immobile_buff::ImmobilePetBuff::create);
     // M6-CRAFT-01: the recipe book skills.

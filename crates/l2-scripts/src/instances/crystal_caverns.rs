@@ -5,10 +5,9 @@
 // Java keeps the progress in `CCWorld extends InstanceWorld`; here the status is the engine
 // `InstanceWorld`'s and the rest is the script's state by instance id ([`CcWorld`]).
 //
-// Not in the engine (the rest is ported): NPC traps (`addTrap`), so the door-opening trap that
-// follows Dolph is never made and `on_trap_action` never fires (the Java TODO says the same of
-// the Darnel/Lahm traps); the spawn animation flag `isSummonSpawn` of `addSpawn` (Kechi's
-// henchmen appear without it, as the Java TODO admits).
+// Not in the engine (the rest is ported): the spawn animation flag `isSummonSpawn` of `addSpawn`
+// (Kechi's henchmen appear without it, as the Java TODO admits). The Darnel/Lahm door traps are
+// not in the Java script either (its TODO says the core did not support them).
 
 use std::collections::HashMap;
 
@@ -436,8 +435,7 @@ impl Script for CrystalCaverns {
             ALARM,
         ]);
         s.add_skill_see_id(&[BAYLOR, 25534, 32275, 32276, 32277]);
-        // `addTrapActionId(DOOR_OPENING_TRAP[0])`: the engine registers the event for every trap.
-        s.set_on_trap_action();
+        s.add_trap_action_id(&[DOOR_OPENING_TRAP[0]]);
         s.add_spell_finished_id(&[BAYLOR]);
         s.add_attack_id(&[TEARS]);
         s.add_kill_id(&MOBLIST);
@@ -1137,8 +1135,24 @@ impl Script for CrystalCaverns {
                 set_status(ctx, id, 8);
 
                 // first door opener trap
-                // NOTE: the engine has no NPC traps (`addTrap`): the trap, and the shout it
-                // makes, are not there, so the secret room door is not opened by it.
+                if let Some(trap) = ctx.add_trap(
+                    DOOR_OPENING_TRAP[0],
+                    DOOR_OPENING_TRAP[1],
+                    DOOR_OPENING_TRAP[2],
+                    DOOR_OPENING_TRAP[3],
+                    DOOR_OPENING_TRAP[4],
+                    id,
+                ) {
+                    ctx.state::<State>().npc_instance.insert(trap.object_id, id);
+                    // NOTE(java-quirk): `Trap.broadcastPacket` only reaches who can see the trap,
+                    // and nobody has detected it yet, so the shout is heard by nobody.
+                    ctx.broadcast_npc_say(
+                        trap,
+                        ChatType::NpcShout,
+                        NpcStringId::YouHaveFinallyComeHereButYouWillNotBeAbleToFindTheSecretRoom,
+                        &[],
+                    );
+                }
             }
         } else if status == 8 {
             for i in 0..4 {
@@ -2072,6 +2086,7 @@ mod tests {
             32275,
             32280,
             32359,
+            DOOR_OPENING_TRAP[0],
         ] {
             text += &format!(r#"<npc id="{id}" type="Folk" level="70" name="F{id}"/>"#);
         }
@@ -2247,6 +2262,26 @@ mod tests {
                 assert!(count_of(&t, id, spawned) >= 1);
             }
         }
+
+        // Dolph's death made the door opening trap (`addTrap`): a trap of no player, invulnerable,
+        // hidden from the party until it is detected.
+        let traps = t.npcs_of(DOOR_OPENING_TRAP[0]);
+        assert_eq!(traps.len(), 1);
+        let trap = traps[0];
+        assert!(t.world.is_trap(trap));
+        assert_eq!(t.world.trap_owner(trap), None);
+        assert!(t.world.is_invul(trap));
+        assert!(!t.world.trap_can_be_seen(trap, Some(Oid(1))));
+        assert_eq!(t.world.instance_id_of(trap), id);
+
+        // Disarming it (`ON_TRAP_ACTION`, `TRAP_DISARMED`) opens the door and starts the first room.
+        assert_eq!(state(&mut t, |s| s.worlds[&300_000].rooms_status[0]), 0);
+        let before = t.world.instance(id).unwrap().npcs.len();
+        let trap_npc = script_npc(&t, trap);
+        t.world.run_as_script(NAME, |ctx| {
+            CrystalCaverns.on_trap_action(ctx, trap_npc, Oid(1), TrapAction::TrapDisarmed);
+        });
+        assert!(t.world.instance(id).unwrap().npcs.len() > before, "room 1 spawned");
     }
 
     #[test]

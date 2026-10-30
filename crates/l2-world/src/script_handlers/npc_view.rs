@@ -57,7 +57,7 @@ fn amount_format(value: i64) -> String {
 }
 
 /// Java `new DecimalFormat("0.00##").format(value)`: two to four decimals (half even).
-fn chance_format(value: f64) -> String {
+pub(crate) fn chance_format(value: f64) -> String {
     let text = format!("{value:.4}");
     let Some((int, frac)) = text.split_once('.') else {
         return text;
@@ -394,7 +394,7 @@ impl World {
     }
 
     /// The player's bonus stats as a drop roll reads them (`rewards/drop.rs`).
-    fn npc_view_killer(&self, player: ObjectId) -> DropKiller {
+    pub(crate) fn npc_view_killer(&self, player: ObjectId) -> DropKiller {
         let level = self.players.get(&player).map_or(1, |p| p.core.level);
         match self.stats(player) {
             Some(view) => DropKiller {

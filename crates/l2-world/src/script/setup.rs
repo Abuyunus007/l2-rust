@@ -246,6 +246,7 @@ impl EventKind {
             Self::AttackableFactionCall => "addFactionCallId",
             Self::AttackableAggroRangeEnter => "addAggroRangeEnterId",
             Self::CreatureSee => "addCreatureSeeId",
+            Self::TrapAction => "addTrapActionId",
             _ => "",
         }
     }
@@ -562,6 +563,12 @@ impl ScriptSetup {
         self.add(EventKind::OlympiadMatchResult, &[]);
     }
 
+    /// Java `addTrapActionId(npcIds)` (S-HAND-04): the script hears `ON_TRAP_ACTION` of the traps
+    /// with these NPC ids (`on_trap_action`).
+    pub fn add_trap_action_id(&mut self, npc_ids: &[i32]) {
+        self.add(EventKind::TrapAction, npc_ids);
+    }
+
     /// `@RegisterEvent(ON_NPC_MANOR_BYPASS)` + `@RegisterType(NPC)` + `@Id(..)` (S-API-04).
     pub fn add_npc_manor_bypass_id(&mut self, npc_ids: &[i32]) {
         self.add(EventKind::NpcManorBypass, npc_ids);
@@ -603,12 +610,13 @@ impl Listeners {
         npc_known: Option<&dyn Fn(i32) -> bool>,
     ) {
         for (kind, ids) in &setup.listeners {
-            if kind.register_type() == RegisterType::Global {
+            if kind.register_type() == RegisterType::Global && ids.is_empty() {
                 self.global.entry(*kind).or_default().push(script);
                 continue;
             }
             for &id in ids {
-                if kind.register_type() == RegisterType::Npc
+                // `addTrapActionId(ids)`: the global kind `TrapAction` registered by NPC id.
+                if (kind.register_type() == RegisterType::Npc || *kind == EventKind::TrapAction)
                     && let Some(known) = npc_known
                     && !known(id)
                 {

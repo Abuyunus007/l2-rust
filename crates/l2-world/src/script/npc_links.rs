@@ -54,6 +54,12 @@ impl World {
         }
     }
 
+    /// Java `creature.setSummoner(summoner)` of a creature whose summoner is no NPC (a decoy's
+    /// player): only `getSummoner()` answers it.
+    pub(crate) fn set_npc_summoner(&mut self, npc: ObjectId, summoner: ObjectId) {
+        self.scripts.npc_links.summoner.insert(npc, summoner);
+    }
+
     /// Java `Npc.addSummonedNpc(npc)`: also `npc.setSummoner(this)`.
     pub fn add_summoned_npc(&mut self, summoner: ObjectId, npc: ObjectId) {
         let links = &mut self.scripts.npc_links;

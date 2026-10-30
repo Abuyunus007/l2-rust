@@ -428,6 +428,11 @@ impl World {
             self.door_do_die(id);
             return true;
         }
+        // `Decoy.doDie` (S-HAND-04).
+        if self.is_decoy(id) {
+            self.decoy_do_die(id);
+            return true;
+        }
         if self.is_npc(id) {
             self.script_record_killing_blow(id, killer);
             self.npc_do_die(id, killer);

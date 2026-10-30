@@ -439,7 +439,16 @@ impl World {
     /// Java `EventDispatcher.hasListener(type, container)`: the object's, the NPC template's or a
     /// global listener exists.
     pub(crate) fn script_has_listener(&self, kind: EventKind, container: Option<ObjectId>) -> bool {
-        let npc_id = container.and_then(|c| self.npcs.get(&c)).map(|n| n.npc_id);
+        self.script_has_listener_for(kind, container, None)
+    }
+
+    /// [`Self::script_has_listener`] with the NPC id of the container for a container that left
+    /// the world before the queued event ran (a disarmed trap).
+    fn script_has_listener_for(&self, kind: EventKind, container: Option<ObjectId>, npc_hint: Option<i32>) -> bool {
+        let npc_id = container
+            .and_then(|c| self.npcs.get(&c))
+            .map(|n| n.npc_id)
+            .or(npc_hint);
         !self.scripts.listeners.global(kind).is_empty()
             || container.is_some_and(|c| self.scripts.object_listeners.has(c, kind))
             || npc_id.is_some_and(|id| self.scripts.listeners.has(kind, id))
@@ -453,10 +462,18 @@ impl World {
         container: Option<ObjectId>,
     ) -> Option<TerminateReturn> {
         let kind = event.kind();
-        if !self.script_has_listener(kind, container) {
+        // Java's container is the trap object, which keeps its template after `deleteMe()`.
+        let npc_hint = match &event {
+            ScriptEvent::TrapAction { trap, .. } => Some(trap.id),
+            _ => None,
+        };
+        if !self.script_has_listener_for(kind, container, npc_hint) {
             return None;
         }
-        let npc_id = container.and_then(|c| self.npcs.get(&c)).map(|n| n.npc_id);
+        let npc_id = container
+            .and_then(|c| self.npcs.get(&c))
+            .map(|n| n.npc_id)
+            .or(npc_hint);
         let mut local: Vec<(ScriptId, Option<i64>)> = Vec::new();
         if let Some(c) = container
             && let Some(list) = self.scripts.object_listeners.by_object.get(&(c, kind))

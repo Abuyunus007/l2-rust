@@ -249,7 +249,7 @@ impl World {
     pub fn is_npc(&self, id: ObjectId) -> bool {
         self.npcs
             .get(&id)
-            .is_some_and(|n| n.class != crate::npc::NpcClass::Summon)
+            .is_some_and(|n| !matches!(n.class, crate::npc::NpcClass::Summon | crate::npc::NpcClass::Decoy))
     }
 
     /// Java `isAttackable()` of an NPC (monsters, guards, ...; see `StatView::is_attackable`).

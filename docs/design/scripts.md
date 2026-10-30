@@ -388,8 +388,21 @@ test loops "kill until the count is reached" instead of guessing the number of k
   `set_npc_script_value` / `is_npc_script_value`, `set_lethalable(id, false)` (the lethal effect respects it), `is_overhit`,
   `overhit_attacker`, `overhit_damage`, `overhit_enabled`, `set_overhit_values` (the over-hit skill flag and the over-hit exp bonus work).
 
-Not fired yet (no Rust counterpart): `ON_TRAP_ACTION` (no trap NPC in the world), the `OnPlayerClan*` events, template-level
+Not fired yet (no Rust counterpart): the `OnPlayerClan*` events, template-level
 (item) listeners of `ON_PLAYER_ITEM_PICKUP`, `ON_CREATURE_ATTACK/ATTACKED` for NPC attacks outside `do_attack`.
+
+## Added by S-HAND-04
+
+- **Traps:** `ctx.add_trap(trap_id, x, y, z, heading, instance_id)` (Java `addTrap`: no owner, no life time, invulnerable; the template
+  may be of any type, the Crystal Caverns trap is a `Folk`). `s.add_trap_action_id(&[..])` (Java `addTrapActionId`) registers
+  `ON_TRAP_ACTION` by trap NPC id; `s.set_on_trap_action()` still hears every trap. `on_trap_action(ctx, trap, trigger, action)` gets
+  `TrapAction::{TrapTriggered, TrapDetected, TrapDisarmed}` (queued; a disarmed trap is deleted before the hook runs, `trap.id` is
+  still its template). World API: `World::{spawn_trap, summon_trap, trap_set_detected, trap_unsummon, trap_can_be_seen, trap_of,
+  trap_owner, trap_skill, is_trap}`. `Trap.broadcastPacket` is kept: `ctx.broadcast_npc_say` of a trap reaches only the players who
+  detected it (nobody, for a script's trap).
+- **Decoys:** `World::{summon_decoy, decoy_of, decoy_owner, is_decoy}`; the `SummonNpc` effect (Decoy and plain NPC branches; the
+  `EffectPoint` branch is not made), `SummonTrap`, `TrapDetect`, `TrapRemove` are registered.
+- **Drop search board:** `_bbs_search_item`, `_bbs_search_drop`, `_bbs_npc_trace` (`community_board/drop_search.rs`).
 
 ## Not in the engine yet (follow-ups)
 

@@ -83,6 +83,12 @@ impl World {
 
     /// Java `target.isAutoAttackable(attacker)` for a player attacker.
     pub fn is_auto_attackable_by(&self, target: ObjectId, attacker: ObjectId) -> bool {
+        // `Decoy.isAutoAttackable` (the owner's) and `Trap.isAutoAttackable` (S-HAND-04).
+        match self.npcs.get(&target).map(|n| n.class) {
+            Some(crate::npc::NpcClass::Decoy) => return self.decoy_auto_attackable(target, attacker),
+            Some(crate::npc::NpcClass::Trap) => return self.trap_auto_attackable(target, Some(attacker)),
+            _ => {}
+        }
         // `FortCommander.isAutoAttackable` (M7-FORT-01).
         if self
             .npcs
@@ -428,6 +434,14 @@ impl World {
 
     /// `NpcClick.onAction`.
     fn npc_click(&mut self, player: ObjectId, npc: ObjectId, interact: bool) {
+        // `DecoyClick` and `TrapClick` (S-HAND-04): the click only targets.
+        if matches!(
+            self.npcs.get(&npc).map(|n| n.class),
+            Some(crate::npc::NpcClass::Decoy | crate::npc::NpcClass::Trap)
+        ) {
+            self.decoy_trap_click(player, npc);
+            return;
+        }
         // `Artefact` has a click handler of its own (`ArtefactClick`, S-HAND-01).
         if self.npc_template(npc).is_some_and(|t| t.npc_type == "Artefact") {
             self.artefact_click(player, npc, interact);

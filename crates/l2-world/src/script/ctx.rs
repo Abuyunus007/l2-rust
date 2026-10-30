@@ -1127,6 +1127,18 @@ impl<'w> ScriptCtx<'w> {
         }
     }
 
+    /// Java `addTrap(trapId, x, y, z, heading, instanceId)`: a trap of no player that never
+    /// runs out (`lifeTime` -1), invulnerable. `None` when the NPC cannot be made.
+    ///
+    /// Its `ON_TRAP_ACTION` listeners are the ones of [`ScriptSetup::add_trap_action_id`] (by trap
+    /// id) and [`ScriptSetup::set_on_trap_action`] (all traps).
+    pub fn add_trap(&mut self, trap_id: i32, x: i32, y: i32, z: i32, heading: i32, instance_id: i32) -> Option<ScriptNpc> {
+        let id = self
+            .world
+            .spawn_trap(trap_id, None, -1, (x, y, z), heading, instance_id)?;
+        self.script_npc(id)
+    }
+
     /// Java `getDoor(doorId, instanceId)`.
     fn door_object(&self, door_id: i32, instance_id: i32) -> Option<ObjectId> {
         if instance_id != 0 && self.world.instance(instance_id).is_some() {
