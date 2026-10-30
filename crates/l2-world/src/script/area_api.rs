@@ -63,6 +63,14 @@ impl World {
         Some((date, self.siege_now_ms()))
     }
 
+    /// Java `npc.getTemplate().canTeach(player.getPlayerClass())` (HealerTrainer; S-AI-08).
+    pub fn script_npc_can_teach(&self, npc_template_id: i32, player: ObjectId) -> bool {
+        self.player(player).is_some_and(|p| {
+            u16::try_from(p.data.class_id)
+                .is_ok_and(|class| self.can_teach(npc_template_id, l2_data::ClassId(class)))
+        })
+    }
+
     /// Java `castle.getSiege().getControlTowerCount()`.
     pub fn script_castle_control_tower_count(&self, castle: i32) -> i32 {
         self.castle_siege(CastleId(castle))

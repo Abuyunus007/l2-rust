@@ -28,6 +28,7 @@ pub mod flee_monsters;
 pub mod gatekeeper_spirit;
 pub mod golem_trader;
 pub mod gordon;
+pub mod healer_trainer;
 pub mod hunting_grounds_teleport;
 pub mod katenar;
 pub mod kier;
@@ -100,6 +101,7 @@ pub(crate) fn register_with(r: &mut ScriptRegistry, class_master: ClassMasterCon
     r.add(flee_monsters::FleeMonsters);
     r.add(gatekeeper_spirit::GatekeeperSpirit);
     r.add(gordon::Gordon);
+    r.add(healer_trainer::HealerTrainer);
     r.add(hunting_grounds_teleport::HuntingGroundsTeleport);
     r.add(katenar::Katenar);
     r.add(kier::Kier);

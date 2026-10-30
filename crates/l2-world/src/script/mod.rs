@@ -154,6 +154,8 @@ pub struct ScriptSettings {
     /// `FeatureConfig.BALLISTA_POINTS` (`KillBallistaPoints`, Ballista).
     pub ballista_points: i32,
     /// `FeatureConfig.ALLOW_WYVERN_ALWAYS` (`AllowRideWyvernAlways`, WyvernManager).
+    /// `PlayerConfig.FEE_DELETE_TRANSFER_SKILLS` (`FeeDeleteTransferSkills`, HealerTrainer).
+    pub fee_delete_transfer_skills: i32,
     pub allow_wyvern_always: bool,
     /// `FeatureConfig.ALLOW_WYVERN_DURING_SIEGE` (`AllowRideWyvernDuringSiege`).
     pub allow_wyvern_during_siege: bool,
@@ -242,6 +244,7 @@ impl Default for ScriptSettings {
             bloodoath_points: 200,
             knightsepaulette_points: 20,
             ballista_points: 30,
+            fee_delete_transfer_skills: 10_000_000,
             allow_wyvern_always: false,
             allow_wyvern_during_siege: true,
             disable_tutorial: false,
