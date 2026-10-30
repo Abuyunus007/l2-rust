@@ -128,9 +128,7 @@ impl Script for Q00510AClansPrestige {
                         SystemMessageId::YouHaveSuccessfullyCompletedAClanQuestS1PointsHaveBeenAddedToYourClanSReputationScore,
                         reward,
                     );
-                    // FOLLOW-UP(engine): Java `clan.broadcastToOnlineMembers(new PledgeShowInfoUpdate(clan))`
-                    // (`World::broadcast_clan_info_update` is `pub(crate)`), so the clan window
-                    // shows the new score only at its next update.
+                    ctx.broadcast_clan_info_update(player);
                     htmltext = "31331-7.html".to_owned();
                 }
             }
@@ -174,8 +172,36 @@ mod tests {
         (t, valdis)
     }
 
-    // The test world has no clan table, so the clan branches (a clan of level 5 led by the
-    // player) are not reachable here. These tests cover the branches without a clan.
+    /// The leader of a level 5 clan (S-API-05's `clan_with_residence`) starts the quest, a claw
+    /// comes from a kill, and Valdis turns it into reputation with the clan info update.
+    #[test]
+    fn the_leader_of_a_level_5_clan_trades_claws_for_reputation() {
+        let (mut t, valdis) = setup();
+        t.enter(1, 40, vec![]);
+        let clan = t.clan_with_residence(1, "Prestige", None, None);
+        t.world.change_clan_level(clan, 5);
+        t.take();
+        assert!(t.quest_page(1, valdis).contains("31331-1.htm"));
+        t.event(1, NAME, "31331-2.htm");
+        assert!(t.event(1, NAME, "31331-3.html").contains("31331-3.html"));
+        assert_eq!(
+            t.take_writes(),
+            [
+                rows::insert(NAME, "cond", "1"),
+                rows::insert(NAME, "<state>", "Started")
+            ]
+        );
+        let rex = t.spawn(22215, 60);
+        t.kill(1, rex);
+        assert_eq!(t.count(1, TYRANNOSAURUS_CLAW), 1);
+        let before = t.world.clan(clan).unwrap().reputation_score;
+        t.take();
+        assert!(t.quest_page(1, valdis).contains("31331-7.html"));
+        assert_eq!(t.count(1, TYRANNOSAURUS_CLAW), 0);
+        assert_eq!(t.world.clan(clan).unwrap().reputation_score, before + 30);
+    }
+
+    // The branches without a clan.
 
     #[test]
     fn a_player_without_a_clan_is_sent_away() {

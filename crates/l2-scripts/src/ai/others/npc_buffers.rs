@@ -5,9 +5,6 @@
 // Java's `NpcBufferAI` is a `Runnable` that schedules itself; here each skill of an NPC is a quest
 // timer `NPC_BUFFER_<index>` of that NPC that starts itself again. A run that finds the NPC gone
 // or without a player as summoner stops, as in Java.
-//
-// FOLLOW-UP(engine): Java treats a `TamedBeast` as its owner in `isEnemy`; the engine has no
-// tamed beast object yet, so the branch is left out.
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};
@@ -50,6 +47,16 @@ fn is_friendly(ctx: &ScriptCtx<'_>, player: ObjectId, target: ObjectId) -> bool 
 fn is_enemy(ctx: &ScriptCtx<'_>, player: ObjectId, target: ObjectId) -> bool {
     if is_friendly(ctx, player, target) {
         return false;
+    }
+
+    // `target instanceof TamedBeast`: the beast stands for its owner.
+    if ctx.world().is_tamed_beast(target) {
+        // NOTE(java-quirk): a beast without an owner makes Java's `isFriendly(player, null)`
+        // throw; here it is no enemy.
+        return ctx
+            .world()
+            .tamed_beast_owner(target)
+            .is_some_and(|owner| is_enemy(ctx, player, owner));
     }
 
     if ctx.world().is_monster_npc(target) {

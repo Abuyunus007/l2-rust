@@ -21,6 +21,8 @@ pub mod quests;
 pub mod village_master;
 
 #[cfg(test)]
+mod engine_tests;
+#[cfg(test)]
 mod helper_tests;
 #[cfg(test)]
 pub(crate) mod testing;

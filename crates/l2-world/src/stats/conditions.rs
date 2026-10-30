@@ -46,7 +46,6 @@ pub(crate) struct CondEnv<'a, 'w> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(usize)]
 enum NotModelled {
-    Category,
     CanAction,
     TargetNpcType,
     GameChance,
@@ -367,7 +366,20 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
             .effect_list(a.object_id())
             .and_then(|l| l.info_by_abnormal_type(*abnormal_type))
             .is_some_and(|info| *level == -1 || *level >= info.facts.abnormal_level),
-        Condition::CategoryType { .. } => not_modelled(NotModelled::Category, "categoryType (CategoryData)"),
+        // `effector.isInCategory(type)` for any of the types: `CategoryData.isInCategory(type,
+        // getId())`, the class id of a player, the template id of an NPC, the door id.
+        Condition::CategoryType { category_types } => {
+            let id = if let Some(p) = a.player() {
+                p.data.class_id
+            } else if let Some(n) = a.npc() {
+                n.npc_id
+            } else {
+                a.door().map_or(0, |d| d.door_id)
+            };
+            category_types
+                .iter()
+                .any(|category| a.world().id_in_category(*category, id))
+        }
 
         // ---- <target ...> ----
         Condition::TargetAggro { is_aggro } => match target(env) {

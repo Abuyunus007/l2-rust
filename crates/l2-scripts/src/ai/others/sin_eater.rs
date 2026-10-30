@@ -2,8 +2,9 @@
 // Java: dist/game/data/scripts/ai/others/Servitors/SinEater.java
 //
 // Java registers `addSummonSpawnId` / `addSummonTalkId` and `@RegisterEvent` listeners for the
-// summon. The summon is an NPC object of the world here, so its spawn is `on_spawn`, its death the
-// per-id creature death, and the attack and talk listeners global ones that look at the id.
+// summon. Its spawn is `on_summon_spawn` (S-API-05); the summon is an NPC object of the world
+// here, so its death is the per-id creature death, and the attack and talk listeners are global
+// ones that look at the id.
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;
@@ -33,7 +34,7 @@ impl Script for SinEater {
     }
 
     fn setup(&self, s: &mut ScriptSetup) {
-        s.add_spawn_id(&[SIN_EATER]); // addSummonSpawnId
+        s.add_summon_spawn_id(&[SIN_EATER]);
         s.set_on_player_summon_talk(); // addSummonTalkId
         s.add_creature_death_id(&[SIN_EATER]);
         s.set_on_creature_attacked();
@@ -106,14 +107,14 @@ impl Script for SinEater {
         None
     }
 
-    fn on_spawn(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
+    fn on_summon_spawn(&self, ctx: &mut ScriptCtx<'_>, summon: ObjectId) {
         let text = if ctx.get_random_boolean() {
             NpcStringId::HeyItSeemsLikeYouNeedMyHelpDoesnTIt
         } else {
             NpcStringId::AlmostGotItOuchStopDamnTheseBloodyManacles
         };
-        broadcast_summon_say(ctx, npc.object_id, text);
-        if let Some(owner) = ctx.world().summon_owner(npc.object_id) {
+        broadcast_summon_say(ctx, summon, text);
+        if let Some(owner) = ctx.world().summon_owner(summon) {
             ctx.start_quest_timer("TALK", 60000, None, Some(owner), false);
         }
     }
@@ -181,5 +182,33 @@ mod tests {
         });
         // `player.getSummon() != null` is false: no new timer.
         assert_eq!(t.world.quest_timer_count(), before);
+    }
+
+    /// `addSummonSpawnId`: the summoned Sin Eater greets and its owner's talk timer starts.
+    #[test]
+    fn the_summoned_sin_eater_greets_its_owner() {
+        let mut registry = ScriptRegistry::new();
+        registry.add(SinEater);
+        let npcs = r#"<npc id="12564" type="Servitor" level="1" name="Sin Eater"/>"#;
+        let mut t = ScriptTest::new(registry, npcs, "", &[]);
+        t.enter(1, 60, vec![]);
+        t.take();
+        let before = t.world.quest_timer_count();
+        let eater = t.world.summon_servitor(
+            ObjectId(1),
+            l2_world::summon::spawn::ServitorParams {
+                npc_id: SIN_EATER,
+                exp_multiplier: 1.0,
+                consume_item: (0, 1),
+                life_time_ms: 3_600_000,
+                consume_interval_ms: 240_000,
+                reference_skill: 0,
+            },
+        );
+        assert!(eater.is_some());
+        // The event is queued (`notifyEventAsync`); a script call delivers it.
+        t.world.run_as_script("SinEater", |_| {});
+        assert!(names_to(&t.take(), 1).contains(&"NPC_SAY".to_owned()));
+        assert_eq!(t.world.quest_timer_count(), before + 1);
     }
 }

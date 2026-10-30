@@ -168,9 +168,15 @@ impl Script for Q00403PathOfTheRogue {
                 if !check_weapon(ctx, attacker) {
                     ctx.set_script_value(npc, 2);
                 } else {
-                    // NOTE(java-quirk): Java also sends the attacker a private NpcSay ("You
-                    // childish fool...") from the bandit. FOLLOW-UP(engine): no script helper
-                    // sends an NpcSay to one player yet.
+                    if npc.id == CATS_EYE_BANDIT {
+                        ctx.npc_say_to(
+                            attacker,
+                            npc,
+                            ChatType::NpcGeneral,
+                            NpcStringId::YouChildishFoolDoYouThinkYouCanCatchMe,
+                            &[],
+                        );
+                    }
                     ctx.set_script_value(npc, 1);
                 }
             }

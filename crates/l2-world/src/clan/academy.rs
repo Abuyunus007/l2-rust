@@ -48,9 +48,13 @@ impl World {
     /// without a penalty and gets the academy circlet. Returns whether the player graduated.
     pub fn academy_graduation(&mut self, player: ObjectId, new_class_id: i32) -> bool {
         let state = self.player_clan_state(player);
-        let in_group = u16::try_from(new_class_id)
-            .map(ClassId)
-            .is_ok_and(is_third_class_group);
+        // `CategoryData.isInCategory(THIRD_CLASS_GROUP, id)` (the loaded table; the class
+        // level without it).
+        let in_group = self.id_in_category_or(
+            l2_data::stats::CategoryType::ThirdClassGroup,
+            new_class_id,
+            |id| u16::try_from(id).map(ClassId).is_ok_and(is_third_class_group),
+        );
         if state.lvl_joined_academy == 0 || !in_group {
             return false;
         }
