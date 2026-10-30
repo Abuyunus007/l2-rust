@@ -279,6 +279,7 @@ pub mod q10279_mutated_kaneus_oren;
 pub mod q10280_mutated_kaneus_schuttgart;
 pub mod q10281_mutated_kaneus_rune;
 pub mod q10282_to_the_seed_of_annihilation;
+pub mod q10283_request_of_ice_merchant;
 
 use l2_world::ScriptRegistry;
 
@@ -558,4 +559,5 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q10274_collecting_in_the_air::Q10274CollectingInTheAir);
     r.add(q10273_good_day_to_fly::Q10273GoodDayToFly);
     r.add(q00905_refined_dragon_blood::Q00905RefinedDragonBlood);
+    r.add(q10283_request_of_ice_merchant::Q10283RequestOfIceMerchant);
 }
