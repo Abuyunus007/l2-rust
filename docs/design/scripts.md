@@ -391,11 +391,27 @@ test loops "kill until the count is reached" instead of guessing the number of k
 Not fired yet (no Rust counterpart): `ON_TRAP_ACTION` (no trap NPC in the world), the `OnPlayerClan*` events, template-level
 (item) listeners of `ON_PLAYER_ITEM_PICKUP`, `ON_CREATURE_ATTACK/ATTACKED` for NPC attacks outside `do_attack`.
 
+## Added by S-API-05
+
+- **Registration from data or settings:** `Script::setup_with(&self, s: &mut ScriptSetup, world: &World)` is what
+  `install_scripts` calls; the default calls `setup`. A Java constructor that loops over a table or tests a config key
+  (`for (int npcId : LevelUpCrystalData.getInstance().getNpcsSoulInfo().keySet()) addKillId(npcId)`,
+  `if (!PlayerConfig.DISABLE_TUTORIAL) addStartNpc(..)`) overrides it: call `self.setup(s)` first, then add what the data
+  says. The world's data and settings are in before `install_scripts` (game server), so they can be read there.
+  Reference: `quests/q00350_enhance_your_weapon.rs`. Tests set the data in `ScriptTest::new_with`'s `prepare`.
+- **Soul crystals:** `world.level_up_crystal_data()` (`script::soul_crystal::{LevelUpCrystalData, SoulCrystal,
+  LevelingSoulCrystalInfo, AbsorbCrystalType}`, loaded from `data/LevelUpCrystalData.xml` with
+  `SoulCrystalChanceMultiplier`), `world.exchange_soul_crystal(player, take_id, give_id, broke)`, the absorb list of an
+  attackable (`add_absorber`, `absorb_soul`, `is_absorbed`, `absorber_hp`, `reset_absorb_list`; cleared when the NPC
+  decays, Java's `onSpawn` reset).
+- `Qs::is_cond(ctx, 0)` / `is_memo_state(ctx, 0)` are true for a removed state too (it reads like an empty one).
+- `is_inside_radius_2d` is strict (`<`) like Java; `is_inside_radius_2d_xy(obj, x, y, radius)` is the point overload.
+
 ## Not in the engine yet (follow-ups)
 
 Summon spawn, premium rates (M9), the multilingual chooser strings (M9), the remaining `EventType`s listed above as not fired.
 
-Found by S-PILOT-01: the tutorial's player listeners (now engine events since S-API-04: wire its `pub` entry points to them); `setup` cannot read the
+Found by S-PILOT-01: the tutorial's player listeners (now engine events since S-API-04: wire its `pub` entry points to them); `setup` cannot read the (since S-API-05 `setup_with` can)
 configuration (Java constructors do: `if (!PlayerConfig.DISABLE_TUTORIAL) addStartNpc(..)`), so such
 scripts check `ctx.script_settings()` in their hooks; the client ground location of a player's
 `MagicSkillUse` in `broadcast_magic_skill_use` (always none).

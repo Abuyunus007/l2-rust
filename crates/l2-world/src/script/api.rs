@@ -77,6 +77,16 @@ pub trait Script: Send + Sync + 'static {
     /// The Java constructor: registers the listeners and the quest items.
     fn setup(&self, setup: &mut ScriptSetup);
 
+    /// The Java constructor of a script that registers from loaded data or settings
+    /// (`for (int npcId : LevelUpCrystalData.getInstance().getNpcsSoulInfo().keySet())
+    /// addKillId(npcId)`): called by [`World::install_scripts`](crate::World::install_scripts)
+    /// instead of [`Script::setup`], with the world's data and settings already in. The default
+    /// calls `setup`; an override calls `self.setup(setup)` first and then adds the data-driven
+    /// ids (S-API-05).
+    fn setup_with(&self, setup: &mut ScriptSetup, world: &crate::World) {
+        self.setup(setup);
+    }
+
     /// Java `onLoad()`: called once after every script was registered and the world data is in.
     fn on_load(&self, ctx: &mut ScriptCtx<'_>) {}
 

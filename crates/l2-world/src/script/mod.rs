@@ -55,6 +55,7 @@ pub mod quest_helpers;
 pub mod reread;
 mod see;
 pub mod setup;
+pub mod soul_crystal;
 pub mod sound;
 mod spawn;
 pub mod state;
@@ -298,6 +299,8 @@ pub(crate) struct ScriptWorld {
     pub(crate) categories: std::sync::Arc<l2_data::CategoryData>,
     /// The killing blow weapon and the summoned NPCs of each NPC (S-DATA-01).
     pub(crate) npc_links: npc_links::NpcLinks,
+    /// `LevelUpCrystalData` (`data/LevelUpCrystalData.xml`), read by Q00350 (S-API-05).
+    pub(crate) level_up_crystals: std::sync::Arc<l2_data::LevelUpCrystalData>,
 }
 
 impl ScriptWorld {
@@ -362,7 +365,7 @@ impl World {
             let id = ScriptId(self.scripts.installed.len() as u32);
             let name = script.name();
             let mut setup = ScriptSetup::default();
-            script.setup(&mut setup);
+            script.setup_with(&mut setup, self);
             let npc_world = &self.npc_world;
             let known = |npc_id: i32| npc_world.template(npc_id).is_some();
             self.scripts.listeners.register(

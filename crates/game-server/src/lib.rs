@@ -1203,6 +1203,12 @@ impl Server {
                     world.set_minigame_settings(minigame_settings.clone());
                     // Java: CategoryData (GameServer constructor, before the scripts: `isInCategory`).
                     world.set_category_data(Arc::clone(&datapack.categories));
+                    // Java: LevelUpCrystalData (GameServer, before the scripts: Q00350 registers
+                    // its monsters from it; the chance multiplier is applied at load, S-API-05).
+                    world.set_level_up_crystal_data(Arc::new(l2_data::LevelUpCrystalData::load(
+                        &datapack.root,
+                        config.player.soul_crystal_chance_multiplier,
+                    )));
                     // Java: the ClassMaster script reads `config/ClassMaster.xml` in its constructor.
                     let scripts = (!config.development.no_quests)
                         .then(|| l2_scripts::all_with(l2_data::ClassMasterConfig::load(&datapack.root)));

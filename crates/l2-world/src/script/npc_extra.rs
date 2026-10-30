@@ -120,6 +120,10 @@ pub(crate) struct NpcExtra {
     see_through_silent_move: bool,
     /// `!_isMortal` (the default is mortal).
     immortal: bool,
+    /// `Attackable._absorbed` and `_absorbersList` (object id -> `AbsorberInfo._absorbedHp`):
+    /// the soul crystal absorbs of quest 350 (S-API-05).
+    absorbed: bool,
+    absorbers: HashMap<ObjectId, f64>,
     /// `!QuestGuard._isAutoAttackable` (Java's default is true).
     quest_guard_not_auto_attackable: bool,
     /// `QuestGuard._isPassive`.
@@ -498,6 +502,49 @@ impl World {
             percentage = 25.0;
         }
         (percentage / 100.0) * exp
+    }
+
+    /// Java `Attackable.absorbSoul()`.
+    pub fn absorb_soul(&mut self, npc: ObjectId) {
+        self.npc_extra_mut(npc).absorbed = true;
+    }
+
+    /// Java `Attackable.isAbsorbed()`.
+    pub fn is_absorbed(&self, npc: ObjectId) -> bool {
+        self.scripts
+            .npc_extras
+            .by_npc
+            .get(&npc)
+            .is_some_and(|e| e.absorbed)
+    }
+
+    /// Java `Attackable.addAbsorber(attacker)`: keeps the NPC's current HP for the player (a
+    /// second absorb updates it) and marks the soul absorbed.
+    pub fn add_absorber(&mut self, npc: ObjectId, attacker: ObjectId) {
+        let current_hp = self.core_of(npc).map_or(0.0, |c| c.cur_hp);
+        let extra = self.npc_extra_mut(npc);
+        extra.absorbers.insert(attacker, current_hp);
+        extra.absorbed = true;
+    }
+
+    /// Java `Attackable.resetAbsorbList()`.
+    pub fn reset_absorb_list(&mut self, npc: ObjectId) {
+        if let Some(extra) = self.scripts.npc_extras.by_npc.get_mut(&npc) {
+            extra.absorbed = false;
+            extra.absorbers.clear();
+        }
+    }
+
+    /// Java `Attackable.getAbsorbersList().get(objectId).getAbsorbedHp()`: `None` when the player
+    /// did not absorb.
+    pub fn absorber_hp(&self, npc: ObjectId, attacker: ObjectId) -> Option<f64> {
+        self.scripts
+            .npc_extras
+            .by_npc
+            .get(&npc)?
+            .absorbers
+            .get(&attacker)
+            .copied()
     }
 
     /// Java `Npc.deleteMe`: everything attached to the NPC goes with it.
