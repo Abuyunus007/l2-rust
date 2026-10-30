@@ -183,6 +183,7 @@ pub mod q00359_for_a_sleepless_deadman;
 pub mod q00360_plunder_their_supplies;
 pub mod q00366_silver_haired_shaman;
 pub mod q00368_trespassing_into_the_holy_ground;
+pub mod q00369_collector_of_jewels;
 pub mod q00376_exploration_of_the_giants_cave_part1;
 pub mod q00377_exploration_of_the_giants_cave_part2;
 pub mod q00379_fantasy_wine;
@@ -371,6 +372,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00360_plunder_their_supplies::Q00360PlunderTheirSupplies);
     r.add(q00366_silver_haired_shaman::Q00366SilverHairedShaman);
     r.add(q00368_trespassing_into_the_holy_ground::Q00368TrespassingIntoTheHolyGround);
+    r.add(q00369_collector_of_jewels::Q00369CollectorOfJewels);
     r.add(q00376_exploration_of_the_giants_cave_part1::Q00376ExplorationOfTheGiantsCavePart1);
     r.add(q00377_exploration_of_the_giants_cave_part2::Q00377ExplorationOfTheGiantsCavePart2);
     r.add(q00379_fantasy_wine::Q00379FantasyWine);
