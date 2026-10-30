@@ -238,6 +238,7 @@ pub mod q00637_through_once_more;
 pub mod q00639_guardians_of_the_holy_grail;
 pub mod q00641_attack_sailren;
 pub mod q00642_a_powerful_primeval_creature;
+pub mod q00644_grave_robber_annihilation;
 pub mod q00645_ghosts_of_batur;
 pub mod q00646_signs_of_revolt;
 pub mod q00649_a_looter_and_a_railroad_man;
@@ -479,6 +480,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00639_guardians_of_the_holy_grail::Q00639GuardiansOfTheHolyGrail);
     r.add(q00641_attack_sailren::Q00641AttackSailren);
     r.add(q00642_a_powerful_primeval_creature::Q00642APowerfulPrimevalCreature);
+    r.add(q00644_grave_robber_annihilation::Q00644GraveRobberAnnihilation);
     r.add(q00645_ghosts_of_batur::Q00645GhostsOfBatur);
     r.add(q00646_signs_of_revolt::Q00646SignsOfRevolt);
     r.add(q00649_a_looter_and_a_railroad_man::Q00649ALooterAndARailroadMan);
