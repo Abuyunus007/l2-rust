@@ -135,6 +135,7 @@ pub mod q00303_collect_arrowheads;
 pub mod q00310_only_what_remains;
 pub mod q00312_take_advantage_of_the_crisis;
 pub mod q00313_collect_spores;
+pub mod q00316_destroy_plague_carriers;
 pub mod q00317_catch_the_wind;
 pub mod q00319_scent_of_death;
 pub mod q00320_bones_tell_the_future;
@@ -275,6 +276,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00310_only_what_remains::Q00310OnlyWhatRemains);
     r.add(q00312_take_advantage_of_the_crisis::Q00312TakeAdvantageOfTheCrisis);
     r.add(q00313_collect_spores::Q00313CollectSpores);
+    r.add(q00316_destroy_plague_carriers::Q00316DestroyPlagueCarriers);
     r.add(q00317_catch_the_wind::Q00317CatchTheWind);
     r.add(q00319_scent_of_death::Q00319ScentOfDeath);
     r.add(q00320_bones_tell_the_future::Q00320BonesTellTheFuture);
