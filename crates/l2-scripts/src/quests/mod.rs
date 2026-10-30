@@ -157,6 +157,7 @@ pub mod q00197_seven_signs_the_sacred_book_of_seal;
 pub mod q00198_seven_signs_embryo;
 pub mod q00212_trial_of_duty;
 pub mod q00215_trial_of_the_pilgrim;
+pub mod q00219_testimony_of_fate;
 pub mod q00222_test_of_the_duelist;
 pub mod q00223_test_of_the_champion;
 pub mod q00224_test_of_sagittarius;
@@ -570,6 +571,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00192_seven_signs_series_of_doubt::Q00192SevenSignsSeriesOfDoubt);
     r.add(q00197_seven_signs_the_sacred_book_of_seal::Q00197SevenSignsTheSacredBookOfSeal);
     r.add(q00198_seven_signs_embryo::Q00198SevenSignsEmbryo);
+    r.add(q00219_testimony_of_fate::Q00219TestimonyOfFate);
     r.add(q00222_test_of_the_duelist::Q00222TestOfTheDuelist);
     r.add(q00223_test_of_the_champion::Q00223TestOfTheChampion);
     r.add(q00224_test_of_sagittarius::Q00224TestOfSagittarius);
