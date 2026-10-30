@@ -119,6 +119,8 @@ pub mod q00131_bird_in_a_cage;
 pub mod q00132_matras_curiosity;
 pub mod q00133_thats_bloody_hot;
 pub mod q00134_temple_missionary;
+pub mod q00135_temple_executor;
+pub mod q00136_more_than_meets_the_eye;
 pub mod q00146_the_zero_hour;
 pub mod q00147_path_to_becoming_an_elite_mercenary;
 pub mod q00148_path_to_becoming_an_exalted_mercenary;
@@ -530,6 +532,8 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00132_matras_curiosity::Q00132MatrasCuriosity);
     r.add(q00133_thats_bloody_hot::Q00133ThatsBloodyHot);
     r.add(q00134_temple_missionary::Q00134TempleMissionary);
+    r.add(q00135_temple_executor::Q00135TempleExecutor);
+    r.add(q00136_more_than_meets_the_eye::Q00136MoreThanMeetsTheEye);
     r.add(q00146_the_zero_hour::Q00146TheZeroHour);
     r.add(q00147_path_to_becoming_an_elite_mercenary::Q00147PathToBecomingAnEliteMercenary);
     r.add(q00148_path_to_becoming_an_exalted_mercenary::Q00148PathToBecomingAnExaltedMercenary);
