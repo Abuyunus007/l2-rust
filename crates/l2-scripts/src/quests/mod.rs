@@ -110,6 +110,7 @@ pub mod q00266_pleas_of_pixies;
 pub mod q00267_wrath_of_verdure;
 pub mod q00268_traces_of_evil;
 pub mod q00269_invention_ambition;
+pub mod q00270_the_one_who_ends_silence;
 pub mod q00271_proof_of_valor;
 pub mod q00272_wrath_of_ancestors;
 pub mod q00273_invaders_of_the_holy_land;
@@ -255,6 +256,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00267_wrath_of_verdure::Q00267WrathOfVerdure);
     r.add(q00268_traces_of_evil::Q00268TracesOfEvil);
     r.add(q00269_invention_ambition::Q00269InventionAmbition);
+    r.add(q00270_the_one_who_ends_silence::Q00270TheOneWhoEndsSilence);
     r.add(q00271_proof_of_valor::Q00271ProofOfValor);
     r.add(q00272_wrath_of_ancestors::Q00272WrathOfAncestors);
     r.add(q00273_invaders_of_the_holy_land::Q00273InvadersOfTheHolyLand);
