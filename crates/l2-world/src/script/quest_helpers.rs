@@ -426,6 +426,17 @@ impl ScriptCtx<'_> {
     }
 }
 
+impl ScriptCtx<'_> {
+    /// Java `SpawnTable.getInstance().getSpawns(npcId).size()`: the spawns of the NPC id in the
+    /// spawn list (S-QR-05; 0 without a spawn list).
+    pub fn spawn_table_count(&self, npc_id: i32) -> usize {
+        self.world()
+            .npc_world
+            .spawn_data()
+            .map_or(0, |data| data.spawns_of(npc_id).count())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
