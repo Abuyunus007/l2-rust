@@ -57,6 +57,7 @@ pub mod q00050_lanoscos_special_bait;
 pub mod q00051_ofulles_special_bait;
 pub mod q00052_willies_special_bait;
 pub mod q00053_linnaeus_special_bait;
+pub mod q00060_good_works_reward;
 pub mod q00061_law_enforcement;
 pub mod q00062_path_of_the_trooper;
 pub mod q00067_saga_of_the_doombringer;
@@ -462,6 +463,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00051_ofulles_special_bait::Q00051OFullesSpecialBait);
     r.add(q00052_willies_special_bait::Q00052WilliesSpecialBait);
     r.add(q00053_linnaeus_special_bait::Q00053LinnaeusSpecialBait);
+    r.add(q00060_good_works_reward::Q00060GoodWorksReward);
     r.add(q00061_law_enforcement::Q00061LawEnforcement);
     r.add(q00062_path_of_the_trooper::Q00062PathOfTheTrooper);
     r.add(q00067_saga_of_the_doombringer::Q00067SagaOfTheDoombringer);
