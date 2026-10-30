@@ -164,8 +164,14 @@ mod tests {
             .page("32557-03.htm", &["32557-04.htm"])
             .page("32557-04.htm", &["32557-05.htm"])
             .page("32557-05.htm", &["32557-06.htm"])
-            .page("32557-06.htm", &["32557-09.html", "32557-10.html", "32557-08.html"])
-            .page("32557-07.html", &["32557-09.html", "32557-10.html", "32557-08.html"])
+            .page(
+                "32557-06.htm",
+                &["32557-09.html", "32557-10.html", "32557-08.html"],
+            )
+            .page(
+                "32557-07.html",
+                &["32557-09.html", "32557-10.html", "32557-08.html"],
+            )
             .page("32557-11.html", &["32557-13.html", "32557-12.html"])
             .npcs(&[LEKON]);
         let mut t = ScriptTest::with_pages(registry, NPCS, ITEMS, pages);
@@ -191,7 +197,13 @@ mod tests {
         t.enter(1, 75, vec![]);
         assert!(t.quest_page(1, lekon).contains("32557-01.htm"));
         // The story pages; the last link (`32557-06.htm`) starts the quest.
-        for page in ["32557-02.htm", "32557-03.htm", "32557-04.htm", "32557-05.htm", "32557-06.htm"] {
+        for page in [
+            "32557-02.htm",
+            "32557-03.htm",
+            "32557-04.htm",
+            "32557-05.htm",
+            "32557-06.htm",
+        ] {
             assert!(t.event(1, NAME, page).contains(page));
         }
         assert_eq!(
