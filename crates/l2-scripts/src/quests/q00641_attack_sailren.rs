@@ -140,7 +140,7 @@ mod tests {
 
     const ITEMS: &str = r#"
         <item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true"/></item>
-        <item id="8782" type="EtcItem" name="Gazkh Fragment"><set name="is_questitem" val="true"/></item>
+        <item id="8782" type="EtcItem" name="Gazkh Fragment"><set name="is_questitem" val="true"/><set name="is_stackable" val="true"/></item>
         <item id="8784" type="EtcItem" name="Gazkh"/>"#;
 
     /// Java `Q00126_TheNameOfEvil2`, as far as this quest reads it: a script of that name.
