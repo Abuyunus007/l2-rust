@@ -244,6 +244,7 @@ pub mod q00645_ghosts_of_batur;
 pub mod q00646_signs_of_revolt;
 pub mod q00647_influx_of_machines;
 pub mod q00649_a_looter_and_a_railroad_man;
+pub mod q00650_a_broken_dream;
 
 use l2_world::ScriptRegistry;
 
@@ -488,4 +489,5 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00646_signs_of_revolt::Q00646SignsOfRevolt);
     r.add(q00647_influx_of_machines::Q00647InfluxOfMachines);
     r.add(q00649_a_looter_and_a_railroad_man::Q00649ALooterAndARailroadMan);
+    r.add(q00650_a_broken_dream::Q00650ABrokenDream);
 }
