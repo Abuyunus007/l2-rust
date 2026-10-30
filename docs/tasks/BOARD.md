@@ -419,7 +419,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-AI-05](S/S-AI-05.md) | Other AIs part 1 (A..M) | sonnet | spot | API-01 | merged |
 | [S-AI-06](S/S-AI-06.md) | Other AIs part 2 (N..Z) | sonnet | spot | API-01 | merged |
 | [S-AI-07](S/S-AI-07.md) | Gracia instances and the seed managers | opus | full | AI-01 | merged |
-| [S-HAND-04](S/S-HAND-04.md) | Decoys, traps and the drop search board | sonnet | full | HAND-03 | ready |
+| [S-HAND-04](S/S-HAND-04.md) | Decoys, traps and the drop search board | sonnet | full | HAND-03 | merged |
 | [S-DATA-01](S/S-DATA-01.md) | Category data, ClassMaster.xml, transformation tree, small script helpers | sonnet | full | VM-01 | merged |
 | [S-API-05](S/S-API-05.md) | Engine gaps the script batches found (soul crystals, traps, tamed beasts, ...) | opus | full | Q batches | merged |
 | [S-AI-08](S/S-AI-08.md) | The AI scripts the AI batches left | sonnet | full | AI batches | merged |
