@@ -1252,3 +1252,131 @@ fn a_grand_boss_whose_row_says_alive_is_spawned() {
     };
     assert_eq!(npcs_of(&w, QUEEN_ANT).len(), 1, "Kain owns the row with the switch on");
 }
+
+const DROPH: i32 = 32711;
+const HEKATON_PRIME: i32 = 25687;
+const CONTROL_DEVICE: &str = "Q00307_ControlDeviceOfTheGiants";
+const RESPAWN_VARIABLE: &str = "GiantsControlDeviceRespawn";
+const SUPPORT_ITEMS: i32 = 14850;
+
+fn global_writes(w: &Bare) -> Vec<l2_world::script::GlobalVariablesWrite> {
+    w.commands()
+        .into_iter()
+        .filter_map(|c| match c {
+            PersistCommand::GlobalVariables(write) => Some(write),
+            _ => None,
+        })
+        .collect()
+}
+
+/// 5. Side by side (CP-Sd): Sieghardt wrote the rows of quest 307 in progress for "Leader" (and a
+/// `global_variables` row of its own). Kain continues the quest after the login, the boss dies in
+/// the party, and the `global_variables` row of the quest is written only with the switch on.
+fn side_by_side(cycle_writes: bool) {
+    let mut opts = Opts::new(
+        cycle_writes,
+        vec![
+            Hero::new("Leader")
+                .gm()
+                .level(80)
+                .with_items(&[(14_851, 1), (14_852, 1), (14_853, 1)]),
+            Hero::new("Friend").level(80),
+        ],
+    );
+    opts.seed.quests = vec![
+        scripts_db::QuestRow {
+            hero: "Leader",
+            name: CONTROL_DEVICE,
+            var: scripts_db::STATE_VAR,
+            value: "Started",
+        },
+        scripts_db::QuestRow {
+            hero: "Leader",
+            name: CONTROL_DEVICE,
+            var: "cond",
+            value: "1",
+        },
+    ];
+    opts.seed.globals = vec![("SieghardtOwned", "42")];
+    let Some(mut w) = Bare::start(&opts) else {
+        return;
+    };
+    let (leader, friend) = (w.me(0), w.me(1));
+    let entered = w.enter_player(0);
+    w.enter_player(1);
+
+    // The login: the journal lists quest 307 at its condition 1, as Sieghardt left it.
+    let list = all::<l2_protocol_game::server::QuestList>(&entered, "QUEST_LIST");
+    assert!(
+        list.iter().any(|l| l.quests.iter().any(|q| q.quest_id == 307 && q.status == 1)),
+        "{list:?}"
+    );
+
+    // Droph knows the quest is going on: the sheets are all there, the page offers the summon.
+    let droph = w.spawn_npc(0, DROPH, 30);
+    let talked = w.talk(0, droph);
+    let talked = w.follow(0, &talked, "Script");
+    assert!(pages(&talked).last().unwrap().contains("Summon Hekaton Prime"), "{:?}", pages(&talked));
+    let summoned = w.follow(0, &talked, "spawn");
+    assert!(pages(&summoned).last().is_some());
+    let hekaton = npcs_of(&w, HEKATON_PRIME);
+    assert_eq!(hekaton.len(), 1, "Hekaton Prime is summoned");
+
+    // The party kills it: the condition goes to 2 in the row Sieghardt wrote.
+    w.input_of(
+        0,
+        ClientInput::JoinParty {
+            name: "Friend".to_owned(),
+            distribution_type_id: 0,
+        },
+    );
+    w.input_of(1, ClientInput::AnswerJoinParty { response: 1 });
+    assert!(w.world.is_in_party_with(leader, friend));
+    w.world.do_die(hekaton[0], Some(leader));
+    w.run_ms(3_000);
+    assert_eq!(w.rows.quest_var(leader.0, CONTROL_DEVICE, "cond"), Some("2"));
+
+    // Droph pays: the support items, and the quest rows go (`exitQuest(true)`), per-player rows
+    // written whatever the switch says.
+    let talked = w.talk(0, droph);
+    w.follow(0, &talked, "Script");
+    assert_eq!(w.items_of(0, SUPPORT_ITEMS), 1);
+    assert_eq!(w.rows.quest_var(leader.0, CONTROL_DEVICE, "<state>"), None);
+
+    // The global row is written when the server stops (`GlobalVariablesManager.storeMe`), and only
+    // with the switch on; Kain knows the respawn time either way.
+    let respawn = w.world.global_variables().get_long(RESPAWN_VARIABLE, 0);
+    assert!(respawn > now_ms(), "{respawn}");
+    w.world.handle(WorldCommand::Shutdown { done: Box::new(|| {}) });
+    w.answer_reads();
+    assert_eq!(w.rows.globals.get("SieghardtOwned").map(String::as_str), Some("42"));
+    if cycle_writes {
+        let row: i64 = w.rows.globals.get(RESPAWN_VARIABLE).unwrap().parse().unwrap();
+        assert!(row > now_ms());
+        assert_eq!(global_writes(&w).len(), 1, "{:?}", global_writes(&w));
+    } else {
+        assert!(!w.rows.globals.contains_key(RESPAWN_VARIABLE));
+        assert!(global_writes(&w).is_empty(), "{:?}", global_writes(&w));
+    }
+
+    // With a throwaway MariaDB: the same statements on the real tables leave the rows the model
+    // says (only under `L2_TEST_DATABASE_URL`).
+    scripts_db::replay_in_database(
+        "scripts_side",
+        &opts.seed,
+        &[("Leader", leader.0), ("Friend", friend.0)],
+        &w.commands(),
+        &w.rows,
+    );
+
+}
+
+#[test]
+fn side_by_side_with_the_switch_off() {
+    side_by_side(false);
+}
+
+#[test]
+fn side_by_side_with_the_switch_on() {
+    side_by_side(true);
+}

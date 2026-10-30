@@ -6,6 +6,11 @@
 
 use std::collections::BTreeMap;
 
+use game_server::persist::{DbStore, PlayerStore};
+use l2_db::connect_with;
+use l2_testkit::test_db::TestDb;
+use sqlx::mysql::MySqlConnectOptions;
+
 use l2_world::{
     BossReadKind, BossRereadRows, BossWrite, ClassIndexLoad, GrandBossData, PersistCommand, QuestLoad,
     QuestWrite, SkillData, SubclassWrite, World, WorldCommand,
@@ -287,4 +292,100 @@ impl Rows {
             _ => {}
         }
     }
+}
+
+/// Replays the quest and `global_variables` writes the world sent into a throwaway MariaDB (the
+/// persistence task's own `DbStore`), after the rows of `seed` (what Sieghardt left), and checks
+/// the tables against the model `Rows`. `hero_ids` are `(name, character id)`. Does nothing, with
+/// a printed note, without `L2_TEST_DATABASE_URL`.
+pub fn replay_in_database(
+    tag: &str,
+    seed: &Seed,
+    hero_ids: &[(&str, i32)],
+    commands: &[PersistCommand],
+    model: &Rows,
+) {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_all()
+        .build()
+        .unwrap();
+    runtime.block_on(async {
+        let Some(db) = TestDb::create(tag).await else {
+            return;
+        };
+        for file in l2_db::GAME_SCHEMA {
+            let text: String = file
+                .lines()
+                .filter(|line| !line.trim_start().starts_with('#'))
+                .collect::<Vec<_>>()
+                .join("\n");
+            for statement in text.split(';').map(str::trim).filter(|s| !s.is_empty()) {
+                db.exec(statement).await;
+            }
+        }
+        let (user, password, host, port) = db.parts();
+        let mut options = MySqlConnectOptions::new()
+            .host(&host)
+            .port(port)
+            .username(&user)
+            .database(db.name());
+        if !password.is_empty() {
+            options = options.password(&password);
+        }
+        let pool = connect_with(options, 4).await.unwrap();
+
+        // Sieghardt's rows first.
+        for row in &seed.quests {
+            let char_id = hero_ids.iter().find(|(n, _)| *n == row.hero).unwrap().1;
+            sqlx::query("INSERT INTO character_quests (charId, name, var, value) VALUES (?, ?, ?, ?)")
+                .bind(char_id)
+                .bind(row.name)
+                .bind(row.var)
+                .bind(row.value)
+                .execute(&pool)
+                .await
+                .unwrap();
+        }
+        for (var, value) in &seed.globals {
+            sqlx::query("INSERT INTO global_variables (var, value) VALUES (?, ?)")
+                .bind(*var)
+                .bind(*value)
+                .execute(&pool)
+                .await
+                .unwrap();
+        }
+
+        // Then what the world wrote, with the statements of the persistence task.
+        let mut store = DbStore::new(pool.clone());
+        for command in commands {
+            match command {
+                PersistCommand::Quest(write) => store.store_quest_write(write).await.unwrap(),
+                PersistCommand::GlobalVariables(write) => store.store_global_variables(write).await.unwrap(),
+                _ => {}
+            }
+        }
+
+        let quests: BTreeMap<(i32, String, String), String> =
+            sqlx::query_as::<_, (i32, String, String, Option<String>)>(
+                "SELECT charId, name, var, value FROM character_quests",
+            )
+            .fetch_all(&pool)
+            .await
+            .unwrap()
+            .into_iter()
+            .map(|(c, n, v, value)| ((c, n, v), value.unwrap_or_default()))
+            .collect();
+        assert_eq!(quests, model.quests, "character_quests");
+        let globals: BTreeMap<String, String> =
+            sqlx::query_as::<_, (String, Option<String>)>("SELECT var, value FROM global_variables")
+                .fetch_all(&pool)
+                .await
+                .unwrap()
+                .into_iter()
+                .map(|(v, value)| (v, value.unwrap_or_default()))
+                .collect();
+        assert_eq!(globals, model.globals, "global_variables");
+        pool.close().await;
+        db.drop_db().await;
+    });
 }
