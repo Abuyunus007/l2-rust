@@ -20,8 +20,9 @@
 // enchantskillgroups, experience, experienceloss, fakeplayerchat, fence, fish, fishingmonsters,
 // fishingrods, handler, henna, hitconditionbonus, initialequipment, initialshortcut, instance,
 // item, itemmall, primeshop, karmaloss, levelupcrystal, localisations, mapregion, multisell, npc,
-// options, petdata, petskill, playertemplate, quest, recipe, secondaryauth, sets, siegeschedule,
+// options, petdata, petskill, playertemplate, recipe, secondaryauth, sets, siegeschedule,
 // skill, skilllearn, skilltree, spawn, staticobject, teleport, transform, walker, zone.
+// `quest` unloads and loads the compiled-in scripts again (`script/admin.rs`).
 
 use std::sync::Arc;
 
@@ -161,7 +162,6 @@ const NOT_RELOADABLE: &[&str] = &[
     "petskill",
     "playertemplate",
     "primeshop",
-    "quest",
     "recipe",
     "secondaryauth",
     "sets",
@@ -217,6 +217,11 @@ fn admin_reload(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
                     .control(ControlRequest::ReloadHtml { requester: gm, path });
                 // The answer (`on_html_reloaded`) says the rest.
                 return Ok(());
+            }
+            "quest" => {
+                // Unload-then-load of the compiled-in script (S-ADMIN-08, D-16).
+                let value = st.next_token().map(str::to_owned);
+                crate::script::admin::reload_quest(world, gm, value.as_deref())?;
             }
             other if NOT_RELOADABLE.contains(&other) => {
                 world.send_sys_message(
@@ -409,7 +414,7 @@ mod tests {
         for (_, action) in RELOAD_COMMANDS {
             let kind = action.split(' ').nth(1).unwrap();
             assert!(
-                NOT_RELOADABLE.contains(&kind) || kind == "htm" || kind == "html",
+                NOT_RELOADABLE.contains(&kind) || ["htm", "html", "quest"].contains(&kind),
                 "{kind}"
             );
         }
