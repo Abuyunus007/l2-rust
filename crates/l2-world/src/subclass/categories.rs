@@ -221,7 +221,7 @@ mod tests {
         }
         let shipped = CategoryData::load(root);
         let fixture = class_groups();
-        assert_eq!(fixture.len(), 34);
+        assert_eq!(fixture.len(), 37);
         for &category in CategoryType::ALL {
             if let Some(ids) = fixture.get(category) {
                 assert_eq!(Some(ids), shipped.get(category), "{}", category.name());
