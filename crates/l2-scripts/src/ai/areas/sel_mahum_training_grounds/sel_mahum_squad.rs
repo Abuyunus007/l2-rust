@@ -2,9 +2,8 @@
 //! fire, the squad leaders walk to the fire and eat or sleep there.
 // Java: dist/game/data/scripts/ai/areas/SelMahumTrainingGrounds/SelMahumSquad.java
 //
-// FOLLOW-UP(engine): `Npc.setWalking()` (a speed mode) has no counterpart; `setWalking` is
-// skipped and `setRunning` is the engine's `set_running`. `broadcastSay(.., 1250)` (radius) is the
-// plain `broadcast_npc_say`.
+// `setWalking` / `setRunning` are the engine's `set_walking` / `set_running` (S-API-05).
+// `broadcastSay(.., 1250)` (radius) is the plain `broadcast_npc_say`.
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;
@@ -55,7 +54,7 @@ fn is_dead(ctx: &ScriptCtx<'_>, npc: ScriptNpc) -> bool {
 
 /// Java `Npc.isRandomWalkingEnabled()`.
 fn random_walking_enabled(ctx: &ScriptCtx<'_>, npc: ScriptNpc) -> bool {
-    !ctx.world().npc_random_walking_forbidden(npc.object_id)
+    ctx.is_random_walking_enabled(npc)
 }
 
 /// Java `Npc.setDisplayEffect(value)`.
@@ -96,7 +95,7 @@ fn heal_player(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: Option<ObjectId>
         ctx.cancel_quest_timer("chef_set_invul", Some(npc), None);
         remove_var(ctx, npc, "BUSY_STATE");
         remove_var(ctx, npc, "INVUL_REMOVE_TIMER_STARTED");
-        // `npc.setWalking()`
+        ctx.set_walking(npc);
     }
 }
 
@@ -184,7 +183,7 @@ impl Script for SelMahumSquad {
             }
             "fire_arrived" => {
                 // myself.i_quest0 = 1;
-                // `npc.setWalking()`
+                ctx.set_walking(npc);
                 ctx.world_mut().set_npc_target(npc.object_id, Some(npc.object_id));
 
                 if !random_walking_enabled(ctx, npc) {

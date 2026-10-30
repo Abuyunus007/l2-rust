@@ -234,7 +234,8 @@ impl World {
             state.restore_summon = false;
         }
         self.summon_recharge_shots(id, true, true);
-        // ON_PLAYER_SUMMON_SPAWN: script event (D-05).
+        // "Notify to scripts." (`ON_PLAYER_SUMMON_SPAWN`, S-API-05)
+        self.script_on_summon_spawn(id);
 
         // `BabyPet.onSpawn`: the baby pet sorts its skills and starts to heal.
         self.baby_on_spawn(id);

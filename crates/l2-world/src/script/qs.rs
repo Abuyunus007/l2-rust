@@ -97,9 +97,11 @@ impl Qs {
         self.read(ctx.world, QuestState::cond).unwrap_or(0)
     }
 
-    /// Java `isCond(condition)`.
+    /// Java `isCond(condition)`. A handle whose state was removed reads like an empty state
+    /// (`_cond` 0), so `is_cond(ctx, 0)` is true for it as for a fresh state.
     pub fn is_cond(self, ctx: &ScriptCtx<'_>, condition: i32) -> bool {
-        self.read(ctx.world, |qs| qs.is_cond(condition)).unwrap_or(false)
+        self.read(ctx.world, |qs| qs.is_cond(condition))
+            .unwrap_or(condition == 0)
     }
 
     /// Java `getMemoState()`.
@@ -110,7 +112,7 @@ impl Qs {
     /// Java `isMemoState(memoState)`.
     pub fn is_memo_state(self, ctx: &ScriptCtx<'_>, memo_state: i32) -> bool {
         self.read(ctx.world, |qs| qs.is_memo_state(memo_state))
-            .unwrap_or(false)
+            .unwrap_or(memo_state == 0)
     }
 
     /// Java `getMemoStateEx(slot)`.
@@ -263,6 +265,13 @@ impl Qs {
         let now = ctx.now_ms();
         let value = restart_time(now, l2_util::time::local_offset_millis(now));
         set(ctx.world, self, RESTART_VAR, &value.to_string());
+    }
+
+    /// The calendar of `setRestartTime` (the next 6:30, seconds and milliseconds of now) as a
+    /// time, for scripts that build it themselves (Q00694's `finishInstance`).
+    pub fn next_restart_time_ms(self, ctx: &ScriptCtx<'_>) -> i64 {
+        let now = ctx.now_ms();
+        restart_time(now, l2_util::time::local_offset_millis(now))
     }
 
     /// Java `isNowAvailable()`: the restart time has passed.

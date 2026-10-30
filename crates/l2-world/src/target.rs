@@ -83,6 +83,10 @@ impl World {
 
     /// Java `target.isAutoAttackable(attacker)` for a player attacker.
     pub fn is_auto_attackable_by(&self, target: ObjectId, attacker: ObjectId) -> bool {
+        // `TamedBeast.isAutoAttackable`: `!_isFreyaBeast` (S-API-05).
+        if let Some(attackable) = self.tamed_beast_auto_attackable(target) {
+            return attackable;
+        }
         // `Decoy.isAutoAttackable` (the owner's) and `Trap.isAutoAttackable` (S-HAND-04).
         match self.npcs.get(&target).map(|n| n.class) {
             Some(crate::npc::NpcClass::Decoy) => return self.decoy_auto_attackable(target, attacker),
@@ -116,6 +120,7 @@ impl World {
             // rules (M7-SIEGE-01).
             Some(ObjectKind::Npc) => self
                 .siege_npc_auto_attackable(target, attacker)
+                .or_else(|| self.npc_auto_attackable_override(target))
                 .unwrap_or_else(|| {
                     self.npcs
                         .get(&target)
@@ -434,6 +439,10 @@ impl World {
 
     /// `NpcClick.onAction`.
     fn npc_click(&mut self, player: ObjectId, npc: ObjectId, interact: bool) {
+        // `TamedBeast.onAction` (S-API-05).
+        if self.tamed_beast_click(player, npc, interact) {
+            return;
+        }
         // `DecoyClick` and `TrapClick` (S-HAND-04): the click only targets.
         if matches!(
             self.npcs.get(&npc).map(|n| n.class),

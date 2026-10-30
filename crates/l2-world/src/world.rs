@@ -913,6 +913,7 @@ impl World {
             ClientInput::Petition(input) => self.on_petition_input(id, input),
             // Java: RequestSSQStatus (M8-SS-01)
             ClientInput::SsqStatus { page } => self.on_request_ssq_status(id, page),
+            ClientInput::SeedPhase => self.on_request_seed_phase(id),
             // Java: RequestQuestList, RequestQuestAbort, RequestTutorial* (S-API-01)
             ClientInput::Quest(input) => self.on_quest_input(id, input),
             ClientInput::SnoopQuit { snoop_id } => self.on_snoop_quit(id, snoop_id),

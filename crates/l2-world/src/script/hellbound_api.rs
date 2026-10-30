@@ -67,6 +67,36 @@ fn admin_hellbound(world: &mut World, gm: ObjectId, _command: &str) -> Result<()
 }
 
 impl World {
+    /// Java `handlers.chat.commands.voiced.Hellbound` (`.hellbound`), registered by
+    /// `HellboundLoader` with the Hellbound scripts: `None` when the command is not this one or
+    /// the scripts are not installed. The maximum trust is the one of the current level (Java
+    /// shows the engine's cached `_maxTrust`, set at the level change: `MAX_TRUST[level]`, 0 for
+    /// level 0).
+    pub(crate) fn hellbound_voiced_handler(&mut self, player: ObjectId, command: &str) -> Option<bool> {
+        if command != "hellbound" || !self.has_script("HellboundEngine") {
+            return None;
+        }
+        let level = self.scripts.globals.get_int("HBLevel", 0);
+        // `HellboundEngine.isLocked()`: `getLevel() <= 0`.
+        if level <= 0 {
+            self.send_message(player, "Hellbound is currently locked.");
+            return Some(true);
+        }
+        let trust = self.scripts.globals.get_int("HBTrust", 0);
+        let max_trust = usize::try_from(level)
+            .ok()
+            .and_then(|l| HELLBOUND_MAX_TRUST.get(l))
+            .copied()
+            .unwrap_or(0);
+        let max = if max_trust > 0 {
+            format!("/{max_trust}")
+        } else {
+            String::new()
+        };
+        self.send_message(player, &format!("Hellbound level: {level} trust: {trust}{max}"));
+        Some(true)
+    }
+
     /// Java `new Spawn(npcId)` + `setAmount(1)` + `setLocation` + `setRespawnDelay(delay,
     /// randomInterval)` + `SpawnTable.addSpawn(spawn)` as `HellboundSpawns` makes it: the spawn
     /// index, nothing spawned yet (`script_do_spawn`). `delay_s` and `random_interval_s` are

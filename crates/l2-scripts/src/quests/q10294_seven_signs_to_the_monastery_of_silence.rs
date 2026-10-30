@@ -3,7 +3,7 @@
 //
 // Pattern: a delivery chain by condition, with the four right books of the reading desks
 // (`good1`..`good4`, one per desk and set by the desk's own page). Each right book shows an
-// effect on its desk (not ported, see FOLLOW-UP below), a spawn or a buff, and the fourth one
+// effect on its desk (`setDisplayEffect(1)`), a spawn or a buff, and the fourth one
 // plays the movie of the burial ground. The monsters come 22 s after the first book (a quest
 // timer). Eris gives the reward at cond 3 (one time).
 
@@ -194,8 +194,7 @@ impl Script for Q10294SevenSignsToTheMonasteryOfSilence {
             "RIGHT_BOOK1" => {
                 if let Some(npc) = npc {
                     qs.set(ctx, "good1", "1");
-                    // NOTE: Java `npc.setDisplayEffect(1)` (`ExChangeNpcState`) is not ported yet.
-                    // FOLLOW-UP(engine): the desk's display effect.
+                    ctx.world_mut().set_npc_display_effect(npc.object_id, 1);
                     ctx.start_quest_timer("SPAWN_MOBS", 22_000, Some(npc), Some(player), false);
                     htmltext = Some("32821-02.html".to_owned());
                     if has_checked_all_right_books(ctx, qs) {
@@ -206,7 +205,7 @@ impl Script for Q10294SevenSignsToTheMonasteryOfSilence {
             "RIGHT_BOOK2" => {
                 if let Some(npc) = npc {
                     qs.set(ctx, "good2", "1");
-                    // FOLLOW-UP(engine): `setDisplayEffect(1)`, see RIGHT_BOOK1.
+                    ctx.world_mut().set_npc_display_effect(npc.object_id, 1);
                     ctx.cast_skill(npc, player, SkillKey::new(VAMPIRIC_RAGE.0, VAMPIRIC_RAGE.1));
                     htmltext = Some("32821-02.html".to_owned());
                     if has_checked_all_right_books(ctx, qs) {
@@ -215,9 +214,9 @@ impl Script for Q10294SevenSignsToTheMonasteryOfSilence {
                 }
             }
             "RIGHT_BOOK3" => {
-                if npc.is_some() {
+                if let Some(npc) = npc {
                     qs.set(ctx, "good3", "1");
-                    // FOLLOW-UP(engine): `setDisplayEffect(1)`, see RIGHT_BOOK1.
+                    ctx.world_mut().set_npc_display_effect(npc.object_id, 1);
                     let instance = ctx.world().instance_id_of(player);
                     if let Some(jude) =
                         ctx.add_spawn(JUDE_VAN_ETINA, 85_783, -253_471, -8_320, 65, false, 0, instance)
@@ -231,9 +230,9 @@ impl Script for Q10294SevenSignsToTheMonasteryOfSilence {
                 }
             }
             "RIGHT_BOOK4" => {
-                if npc.is_some() {
+                if let Some(npc) = npc {
                     qs.set(ctx, "good4", "1");
-                    // FOLLOW-UP(engine): `setDisplayEffect(1)`, see RIGHT_BOOK1.
+                    ctx.world_mut().set_npc_display_effect(npc.object_id, 1);
                     let instance = ctx.world().instance_id_of(player);
                     if let Some(solina) = ctx.add_spawn(
                         SOLINAS_EVIL_THOUGHTS,
@@ -575,7 +574,16 @@ mod tests {
 
         // Book 1: the desk's page, the monsters after 22 s.
         assert!(t.quest_page(1, npcs.desk1).contains("32821-01.html"));
-        assert!(t.event(1, NAME, "RIGHT_BOOK1").contains("32821-02.html"));
+        t.bypass(1, &format!("Script {NAME} RIGHT_BOOK1"));
+        let out = t.take();
+        assert!(pages_to(&out, 1).pop().unwrap().contains("32821-02.html"));
+        // The desk's display effect (`setDisplayEffect(1)`, `ExChangeNpcState`).
+        assert!(
+            names_to(&out, 1).iter().any(|n| n == "EX_CHANGE_NPC_STATE"),
+            "{:?}",
+            names_to(&out, 1)
+        );
+        assert_eq!(t.world.npc(npcs.desk1).map(|n| n.display_effect), Some(1));
         assert_eq!(t.take_writes(), [rows::insert(NAME, "good1", "1")]);
         assert!(t.npcs_of(GUIDE_SOLINA).is_empty());
         t.wait_ms(22_000);

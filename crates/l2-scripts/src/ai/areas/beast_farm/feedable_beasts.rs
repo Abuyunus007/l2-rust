@@ -2,10 +2,9 @@
 //! spice (the older, pre-Freya beast farm).
 // Java: dist/game/data/scripts/ai/areas/BeastFarm/FeedableBeasts.java
 //
-// FOLLOW-UP(engine): the `TamedBeast` of the last step (and the spice it eats later, the old
-// trained beasts the character had, the rare chat of the new beast) is not modelled by the
-// world, see `beast_farm.rs`. This port draws the same random numbers, deletes the fed mob and
-// runs the quest hook (`Q00020`), but no tamed beast appears.
+// The last step is a `TamedBeast` of the character (`spawn_tamed_beast`, S-API-05): his old
+// trained beasts go, the new one follows him, buffs him and eats his spice (the world's
+// `CheckDuration`, whose food skill comes back here as a skill-see: `onReceiveFood`).
 
 use std::collections::HashMap;
 
@@ -21,6 +20,8 @@ const GOLDEN_SPICE: i32 = 6643;
 const CRYSTAL_SPICE: i32 = 6644;
 const SKILL_GOLDEN_SPICE: i32 = 2188;
 const SKILL_CRYSTAL_SPICE: i32 = 2189;
+/// Java `FOODSKILLDIFF`: the food item id minus its skill id.
+const FOODSKILLDIFF: i32 = GOLDEN_SPICE - SKILL_GOLDEN_SPICE;
 
 // Tamed Wild Beasts
 const TRAINED_BUFFALO1: i32 = 16013;
@@ -123,6 +124,18 @@ fn mad_cow_polymorph(npc_id: i32) -> Option<i32> {
         _ => None,
     }
 }
+
+/// Java `TAMED_TEXT`: what a tamed beast says when it is fed its food.
+const TAMED_TEXT: [NpcStringId; 8] = [
+    NpcStringId::S1SoWhatDoYouThinkItIsLikeToBeTamed,
+    NpcStringId::S1WheneverISeeSpiceIThinkIWillMissYourHandThatUsedToFeedItToMe,
+    NpcStringId::S1DonTGoToTheVillageIDonTHaveTheStrengthToFollowYou,
+    NpcStringId::ThankYouForTrustingMeS1IHopeIWillBeHelpfulToYou,
+    NpcStringId::S1WillIBeAbleToHelpYou,
+    NpcStringId::IGuessItSJustMyAnimalMagnetism,
+    NpcStringId::TooMuchSpicyFoodMakesMeSweatLikeABeast,
+    NpcStringId::AnimalsNeedLoveToo,
+];
 
 const TEXT_0: [NpcStringId; 10] = [
     NpcStringId::WhatDidYouJustDoToMe,
@@ -336,14 +349,23 @@ fn spawn_next(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, growth_level: i32, player
     // if this is finally a trained mob, then despawn any other trained mobs that the
     // player might have and initialize the Tamed Beast.
     if TAMED_BEASTS.contains(&next_npc_id) {
-        // FOLLOW-UP(engine): the character's old trained beasts are deleted and
-        // `new TamedBeast(nextNpcId, player, food - FOODSKILLDIFF, x, y, z)` appears here.
+        for old_trained in ctx.world().trained_beasts(player) {
+            ctx.world_mut().delete_npc(old_trained);
+        }
+        let next_npc = at.and_then(|(x, y, z, _)| {
+            ctx.world_mut()
+                .spawn_tamed_beast(next_npc_id, player, food - FOODSKILLDIFF, (x, y, z), false)
+        });
+        if let Some(next_npc) = next_npc {
+            ctx.world_mut().set_running(next_npc, true);
+        }
         check_jewel_of_innocence(ctx, player);
         check_crystal_of_purity(ctx, player);
 
         // also, perform a rare random chat
         if ctx.get_random(20) == 0 {
-            // Java draws the message `getRandom(2024, 2029)` for the new beast to say.
+            // NOTE(java-quirk): Java broadcasts the line from the fed mob (`npc`), which was
+            // deleted above, so nobody hears it; only the message is drawn.
             let _message = ctx.get_random_range(2024, 2029);
         }
     } else {
@@ -498,9 +520,19 @@ impl Script for FeedableBeasts {
             if ctx.get_random(100) < growth_data.chance {
                 spawn_next(ctx, npc, growth_level, caster, food);
             }
+        } else if TAMED_BEASTS.contains(&npc_id) && ctx.world().is_tamed_beast(npc.object_id) {
+            if skill_id == ctx.world().tamed_beast_food_type(npc.object_id) {
+                ctx.world_mut().tamed_beast_on_receive_food(npc.object_id);
+                if let Some(message) = ctx.get_random_entry(&TAMED_TEXT) {
+                    let name = ctx.player_name(caster);
+                    if message.param_count() > 0 {
+                        ctx.broadcast_npc_say(npc, ChatType::General, message, &[&name]);
+                    } else {
+                        ctx.broadcast_npc_say(npc, ChatType::General, message, &[]);
+                    }
+                }
+            }
         }
-        // FOLLOW-UP(engine): `else if (TAMED_BEASTS.contains(npcId) && npc instanceof TamedBeast)`
-        // feeds a tamed beast (`beast.onReceiveFood()` and its chat).
     }
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, _killer: ObjectId, _is_summon: bool) {

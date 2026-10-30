@@ -259,16 +259,23 @@ impl ScriptCtx<'_> {
         self.world.check_if_in_range(range, a, b, include_z)
     }
 
-    /// Java `a.isInsideRadius2D(b, radius)`: `false` when either is not in the world.
+    /// Java `a.isInsideRadius2D(b, radius)`: the 2D distance is strictly below the radius
+    /// (`calculateDistance2D(..) < radius`); `false` when either is not in the world.
     pub fn is_inside_radius_2d(&self, a: ObjectId, b: ObjectId, radius: i32) -> bool {
-        match (self.world.position_of(a), self.world.position_of(b)) {
-            (Some((ax, ay, _)), Some((bx, by, _))) => {
-                let dx = f64::from(ax - bx);
-                let dy = f64::from(ay - by);
-                dx * dx + dy * dy <= f64::from(radius) * f64::from(radius)
-            }
-            _ => false,
+        match self.world.position_of(b) {
+            Some((bx, by, _)) => self.is_inside_radius_2d_xy(a, bx, by, radius),
+            None => false,
         }
+    }
+
+    /// Java `creature.isInsideRadius2D(x, y, z, radius)`: the 2D distance to the point is
+    /// strictly below the radius; `false` when the object is not in the world.
+    pub fn is_inside_radius_2d_xy(&self, a: ObjectId, x: i32, y: i32, radius: i32) -> bool {
+        self.world.position_of(a).is_some_and(|(ax, ay, _)| {
+            let dx = f64::from(x) - f64::from(ax);
+            let dy = f64::from(y) - f64::from(ay);
+            (dx * dx + dy * dy).sqrt() < f64::from(radius)
+        })
     }
 
     /// Java `player.setPlayerClass(id)`: the class change (message, skills, party and clan

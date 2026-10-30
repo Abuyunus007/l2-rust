@@ -60,6 +60,12 @@ pub trait Script: Send + Sync + 'static {
         -1
     }
 
+    /// Java `getNpcStringId()`: the client string of the quest's name in the quest list (the id,
+    /// less 5000 above 10000). A quest whose Java class overrides it overrides this (S-API-05).
+    fn npc_string_id(&self) -> i32 {
+        super::link::npc_string_id(self.id())
+    }
+
     /// Java `isCustomQuest()`: a custom quest shows its path instead of a client string.
     fn is_custom(&self) -> bool {
         false
@@ -76,6 +82,16 @@ pub trait Script: Send + Sync + 'static {
 
     /// The Java constructor: registers the listeners and the quest items.
     fn setup(&self, setup: &mut ScriptSetup);
+
+    /// The Java constructor of a script that registers from loaded data or settings
+    /// (`for (int npcId : LevelUpCrystalData.getInstance().getNpcsSoulInfo().keySet())
+    /// addKillId(npcId)`): called by [`World::install_scripts`](crate::World::install_scripts)
+    /// instead of [`Script::setup`], with the world's data and settings already in. The default
+    /// calls `setup`; an override calls `self.setup(setup)` first and then adds the data-driven
+    /// ids (S-API-05).
+    fn setup_with(&self, setup: &mut ScriptSetup, world: &crate::World) {
+        self.setup(setup);
+    }
 
     /// Java `onLoad()`: called once after every script was registered and the world data is in.
     fn on_load(&self, ctx: &mut ScriptCtx<'_>) {}
@@ -442,6 +458,10 @@ pub trait Script: Send + Sync + 'static {
 
     /// `ON_PLAYER_SUMMON_TALK` (queued, container: the summon).
     fn on_player_summon_talk(&self, ctx: &mut ScriptCtx<'_>, summon: ObjectId) {}
+
+    /// Java `onSummonSpawn(summon)` (`addSummonSpawnId`, queued): the summon spawned next to its
+    /// owner (`ctx.world().summon_owner(summon)`).
+    fn on_summon_spawn(&self, ctx: &mut ScriptCtx<'_>, summon: ObjectId) {}
 
     /// `ON_PLAYABLE_EXP_CHANGED` (synchronous, container: the playable). `terminate` refuses
     /// the experience.

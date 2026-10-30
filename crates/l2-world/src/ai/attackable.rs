@@ -265,7 +265,7 @@ impl World {
     }
 
     /// Java `Npc.getAggroRange()`: the template's, or the `aggroRange` of the spawn's `AIData`.
-    pub(crate) fn aggro_range_of(&self, id: ObjectId) -> i32 {
+    pub fn aggro_range_of(&self, id: ObjectId) -> i32 {
         if let Some(spawn) = self.npc_spawn(id)
             && spawn.name.is_some()
             && let Some(range) = spawn.ai_data.as_ref().and_then(|d| d.get("aggroRange"))
@@ -277,7 +277,7 @@ impl World {
 
     /// Java `Npc.isRandomWalkingEnabled()`: the template's `isRandomWalkEnabled()` (the
     /// `randomWalk` flag and `MoveArounding`), unless the spawn's `AIData` says `disableRandomWalk`.
-    fn is_random_walking_enabled(&self, id: ObjectId) -> bool {
+    pub(crate) fn is_random_walking_enabled(&self, id: ObjectId) -> bool {
         // `setRandomWalking(false)` of a script (S-AI-05).
         if self.npc_world.random_walk_off.contains(&id) {
             return false;

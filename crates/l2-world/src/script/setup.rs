@@ -131,6 +131,8 @@ pub enum EventKind {
     FortSiegeStart,
     /// `ON_OLYMPIAD_MATCH_RESULT` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
     OlympiadMatchResult,
+    /// `ON_PLAYER_SUMMON_SPAWN` (`addSummonSpawnId`, S-API-05), by the summon's NPC id.
+    PlayerSummonSpawn,
 }
 
 impl EventKind {
@@ -229,6 +231,7 @@ impl EventKind {
             Self::FortSiegeFinish => (150, "ON_FORT_SIEGE_FINISH"),
             Self::FortSiegeStart => (151, "ON_FORT_SIEGE_START"),
             Self::OlympiadMatchResult => (175, "ON_OLYMPIAD_MATCH_RESULT"),
+            Self::PlayerSummonSpawn => (231, "ON_PLAYER_SUMMON_SPAWN"),
         }
     }
 
@@ -246,7 +249,11 @@ impl EventKind {
             Self::AttackableFactionCall => "addFactionCallId",
             Self::AttackableAggroRangeEnter => "addAggroRangeEnterId",
             Self::CreatureSee => "addCreatureSeeId",
+<<<<<<< HEAD
             Self::TrapAction => "addTrapActionId",
+=======
+            Self::PlayerSummonSpawn => "addSummonSpawnId",
+>>>>>>> main
             _ => "",
         }
     }
@@ -306,6 +313,12 @@ impl ScriptSetup {
     /// Java `addSpawnId(npcIds)`.
     pub fn add_spawn_id(&mut self, npc_ids: &[i32]) {
         self.add(EventKind::NpcSpawn, npc_ids);
+    }
+
+    /// Java `addSummonSpawnId(npcIds)`: `on_summon_spawn` when a summon (servitor or pet) of one
+    /// of the NPC ids spawns (S-API-05).
+    pub fn add_summon_spawn_id(&mut self, npc_ids: &[i32]) {
+        self.add(EventKind::PlayerSummonSpawn, npc_ids);
     }
 
     /// Java `addTeleportId(npcIds)`.
@@ -596,6 +609,9 @@ pub(crate) struct Listeners {
     can_see_me: std::collections::HashSet<(ScriptId, i32)>,
     /// Java `_registeredIds`, per script.
     registered: HashMap<ScriptId, Vec<(EventKind, i32)>>,
+    /// The zone ids with an `ON_CREATURE_ZONE_ENTER` or `EXIT` listener, sorted (the NPC zone
+    /// check reads it on every NPC move, S-API-05).
+    zone_ids: Vec<i32>,
 }
 
 impl Listeners {
@@ -632,6 +648,13 @@ impl Listeners {
                 } else {
                     *kind
                 };
+                if matches!(
+                    key_kind,
+                    EventKind::CreatureZoneEnter | EventKind::CreatureZoneExit
+                ) && let Err(at) = self.zone_ids.binary_search(&id)
+                {
+                    self.zone_ids.insert(at, id);
+                }
                 let entry = self.by_id.entry((key_kind, id)).or_default();
                 // Java's `PriorityBlockingQueue` holds the same listener object once per call;
                 // a script that registers an id twice gets two listeners there, and here.
@@ -659,6 +682,11 @@ impl Listeners {
     /// Java `hasListener(type)` for an id.
     pub(crate) fn has(&self, kind: EventKind, id: i32) -> bool {
         !self.of(kind, id).is_empty()
+    }
+
+    /// The zone ids some script listens to (`ON_CREATURE_ZONE_ENTER` / `EXIT`), sorted.
+    pub(crate) fn listened_zone_ids(&self) -> &[i32] {
+        &self.zone_ids
     }
 
     /// Every kind the script registered (the ids and the global ones), without repeats.

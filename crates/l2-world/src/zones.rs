@@ -120,6 +120,17 @@ pub(crate) struct ZoneContext {
     /// `ZoneType._enabled` of the effect zones a script switched (`setEnabled`), by zone id; the
     /// others have their `default_enabled` parameter.
     pub(crate) effect_enabled: std::collections::HashMap<i32, bool>,
+    /// The zones an NPC is in, for the scripts' `ON_CREATURE_ZONE_ENTER` / `EXIT` (S-API-05).
+    pub(crate) npc_zones: std::collections::HashMap<ObjectId, NpcZones>,
+}
+
+/// An NPC's part of the zones' `_characterList`s and its `_lastZoneValidateLocation`. Only the
+/// zones a script listens to are kept: the zone effects themselves (damage, peace, ...) are the
+/// players' (S-API-05).
+#[derive(Debug, Clone, Default)]
+pub(crate) struct NpcZones {
+    last_validate: Option<(i32, i32, i32)>,
+    members: Vec<ZoneKey>,
 }
 
 /// The zones a zone holds a creature in, as Java's `_characterList` identifies them: a zone id
@@ -236,6 +247,30 @@ impl ZoneRules {
             }
         }
         rules
+    }
+
+    /// Java `ZoneType.isAffected(creature)` for an NPC: the instance, the switch, the level and
+    /// `targetClass` (a player-only target class leaves NPCs out; races and classes are the
+    /// players').
+    fn affects_npc(&self, zone: &Zone, level: i32, world_template: Option<i32>) -> bool {
+        if self.instance_template_id > 0
+            && world_template.is_some_and(|template| template != self.instance_template_id)
+        {
+            return false;
+        }
+        if !self.enabled {
+            return false;
+        }
+        if level < self.min_level || level > self.max_level {
+            return false;
+        }
+        // `creature.isInstanceTypes(_target)`: `Playable` and `Player` are not NPCs.
+        !zone
+            .params
+            .iter()
+            .rev()
+            .find(|(name, _)| name == "targetClass")
+            .is_some_and(|(_, value)| matches!(value.as_str(), "Playable" | "Player"))
     }
 
     /// Java `ZoneType.isAffected(creature)` for a player. `world_template` is the template of the
@@ -485,6 +520,10 @@ impl World {
     /// place of the last check.
     pub fn revalidate_zone(&mut self, id: ObjectId, force: bool) {
         if self.zoning.zones.is_none() {
+            return;
+        }
+        if self.npcs.contains_key(&id) {
+            self.revalidate_npc_script_zones(id, force);
             return;
         }
         // "Cannot validate if not in a world region (happens during teleport)."
@@ -1211,5 +1250,115 @@ impl World {
                 }
             }
         }
+    }
+}
+
+impl World {
+    /// `Creature.revalidateZone(force)` of an NPC, for the zones scripts listen to
+    /// (`addEnterZoneId` / `addExitZoneId`): Java's `ON_CREATURE_ZONE_ENTER` / `EXIT` of NPCs
+    /// (S-API-05). Without `force` it runs once the NPC is `MaxDriftRange` away from the last
+    /// check (100 while in combat), like Java.
+    fn revalidate_npc_script_zones(&mut self, id: ObjectId, force: bool) {
+        let known = self.zoning.npc_zones.contains_key(&id);
+        if self.scripts.listeners.listened_zone_ids().is_empty() && !known {
+            return;
+        }
+        if self.objects.get(&id).and_then(|e| e.region).is_none() {
+            return;
+        }
+        let Some((x, y, z)) = self.position_of(id) else {
+            return;
+        };
+        let drift = if self.is_in_combat(id) {
+            100.0
+        } else {
+            f64::from(self.ai.attackable.settings.max_drift_range)
+        };
+        let last = self.zoning.npc_zones.get(&id).and_then(|s| s.last_validate);
+        if !force && let Some((lx, ly, lz)) = last {
+            let (dx, dy, dz) = (f64::from(x - lx), f64::from(y - ly), f64::from(z - lz));
+            if (dx * dx + dy * dy + dz * dz).sqrt() < drift {
+                return;
+            }
+        }
+        self.zoning.npc_zones.entry(id).or_default().last_validate = Some((x, y, z));
+        let listened = self.scripts.listeners.listened_zone_ids().to_vec();
+        let Some(zones) = self.zoning.zones.clone() else {
+            return;
+        };
+        let level = self.npcs.get(&id).map_or(0, |n| n.core.level);
+        let world_template = self.instance_world_of(id).map(|w| w.template_id);
+        for zone in zones.region_zones(x, y) {
+            if listened.binary_search(&zone.id).is_err() {
+                continue;
+            }
+            let key: ZoneKey = (zone.id, zone.zone_type.clone());
+            let member = self
+                .zoning
+                .npc_zones
+                .get(&id)
+                .is_some_and(|s| s.members.contains(&key));
+            if zone.is_inside_zone(x, y, z) {
+                if member {
+                    continue;
+                }
+                let mut rules = ZoneRules::of(zone);
+                if let Some(enabled) = self.trap_zone_override(zone) {
+                    rules.enabled = enabled;
+                }
+                if matches!(ZoneKind::of(&zone.zone_type), ZoneKind::Effect) {
+                    rules.enabled = self.is_effect_zone_enabled(zone.id);
+                }
+                if !rules.affects_npc(zone, level, world_template) {
+                    continue;
+                }
+                self.zoning.npc_zones.entry(id).or_default().members.push(key);
+                self.script_on_zone_enter(id, zone.id);
+            } else if member {
+                if let Some(state) = self.zoning.npc_zones.get_mut(&id) {
+                    state.members.retain(|k| *k != key);
+                }
+                self.script_on_zone_exit(id, zone.id);
+            }
+        }
+        // `Creature.setXYZ`: a new zone cell drops the zones of the old one
+        // (`oldZoneRegion.removeFromZones(this)`).
+        let members = self
+            .zoning
+            .npc_zones
+            .get(&id)
+            .map(|s| s.members.clone())
+            .unwrap_or_default();
+        for key in members {
+            let inside = zones
+                .get_of_type(key.0, &key.1)
+                .is_some_and(|zone| zone.is_inside_zone(x, y, z));
+            if !inside {
+                if let Some(state) = self.zoning.npc_zones.get_mut(&id) {
+                    state.members.retain(|k| *k != key);
+                }
+                self.script_on_zone_exit(id, key.0);
+            }
+        }
+    }
+
+    /// `ZoneRegion.removeFromZones(npc)` of `Npc.deleteMe` / `Creature.onDecay`: the NPC leaves
+    /// every zone it was in (the scripts hear the exits).
+    pub(crate) fn npc_leave_script_zones(&mut self, id: ObjectId) {
+        let Some(state) = self.zoning.npc_zones.remove(&id) else {
+            return;
+        };
+        for (zone_id, _) in state.members {
+            self.script_on_zone_exit(id, zone_id);
+        }
+    }
+
+    /// The zones (id, type) a script listens to that the NPC is in.
+    pub fn npc_script_zones(&self, id: ObjectId) -> Vec<(i32, String)> {
+        self.zoning
+            .npc_zones
+            .get(&id)
+            .map(|s| s.members.clone())
+            .unwrap_or_default()
     }
 }

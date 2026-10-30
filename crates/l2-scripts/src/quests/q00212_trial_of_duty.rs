@@ -60,11 +60,6 @@ const DIMENSIONAL_DIAMOND: i32 = 7562;
 
 // Misc
 const MIN_LEVEL: i32 = 35;
-/// Java `CategoryType.KNIGHT_GROUP` (`CategoryData.xml`: knight, elven knight, palus knight).
-// FOLLOW-UP(engine): `l2-world/src/subclass/categories.rs` has no `KNIGHT_GROUP` row, so
-// `player.isInCategory(KNIGHT_GROUP)` is checked against these ids here. Move the row into the
-// table and call `ctx.world().is_in_category(player, CategoryType::KnightGroup)` instead.
-const KNIGHT_GROUP: [i32; 3] = [4, 19, 32];
 /// Java `PlayerClass.KNIGHT`.
 const KNIGHT: i32 = 4;
 /// Java `player.getVariables()` key: the second-class diamonds are given once per character.
@@ -73,8 +68,10 @@ const DIAMOND_REWARD_VAR: &str = "2ND_CLASS_DIAMOND_REWARD";
 /// Java `Q00212_TrialOfDuty`.
 pub struct Q00212TrialOfDuty;
 
+/// Java `player.isInCategory(CategoryType.KNIGHT_GROUP)` (the loaded `CategoryData`).
 fn in_knight_group(ctx: &ScriptCtx<'_>, player: ObjectId) -> bool {
-    KNIGHT_GROUP.contains(&ctx.player_class_id(player))
+    ctx.world()
+        .is_in_category(player, l2_world::subclass::CategoryType::KnightGroup)
 }
 
 /// Java `getActiveWeaponItem()` id of the player (0 when none).

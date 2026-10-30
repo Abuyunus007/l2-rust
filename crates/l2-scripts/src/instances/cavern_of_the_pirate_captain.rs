@@ -166,7 +166,7 @@ impl Script for CavernOfThePirateCaptain {
                 let is83 = parameter_bool(ctx.world(), instance_id, "is83");
                 match event {
                     "BURN_BLUE" => {
-                        if right_hand_of(ctx, npc) == 0 {
+                        if ctx.right_hand_item(npc) == 0 {
                             ctx.world_mut().set_npc_right_hand(npc.object_id, FIRE);
                             ctx.start_quest_timer("BURN_BLUE2", 3000, Some(npc), player, false);
                             if parameter_int(ctx.world(), instance_id, "blueFounded") == 4 {
@@ -175,18 +175,18 @@ impl Script for CavernOfThePirateCaptain {
                         }
                     }
                     "BURN_BLUE2" => {
-                        if right_hand_of(ctx, npc) == FIRE {
+                        if ctx.right_hand_item(npc) == FIRE {
                             ctx.world_mut().set_npc_right_hand(npc.object_id, BLUE);
                         }
                     }
                     "BURN_RED" => {
-                        if right_hand_of(ctx, npc) == 0 {
+                        if ctx.right_hand_item(npc) == 0 {
                             ctx.world_mut().set_npc_right_hand(npc.object_id, FIRE);
                             ctx.start_quest_timer("BURN_RED2", 3000, Some(npc), player, false);
                         }
                     }
                     "BURN_RED2" => {
-                        if right_hand_of(ctx, npc) == FIRE {
+                        if ctx.right_hand_item(npc) == FIRE {
                             let room = get_room_by_candle(ctx, npc);
                             ctx.world_mut().set_npc_right_hand(npc.object_id, RED);
                             manage_screen_msg(
@@ -319,11 +319,6 @@ impl Script for CavernOfThePirateCaptain {
 
         None
     }
-}
-
-/// `npc.getRightHandItem()`.
-fn right_hand_of(ctx: &ScriptCtx<'_>, npc: ScriptNpc) -> i32 {
-    ctx.world().npc(npc.object_id).map_or(0, |n| n.right_hand)
 }
 
 fn parameter(world: &World, instance_id: i32, key: &str) -> Option<String> {

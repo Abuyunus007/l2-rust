@@ -130,8 +130,8 @@ impl Script for Q00235MimirsElixir {
                     ctx.take_items(player, STAR_OF_DESTINY, -1);
                     ctx.give_items(player, ENCHANT_WEAPON_A, 1);
                     qs.exit_quest(ctx, false, true);
-                    // FOLLOW-UP(engine): Java `player.sendPacket(new SocialAction(objectId, 3))`:
-                    // no public world call sends a social action to one player yet.
+                    // `player.sendPacket(new SocialAction(player.getObjectId(), 3))`.
+                    ctx.send_social_action(player, 3);
                     htmltext = Some(event.to_owned());
                 }
             }

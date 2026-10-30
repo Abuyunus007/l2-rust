@@ -135,9 +135,7 @@ impl Script for Q00713PathToBecomingALordAden {
 
         match npc.id {
             LOGAN => {
-                // Java `isCond(0)`: a state with no row yet has cond 0 (`Qs::is_cond` reads
-                // nothing for it, so the value is compared here).
-                if qs.get_cond(ctx) == 0 {
+                if qs.is_cond(ctx, 0) {
                     if castle_owner == Some(player) {
                         if has_fort(ctx) {
                             htmltext = Some("35274-00.html".to_owned());

@@ -315,6 +315,30 @@ impl<'w> ScriptCtx<'w> {
     /// Java `giveItems(player, itemId, count, enchantlevel)`: quest items count times
     /// `QuestItemDropAmountMultiplier`; "You have earned ..." and the load.
     pub fn give_items_enchanted(&mut self, player: ObjectId, item_id: i32, count: i64, enchant_level: i32) {
+        self.give_items_with(player, item_id, count, enchant_level, None);
+    }
+
+    /// Java `giveItems(player, itemId, count, attributeId, attributeLevel)`: the item with an
+    /// element attribute (`Elementals.FIRE` = 0 .. `HOLY` = 4); nothing is set when the level is 0.
+    pub fn give_items_elemental(
+        &mut self,
+        player: ObjectId,
+        item_id: i32,
+        count: i64,
+        element: i32,
+        power: i32,
+    ) {
+        self.give_items_with(player, item_id, count, 0, Some((element, power)));
+    }
+
+    fn give_items_with(
+        &mut self,
+        player: ObjectId,
+        item_id: i32,
+        count: i64,
+        enchant_level: i32,
+        element: Option<(i32, i32)>,
+    ) {
         if count <= 0 {
             return;
         }
@@ -345,6 +369,13 @@ impl<'w> ScriptCtx<'w> {
             {
                 item.enchant_level = enchant_level;
             }
+        }
+        if let Some((element, power)) = element
+            && element >= 0
+            && power > 0
+        {
+            self.world
+                .set_item_elemental(added.item.object_id, element, power);
         }
         self.send_item_get_message(player, item_id, final_count);
     }
@@ -728,6 +759,21 @@ impl<'w> ScriptCtx<'w> {
             self.world
                 .start_quest_timer(script, name, time_ms, npc, player, repeating);
         }
+    }
+
+    /// Java `ThreadPool.schedule(() -> ..., delay)` in a script: `on_event(name, npc, player)`
+    /// after `time_ms`, as a task of its own that never merges with a timer of the same name
+    /// (unlike [`ScriptCtx::start_quest_timer`]) and that `has_quest_timer` / `cancel_quest_timer`
+    /// do not see (S-API-05).
+    pub fn schedule_event(
+        &mut self,
+        name: &str,
+        time_ms: i64,
+        npc: Option<ScriptNpc>,
+        player: Option<ObjectId>,
+    ) {
+        self.world
+            .schedule_script_event(self.script, name, time_ms, npc, player);
     }
 
     /// Java `getQuestTimer(name, npc, player) != null`.

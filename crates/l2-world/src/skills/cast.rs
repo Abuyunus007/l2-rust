@@ -1685,16 +1685,19 @@ impl World {
                 (None, None)
             };
             let level_of = |w: &World, id: ObjectId| w.stats(id).map_or(0, |v| v.level());
-            // `giveRaidCurse()` is true for every raid (scripts may turn it off: D-05).
+            // `giveRaidCurse()` is true for every raid unless a script turned it off (`gives_raid_curse`).
             let raid_watch = |w: &World, other: Option<ObjectId>| {
                 other.is_some_and(|o| {
                     w.is_raid(o)
+                        && w.gives_raid_curse(o)
                         && w.combat_state(o).is_some_and(|c| c.attack_by.contains(&target))
                         && caster_level > level_of(w, o) + 8
                 })
             };
             let curse = !self.settings.cast.raid_disable_curse
-                && ((self.is_raid(target) && caster_level > level_of(self, target) + 8)
+                && ((self.is_raid(target)
+                    && self.gives_raid_curse(target)
+                    && caster_level > level_of(self, target) + 8)
                     || (!negative && raid_watch(self, attack_target))
                     || (!negative && raid_watch(self, cast_target)));
             if curse {

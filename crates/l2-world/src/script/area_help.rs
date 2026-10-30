@@ -28,6 +28,11 @@ impl ScriptCtx<'_> {
         );
     }
 
+    /// Java `npc.setHeading(heading)` alone (no packet; S-QR-11).
+    pub fn set_npc_heading(&mut self, npc: ScriptNpc, heading: i32) {
+        self.world_mut().set_heading(npc.object_id, heading);
+    }
+
     /// Java `npc.setHeading(heading); npc.broadcastPacket(new ValidateLocation(npc))`.
     pub fn set_heading_and_validate(&mut self, npc: ScriptNpc, heading: i32) {
         self.world_mut().set_heading(npc.object_id, heading);

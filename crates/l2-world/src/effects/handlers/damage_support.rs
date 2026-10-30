@@ -93,6 +93,8 @@ impl World {
         }
         if self.is_player(id) {
             self.player_reduce_hp_special(id, amount, attacker, awake, is_dot, is_hp_consumption);
+            // `Player.reduceCurrentHp`: "Notify the tamed beast of attacks." (S-API-05)
+            self.tamed_beasts_on_owner_attacked(id, attacker);
             return;
         }
         if !self.is_npc(id) {
