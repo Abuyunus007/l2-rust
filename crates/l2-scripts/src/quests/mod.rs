@@ -179,6 +179,7 @@ pub mod q00317_catch_the_wind;
 pub mod q00405_path_of_the_cleric;
 pub mod q00406_path_of_the_elven_knight;
 pub mod q00410_path_of_the_palus_knight;
+pub mod q00413_path_of_the_shillien_oracle;
 pub mod q00450_grave_robber_rescue;
 
 use l2_world::ScriptRegistry;
@@ -359,5 +360,6 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00405_path_of_the_cleric::Q00405PathOfTheCleric);
     r.add(q00406_path_of_the_elven_knight::Q00406PathOfTheElvenKnight);
     r.add(q00410_path_of_the_palus_knight::Q00410PathOfThePalusKnight);
+    r.add(q00413_path_of_the_shillien_oracle::Q00413PathOfTheShillienOracle);
     r.add(q00450_grave_robber_rescue::Q00450GraveRobberRescue);
 }
