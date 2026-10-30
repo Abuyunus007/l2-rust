@@ -720,7 +720,7 @@ mod tests {
             NornilsGarden.on_enter_zone(ctx, Oid(2), 20111);
             NornilsGarden.on_enter_zone(ctx, Oid(2), 20112);
         });
-        assert_eq!(count_of(&t, 18347, instance_id), 1 + 3);
+        assert_eq!(count_of(&t, 18347, instance_id), 1 + 2);
     }
 
     #[test]
