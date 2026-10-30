@@ -30,6 +30,7 @@
 
 pub mod admin;
 pub mod ai_help;
+mod area_help;
 pub mod api;
 pub mod ctx;
 pub mod events;
