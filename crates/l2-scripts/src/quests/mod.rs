@@ -275,6 +275,7 @@ pub mod q10277_mutated_kaneus_dion;
 pub mod q10278_mutated_kaneus_heine;
 pub mod q10279_mutated_kaneus_oren;
 pub mod q10280_mutated_kaneus_schuttgart;
+pub mod q10281_mutated_kaneus_rune;
 
 use l2_world::ScriptRegistry;
 
@@ -550,4 +551,5 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q10278_mutated_kaneus_heine::Q10278MutatedKaneusHeine);
     r.add(q10279_mutated_kaneus_oren::Q10279MutatedKaneusOren);
     r.add(q10280_mutated_kaneus_schuttgart::Q10280MutatedKaneusSchuttgart);
+    r.add(q10281_mutated_kaneus_rune::Q10281MutatedKaneusRune);
 }
