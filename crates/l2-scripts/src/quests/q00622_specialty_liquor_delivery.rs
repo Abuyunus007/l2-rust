@@ -110,9 +110,7 @@ impl Script for Q00622SpecialtyLiquorDelivery {
                 }
             }
             "31543-02.html" | "31544-02.html" | "31545-02.html" | "31546-02.html" => {
-                let Some(npc) = npc else {
-                    return None;
-                };
+                let npc = npc?;
                 if TALKERS.contains(&npc.id) && qs.is_cond(ctx, talker_cond(npc.id)) {
                     if ctx.has_quest_items(player, SPECIAL_DRINK) {
                         let next = qs.get_cond(ctx) + 1;
