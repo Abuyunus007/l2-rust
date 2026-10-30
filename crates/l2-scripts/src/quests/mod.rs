@@ -261,6 +261,7 @@ pub mod q00381_lets_become_a_royal_member;
 pub mod q00382_kails_magic_coin;
 pub mod q00385_yoke_of_the_past;
 pub mod q00450_grave_robber_rescue;
+pub mod q00715_path_to_becoming_a_lord_goddard;
 pub mod q00903_the_call_of_antharas;
 pub mod q00904_dragon_trophy_antharas;
 pub mod q00905_refined_dragon_blood;
@@ -562,4 +563,5 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00905_refined_dragon_blood::Q00905RefinedDragonBlood);
     r.add(q10283_request_of_ice_merchant::Q10283RequestOfIceMerchant);
     r.add(q10271_the_enveloping_darkness::Q10271TheEnvelopingDarkness);
+    r.add(q00715_path_to_becoming_a_lord_goddard::Q00715PathToBecomingALordGoddard);
 }
