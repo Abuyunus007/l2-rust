@@ -311,6 +311,23 @@ pub mod q00612_battle_against_ketra_orcs;
 pub mod q00613_prove_your_courage_varka;
 pub mod q00614_slay_the_enemy_commander_varka;
 pub mod q00615_magical_power_of_fire_part1;
+pub mod q00651_runaway_youth;
+pub mod q00652_an_aged_ex_adventurer;
+pub mod q00653_wild_maiden;
+pub mod q00654_journey_to_a_settlement;
+pub mod q00655_a_grand_plan_for_taming_wild_beasts;
+pub mod q00659_id_rather_be_collecting_fairy_breath;
+pub mod q00661_making_the_harvest_grounds_safe;
+pub mod q00688_defeat_the_elrokian_raiders;
+pub mod q00690_judes_request;
+pub mod q00691_matras_suspicious_request;
+pub mod q00696_conquer_the_hall_of_erosion;
+pub mod q00697_defend_the_hall_of_erosion;
+pub mod q00698_block_the_lords_escape;
+pub mod q00699_guardian_of_the_skies;
+pub mod q00701_proof_of_existence;
+pub mod q00710_path_to_becoming_a_lord_giran;
+pub mod q00713_path_to_becoming_a_lord_aden;
 
 use l2_world::ScriptRegistry;
 
@@ -623,4 +640,21 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00456_dont_know_dont_care::Q00456DontKnowDontCare);
     r.add(q00457_lost_and_found::Q00457LostAndFound);
     r.add(q00458_perfect_form::Q00458PerfectForm);
+    r.add(q00651_runaway_youth::Q00651RunawayYouth);
+    r.add(q00652_an_aged_ex_adventurer::Q00652AnAgedExAdventurer);
+    r.add(q00653_wild_maiden::Q00653WildMaiden);
+    r.add(q00654_journey_to_a_settlement::Q00654JourneyToASettlement);
+    r.add(q00655_a_grand_plan_for_taming_wild_beasts::Q00655AGrandPlanForTamingWildBeasts);
+    r.add(q00659_id_rather_be_collecting_fairy_breath::Q00659IdRatherBeCollectingFairyBreath);
+    r.add(q00661_making_the_harvest_grounds_safe::Q00661MakingTheHarvestGroundsSafe);
+    r.add(q00688_defeat_the_elrokian_raiders::Q00688DefeatTheElrokianRaiders);
+    r.add(q00690_judes_request::Q00690JudesRequest);
+    r.add(q00691_matras_suspicious_request::Q00691MatrasSuspiciousRequest);
+    r.add(q00696_conquer_the_hall_of_erosion::Q00696ConquerTheHallOfErosion);
+    r.add(q00697_defend_the_hall_of_erosion::Q00697DefendTheHallOfErosion);
+    r.add(q00698_block_the_lords_escape::Q00698BlockTheLordsEscape);
+    r.add(q00699_guardian_of_the_skies::Q00699GuardianOfTheSkies);
+    r.add(q00701_proof_of_existence::Q00701ProofOfExistence);
+    r.add(q00710_path_to_becoming_a_lord_giran::Q00710PathToBecomingALordGiran);
+    r.add(q00713_path_to_becoming_a_lord_aden::Q00713PathToBecomingALordAden);
 }
