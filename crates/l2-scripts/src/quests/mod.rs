@@ -190,6 +190,7 @@ pub mod q00411_path_of_the_assassin;
 pub mod q00412_path_of_the_dark_wizard;
 pub mod q00413_path_of_the_shillien_oracle;
 pub mod q00414_path_of_the_orc_raider;
+pub mod q00416_path_of_the_orc_shaman;
 pub mod q00450_grave_robber_rescue;
 
 use l2_world::ScriptRegistry;
@@ -367,6 +368,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00295_dreaming_of_the_skies::Q00295DreamingOfTheSkies);
     r.add(q00303_collect_arrowheads::Q00303CollectArrowheads);
     r.add(q00317_catch_the_wind::Q00317CatchTheWind);
+    r.add(q00416_path_of_the_orc_shaman::Q00416PathOfTheOrcShaman);
     r.add(q00401_path_of_the_warrior::Q00401PathOfTheWarrior);
     r.add(q00402_path_of_the_human_knight::Q00402PathOfTheHumanKnight);
     r.add(q00403_path_of_the_rogue::Q00403PathOfTheRogue);
