@@ -254,6 +254,7 @@ pub mod q00328_sense_for_business;
 pub mod q00329_curiosity_of_a_dwarf;
 pub mod q00330_adept_of_taste;
 pub mod q00331_arrow_of_vengeance;
+pub mod q00333_hunt_of_the_black_lion;
 pub mod q00337_audience_with_the_land_dragon;
 pub mod q00338_alligator_hunter;
 pub mod q00340_subjugation_of_lizardmen;
@@ -680,6 +681,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00329_curiosity_of_a_dwarf::Q00329CuriosityOfADwarf);
     r.add(q00330_adept_of_taste::Q00330AdeptOfTaste);
     r.add(q00331_arrow_of_vengeance::Q00331ArrowOfVengeance);
+    r.add(q00333_hunt_of_the_black_lion::Q00333HuntOfTheBlackLion);
     r.add(q00337_audience_with_the_land_dragon::Q00337AudienceWithTheLandDragon);
     r.add(q00338_alligator_hunter::Q00338AlligatorHunter);
     r.add(q00340_subjugation_of_lizardmen::Q00340SubjugationOfLizardmen);
