@@ -67,7 +67,7 @@ impl Script for Q00423TakeYourBestShot {
 
     fn on_first_talk(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, _player: ObjectId) -> Option<String> {
         // Java `npc.isInsideRadius2D(96782, 85918, 0, 100)`: the Ugoros gate has its own page.
-        if inside_radius_2d(ctx, npc, 96_782, 85_918, 100) {
+        if ctx.is_inside_radius_2d_xy(npc.object_id, 96_782, 85_918, 100) {
             Some("32740-ugoros.html".to_owned())
         } else {
             Some("32740.html".to_owned())
@@ -135,15 +135,6 @@ impl Script for Q00423TakeYourBestShot {
         }
         Some(htmltext)
     }
-}
-
-/// Java `Creature.isInsideRadius2D(x, y, 0, radius)`: the 2D distance is strictly below the radius.
-fn inside_radius_2d(ctx: &ScriptCtx<'_>, npc: ScriptNpc, x: i32, y: i32, radius: i32) -> bool {
-    ctx.world().position_of(npc.object_id).is_some_and(|(nx, ny, _)| {
-        let dx = f64::from(x - nx);
-        let dy = f64::from(y - ny);
-        (dx * dx + dy * dy).sqrt() < f64::from(radius)
-    })
 }
 
 #[cfg(test)]

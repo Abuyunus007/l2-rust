@@ -4,8 +4,7 @@
 //
 // Pattern: the test chain of the "Test of ..." quests (see Q00222), with letters handed from NPC
 // to NPC on the memo state and a kill step that moves the condition on its ninth and tenth kill.
-// FOLLOW-UP(engine): the killing blow weapon is not tracked (`npc.getKillingBlowWeapon()`), so the
-// last step never sees the crescent moon bow and the serpent demon always respawns.
+// The last step needs the killing blow from the crescent moon bow (`npc.getKillingBlowWeapon()`).
 
 use l2_protocol_game::server::SocialAction;
 use l2_util::ObjectId;
@@ -319,9 +318,7 @@ impl Script for Q00224TestOfSagittarius {
                 }
                 SERPENT_DEMON_KADESH => {
                     if qs.is_memo_state(ctx, 13) && !ctx.has_quest_items(killer, TALISMAN_OF_KADESH) {
-                        // FOLLOW-UP(engine): `npc.getKillingBlowWeapon() == CRESCENT_MOON_BOW`. The
-                        // weapon of the killing blow is not kept, so it reads as no weapon.
-                        if killing_blow_weapon(npc) == CRESCENT_MOON_BOW {
+                        if ctx.killing_blow_weapon(npc) == CRESCENT_MOON_BOW {
                             ctx.give_items(killer, TALISMAN_OF_KADESH, 1);
                             qs.set_memo_state(ctx, 14);
                             qs.set_cond(ctx, 14, true);
@@ -486,12 +483,6 @@ impl Script for Q00224TestOfSagittarius {
     }
 }
 
-/// FOLLOW-UP(engine): Java `npc.getKillingBlowWeapon()` (the item id of the weapon that made the
-/// killing blow, 0 without one). The world does not keep it yet, so this is always 0.
-fn killing_blow_weapon(_npc: ScriptNpc) -> i32 {
-    0
-}
-
 #[cfg(test)]
 mod tests {
     use l2_util::ObjectId as Oid;
@@ -509,7 +500,8 @@ mod tests {
         <npc id="30653" type="Folk" level="70" name="Sir Aron Tanford"/>
         <npc id="30702" type="Folk" level="70" name="Guild President Bernard"/>
         <npc id="30717" type="Folk" level="70" name="Magister Gauen"/>
-        <npc id="20079" type="Monster" level="40" name="Ant"/>"#;
+        <npc id="20079" type="Monster" level="40" name="Ant"/>
+        <npc id="27090" type="Monster" level="40" name="Serpent Demon Kadesh"/>"#;
 
     const ITEMS: &str = r#"
         <item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true"/></item>
@@ -703,6 +695,46 @@ mod tests {
                 rows::update(NAME, "cond", "6"),
                 rows::update(NAME, "__compltdStateFlags", "-2147483599"),
             ]
+        );
+    }
+
+    #[test]
+    fn kadesh_gives_the_talisman_only_to_a_crescent_moon_bow_killing_blow() {
+        let (mut t, npcs) = setup();
+        let mut bow = crate::testing::item(300, CRESCENT_MOON_BOW, 1);
+        bow.loc = "PAPERDOLL".to_owned();
+        bow.loc_data = 5;
+        t.enter_as(1, 39, 0, player_class::ROGUE, vec![]);
+        t.enter_as(2, 39, 0, player_class::ROGUE, vec![bow]);
+        for player in [1, 2] {
+            t.quest_page(player, npcs.bernard);
+            t.event(player, NAME, "ACCEPT");
+            t.world.run_as_script(NAME, |ctx| {
+                let qs = ctx.get_quest_state(Oid(player), false).unwrap();
+                qs.set_memo_state(ctx, 13);
+            });
+        }
+        t.take_writes();
+
+        // Without the bow the demon comes back (`addSpawn(SERPENT_DEMON_KADESH, npc, true, 300000)`).
+        let kadesh = t.spawn(SERPENT_DEMON_KADESH, 70);
+        t.kill(1, kadesh);
+        assert_eq!(t.world.killing_blow_weapon(kadesh), 0);
+        assert_eq!(t.count(1, TALISMAN_OF_KADESH), 0);
+        assert_eq!(t.npcs_of(SERPENT_DEMON_KADESH).len(), 2);
+        for demon in t.npcs_of(SERPENT_DEMON_KADESH) {
+            t.world.delete_npc(demon);
+        }
+
+        // The killing blow of the crescent moon bow gives the talisman (memo 14, cond 14).
+        let kadesh = t.spawn(SERPENT_DEMON_KADESH, 70);
+        t.kill(2, kadesh);
+        assert_eq!(t.world.killing_blow_weapon(kadesh), CRESCENT_MOON_BOW);
+        assert_eq!(t.count(2, TALISMAN_OF_KADESH), 1);
+        let writes = t.take_writes();
+        assert!(
+            writes.contains(&rows::of(2, rows::update(NAME, "cond", "14"))),
+            "{writes:?}"
         );
     }
 

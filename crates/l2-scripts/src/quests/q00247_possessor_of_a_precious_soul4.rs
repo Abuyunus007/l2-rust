@@ -72,8 +72,7 @@ impl Script for Q00247PossessorOfAPreciousSoul4 {
             }
             "31745-5.html" => {
                 if st.is_cond(ctx, 2) {
-                    // FOLLOW-UP(engine): Java `player.setNoble(true)` (the noble skill tree and the
-                    // flag). `World::set_noble` is `pub(crate)` in `admin/edit_char.rs`.
+                    ctx.set_noble(player, true);
                     ctx.add_exp_and_sp(player, 93836, 0);
                     ctx.give_items(player, NOBLESS_TIARA, 1);
                     // Java `npc.setTarget(player); npc.doCast(MIMIRS_ELIXIR)`: the bypass always
@@ -81,8 +80,8 @@ impl Script for Q00247PossessorOfAPreciousSoul4 {
                     if let Some(npc) = npc {
                         ctx.cast_skill(npc, player, MIMIRS_ELIXIR);
                     }
-                    // FOLLOW-UP(engine): Java `player.sendPacket(new SocialAction(objectId, 3))`:
-                    // no public world call sends a social action to one player yet.
+                    // `player.sendPacket(new SocialAction(player.getObjectId(), 3))`.
+                    ctx.send_social_action(player, 3);
                     st.exit_quest(ctx, false, true);
                 }
             }

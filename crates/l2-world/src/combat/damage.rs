@@ -320,6 +320,8 @@ impl World {
         }
         if self.is_player(target) {
             self.player_reduce_hp(target, amount, attacker);
+            // `Player.reduceCurrentHp`: "Notify the tamed beast of attacks." (S-API-05)
+            self.tamed_beasts_on_owner_attacked(target, attacker);
             return;
         }
         if self.is_summon(target) {

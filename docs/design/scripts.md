@@ -391,11 +391,46 @@ test loops "kill until the count is reached" instead of guessing the number of k
 Not fired yet (no Rust counterpart): `ON_TRAP_ACTION` (no trap NPC in the world), the `OnPlayerClan*` events, template-level
 (item) listeners of `ON_PLAYER_ITEM_PICKUP`, `ON_CREATURE_ATTACK/ATTACKED` for NPC attacks outside `do_attack`.
 
+## Added by S-API-05
+
+- **Registration from data or settings:** `Script::setup_with(&self, s: &mut ScriptSetup, world: &World)` is what
+  `install_scripts` calls; the default calls `setup`. A Java constructor that loops over a table or tests a config key
+  (`for (int npcId : LevelUpCrystalData.getInstance().getNpcsSoulInfo().keySet()) addKillId(npcId)`,
+  `if (!PlayerConfig.DISABLE_TUTORIAL) addStartNpc(..)`) overrides it: call `self.setup(s)` first, then add what the data
+  says. The world's data and settings are in before `install_scripts` (game server), so they can be read there.
+  Reference: `quests/q00350_enhance_your_weapon.rs`. Tests set the data in `ScriptTest::new_with`'s `prepare`.
+- **Soul crystals:** `world.level_up_crystal_data()` (`script::soul_crystal::{LevelUpCrystalData, SoulCrystal,
+  LevelingSoulCrystalInfo, AbsorbCrystalType}`, loaded from `data/LevelUpCrystalData.xml` with
+  `SoulCrystalChanceMultiplier`), `world.exchange_soul_crystal(player, take_id, give_id, broke)`, the absorb list of an
+  attackable (`add_absorber`, `absorb_soul`, `is_absorbed`, `absorber_hp`, `reset_absorb_list`; cleared when the NPC
+  decays, Java's `onSpawn` reset).
+- `Qs::is_cond(ctx, 0)` / `is_memo_state(ctx, 0)` are true for a removed state too (it reads like an empty one).
+- `is_inside_radius_2d` is strict (`<`) like Java; `is_inside_radius_2d_xy(obj, x, y, radius)` is the point overload.
+- **Timers that do not merge** (Java `ThreadPool.schedule` in a script): `ctx.schedule_event(name, ms, npc, player)` runs
+  `on_event` once; several of the same name run side by side and the quest timer lookups do not see them.
+- **Summons:** `s.add_summon_spawn_id(&[..])` + `on_summon_spawn(ctx, summon)` (`ON_PLAYER_SUMMON_SPAWN`, queued). A summon
+  no longer fires `ON_NPC_SPAWN` (Java's summon is no `Npc`). `ctx.add_spawn_summoned_at(summoner, id, at, offset, despawn)`
+  links the spawn to its summoner (`getSummonedNpcCount`).
+- **Tamed beasts:** `world.spawn_tamed_beast(npc_id, owner, food, (x, y, z), is_freya)` (`new TamedBeast(..)`),
+  `trained_beasts(owner)`, `is_tamed_beast`, `tamed_beast_owner`, `tamed_beast_food_type`, `tamed_beast_on_receive_food`,
+  `tamed_beast_add_skill`, `tamed_beast_cast_skills`; the follow, buff, heal and food tasks are the world's.
+- **NPC calls:** `ctx.set_walking(npc)`, `ctx.is_random_walking_enabled(npc)`, `ctx.get_point_in_range(npc, min, max)`,
+  `ctx.is_in_surrounding_region(a, b)`, `ctx.right_hand_item(npc)`, `ctx.spawns_of(npc_id)` (`SpawnTable.getSpawns` with
+  `getLastSpawn`), `world.set_npc_display_effect`, `set_npc_name`, `set_npc_auto_attackable`,
+  `set_npc_show_summon_animation`, `broadcast_npc_info`; NPCs enter and leave the zones a script listens to
+  (`on_enter_zone` / `on_exit_zone` get NPCs too, as in Java), `set_effect_zone_enabled`.
+- **Players and clans:** `ctx.send_radar_control(player, show, type, x, y, z)`, `ctx.npc_say_to(player, npc, ..)`,
+  `ctx.broadcast_clan_info_update(player)`, `ctx.is_my_lord(npc, player)`; `Script::npc_string_id()` (Java
+  `getNpcStringId`, the quest list name).
+- **Tests:** `t.clan_with_residence(leader, name, castle, fort)`, `t.summon(owner, npc_id)`, `t.set_skills(items, skills)`.
+- `RequestSeedPhase` (`ExShowSeedMapInfo`), `.hellbound`, `//gracia_seeds` (`script/gracia_admin.rs`).
+
 ## Not in the engine yet (follow-ups)
 
-Summon spawn, premium rates (M9), the multilingual chooser strings (M9), the remaining `EventType`s listed above as not fired.
+Premium rates (M9), the multilingual chooser strings (M9), the remaining `EventType`s listed above as not fired, the trap
+creature (`addTrap`, `ON_TRAP_ACTION`: S-HAND-04), the transfer skill trees.
 
-Found by S-PILOT-01: the tutorial's player listeners (now engine events since S-API-04: wire its `pub` entry points to them); `setup` cannot read the
+Found by S-PILOT-01: the tutorial's player listeners (now engine events since S-API-04: wire its `pub` entry points to them); `setup` cannot read the (since S-API-05 `setup_with` can)
 configuration (Java constructors do: `if (!PlayerConfig.DISABLE_TUTORIAL) addStartNpc(..)`), so such
 scripts check `ctx.script_settings()` in their hooks; the client ground location of a player's
 `MagicSkillUse` in `broadcast_magic_skill_use` (always none).

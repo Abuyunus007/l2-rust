@@ -187,13 +187,9 @@ impl Script for Q00225TestOfTheSearcher {
             }
             "30627-01a.html" => {
                 let tree = npc?;
-                // FOLLOW-UP(engine): Java `npc.getSummonedNpcCount() < 5`. The world does not count
-                // the NPCs a monster summoned, so the count reads as 0 and the chest always comes.
-                if summoned_npc_count(tree) < 5 {
+                if ctx.summoned_npc_count(tree) < 5 {
                     ctx.give_items(player, RUSTED_KEY, 1);
-                    // FOLLOW-UP(engine): `addSpawn(summoner = tree, ...)`: the chest is not linked to
-                    // the tree that summoned it (only the place and the random offset are kept).
-                    ctx.add_spawn_at(STRONG_WOODEN_CHEST, tree.object_id, true, 0);
+                    ctx.add_spawn_summoned_at(tree, STRONG_WOODEN_CHEST, tree.object_id, true, 0);
                     qs.set_cond(ctx, 17, true);
                     htmltext = Some(event.to_owned());
                 }
@@ -544,12 +540,6 @@ impl Script for Q00225TestOfTheSearcher {
     }
 }
 
-/// FOLLOW-UP(engine): Java `Npc.getSummonedNpcCount()`, the NPCs a monster summoned that are alive.
-/// The world keeps no summoner link yet, so this is 0.
-fn summoned_npc_count(_npc: ScriptNpc) -> i32 {
-    0
-}
-
 #[cfg(test)]
 mod tests {
     use l2_util::ObjectId as Oid;
@@ -833,6 +823,9 @@ mod tests {
         );
         let chests = t.npcs_of(STRONG_WOODEN_CHEST);
         assert_eq!(chests.len(), 1);
+        // The tree summoned it (`addSpawn(npc, ..)`): it counts in `getSummonedNpcCount`.
+        assert_eq!(t.world.summoned_npc_count(npcs.tree), 1);
+        assert_eq!(t.world.summoner_of(chests[0]), Some(npcs.tree));
 
         // The chest opens with the key: 20 gold bars, cond 18, the chest is gone.
         let chest = chests[0];

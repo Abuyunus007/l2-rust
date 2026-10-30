@@ -97,9 +97,11 @@ impl Qs {
         self.read(ctx.world, QuestState::cond).unwrap_or(0)
     }
 
-    /// Java `isCond(condition)`.
+    /// Java `isCond(condition)`. A handle whose state was removed reads like an empty state
+    /// (`_cond` 0), so `is_cond(ctx, 0)` is true for it as for a fresh state.
     pub fn is_cond(self, ctx: &ScriptCtx<'_>, condition: i32) -> bool {
-        self.read(ctx.world, |qs| qs.is_cond(condition)).unwrap_or(false)
+        self.read(ctx.world, |qs| qs.is_cond(condition))
+            .unwrap_or(condition == 0)
     }
 
     /// Java `getMemoState()`.
@@ -110,7 +112,7 @@ impl Qs {
     /// Java `isMemoState(memoState)`.
     pub fn is_memo_state(self, ctx: &ScriptCtx<'_>, memo_state: i32) -> bool {
         self.read(ctx.world, |qs| qs.is_memo_state(memo_state))
-            .unwrap_or(false)
+            .unwrap_or(memo_state == 0)
     }
 
     /// Java `getMemoStateEx(slot)`.

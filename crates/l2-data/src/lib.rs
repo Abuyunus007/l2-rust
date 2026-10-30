@@ -32,6 +32,7 @@ pub mod initial_shortcuts;
 pub mod instance;
 pub mod item;
 pub mod level_tables;
+pub mod level_up_crystal;
 pub mod loader;
 pub mod map_region;
 pub mod minigame;
@@ -98,6 +99,7 @@ pub use instance::{
 };
 pub use item::{ItemKind, ItemTemplate, ItemTemplates};
 pub use level_tables::{ExperienceLoss, KarmaLoss};
+pub use level_up_crystal::{AbsorbCrystalType, LevelUpCrystalData, LevelingSoulCrystalInfo, SoulCrystal};
 pub use loader::DataError;
 pub use map_region::{MapRegion, MapRegions};
 pub use minigame::{

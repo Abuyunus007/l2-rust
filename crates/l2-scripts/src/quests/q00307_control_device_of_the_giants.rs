@@ -7,10 +7,6 @@
 // shared through the global variable `GiantsControlDeviceRespawn` for one hour after the kill. The
 // boss's death in a party sets cond 2 for the members in cond 1; Droph gives the support items and
 // ends the quest.
-//
-// FOLLOW-UP(engine): the Java radar points (`RadarControl(0, 2, x, y, z)`, the 05a/05b/05c pages)
-// have no script helper yet (`ctx.add_radar` sends the other two radar packets); the pages are
-// shown, the radar marker is not sent.
 
 use l2_util::ObjectId;
 use l2_world::script::{CREATED, QuestSound, STARTED};
@@ -93,8 +89,15 @@ impl Script for Q00307ControlDeviceOfTheGiants {
                     );
                 }
             }
-            // FOLLOW-UP(engine): Java sends `RadarControl(0, 2, ..)` here (see the file comment).
-            "32711-05a.html" | "32711-05b.html" | "32711-05c.html" => {}
+            "32711-05a.html" => {
+                ctx.send_radar_control(player, 0, 2, 186_214, 61_591, -4_152);
+            }
+            "32711-05b.html" => {
+                ctx.send_radar_control(player, 0, 2, 187_554, 60_800, -4_984);
+            }
+            "32711-05c.html" => {
+                ctx.send_radar_control(player, 0, 2, 193_432, 53_922, -4_368);
+            }
             "spawn" => {
                 if !ctx.has_all_quest_items(player, &SHEETS) {
                     return Some(ctx.get_no_quest_msg(player));

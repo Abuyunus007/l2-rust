@@ -107,6 +107,8 @@ pub struct ScriptTest {
     log: Log,
     writes: Writes,
     boss: BossCommands,
+    /// The world's id factory (for objects a helper spawns besides NPCs).
+    ids: Arc<IdFactory>,
     _root: tempfile::TempDir,
 }
 
@@ -151,7 +153,8 @@ impl ScriptTest {
             items,
             ..StatData::default()
         })));
-        world.set_id_factory(Arc::new(IdFactory::new(Vec::<i32>::new()).unwrap()));
+        let ids = Arc::new(IdFactory::new(Vec::<i32>::new()).unwrap());
+        world.set_id_factory(Arc::clone(&ids));
         let npcs = Arc::new(
             NpcTemplates::from_xml(&format!("<list>{npcs}</list>"), &NpcLoadOptions::default()).unwrap(),
         );
@@ -167,6 +170,7 @@ impl ScriptTest {
             log,
             writes,
             boss,
+            ids,
             _root: root,
         }
     }
@@ -401,6 +405,96 @@ impl ScriptTest {
     pub fn event(&mut self, player: i32, script_name: &str, event: &str) -> String {
         self.bypass(player, &format!("Script {script_name} {event}"));
         pages_to(&self.take(), player).pop().unwrap_or_default()
+    }
+}
+
+/// Clans with residences, summons and skills (S-API-05): the branches of clan, castle and summon
+/// scripts that the plain test world cannot reach.
+impl ScriptTest {
+    /// Player `leader` (entered) founds the clan `name`; it owns the castle `castle` and/or the
+    /// fortress `fort` (residence ids, `None` for none; Java's clans never hold both). The
+    /// residences are (re)loaded, so call it once per test. Returns the clan id; the packets and writes it causes are dropped.
+    pub fn clan_with_residence(
+        &mut self,
+        leader: i32,
+        name: &str,
+        castle: Option<i32>,
+        fort: Option<i32>,
+    ) -> i32 {
+        let clan = self.world.create_clan(ObjectId(leader), name).unwrap();
+        // A fortress loads only with its flag pole (a static object of type 3 named after it).
+        if let Some(id) = fort {
+            let pole = format!(
+                r#"<list><object id="{}" name="Fort{id}_flagpole" type="3" x="{X}" y="{Y}" z="{Z}" texture="" map_x="0" map_y="0" /></list>"#,
+                23_000_000 + id
+            );
+            let poles = l2_data::StaticObjectTemplates::from_xml(&pole).unwrap();
+            self.world.spawn_static_objects(&poles, &self.ids).unwrap();
+        }
+        self.world.load_residences(ResidenceLoad {
+            castles: castle
+                .map(|id| l2_world::residence::CastleRecord {
+                    id,
+                    found: true,
+                    name: format!("Castle{id}"),
+                    ..Default::default()
+                })
+                .into_iter()
+                .collect(),
+            forts: fort
+                .map(|id| l2_world::residence::FortRecord {
+                    id,
+                    name: format!("Fort{id}"),
+                    owner_id: clan,
+                    ..Default::default()
+                })
+                .into_iter()
+                .collect(),
+            ..ResidenceLoad::default()
+        });
+        if let Some(id) = castle {
+            self.world.castle_set_owner(CastleId(id), Some(clan));
+        }
+        self.take();
+        self.take_writes();
+        clan
+    }
+
+    /// A servitor of `npc_id` (a `Servitor` NPC template) for player `owner`, next to him (the
+    /// `Summon` effect's `onStart`). The packets are dropped.
+    pub fn summon(&mut self, owner: i32, npc_id: i32) -> ObjectId {
+        let summon = self
+            .world
+            .summon_servitor(
+                ObjectId(owner),
+                l2_world::summon::spawn::ServitorParams {
+                    npc_id,
+                    exp_multiplier: 1.0,
+                    consume_item: (0, 1),
+                    life_time_ms: 3_600_000,
+                    consume_interval_ms: 240_000,
+                    reference_skill: 0,
+                },
+            )
+            .unwrap();
+        self.take();
+        summon
+    }
+
+    /// Installs skill templates (`<skill>` elements of the datapack format) next to the item
+    /// templates `items` (the same text as the test's `ITEMS`), for `cast_skill` and skill checks.
+    pub fn set_skills(&mut self, items: &str, skills: &str) {
+        let items = Arc::new(ItemTemplates::from_xml(&format!("<list>{items}</list>")).unwrap());
+        let skills = Arc::new(l2_data::SkillTemplates::from_xml(
+            &format!("<list>{skills}</list>"),
+            &l2_data::skill::EnchantSkillGroups::default(),
+            &l2_data::SkillLoadOptions::default(),
+        ));
+        self.world.set_static_data(Box::new(Data(StatData {
+            items,
+            skills,
+            ..StatData::default()
+        })));
     }
 }
 

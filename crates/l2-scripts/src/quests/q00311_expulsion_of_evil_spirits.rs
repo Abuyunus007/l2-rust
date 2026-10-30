@@ -118,7 +118,7 @@ fn altar_spawn(ctx: &mut ScriptCtx<'_>, npc: Option<ScriptNpc>, player: Option<O
     if let (Some(npc), Some(player)) = (npc, player)
         && ctx.check_if_in_range(1200, npc.object_id, player, true)
     {
-        ctx.start_quest_timer("zoneCheck", 1000, None, Some(player), false);
+        ctx.schedule_event("zoneCheck", 1000, None, Some(player));
     }
 }
 
@@ -159,9 +159,8 @@ fn zone_check(ctx: &mut ScriptCtx<'_>, player: ObjectId) {
     if no_state || !ctx.has_quest_items(player, PROTECTION_SOULS_PENDANT) {
         cast_debuff(ctx, altar, player);
         // NOTE(java-quirk): Java schedules a new runnable each time (and one for every entry
-        // and attack), so several checks can run side by side; the timer of this port is one per
-        // player and name (FOLLOW-UP(engine): timers that do not merge).
-        ctx.start_quest_timer("zoneCheck", 3000, None, Some(player), false);
+        // and attack), so several checks can run side by side (`schedule_event` does not merge).
+        ctx.schedule_event("zoneCheck", 3000, None, Some(player));
     }
 }
 
@@ -438,13 +437,13 @@ impl Script for Q00311ExpulsionOfEvilSpirits {
                 }
             }
         } else if !ctx.has_quest_items(attacker, PROTECTION_SOULS_PENDANT) {
-            ctx.start_quest_timer("zoneCheck", 1000, None, Some(attacker), false);
+            ctx.schedule_event("zoneCheck", 1000, None, Some(attacker));
         }
     }
 
     fn on_enter_zone(&self, ctx: &mut ScriptCtx<'_>, creature: ObjectId, _zone_id: i32) {
         if ctx.world().player(creature).is_some() {
-            ctx.start_quest_timer("zoneCheck", 1000, None, Some(creature), false);
+            ctx.schedule_event("zoneCheck", 1000, None, Some(creature));
         }
     }
 }

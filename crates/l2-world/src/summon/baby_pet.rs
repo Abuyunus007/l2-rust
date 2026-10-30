@@ -18,7 +18,7 @@ const AWAKENING: i32 = 5753;
 /// `scheduleAtFixedRate(new CastTask(this), 3000, 2000)`.
 const FIRST_CAST_MS: u64 = 3000;
 const CAST_INTERVAL_MS: u64 = 2000;
-/// `CategoryType.BABY_PET_GROUP` in `categoryData.xml`.
+/// `CategoryType.BABY_PET_GROUP` in `categoryData.xml` (used when no table is loaded).
 const BABY_PET_GROUP: [i32; 3] = [12780, 12781, 12782];
 
 /// The fields only a baby pet has.
@@ -240,9 +240,11 @@ impl World {
             );
             let hp_percent = cur_hp / f64::from(max_hp);
             // NOTE(java-quirk): the name says "improved", the category is the plain baby pets.
-            let is_improved_baby = self
-                .summon_npc_id(pet)
-                .is_some_and(|id| BABY_PET_GROUP.contains(&id));
+            let is_improved_baby = self.summon_npc_id(pet).is_some_and(|id| {
+                self.id_in_category_or(l2_data::stats::CategoryType::BabyPetGroup, id, |id| {
+                    BABY_PET_GROUP.contains(&id)
+                })
+            });
             if (is_improved_baby && hp_percent < 0.3) || (!is_improved_baby && hp_percent < 0.15) {
                 if let Some(skill) = table.get(major.id, major.level)
                     && !self.is_skill_disabled(pet, skill)

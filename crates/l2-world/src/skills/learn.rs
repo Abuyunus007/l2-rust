@@ -27,7 +27,7 @@
 //   loaded, so those requests find no `SkillLearn` and are ignored, which is what Java does for a
 //   skill that is not in a tree.
 // - The script event `ON_PLAYER_SKILL_LEARN` (D-05).
-// - `isSkillAllowed` knows the class tree only; the fishing, transform, collect, hero, GM and
+// - `isSkillAllowed` knows the class, fishing, transform and collect trees (S-API-05); the GM and
 //   transfer trees are not loaded. That cannot change what `AutoLearnSkills` learns (their skill ids
 //   are never in a class tree), see [`World::is_skill_allowed`].
 // - Stopping the effect of a toggle skill that is learned again (`giveAvailableSkills`) waits for
@@ -327,8 +327,9 @@ impl World {
     }
 
     /// Java `SkillTreeData.isSkillAllowed(player, skill)`, for the trees that are loaded: a skill
-    /// excluded from the check, or a line of the class tree of the player's class (the level
-    /// counts as at most the skill's highest level).
+    /// excluded from the check, a line of the class tree of the player's class, of the fishing or
+    /// transformation tree (race or no race) or of the collect tree (the level counts as at most
+    /// the skill's highest level).
     pub(crate) fn is_skill_allowed(&self, player: ObjectId, skill_id: i32, level: i32) -> bool {
         let Some(data) = self.data.stat_data() else {
             return false;
@@ -345,12 +346,42 @@ impl World {
             return false;
         };
         let max_level = data.skills.max_level(skill_id);
-        self.rewards
-            .skill_trees
-            .class_skill(class, skill_id, level.min(max_level))
-            .is_some()
+        let race = self.players.get(&player).map_or(-1, |p| p.data.race);
+        trees_allow(
+            &self.rewards.skill_trees,
+            class,
+            race,
+            skill_id,
+            level.min(max_level),
+        )
     }
+}
 
+/// The tree part of `isSkillAllowed` for a skill line (`level` already capped at the skill's
+/// highest level): `_skillsByClassIdHashCodes` (the complete class tree, common lines included),
+/// `_skillsByRaceHashCodes` and `_allSkillsHashCodes` (S-API-05): the fishing and the
+/// transformation lines of the race or of no race, and every collect line.
+fn trees_allow(trees: &l2_data::SkillTrees, class: ClassId, race: i32, skill_id: i32, level: i32) -> bool {
+    if trees.class_skill(class, skill_id, level).is_some() {
+        return true;
+    }
+    let fits = |l: &SkillLearn| {
+        l.skill_id == skill_id
+            && l.skill_level == level
+            && (l.races.is_empty() || l.races.iter().any(|r| *r as i32 == race))
+    };
+    if trees.fishing_skills().iter().any(fits)
+        || trees.transform_skills().iter().any(fits)
+        || trees.collect_skill(skill_id, level).is_some()
+    {
+        return true;
+    }
+    // NOTE: the transfer trees (`getTransferSkill`, the healers' transfer skills) are not loaded
+    // yet (`l2_data::skill_tree`), so they are not checked.
+    false
+}
+
+impl World {
     /// Java `SkillTreeData.getAllAvailableSkills(player, playerClass, includeByFs, includeAutoGet,
     /// includeRequiredItems)`: the skills the player knows that the trees allow, plus every skill
     /// the trees would let him learn one level after the other, as skill id to level.
@@ -1559,6 +1590,43 @@ mod tests {
             ..query()
         };
         assert_eq!(ids(&available_in(&tree, &low, &known)), vec![(6, 1), (1405, 1)]);
+    }
+
+    #[test]
+    fn the_fishing_transform_and_collect_trees_allow_their_skills_like_java() {
+        let trees = SkillTrees::from_xml(
+            r#"<list>
+            <skillTree type="classSkillTree" classId="0">
+                <skill skillId="3" skillLevel="1" getLevel="5" learnedByNpc="true" />
+            </skillTree>
+            <skillTree type="transformSkillTree">
+                <skill skillId="617" skillLevel="1" getLevel="50" />
+                <skill skillId="670" skillLevel="1" getLevel="50"><race>KAMAEL</race></skill>
+            </skillTree>
+            <skillTree type="fishingSkillTree">
+                <skill skillId="1368" skillLevel="1" getLevel="10"><race>DWARF</race></skill>
+            </skillTree>
+            <skillTree type="collectSkillTree">
+                <skill skillId="932" skillLevel="1" getLevel="1" />
+            </skillTree>
+            </list>"#,
+        )
+        .unwrap();
+        let (human, dwarf, kamael) = (0, 4, 5);
+        let fighter = ClassId(0);
+        assert!(trees_allow(&trees, fighter, human, 3, 1));
+        // A transformation line of no race: every race.
+        assert!(trees_allow(&trees, fighter, human, 617, 1));
+        // A race line: that race only.
+        assert!(trees_allow(&trees, fighter, kamael, 670, 1));
+        assert!(!trees_allow(&trees, fighter, human, 670, 1));
+        assert!(trees_allow(&trees, fighter, dwarf, 1368, 1));
+        assert!(!trees_allow(&trees, fighter, human, 1368, 1));
+        // Collect lines: everybody.
+        assert!(trees_allow(&trees, fighter, human, 932, 1));
+        // Not in any tree, or another level.
+        assert!(!trees_allow(&trees, fighter, human, 617, 2));
+        assert!(!trees_allow(&trees, fighter, human, 9999, 1));
     }
 
     #[test]

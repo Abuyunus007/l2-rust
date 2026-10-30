@@ -430,6 +430,8 @@ impl World {
         }
         if self.is_npc(id) {
             self.script_record_killing_blow(id, killer);
+            // `TamedBeast.doDie` (S-API-05).
+            self.tamed_beast_on_death(id);
             self.npc_do_die(id, killer);
             if self.is_attackable_npc(id) {
                 self.attackable_do_die(id, killer);

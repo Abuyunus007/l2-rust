@@ -599,7 +599,7 @@ fn call_skill_ai(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
     let current_target = ctx.state::<ValakasState>().current_target;
     let lost = match current_target {
         None => true,
-        Some(target) => ctx.world().is_dead(target) || !in_surrounding_region(ctx, id, target),
+        Some(target) => ctx.world().is_dead(target) || !ctx.is_in_surrounding_region(id, target),
     };
     if lost || (ctx.get_random(10) == 0) {
         let target = get_random_target(ctx, id);
@@ -694,18 +694,6 @@ fn get_random_target(ctx: &mut ScriptCtx<'_>, id: ObjectId) -> Option<ObjectId> 
         })
         .collect();
     ctx.get_random_entry(&candidates)
-}
-
-/// Java `isInSurroundingRegion(other)`: the other's region is one of the 3x3 around this one.
-fn in_surrounding_region(ctx: &ScriptCtx<'_>, id: ObjectId, other: ObjectId) -> bool {
-    let world = ctx.world();
-    match (
-        world.object(id).and_then(|e| e.region),
-        world.object(other).and_then(|e| e.region),
-    ) {
-        (Some(mine), Some(theirs)) => theirs.surrounding().contains(&mine),
-        _ => false,
-    }
 }
 
 // ------------------------------------------------------------------ world helpers

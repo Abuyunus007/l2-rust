@@ -1705,6 +1705,8 @@ impl ClientSession {
             ClientPacket::RequestShowMiniMap(_) => ClientInput::Leftover(LeftoverInput::ShowMiniMap),
             // Java: RequestSSQStatus (M8-SS-01)
             ClientPacket::RequestSsqStatus(p) => ClientInput::SsqStatus { page: p.page },
+            // Java: RequestSeedPhase (S-API-05)
+            ClientPacket::RequestSeedPhase(_) => ClientInput::SeedPhase,
             // Java: RequestQuestList, RequestQuestAbort, RequestTutorial* (S-API-01)
             ClientPacket::RequestQuestList(_) => ClientInput::Quest(QuestInput::List),
             ClientPacket::RequestQuestAbort(p) => {

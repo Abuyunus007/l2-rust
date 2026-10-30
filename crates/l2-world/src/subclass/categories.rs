@@ -38,6 +38,21 @@ impl World {
             .get(&id)
             .is_some_and(|p| self.id_in_category(category, p.data.class_id))
     }
+
+    /// [`World::id_in_category`] for the engine's own checks (the academy graduation, the baby
+    /// pet heal, ...): the loaded table answers when it lists the category; a world without the
+    /// table (tests, tools) answers with `fallback`, the shipped file's content (S-API-05).
+    pub(crate) fn id_in_category_or(
+        &self,
+        category: CategoryType,
+        id: i32,
+        fallback: impl FnOnce(i32) -> bool,
+    ) -> bool {
+        match self.scripts.categories.get(category) {
+            Some(ids) => ids.contains(&id),
+            None => fallback(id),
+        }
+    }
 }
 
 /// The class groups the script tests install in place of the shipped file, so they do not need
@@ -227,6 +242,22 @@ mod tests {
                 assert_eq!(Some(ids), shipped.get(category), "{}", category.name());
             }
         }
+    }
+
+    #[test]
+    fn the_engine_checks_use_the_loaded_table_and_fall_back_without_it() {
+        let mut world = World::new(WorldRng::from_seed(1), Box::new(NoOutbox));
+        // No table: the fallback answers.
+        assert!(world.id_in_category_or(CategoryType::BabyPetGroup, 12780, |id| id == 12780));
+        // A loaded table that lists the category answers alone (here 12780 is not listed).
+        world.set_category_data(Arc::new(CategoryData::from_lists([(
+            CategoryType::BabyPetGroup,
+            vec![12781],
+        )])));
+        assert!(!world.id_in_category_or(CategoryType::BabyPetGroup, 12780, |_| true));
+        assert!(world.id_in_category_or(CategoryType::BabyPetGroup, 12781, |_| false));
+        // A category the table lacks: the fallback.
+        assert!(world.id_in_category_or(CategoryType::ThirdClassGroup, 2, |id| id == 2));
     }
 
     #[test]
