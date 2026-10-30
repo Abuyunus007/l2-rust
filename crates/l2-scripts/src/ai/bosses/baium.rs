@@ -20,6 +20,7 @@ use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::{ChatType, Earthquake, ExShowScreenMessage, PlaySound, SocialAction};
 use l2_util::ObjectId;
 use l2_world::mount::MountType;
+use l2_world::subclass::CategoryType;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey, TeleportTarget};
 use tracing::info;
 
@@ -102,10 +103,6 @@ const EVENT_RESPAWN_BAIUM: &str = "RESPAWN_BAIUM";
 const EVENT_ABORT_FIGHT: &str = "ABORT_FIGHT";
 const EVENT_DESPAWN_MINIONS: &str = "DESPAWN_MINIONS";
 const EVENT_MANAGE_SKILLS: &str = "MANAGE_SKILLS";
-
-/// Java `CategoryType.CLERIC_GROUP` of `data/CategoryData.xml` (the categories are not a table
-/// yet; `clan/academy.rs` does the same for its group).
-const CLERIC_GROUP: [i32; 13] = [10, 15, 16, 17, 25, 29, 30, 38, 42, 43, 97, 98, 105];
 
 /// The fields of the Java class, and Baium's `NpcVariables`.
 #[derive(Debug, Default)]
@@ -728,10 +725,7 @@ impl Script for Baium {
         let health_ratio = hp / max_hp;
         // `creature.isInCategory(CLERIC_GROUP)`: the class id of a player (an NPC's id is never in
         // the group).
-        let cleric = ctx
-            .world()
-            .player(creature)
-            .is_some_and(|p| CLERIC_GROUP.contains(&p.data.class_id));
+        let cleric = ctx.world().is_in_category(creature, CategoryType::ClericGroup);
         if cleric {
             if health_ratio < 0.25 {
                 refresh_ai_params_with(ctx, creature, npc, 10000, 10000);

@@ -4,10 +4,10 @@
 //
 // # The configuration
 // Java reads `config/ClassMaster.xml` in the constructor and keeps it in fields. Here the parsed
-// file is a [`ClassMasterConfig`] the script is built with (read-only, like the Java fields after
-// `load()`); [`ClassMasterConfig::default`] is the shipped file (`classChangeEnabled="false"`).
-// The XML loader and the game server's wiring are not part of this port (see the card report),
-// so the registry builds the default.
+// file is a [`ClassMasterConfig`] (loaded by `l2-data`, S-DATA-01) the script is built with
+// (read-only, like the Java fields after `load()`); [`ClassMasterConfig::default`] is the shipped
+// file (`classChangeEnabled="false"`). The game server builds the script with the loaded file
+// (`l2_scripts::all_with`).
 //
 // # Left out, with the system that brings it
 // - `ON_PLAYER_BYPASS` (the `Script ClassMaster ...` links of the tutorial window),
@@ -17,7 +17,7 @@
 //   is ported for the listener to call.
 
 use l2_util::ObjectId;
-use l2_world::subclass::categories::class_in_category;
+use l2_world::subclass::categories::{ClassChangeData, ClassMasterConfig};
 use l2_world::subclass::{CategoryType, ClassId};
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
 use tracing::warn;
@@ -61,52 +61,6 @@ mod class {
     pub const FEMALE_SOLDIER: i32 = 124;
     pub const TROOPER: i32 = 125;
     pub const WARDER: i32 = 126;
-}
-
-/// Java `ItemHolder`: an item id and a count.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct ItemHolder {
-    pub id: i32,
-    pub count: i64,
-}
-
-/// Java `ClassMaster.ClassChangeData`: one `classChangeOption`.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ClassChangeData {
-    /// `name`.
-    pub name: String,
-    /// `appliesTo/category`.
-    pub applied_categories: Vec<CategoryType>,
-    /// `rewards/setNoble`.
-    pub reward_noblesse: bool,
-    /// `rewards/setHero`.
-    pub reward_hero: bool,
-    /// `conditions/item`.
-    pub items_required: Vec<ItemHolder>,
-    /// `rewards/item`.
-    pub items_rewarded: Vec<ItemHolder>,
-}
-
-impl ClassChangeData {
-    /// Java `isInCategory(player)`: the player is in one of the option's categories.
-    fn is_in_category(&self, ctx: &ScriptCtx<'_>, player: ObjectId) -> bool {
-        self.applied_categories
-            .iter()
-            .any(|&c| ctx.world().is_in_category(player, c))
-    }
-}
-
-/// The `classMaster` element of `config/ClassMaster.xml`.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct ClassMasterConfig {
-    /// `classChangeEnabled` (default `false`).
-    pub is_enabled: bool,
-    /// `spawnClassMasters` (default `true` when enabled).
-    pub spawn_class_masters: bool,
-    /// `showPopupWindow` (default `false`).
-    pub show_popup_window: bool,
-    /// The `classChangeOption`s that have a category, in file order.
-    pub class_change_data: Vec<ClassChangeData>,
 }
 
 /// Java `ai.others.ClassMaster.ClassMaster`.
@@ -170,6 +124,14 @@ const SPAWNS: [(i32, i32, i32, i32, i32); 52] = [
     (31757, 147924, -58052, -2979, 49000), // Goddard
     (31757, 148514, -57972, -2974, 53000), // Goddard
 ];
+
+/// Java `ClassChangeData.isInCategory(player)`: the player is in one of the option's categories.
+fn option_in_category(option: &ClassChangeData, ctx: &ScriptCtx<'_>, player: ObjectId) -> bool {
+    option
+        .applied_categories
+        .iter()
+        .any(|&c| ctx.world().is_in_category(player, c))
+}
 
 fn level_of(ctx: &ScriptCtx<'_>, player: ObjectId) -> i32 {
     ctx.player_level(player)
@@ -277,7 +239,7 @@ impl ClassMaster {
         self.config
             .class_change_data
             .iter()
-            .any(|d| d.is_in_category(ctx, player))
+            .any(|d| option_in_category(d, ctx, player))
     }
 
     /// Java `checkIfClassChangeHasOptions(player)`: an option with a price applies, or more than
@@ -287,14 +249,14 @@ impl ClassMaster {
         // Check if there are requirements.
         let show_options = data
             .iter()
-            .any(|ccd| !ccd.items_required.is_empty() && ccd.is_in_category(ctx, player));
+            .any(|ccd| !ccd.items_required.is_empty() && option_in_category(ccd, ctx, player));
         if show_options {
             return true;
         }
         // Check if there is more than 1 reward to chose.
         let count = data
             .iter()
-            .filter(|ccd| !ccd.items_rewarded.is_empty() && ccd.is_in_category(ctx, player))
+            .filter(|ccd| !ccd.items_rewarded.is_empty() && option_in_category(ccd, ctx, player))
             .count();
         count > 1
     }
@@ -458,7 +420,7 @@ impl ClassMaster {
             .config
             .class_change_data
             .iter()
-            .find(|ccd| ccd.is_in_category(ctx, player))
+            .find(|ccd| option_in_category(ccd, ctx, player))
             .cloned();
         if let Some(data) = data {
             if !Self::pay_and_reward(ctx, player, &data) {
@@ -528,12 +490,21 @@ impl ClassMaster {
         let mut can_change = false;
         if (second || first) && level >= 40 {
             // In retail you can skip first occupation.
-            can_change = class_in_category(CategoryType::ThirdClassGroup, class_id)
-                || (first && class_in_category(CategoryType::SecondClassGroup, class_id));
+            can_change = ctx
+                .world()
+                .id_in_category(CategoryType::ThirdClassGroup, class_id)
+                || (first
+                    && ctx
+                        .world()
+                        .id_in_category(CategoryType::SecondClassGroup, class_id));
         } else if first && level >= 20 {
-            can_change = class_in_category(CategoryType::SecondClassGroup, class_id);
+            can_change = ctx
+                .world()
+                .id_in_category(CategoryType::SecondClassGroup, class_id);
         } else if in_category(ctx, player, CategoryType::ThirdClassGroup) && level >= 76 {
-            can_change = class_in_category(CategoryType::FourthClassGroup, class_id);
+            can_change = ctx
+                .world()
+                .id_in_category(CategoryType::FourthClassGroup, class_id);
         }
 
         // Validate that the requested class belongs to the player's own class tree, preventing
@@ -705,6 +676,8 @@ impl Script for ClassMaster {
 mod tests {
     use l2_util::ObjectId as Oid;
     use l2_world::ScriptRegistry;
+
+    use l2_world::subclass::categories::ItemHolder;
 
     use super::*;
     use crate::testing::{ScriptTest, item, names_to, pages_to, player_data};

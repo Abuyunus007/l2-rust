@@ -20,13 +20,22 @@ pub mod quests;
 pub mod village_master;
 
 #[cfg(test)]
+mod helper_tests;
+#[cfg(test)]
 pub(crate) mod testing;
 
 use l2_world::ScriptRegistry;
+use l2_world::subclass::categories::ClassMasterConfig;
 
-/// Every script, in Java's load order.
+/// Every script, in Java's load order, with the class master disabled (the shipped
+/// `config/ClassMaster.xml`).
 pub fn register_all(r: &mut ScriptRegistry) {
-    ai::register(r);
+    register_all_with(r, ClassMasterConfig::default());
+}
+
+/// [`register_all`] with the class master built from the loaded `config/ClassMaster.xml`.
+pub fn register_all_with(r: &mut ScriptRegistry, class_master: ClassMasterConfig) {
+    ai::register_with(r, class_master);
     custom::register(r);
     instances::register(r);
     quests::register(r);
@@ -37,5 +46,12 @@ pub fn register_all(r: &mut ScriptRegistry) {
 pub fn all() -> ScriptRegistry {
     let mut r = ScriptRegistry::new();
     register_all(&mut r);
+    r
+}
+
+/// [`all`] with the class master built from the loaded `config/ClassMaster.xml`.
+pub fn all_with(class_master: ClassMasterConfig) -> ScriptRegistry {
+    let mut r = ScriptRegistry::new();
+    register_all_with(&mut r, class_master);
     r
 }

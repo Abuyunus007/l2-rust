@@ -177,9 +177,8 @@ impl Script for Q00062PathOfTheTrooper {
                                 ctx.add_exp_and_sp(player, 591_724, 34_244);
                             }
                             qs.exit_quest(ctx, false, true);
-                            // NOTE(java-quirk): Java also sends the player `SocialAction(3)` (the
-                            // bow). FOLLOW-UP(engine): no script helper sends a social action to
-                            // one player yet.
+                            // `SocialAction(3)` (the bow) goes to this player only.
+                            ctx.send_social_action(player, 3);
                             htmltext = "32197-10.html".to_owned();
                         }
                     }

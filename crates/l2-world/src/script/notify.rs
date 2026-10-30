@@ -456,6 +456,7 @@ impl World {
 
     /// Java `Npc.onSpawn`: `ON_NPC_SPAWN`.
     pub fn script_on_npc_spawn(&mut self, npc: ObjectId) {
+        self.script_reset_npc_links(npc);
         if let Some(n) = self.has_npc_listener(EventKind::NpcSpawn, npc) {
             self.queue_script_event(PendingEvent::Spawn(n));
         }
@@ -777,6 +778,7 @@ impl World {
         self.script_forget_all_seen(npc);
         self.script_forget_listeners(npc);
         self.script_forget_npc_extras(npc);
+        self.script_unlink_summoned(npc);
     }
 
     // ------------------------------------------------------------------ S-API-03 hooks
