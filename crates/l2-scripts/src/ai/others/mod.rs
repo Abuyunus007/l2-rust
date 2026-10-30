@@ -1,6 +1,6 @@
 //! `data/scripts/ai/others`: NPC and monster scripts that belong to no area.
 //!
-//! One module per script, sorted by name; one `add` line per script in [`register`], in the
+//! One module per script, sorted by name; one `add` line per script in [`register_with`], in the
 //! same order (Java's load order is the folder listing).
 
 pub mod abercrombie;
@@ -71,9 +71,11 @@ pub mod wasted_corpse;
 pub mod weaver_olf;
 
 use l2_world::ScriptRegistry;
+use l2_world::subclass::categories::ClassMasterConfig;
 
-/// Registers every script of the folder.
-pub(crate) fn register(r: &mut ScriptRegistry) {
+/// Registers every script of the folder, the class master built from the loaded
+/// `config/ClassMaster.xml`.
+pub(crate) fn register_with(r: &mut ScriptRegistry, class_master: ClassMasterConfig) {
     r.add(abercrombie::Abercrombie);
     r.add(altars_of_sacrifice::AltarsOfSacrifice);
     r.add(arena_manager::ArenaManager);
@@ -102,7 +104,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(monument_of_heroes::MonumentOfHeroes);
     r.add(muscle_bomber::MuscleBomber);
     r.add(avant_garde::AvantGarde);
-    r.add(class_master::ClassMaster::default());
+    r.add(class_master::ClassMaster::new(class_master));
     r.add(manor_manager::ManorManager);
     r.add(monument_of_heroes::MonumentOfHeroes);
     r.add(steel_citadel_teleport::SteelCitadelTeleport);
