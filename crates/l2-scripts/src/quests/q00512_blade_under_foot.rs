@@ -51,22 +51,6 @@ fn raid_boss(npc_id: i32) -> Option<DropInfo> {
     }
 }
 
-/// Java `npc.isMyLord(player)` (`Npc.java`): the clan leader whose clan owns the NPC's castle or
-/// fortress. The castle and fortress ids of the NPC are -1 when it has none (Java's `getCastle()`
-/// is then `null`).
-// NOTE(java-quirk): the comparison is `||`, so a clan leader whose clan owns the fortress of the
-// NPC passes too, and a castle of -1 never matches a clan (castle id 0 or more).
-fn is_my_lord(ctx: &ScriptCtx<'_>, npc: ObjectId, player: ObjectId) -> bool {
-    if !ctx.is_clan_leader(player) {
-        return false;
-    }
-    let castle = ctx.world().npc_castle(npc).map_or(-1, |c| c.0);
-    let fort = ctx.world().npc_fort(npc).map_or(-1, |f| f.0);
-    ctx.world()
-        .clan_of(player)
-        .is_some_and(|clan| clan.castle_id == castle || clan.fort_id == fort)
-}
-
 /// Java `npc.getCastle().getResidenceId() == player.getClan().getCastleId() && castleId > 0`:
 /// the clan owns the castle of the NPC (`false` without a clan).
 fn clan_owns_npc_castle(ctx: &ScriptCtx<'_>, npc: ObjectId, player: ObjectId) -> bool {
@@ -137,9 +121,7 @@ impl Script for Q00512BladeUnderFoot {
                 if let Some(npc) = npc
                     && ctx.player_level(player) >= MIN_LEVEL
                 {
-                    if is_my_lord(ctx, npc.object_id, player)
-                        || clan_owns_npc_castle(ctx, npc.object_id, player)
-                    {
+                    if ctx.is_my_lord(npc, player) || clan_owns_npc_castle(ctx, npc.object_id, player) {
                         qs.start_quest(ctx);
                         htmltext = Some(event.to_owned());
                     } else {
@@ -177,14 +159,13 @@ impl Script for Q00512BladeUnderFoot {
         match qs.state(ctx) {
             CREATED => {
                 if ctx.player_level(player) >= MIN_LEVEL {
-                    htmltext = if is_my_lord(ctx, npc.object_id, player)
-                        || clan_owns_npc_castle(ctx, npc.object_id, player)
-                    {
-                        "36403-01.htm"
-                    } else {
-                        "36403-03.htm"
-                    }
-                    .to_owned();
+                    htmltext =
+                        if ctx.is_my_lord(npc, player) || clan_owns_npc_castle(ctx, npc.object_id, player) {
+                            "36403-01.htm"
+                        } else {
+                            "36403-03.htm"
+                        }
+                        .to_owned();
                 } else {
                     htmltext = "36403-08.htm".to_owned();
                 }

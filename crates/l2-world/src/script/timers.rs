@@ -43,6 +43,9 @@ struct QuestTimer {
     /// The period of a repeating timer (`scheduleAtFixedRate`), in ticks.
     repeat_ticks: Option<u64>,
     wheel: TimerId,
+    /// A `ThreadPool.schedule` task of a script ([`World::schedule_script_event`]): not a
+    /// `QuestTimer`, so the name lookups (`getQuestTimer`, `cancelQuestTimer(s)`) do not see it.
+    unmerged: bool,
 }
 
 /// Every running quest timer, by id; ids grow, so the lowest matching id is Java's first in
@@ -66,7 +69,8 @@ impl QuestTimers {
         self.timers
             .iter()
             .find(|(_, t)| {
-                t.script == script
+                !t.unmerged
+                    && t.script == script
                     && t.name == name
                     && t.npc.map(|n| n.object_id) == npc
                     && t.player == player
@@ -101,6 +105,35 @@ impl World {
         {
             return;
         }
+        self.insert_quest_timer(script, name, time_ms, npc, player, repeating, false);
+    }
+
+    /// Java `ThreadPool.schedule(() -> ..., delay)` in a script: a one-shot task that runs the
+    /// script's `on_event(name, npc, player)` and never merges with a timer of the same name
+    /// (several can run side by side). It stops with its NPC or player like a quest timer
+    /// (`Npc.onDecay`, logout), where Java's runnable would still run on the stale object.
+    pub(crate) fn schedule_script_event(
+        &mut self,
+        script: ScriptId,
+        name: &str,
+        time_ms: i64,
+        npc: Option<ScriptNpc>,
+        player: Option<ObjectId>,
+    ) {
+        self.insert_quest_timer(script, name, time_ms, npc, player, false, true);
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn insert_quest_timer(
+        &mut self,
+        script: ScriptId,
+        name: &str,
+        time_ms: i64,
+        npc: Option<ScriptNpc>,
+        player: Option<ObjectId>,
+        repeating: bool,
+        unmerged: bool,
+    ) {
         let ticks = TimerWheel::ms_to_ticks(u64::try_from(time_ms).unwrap_or(0));
         let id = self.scripts.timers.next_id;
         self.scripts.timers.next_id += 1;
@@ -116,6 +149,7 @@ impl World {
                 player,
                 repeat_ticks: repeating.then_some(ticks),
                 wheel,
+                unmerged,
             },
         );
     }
@@ -134,7 +168,8 @@ impl World {
             .timers
             .iter()
             .filter(|(_, t)| {
-                t.script == script
+                !t.unmerged
+                    && t.script == script
                     && t.name == name
                     && t.npc.map(|n| n.object_id) == npc
                     && t.player == player
@@ -153,7 +188,7 @@ impl World {
             .timers
             .timers
             .iter()
-            .filter(|(_, t)| t.script == script && t.name == name)
+            .filter(|(_, t)| !t.unmerged && t.script == script && t.name == name)
             .map(|(id, _)| *id)
             .collect();
         for id in ids {

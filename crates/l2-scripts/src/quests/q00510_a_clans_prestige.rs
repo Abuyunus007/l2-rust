@@ -128,9 +128,7 @@ impl Script for Q00510AClansPrestige {
                         SystemMessageId::YouHaveSuccessfullyCompletedAClanQuestS1PointsHaveBeenAddedToYourClanSReputationScore,
                         reward,
                     );
-                    // FOLLOW-UP(engine): Java `clan.broadcastToOnlineMembers(new PledgeShowInfoUpdate(clan))`
-                    // (`World::broadcast_clan_info_update` is `pub(crate)`), so the clan window
-                    // shows the new score only at its next update.
+                    ctx.broadcast_clan_info_update(player);
                     htmltext = "31331-7.html".to_owned();
                 }
             }

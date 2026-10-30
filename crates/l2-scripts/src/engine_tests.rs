@@ -1,10 +1,12 @@
 //! Tests of the S-API-05 engine fixes and additions, run through a probe script the way a
 //! quest calls them.
 
+use l2_protocol_game::NpcStringId;
+use l2_protocol_game::server::{ChatType, NpcSay, RadarControl};
 use l2_util::ObjectId as Oid;
-use l2_world::{Script, ScriptRegistry, ScriptSetup};
+use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptRegistry, ScriptSetup};
 
-use crate::testing::{ScriptTest, X, Y, pages_to};
+use crate::testing::{ScriptTest, X, Y, decode, name_of, names_to, pages_to};
 
 const NAME: &str = "Probe";
 const NPC_ID: i32 = 31_000;
@@ -26,6 +28,29 @@ impl Script for Probe {
     }
 
     fn setup(&self, _s: &mut ScriptSetup) {}
+
+    fn on_event(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        event: &str,
+        _npc: Option<ScriptNpc>,
+        player: Option<Oid>,
+    ) -> Option<String> {
+        ctx.state::<Events>().0.push(format!("{event} {player:?}"));
+        None
+    }
+}
+
+/// The events the probe heard.
+#[derive(Default)]
+struct Events(Vec<String>);
+
+fn events(t: &mut ScriptTest) -> Vec<String> {
+    let mut out = Vec::new();
+    t.world.run_as_script(NAME, |ctx| {
+        out = std::mem::take(&mut ctx.state::<Events>().0);
+    });
+    out
 }
 
 fn setup() -> ScriptTest {
@@ -104,4 +129,84 @@ fn a_click_on_a_castle_chamberlain_shows_its_first_talk_page() {
             assert!(shown.is_empty(), "{shown:?}");
         }
     }
+}
+
+#[test]
+fn schedule_event_does_not_merge_like_java_thread_pool_tasks() {
+    let mut t = setup();
+    t.world.run_as_script(NAME, |ctx| {
+        ctx.schedule_event("zoneCheck", 1_000, None, Some(Oid(1)));
+        ctx.schedule_event("zoneCheck", 1_000, None, Some(Oid(1)));
+        // Not a quest timer: the name lookups do not see it.
+        assert!(!ctx.has_quest_timer("zoneCheck", None, Some(Oid(1))));
+        ctx.cancel_quest_timers("zoneCheck");
+        // A quest timer of the same name merges.
+        ctx.start_quest_timer("timer", 1_000, None, Some(Oid(1)), false);
+        ctx.start_quest_timer("timer", 1_000, None, Some(Oid(1)), false);
+    });
+    t.wait_ms(1_100);
+    assert_eq!(
+        events(&mut t),
+        [
+            "zoneCheck Some(ObjectId(1))",
+            "zoneCheck Some(ObjectId(1))",
+            "timer Some(ObjectId(1))"
+        ]
+    );
+}
+
+#[test]
+fn radar_control_and_npc_say_go_to_one_player() {
+    let mut t = setup();
+    t.enter(2, 40, vec![]);
+    let npc = t.spawn(NPC_ID, 20);
+    t.take();
+    t.world.run_as_script(NAME, |ctx| {
+        ctx.send_radar_control(Oid(1), 0, 2, 77_325, 205_773, -3_432);
+        let npc = ctx.script_npc(npc).unwrap();
+        ctx.npc_say_to(
+            Oid(1),
+            npc,
+            ChatType::NpcGeneral,
+            NpcStringId::YouChildishFoolDoYouThinkYouCanCatchMe,
+            &[],
+        );
+    });
+    let out = t.take();
+    let to_1: Vec<_> = out.iter().filter(|(p, _)| *p == 1).map(|(_, b)| b).collect();
+    assert_eq!(to_1.len(), 2);
+    let radar: RadarControl = decode(to_1[0]);
+    assert_eq!(
+        (radar.show_radar, radar.radar_type, radar.x, radar.y, radar.z),
+        (0, 2, 77_325, 205_773, -3_432)
+    );
+    assert_eq!(name_of(to_1[1]), "NPC_SAY");
+    let say: NpcSay = decode(to_1[1]);
+    assert_eq!(say.object_id, npc.0);
+    assert_eq!(
+        say.npc_string,
+        NpcStringId::YouChildishFoolDoYouThinkYouCanCatchMe.id()
+    );
+    assert!(names_to(&out, 2).is_empty());
+}
+
+#[test]
+fn the_clan_info_update_goes_to_the_clan_and_is_my_lord_needs_a_residence() {
+    let mut t = setup();
+    t.enter(2, 40, vec![]);
+    let npc = t.spawn(NPC_ID, 20);
+    t.world.create_clan(Oid(1), "Probes").unwrap();
+    t.take();
+    t.world.run_as_script(NAME, |ctx| {
+        ctx.broadcast_clan_info_update(Oid(1));
+        // Player 2 has no clan: nothing.
+        ctx.broadcast_clan_info_update(Oid(2));
+        let npc = ctx.script_npc(npc).unwrap();
+        // The leader of a clan without castle or fortress, at an NPC without one.
+        assert!(!ctx.is_my_lord(npc, Oid(1)));
+        assert!(!ctx.is_my_lord(npc, Oid(2)));
+    });
+    let out = t.take();
+    assert_eq!(names_to(&out, 1), ["PLEDGE_SHOW_INFO_UPDATE"]);
+    assert!(names_to(&out, 2).is_empty());
 }

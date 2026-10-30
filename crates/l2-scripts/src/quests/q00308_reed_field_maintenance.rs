@@ -6,8 +6,6 @@
 // item of a table (Moirai pieces get 1 to 4 of them), the exchange takes the awakened hides first.
 // Players who are on Q00309_ForAGoodCause are sent to its own NPC (`player_quest_state`).
 //
-// FOLLOW-UP(engine): the Java radar point of the start (`RadarControl(0, 2, ..)`) has no script
-// helper yet; the page is shown, the radar marker is not sent.
 // NOTE(java-quirk): the reward check reads Q00238 with the full class name (`Class.getName()`),
 // which never matches a quest state (states are keyed by the simple name), so the page is always
 // the one for "not completed".
@@ -132,7 +130,7 @@ impl Script for Q00308ReedFieldMaintenance {
             }
             "32646-04.html" => {
                 qs.start_quest(ctx);
-                // FOLLOW-UP(engine): Java sends `RadarControl(0, 2, 77325, 205773, -3432)` here.
+                ctx.send_radar_control(player, 0, 2, 77_325, 205_773, -3_432);
                 htmltext = Some(event.to_owned());
             }
             "claimreward" => {

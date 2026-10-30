@@ -730,6 +730,21 @@ impl<'w> ScriptCtx<'w> {
         }
     }
 
+    /// Java `ThreadPool.schedule(() -> ..., delay)` in a script: `on_event(name, npc, player)`
+    /// after `time_ms`, as a task of its own that never merges with a timer of the same name
+    /// (unlike [`ScriptCtx::start_quest_timer`]) and that `has_quest_timer` / `cancel_quest_timer`
+    /// do not see (S-API-05).
+    pub fn schedule_event(
+        &mut self,
+        name: &str,
+        time_ms: i64,
+        npc: Option<ScriptNpc>,
+        player: Option<ObjectId>,
+    ) {
+        self.world
+            .schedule_script_event(self.script, name, time_ms, npc, player);
+    }
+
     /// Java `getQuestTimer(name, npc, player) != null`.
     pub fn has_quest_timer(&self, name: &str, npc: Option<ScriptNpc>, player: Option<ObjectId>) -> bool {
         self.world

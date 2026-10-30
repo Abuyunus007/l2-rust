@@ -42,6 +42,7 @@ mod gracia_api;
 pub mod hellbound_api;
 mod instance_api;
 pub mod link;
+pub mod more_api;
 mod movie;
 pub mod notify;
 #[cfg(test)]
