@@ -180,6 +180,7 @@ pub mod q00354_conquest_of_alligator_island;
 pub mod q00357_warehouse_keepers_ambition;
 pub mod q00358_illegitimate_child_of_the_goddess;
 pub mod q00359_for_a_sleepless_deadman;
+pub mod q00360_plunder_their_supplies;
 pub mod q00366_silver_haired_shaman;
 pub mod q00368_trespassing_into_the_holy_ground;
 pub mod q00376_exploration_of_the_giants_cave_part1;
@@ -367,6 +368,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00357_warehouse_keepers_ambition::Q00357WarehouseKeepersAmbition);
     r.add(q00358_illegitimate_child_of_the_goddess::Q00358IllegitimateChildOfTheGoddess);
     r.add(q00359_for_a_sleepless_deadman::Q00359ForASleeplessDeadman);
+    r.add(q00360_plunder_their_supplies::Q00360PlunderTheirSupplies);
     r.add(q00366_silver_haired_shaman::Q00366SilverHairedShaman);
     r.add(q00368_trespassing_into_the_holy_ground::Q00368TrespassingIntoTheHolyGround);
     r.add(q00376_exploration_of_the_giants_cave_part1::Q00376ExplorationOfTheGiantsCavePart1);
