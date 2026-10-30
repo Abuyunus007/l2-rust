@@ -536,6 +536,13 @@ impl ScriptTest {
             .set_static_data(Box::new(Data(self.stat.clone(), self.forms.clone())));
     }
 
+    /// Sets what `creature.getLastSkillCast()` returns, as if `creature` had cast `skill` (a
+    /// script that asks "did he cast Spoil?" is reached without a real cast).
+    pub fn set_last_skill_cast(&mut self, creature: i32, skill: SkillKey) {
+        self.world
+            .test_set_last_skill_cast(ObjectId(creature), Some(skill));
+    }
+
     /// Marks a monster as spoiled by `spoiler` (Java `Attackable.setSpoilerObjectId`, what the
     /// Spoil effect does), so a script's `isSpoiled()` check can be reached without casting.
     pub fn set_spoiled(&mut self, npc: ObjectId, spoiler: i32) {

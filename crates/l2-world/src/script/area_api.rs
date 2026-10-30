@@ -46,6 +46,12 @@ impl World {
         }
     }
 
+    /// Test hook for the script harness (`ScriptTest::set_last_skill_cast`): what a cast of
+    /// `skill` leaves in `getLastSkillCast()`, without the cast.
+    pub fn test_set_last_skill_cast(&mut self, id: ObjectId, skill: Option<SkillKey>) {
+        self.cast.creatures.entry(id).or_default().last_skill_cast = skill;
+    }
+
     /// Java `npc.getCurrentMp()`.
     pub fn script_npc_current_mp(&self, npc: ObjectId) -> f64 {
         self.npc(npc).map_or(0.0, |n| n.core.cur_mp)

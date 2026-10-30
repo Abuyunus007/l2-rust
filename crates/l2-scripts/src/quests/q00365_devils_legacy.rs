@@ -329,6 +329,56 @@ mod tests {
     }
 
     #[test]
+    fn the_big_prize_makes_collob_cast_the_poison_and_fills_his_mana() {
+        // One chest in five is the big prize (the poison, memo state 2). The world's random
+        // numbers are seeded, so the first world that rolls one is the same on every run.
+        let skills = r#"<skill id="4035" levels="2" name="Poison"><operateType>A1</operateType><targetType>ONE</targetType></skill>"#;
+        let npcs = r#"
+            <npc id="30092" type="Folk" level="50" name="Collob"><stats><vitals hp="1000" mp="300"/></stats></npc>
+            <npc id="30095" type="Folk" level="50" name="Randolf"/>"#;
+        for attempt in 0..100 {
+            let mut registry = ScriptRegistry::new();
+            registry.add(Q00365DevilsLegacy);
+            let pages = Pages::of(&Q00365DevilsLegacy)
+                .page("30095-01.htm", &["30095-02.htm"])
+                .page("30092-01.html", &["REWARD"])
+                .plain(&["30092-05.html", "30092-06.html"])
+                .npcs(&[COLLOB, RANDOLF]);
+            let mut t = ScriptTest::with_pages(registry, npcs, ITEMS, pages);
+            t.set_skills(ITEMS, skills);
+            let randolf = t.spawn(RANDOLF, 20);
+            let collob = t.spawn(COLLOB, 40);
+            t.enter(
+                1,
+                39,
+                vec![item(5, PIRATES_TREASURE_CHEST, 1), item(6, 57, 1_000)],
+            );
+            for _ in 0..attempt {
+                // Burn random numbers so each attempt rolls differently.
+                t.world.run_as_script(NAME, |ctx| {
+                    ctx.get_random(100);
+                });
+            }
+            t.quest_page(1, randolf);
+            t.event(1, NAME, "30095-02.htm");
+            t.quest_page(1, collob);
+            t.world.set_current_mp(collob, 0.0, true);
+            let page = t.event(1, NAME, "REWARD");
+            if !page.contains("30092-06.html") {
+                continue;
+            }
+            assert_eq!(
+                t.world.script_last_skill_cast(collob),
+                Some(SkillKey::new(POISON.0, POISON.1))
+            );
+            // His mana is full again, so he can cast on the next player too.
+            assert_eq!(t.world.script_npc_current_mp(collob), 300.0);
+            return;
+        }
+        panic!("no big prize in 100 tries");
+    }
+
+    #[test]
     fn collob_wants_the_chest_and_the_adena() {
         let (mut t, randolf, collob) = setup();
         t.enter(1, 39, vec![]);

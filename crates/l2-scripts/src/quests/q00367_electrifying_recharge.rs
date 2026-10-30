@@ -231,6 +231,10 @@ mod tests {
         <item id="4564" type="EtcItem" name="Dye 4564"/>"#;
 
     fn setup() -> (ScriptTest, Oid) {
+        setup_with(NPCS)
+    }
+
+    fn setup_with(npcs: &str) -> (ScriptTest, Oid) {
         let mut registry = ScriptRegistry::new();
         registry.add(Q00367ElectrifyingRecharge);
         let pages = Pages::of(&Q00367ElectrifyingRecharge)
@@ -245,7 +249,7 @@ mod tests {
                 "30673-08.html",
             ])
             .npcs(&[LORAIN]);
-        let mut t = ScriptTest::with_pages(registry, NPCS, ITEMS, pages);
+        let mut t = ScriptTest::with_pages(registry, npcs, ITEMS, pages);
         let lorain = t.spawn(LORAIN, 20);
         (t, lorain)
     }
@@ -306,6 +310,53 @@ mod tests {
         t.take();
         assert!(t.quest_page(1, lorain).contains("30673-08.html"));
         assert_eq!((t.count(1, TITAN_LAMP5), t.count(1, TITAN_LAMP1)), (0, 1));
+    }
+
+    // Catherok with the mana for the storm (skill 4072 costs 10 MP here).
+    const NPCS_WITH_MANA: &str = r#"
+        <npc id="30673" type="Folk" level="70" name="Lorain"/>
+        <npc id="21035" type="Monster" level="40" name="Catherok"><stats><vitals hp="1000" mp="100"/></stats></npc>"#;
+    const STORM: &str = r#"<skill id="4072" levels="4" name="Thunder Storm">
+        <operateType>A1</operateType><targetType>ONE</targetType><mpConsume>10</mpConsume></skill>"#;
+
+    fn started_player_and_catherok(npcs: &str, skills: Option<&str>) -> (ScriptTest, Oid) {
+        let (mut t, lorain) = setup_with(npcs);
+        if let Some(skills) = skills {
+            t.set_skills(ITEMS, skills);
+        }
+        t.enter(1, 37, vec![]);
+        t.quest_page(1, lorain);
+        t.event(1, NAME, "30673-02.htm");
+        let cath = t.spawn(CATHEROK, 60);
+        (t, cath)
+    }
+
+    #[test]
+    fn catherok_casts_the_thunder_storm_at_the_attacker_once_per_life() {
+        let (mut t, cath) = started_player_and_catherok(NPCS_WITH_MANA, Some(STORM));
+        assert_eq!(t.world.script_last_skill_cast(cath), None);
+        hit(&mut t, cath);
+        assert_eq!(
+            t.world.script_last_skill_cast(cath),
+            Some(SkillKey::new(4072, 4)),
+            "the first hit makes it cast"
+        );
+        // A second hit on the same Catherok does nothing (script value 367).
+        t.world.script_clear_last_skill_cast(cath);
+        hit(&mut t, cath);
+        assert_eq!(t.world.script_last_skill_cast(cath), None);
+    }
+
+    #[test]
+    fn catherok_does_not_cast_without_the_skill_or_the_mana() {
+        // No skill table: the skill does not exist.
+        let (mut t, cath) = started_player_and_catherok(NPCS_WITH_MANA, None);
+        hit(&mut t, cath);
+        assert_eq!(t.world.script_last_skill_cast(cath), None);
+        // The skill exists but the template has no mana.
+        let (mut t, cath) = started_player_and_catherok(NPCS, Some(STORM));
+        hit(&mut t, cath);
+        assert_eq!(t.world.script_last_skill_cast(cath), None);
     }
 
     #[test]
