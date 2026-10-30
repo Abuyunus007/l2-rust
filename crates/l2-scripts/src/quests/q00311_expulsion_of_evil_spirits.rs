@@ -218,9 +218,7 @@ impl Script for Q00311ExpulsionOfEvilSpirits {
             return None;
         }
         if event.eq_ignore_ascii_case("minion1") && zone_has_npc(ctx, VARANGKA) {
-            let Some(player) = player else {
-                return None;
-            };
+            let player = player?;
             if !zone_has_npc(ctx, VARANGKA + 1)
                 && let Some(varangka) = ctx.state::<ExpulsionState>().varangka
             {
@@ -244,9 +242,7 @@ impl Script for Q00311ExpulsionOfEvilSpirits {
             return None;
         }
         if event.eq_ignore_ascii_case("minion2") {
-            let Some(player) = player else {
-                return None;
-            };
+            let player = player?;
             if !zone_has_npc(ctx, VARANGKA + 2) && zone_has_npc(ctx, VARANGKA) {
                 let (px, py) = player_xy(ctx, player);
                 let x = px + ctx.get_random_range(10, 50);
