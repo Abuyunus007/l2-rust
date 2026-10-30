@@ -388,6 +388,7 @@ pub mod q00655_a_grand_plan_for_taming_wild_beasts;
 pub mod q00659_id_rather_be_collecting_fairy_breath;
 pub mod q00660_aiding_the_floran_village;
 pub mod q00661_making_the_harvest_grounds_safe;
+pub mod q00662_a_game_of_cards;
 pub mod q00688_defeat_the_elrokian_raiders;
 pub mod q00690_judes_request;
 pub mod q00691_matras_suspicious_request;
@@ -793,6 +794,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00659_id_rather_be_collecting_fairy_breath::Q00659IdRatherBeCollectingFairyBreath);
     r.add(q00660_aiding_the_floran_village::Q00660AidingTheFloranVillage);
     r.add(q00661_making_the_harvest_grounds_safe::Q00661MakingTheHarvestGroundsSafe);
+    r.add(q00662_a_game_of_cards::Q00662AGameOfCards);
     r.add(q00688_defeat_the_elrokian_raiders::Q00688DefeatTheElrokianRaiders);
     r.add(q00690_judes_request::Q00690JudesRequest);
     r.add(q00691_matras_suspicious_request::Q00691MatrasSuspiciousRequest);
