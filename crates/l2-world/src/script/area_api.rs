@@ -129,6 +129,11 @@ impl World {
             .is_some_and(|t| matches!(t.base_attack_type, WeaponType::Sword | WeaponType::Pole))
     }
 
+    /// Java `creature.isRaid()`.
+    pub fn script_is_raid(&self, creature: ObjectId) -> bool {
+        self.is_raid(creature)
+    }
+
     /// Java `creature.isInvisible()`.
     pub fn script_is_invisible(&self, creature: ObjectId) -> bool {
         self.objects.get(&creature).is_some_and(|e| e.invisible)
@@ -138,6 +143,25 @@ impl World {
     pub fn script_stop_npc_respawn(&mut self, npc: ObjectId) {
         if let Some(index) = self.npcs.get(&npc).and_then(|n| n.spawn) {
             self.stop_respawn(index);
+        }
+    }
+
+    /// Java `ZoneManager.getZones(x, y, z)` filtered to `EffectZone`: the ids.
+    pub fn script_effect_zones_at(&self, x: i32, y: i32, z: i32) -> Vec<i32> {
+        self.zoning.zones.as_ref().map_or_else(Vec::new, |zones| {
+            zones
+                .zones_at(x, y, z)
+                .into_iter()
+                .filter(|zone| zone.zone_type == "EffectZone")
+                .map(|zone| zone.id)
+                .collect()
+        })
+    }
+
+    /// Java `ZoneType.oustAllPlayers()` of a zone: everybody inside goes to the nearest town.
+    pub fn script_oust_all_players(&mut self, zone_id: i32, zone_type: &str) {
+        for player in self.zone_players_inside(zone_id, zone_type) {
+            self.tele_to_location_where(player, crate::teleport::TeleportWhereType::Town);
         }
     }
 
