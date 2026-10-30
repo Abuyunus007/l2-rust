@@ -111,6 +111,7 @@ pub mod q00122_ominous_news;
 pub mod q00123_the_leader_and_the_follower;
 pub mod q00124_meeting_the_elroki;
 pub mod q00125_the_name_of_evil1;
+pub mod q00126_the_name_of_evil2;
 pub mod q00128_pailaka_song_of_ice_and_fire;
 pub mod q00132_matras_curiosity;
 pub mod q00146_the_zero_hour;
@@ -516,6 +517,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00123_the_leader_and_the_follower::Q00123TheLeaderAndTheFollower);
     r.add(q00124_meeting_the_elroki::Q00124MeetingTheElroki);
     r.add(q00125_the_name_of_evil1::Q00125TheNameOfEvil1);
+    r.add(q00126_the_name_of_evil2::Q00126TheNameOfEvil2);
     r.add(q00128_pailaka_song_of_ice_and_fire::Q00128PailakaSongOfIceAndFire);
     r.add(q00132_matras_curiosity::Q00132MatrasCuriosity);
     r.add(q00146_the_zero_hour::Q00146TheZeroHour);
