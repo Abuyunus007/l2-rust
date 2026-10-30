@@ -523,8 +523,8 @@ impl World {
             }
             self.set_siege_side(player, territory_id);
         }
-        // D-05: `TerritoryWarSuperClass.onEnterWorld` (the territory quests and the "Kill the"
-        // quest notified of the player's death).
+        // `TerritoryWarSuperClass.onEnterWorld` (the territory quest and the "Kill the" quest
+        // notified of the player's death) is the login listener of the script (S-TW-01).
     }
 
     /// The end of `Player.deleteMe` for the war: a ward carrier drops it (`dropCombatFlag(this,
