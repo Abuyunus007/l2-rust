@@ -283,6 +283,7 @@ pub mod q10288_secret_mission;
 pub mod q10289_fade_to_black;
 pub mod q10290_land_dragon_conqueror;
 pub mod q10291_fire_dragon_destroyer;
+pub mod q10292_seven_signs_girl_of_doubt;
 pub mod q10296_seven_signs_one_who_seeks_the_power_of_the_seal;
 pub mod q10501_zaken_embroidered_soul_cloak;
 pub mod q10502_freya_embroidered_soul_cloak;
@@ -572,6 +573,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q10289_fade_to_black::Q10289FadeToBlack);
     r.add(q10290_land_dragon_conqueror::Q10290LandDragonConqueror);
     r.add(q10291_fire_dragon_destroyer::Q10291FireDragonDestroyer);
+    r.add(q10292_seven_signs_girl_of_doubt::Q10292SevenSignsGirlOfDoubt);
     r.add(
         q10296_seven_signs_one_who_seeks_the_power_of_the_seal::Q10296SevenSignsOneWhoSeeksThePowerOfTheSeal,
     );
