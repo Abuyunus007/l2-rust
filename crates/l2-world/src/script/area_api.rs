@@ -63,6 +63,113 @@ impl World {
         Some((date, self.siege_now_ms()))
     }
 
+    /// Java `npc.getTemplate().canTeach(player.getPlayerClass())` (HealerTrainer; S-AI-08).
+    pub fn script_npc_can_teach(&self, npc_template_id: i32, player: ObjectId) -> bool {
+        self.player(player).is_some_and(|p| {
+            u16::try_from(p.data.class_id)
+                .is_ok_and(|class| self.can_teach(npc_template_id, l2_data::ClassId(class)))
+        })
+    }
+
+    /// Java `npc.getAI().getIntention() == Intention.ATTACK` (SelMahumSquad; S-AI-08).
+    pub fn script_intention_is_attack(&self, npc: ObjectId) -> bool {
+        self.intention_of(npc) == crate::movement::Intention::Attack
+    }
+
+    /// Java `npc.getAI().getIntention() == Intention.CAST`.
+    pub fn script_intention_is_cast(&self, npc: ObjectId) -> bool {
+        self.intention_of(npc) == crate::movement::Intention::Cast
+    }
+
+    /// Java `npc.getRightHandItem()`: the item id in the right hand, 0 for none.
+    pub fn script_npc_right_hand(&self, npc: ObjectId) -> i32 {
+        self.npc(npc).map_or(0, |n| n.right_hand)
+    }
+
+    /// Java `npc.isInSurroundingRegion(other)`.
+    pub fn script_is_in_surrounding_region(&self, npc: ObjectId, other: ObjectId) -> bool {
+        self.is_in_surrounding_region(npc, other)
+    }
+
+    /// Java `skill.getAffectRange()` of a skill by id and level (0 for an unknown skill).
+    pub fn script_skill_affect_range(&self, skill: SkillKey) -> i32 {
+        self.skill_table()
+            .and_then(|t| t.get(skill.id, skill.level).map(|s| s.affect_range))
+            .unwrap_or(0)
+    }
+
+    /// Java `player.getKarma()`.
+    pub fn script_player_karma(&self, player: ObjectId) -> i32 {
+        self.karma_of_player(player)
+    }
+
+    /// Java `World.forEachVisibleObjectInRange(npc, Creature.class, range, ..)`: the players, NPCs
+    /// and summons the NPC sees within `range`.
+    pub fn script_visible_creatures_in_range(&self, npc: ObjectId, range: i32) -> Vec<ObjectId> {
+        self.visible_objects_in_range(npc, range)
+            .into_iter()
+            .filter(|o| self.player(*o).is_some() || self.npc(*o).is_some() || self.is_summon(*o))
+            .collect()
+    }
+
+    /// Java `player.updatePvPStatus(target)`.
+    pub fn script_update_pvp_status(&mut self, player: ObjectId, target: ObjectId) {
+        self.update_pvp_status_target(player, target);
+    }
+
+    /// Java `npc.getAggroRange()`.
+    pub fn script_npc_aggro_range(&self, npc: ObjectId) -> i32 {
+        self.npc_template(npc).map_or(0, |t| t.aggro_range)
+    }
+
+    /// Java `npc.getTemplate().getBaseAttackType()` is `SWORD` or `POLE`.
+    pub fn script_npc_attacks_with_sword_or_pole(&self, npc: ObjectId) -> bool {
+        use l2_data::item::WeaponType;
+        self.npc_template(npc)
+            .is_some_and(|t| matches!(t.base_attack_type, WeaponType::Sword | WeaponType::Pole))
+    }
+
+    /// Java `creature.isRaid()`.
+    pub fn script_is_raid(&self, creature: ObjectId) -> bool {
+        self.is_raid(creature)
+    }
+
+    /// Java `creature.isInvisible()`.
+    pub fn script_is_invisible(&self, creature: ObjectId) -> bool {
+        self.objects.get(&creature).is_some_and(|e| e.invisible)
+    }
+
+    /// Java `npc.getSpawn().stopRespawn()` (nothing for an NPC without a spawn).
+    pub fn script_stop_npc_respawn(&mut self, npc: ObjectId) {
+        if let Some(index) = self.npcs.get(&npc).and_then(|n| n.spawn) {
+            self.stop_respawn(index);
+        }
+    }
+
+    /// Java `ZoneManager.getZones(x, y, z)` filtered to `EffectZone`: the ids.
+    pub fn script_effect_zones_at(&self, x: i32, y: i32, z: i32) -> Vec<i32> {
+        self.zoning.zones.as_ref().map_or_else(Vec::new, |zones| {
+            zones
+                .zones_at(x, y, z)
+                .into_iter()
+                .filter(|zone| zone.zone_type == "EffectZone")
+                .map(|zone| zone.id)
+                .collect()
+        })
+    }
+
+    /// Java `ZoneType.oustAllPlayers()` of a zone: everybody inside goes to the nearest town.
+    pub fn script_oust_all_players(&mut self, zone_id: i32, zone_type: &str) {
+        for player in self.zone_players_inside(zone_id, zone_type) {
+            self.tele_to_location_where(player, crate::teleport::TeleportWhereType::Town);
+        }
+    }
+
+    /// Java `GameTimeTaskManager.isNight()`.
+    pub fn script_is_night(&self) -> bool {
+        Self::is_night_now()
+    }
+
     /// Java `castle.getSiege().getControlTowerCount()`.
     pub fn script_castle_control_tower_count(&self, castle: i32) -> i32 {
         self.castle_siege(CastleId(castle))

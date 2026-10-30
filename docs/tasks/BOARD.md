@@ -452,9 +452,9 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-Q-18](S/S-Q-18.md) | Quests Q00651..Q00713 (30 quests) | haiku | spot | PILOT-01 | merged |
 | [S-Q-19](S/S-Q-19.md) | Quests Q00714..Q10285 (32 quests) | haiku | spot | PILOT-01 | merged |
 | [S-Q-20](S/S-Q-20.md) | Quests Q10286..Q10505 (16 quests) | haiku | spot | PILOT-01 | merged |
-| [S-QR-01](S/S-QR-01.md) | Remaining quests Q00022..Q00064 (7) | sonnet | spot | Q batches | in-progress |
+| [S-QR-01](S/S-QR-01.md) | Remaining quests Q00022..Q00064 (7) | sonnet | spot | Q batches | merged |
 | [S-QR-02](S/S-QR-02.md) | Remaining quests Q00065..Q00120 (7) | sonnet | spot | Q batches | merged |
-| [S-QR-03](S/S-QR-03.md) | Remaining quests Q00123..Q00139 (13) | sonnet | spot | Q batches | in-progress |
+| [S-QR-03](S/S-QR-03.md) | Remaining quests Q00123..Q00139 (13) | sonnet | spot | Q batches | merged |
 | [S-QR-04](S/S-QR-04.md) | Remaining quests Q00140..Q00194 (14) | sonnet | spot | Q batches | ready |
 | [S-QR-05](S/S-QR-05.md) | Remaining quests Q00195..Q00218 (8) | sonnet | spot | Q batches | ready |
 | [S-QR-06](S/S-QR-06.md) | Remaining quests Q00219..Q00230 (6) | sonnet | spot | Q batches | ready |
