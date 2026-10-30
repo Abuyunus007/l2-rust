@@ -140,7 +140,7 @@ impl Script for Q00457LostAndFound {
                 // (2D, strictly) ends the escort with the book.
                 let checkers = checkers_in_world(ctx);
                 for escort in checkers {
-                    if inside_radius_2d(ctx, npc.object_id, escort, 1_000) {
+                    if ctx.is_inside_radius_2d(npc.object_id, escort, 1_000) {
                         ctx.start_quest_timer("STOP", 1_000, Some(npc), Some(player), false);
                         ctx.start_quest_timer("BYE", 3_000, Some(npc), Some(player), false);
                         ctx.cancel_quest_timer("CHECK", Some(npc), Some(player));
@@ -265,18 +265,6 @@ fn checkers_in_world(ctx: &mut ScriptCtx<'_>) -> Vec<ObjectId> {
         .collect();
     ctx.state::<EscortCheckers>().0.clone_from(&alive);
     alive
-}
-
-/// Java `npc.isInsideRadius2D(escort, radius)`: the 2D distance is strictly below the radius.
-fn inside_radius_2d(ctx: &ScriptCtx<'_>, a: ObjectId, b: ObjectId, radius: i32) -> bool {
-    match (ctx.world().position_of(a), ctx.world().position_of(b)) {
-        (Some((ax, ay, _)), Some((bx, by, _))) => {
-            let dx = f64::from(ax - bx);
-            let dy = f64::from(ay - by);
-            (dx * dx + dy * dy).sqrt() < f64::from(radius)
-        }
-        _ => false,
-    }
 }
 
 #[cfg(test)]
