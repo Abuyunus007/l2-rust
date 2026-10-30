@@ -189,6 +189,7 @@ pub mod q00376_exploration_of_the_giants_cave_part1;
 pub mod q00377_exploration_of_the_giants_cave_part2;
 pub mod q00379_fantasy_wine;
 pub mod q00382_kails_magic_coin;
+pub mod q00385_yoke_of_the_past;
 pub mod q00450_grave_robber_rescue;
 
 use l2_world::ScriptRegistry;
@@ -379,5 +380,6 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00377_exploration_of_the_giants_cave_part2::Q00377ExplorationOfTheGiantsCavePart2);
     r.add(q00379_fantasy_wine::Q00379FantasyWine);
     r.add(q00382_kails_magic_coin::Q00382KailsMagicCoin);
+    r.add(q00385_yoke_of_the_past::Q00385YokeOfThePast);
     r.add(q00450_grave_robber_rescue::Q00450GraveRobberRescue);
 }
