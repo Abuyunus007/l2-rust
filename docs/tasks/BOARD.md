@@ -414,7 +414,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-VM-01](S/S-VM-01.md) | Class change, ClassMaster, certifications, noble quest | opus | full | API-01, SUB-01 | merged |
 | [S-AI-01](S/S-AI-01.md) | Gracia AIs | sonnet | spot | API-01 | merged |
 | [S-AI-02](S/S-AI-02.md) | Hellbound AIs | sonnet | spot | API-01 | merged |
-| [S-AI-03](S/S-AI-03.md) | Area AIs part 1 | sonnet | spot | API-01 | ready |
+| [S-AI-03](S/S-AI-03.md) | Area AIs part 1 | sonnet | spot | API-01 | in-progress |
 | [S-AI-04](S/S-AI-04.md) | Area AIs part 2 | sonnet | spot | API-01 | ready |
 | [S-AI-05](S/S-AI-05.md) | Other AIs part 1 (A..M) | sonnet | spot | API-01 | merged |
 | [S-AI-06](S/S-AI-06.md) | Other AIs part 2 (N..Z) | sonnet | spot | API-01 | merged |
@@ -423,7 +423,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-DATA-01](S/S-DATA-01.md) | Category data, ClassMaster.xml, transformation tree, small script helpers | sonnet | full | VM-01 | merged |
 | [S-BOSS-01](S/S-BOSS-01.md) | Antharas, Valakas, Baium | opus | full | API-01 | merged |
 | [S-BOSS-02](S/S-BOSS-02.md) | Beleth, Frintezza, Core, Orfen, Queen Ant | sonnet | full | API-01 | merged |
-| [S-BOSS-03](S/S-BOSS-03.md) | Sailren, Seer Ugoros, Dr. Chaos, Anais, Queen Shyeed | sonnet | full | API-01 | ready |
+| [S-BOSS-03](S/S-BOSS-03.md) | Sailren, Seer Ugoros, Dr. Chaos, Anais, Queen Shyeed | sonnet | full | API-01 | in-progress |
 | [S-INST-01](S/S-INST-01.md) | Kamaloka and Pailaka instances | sonnet | full | API-01 | merged |
 | [S-INST-02](S/S-INST-02.md) | Crystal Caverns, Dark Cloud Mansion, Chambers of Delusion | sonnet | full | API-01 | merged |
 | [S-INST-03](S/S-INST-03.md) | Ice Queen, Nornil, Jinia and the small instances | sonnet | full | API-01 | ready |
@@ -443,13 +443,13 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-Q-11](S/S-Q-11.md) | Quests Q00310..Q00335 (18 quests) | haiku | spot | PILOT-01 | merged |
 | [S-Q-12](S/S-Q-12.md) | Quests Q00336..Q00352 (13 quests) | haiku | spot | PILOT-01 | merged |
 | [S-Q-13](S/S-Q-13.md) | Quests Q00354..Q00385 (29 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-14](S/S-Q-14.md) | Quests Q00386..Q00416 (17 quests) | haiku | spot | PILOT-01 | in-progress |
-| [S-Q-15](S/S-Q-15.md) | Quests Q00417..Q00458 (18 quests) | haiku | spot | PILOT-01 | in-progress |
-| [S-Q-16](S/S-Q-16.md) | Quests Q00461..Q00615 (29 quests) | haiku | spot | PILOT-01 | in-progress |
+| [S-Q-14](S/S-Q-14.md) | Quests Q00386..Q00416 (17 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-15](S/S-Q-15.md) | Quests Q00417..Q00458 (18 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-16](S/S-Q-16.md) | Quests Q00461..Q00615 (29 quests) | haiku | spot | PILOT-01 | merged |
 | [S-Q-17](S/S-Q-17.md) | Quests Q00616..Q00650 (34 quests) | haiku | spot | PILOT-01 | in-progress |
 | [S-Q-18](S/S-Q-18.md) | Quests Q00651..Q00713 (30 quests) | haiku | spot | PILOT-01 | in-progress |
-| [S-Q-19](S/S-Q-19.md) | Quests Q00714..Q10285 (32 quests) | haiku | spot | PILOT-01 | ready |
-| [S-Q-20](S/S-Q-20.md) | Quests Q10286..Q10505 (16 quests) | haiku | spot | PILOT-01 | ready |
+| [S-Q-19](S/S-Q-19.md) | Quests Q00714..Q10285 (32 quests) | haiku | spot | PILOT-01 | in-progress |
+| [S-Q-20](S/S-Q-20.md) | Quests Q10286..Q10505 (16 quests) | haiku | spot | PILOT-01 | in-progress |
 | S-ADMIN-08 | Admin words of the script systems | haiku | review | API-01, VM-01 | ready (card written when API-01 merges) |
 | S-E2E-01 | End to end | sonnet | review | Q, VM-01, BOSS-01, INST-01 | ready (card written when API-01 merges) |
 | S-RUN-01 | Runbook and milestone checks | opus | review | E2E-01 | ready (card written when API-01 merges) |
