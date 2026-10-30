@@ -131,6 +131,8 @@ pub enum EventKind {
     FortSiegeStart,
     /// `ON_OLYMPIAD_MATCH_RESULT` (S-API-04). Global, or on one object with `ScriptCtx::add_listener`.
     OlympiadMatchResult,
+    /// `ON_PLAYER_SUMMON_SPAWN` (`addSummonSpawnId`, S-API-05), by the summon's NPC id.
+    PlayerSummonSpawn,
 }
 
 impl EventKind {
@@ -229,6 +231,7 @@ impl EventKind {
             Self::FortSiegeFinish => (150, "ON_FORT_SIEGE_FINISH"),
             Self::FortSiegeStart => (151, "ON_FORT_SIEGE_START"),
             Self::OlympiadMatchResult => (175, "ON_OLYMPIAD_MATCH_RESULT"),
+            Self::PlayerSummonSpawn => (231, "ON_PLAYER_SUMMON_SPAWN"),
         }
     }
 
@@ -246,6 +249,7 @@ impl EventKind {
             Self::AttackableFactionCall => "addFactionCallId",
             Self::AttackableAggroRangeEnter => "addAggroRangeEnterId",
             Self::CreatureSee => "addCreatureSeeId",
+            Self::PlayerSummonSpawn => "addSummonSpawnId",
             _ => "",
         }
     }
@@ -305,6 +309,12 @@ impl ScriptSetup {
     /// Java `addSpawnId(npcIds)`.
     pub fn add_spawn_id(&mut self, npc_ids: &[i32]) {
         self.add(EventKind::NpcSpawn, npc_ids);
+    }
+
+    /// Java `addSummonSpawnId(npcIds)`: `on_summon_spawn` when a summon (servitor or pet) of one
+    /// of the NPC ids spawns (S-API-05).
+    pub fn add_summon_spawn_id(&mut self, npc_ids: &[i32]) {
+        self.add(EventKind::PlayerSummonSpawn, npc_ids);
     }
 
     /// Java `addTeleportId(npcIds)`.

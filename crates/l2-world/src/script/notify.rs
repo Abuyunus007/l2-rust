@@ -51,6 +51,8 @@ pub(crate) enum PendingEvent {
         is_summon: bool,
     },
     Spawn(ScriptNpc),
+    /// `ON_PLAYER_SUMMON_SPAWN` (S-API-05).
+    SummonSpawn(ScriptNpc),
     Teleport(ScriptNpc),
     ZoneEnter {
         creature: ObjectId,
@@ -212,6 +214,11 @@ impl World {
             PendingEvent::Spawn(npc) => {
                 for script in self.listeners_of(EventKind::NpcSpawn, npc.id) {
                     self.with_script(script, |s, ctx| s.on_spawn(ctx, npc));
+                }
+            }
+            PendingEvent::SummonSpawn(summon) => {
+                for script in self.listeners_of(EventKind::PlayerSummonSpawn, summon.id) {
+                    self.with_script(script, |s, ctx| s.on_summon_spawn(ctx, summon.object_id));
                 }
             }
             PendingEvent::Teleport(npc) => {
@@ -457,8 +464,21 @@ impl World {
     /// Java `Npc.onSpawn`: `ON_NPC_SPAWN`.
     pub fn script_on_npc_spawn(&mut self, npc: ObjectId) {
         self.script_reset_npc_links(npc);
+        // A summon is not an `Npc` in Java: its spawn is `ON_PLAYER_SUMMON_SPAWN`
+        // (`script_on_summon_spawn`, S-API-05).
+        if self.summon_owner(npc).is_some() {
+            return;
+        }
         if let Some(n) = self.has_npc_listener(EventKind::NpcSpawn, npc) {
             self.queue_script_event(PendingEvent::Spawn(n));
+        }
+    }
+
+    /// Java `Summon.onSpawn`: `ON_PLAYER_SUMMON_SPAWN` (the listener is on the summon's NPC
+    /// template).
+    pub(crate) fn script_on_summon_spawn(&mut self, summon: ObjectId) {
+        if let Some(n) = self.has_npc_listener(EventKind::PlayerSummonSpawn, summon) {
+            self.queue_script_event(PendingEvent::SummonSpawn(n));
         }
     }
 

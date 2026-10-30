@@ -453,6 +453,10 @@ pub trait Script: Send + Sync + 'static {
     /// `ON_PLAYER_SUMMON_TALK` (queued, container: the summon).
     fn on_player_summon_talk(&self, ctx: &mut ScriptCtx<'_>, summon: ObjectId) {}
 
+    /// Java `onSummonSpawn(summon)` (`addSummonSpawnId`, queued): the summon spawned next to its
+    /// owner (`ctx.world().summon_owner(summon)`).
+    fn on_summon_spawn(&self, ctx: &mut ScriptCtx<'_>, summon: ObjectId) {}
+
     /// `ON_PLAYABLE_EXP_CHANGED` (synchronous, container: the playable). `terminate` refuses
     /// the experience.
     fn on_playable_exp_changed(
