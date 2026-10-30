@@ -145,6 +145,7 @@ pub mod q00173_to_the_isle_of_souls;
 pub mod q00174_supply_check;
 pub mod q00175_the_way_of_the_warrior;
 pub mod q00176_steps_for_honor;
+pub mod q00178_iconic_trinity;
 pub mod q00179_into_the_large_cavern;
 pub mod q00182_new_recruits;
 pub mod q00183_relic_exploration;
@@ -560,6 +561,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00174_supply_check::Q00174SupplyCheck);
     r.add(q00175_the_way_of_the_warrior::Q00175TheWayOfTheWarrior);
     r.add(q00176_steps_for_honor::Q00176StepsForHonor);
+    r.add(q00178_iconic_trinity::Q00178IconicTrinity);
     r.add(q00179_into_the_large_cavern::Q00179IntoTheLargeCavern);
     r.add(q00182_new_recruits::Q00182NewRecruits);
     r.add(q00212_trial_of_duty::Q00212TrialOfDuty);
