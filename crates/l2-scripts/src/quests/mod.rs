@@ -136,6 +136,7 @@ pub mod q00313_collect_spores;
 pub mod q00317_catch_the_wind;
 pub mod q00319_scent_of_death;
 pub mod q00320_bones_tell_the_future;
+pub mod q00324_sweetest_venom;
 pub mod q00450_grave_robber_rescue;
 
 use l2_world::ScriptRegistry;
@@ -273,5 +274,6 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00317_catch_the_wind::Q00317CatchTheWind);
     r.add(q00319_scent_of_death::Q00319ScentOfDeath);
     r.add(q00320_bones_tell_the_future::Q00320BonesTellTheFuture);
+    r.add(q00324_sweetest_venom::Q00324SweetestVenom);
     r.add(q00450_grave_robber_rescue::Q00450GraveRobberRescue);
 }
