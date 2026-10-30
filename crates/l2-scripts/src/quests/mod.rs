@@ -112,6 +112,7 @@ pub mod q00111_elrokian_hunters_proof;
 pub mod q00112_walk_of_fate;
 pub mod q00113_status_of_the_beacon_tower;
 pub mod q00114_resurrection_of_an_old_manager;
+pub mod q00115_the_other_side_of_truth;
 pub mod q00116_beyond_the_hills_of_winter;
 pub mod q00117_the_ocean_of_distant_stars;
 pub mod q00118_to_lead_and_be_led;
@@ -603,6 +604,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00110_to_the_primeval_isle::Q00110ToThePrimevalIsle);
     r.add(q00113_status_of_the_beacon_tower::Q00113StatusOfTheBeaconTower);
     r.add(q00114_resurrection_of_an_old_manager::Q00114ResurrectionOfAnOldManager);
+    r.add(q00115_the_other_side_of_truth::Q00115TheOtherSideOfTruth);
     r.add(q00116_beyond_the_hills_of_winter::Q00116BeyondTheHillsOfWinter);
     r.add(q00117_the_ocean_of_distant_stars::Q00117TheOceanOfDistantStars);
     r.add(q00118_to_lead_and_be_led::Q00118ToLeadAndBeLed);
