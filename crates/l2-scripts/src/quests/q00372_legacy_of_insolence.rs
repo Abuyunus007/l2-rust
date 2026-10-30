@@ -483,7 +483,7 @@ mod tests {
         ]) {
             out.push_str(&format!(
                 r#"<item id="{id}" type="EtcItem" name="Item {id}"><set name="is_questitem" val="{}"/></item>"#,
-                id <= 6001 && id >= 5966
+                (5966..=6001).contains(&id)
             ));
         }
         out

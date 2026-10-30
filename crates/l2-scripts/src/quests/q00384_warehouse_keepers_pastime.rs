@@ -193,25 +193,24 @@ pub(crate) fn take_html(
     npc_id: i32,
 ) -> Option<String> {
     let page = |ctx: &ScriptCtx<'_>, n: i32| ctx.get_htm(player, &format!("{npc_id}-{n}.html"));
-    let html;
-    if !is_selected_bingo_number(ctx, qs, num) {
+    let html = if !is_selected_bingo_number(ctx, qs, num) {
         select_bingo_number(ctx, qs, num);
-        html = match bingo_select_count(ctx, qs) {
+        match bingo_select_count(ctx, qs) {
             2 => page(ctx, 14),
             3 => page(ctx, 16),
             4 => page(ctx, 18),
             5 => page(ctx, 20),
             _ => None,
-        };
+        }
     } else {
-        html = match bingo_select_count(ctx, qs) {
+        match bingo_select_count(ctx, qs) {
             1 => page(ctx, 15),
             2 => page(ctx, 17),
             3 => page(ctx, 19),
             4 => page(ctx, 21),
             _ => None,
-        };
-    }
+        }
+    };
     fill_board(ctx, qs, html)
 }
 
