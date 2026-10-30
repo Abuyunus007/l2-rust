@@ -573,7 +573,7 @@ mod tests {
                 qs.set_state(ctx, COMPLETED);
             }
         });
-        writes(&t);
+        writes(t);
     }
 
     fn ev(t: &mut ScriptTest, event: &str, npc: Option<Oid>) -> Option<String> {
@@ -601,7 +601,7 @@ mod tests {
                 qs.set_cond(ctx, cond, false);
             }
         });
-        writes(&t);
+        writes(t);
     }
 
     /// The writes without the journal flag rows (`__compltdStateFlags`) the high conds add.
