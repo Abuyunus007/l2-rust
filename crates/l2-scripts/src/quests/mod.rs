@@ -285,6 +285,7 @@ pub mod q00369_collector_of_jewels;
 pub mod q00370_an_elder_sows_seeds;
 pub mod q00371_shrieks_of_ghosts;
 pub mod q00372_legacy_of_insolence;
+pub mod q00373_supplier_of_reagents;
 pub mod q00376_exploration_of_the_giants_cave_part1;
 pub mod q00377_exploration_of_the_giants_cave_part2;
 pub mod q00379_fantasy_wine;
@@ -720,6 +721,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00370_an_elder_sows_seeds::Q00370AnElderSowsSeeds);
     r.add(q00371_shrieks_of_ghosts::Q00371ShrieksOfGhosts);
     r.add(q00372_legacy_of_insolence::Q00372LegacyOfInsolence);
+    r.add(q00373_supplier_of_reagents::Q00373SupplierOfReagents);
     r.add(q00376_exploration_of_the_giants_cave_part1::Q00376ExplorationOfTheGiantsCavePart1);
     r.add(q00377_exploration_of_the_giants_cave_part2::Q00377ExplorationOfTheGiantsCavePart2);
     r.add(q00379_fantasy_wine::Q00379FantasyWine);
