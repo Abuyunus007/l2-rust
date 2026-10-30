@@ -153,6 +153,7 @@ pub mod q00198_seven_signs_embryo;
 pub mod q00211_trial_of_the_challenger;
 pub mod q00212_trial_of_duty;
 pub mod q00213_trial_of_the_seeker;
+pub mod q00214_trial_of_the_scholar;
 pub mod q00215_trial_of_the_pilgrim;
 pub mod q00222_test_of_the_duelist;
 pub mod q00223_test_of_the_champion;
@@ -547,6 +548,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00211_trial_of_the_challenger::Q00211TrialOfTheChallenger);
     r.add(q00212_trial_of_duty::Q00212TrialOfDuty);
     r.add(q00213_trial_of_the_seeker::Q00213TrialOfTheSeeker);
+    r.add(q00214_trial_of_the_scholar::Q00214TrialOfTheScholar);
     r.add(q00215_trial_of_the_pilgrim::Q00215TrialOfThePilgrim);
     r.add(q00183_relic_exploration::Q00183RelicExploration);
     r.add(q00184_art_of_persuasion::Q00184ArtOfPersuasion);
