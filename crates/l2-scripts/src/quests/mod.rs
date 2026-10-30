@@ -398,6 +398,8 @@ pub mod q00702_a_trap_for_revenge;
 pub mod q00708_path_to_becoming_a_lord_gludio;
 pub mod q00709_path_to_becoming_a_lord_dion;
 pub mod q00710_path_to_becoming_a_lord_giran;
+pub mod q00711_path_to_becoming_a_lord_innadril;
+pub mod q00712_path_to_becoming_a_lord_oren;
 pub mod q00713_path_to_becoming_a_lord_aden;
 pub mod q00714_path_to_becoming_a_lord_schuttgart;
 pub mod q00715_path_to_becoming_a_lord_goddard;
@@ -804,6 +806,8 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00708_path_to_becoming_a_lord_gludio::Q00708PathToBecomingALordGludio);
     r.add(q00709_path_to_becoming_a_lord_dion::Q00709PathToBecomingALordDion);
     r.add(q00710_path_to_becoming_a_lord_giran::Q00710PathToBecomingALordGiran);
+    r.add(q00711_path_to_becoming_a_lord_innadril::Q00711PathToBecomingALordInnadril);
+    r.add(q00712_path_to_becoming_a_lord_oren::Q00712PathToBecomingALordOren);
     r.add(q00713_path_to_becoming_a_lord_aden::Q00713PathToBecomingALordAden);
     r.add(q00616_magical_power_of_fire_part2::Q00616MagicalPowerOfFirePart2);
     r.add(q00617_gather_the_flames::Q00617GatherTheFlames);
