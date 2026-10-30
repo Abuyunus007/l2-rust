@@ -4,7 +4,7 @@
 use l2_util::ObjectId as Oid;
 use l2_world::{PlayerClanState, Script, ScriptCtx, ScriptNpc, ScriptRegistry, ScriptSetup};
 
-use crate::testing::{Pages, ScriptTest, item, names_to, pages_to, player_data};
+use crate::testing::{Pages, ScriptTest, item, names_to, player_data};
 
 const NPC_ID: i32 = 31_000;
 const NPCS: &str = r#"<npc id="31000" type="Folk" level="70" name="Probe"/>"#;
@@ -91,10 +91,11 @@ fn sponsor_apprentice_and_pledge_type_come_from_the_clan_state() {
         t.event(1, "Probe", "clan")
             .contains("sponsor=0 apprentice=0 pledge=0")
     );
-    // An academy member with a sponsor, and its sponsor.
+    // An academy member with a sponsor, and its sponsor. The state is set directly (the test world
+    // has no clan table, so a real clan id would be reset when the player enters).
     let mut academy = player_data(2, 20, vec![]);
     academy.profile.clan = Some(PlayerClanState {
-        clan_id: 7,
+        clan_id: 0,
         pledge_type: -1,
         sponsor: 3,
         ..Default::default()
@@ -106,7 +107,7 @@ fn sponsor_apprentice_and_pledge_type_come_from_the_clan_state() {
     );
     let mut sponsor = player_data(3, 80, vec![]);
     sponsor.profile.clan = Some(PlayerClanState {
-        clan_id: 7,
+        clan_id: 0,
         apprentice: 2,
         ..Default::default()
     });
@@ -157,5 +158,4 @@ fn a_warehouse_item_is_destroyed_by_count() {
     // The last unit deletes the item.
     assert!(t.world.destroy_private_warehouse_item(Oid(1), Oid(900), 1));
     assert_eq!(t.world.private_warehouse_item(Oid(1), Oid(900)), None);
-    let _ = pages_to;
 }

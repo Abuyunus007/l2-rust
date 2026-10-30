@@ -178,8 +178,10 @@ mod tests {
             }
         }
         // Samples that scripts rely on.
-        assert!(data.is_in_category(CategoryType::HealGroup, 16));
-        assert!(data.is_in_category(CategoryType::KnightGroup, 5));
+        assert!(data.is_in_category(CategoryType::HealGroup, 15));
+        assert!(data.is_in_category(CategoryType::HealGroup, 50));
+        assert!(!data.is_in_category(CategoryType::HealGroup, 16));
+        assert!(data.is_in_category(CategoryType::KnightGroup, 32));
         assert!(data.is_in_category(CategoryType::FirstClassGroup, 0));
         assert!(!data.is_in_category(CategoryType::FirstClassGroup, 1));
     }
