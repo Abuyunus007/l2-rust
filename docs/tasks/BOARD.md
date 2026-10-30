@@ -464,7 +464,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-QR-10](S/S-QR-10.md) | Remaining quests Q00367..Q00417 (8) | sonnet | spot | Q batches | merged |
 | [S-QR-11](S/S-QR-11.md) | Remaining quests Q00419..Q00511 (7) | sonnet | spot | Q batches | merged |
 | [S-QR-12](S/S-QR-12.md) | Remaining quests Q00551..Q00692 (10) | sonnet | spot | Q batches | merged |
-| [S-QR-13](S/S-QR-13.md) | Remaining quests Q00693..Q10270 (13) | sonnet | spot | Q batches | ready |
+| [S-QR-13](S/S-QR-13.md) | Remaining quests Q00693..Q10270 (13) | sonnet | spot | Q batches | merged |
 | [S-QR-14](S/S-QR-14.md) | Remaining quests Q10272..Q10285 (4) | sonnet | spot | Q batches | merged |
 | [S-QR-15](S/S-QR-15.md) | Leftover quests of S-QR-02 (5) | sonnet | spot | Q batches | running |
 | [S-LEFT-01](S/S-LEFT-01.md) | Script milestone stragglers | sonnet | full | API-05 | running |
