@@ -318,7 +318,10 @@ mod tests {
         assert!(t.event(1, NAME, "32560-06.html").contains("32560-06.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::insert(NAME, "cond", "1"), rows::insert(NAME, "<state>", "Started")]
+            [
+                rows::insert(NAME, "cond", "1"),
+                rows::insert(NAME, "<state>", "Started")
+            ]
         );
         assert!(t.quest_page(1, artius).contains("32559-01.html"));
         t.event(1, NAME, "32559-02.html");
@@ -363,7 +366,10 @@ mod tests {
         assert_eq!(t.count(1, 57), 556_980);
         assert_eq!(
             t.take_writes(),
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
         assert!(t.quest_page(1, artius).contains("32559-19.html"));
     }

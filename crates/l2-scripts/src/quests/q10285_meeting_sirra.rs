@@ -311,7 +311,13 @@ mod tests {
         let pages = Pages::of(&Q10285MeetingSirra)
             .page("32020-01.htm", &["32020-02.htm"])
             .page("32020-02.htm", &["32020-03.htm"])
-            .plain(&["32020-03.htm", "32020-04.htm", "32020-05.htm", "32020-06.html", "32020-08.html"])
+            .plain(&[
+                "32020-03.htm",
+                "32020-04.htm",
+                "32020-05.htm",
+                "32020-06.html",
+                "32020-08.html",
+            ])
             .page("32760-01.html", &["32760-02.html"])
             .plain(&["32760-02.html", "32760-03.html", "32760-04.html", "32760-07.html"])
             .page("32761-01.html", &["32761-02.html"])
@@ -401,7 +407,10 @@ mod tests {
         assert!(t.count(1, 57) > 0);
         assert_eq!(
             t.take_writes(),
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
         assert!(t.quest_page(1, rafforty).contains("32020-05.htm"));
     }

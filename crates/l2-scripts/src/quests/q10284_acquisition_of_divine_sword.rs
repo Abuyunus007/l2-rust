@@ -80,7 +80,11 @@ impl Script for Q10284AcquisitionOfDivineSword {
             }
             "another_story" => {
                 if qs.is_memo_state(ctx, 1) {
-                    let ex = (qs.get_int(ctx, "ex1"), qs.get_int(ctx, "ex2"), qs.get_int(ctx, "ex3"));
+                    let ex = (
+                        qs.get_int(ctx, "ex1"),
+                        qs.get_int(ctx, "ex2"),
+                        qs.get_int(ctx, "ex3"),
+                    );
                     htmltext = match ex {
                         (1, 0, 0) => Some("32760-05a.html"),
                         (0, 1, 0) => Some("32760-05b.html"),
@@ -189,7 +193,11 @@ impl Script for Q10284AcquisitionOfDivineSword {
                 },
                 JINIA => {
                     if qs.is_memo_state(ctx, 1) {
-                        let ex = (qs.get_int(ctx, "ex1"), qs.get_int(ctx, "ex2"), qs.get_int(ctx, "ex3"));
+                        let ex = (
+                            qs.get_int(ctx, "ex1"),
+                            qs.get_int(ctx, "ex2"),
+                            qs.get_int(ctx, "ex3"),
+                        );
                         match ex {
                             (0, 0, 0) => htmltext = "32760-01.html".to_owned(),
                             (1, 0, 0) => htmltext = "32760-01a.html".to_owned(),
@@ -210,13 +218,23 @@ impl Script for Q10284AcquisitionOfDivineSword {
                         } else {
                             ("32653-01.html", "32653-05.html")
                         };
-                        htmltext = if ctx.player_level(player) >= MIN_LEVEL { ok } else { low }.to_owned();
+                        htmltext = if ctx.player_level(player) >= MIN_LEVEL {
+                            ok
+                        } else {
+                            low
+                        }
+                        .to_owned();
                     }
                     3 => {
                         ctx.give_adena(player, 296_425, true);
                         ctx.add_exp_and_sp(player, 921_805, 82_230);
                         qs.exit_quest(ctx, false, true);
-                        htmltext = if npc.id == TARUN { "32654-04.html" } else { "32653-04.html" }.to_owned();
+                        htmltext = if npc.id == TARUN {
+                            "32654-04.html"
+                        } else {
+                            "32653-04.html"
+                        }
+                        .to_owned();
                     }
                     _ => {}
                 },
@@ -272,7 +290,14 @@ mod tests {
         let pages = Pages::of(&Q10284AcquisitionOfDivineSword)
             .page("32020-01.htm", &["32020-02.html"])
             .page("32020-02.html", &["32020-03.html"])
-            .plain(&["32020-03.html", "32020-04.html", "32020-05.html", "32020-06.html", "32020-07.html", "32020-08.html"])
+            .plain(&[
+                "32020-03.html",
+                "32020-04.html",
+                "32020-05.html",
+                "32020-06.html",
+                "32020-07.html",
+                "32020-08.html",
+            ])
             .page("32760-01.html", &["32760-02a.html"])
             .page("32760-02a.html", &["32760-02b.html"])
             .page("32760-02b.html", &["32760-02c.html"])
@@ -369,7 +394,10 @@ mod tests {
         assert!(t.count(1, 57) > 0);
         assert_eq!(
             t.take_writes(),
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
     }
 }

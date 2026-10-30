@@ -439,6 +439,7 @@ pub mod q10271_the_enveloping_darkness;
 pub mod q10272_light_fragment;
 pub mod q10273_good_day_to_fly;
 pub mod q10274_collecting_in_the_air;
+pub mod q10275_containing_the_attribute_power;
 pub mod q10276_mutated_kaneus_gludio;
 pub mod q10277_mutated_kaneus_dion;
 pub mod q10278_mutated_kaneus_heine;
@@ -905,6 +906,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q10272_light_fragment::Q10272LightFragment);
     r.add(q10273_good_day_to_fly::Q10273GoodDayToFly);
     r.add(q10274_collecting_in_the_air::Q10274CollectingInTheAir);
+    r.add(q10275_containing_the_attribute_power::Q10275ContainingTheAttributePower);
     r.add(q10276_mutated_kaneus_gludio::Q10276MutatedKaneusGludio);
     r.add(q10277_mutated_kaneus_dion::Q10277MutatedKaneusDion);
     r.add(q10278_mutated_kaneus_heine::Q10278MutatedKaneusHeine);
