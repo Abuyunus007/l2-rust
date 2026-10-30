@@ -268,6 +268,7 @@ pub mod q00343_under_the_shadow_of_the_ivory_tower;
 pub mod q00344_1000_years_the_end_of_lamentation;
 pub mod q00345_method_to_raise_the_dead;
 pub mod q00347_go_get_the_calculator;
+pub mod q00348_an_arrogant_search;
 pub mod q00350_enhance_your_weapon;
 pub mod q00351_black_swan;
 pub mod q00352_help_rood_raise_a_new_pet;
@@ -705,6 +706,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00344_1000_years_the_end_of_lamentation::Q00344ThousandYearsTheEndOfLamentation);
     r.add(q00345_method_to_raise_the_dead::Q00345MethodToRaiseTheDead);
     r.add(q00347_go_get_the_calculator::Q00347GoGetTheCalculator);
+    r.add(q00348_an_arrogant_search::Q00348AnArrogantSearch);
     r.add(q00350_enhance_your_weapon::Q00350EnhanceYourWeapon);
     r.add(q00351_black_swan::Q00351BlackSwan);
     r.add(q00352_help_rood_raise_a_new_pet::Q00352HelpRoodRaiseANewPet);
