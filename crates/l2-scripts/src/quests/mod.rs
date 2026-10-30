@@ -229,6 +229,7 @@ pub mod q00602_shadow_of_light;
 pub mod q00606_battle_against_varka_silenos;
 pub mod q00607_prove_your_courage_ketra;
 pub mod q00608_slay_the_enemy_commander_ketra;
+pub mod q00609_magical_power_of_water_part1;
 pub mod q00612_battle_against_ketra_orcs;
 pub mod q00613_prove_your_courage_varka;
 pub mod q00614_slay_the_enemy_commander_varka;
@@ -459,6 +460,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00601_watching_eyes::Q00601WatchingEyes);
     r.add(q00602_shadow_of_light::Q00602ShadowOfLight);
     r.add(q00606_battle_against_varka_silenos::Q00606BattleAgainstVarkaSilenos);
+    r.add(q00609_magical_power_of_water_part1::Q00609MagicalPowerOfWaterPart1);
     r.add(q00607_prove_your_courage_ketra::Q00607ProveYourCourageKetra);
     r.add(q00608_slay_the_enemy_commander_ketra::Q00608SlayTheEnemyCommanderKetra);
     r.add(q00612_battle_against_ketra_orcs::Q00612BattleAgainstKetraOrcs);
