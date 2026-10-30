@@ -421,7 +421,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-AI-07](S/S-AI-07.md) | Gracia instances and the seed managers | opus | full | AI-01 | merged |
 | [S-HAND-04](S/S-HAND-04.md) | Decoys, traps and the drop search board | sonnet | full | HAND-03 | ready |
 | [S-DATA-01](S/S-DATA-01.md) | Category data, ClassMaster.xml, transformation tree, small script helpers | sonnet | full | VM-01 | merged |
-| [S-API-05](S/S-API-05.md) | Engine gaps the script batches found (soul crystals, traps, tamed beasts, ...) | opus | full | Q batches | in-progress |
+| [S-API-05](S/S-API-05.md) | Engine gaps the script batches found (soul crystals, traps, tamed beasts, ...) | opus | full | Q batches | merged |
 | [S-AI-08](S/S-AI-08.md) | The AI scripts the AI batches left | sonnet | full | AI batches | merged |
 | [S-BOSS-01](S/S-BOSS-01.md) | Antharas, Valakas, Baium | opus | full | API-01 | merged |
 | [S-BOSS-02](S/S-BOSS-02.md) | Beleth, Frintezza, Core, Orfen, Queen Ant | sonnet | full | API-01 | merged |
