@@ -248,6 +248,8 @@ pub mod q00653_wild_maiden;
 pub mod q00654_journey_to_a_settlement;
 pub mod q00655_a_grand_plan_for_taming_wild_beasts;
 pub mod q00659_id_rather_be_collecting_fairy_breath;
+pub mod q00661_making_the_harvest_grounds_safe;
+pub mod q00688_defeat_the_elrokian_raiders;
 pub mod q00696_conquer_the_hall_of_erosion;
 pub mod q00697_defend_the_hall_of_erosion;
 pub mod q00698_block_the_lords_escape;
@@ -502,4 +504,6 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00698_block_the_lords_escape::Q00698BlockTheLordsEscape);
     r.add(q00654_journey_to_a_settlement::Q00654JourneyToASettlement);
     r.add(q00659_id_rather_be_collecting_fairy_breath::Q00659IdRatherBeCollectingFairyBreath);
+    r.add(q00688_defeat_the_elrokian_raiders::Q00688DefeatTheElrokianRaiders);
+    r.add(q00661_making_the_harvest_grounds_safe::Q00661MakingTheHarvestGroundsSafe);
 }
