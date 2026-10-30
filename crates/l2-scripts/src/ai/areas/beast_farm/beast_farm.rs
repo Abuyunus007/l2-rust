@@ -5,7 +5,6 @@
 // follows it and casts its beast skills), is not modelled by the world (`summon/mod.rs`, "Not
 // modelled: TamedBeast"). That step is ported as far as the world allows: the fed mob goes, the
 // random beast (name and skills) is drawn, and the quest hooks run, but no tamed beast appears.
-// `Q00655_AGrandPlanForTamingWildBeasts.checkCrystalofPurity` is not ported yet either.
 
 use std::collections::HashMap;
 
@@ -13,6 +12,7 @@ use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};
 
 use crate::quests::q00020_bring_up_with_love::check_jewel_of_innocence;
+use crate::quests::q00655_a_grand_plan_for_taming_wild_beasts::check_crystal_of_purity;
 
 const GOLDEN_SPICE: i32 = 15474;
 const CRYSTAL_SPICE: i32 = 15475;
@@ -153,7 +153,7 @@ fn spawn_next(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, next_np
         let _ = food;
 
         check_jewel_of_innocence(ctx, player);
-        // FOLLOW-UP: `Q00655_AGrandPlanForTamingWildBeasts.checkCrystalofPurity(player)`.
+        check_crystal_of_purity(ctx, player);
     } else {
         // if not trained, the newly spawned mob will automatically be agro against its feeder
         // (what happened to "never bite the hand that feeds you" anyway?!)

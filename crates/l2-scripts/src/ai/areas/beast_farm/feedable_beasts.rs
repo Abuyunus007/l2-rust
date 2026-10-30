@@ -5,8 +5,7 @@
 // FOLLOW-UP(engine): the `TamedBeast` of the last step (and the spice it eats later, the old
 // trained beasts the character had, the rare chat of the new beast) is not modelled by the
 // world, see `beast_farm.rs`. This port draws the same random numbers, deletes the fed mob and
-// runs the quest hook (`Q00020`), but no tamed beast appears. `checkCrystalofPurity` of
-// `Q00655_AGrandPlanForTamingWildBeasts` is not ported yet.
+// runs the quest hook (`Q00020`), but no tamed beast appears.
 
 use std::collections::HashMap;
 
@@ -16,6 +15,7 @@ use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};
 
 use crate::quests::q00020_bring_up_with_love::check_jewel_of_innocence;
+use crate::quests::q00655_a_grand_plan_for_taming_wild_beasts::check_crystal_of_purity;
 
 const GOLDEN_SPICE: i32 = 6643;
 const CRYSTAL_SPICE: i32 = 6644;
@@ -339,7 +339,7 @@ fn spawn_next(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, growth_level: i32, player
         // FOLLOW-UP(engine): the character's old trained beasts are deleted and
         // `new TamedBeast(nextNpcId, player, food - FOODSKILLDIFF, x, y, z)` appears here.
         check_jewel_of_innocence(ctx, player);
-        // FOLLOW-UP: `Q00655_AGrandPlanForTamingWildBeasts.checkCrystalofPurity(player)`.
+        check_crystal_of_purity(ctx, player);
 
         // also, perform a rare random chat
         if ctx.get_random(20) == 0 {
