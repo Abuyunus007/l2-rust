@@ -232,6 +232,7 @@ pub mod q00329_curiosity_of_a_dwarf;
 pub mod q00331_arrow_of_vengeance;
 pub mod q00450_grave_robber_rescue;
 pub mod q00616_magical_power_of_fire_part2;
+pub mod q00617_gather_the_flames;
 pub mod q00618_into_the_flame;
 pub mod q00623_the_finest_food;
 pub mod q00624_the_finest_ingredients_part1;
@@ -488,6 +489,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00331_arrow_of_vengeance::Q00331ArrowOfVengeance);
     r.add(q00450_grave_robber_rescue::Q00450GraveRobberRescue);
     r.add(q00616_magical_power_of_fire_part2::Q00616MagicalPowerOfFirePart2);
+    r.add(q00617_gather_the_flames::Q00617GatherTheFlames);
     r.add(q00618_into_the_flame::Q00618IntoTheFlame);
     r.add(q00623_the_finest_food::Q00623TheFinestFood);
     r.add(q00624_the_finest_ingredients_part1::Q00624TheFinestIngredientsPart1);
