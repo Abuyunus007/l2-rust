@@ -34,6 +34,18 @@ impl World {
         Some(table.get(key.id, key.level)?.reuse_hash_code)
     }
 
+    /// Java `creature.getLastSkillCast()` (S-QR-10).
+    pub fn script_last_skill_cast(&self, id: ObjectId) -> Option<SkillKey> {
+        self.cast.creatures.get(&id).and_then(|c| c.last_skill_cast)
+    }
+
+    /// Java `creature.setLastSkillCast(null)` (S-QR-10).
+    pub fn script_clear_last_skill_cast(&mut self, id: ObjectId) {
+        if let Some(state) = self.cast.creatures.get_mut(&id) {
+            state.last_skill_cast = None;
+        }
+    }
+
     /// Java `npc.getCurrentMp()`.
     pub fn script_npc_current_mp(&self, npc: ObjectId) -> f64 {
         self.npc(npc).map_or(0.0, |n| n.core.cur_mp)

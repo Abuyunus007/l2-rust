@@ -313,6 +313,7 @@ pub mod q00413_path_of_the_shillien_oracle;
 pub mod q00414_path_of_the_orc_raider;
 pub mod q00415_path_of_the_orc_monk;
 pub mod q00416_path_of_the_orc_shaman;
+pub mod q00417_path_of_the_scavenger;
 pub mod q00418_path_of_the_artisan;
 pub mod q00421_little_wings_big_adventure;
 pub mod q00422_repent_your_sins;
@@ -753,6 +754,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00414_path_of_the_orc_raider::Q00414PathOfTheOrcRaider);
     r.add(q00415_path_of_the_orc_monk::Q00415PathOfTheOrcMonk);
     r.add(q00416_path_of_the_orc_shaman::Q00416PathOfTheOrcShaman);
+    r.add(q00417_path_of_the_scavenger::Q00417PathOfTheScavenger);
     r.add(q00450_grave_robber_rescue::Q00450GraveRobberRescue);
     r.add(q00461_rumble_in_the_base::Q00461RumbleInTheBase);
     r.add(q00463_i_must_be_a_genius::Q00463IMustBeaGenius);
