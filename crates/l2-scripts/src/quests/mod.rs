@@ -329,6 +329,7 @@ pub mod q00509_a_clans_fame;
 pub mod q00510_a_clans_prestige;
 pub mod q00512_blade_under_foot;
 pub mod q00551_olympiad_starter;
+pub mod q00552_olympiad_veteran;
 pub mod q00601_watching_eyes;
 pub mod q00602_shadow_of_light;
 pub mod q00603_daimon_the_white_eyed_part1;
@@ -749,6 +750,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00509_a_clans_fame::Q00509AClansFame);
     r.add(q00510_a_clans_prestige::Q00510AClansPrestige);
     r.add(q00551_olympiad_starter::Q00551OlympiadStarter);
+    r.add(q00552_olympiad_veteran::Q00552OlympiadVeteran);
     r.add(q00601_watching_eyes::Q00601WatchingEyes);
     r.add(q00603_daimon_the_white_eyed_part1::Q00603DaimonTheWhiteEyedPart1);
     r.add(q00605_alliance_with_ketra_orcs::Q00605AllianceWithKetraOrcs);
