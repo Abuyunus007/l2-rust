@@ -40,6 +40,7 @@ pub mod events;
 #[cfg(test)]
 mod events_tests;
 pub mod globals;
+mod gracia_admin;
 mod gracia_api;
 pub mod hellbound_api;
 mod instance_api;
