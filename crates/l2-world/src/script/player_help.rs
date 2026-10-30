@@ -96,6 +96,12 @@ impl ScriptCtx<'_> {
         );
     }
 
+    /// Java `player.setNoble(value)`: the noble skill tree is given or taken, the flag is set and
+    /// the skill list sent.
+    pub fn set_noble(&mut self, player: ObjectId, value: bool) {
+        self.world_mut().set_noble(player, value);
+    }
+
     /// Java `player.getWarehouse().getItemByObjectId(objectId)`: `(item id, count)`.
     pub fn private_warehouse_item(&self, player: ObjectId, object_id: ObjectId) -> Option<(i32, i64)> {
         self.world().private_warehouse_item(player, object_id)

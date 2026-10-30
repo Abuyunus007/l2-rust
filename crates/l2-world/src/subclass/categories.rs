@@ -112,6 +112,12 @@ pub mod fixture {
     const KAMAEL_MALE_MAIN_OCCUPATION: [u16; 10] = [123, 125, 127, 128, 131, 132, 129, 133, 135, 136];
     /// `KAMAEL_FEMALE_MAIN_OCCUPATION`.
     const KAMAEL_FEMALE_MAIN_OCCUPATION: [u16; 10] = [124, 126, 129, 130, 133, 134, 128, 132, 135, 136];
+    /// `KNIGHT_GROUP`.
+    const KNIGHT_GROUP: [u16; 3] = [4, 19, 32];
+    /// `WHITE_MAGIC_GROUP`.
+    const WHITE_MAGIC_GROUP: [u16; 5] = [15, 29, 5, 19, 4];
+    /// `HEAL_GROUP`.
+    const HEAL_GROUP: [u16; 4] = [15, 29, 42, 50];
     /// `SUB_GROUP_WARRIOR`.
     const SUB_GROUP_WARRIOR: [u16; 18] = [
         3, 127, 128, 129, 46, 55, 57, 48, 2, 89, 131, 113, 117, 118, 132, 133, 114, 88,
@@ -156,6 +162,9 @@ pub mod fixture {
             CategoryType::KamaelFourthClassGroup => &KAMAEL_FOURTH_CLASS_GROUP,
             CategoryType::KamaelMaleMainOccupation => &KAMAEL_MALE_MAIN_OCCUPATION,
             CategoryType::KamaelFemaleMainOccupation => &KAMAEL_FEMALE_MAIN_OCCUPATION,
+            CategoryType::KnightGroup => &KNIGHT_GROUP,
+            CategoryType::WhiteMagicGroup => &WHITE_MAGIC_GROUP,
+            CategoryType::HealGroup => &HEAL_GROUP,
             CategoryType::SubGroupWarrior => &SUB_GROUP_WARRIOR,
             CategoryType::SubGroupRogue => &SUB_GROUP_ROGUE,
             CategoryType::SubGroupKnight => &SUB_GROUP_KNIGHT,
@@ -203,7 +212,7 @@ mod tests {
         }
         let shipped = CategoryData::load(root);
         let fixture = class_groups();
-        assert_eq!(fixture.len(), 31);
+        assert_eq!(fixture.len(), 34);
         for &category in CategoryType::ALL {
             if let Some(ids) = fixture.get(category) {
                 assert_eq!(Some(ids), shipped.get(category), "{}", category.name());

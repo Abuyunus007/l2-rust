@@ -7,7 +7,8 @@ use l2_world::{PlayerClanState, Script, ScriptCtx, ScriptNpc, ScriptRegistry, Sc
 use crate::testing::{Pages, ScriptTest, item, names_to, player_data};
 
 const NPC_ID: i32 = 31_000;
-const NPCS: &str = r#"<npc id="31000" type="Folk" level="70" name="Probe"/>"#;
+const NPCS: &str = r#"<npc id="31000" type="Folk" level="70" name="Probe"/>
+    <npc id="31001" type="Monster" level="10" name="Mob"/>"#;
 const ITEMS: &str =
     r#"<item id="10280" type="EtcItem" name="Certificate"><set name="is_stackable" val="true"/></item>"#;
 
@@ -158,4 +159,48 @@ fn a_warehouse_item_is_destroyed_by_count() {
     // The last unit deletes the item.
     assert!(t.world.destroy_private_warehouse_item(Oid(1), Oid(900), 1));
     assert_eq!(t.world.private_warehouse_item(Oid(1), Oid(900)), None);
+}
+
+#[test]
+fn set_noble_sets_the_flag() {
+    let (mut t, probe) = setup();
+    enter(&mut t, probe, 1, player_data(1, 80, vec![]));
+    assert!(!t.world.is_noble(Oid(1)));
+    // The script helper is the one quests call.
+    t.world.set_noble(Oid(1), true);
+    assert!(t.world.is_noble(Oid(1)));
+}
+
+#[test]
+fn summoned_npcs_are_counted_until_they_decay() {
+    let (mut t, probe) = setup();
+    assert_eq!(t.world.summoned_npc_count(probe), 0);
+    let a = t.spawn(31_001, 40);
+    let b = t.spawn(31_001, 60);
+    t.world.add_summoned_npc(probe, a);
+    t.world.add_summoned_npc(probe, b);
+    assert_eq!(t.world.summoned_npc_count(probe), 2);
+    assert_eq!(t.world.summoner_of(a), Some(probe));
+    // `Npc.onDecay` removes the NPC from its summoner's list.
+    assert!(t.world.delete_npc(a));
+    assert_eq!(t.world.summoned_npc_count(probe), 1);
+    assert_eq!(t.world.summoner_of(b), Some(probe));
+}
+
+#[test]
+fn the_killing_blow_weapon_is_the_killers_right_hand_item() {
+    let (mut t, _) = setup();
+    let mut sword = item(300, 10280, 1);
+    sword.loc = "PAPERDOLL".to_owned();
+    sword.loc_data = 5;
+    t.enter_with(player_data(1, 80, vec![sword]));
+    t.enter_with(player_data(2, 80, vec![]));
+    let a = t.spawn(31_001, 40);
+    let b = t.spawn(31_001, 60);
+    assert_eq!(t.world.killing_blow_weapon(a), 0);
+    t.kill(1, a);
+    assert_eq!(t.world.killing_blow_weapon(a), 10280);
+    // No weapon: 0 (the fists item is not in this world's templates).
+    t.kill(2, b);
+    assert_eq!(t.world.killing_blow_weapon(b), 0);
 }
