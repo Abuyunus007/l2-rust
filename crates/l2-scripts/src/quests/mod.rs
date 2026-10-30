@@ -177,6 +177,7 @@ pub mod q00295_dreaming_of_the_skies;
 pub mod q00303_collect_arrowheads;
 pub mod q00317_catch_the_wind;
 pub mod q00401_path_of_the_warrior;
+pub mod q00402_path_of_the_human_knight;
 pub mod q00403_path_of_the_rogue;
 pub mod q00404_path_of_the_human_wizard;
 pub mod q00405_path_of_the_cleric;
@@ -367,6 +368,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00303_collect_arrowheads::Q00303CollectArrowheads);
     r.add(q00317_catch_the_wind::Q00317CatchTheWind);
     r.add(q00401_path_of_the_warrior::Q00401PathOfTheWarrior);
+    r.add(q00402_path_of_the_human_knight::Q00402PathOfTheHumanKnight);
     r.add(q00403_path_of_the_rogue::Q00403PathOfTheRogue);
     r.add(q00404_path_of_the_human_wizard::Q00404PathOfTheHumanWizard);
     r.add(q00405_path_of_the_cleric::Q00405PathOfTheCleric);
