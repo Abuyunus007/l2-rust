@@ -115,6 +115,7 @@ pub mod q00140_shadow_fox_part2;
 pub mod q00141_shadow_fox_part3;
 pub mod q00142_fallen_angel_request_of_dawn;
 pub mod q00143_fallen_angel_request_of_dusk;
+pub mod q00144_pailaka_injured_dragon;
 pub mod q00146_the_zero_hour;
 pub mod q00147_path_to_becoming_an_elite_mercenary;
 pub mod q00148_path_to_becoming_an_exalted_mercenary;
@@ -528,6 +529,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00141_shadow_fox_part3::Q00141ShadowFoxPart3);
     r.add(q00142_fallen_angel_request_of_dawn::Q00142FallenAngelRequestOfDawn);
     r.add(q00143_fallen_angel_request_of_dusk::Q00143FallenAngelRequestOfDusk);
+    r.add(q00144_pailaka_injured_dragon::Q00144PailakaInjuredDragon);
     r.add(q00146_the_zero_hour::Q00146TheZeroHour);
     r.add(q00147_path_to_becoming_an_elite_mercenary::Q00147PathToBecomingAnEliteMercenary);
     r.add(q00148_path_to_becoming_an_exalted_mercenary::Q00148PathToBecomingAnExaltedMercenary);
