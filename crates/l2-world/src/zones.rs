@@ -117,6 +117,9 @@ pub(crate) struct ZoneContext {
     pub(crate) effect_skills: std::collections::HashMap<i32, Vec<(i32, i32)>>,
     /// The running `EffectZone.ApplySkill` tasks (`_task`) by zone id.
     pub(crate) effect_tasks: std::collections::HashMap<i32, crate::timer::TimerId>,
+    /// `ZoneType._enabled` of the effect zones a script switched (`setEnabled`), by zone id; the
+    /// others have their `default_enabled` parameter.
+    pub(crate) effect_enabled: std::collections::HashMap<i32, bool>,
 }
 
 /// The zones a zone holds a creature in, as Java's `_characterList` identifies them: a zone id
@@ -1060,6 +1063,22 @@ impl World {
             .map(|z| z.id)
     }
 
+    /// Java `ZoneType.isEnabled()` of an effect zone: what a script set, else `default_enabled`.
+    pub fn is_effect_zone_enabled(&self, zone_id: i32) -> bool {
+        if let Some(enabled) = self.zoning.effect_enabled.get(&zone_id) {
+            return *enabled;
+        }
+        self.effect_zone(zone_id)
+            .is_some_and(|zone| zone.param("default_enabled").is_none_or(parse_bool))
+    }
+
+    /// Java `ZoneType.setEnabled(value)` of an effect zone.
+    pub fn set_effect_zone_enabled(&mut self, zone_id: i32, enabled: bool) {
+        if self.effect_zone(zone_id).is_some() {
+            self.zoning.effect_enabled.insert(zone_id, enabled);
+        }
+    }
+
     /// Java `EffectZone.addSkill(skillId, skillLevel)`: a level below 1 removes the skill.
     pub fn effect_zone_add_skill(&mut self, zone_id: i32, skill_id: i32, skill_level: i32) {
         if skill_level < 1 {
@@ -1171,8 +1190,7 @@ impl World {
             params.reuse_ms.max(1),
         );
         self.zoning.effect_tasks.insert(zone_id, timer);
-        // `isEnabled()`: `default_enabled` (nothing switches an effect zone at run time).
-        if !zone.param("default_enabled").is_none_or(parse_bool) {
+        if !self.is_effect_zone_enabled(zone_id) {
             return;
         }
         let skills = self.effect_zone_skills(&zone).unwrap_or_default();

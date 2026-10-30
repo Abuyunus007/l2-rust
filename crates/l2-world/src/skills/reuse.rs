@@ -249,6 +249,26 @@ impl World {
         self.reuse_state_mut(id).disabled.insert(skill.hash_code(), until);
     }
 
+    /// [`Self::enable_skill`] for a script that names the skill by id and level; nothing when
+    /// the skill table has no such skill.
+    pub fn enable_skill_by_id(&mut self, id: ObjectId, skill_id: i32, skill_level: i32) {
+        if let Some(table) = self.skill_table()
+            && let Some(skill) = table.get(skill_id, skill_level)
+        {
+            self.enable_skill(id, skill);
+        }
+    }
+
+    /// [`Self::disable_skill`] for a script that names the skill by id and level; nothing when
+    /// the skill table has no such skill.
+    pub fn disable_skill_by_id(&mut self, id: ObjectId, skill_id: i32, skill_level: i32, delay_ms: i64) {
+        if let Some(table) = self.skill_table()
+            && let Some(skill) = table.get(skill_id, skill_level)
+        {
+            self.disable_skill(id, skill, delay_ms);
+        }
+    }
+
     /// Java `Creature.resetDisabledSkills()`.
     pub fn reset_disabled_skills(&mut self, id: ObjectId) {
         if let Some(state) = self.cast.creatures.get_mut(&id) {

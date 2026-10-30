@@ -423,7 +423,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-DATA-01](S/S-DATA-01.md) | Category data, ClassMaster.xml, transformation tree, small script helpers | sonnet | full | VM-01 | merged |
 | [S-BOSS-01](S/S-BOSS-01.md) | Antharas, Valakas, Baium | opus | full | API-01 | merged |
 | [S-BOSS-02](S/S-BOSS-02.md) | Beleth, Frintezza, Core, Orfen, Queen Ant | sonnet | full | API-01 | merged |
-| [S-BOSS-03](S/S-BOSS-03.md) | Sailren, Seer Ugoros, Dr. Chaos, Anais, Queen Shyeed | sonnet | full | API-01 | in-progress |
+| [S-BOSS-03](S/S-BOSS-03.md) | Sailren, Seer Ugoros, Dr. Chaos, Anais, Queen Shyeed | sonnet | full | API-01 | merged |
 | [S-INST-01](S/S-INST-01.md) | Kamaloka and Pailaka instances | sonnet | full | API-01 | merged |
 | [S-INST-02](S/S-INST-02.md) | Crystal Caverns, Dark Cloud Mansion, Chambers of Delusion | sonnet | full | API-01 | merged |
 | [S-INST-03](S/S-INST-03.md) | Ice Queen, Nornil, Jinia and the small instances | sonnet | full | API-01 | in-progress |
@@ -448,7 +448,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-Q-16](S/S-Q-16.md) | Quests Q00461..Q00615 (29 quests) | haiku | spot | PILOT-01 | merged |
 | [S-Q-17](S/S-Q-17.md) | Quests Q00616..Q00650 (34 quests) | haiku | spot | PILOT-01 | merged |
 | [S-Q-18](S/S-Q-18.md) | Quests Q00651..Q00713 (30 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-19](S/S-Q-19.md) | Quests Q00714..Q10285 (32 quests) | haiku | spot | PILOT-01 | in-progress |
+| [S-Q-19](S/S-Q-19.md) | Quests Q00714..Q10285 (32 quests) | haiku | spot | PILOT-01 | merged |
 | [S-Q-20](S/S-Q-20.md) | Quests Q10286..Q10505 (16 quests) | haiku | spot | PILOT-01 | in-progress |
 | S-ADMIN-08 | Admin words of the script systems | haiku | review | API-01, VM-01 | ready (card written when API-01 merges) |
 | S-E2E-01 | End to end | sonnet | review | Q, VM-01, BOSS-01, INST-01 | ready (card written when API-01 merges) |
