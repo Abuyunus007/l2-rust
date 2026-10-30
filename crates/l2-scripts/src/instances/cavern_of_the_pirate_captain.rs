@@ -189,11 +189,19 @@ impl Script for CavernOfThePirateCaptain {
                         if right_hand_of(ctx, npc) == FIRE {
                             let room = get_room_by_candle(ctx, npc);
                             ctx.world_mut().set_npc_right_hand(npc.object_id, RED);
-                            manage_screen_msg(ctx, instance_id, NpcStringId::TheCandlesCanLeadYouToZakenDestroyHim);
+                            manage_screen_msg(
+                                ctx,
+                                instance_id,
+                                NpcStringId::TheCandlesCanLeadYouToZakenDestroyHim,
+                            );
                             for mob in [
                                 if is83 { DOLL_BLADER_83 } else { DOLL_BLADER_60 },
                                 if is83 { VALE_MASTER_83 } else { VALE_MASTER_60 },
-                                if is83 { PIRATES_ZOMBIE_83 } else { PIRATES_ZOMBIE_60 },
+                                if is83 {
+                                    PIRATES_ZOMBIE_83
+                                } else {
+                                    PIRATES_ZOMBIE_60
+                                },
                                 if is83 {
                                     PIRATES_ZOMBIE_CAPTAIN_83
                                 } else {
@@ -216,7 +224,11 @@ impl Script for CavernOfThePirateCaptain {
                         let zaken_room = parameter_int(ctx.world(), instance_id, "zakenRoom");
                         for mob in [
                             if is83 { DOLL_BLADER_83 } else { DOLL_BLADER_60 },
-                            if is83 { PIRATES_ZOMBIE_83 } else { PIRATES_ZOMBIE_60 },
+                            if is83 {
+                                PIRATES_ZOMBIE_83
+                            } else {
+                                PIRATES_ZOMBIE_60
+                            },
                             if is83 {
                                 PIRATES_ZOMBIE_CAPTAIN_83
                             } else {
@@ -290,7 +302,12 @@ impl Script for CavernOfThePirateCaptain {
             if ctx.is_script_value(npc, 0) {
                 if is_blue {
                     let blue_founded = parameter_int(ctx.world(), instance_id, "blueFounded") + 1;
-                    set_parameter(ctx.world_mut(), instance_id, "blueFounded", blue_founded.to_string());
+                    set_parameter(
+                        ctx.world_mut(),
+                        instance_id,
+                        "blueFounded",
+                        blue_founded.to_string(),
+                    );
                     ctx.start_quest_timer("BURN_BLUE", 500, Some(npc), Some(player), false);
                 } else {
                     ctx.start_quest_timer("BURN_RED", 500, Some(npc), Some(player), false);
@@ -444,10 +461,13 @@ fn enter_instance(ctx: &mut ScriptCtx<'_>, player: ObjectId, template_id: i32) {
         |_, _| true,
         |world, player, instance_id, first_entrance| {
             if first_entrance {
-                let template = world
-                    .instance_world(instance_id)
-                    .map_or(0, |w| w.template_id);
-                set_parameter(world, instance_id, "is83", (template == TEMPLATE_ID_83).to_string());
+                let template = world.instance_world(instance_id).map_or(0, |w| w.template_id);
+                set_parameter(
+                    world,
+                    instance_id,
+                    "is83",
+                    (template == TEMPLATE_ID_83).to_string(),
+                );
                 set_parameter(
                     world,
                     instance_id,
@@ -704,7 +724,10 @@ mod tests {
         let world = t.world.instance_world(instance_id).unwrap();
         assert_eq!((world.template_id, world.allowed.clone()), (133, vec![Oid(1)]));
         assert_eq!(world.parameters.get("is83").map(String::as_str), Some("false"));
-        assert_eq!(world.parameters.get("playersInside").map(String::as_str), Some("1"));
+        assert_eq!(
+            world.parameters.get("playersInside").map(String::as_str),
+            Some("1")
+        );
         let (x, y, _) = t.world.position_of(Oid(1)).unwrap();
         assert!(ENTER_LOC.iter().any(|(ex, ey, _)| (*ex, *ey) == (x, y)));
 
@@ -749,7 +772,12 @@ mod tests {
         assert_eq!(t.world.npc(red).unwrap().right_hand, FIRE);
         t.wait_ms(3_100);
         assert_eq!(t.world.npc(red).unwrap().right_hand, RED);
-        for id in [DOLL_BLADER_60, VALE_MASTER_60, PIRATES_ZOMBIE_60, PIRATES_ZOMBIE_CAPTAIN_60] {
+        for id in [
+            DOLL_BLADER_60,
+            VALE_MASTER_60,
+            PIRATES_ZOMBIE_60,
+            PIRATES_ZOMBIE_CAPTAIN_60,
+        ] {
             let found = t.npcs_of(id);
             assert_eq!(found.len(), 1, "{id}");
             assert_eq!(t.world.instance_id_of(found[0]), instance_id);

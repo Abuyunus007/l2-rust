@@ -376,7 +376,10 @@ fn send_with_name(ctx: &ScriptCtx<'_>, to: ObjectId, id: SystemMessageId, about:
 fn check_conditions(ctx: &mut ScriptCtx<'_>, player: ObjectId) -> &'static str {
     let Some(party) = ctx.world().party_of(player) else {
         // player must be in party
-        ctx.send_system_message(player, SystemMessageId::YouAreNotCurrentlyInAPartySoYouCannotEnter);
+        ctx.send_system_message(
+            player,
+            SystemMessageId::YouAreNotCurrentlyInAPartySoYouCannotEnter,
+        );
         return "32330-05.html";
     };
 
@@ -638,7 +641,10 @@ mod tests {
         t.talk(1, guard);
         t.ticks(5);
         assert!(page(&mut t).contains("32330.html"));
-        assert!(t.event(1, "NornilsGarden", "enter_instance").contains("32330-05.html"));
+        assert!(
+            t.event(1, "NornilsGarden", "enter_instance")
+                .contains("32330-05.html")
+        );
         assert_eq!(t.world.instance_id_of(Oid(1)), 0);
     }
 
@@ -649,7 +655,10 @@ mod tests {
         assert!(instance_id > 0);
         assert_eq!(t.world.instance_id_of(Oid(2)), instance_id);
         let world = t.world.instance_world(instance_id).unwrap();
-        assert_eq!((world.template_id, world.allowed.clone()), (11, vec![Oid(1), Oid(2)]));
+        assert_eq!(
+            (world.template_id, world.allowed.clone()),
+            (11, vec![Oid(1), Oid(2)])
+        );
         let instance = t.world.instance(instance_id).unwrap();
         assert!(!instance.allow_summon);
         assert_eq!(instance.empty_destroy_time_ms, 5 * 60_000);
@@ -679,7 +688,10 @@ mod tests {
         t.talk(1, guard);
         t.ticks(5);
         t.take();
-        assert!(t.event(1, "NornilsGarden", "enter_instance").contains("32330-08.html"));
+        assert!(
+            t.event(1, "NornilsGarden", "enter_instance")
+                .contains("32330-08.html")
+        );
         assert_eq!(t.world.instance_id_of(Oid(1)), 0);
     }
 

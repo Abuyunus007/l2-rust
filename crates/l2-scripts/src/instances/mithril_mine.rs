@@ -96,7 +96,8 @@ impl Script for MithrilMine {
                         };
                         ctx.set_script_value(spawned_mob, 1);
                         ctx.world_mut().set_npc_running(spawned_mob.object_id);
-                        ctx.world_mut().set_intention_attack(spawned_mob.object_id, npc.object_id);
+                        ctx.world_mut()
+                            .set_intention_attack(spawned_mob.object_id, npc.object_id);
                         ctx.world_mut()
                             .add_damage_hate(spawned_mob.object_id, npc.object_id, 0, 999_999);
                     }
@@ -179,13 +180,20 @@ impl Script for MithrilMine {
             return;
         };
         if npc.id == KEGOR {
-            ctx.broadcast_npc_say(npc, ChatType::NpcGeneral, NpcStringId::HowCouldIFallInAPlaceLikeThis, &[]);
+            ctx.broadcast_npc_say(
+                npc,
+                ChatType::NpcGeneral,
+                NpcStringId::HowCouldIFallInAPlaceLikeThis,
+                &[],
+            );
             ctx.world_mut().set_instance_duration(instance_id, 1000);
         } else {
             if ctx.is_script_value(npc, 1) {
                 let count = count_of(ctx, instance_id);
                 if let Some(world) = ctx.world_mut().instance_world_mut(instance_id) {
-                    world.parameters.insert("count".to_owned(), (count + 1).to_string());
+                    world
+                        .parameters
+                        .insert("count".to_owned(), (count + 1).to_string());
                 }
             }
 
@@ -428,10 +436,8 @@ mod tests {
     /// Kegor stands in the instance, next to the player who just arrived.
     fn put_kegor_beside_the_player(t: &mut ScriptTest, kegor: Oid, instance_id: i32) {
         let (x, y, z) = t.world.position_of(Oid(1)).unwrap();
-        t.world.tele_to_location(
-            kegor,
-            TeleportTarget::at(x + 20, y, z).with_instance(instance_id),
-        );
+        t.world
+            .tele_to_location(kegor, TeleportTarget::at(x + 20, y, z).with_instance(instance_id));
         t.ticks(5);
     }
 
@@ -471,6 +477,9 @@ mod tests {
         assert_eq!(t.world.instance_id_of(Oid(1)), 0);
         assert!(t.world.instance_world(instance_id).unwrap().allowed.is_empty());
         let writes = t.take_writes();
-        assert!(writes.contains(&rows::of(1, rows::delete(Q10284_ACQUISITION_OF_DIVINE_SWORD, false))));
+        assert!(writes.contains(&rows::of(
+            1,
+            rows::delete(Q10284_ACQUISITION_OF_DIVINE_SWORD, false)
+        )));
     }
 }

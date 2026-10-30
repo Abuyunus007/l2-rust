@@ -71,8 +71,12 @@ impl Script for IceQueensCastle {
             }
             "TIMER_MOVING" => {
                 if let Some(npc) = npc {
-                    ctx.world_mut()
-                        .npc_move_to_location(npc.object_id, FREYA_LOC.0, FREYA_LOC.1, FREYA_LOC.2);
+                    ctx.world_mut().npc_move_to_location(
+                        npc.object_id,
+                        FREYA_LOC.0,
+                        FREYA_LOC.1,
+                        FREYA_LOC.2,
+                    );
                 }
             }
             "TIMER_BLIZZARD" => {
@@ -187,13 +191,17 @@ fn archery_knights_around(ctx: &ScriptCtx<'_>, npc: ScriptNpc) -> Vec<ObjectId> 
 fn attack(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, character: ObjectId) {
     ctx.world_mut().set_npc_running(npc.object_id);
     ctx.world_mut().set_intention_attack(npc.object_id, character);
-    ctx.world_mut().add_damage_hate(npc.object_id, character, 0, 999_999);
+    ctx.world_mut()
+        .add_damage_hate(npc.object_id, character, 0, 999_999);
 }
 
 /// Java `checkConditions(player)`.
 fn check_conditions(ctx: &mut ScriptCtx<'_>, player: ObjectId) -> bool {
     if ctx.player_level(player) < MIN_LV {
-        ctx.send_system_message(player, SystemMessageId::C1SLevelDoesNotCorrespondToTheRequirementsForEntry);
+        ctx.send_system_message(
+            player,
+            SystemMessageId::C1SLevelDoesNotCorrespondToTheRequirementsForEntry,
+        );
         return false;
     }
 
@@ -310,14 +318,17 @@ mod tests {
         assert!(instance_id > 0);
 
         let freya = t.spawn(FREYA, 10);
-        t.world
-            .tele_to_location(freya, TeleportTarget::at(START_LOC.0, START_LOC.1, START_LOC.2).with_instance(instance_id));
+        t.world.tele_to_location(
+            freya,
+            TeleportTarget::at(START_LOC.0, START_LOC.1, START_LOC.2).with_instance(instance_id),
+        );
         t.ticks(5);
         let npc = ScriptNpc {
             object_id: freya,
             id: FREYA,
         };
-        t.world.run_as_script("IceQueensCastle", |ctx| IceQueensCastle.on_spawn(ctx, npc));
+        t.world
+            .run_as_script("IceQueensCastle", |ctx| IceQueensCastle.on_spawn(ctx, npc));
         assert_eq!(t.world.quest_timer_count(), 2);
 
         // The blizzard ends: the scene starts a second later, 24 seconds after that the player

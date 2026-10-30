@@ -105,10 +105,24 @@ impl Script for NornilsGardenQuest {
             .is_some_and(|q| q.is_completed(ctx));
         match npc.id {
             RODENPICULA => {
-                htmltext = Some(if completed { "32237-02.html" } else { "32237-01.html" }.to_owned());
+                htmltext = Some(
+                    if completed {
+                        "32237-02.html"
+                    } else {
+                        "32237-01.html"
+                    }
+                    .to_owned(),
+                );
             }
             MOTHER_NORNIL => {
-                htmltext = Some(if completed { "32239-02.html" } else { "32239-01.html" }.to_owned());
+                htmltext = Some(
+                    if completed {
+                        "32239-02.html"
+                    } else {
+                        "32239-01.html"
+                    }
+                    .to_owned(),
+                );
             }
             _ => {}
         }
@@ -259,7 +273,13 @@ mod tests {
         assert!(instance_id > 0);
         let world = t.world.instance_world(instance_id).unwrap();
         assert_eq!((world.template_id, world.allowed.clone()), (12, vec![Oid(1)]));
-        assert_eq!(world.parameters.get("ORIGIN_LOC").map(|v| v.starts_with(&format!("{X};{Y};"))), Some(true));
+        assert_eq!(
+            world
+                .parameters
+                .get("ORIGIN_LOC")
+                .map(|v| v.starts_with(&format!("{X};{Y};"))),
+            Some(true)
+        );
         let (x, y, _) = t.world.position_of(Oid(1)).unwrap();
         assert_eq!((x, y), (ENTER_LOC.0, ENTER_LOC.1));
         let mut cond = 0;
@@ -299,6 +319,10 @@ mod tests {
         let (x, y, _) = t.world.position_of(Oid(1)).unwrap();
         assert_eq!((x, y), (X, Y));
         // The world is gone with the instance or no longer allows the player.
-        assert!(t.world.instance_world(instance_id).is_none_or(|w| w.allowed.is_empty()));
+        assert!(
+            t.world
+                .instance_world(instance_id)
+                .is_none_or(|w| w.allowed.is_empty())
+        );
     }
 }

@@ -191,10 +191,7 @@ fn enter_instance(ctx: &mut ScriptCtx<'_>, player: ObjectId, template_id: i32) {
 
 /// Java `spawnRaid(world)`.
 fn spawn_raid(ctx: &mut ScriptCtx<'_>, instance_id: i32) {
-    let status = ctx
-        .world()
-        .instance_world(instance_id)
-        .map_or(0, |w| w.status());
+    let status = ctx.world().instance_world(instance_id).map_or(0, |w| w.status());
     let spawn_id = if status == 0 {
         ctx.get_random_entry(&RAIDS1)
     } else if status == 1 {
@@ -203,7 +200,16 @@ fn spawn_raid(ctx: &mut ScriptCtx<'_>, instance_id: i32) {
         ctx.get_random_entry(&RAIDS3)
     };
     if let Some(spawn_id) = spawn_id {
-        ctx.add_spawn(spawn_id, RAIDS_LOC.0, RAIDS_LOC.1, RAIDS_LOC.2, 0, false, 0, instance_id);
+        ctx.add_spawn(
+            spawn_id,
+            RAIDS_LOC.0,
+            RAIDS_LOC.1,
+            RAIDS_LOC.2,
+            0,
+            false,
+            0,
+            instance_id,
+        );
     }
 }
 
@@ -275,17 +281,25 @@ mod tests {
     fn enter_spawns_a_raid_and_each_kill_brings_the_next_until_the_instance_ends() {
         let (mut t, _) = setup();
         t.enter(1, 70, vec![]);
-        t.world.run_as_script("CastleDungeon", |ctx| enter_instance(ctx, Oid(1), 13));
+        t.world
+            .run_as_script("CastleDungeon", |ctx| enter_instance(ctx, Oid(1), 13));
         t.ticks(60);
 
         // Enter: allowed, teleported to one of the three points, the first raid spawned.
         let instance_id = t.world.instance_id_of(Oid(1));
         assert!(instance_id > 0);
         let world = t.world.instance_world(instance_id).unwrap();
-        assert_eq!((world.template_id, world.allowed.clone(), world.status()), (13, vec![Oid(1)], 0));
+        assert_eq!(
+            (world.template_id, world.allowed.clone(), world.status()),
+            (13, vec![Oid(1)], 0)
+        );
         let (x, y, _) = t.world.position_of(Oid(1)).unwrap();
         let offset = t.world.max_offset_on_teleport();
-        assert!(ENTER_LOC.iter().any(|(ex, ey, _)| (x - ex).abs() <= offset && (y - ey).abs() <= offset));
+        assert!(
+            ENTER_LOC
+                .iter()
+                .any(|(ex, ey, _)| (x - ex).abs() <= offset && (y - ey).abs() <= offset)
+        );
         let first = raids(&t, &RAIDS1);
         assert_eq!(first.len(), 1);
         assert_eq!(t.world.instance_id_of(first[0]), instance_id);
@@ -314,10 +328,12 @@ mod tests {
     fn a_second_enter_goes_back_into_the_same_instance() {
         let (mut t, _) = setup();
         t.enter(1, 70, vec![]);
-        t.world.run_as_script("CastleDungeon", |ctx| enter_instance(ctx, Oid(1), 13));
+        t.world
+            .run_as_script("CastleDungeon", |ctx| enter_instance(ctx, Oid(1), 13));
         t.ticks(60);
         let instance_id = t.world.instance_id_of(Oid(1));
-        t.world.run_as_script("CastleDungeon", |ctx| enter_instance(ctx, Oid(1), 13));
+        t.world
+            .run_as_script("CastleDungeon", |ctx| enter_instance(ctx, Oid(1), 13));
         t.ticks(60);
         assert_eq!(t.world.instance_id_of(Oid(1)), instance_id);
         assert_eq!(raids(&t, &RAIDS1).len(), 1);
