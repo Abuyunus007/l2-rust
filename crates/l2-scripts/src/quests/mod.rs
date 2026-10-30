@@ -180,6 +180,7 @@ pub mod q00231_test_of_the_maestro;
 pub mod q00232_test_of_the_lord;
 pub mod q00233_test_of_the_war_spirit;
 pub mod q00235_mimirs_elixir;
+pub mod q00236_seeds_of_chaos;
 pub mod q00237_winds_of_change;
 pub mod q00238_success_failure_of_business;
 pub mod q00239_wont_you_join_us;
@@ -607,6 +608,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00232_test_of_the_lord::Q00232TestOfTheLord);
     r.add(q00233_test_of_the_war_spirit::Q00233TestOfTheWarSpirit);
     r.add(q00235_mimirs_elixir::Q00235MimirsElixir);
+    r.add(q00236_seeds_of_chaos::Q00236SeedsOfChaos);
     r.add(q00237_winds_of_change::Q00237WindsOfChange);
     r.add(q00238_success_failure_of_business::Q00238SuccessFailureOfBusiness);
     r.add(q00239_wont_you_join_us::Q00239WontYouJoinUs);
