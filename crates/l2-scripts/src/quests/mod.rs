@@ -162,6 +162,7 @@ pub mod q00223_test_of_the_champion;
 pub mod q00224_test_of_sagittarius;
 pub mod q00225_test_of_the_searcher;
 pub mod q00226_test_of_the_healer;
+pub mod q00227_test_of_the_reformer;
 pub mod q00228_test_of_magus;
 pub mod q00231_test_of_the_maestro;
 pub mod q00235_mimirs_elixir;
@@ -573,6 +574,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00224_test_of_sagittarius::Q00224TestOfSagittarius);
     r.add(q00225_test_of_the_searcher::Q00225TestOfTheSearcher);
     r.add(q00226_test_of_the_healer::Q00226TestOfTheHealer);
+    r.add(q00227_test_of_the_reformer::Q00227TestOfTheReformer);
     r.add(q00228_test_of_magus::Q00228TestOfMagus);
     r.add(q00231_test_of_the_maestro::Q00231TestOfTheMaestro);
     r.add(q00235_mimirs_elixir::Q00235MimirsElixir);
