@@ -273,6 +273,9 @@ struct Installed {
 #[derive(Default)]
 pub(crate) struct ScriptWorld {
     installed: Vec<Installed>,
+    /// The scripts `//script_unload` took out (S-ADMIN-08): still in `installed` (the ids stay),
+    /// but no longer in `by_name`, the listener tables or any lookup.
+    unloaded: std::collections::HashSet<ScriptId>,
     /// Java `ScriptManager._quests` + `_scripts` by name (case sensitive).
     by_name: HashMap<String, ScriptId>,
     pub(crate) listeners: setup::Listeners,
@@ -345,6 +348,16 @@ impl ScriptWorld {
             .iter()
             .position(|i| i.script.id() > 0 && i.script.id() == quest_id)
             .map(|index| ScriptId(index as u32))
+            .filter(|id| !self.unloaded.contains(id))
+    }
+
+    /// An installed script by name, loaded or not: the quest states a player keeps outlive a
+    /// `//script_unload` (S-ADMIN-08).
+    pub(crate) fn find_any(&self, name: &str) -> Option<ScriptId> {
+        self.installed
+            .iter()
+            .position(|i| i.script.name() == name)
+            .map(|index| ScriptId(index as u32))
     }
 
     pub(crate) fn quest_items(&self, id: ScriptId) -> &[i32] {
@@ -359,7 +372,17 @@ impl ScriptWorld {
             .map_or(&[], |i| i.start_conditions.as_slice())
     }
 
+    /// The loaded scripts, in registration order.
     pub(crate) fn ids(&self) -> impl Iterator<Item = ScriptId> + use<> {
+        (0..self.installed.len() as u32)
+            .map(ScriptId)
+            .filter(|id| !self.unloaded.contains(id))
+            .collect::<Vec<_>>()
+            .into_iter()
+    }
+
+    /// Every installed script, loaded or not.
+    pub(crate) fn all_ids(&self) -> impl Iterator<Item = ScriptId> + use<> {
         (0..self.installed.len() as u32).map(ScriptId)
     }
 }
@@ -417,6 +440,74 @@ impl World {
             }
         }
         self.script_drain();
+    }
+
+    /// Java `Quest.unload()` (`//script_unload`): `onSave`, the quest timers and the timer
+    /// executor stop, the script leaves the `ScriptManager` lists and its listeners go. The
+    /// players keep their quest states (they live in `character_quests`). `false` when the
+    /// script is not loaded. A compiled-in script cannot be recompiled (D-16): `load_script`
+    /// brings the same code back.
+    pub(crate) fn unload_script(&mut self, id: ScriptId) -> bool {
+        if self.scripts.unloaded.contains(&id) {
+            return false;
+        }
+        let Some(script) = self.scripts.script(id) else {
+            return false;
+        };
+        script.on_save(&mut ScriptCtx::new(self, id));
+        // `_questTimers.values().forEach(cancel)`: the timers of the `QuestTimer` list.
+        let names: Vec<String> = self.quest_timers_of(id).into_iter().map(|t| t.0).collect();
+        for name in names {
+            self.cancel_quest_timers(id, &name);
+        }
+        if self.scripts.by_name.get(script.name()) == Some(&id) {
+            self.scripts.by_name.remove(script.name());
+        }
+        self.scripts.listeners.unregister(id);
+        // `_timerExecutor.cancelAllTimers()`.
+        ScriptCtx::new(self, id).cancel_all_timers();
+        // A new instance starts with new fields when the script is loaded again.
+        self.scripts.script_state.remove(&id);
+        self.scripts.unloaded.insert(id);
+        true
+    }
+
+    /// Java `ScriptEngine.executeScript(file)` of an unloaded script: the constructor runs again
+    /// (listeners registered after the others, like a freshly compiled class) and `onLoad`.
+    /// `false` when the script is loaded already.
+    pub(crate) fn load_script(&mut self, id: ScriptId) -> bool {
+        if !self.scripts.unloaded.remove(&id) {
+            return false;
+        }
+        let Some(script) = self.scripts.script(id) else {
+            return false;
+        };
+        let has_templates = self.npc_world.has_templates();
+        let name = script.name();
+        let mut setup = ScriptSetup::default();
+        script.setup_with(&mut setup, self);
+        let npc_world = &self.npc_world;
+        let known = |npc_id: i32| npc_world.template(npc_id).is_some();
+        self.scripts.listeners.register(
+            id,
+            name,
+            &setup,
+            has_templates.then_some(&known as &dyn Fn(i32) -> bool),
+        );
+        self.scripts.by_name.insert(name.to_owned(), id);
+        if let Some(installed) = self.scripts.installed.get_mut(id.0 as usize) {
+            installed.quest_items = setup.quest_items;
+            installed.start_conditions = setup.start_conditions;
+        }
+        script.on_load(&mut ScriptCtx::new(self, id));
+        self.script_drain();
+        true
+    }
+
+    /// Java `Quest.reload()`: unload, then load again.
+    pub(crate) fn reload_script(&mut self, id: ScriptId) {
+        self.unload_script(id);
+        self.load_script(id);
     }
 
     /// The script settings (`Rates.ini`, `General.ini`, `SideBySide.ini`).

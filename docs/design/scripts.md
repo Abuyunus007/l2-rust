@@ -425,6 +425,24 @@ Not fired yet (no Rust counterpart): `ON_TRAP_ACTION` (no trap NPC in the world)
 - **Tests:** `t.clan_with_residence(leader, name, castle, fort)`, `t.summon(owner, npc_id)`, `t.set_skills(items, skills)`.
 - `RequestSeedPhase` (`ExShowSeedMapInfo`), `.hellbound`, `//gracia_seeds` (`script/gracia_admin.rs`).
 
+## Admin words: reload, unload, load (S-ADMIN-08, D-16)
+
+Java recompiles a script file for `//quest_reload`, `//script_load` and `//reload quest`. A Rust script is compiled in, so
+these words do **unload-then-load of the same code** (`World::unload_script` / `load_script` / `reload_script`, `script/mod.rs`):
+
+- **Unload** (`//script_unload <name|id>`): `on_save`, the quest timers and the `TimerExecutor` timers stop (their
+  `on_timer_cancel` runs), the script leaves `by_name` and every listener table, its `script_state` is dropped. The players keep
+  their quest states (they are `character_quests` rows); the `ScriptId` stays, the script is only marked unloaded (`ids()` skips it,
+  `find_any(name)` still finds it).
+- **Load** (`//script_load <path>`): the file name (folders and `.java`/`.rs` dropped) is the script's name. An unloaded script
+  runs `setup` and `on_load` again and registers its listeners after the others (a recompiled class does the same); a loaded one
+  is reloaded (Java replaces a script of the same name). An unknown name answers "Failed to load script!". New Rust code needs a restart.
+- **Reload** (`//quest_reload`, `//reload quest [name|id]`): unload then load. `//reload quest` without argument does it for every
+  script (`reloadAllScripts`). `//reload script` and `//reload scripts` do not exist in Java (the usage line answers).
+- **`//charquestmenu` / `//setcharquest`** build their pages from the target's in-memory quest states instead of Java's SELECT
+  (D-15; the states are the rows, every change is written through). A `CREATED` state has no `<state>` row and is not listed.
+  `setcharquest` changes go through `Qs` (`character_quests` writes as Java, D-39).
+
 ## Not in the engine yet (follow-ups)
 
 Premium rates (M9), the multilingual chooser strings (M9), the remaining `EventType`s listed above as not fired, the trap
