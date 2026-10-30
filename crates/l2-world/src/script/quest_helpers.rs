@@ -238,6 +238,15 @@ impl ScriptCtx<'_> {
             .is_some_and(|w| matches!(w.weapon_type, WeaponType::Fist | WeaponType::DualFist))
     }
 
+    /// Java `player.getInventory().getItemByItemId(itemId).getObjectId()`: the object id of the
+    /// first item of that id in the inventory, `None` without one (the flute quests link the
+    /// summon to the flute by it).
+    pub fn inventory_item_object_id(&self, player: ObjectId, item_id: i32) -> Option<ObjectId> {
+        self.world
+            .inventory_item_by_item_id(player, item_id)
+            .map(|item| item.object_id)
+    }
+
     /// Java `PlayerConfig.ALT_PARTY_RANGE` (`AltPartyRange`).
     pub fn alt_party_range(&self) -> i32 {
         self.world.settings.party.alt_party_range
