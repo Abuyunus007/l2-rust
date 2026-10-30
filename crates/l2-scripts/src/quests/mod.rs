@@ -256,6 +256,7 @@ pub mod q00639_guardians_of_the_holy_grail;
 pub mod q00640_the_zero_hour;
 pub mod q00641_attack_sailren;
 pub mod q00642_a_powerful_primeval_creature;
+pub mod q00643_rise_and_fall_of_the_elroki_tribe;
 pub mod q00644_grave_robber_annihilation;
 pub mod q00645_ghosts_of_batur;
 pub mod q00646_signs_of_revolt;
@@ -518,6 +519,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00640_the_zero_hour::Q00640TheZeroHour);
     r.add(q00641_attack_sailren::Q00641AttackSailren);
     r.add(q00642_a_powerful_primeval_creature::Q00642APowerfulPrimevalCreature);
+    r.add(q00643_rise_and_fall_of_the_elroki_tribe::Q00643RiseAndFallOfTheElrokiTribe);
     r.add(q00644_grave_robber_annihilation::Q00644GraveRobberAnnihilation);
     r.add(q00645_ghosts_of_batur::Q00645GhostsOfBatur);
     r.add(q00646_signs_of_revolt::Q00646SignsOfRevolt);
