@@ -128,6 +128,8 @@ pub(crate) struct NpcExtra {
     quest_guard_not_auto_attackable: bool,
     /// `QuestGuard._isPassive`.
     quest_guard_passive: bool,
+    /// `RaidBoss._useRaidCurse` turned off by a script (`setUseRaidCurse(false)`, S-QR-11).
+    no_raid_curse: bool,
     /// `Npc.setName(name)` of a script (S-API-05): `getName()` instead of the template's.
     custom_name: Option<String>,
     /// `Npc.setAutoAttackable(flag)` of a script (S-API-05), for a plain `Npc`.
@@ -352,6 +354,21 @@ impl World {
     /// Java `QuestGuard.setPassive(value)`.
     pub fn set_quest_guard_passive(&mut self, id: ObjectId, value: bool) {
         self.npc_extra_mut(id).quest_guard_passive = value;
+    }
+
+    /// Java `RaidBoss.setUseRaidCurse(value)` (S-QR-11).
+    pub fn set_use_raid_curse(&mut self, id: ObjectId, value: bool) {
+        self.npc_extra_mut(id).no_raid_curse = !value;
+    }
+
+    /// Java `Creature.giveRaidCurse()` as scripts set it (true unless a script turned it off).
+    pub fn gives_raid_curse(&self, id: ObjectId) -> bool {
+        !self
+            .scripts
+            .npc_extras
+            .by_npc
+            .get(&id)
+            .is_some_and(|e| e.no_raid_curse)
     }
 
     /// Java `QuestGuard.isPassive()`.
