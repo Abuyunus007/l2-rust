@@ -150,6 +150,7 @@ pub mod q00195_seven_signs_secret_ritual_of_the_priests;
 pub mod q00196_seven_signs_seal_of_the_emperor;
 pub mod q00197_seven_signs_the_sacred_book_of_seal;
 pub mod q00198_seven_signs_embryo;
+pub mod q00211_trial_of_the_challenger;
 pub mod q00212_trial_of_duty;
 pub mod q00215_trial_of_the_pilgrim;
 pub mod q00222_test_of_the_duelist;
@@ -542,6 +543,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00176_steps_for_honor::Q00176StepsForHonor);
     r.add(q00179_into_the_large_cavern::Q00179IntoTheLargeCavern);
     r.add(q00182_new_recruits::Q00182NewRecruits);
+    r.add(q00211_trial_of_the_challenger::Q00211TrialOfTheChallenger);
     r.add(q00212_trial_of_duty::Q00212TrialOfDuty);
     r.add(q00215_trial_of_the_pilgrim::Q00215TrialOfThePilgrim);
     r.add(q00183_relic_exploration::Q00183RelicExploration);
