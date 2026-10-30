@@ -104,6 +104,18 @@ impl World {
         self.send(to, &TutorialCloseHtml)
     }
 
+    /// `player.sendPacket(new SocialAction(player.getObjectId(), action_id))` (S-Q-14: the bow
+    /// after a path quest's reward, `SocialAction` 3).
+    pub fn send_social_action(&mut self, to: ObjectId, action_id: i32) -> bool {
+        self.send(
+            to,
+            &l2_protocol_game::server::SocialAction {
+                object_id: to.0,
+                action_id,
+            },
+        )
+    }
+
     /// Java `Quest.playerEnter(player)`: the quest states and variables the session read at
     /// `CharacterSelect` (D-15) become the player's quest states.
     pub(crate) fn script_player_enter(&mut self, id: ObjectId) {

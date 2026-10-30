@@ -210,6 +210,14 @@ impl ScriptCtx<'_> {
         self.world.is_in_party(player)
     }
 
+    /// Java `creature.getActiveWeaponInstance()` as its item id (`None` without a weapon in the
+    /// right hand). Used by the path quests' `checkWeapon` (Q00401, Q00404, ...).
+    pub fn active_weapon_item_id(&self, player: ObjectId) -> Option<i32> {
+        use l2_protocol_game::server::charscreen::paperdoll;
+        let object = self.world.paperdoll_object(player, paperdoll::RHAND)?;
+        self.world.inventory_item(player, object).map(|item| item.item_id)
+    }
+
     /// Java `PlayerConfig.ALT_PARTY_RANGE` (`AltPartyRange`).
     pub fn alt_party_range(&self) -> i32 {
         self.world.settings.party.alt_party_range
