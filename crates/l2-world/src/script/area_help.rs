@@ -95,6 +95,35 @@ impl ScriptCtx<'_> {
         self.world_mut().summon_items_on_use(player, &item, template, true);
     }
 
+    /// Java `npc.isInMySpawnGroup(other)`: both NPCs have a spawn and the spawns have the same
+    /// (non-null) name.
+    pub fn is_in_my_spawn_group(&self, npc: ScriptNpc, other: ScriptNpc) -> bool {
+        let name_of = |id: ObjectId| {
+            let index = self.world().npc_spawn_index(id)?;
+            self.world().spawn_def_name(index)
+        };
+        match (name_of(npc.object_id), name_of(other.object_id)) {
+            (Some(a), Some(b)) => a == b,
+            _ => false,
+        }
+    }
+
+    /// Java `SpawnTable.getInstance().getSpawns(npcId)` read as `(spawn.getLastSpawn(), name
+    /// starts with prefix, x, y, z, heading)`, for the spawns whose name starts with `prefix`.
+    pub fn spawns_named(&self, npc_id: i32, prefix: &str) -> Vec<super::area_spawns::NamedSpawn> {
+        self.world().named_spawns_of(npc_id, prefix)
+    }
+
+    /// Java `npc.getAI().getIntention() == Intention.IDLE`.
+    pub fn is_intention_idle(&self, npc: ScriptNpc) -> bool {
+        self.world().intention_of(npc.object_id) == crate::movement::Intention::Idle
+    }
+
+    /// Java `npc.isAttackable()`.
+    pub fn is_attackable(&self, npc: ScriptNpc) -> bool {
+        self.world().is_attackable_npc(npc.object_id)
+    }
+
     /// Java `player.hasPet()`.
     pub fn has_pet(&self, owner: ObjectId) -> bool {
         self.world().has_pet(owner)
