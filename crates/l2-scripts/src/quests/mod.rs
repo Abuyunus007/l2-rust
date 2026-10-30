@@ -139,6 +139,7 @@ pub mod q00167_dwarven_kinship;
 pub mod q00168_deliver_supplies;
 pub mod q00169_offspring_of_nightmares;
 pub mod q00170_dangerous_seduction;
+pub mod q00171_acts_of_evil;
 pub mod q00172_new_horizons;
 pub mod q00173_to_the_isle_of_souls;
 pub mod q00174_supply_check;
@@ -553,6 +554,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00168_deliver_supplies::Q00168DeliverSupplies);
     r.add(q00169_offspring_of_nightmares::Q00169OffspringOfNightmares);
     r.add(q00170_dangerous_seduction::Q00170DangerousSeduction);
+    r.add(q00171_acts_of_evil::Q00171ActsOfEvil);
     r.add(q00172_new_horizons::Q00172NewHorizons);
     r.add(q00173_to_the_isle_of_souls::Q00173ToTheIsleOfSouls);
     r.add(q00174_supply_check::Q00174SupplyCheck);
