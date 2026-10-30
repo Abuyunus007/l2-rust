@@ -278,6 +278,7 @@ pub mod q00415_path_of_the_orc_monk;
 pub mod q00416_path_of_the_orc_shaman;
 pub mod q00450_grave_robber_rescue;
 pub mod q10288_secret_mission;
+pub mod q10289_fade_to_black;
 pub mod q10290_land_dragon_conqueror;
 pub mod q10291_fire_dragon_destroyer;
 pub mod q10501_zaken_embroidered_soul_cloak;
@@ -563,6 +564,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00416_path_of_the_orc_shaman::Q00416PathOfTheOrcShaman);
     r.add(q00450_grave_robber_rescue::Q00450GraveRobberRescue);
     r.add(q10288_secret_mission::Q10288SecretMission);
+    r.add(q10289_fade_to_black::Q10289FadeToBlack);
     r.add(q10290_land_dragon_conqueror::Q10290LandDragonConqueror);
     r.add(q10291_fire_dragon_destroyer::Q10291FireDragonDestroyer);
     r.add(q10501_zaken_embroidered_soul_cloak::Q10501ZakenEmbroideredSoulCloak);
