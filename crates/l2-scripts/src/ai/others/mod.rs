@@ -115,8 +115,6 @@ pub(crate) fn register_with(r: &mut ScriptRegistry, class_master: ClassMasterCon
     r.add(muscle_bomber::MuscleBomber);
     r.add(avant_garde::AvantGarde);
     r.add(class_master::ClassMaster::new(class_master));
-    r.add(manor_manager::ManorManager);
-    r.add(monument_of_heroes::MonumentOfHeroes);
     r.add(steel_citadel_teleport::SteelCitadelTeleport);
     r.add(subclass_certification::SubclassCertification);
     r.add(symbol_maker::SymbolMaker);
