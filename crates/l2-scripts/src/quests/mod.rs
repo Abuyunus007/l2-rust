@@ -220,6 +220,8 @@ pub mod q00423_take_your_best_shot;
 pub mod q00431_wedding_march;
 pub mod q00432_birthday_party_song;
 pub mod q00450_grave_robber_rescue;
+pub mod q00451_luciens_altar;
+pub mod q00452_finding_the_lost_soldiers;
 
 use l2_world::ScriptRegistry;
 
@@ -440,4 +442,6 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00431_wedding_march::Q00431WeddingMarch);
     r.add(q00432_birthday_party_song::Q00432BirthdayPartySong);
     r.add(q00450_grave_robber_rescue::Q00450GraveRobberRescue);
+    r.add(q00451_luciens_altar::Q00451LuciensAltar);
+    r.add(q00452_finding_the_lost_soldiers::Q00452FindingTheLostSoldiers);
 }
