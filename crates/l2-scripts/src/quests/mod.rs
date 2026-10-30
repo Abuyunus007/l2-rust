@@ -245,6 +245,7 @@ pub mod q00634_in_search_of_fragments_of_dimension;
 pub mod q00635_into_the_dimensional_rift;
 pub mod q00636_truth_beyond;
 pub mod q00637_through_once_more;
+pub mod q00638_seekers_of_the_holy_grail;
 pub mod q00639_guardians_of_the_holy_grail;
 pub mod q00641_attack_sailren;
 pub mod q00642_a_powerful_primeval_creature;
@@ -499,6 +500,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00635_into_the_dimensional_rift::Q00635IntoTheDimensionalRift);
     r.add(q00636_truth_beyond::Q00636TruthBeyond);
     r.add(q00637_through_once_more::Q00637ThroughOnceMore);
+    r.add(q00638_seekers_of_the_holy_grail::Q00638SeekersOfTheHolyGrail);
     r.add(q00639_guardians_of_the_holy_grail::Q00639GuardiansOfTheHolyGrail);
     r.add(q00641_attack_sailren::Q00641AttackSailren);
     r.add(q00642_a_powerful_primeval_creature::Q00642APowerfulPrimevalCreature);
