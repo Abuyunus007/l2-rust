@@ -403,6 +403,7 @@ pub mod q00712_path_to_becoming_a_lord_oren;
 pub mod q00713_path_to_becoming_a_lord_aden;
 pub mod q00714_path_to_becoming_a_lord_schuttgart;
 pub mod q00715_path_to_becoming_a_lord_goddard;
+pub mod q00716_path_to_becoming_a_lord_rune;
 pub mod q00901_how_lavasaurus_are_made;
 pub mod q00902_reclaim_our_era;
 pub mod q00903_the_call_of_antharas;
@@ -845,6 +846,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00650_a_broken_dream::Q00650ABrokenDream);
     r.add(q00714_path_to_becoming_a_lord_schuttgart::Q00714PathToBecomingALordSchuttgart);
     r.add(q00715_path_to_becoming_a_lord_goddard::Q00715PathToBecomingALordGoddard);
+    r.add(q00716_path_to_becoming_a_lord_rune::Q00716PathToBecomingALordRune);
     r.add(q00901_how_lavasaurus_are_made::Q00901HowLavasaurusesAreMade);
     r.add(q00902_reclaim_our_era::Q00902ReclaimOurEra);
     r.add(q00903_the_call_of_antharas::Q00903TheCallOfAntharas);
