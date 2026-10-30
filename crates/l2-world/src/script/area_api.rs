@@ -71,6 +71,31 @@ impl World {
         })
     }
 
+    /// Java `npc.getAI().getIntention() == Intention.ATTACK` (SelMahumSquad; S-AI-08).
+    pub fn script_intention_is_attack(&self, npc: ObjectId) -> bool {
+        self.intention_of(npc) == crate::movement::Intention::Attack
+    }
+
+    /// Java `npc.getAI().getIntention() == Intention.CAST`.
+    pub fn script_intention_is_cast(&self, npc: ObjectId) -> bool {
+        self.intention_of(npc) == crate::movement::Intention::Cast
+    }
+
+    /// Java `npc.getRightHandItem()`: the item id in the right hand, 0 for none.
+    pub fn script_npc_right_hand(&self, npc: ObjectId) -> i32 {
+        self.npc(npc).map_or(0, |n| n.right_hand)
+    }
+
+    /// Java `npc.isInSurroundingRegion(other)`.
+    pub fn script_is_in_surrounding_region(&self, npc: ObjectId, other: ObjectId) -> bool {
+        self.is_in_surrounding_region(npc, other)
+    }
+
+    /// Java `GameTimeTaskManager.isNight()`.
+    pub fn script_is_night(&self) -> bool {
+        Self::is_night_now()
+    }
+
     /// Java `castle.getSiege().getControlTowerCount()`.
     pub fn script_castle_control_tower_count(&self, castle: i32) -> i32 {
         self.castle_siege(CastleId(castle))
