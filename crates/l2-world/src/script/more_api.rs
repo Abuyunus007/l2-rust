@@ -91,4 +91,30 @@ impl ScriptCtx<'_> {
     pub fn is_my_lord(&self, npc: ScriptNpc, player: ObjectId) -> bool {
         self.world().is_my_lord(npc.object_id, player)
     }
+
+    /// Java `addSpawn(summoner, npcId, pos, randomOffset, despawnDelay)` with `pos` the place
+    /// and heading of `at`: the new NPC joins `summoner`'s list (`getSummonedNpcCount`). Java
+    /// passes instance 0 here, whatever the instance of `at`.
+    pub fn add_spawn_summoned_at(
+        &mut self,
+        summoner: ScriptNpc,
+        npc_id: i32,
+        at: ObjectId,
+        random_offset: bool,
+        despawn_delay_ms: i64,
+    ) -> Option<ScriptNpc> {
+        let (x, y, z) = self.world().position_of(at)?;
+        let heading = self.world().heading_of(at);
+        self.add_spawn_summoned(
+            summoner,
+            npc_id,
+            x,
+            y,
+            z,
+            heading,
+            random_offset,
+            despawn_delay_ms,
+            0,
+        )
+    }
 }
