@@ -241,7 +241,10 @@ mod tests {
         assert!(t.event(1, NAME, "30181-03.htm").contains("30181-03.htm"));
         assert_eq!(
             t.take_writes(),
-            [rows::insert(NAME, "cond", "1"), rows::insert(NAME, "<state>", "Started")]
+            [
+                rows::insert(NAME, "cond", "1"),
+                rows::insert(NAME, "<state>", "Started")
+            ]
         );
 
         // 100 busts: 100 * 120 + 7800 adena.

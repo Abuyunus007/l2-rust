@@ -308,10 +308,7 @@ mod tests {
         assert!(page.contains("30458-0"), "{page}");
         assert_eq!(
             t.take_writes(),
-            [
-                rows::insert(NAME, "ex", "11"),
-                rows::update(NAME, "cond", "2")
-            ]
+            [rows::insert(NAME, "ex", "11"), rows::update(NAME, "cond", "2")]
         );
         assert!(t.quest_page(1, poitan).contains("30458-04.html"));
         assert!(t.take_writes().is_empty());
@@ -334,7 +331,10 @@ mod tests {
         assert!(won || page.contains("30959-02.html"), "{page}");
         let writes = t.take_writes();
         assert_eq!(writes.len(), 2);
-        assert_eq!(writes[0], rows::update(NAME, "memoState", if won { "5" } else { "6" }));
+        assert_eq!(
+            writes[0],
+            rows::update(NAME, "memoState", if won { "5" } else { "6" })
+        );
         assert_eq!(writes[1], rows::update(NAME, "cond", "4"));
         assert_eq!(t.count(1, EVENT_CLOTHES), if won { 0 } else { 1 });
     }

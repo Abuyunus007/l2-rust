@@ -208,7 +208,13 @@ fn get_reward(ctx: &mut ScriptCtx<'_>, player: ObjectId) {
 
 /// The shared tail of the platinum tribe hooks. `step` is the progress one hit or kill adds
 /// (the same number is tested again after the add, like Java).
-fn platinum_progress(ctx: &mut ScriptCtx<'_>, qs: l2_world::Qs, member: ObjectId, sound_to: ObjectId, step: i32) {
+fn platinum_progress(
+    ctx: &mut ScriptCtx<'_>,
+    qs: l2_world::Qs,
+    member: ObjectId,
+    sound_to: ObjectId,
+    step: i32,
+) {
     if qs.get_memo_state_ex(ctx, 0) == 12 {
         qs.set_memo_state_ex(ctx, 1, qs.get_memo_state_ex(ctx, 1) + step);
         // NOTE(java-quirk): the limit is tested against the value plus the step again.
@@ -302,7 +308,10 @@ impl Script for Q00348AnArrogantSearch {
         player: Option<ObjectId>,
     ) -> Option<String> {
         if let Some(npc) = npc
-            && matches!(npc.id, ARK_GUARDIAN_ELBEROTH | ARK_GUARDIAN_SHADOWFANG | ANGEL_KILLER)
+            && matches!(
+                npc.id,
+                ARK_GUARDIAN_ELBEROTH | ARK_GUARDIAN_SHADOWFANG | ANGEL_KILLER
+            )
             && event == "DESPAWN"
         {
             ctx.delete_npc(npc);
@@ -325,7 +334,8 @@ impl Script for Q00348AnArrogantSearch {
             }
             "30864-08.html" => {
                 let memo_state = qs.get_memo_state(ctx);
-                if (memo_state == 1 && ctx.has_at_least_one_quest_item(player, &[TITANS_POWERSTONE, SHELL_OF_MONSTERS]))
+                if (memo_state == 1
+                    && ctx.has_at_least_one_quest_item(player, &[TITANS_POWERSTONE, SHELL_OF_MONSTERS]))
                     || memo_state == 2
                 {
                     qs.set_memo_state_ex(ctx, 0, 4);
@@ -457,8 +467,14 @@ impl Script for Q00348AnArrogantSearch {
     ) {
         match npc.id {
             ARK_GUARDIAN_ELBEROTH => {
-                if !ctx.world().npc_variables(npc.object_id).is_some_and(|v| v.get_bool(I_QUEST0, false)) {
-                    ctx.world_mut().npc_variables_mut(npc.object_id).set_bool(I_QUEST0, true);
+                if !ctx
+                    .world()
+                    .npc_variables(npc.object_id)
+                    .is_some_and(|v| v.get_bool(I_QUEST0, false))
+                {
+                    ctx.world_mut()
+                        .npc_variables_mut(npc.object_id)
+                        .set_bool(I_QUEST0, true);
                     ctx.broadcast_npc_say(
                         npc,
                         ChatType::NpcGeneral,
@@ -468,8 +484,14 @@ impl Script for Q00348AnArrogantSearch {
                 }
             }
             ARK_GUARDIAN_SHADOWFANG => {
-                if !ctx.world().npc_variables(npc.object_id).is_some_and(|v| v.get_bool(I_QUEST0, false)) {
-                    ctx.world_mut().npc_variables_mut(npc.object_id).set_bool(I_QUEST0, true);
+                if !ctx
+                    .world()
+                    .npc_variables(npc.object_id)
+                    .is_some_and(|v| v.get_bool(I_QUEST0, false))
+                {
+                    ctx.world_mut()
+                        .npc_variables_mut(npc.object_id)
+                        .set_bool(I_QUEST0, true);
                     ctx.broadcast_npc_say(
                         npc,
                         ChatType::NpcGeneral,
@@ -591,7 +613,10 @@ impl Script for Q00348AnArrogantSearch {
                 }
             }
             YINTZU | PALIOTE => {
-                if near(ctx, npc, player) && qs.is_memo_state(ctx, 1) && !ctx.has_quest_items(member, SHELL_OF_MONSTERS) {
+                if near(ctx, npc, player)
+                    && qs.is_memo_state(ctx, 1)
+                    && !ctx.has_quest_items(member, SHELL_OF_MONSTERS)
+                {
                     ctx.give_items(member, SHELL_OF_MONSTERS, 1);
                     ctx.play_sound(player, QuestSound::ItemsoundQuestItemget);
                 }
@@ -624,7 +649,9 @@ impl Script for Q00348AnArrogantSearch {
     fn on_spawn(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
         match npc.id {
             ARK_GUARDIAN_ELBEROTH => {
-                ctx.world_mut().npc_variables_mut(npc.object_id).set_bool(I_QUEST0, false);
+                ctx.world_mut()
+                    .npc_variables_mut(npc.object_id)
+                    .set_bool(I_QUEST0, false);
                 ctx.broadcast_npc_say(
                     npc,
                     ChatType::NpcGeneral,
@@ -634,7 +661,9 @@ impl Script for Q00348AnArrogantSearch {
                 ctx.start_quest_timer("DESPAWN", 600_000, Some(npc), None, false);
             }
             ARK_GUARDIAN_SHADOWFANG => {
-                ctx.world_mut().npc_variables_mut(npc.object_id).set_bool(I_QUEST0, false);
+                ctx.world_mut()
+                    .npc_variables_mut(npc.object_id)
+                    .set_bool(I_QUEST0, false);
                 ctx.broadcast_npc_say(
                     npc,
                     ChatType::NpcGeneral,
@@ -751,28 +780,43 @@ impl Script for Q00348AnArrogantSearch {
                                 0 => htmltext = "30864-22.html".to_owned(),
                                 1 => {
                                     if ctx.has_quest_items(player, BLOOD_OF_SAINT)
-                                        && !ctx.has_at_least_one_quest_item(player, &[BOOK_OF_SAINT, BOUGH_OF_SAINT])
+                                        && !ctx.has_at_least_one_quest_item(
+                                            player,
+                                            &[BOOK_OF_SAINT, BOUGH_OF_SAINT],
+                                        )
                                     {
                                         htmltext = "30864-33.html".to_owned();
-                                    } else if !ctx.has_all_quest_items(player, &[BLOOD_OF_SAINT, WHITE_FABRIC_2]) {
+                                    } else if !ctx
+                                        .has_all_quest_items(player, &[BLOOD_OF_SAINT, WHITE_FABRIC_2])
+                                    {
                                         htmltext = "30864-36.html".to_owned();
                                     }
                                 }
                                 2 => {
                                     if ctx.has_quest_items(player, BOOK_OF_SAINT)
-                                        && !ctx.has_at_least_one_quest_item(player, &[BLOOD_OF_SAINT, BOUGH_OF_SAINT])
+                                        && !ctx.has_at_least_one_quest_item(
+                                            player,
+                                            &[BLOOD_OF_SAINT, BOUGH_OF_SAINT],
+                                        )
                                     {
                                         htmltext = "30864-34.html".to_owned();
-                                    } else if !ctx.has_all_quest_items(player, &[BOOK_OF_SAINT, WHITE_FABRIC_2]) {
+                                    } else if !ctx
+                                        .has_all_quest_items(player, &[BOOK_OF_SAINT, WHITE_FABRIC_2])
+                                    {
                                         htmltext = "30864-37.html".to_owned();
                                     }
                                 }
                                 3 => {
                                     if ctx.has_quest_items(player, BOUGH_OF_SAINT)
-                                        && !ctx.has_at_least_one_quest_item(player, &[BLOOD_OF_SAINT, BOOK_OF_SAINT])
+                                        && !ctx.has_at_least_one_quest_item(
+                                            player,
+                                            &[BLOOD_OF_SAINT, BOOK_OF_SAINT],
+                                        )
                                     {
                                         htmltext = "30864-35.html".to_owned();
-                                    } else if !ctx.has_all_quest_items(player, &[BOUGH_OF_SAINT, WHITE_FABRIC_2]) {
+                                    } else if !ctx
+                                        .has_all_quest_items(player, &[BOUGH_OF_SAINT, WHITE_FABRIC_2])
+                                    {
                                         htmltext = "30864-38.html".to_owned();
                                     }
                                 }
@@ -780,7 +824,9 @@ impl Script for Q00348AnArrogantSearch {
                             }
                         }
 
-                        if ctx.get_quest_items_count(player, WHITE_FABRIC_2) > 1 && qs.get_memo_state_ex(ctx, 1) > 0 {
+                        if ctx.get_quest_items_count(player, WHITE_FABRIC_2) > 1
+                            && qs.get_memo_state_ex(ctx, 1) > 0
+                        {
                             htmltext = "30864-40.html".to_owned();
                         }
                         if ctx.get_quest_items_count(player, WHITE_FABRIC_2) == 1
@@ -818,7 +864,9 @@ impl Script for Q00348AnArrogantSearch {
                         if ctx.get_quest_items_count(player, WHITE_FABRIC_1) == 1 {
                             htmltext = "30864-25.html".to_owned();
                         }
-                        if ctx.get_quest_items_count(player, WHITE_FABRIC_2) > 1 && qs.get_memo_state_ex(ctx, 1) > 0 {
+                        if ctx.get_quest_items_count(player, WHITE_FABRIC_2) > 1
+                            && qs.get_memo_state_ex(ctx, 1) > 0
+                        {
                             htmltext = "30864-40.html".to_owned();
                         }
                         if ctx.get_quest_items_count(player, WHITE_FABRIC_2) == 1
@@ -1004,7 +1052,8 @@ impl Script for Q00348AnArrogantSearch {
                             qs.set_memo_state_ex(ctx, 0, 8);
                         }
                         htmltext = "30978-01.html".to_owned();
-                    } else if qs.get_memo_state(ctx) < 8 && ((qs.get_memo_state_ex(ctx, 1) % 1000) / 100) == 1 {
+                    } else if qs.get_memo_state(ctx) < 8 && ((qs.get_memo_state_ex(ctx, 1) % 1000) / 100) == 1
+                    {
                         htmltext = "30978-02.html".to_owned();
                         if qs.get_memo_state_ex(ctx, 1) % 10 != 0 {
                             qs.set_cond(ctx, 10, true);
@@ -1039,7 +1088,9 @@ impl Script for Q00348AnArrogantSearch {
                             qs.set_memo_state_ex(ctx, 0, 8);
                         }
                         htmltext = "30979-01.html".to_owned();
-                    } else if qs.get_memo_state(ctx) < 8 && ((qs.get_memo_state_ex(ctx, 1) % 10000) / 1000) == 1 {
+                    } else if qs.get_memo_state(ctx) < 8
+                        && ((qs.get_memo_state_ex(ctx, 1) % 10000) / 1000) == 1
+                    {
                         htmltext = "30979-02.html".to_owned();
                         if qs.get_memo_state_ex(ctx, 1) % 10 != 0 {
                             qs.set_cond(ctx, 14, true);
@@ -1251,7 +1302,13 @@ mod tests {
             .page("30864-01.htm", &["30864-02.htm"])
             .page("30864-02.htm", &["30864-03.htm"])
             .page("30864-03.htm", &["30864-04.htm"])
-            .plain(&["30864-04.htm", "30864-05.html", "30864-06.html", "30864-09.html", "30864-13.html"])
+            .plain(&[
+                "30864-04.htm",
+                "30864-05.html",
+                "30864-06.html",
+                "30864-09.html",
+                "30864-13.html",
+            ])
             .page("30864-07.html", &["30864-08.html"])
             .page("30864-08.html", &["30864-09.html"])
             .plain(&["30864-42.html", "30864-16.html"])
@@ -1306,10 +1363,7 @@ mod tests {
         assert_eq!(t.count(1, SHELL_OF_MONSTERS), 0);
         assert!(t.event(1, NAME, "30864-08.html").contains("30864-08.html"));
         assert!(t.event(1, NAME, "30864-09.html").contains("30864-09.html"));
-        assert_eq!(
-            (t.count(1, 4288), t.count(1, 4289), t.count(1, 4290)),
-            (1, 1, 1)
-        );
+        assert_eq!((t.count(1, 4288), t.count(1, 4289), t.count(1, 4290)), (1, 1, 1));
         t.take_writes();
         // Memo state 5 with no key digits: "30864-16".
         assert!(t.quest_page(1, hanellin).contains("30864-16.html"));

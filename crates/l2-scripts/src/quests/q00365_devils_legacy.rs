@@ -158,7 +158,16 @@ impl Script for Q00365DevilsLegacy {
         let qs = ctx.random_party_member_state(killer, -1, 3, Some(npc));
         if let Some(qs) = qs {
             let chance = MOBS.iter().find(|m| m.0 == npc.id).map_or(0.0, |m| m.1);
-            ctx.give_item_randomly(qs.player(), Some(npc), PIRATES_TREASURE_CHEST, 1, 1, 0, chance, true);
+            ctx.give_item_randomly(
+                qs.player(),
+                Some(npc),
+                PIRATES_TREASURE_CHEST,
+                1,
+                1,
+                0,
+                chance,
+                true,
+            );
         }
     }
 

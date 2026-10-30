@@ -283,11 +283,7 @@ mod tests {
             states: vec![(NAME.to_owned(), Some("Started".to_owned()))],
             variables: vec![
                 (NAME.to_owned(), "cond".to_owned(), Some("2".to_owned())),
-                (
-                    NAME.to_owned(),
-                    "memoState".to_owned(),
-                    Some(memo.to_owned()),
-                ),
+                (NAME.to_owned(), "memoState".to_owned(), Some(memo.to_owned())),
             ],
         };
         data
@@ -318,16 +314,25 @@ mod tests {
         );
         assert!(t.quest_page(1, n.swan).contains("30957-01.html"));
         assert!(t.event(1, NAME, "30957-02.html").contains("30957-02.html"));
-        assert_eq!((t.count(1, CLOTHES_CHEST_KEY), t.count(1, BEER_CHEST_KEY)), (1, 1));
+        assert_eq!(
+            (t.count(1, CLOTHES_CHEST_KEY), t.count(1, BEER_CHEST_KEY)),
+            (1, 1)
+        );
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "2"), rows::update(NAME, "cond", "2")]
+            [
+                rows::update(NAME, "memoState", "2"),
+                rows::update(NAME, "cond", "2")
+            ]
         );
 
         // The beer chest takes the key, and the beer comes on a coin flip.
         assert!(t.quest_page(1, n.beer_chest).contains("30960-01.html"));
         let page = t.event(1, NAME, "OPEN_CHEST");
-        assert!(page.contains("30960-02.html") || page.contains("30960-03.html"), "{page}");
+        assert!(
+            page.contains("30960-02.html") || page.contains("30960-03.html"),
+            "{page}"
+        );
         assert_eq!(t.count(1, BEER_CHEST_KEY), 0);
         assert_eq!(
             t.count(1, STOLEN_BLACK_BEER),
@@ -348,7 +353,10 @@ mod tests {
         assert_eq!(t.count(1, 57), 100);
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "5"), rows::update(NAME, "cond", "3")]
+            [
+                rows::update(NAME, "memoState", "5"),
+                rows::update(NAME, "cond", "3")
+            ]
         );
     }
 
