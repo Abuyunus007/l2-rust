@@ -167,10 +167,24 @@ impl Script for Q00115TheOtherSideOfTruth {
                     if ctx.has_quest_items(player, PIECE_OF_TABLET) {
                         Self::reward(ctx, player);
                         qs.exit_quest(ctx, false, true);
-                        htmltext = Some(if event == "finish" { "32020-25.html" } else { "32020-27.html" }.to_owned());
+                        htmltext = Some(
+                            if event == "finish" {
+                                "32020-25.html"
+                            } else {
+                                "32020-27.html"
+                            }
+                            .to_owned(),
+                        );
                     } else {
                         qs.set_cond(ctx, 11, true);
-                        htmltext = Some(if event == "finish" { "32020-26.html" } else { "32020-28.html" }.to_owned());
+                        htmltext = Some(
+                            if event == "finish" {
+                                "32020-26.html"
+                            } else {
+                                "32020-28.html"
+                            }
+                            .to_owned(),
+                        );
                         ctx.play_sound(player, QuestSound::AmbsoundThunder);
                     }
                 }
@@ -442,12 +456,18 @@ mod tests {
         assert!(t.event(1, NAME, "32020-02.html").contains("32020-02.html"));
         assert_eq!(
             t.take_writes(),
-            [rows::insert(NAME, "cond", "1"), rows::insert(NAME, "<state>", "Started")]
+            [
+                rows::insert(NAME, "cond", "1"),
+                rows::insert(NAME, "<state>", "Started")
+            ]
         );
         assert_eq!(talk(&mut t, misa).as_deref(), Some("32018-01.html"));
         assert_eq!(t.count(1, MISAS_LETTER), 1);
         assert_eq!(t.take_writes().len(), 1);
-        assert_eq!(ev(&mut t, "32020-07.html", None).as_deref(), Some("32020-07.html"));
+        assert_eq!(
+            ev(&mut t, "32020-07.html", None).as_deref(),
+            Some("32020-07.html")
+        );
         assert_eq!(t.count(1, MISAS_LETTER), 0);
     }
 
@@ -477,7 +497,10 @@ mod tests {
         });
         t.take_writes();
         assert_eq!(talk(&mut t, s1).as_deref(), Some("32021-01.html"));
-        assert_eq!(ev(&mut t, "32021-02.html", Some(s1)).as_deref(), Some("32021-02.html"));
+        assert_eq!(
+            ev(&mut t, "32021-02.html", Some(s1)).as_deref(),
+            Some("32021-02.html")
+        );
         assert_eq!(t.count(1, PIECE_OF_TABLET), 1);
         assert_eq!(t.take_writes(), [rows::update(NAME, "ex", "7")]);
         // ex 14 ends the puzzle for the first sculpture.
@@ -488,7 +511,10 @@ mod tests {
         });
         t.take_writes();
         assert_eq!(talk(&mut t, s1).as_deref(), Some("32021-05.html"));
-        assert_eq!(ev(&mut t, "32021-06.html", Some(s1)).as_deref(), Some("32021-06.html"));
+        assert_eq!(
+            ev(&mut t, "32021-06.html", Some(s1)).as_deref(),
+            Some("32021-06.html")
+        );
         assert!(t.take_writes().contains(&rows::update(NAME, "cond", "8")));
     }
 
@@ -502,7 +528,8 @@ mod tests {
         assert_eq!(ev(&mut t, "finish", None).as_deref(), Some("32020-26.html"));
         assert!(t.take_writes().contains(&rows::update(NAME, "cond", "11")));
 
-        t.world.run_as_script(NAME, |ctx| ctx.give_items(Oid(1), PIECE_OF_TABLET, 1));
+        t.world
+            .run_as_script(NAME, |ctx| ctx.give_items(Oid(1), PIECE_OF_TABLET, 1));
         assert_eq!(talk(&mut t, rafforty).as_deref(), Some("32020-30.html"));
         assert_eq!(t.count(1, 57), 115_673);
         let w: Vec<_> = t

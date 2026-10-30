@@ -581,7 +581,9 @@ impl Script for Q00065CertifiedSoulBreaker {
                     } else if memo_state == 13 {
                         if !spawned(ctx, npc.object_id) {
                             claim_box(ctx, npc, player);
-                            if let Some(katenar) = ctx.add_spawn(KATENAR, 36110, 191921, -3712, 0, false, 0, 0) {
+                            if let Some(katenar) =
+                                ctx.add_spawn(KATENAR, 36110, 191921, -3712, 0, false, 0, 0)
+                            {
                                 set_object_var(ctx, katenar.object_id, "player0", player);
                                 set_object_var(ctx, katenar.object_id, "npc0", npc.object_id);
                             }
@@ -770,7 +772,10 @@ mod tests {
         );
         assert_eq!(
             t.take_writes(),
-            [rows::update(NAME, "memoState", "2"), rows::update(NAME, "cond", "2")]
+            [
+                rows::update(NAME, "memoState", "2"),
+                rows::update(NAME, "cond", "2")
+            ]
         );
     }
 
@@ -786,10 +791,7 @@ mod tests {
         assert_eq!(talk(&mut t, npcs.jacob).as_deref(), Some("30073-01a.html"));
         assert_eq!(talk(&mut t, npcs.harlan).as_deref(), Some("30074-02.html"));
         assert_eq!(talk(&mut t, npcs.jacob).as_deref(), Some("30073-03.html"));
-        assert!(
-            t.take_writes()
-                .contains(&rows::update(NAME, "memoState", "7"))
-        );
+        assert!(t.take_writes().contains(&rows::update(NAME, "memoState", "7")));
     }
 
     #[test]

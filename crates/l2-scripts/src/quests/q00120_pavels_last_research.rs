@@ -279,24 +279,29 @@ impl Script for Q00120PavelsLastResearch {
             }
             "32041-20.html" => {
                 html = shown(
-                    qs.is_memo_state(ctx, 15) && ctx.has_all_quest_items(player, &[RESEARCH_REPORT, KEY_OF_ENIGMA]),
+                    qs.is_memo_state(ctx, 15)
+                        && ctx.has_all_quest_items(player, &[RESEARCH_REPORT, KEY_OF_ENIGMA]),
                     event,
                 );
             }
             "pavel" | "e=mc2" => {
                 html = shown(
-                    qs.is_memo_state(ctx, 15) && ctx.has_all_quest_items(player, &[RESEARCH_REPORT, KEY_OF_ENIGMA]),
+                    qs.is_memo_state(ctx, 15)
+                        && ctx.has_all_quest_items(player, &[RESEARCH_REPORT, KEY_OF_ENIGMA]),
                     "32041-21.html",
                 );
             }
             "wdl" => {
                 html = shown(
-                    qs.is_memo_state(ctx, 15) && ctx.has_all_quest_items(player, &[RESEARCH_REPORT, KEY_OF_ENIGMA]),
+                    qs.is_memo_state(ctx, 15)
+                        && ctx.has_all_quest_items(player, &[RESEARCH_REPORT, KEY_OF_ENIGMA]),
                     "32041-22.html",
                 );
             }
             "32041-23.html" => {
-                if qs.is_memo_state(ctx, 15) && ctx.has_all_quest_items(player, &[RESEARCH_REPORT, KEY_OF_ENIGMA]) {
+                if qs.is_memo_state(ctx, 15)
+                    && ctx.has_all_quest_items(player, &[RESEARCH_REPORT, KEY_OF_ENIGMA])
+                {
                     ctx.take_items(player, KEY_OF_ENIGMA, -1);
                     qs.set_memo_state(ctx, 16);
                     qs.set_cond(ctx, 17, true);
@@ -376,7 +381,14 @@ impl Script for Q00120PavelsLastResearch {
             }
             "wm1_return" => {
                 if qs.is_memo_state(ctx, 10) {
-                    html = Some(if qs.is_memo_state_ex(ctx, 0, 10101) { "32042-13.html" } else { "32042-09.html" }.to_owned());
+                    html = Some(
+                        if qs.is_memo_state_ex(ctx, 0, 10101) {
+                            "32042-13.html"
+                        } else {
+                            "32042-09.html"
+                        }
+                        .to_owned(),
+                    );
                 }
             }
             "32042-10.html" => {
@@ -461,7 +473,14 @@ impl Script for Q00120PavelsLastResearch {
             }
             "32043-10.html" | "wm2_return" => {
                 if qs.is_memo_state(ctx, 18) {
-                    html = Some(if qs.is_memo_state_ex(ctx, 0, 1111) { "32043-12.html" } else { "32043-11.html" }.to_owned());
+                    html = Some(
+                        if qs.is_memo_state_ex(ctx, 0, 1111) {
+                            "32043-12.html"
+                        } else {
+                            "32043-11.html"
+                        }
+                        .to_owned(),
+                    );
                 }
             }
             "32043-13.html" => {
@@ -474,7 +493,14 @@ impl Script for Q00120PavelsLastResearch {
             "32043-14.html" => html = shown(qs.is_memo_state(ctx, 18), event),
             "wm2_output" => {
                 if qs.is_memo_state(ctx, 18) {
-                    html = Some(if qs.get_memo_state_ex(ctx, 0) < 1000 { "32043-15.html" } else { "32043-18.html" }.to_owned());
+                    html = Some(
+                        if qs.get_memo_state_ex(ctx, 0) < 1000 {
+                            "32043-15.html"
+                        } else {
+                            "32043-18.html"
+                        }
+                        .to_owned(),
+                    );
                 }
             }
             "32043-16.html" => html = shown(qs.is_memo_state(ctx, 18), event),
@@ -559,7 +585,14 @@ impl Script for Q00120PavelsLastResearch {
             "32044-07.html" => html = shown(qs.is_memo_state(ctx, 21), event),
             "wm3_observe" => {
                 if qs.is_memo_state(ctx, 21) {
-                    html = Some(if qs.get_memo_state_ex(ctx, 0) % 100 == 11 { "32044-10.html" } else { "32044-09.html" }.to_owned());
+                    html = Some(
+                        if qs.get_memo_state_ex(ctx, 0) % 100 == 11 {
+                            "32044-10.html"
+                        } else {
+                            "32044-09.html"
+                        }
+                        .to_owned(),
+                    );
                 }
             }
             "32044-11.html" => {
@@ -584,7 +617,14 @@ impl Script for Q00120PavelsLastResearch {
             }
             "wm3_control" => {
                 if qs.is_memo_state(ctx, 21) {
-                    html = Some(if qs.get_memo_state_ex(ctx, 0) / 100 == 1 { "32044-15.html" } else { "32044-14.html" }.to_owned());
+                    html = Some(
+                        if qs.get_memo_state_ex(ctx, 0) / 100 == 1 {
+                            "32044-15.html"
+                        } else {
+                            "32044-14.html"
+                        }
+                        .to_owned(),
+                    );
                 }
             }
             "32044-16.html" => {
@@ -605,7 +645,11 @@ impl Script for Q00120PavelsLastResearch {
                     ctx.play_sound(player, QuestSound::AmbsoundDrone);
                     // NOTE(java-quirk): `npc.setTarget(player)` throws without an NPC.
                     let npc = npc?;
-                    ctx.cast_skill(npc, player, SkillKey::new(QUEST_TRAP_POWER_SHOT.0, QUEST_TRAP_POWER_SHOT.1));
+                    ctx.cast_skill(
+                        npc,
+                        player,
+                        SkillKey::new(QUEST_TRAP_POWER_SHOT.0, QUEST_TRAP_POWER_SHOT.1),
+                    );
                     html = Some(event.to_owned());
                 }
             }
@@ -618,7 +662,11 @@ impl Script for Q00120PavelsLastResearch {
                     qs.set_memo_state(ctx, 14);
                     qs.set_cond(ctx, 15, true);
                     let npc = npc?;
-                    ctx.cast_skill(npc, player, SkillKey::new(QUEST_TRAP_POWER_SHOT.0, QUEST_TRAP_POWER_SHOT.1));
+                    ctx.cast_skill(
+                        npc,
+                        player,
+                        SkillKey::new(QUEST_TRAP_POWER_SHOT.0, QUEST_TRAP_POWER_SHOT.1),
+                    );
                     html = Some(event.to_owned());
                 }
             }
@@ -652,7 +700,12 @@ impl Script for Q00120PavelsLastResearch {
         match npc.id {
             SUSPICIOUS_LOOKING_PILE_OF_STONES => {
                 if qs.is_created(ctx) {
-                    html = if check_q114(ctx, player) { "32046-01.htm" } else { "32046-02.htm" }.to_owned();
+                    html = if check_q114(ctx, player) {
+                        "32046-01.htm"
+                    } else {
+                        "32046-02.htm"
+                    }
+                    .to_owned();
                 } else if qs.is_started(ctx) {
                     match qs.get_memo_state(ctx) {
                         1 => html = "32046-09.html".to_owned(),
@@ -721,7 +774,12 @@ impl Script for Q00120PavelsLastResearch {
                     _ => {}
                 },
                 5 => {
-                    html = if qs.get_memo_state_ex(ctx, 0) > 0 { "32041-07.html" } else { "32041-08.html" }.to_owned();
+                    html = if qs.get_memo_state_ex(ctx, 0) > 0 {
+                        "32041-07.html"
+                    } else {
+                        "32041-08.html"
+                    }
+                    .to_owned();
                 }
                 6 => html = "32041-14.html".to_owned(),
                 14 => {
@@ -757,7 +815,12 @@ impl Script for Q00120PavelsLastResearch {
                 }
                 9 => html = "32042-06.html".to_owned(),
                 10 => {
-                    html = if qs.is_memo_state_ex(ctx, 0, 10101) { "32042-13.html" } else { "32042-09.html" }.to_owned();
+                    html = if qs.is_memo_state_ex(ctx, 0, 10101) {
+                        "32042-13.html"
+                    } else {
+                        "32042-09.html"
+                    }
+                    .to_owned();
                 }
                 11 => html = "32042-14.html".to_owned(),
                 _ => {}
@@ -831,7 +894,13 @@ mod tests {
         registry.add(Q114);
         let pages = Pages::of(&Q00120PavelsLastResearch)
             .page("32046-01.htm", &["quest_accept"])
-            .plain(&["32046-02.htm", "32046-07.htm", "32046-08.htm", "32046-09.html", "32041-28.html"])
+            .plain(&[
+                "32046-02.htm",
+                "32046-07.htm",
+                "32046-08.htm",
+                "32046-09.html",
+                "32041-28.html",
+            ])
             .page("32042-01.html", &["32042-02.html"])
             .page("32042-02.html", &["wm1_1_a"])
             .page("32042-03.html", &["wm1_2_t"])

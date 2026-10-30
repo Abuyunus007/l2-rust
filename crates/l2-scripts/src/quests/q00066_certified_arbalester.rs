@@ -487,7 +487,9 @@ impl Script for Q00066CertifiedArbalester {
                     }
                     if ctx.get_quest_items_count(killer, ENMITY_CRYSTAL) < 29 {
                         ctx.give_items(killer, ENMITY_CRYSTAL, 2);
-                        if ctx.get_random(1000) < 220 && ctx.get_quest_items_count(killer, ENMITY_CRYSTAL) < 28 {
+                        if ctx.get_random(1000) < 220
+                            && ctx.get_quest_items_count(killer, ENMITY_CRYSTAL) < 28
+                        {
                             ctx.give_items(killer, ENMITY_CRYSTAL, 1);
                             if ctx.get_quest_items_count(killer, ENMITY_CRYSTAL) >= 27 {
                                 qs.set_cond(ctx, 4, true);
@@ -717,7 +719,14 @@ impl Script for Q00066CertifiedArbalester {
 
 /// The block every counting drop of Java repeats: at `limit - 1` items the cond `cond` is set,
 /// below that the item sound plays, then one item is given.
-fn page_step(ctx: &mut ScriptCtx<'_>, qs: l2_world::script::Qs, killer: ObjectId, item: i32, limit: i64, cond: i32) {
+fn page_step(
+    ctx: &mut ScriptCtx<'_>,
+    qs: l2_world::script::Qs,
+    killer: ObjectId,
+    item: i32,
+    limit: i64,
+    cond: i32,
+) {
     if ctx.get_quest_items_count(killer, item) >= limit - 1 {
         qs.set_cond(ctx, cond, true);
     } else {

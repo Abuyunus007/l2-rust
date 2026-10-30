@@ -232,13 +232,13 @@ impl Script for Q00114ResurrectionOfAnOldManager {
             "32041-05.html" | "32041-06.html" | "32041-07.html" | "32041-17.html" | "32041-18.html"
             | "32041-19.html" | "32041-20.html" | "32041-21.html" | "32041-22.html" | "32041-25.html"
             | "32041-29.html" | "32041-30.html" | "32041-35.html" | "32041-36.html" | "32046-05.html"
-            | "32046-06.html" | "32047-06a.html" | "32047-12a.html" | "32047-12b.html"
-            | "32047-12c.html" | "32047-13a.html" | "32047-14a.html" | "32047-13b.html"
-            | "32047-13c.html" | "32047-14c.html" | "32047-15c.html" | "32047-17c.html"
-            | "32047-13ab.html" | "32047-15a.html" | "32047-16a.html" | "32047-16c.html"
-            | "32047-18a.html" | "32047-19a.html" | "32047-18ab.html" | "32047-19ab.html"
-            | "32047-18c.html" | "32047-17a.html" | "32047-19c.html" | "32047-21b.html"
-            | "32047-27c.html" | "32047-28c.html" => {}
+            | "32046-06.html" | "32047-06a.html" | "32047-12a.html" | "32047-12b.html" | "32047-12c.html"
+            | "32047-13a.html" | "32047-14a.html" | "32047-13b.html" | "32047-13c.html"
+            | "32047-14c.html" | "32047-15c.html" | "32047-17c.html" | "32047-13ab.html"
+            | "32047-15a.html" | "32047-16a.html" | "32047-16c.html" | "32047-18a.html"
+            | "32047-19a.html" | "32047-18ab.html" | "32047-19ab.html" | "32047-18c.html"
+            | "32047-17a.html" | "32047-19c.html" | "32047-21b.html" | "32047-27c.html"
+            | "32047-28c.html" => {}
             _ => htmltext = None,
         }
         htmltext
@@ -307,7 +307,12 @@ impl Script for Q00114ResurrectionOfAnOldManager {
                 }
                 STARTED => match qs.get_cond(ctx) {
                     1 => {
-                        htmltext = if talk == 1 { "32041-08.html" } else { "32041-04.htm" }.to_owned();
+                        htmltext = if talk == 1 {
+                            "32041-08.html"
+                        } else {
+                            "32041-04.htm"
+                        }
+                        .to_owned();
                     }
                     2 => htmltext = "32041-10.html".to_owned(),
                     3..=5 => match talk {
@@ -320,7 +325,12 @@ impl Script for Q00114ResurrectionOfAnOldManager {
                     9 | 12 | 16 => htmltext = "32041-28.html".to_owned(),
                     17 | 18 => htmltext = "32041-32.html".to_owned(),
                     19 => {
-                        htmltext = if talk == 1 { "32041-34z.html" } else { "32041-33.html" }.to_owned();
+                        htmltext = if talk == 1 {
+                            "32041-34z.html"
+                        } else {
+                            "32041-33.html"
+                        }
+                        .to_owned();
                     }
                     20 => htmltext = "32041-39z.html".to_owned(),
                     21 => htmltext = "32041-40z.html".to_owned(),
@@ -369,8 +379,12 @@ impl Script for Q00114ResurrectionOfAnOldManager {
                             if qs.get_int(ctx, "choice") == 1 {
                                 htmltext = "32047-22a.html".to_owned();
                             } else {
-                                htmltext = if talk == 1 { "32047-31c.html" } else { "32047-26c.html" }
-                                    .to_owned();
+                                htmltext = if talk == 1 {
+                                    "32047-31c.html"
+                                } else {
+                                    "32047-26c.html"
+                                }
+                                .to_owned();
                             }
                         }
                         23 => htmltext = "32047-23z.html".to_owned(),
@@ -397,7 +411,12 @@ impl Script for Q00114ResurrectionOfAnOldManager {
                 if qs.is_started(ctx) {
                     match qs.get_cond(ctx) {
                         13 => {
-                            htmltext = if talk == 1 { "32050-02.html" } else { "32050-01.html" }.to_owned();
+                            htmltext = if talk == 1 {
+                                "32050-02.html"
+                            } else {
+                                "32050-01.html"
+                            }
+                            .to_owned();
                         }
                         14 => htmltext = "32050-04.html".to_owned(),
                         23 => htmltext = "32050-04b.html".to_owned(),
@@ -467,7 +486,10 @@ mod tests {
         let pages = Pages::of(&Q00114ResurrectionOfAnOldManager)
             .page("32041-02.htm", &["32041-04.htm"])
             .plain(&["32041-01.htm", "32041-03.htm", "32041-04.htm", "32041-08.html"])
-            .page("32047-01.html", &["32047-02.html", "32047-03.html", "32047-05.html"])
+            .page(
+                "32047-01.html",
+                &["32047-02.html", "32047-03.html", "32047-05.html"],
+            )
             .plain(&["32047-02.html", "32047-03.html", "32047-04.html", "32047-05.html"])
             .page("32047-10.html", &["32047-06.html"])
             .plain(&["32047-06.html", "32046-07.html"])
@@ -535,7 +557,10 @@ mod tests {
         assert!(t.event(1, NAME, "32041-04.htm").contains("32041-04.htm"));
         assert_eq!(
             t.take_writes(),
-            [rows::insert(NAME, "cond", "1"), rows::insert(NAME, "<state>", "Started")]
+            [
+                rows::insert(NAME, "cond", "1"),
+                rows::insert(NAME, "<state>", "Started")
+            ]
         );
         assert_eq!(ev(&mut t, "32041-08.html").as_deref(), Some("32041-08.html"));
         assert_eq!(ev(&mut t, "32041-09.html").as_deref(), Some("32041-09.html"));
@@ -565,11 +590,7 @@ mod tests {
         cond(&mut t, 17);
         t.world.run_as_script(NAME, |ctx| {
             ctx.give_items(Oid(1), DETCTOR, 1);
-            Q00114ResurrectionOfAnOldManager.on_creature_see(
-                ctx,
-                ctx.script_npc(stones).unwrap(),
-                Oid(1),
-            );
+            Q00114ResurrectionOfAnOldManager.on_creature_see(ctx, ctx.script_npc(stones).unwrap(), Oid(1));
         });
         assert_eq!(t.count(1, DETCTOR), 0);
         assert_eq!(t.count(1, DETCTOR2), 1);
