@@ -146,6 +146,8 @@ pub mod q00189_contract_completion;
 pub mod q00190_lost_dream;
 pub mod q00191_vain_conclusion;
 pub mod q00192_seven_signs_series_of_doubt;
+pub mod q00195_seven_signs_secret_ritual_of_the_priests;
+pub mod q00196_seven_signs_seal_of_the_emperor;
 pub mod q00197_seven_signs_the_sacred_book_of_seal;
 pub mod q00198_seven_signs_embryo;
 pub mod q00212_trial_of_duty;
@@ -552,6 +554,8 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00190_lost_dream::Q00190LostDream);
     r.add(q00191_vain_conclusion::Q00191VainConclusion);
     r.add(q00192_seven_signs_series_of_doubt::Q00192SevenSignsSeriesOfDoubt);
+    r.add(q00195_seven_signs_secret_ritual_of_the_priests::Q00195SevenSignsSecretRitualOfThePriests);
+    r.add(q00196_seven_signs_seal_of_the_emperor::Q00196SevenSignsSealOfTheEmperor);
     r.add(q00197_seven_signs_the_sacred_book_of_seal::Q00197SevenSignsTheSacredBookOfSeal);
     r.add(q00198_seven_signs_embryo::Q00198SevenSignsEmbryo);
     r.add(q00222_test_of_the_duelist::Q00222TestOfTheDuelist);
