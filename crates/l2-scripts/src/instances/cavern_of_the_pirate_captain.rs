@@ -607,8 +607,8 @@ fn manage_npc_spawn(world: &mut World, instance_id: i32) {
         candles.push(candle);
     }
 
-    for i in 3..7 {
-        let index = ROOM_DATA[(zaken_room - 1) as usize][i] - 1;
+    for candle_number in &ROOM_DATA[(zaken_room - 1) as usize][3..7] {
+        let index = candle_number - 1;
         if let Some(Some(candle)) = candles.get(index as usize) {
             world.npc_variables_mut(*candle).set_int("isBlue", 1);
         }

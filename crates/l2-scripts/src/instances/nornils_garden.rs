@@ -477,7 +477,7 @@ fn enter_instance(ctx: &mut ScriptCtx<'_>, _npc: ScriptNpc, player: ObjectId) ->
 
         // check for level difference again on reenter
         let level = ctx.player_level(player);
-        if level > INSTANCE_LEVEL_MAX || level < INSTANCE_LEVEL_MIN {
+        if !(INSTANCE_LEVEL_MIN..=INSTANCE_LEVEL_MAX).contains(&level) {
             send_with_name(
                 ctx,
                 player,
