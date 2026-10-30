@@ -457,7 +457,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-QR-03](S/S-QR-03.md) | Remaining quests Q00123..Q00139 (13) | sonnet | spot | Q batches | merged |
 | [S-QR-04](S/S-QR-04.md) | Remaining quests Q00140..Q00194 (14) | sonnet | spot | Q batches | merged |
 | [S-QR-05](S/S-QR-05.md) | Remaining quests Q00195..Q00218 (8) | sonnet | spot | Q batches | merged |
-| [S-QR-06](S/S-QR-06.md) | Remaining quests Q00219..Q00230 (6) | sonnet | spot | Q batches | ready |
+| [S-QR-06](S/S-QR-06.md) | Remaining quests Q00219..Q00230 (6) | sonnet | spot | Q batches | merged |
 | [S-QR-07](S/S-QR-07.md) | Remaining quests Q00232..Q00241 (5) | sonnet | spot | Q batches | ready |
 | [S-QR-08](S/S-QR-08.md) | Remaining quests Q00242..Q00335 (5) | sonnet | spot | Q batches | ready |
 | [S-QR-09](S/S-QR-09.md) | Remaining quests Q00336..Q00365 (6) | sonnet | spot | Q batches | ready |
