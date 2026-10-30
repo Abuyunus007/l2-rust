@@ -234,6 +234,7 @@ pub mod q00450_grave_robber_rescue;
 pub mod q00635_into_the_dimensional_rift;
 pub mod q00636_truth_beyond;
 pub mod q00639_guardians_of_the_holy_grail;
+pub mod q00641_attack_sailren;
 pub mod q00646_signs_of_revolt;
 
 use l2_world::ScriptRegistry;
@@ -469,5 +470,6 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00635_into_the_dimensional_rift::Q00635IntoTheDimensionalRift);
     r.add(q00636_truth_beyond::Q00636TruthBeyond);
     r.add(q00639_guardians_of_the_holy_grail::Q00639GuardiansOfTheHolyGrail);
+    r.add(q00641_attack_sailren::Q00641AttackSailren);
     r.add(q00646_signs_of_revolt::Q00646SignsOfRevolt);
 }
