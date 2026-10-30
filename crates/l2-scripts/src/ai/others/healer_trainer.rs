@@ -16,10 +16,9 @@ use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
 
 // NPC
 const HEALER_TRAINERS: [i32; 44] = [
-    30022, 30030, 30032, 30036, 30067, 30068, 30116, 30117, 30118, 30119, 30144, 30145, 30188, 30194,
-    30293, 30330, 30375, 30377, 30464, 30473, 30476, 30680, 30701, 30720, 30721, 30858, 30859, 30860,
-    30861, 30864, 30906, 30908, 30912, 31280, 31281, 31287, 31329, 31330, 31335, 31969, 31970, 31976,
-    32155, 32162,
+    30022, 30030, 30032, 30036, 30067, 30068, 30116, 30117, 30118, 30119, 30144, 30145, 30188, 30194, 30293,
+    30330, 30375, 30377, 30464, 30473, 30476, 30680, 30701, 30720, 30721, 30858, 30859, 30860, 30861, 30864,
+    30906, 30908, 30912, 31280, 31281, 31287, 31329, 31330, 31335, 31969, 31970, 31976, 32155, 32162,
 ];
 
 // Misc
@@ -156,10 +155,16 @@ mod tests {
         let (mut t, trainer) = setup();
         t.talk(1, trainer);
         t.event(1, "HealerTrainer", "SkillTransfer");
-        assert!(t.event(1, "HealerTrainer", "SkillTransferLearn").contains("30022-noteach.html"));
+        assert!(
+            t.event(1, "HealerTrainer", "SkillTransferLearn")
+                .contains("30022-noteach.html")
+        );
         t.talk(1, trainer);
         t.event(1, "HealerTrainer", "SkillTransfer");
-        assert!(t.event(1, "HealerTrainer", "SkillTransferCleanse").contains("cleanse-no.html"));
+        assert!(
+            t.event(1, "HealerTrainer", "SkillTransferCleanse")
+                .contains("cleanse-no.html")
+        );
     }
 
     #[test]

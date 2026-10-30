@@ -2,7 +2,7 @@
 // Java: dist/game/data/scripts/ai/areas/ImperialTomb/FourSepulchers/FourSepulchers.xml
 
 /// One `<spawn>`: `(sepulcherId, wave, npcId, x, y, z, heading)`, in file order.
-pub const ROOM_SPAWN_DATA: [(i32, i32, i32, i32, i32, i32, i32); 762] = [
+pub static ROOM_SPAWN_DATA: [(i32, i32, i32, i32, i32, i32, i32); 762] = [
     (1, 1, 18120, 182214, -85572, -7219, 53601),
     (1, 1, 18132, 181626, -85799, -7218, 48022),
     (1, 1, 18132, 182223, -85833, -7220, 50241),

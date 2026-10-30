@@ -125,7 +125,10 @@ fn say(ctx: &mut ScriptCtx<'_>, npc: ObjectId, text: NpcStringId) {
 fn init_room(ctx: &mut ScriptCtx<'_>, manager: ObjectId) -> MinigameRoom {
     let mut burners = Vec::new();
     for id in ctx.world().npc_ids() {
-        let is_burner = ctx.world().npc(id).is_some_and(|n| n.npc_id == BURNER && !n.decayed);
+        let is_burner = ctx
+            .world()
+            .npc(id)
+            .is_some_and(|n| n.npc_id == BURNER && !n.decayed);
         if is_burner && burners.len() <= 8 && ctx.check_if_in_range(1000, manager, id, false) {
             burners.push(id);
         }
@@ -247,7 +250,11 @@ impl Script for Minigame {
                     return Some("32758-05.html".to_owned());
                 }
 
-                if ctx.world().creature_target(npc.object_id).is_some_and(|t| t != player) {
+                if ctx
+                    .world()
+                    .creature_target(npc.object_id)
+                    .is_some_and(|t| t != player)
+                {
                     return Some("32758-04.html".to_owned());
                 }
 
@@ -330,11 +337,21 @@ impl Script for Minigame {
                 }
             }
             "hurry_up" => {
-                ctx.broadcast_npc_say(npc, ChatType::NpcGeneral, NpcStringId::ThereSAbout1MinuteLeft, &[]);
+                ctx.broadcast_npc_say(
+                    npc,
+                    ChatType::NpcGeneral,
+                    NpcStringId::ThereSAbout1MinuteLeft,
+                    &[],
+                );
                 ctx.start_quest_timer("hurry_up2", 60_000, Some(npc), None, false);
             }
             "hurry_up2" => {
-                ctx.broadcast_npc_say(npc, ChatType::NpcGeneral, NpcStringId::ThereSJust10SecondsLeft, &[]);
+                ctx.broadcast_npc_say(
+                    npc,
+                    ChatType::NpcGeneral,
+                    NpcStringId::ThereSJust10SecondsLeft,
+                    &[],
+                );
                 ctx.start_quest_timer("expire", 10_000, Some(npc), None, false);
             }
             "expire" => {

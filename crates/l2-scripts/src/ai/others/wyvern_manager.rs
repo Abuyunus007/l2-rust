@@ -147,7 +147,8 @@ fn main_page(ctx: &ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId) -> String {
 /// Java `mountWyvern(npc, player)`.
 fn mount_wyvern(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId) -> String {
     if ctx.world().script_is_mounted_on(player, STRIDER_LEVEL, &STRIDERS) {
-        if is_owner_clan(ctx, npc, player) && ctx.get_quest_items_count(player, CRYSTAL_B_GRADE) >= WYVERN_FEE {
+        if is_owner_clan(ctx, npc, player) && ctx.get_quest_items_count(player, CRYSTAL_B_GRADE) >= WYVERN_FEE
+        {
             ctx.take_items(player, CRYSTAL_B_GRADE, WYVERN_FEE);
             ctx.world_mut().script_dismount_and_mount(player, WYVERN);
             return "wyvernmanager-04.html".to_owned();
@@ -282,13 +283,20 @@ mod tests {
             page = WyvernManager.on_first_talk(ctx, npc, ObjectId(1));
         });
         assert_eq!(page.as_deref(), Some("wyvernmanager-02.html"));
-        assert_eq!(event(&mut t, npc, "Return").as_deref(), Some("wyvernmanager-02.html"));
+        assert_eq!(
+            event(&mut t, npc, "Return").as_deref(),
+            Some("wyvernmanager-02.html")
+        );
     }
 
     #[test]
     fn help_depends_on_the_residence_type() {
         let (mut t, npc) = setup();
-        assert!(event(&mut t, npc, "Help").unwrap().contains("wyvernmanager-03.html"));
+        assert!(
+            event(&mut t, npc, "Help")
+                .unwrap()
+                .contains("wyvernmanager-03.html")
+        );
     }
 
     #[test]

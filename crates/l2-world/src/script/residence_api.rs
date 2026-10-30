@@ -63,7 +63,10 @@ impl World {
     /// player.getMountNpcId())`.
     pub fn script_is_mounted_on(&self, player: ObjectId, min_level: i32, npc_ids: &[i32]) -> bool {
         self.is_mounted(player)
-            && self.players.get(&player).is_some_and(|p| p.mount.level >= min_level)
+            && self
+                .players
+                .get(&player)
+                .is_some_and(|p| p.mount.level >= min_level)
             && npc_ids.contains(&self.mount_npc_id_of(player))
     }
 

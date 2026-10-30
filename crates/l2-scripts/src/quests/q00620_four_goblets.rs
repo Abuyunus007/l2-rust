@@ -29,7 +29,12 @@ const GOBLET_OF_MORIGUL: i32 = 7259;
 const CHAPEL_KEY: i32 = 7260;
 const USED_GRAVE_PASS: i32 = 7261;
 const ANTIQUE_BROOCH: i32 = 7262;
-const GOBLETS: [i32; 4] = [GOBLET_OF_ALECTIA, GOBLET_OF_TISHAS, GOBLET_OF_MEKARA, GOBLET_OF_MORIGUL];
+const GOBLETS: [i32; 4] = [
+    GOBLET_OF_ALECTIA,
+    GOBLET_OF_TISHAS,
+    GOBLET_OF_MEKARA,
+    GOBLET_OF_MORIGUL,
+];
 
 // Misc
 const MIN_LEVEL: i32 = 74;
@@ -347,9 +352,9 @@ impl Script for Q00620FourGoblets {
         match event {
             "31453-02.htm" | "31453-03.htm" | "31453-04.htm" | "31453-05.htm" | "31453-06.htm"
             | "31453-07.htm" | "31453-08.htm" | "31453-09.htm" | "31453-10.htm" | "31453-11.htm"
-            | "31453-16.html" | "31453-17.html" | "31453-18.html" | "31453-19.html"
-            | "31453-20.html" | "31453-21.html" | "31453-22.html" | "31453-23.html"
-            | "31453-24.html" | "31453-25.html" | "31453-27.html" | "31452-04.html" => {
+            | "31453-16.html" | "31453-17.html" | "31453-18.html" | "31453-19.html" | "31453-20.html"
+            | "31453-21.html" | "31453-22.html" | "31453-23.html" | "31453-24.html" | "31453-25.html"
+            | "31453-27.html" | "31452-04.html" => {
                 htmltext = Some(event.to_owned());
             }
             "31453-12.htm" => {
@@ -475,10 +480,28 @@ impl Script for Q00620FourGoblets {
                     ctx.give_item_randomly(member, Some(npc), SEALED_BOX, 1, 1, 0, chance, true);
                 } else if let Some(&(_, percent)) = MOB2.iter().find(|m| m.0 == npc.id) {
                     let item_count = if ctx.get_random(100) < percent { 2 } else { 1 };
-                    ctx.give_item_randomly(member, Some(npc), SEALED_BOX, item_count, item_count, 0, 1.0, true);
+                    ctx.give_item_randomly(
+                        member,
+                        Some(npc),
+                        SEALED_BOX,
+                        item_count,
+                        item_count,
+                        0,
+                        1.0,
+                        true,
+                    );
                 } else if let Some(&(_, percent)) = MOB3.iter().find(|m| m.0 == npc.id) {
                     let item_count = if ctx.get_random(100) < percent { 5 } else { 4 };
-                    ctx.give_item_randomly(member, Some(npc), SEALED_BOX, item_count, item_count, 0, 1.0, true);
+                    ctx.give_item_randomly(
+                        member,
+                        Some(npc),
+                        SEALED_BOX,
+                        item_count,
+                        item_count,
+                        0,
+                        1.0,
+                        true,
+                    );
                 }
             }
         }

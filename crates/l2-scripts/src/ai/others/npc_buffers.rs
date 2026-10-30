@@ -90,10 +90,7 @@ fn run(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, index: usize) {
         return;
     }
 
-    let Some(player) = ctx
-        .summoner(npc)
-        .filter(|s| ctx.world().player(*s).is_some())
-    else {
+    let Some(player) = ctx.summoner(npc).filter(|s| ctx.world().player(*s).is_some()) else {
         return;
     };
 
@@ -115,7 +112,10 @@ fn run(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, index: usize) {
             }
         }
         AffectScope::Range => {
-            for target in ctx.world().script_visible_creatures_in_range(npc.object_id, range) {
+            for target in ctx
+                .world()
+                .script_visible_creatures_in_range(npc.object_id, range)
+            {
                 match object {
                     AffectObject::Friend => {
                         if is_friendly(ctx, player, target) && !ctx.is_dead(target) {
@@ -204,7 +204,10 @@ mod tests {
     #[test]
     fn every_listed_buffer_has_its_skills_in_the_table() {
         assert_eq!(NPC_BUFFERS.len(), 33);
-        assert_eq!(buffer_skills(143), &[(23308, 1, 5, AffectScope::Range, AffectObject::Friend)]);
+        assert_eq!(
+            buffer_skills(143),
+            &[(23308, 1, 5, AffectScope::Range, AffectObject::Friend)]
+        );
         assert_eq!(
             buffer_skills(106),
             &[(22250, 1, 60, AffectScope::Party, AffectObject::Friend)]
@@ -237,7 +240,16 @@ mod tests {
         t.world.run_as_script("NpcBuffers", |ctx| {
             let owner = ctx.script_npc(ObjectId(1));
             assert!(owner.is_none());
-            totem = ctx.add_spawn(143, crate::testing::X + 20, crate::testing::Y, crate::testing::Z, 0, false, 0, 0);
+            totem = ctx.add_spawn(
+                143,
+                crate::testing::X + 20,
+                crate::testing::Y,
+                crate::testing::Z,
+                0,
+                false,
+                0,
+                0,
+            );
         });
         let totem = totem.unwrap();
         // The summoner is a player: the run keeps its timer (5 s) on the wheel.

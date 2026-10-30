@@ -40,7 +40,9 @@ fn var_int(ctx: &ScriptCtx<'_>, npc: ScriptNpc, name: &str) -> i32 {
 }
 
 fn set_var(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, name: &str, value: i32) {
-    ctx.world_mut().npc_variables_mut(npc.object_id).set_int(name, value);
+    ctx.world_mut()
+        .npc_variables_mut(npc.object_id)
+        .set_int(name, value);
 }
 
 fn remove_var(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, name: &str) {
@@ -186,13 +188,15 @@ impl Script for SelMahumSquad {
                 ctx.world_mut().set_npc_target(npc.object_id, Some(npc.object_id));
 
                 if !random_walking_enabled(ctx, npc) {
-                    ctx.world_mut().do_cast(npc.object_id, SkillKey { id: 6331, level: 1 });
+                    ctx.world_mut()
+                        .do_cast(npc.object_id, SkillKey { id: 6331, level: 1 });
                     display(ctx, npc, MAHUM_EFFECT_SLEEP);
                 }
 
                 if var_int(ctx, npc, "BUSY_STATE") == 1 {
                     // Eating
-                    ctx.world_mut().do_cast(npc.object_id, SkillKey { id: 6332, level: 1 });
+                    ctx.world_mut()
+                        .do_cast(npc.object_id, SkillKey { id: 6332, level: 1 });
                     display(ctx, npc, MAHUM_EFFECT_EAT);
                 }
 
@@ -371,7 +375,8 @@ impl Script for SelMahumSquad {
         _is_summon: bool,
     ) {
         if npc.id == STOVE && skill.id == 9075 && targets.contains(&npc.object_id) {
-            ctx.world_mut().do_cast(npc.object_id, SkillKey { id: 6688, level: 1 });
+            ctx.world_mut()
+                .do_cast(npc.object_id, SkillKey { id: 6688, level: 1 });
             ctx.world_mut()
                 .broadcast_event(npc.object_id, "SCE_SOUP_FAILURE", 600, Some(caster));
         }

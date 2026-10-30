@@ -37,8 +37,8 @@ const GREAT_SAGES_BOSS: i32 = 25339;
 const JUDGE_BOSS: i32 = 25349;
 const TELEPORTER: i32 = 31452;
 const FIRST_TALK_NPCS: [i32; 25] = [
-    TELEPORTER, 31453, 31454, 31919, 31920, 31925, 31926, 31927, 31928, 31929, 31930, 31931, 31932,
-    31933, 31934, 31935, 31936, 31937, 31938, 31939, 31940, 31941, 31942, 31943, 31944,
+    TELEPORTER, 31453, 31454, 31919, 31920, 31925, 31926, 31927, 31928, 31929, 31930, 31931, 31932, 31933,
+    31934, 31935, 31936, 31937, 31938, 31939, 31940, 31941, 31942, 31943, 31944,
 ];
 const CHEST_REWARD_MONSTERS: [i32; 4] = [
     18120, // room 1
@@ -191,7 +191,11 @@ fn get_sepulcher_id(ctx: &ScriptCtx<'_>, player: ObjectId) -> i32 {
         (3, GREAT_SAGES_ZONE),
         (4, JUDGE_ZONE),
     ] {
-        if ctx.world().zone_players_inside(zone, SCRIPT_ZONE).contains(&player) {
+        if ctx
+            .world()
+            .zone_players_inside(zone, SCRIPT_ZONE)
+            .contains(&player)
+        {
             return id;
         }
     }
@@ -248,7 +252,11 @@ fn show_html_file(
         return;
     };
     if let Some(member) = member {
-        let name = ctx.world().player(member).map(|p| p.data.name.clone()).unwrap_or_default();
+        let name = ctx
+            .world()
+            .player(member)
+            .map(|p| p.data.name.clone())
+            .unwrap_or_default();
         html = html.replace("%member%", &name);
     }
     ctx.show_result(player, Some(&html), Some(npc));
@@ -299,7 +307,7 @@ fn spawn_next_wave(ctx: &mut ScriptCtx<'_>, player: ObjectId) {
         return;
     };
     let mut list = monsters(ctx, sepulcher_id);
-    for (sepulcher, wave, npc_id, x, y, z, heading) in ROOM_SPAWN_DATA {
+    for &(sepulcher, wave, npc_id, x, y, z, heading) in ROOM_SPAWN_DATA.iter() {
         if sepulcher == sepulcher_id
             && wave == current_wave
             && let Some(npc) = ctx.add_spawn(npc_id, x, y, z, heading, false, 0, 0)
@@ -555,7 +563,13 @@ impl Script for FourSepulchers {
                         for (sepulcher, wave, door) in DOORS {
                             if sepulcher == sepulcher_id && wave == current_wave {
                                 ctx.open_door(door, 0);
-                                ctx.start_quest_timer(&format!("CLOSE_DOOR_{door}"), 15_000, None, None, false);
+                                ctx.start_quest_timer(
+                                    &format!("CLOSE_DOOR_{door}"),
+                                    15_000,
+                                    None,
+                                    None,
+                                    false,
+                                );
                                 break;
                             }
                         }
@@ -566,7 +580,12 @@ impl Script for FourSepulchers {
                             spawn_next_wave(ctx, player);
                         }
 
-                        ctx.broadcast_npc_say(npc, ChatType::NpcGeneral, NpcStringId::TheMonstersHaveSpawned, &[]);
+                        ctx.broadcast_npc_say(
+                            npc,
+                            ChatType::NpcGeneral,
+                            NpcStringId::TheMonstersHaveSpawned,
+                            &[],
+                        );
                     } else {
                         let name = ctx.world().npc_template_name(npc.object_id);
                         if let Some(html) = ctx.get_htm(player, "Gatekeeper-no.html") {
@@ -594,7 +613,9 @@ impl Script for FourSepulchers {
                     let dx = ctx.get_random_range(-400, 400);
                     let dy = ctx.get_random_range(-400, 400);
                     let at = ctx.world().position_of(npc.object_id);
-                    let destination = ctx.world().npc_valid_location_toward(npc.object_id, sx + dx, sy + dy);
+                    let destination = ctx
+                        .world()
+                        .npc_valid_location_toward(npc.object_id, sx + dx, sy + dy);
                     if let (Some((x, y, _)), Some((tx, ty, tz))) = (at, destination)
                         && f64::from((x - sx).pow(2) + (y - sy).pow(2)).sqrt() < 600.0
                     {
@@ -611,7 +632,8 @@ impl Script for FourSepulchers {
             }
             "REMOVE_PETRIFY" => {
                 let npc = npc?;
-                ctx.world_mut().script_stop_skill_effects_removed(npc.object_id, PETRIFY.id);
+                ctx.world_mut()
+                    .script_stop_skill_effects_removed(npc.object_id, PETRIFY.id);
                 // npc.setTargetable(true);
                 ctx.world_mut().set_invul(npc.object_id, false);
                 return None;
@@ -656,7 +678,9 @@ impl Script for FourSepulchers {
                         .npc_ids()
                         .into_iter()
                         .find(|id| {
-                            ctx.world().npc(*id).is_some_and(|n| n.npc_id == manager_id && !n.decayed)
+                            ctx.world()
+                                .npc(*id)
+                                .is_some_and(|n| n.npc_id == manager_id && !n.decayed)
                         })
                         .and_then(|id| ctx.script_npc(id));
                     match manager {
@@ -867,7 +891,12 @@ mod tests {
             "Gatekeeper-no.html",
         ]
         .iter()
-        .map(|f| (format!("{dir}/{f}"), format!("<html><body>{f} %member%</body></html>")))
+        .map(|f| {
+            (
+                format!("{dir}/{f}"),
+                format!("<html><body>{f} %member%</body></html>"),
+            )
+        })
         .collect();
         files.push(("data/zones/script.xml".to_owned(), ZONES.to_owned()));
         let files: Vec<(&str, &str)> = files.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
@@ -891,7 +920,10 @@ mod tests {
     fn the_announcement_is_at_minute_55() {
         // 12:10:30 -> 44 min 30 s.
         let base = 12 * 3_600_000;
-        assert_eq!(ms_until_announce(base + 10 * 60_000 + 30_000), 44 * 60_000 + 30_000);
+        assert_eq!(
+            ms_until_announce(base + 10 * 60_000 + 30_000),
+            44 * 60_000 + 30_000
+        );
         assert_eq!(ms_until_announce(base + 55 * 60_000), 60 * 60_000);
         assert_eq!(ms_until_announce(base + 56 * 60_000), 59 * 60_000);
     }
@@ -941,7 +973,11 @@ mod tests {
         let out = t.take();
         assert!(!pages_to(&out, 1).is_empty());
         // Nobody left the place.
-        assert!(t.world.zone_players_inside(CONQUEROR_ZONE, SCRIPT_ZONE).is_empty());
+        assert!(
+            t.world
+                .zone_players_inside(CONQUEROR_ZONE, SCRIPT_ZONE)
+                .is_empty()
+        );
     }
 
     #[test]
