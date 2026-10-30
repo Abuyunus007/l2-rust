@@ -261,6 +261,7 @@ pub mod q00381_lets_become_a_royal_member;
 pub mod q00382_kails_magic_coin;
 pub mod q00385_yoke_of_the_past;
 pub mod q00450_grave_robber_rescue;
+pub mod q00998_fallen_angel_select;
 pub mod q10268_to_the_seed_of_infinity;
 pub mod q10269_to_the_seed_of_destruction;
 pub mod q10282_to_the_seed_of_annihilation;
@@ -528,4 +529,5 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q10268_to_the_seed_of_infinity::Q10268ToTheSeedOfInfinity);
     r.add(q10269_to_the_seed_of_destruction::Q10269ToTheSeedOfDestruction);
     r.add(q10282_to_the_seed_of_annihilation::Q10282ToTheSeedOfAnnihilation);
+    r.add(q00998_fallen_angel_select::Q00998FallenAngelSelect);
 }
