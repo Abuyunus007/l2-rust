@@ -14,6 +14,7 @@ pub mod giran;
 pub mod gracia;
 pub mod hellbound;
 pub mod hot_springs;
+pub mod imperial_tomb;
 pub mod isle_of_prayer;
 pub mod ketra_orc_outpust;
 pub mod mithril_mines;
@@ -48,6 +49,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     gracia::register(r);
     hellbound::register(r);
     hot_springs::register(r);
+    imperial_tomb::register(r);
     isle_of_prayer::register(r);
     ketra_orc_outpust::register(r);
     mithril_mines::register(r);
