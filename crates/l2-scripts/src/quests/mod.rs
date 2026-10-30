@@ -246,6 +246,9 @@ pub mod q00651_runaway_youth;
 pub mod q00652_an_aged_ex_adventurer;
 pub mod q00653_wild_maiden;
 pub mod q00655_a_grand_plan_for_taming_wild_beasts;
+pub mod q00696_conquer_the_hall_of_erosion;
+pub mod q00697_defend_the_hall_of_erosion;
+pub mod q00698_block_the_lords_escape;
 
 use l2_world::ScriptRegistry;
 
@@ -492,4 +495,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00651_runaway_youth::Q00651RunawayYouth);
     r.add(q00652_an_aged_ex_adventurer::Q00652AnAgedExAdventurer);
     r.add(q00653_wild_maiden::Q00653WildMaiden);
+    r.add(q00696_conquer_the_hall_of_erosion::Q00696ConquerTheHallOfErosion);
+    r.add(q00697_defend_the_hall_of_erosion::Q00697DefendTheHallOfErosion);
+    r.add(q00698_block_the_lords_escape::Q00698BlockTheLordsEscape);
 }
