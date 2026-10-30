@@ -417,6 +417,7 @@ pub mod q00998_fallen_angel_select;
 pub mod q10267_journey_to_gracia;
 pub mod q10268_to_the_seed_of_infinity;
 pub mod q10269_to_the_seed_of_destruction;
+pub mod q10270_birth_of_the_seed;
 pub mod q10271_the_enveloping_darkness;
 pub mod q10273_good_day_to_fly;
 pub mod q10274_collecting_in_the_air;
@@ -862,6 +863,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q10267_journey_to_gracia::Q10267JourneyToGracia);
     r.add(q10268_to_the_seed_of_infinity::Q10268ToTheSeedOfInfinity);
     r.add(q10269_to_the_seed_of_destruction::Q10269ToTheSeedOfDestruction);
+    r.add(q10270_birth_of_the_seed::Q10270BirthOfTheSeed);
     r.add(q10271_the_enveloping_darkness::Q10271TheEnvelopingDarkness);
     r.add(q10273_good_day_to_fly::Q10273GoodDayToFly);
     r.add(q10274_collecting_in_the_air::Q10274CollectingInTheAir);
