@@ -366,6 +366,13 @@ impl World {
         self.broadcast_with_self(player, packet);
     }
 
+    /// Java `door.setMeshIndex(mesh)`: only the field (S-INST-03, Nornil's Garden).
+    pub fn set_door_mesh_index(&mut self, id: ObjectId, mesh_index: i32) {
+        if let Some(door) = self.doors.get_mut(&id) {
+            door.mesh_index = mesh_index;
+        }
+    }
+
     /// Java `npc.isMyLord(player)` (S-INST-03, Castle Dungeon).
     pub fn npc_is_my_lord(&self, npc: ObjectId, player: ObjectId) -> bool {
         self.fort_is_my_lord(npc, player)

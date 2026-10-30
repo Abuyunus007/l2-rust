@@ -22,6 +22,7 @@ pub mod jinia_guild_hideout4;
 pub(crate) mod jinia_guild_hideout;
 pub mod kamaloka;
 pub mod mithril_mine;
+pub mod nornils_garden;
 pub mod nornils_garden_quest;
 pub mod pailaka_devils_legacy;
 pub mod pailaka_injured_dragon;
@@ -188,6 +189,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(jinia_guild_hideout4::JiniaGuildHideout4);
     r.add(kamaloka::Kamaloka);
     r.add(mithril_mine::MithrilMine);
+    r.add(nornils_garden::NornilsGarden);
     r.add(nornils_garden_quest::NornilsGardenQuest);
     r.add(pailaka_devils_legacy::PailakaDevilsLegacy);
     r.add(pailaka_injured_dragon::PailakaInjuredDragon);
