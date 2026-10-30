@@ -133,6 +133,7 @@ pub mod q00275_dark_winged_spies;
 pub mod q00295_dreaming_of_the_skies;
 pub mod q00303_collect_arrowheads;
 pub mod q00317_catch_the_wind;
+pub mod q00338_alligator_hunter;
 pub mod q00450_grave_robber_rescue;
 
 use l2_world::ScriptRegistry;
@@ -267,5 +268,6 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00295_dreaming_of_the_skies::Q00295DreamingOfTheSkies);
     r.add(q00303_collect_arrowheads::Q00303CollectArrowheads);
     r.add(q00317_catch_the_wind::Q00317CatchTheWind);
+    r.add(q00338_alligator_hunter::Q00338AlligatorHunter);
     r.add(q00450_grave_robber_rescue::Q00450GraveRobberRescue);
 }
