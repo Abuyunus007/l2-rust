@@ -28,6 +28,13 @@ const UPDATE_CHARACTER: &str = "UPDATE characters SET level=?,maxHp=?,curHp=?,ma
 // Java: Player.RESTORE_CHARACTER
 const RESTORE_CHARACTER: &str = "SELECT * FROM characters WHERE charId=?";
 // Java: Player.RESTORE_CHARACTER's `createDate` column (S-HAND-02: read as text)
+// Java: CharacterBirthday.SELECT_PENDING_BIRTHDAY_GIFTS. The `createDate` column Java also selects is
+// not read, so it is left out.
+// NOTE(java-quirk): Java binds `System.currentTimeMillis() - 24h` (milliseconds) to `FROM_UNIXTIME(?)`,
+// which takes seconds; a value that big gives NULL, so `BETWEEN` is never true and no character is
+// found. The statement and the bind are kept as they are.
+const SELECT_PENDING_BIRTHDAY_GIFTS: &str = "SELECT charId, char_name, (YEAR(NOW()) - YEAR(createDate)) AS age FROM characters WHERE (YEAR(NOW()) - YEAR(createDate) > 0) AND ((DATE_ADD(createDate, INTERVAL (YEAR(NOW()) - YEAR(createDate)) YEAR)) BETWEEN FROM_UNIXTIME(?) AND NOW())";
+
 const SELECT_CREATE_DATE: &str = "SELECT CAST(createDate AS CHAR) FROM characters WHERE charId=?";
 // Java: Player.restore (other characters of the account)
 const SELECT_OTHER_CHARACTERS: &str =
@@ -763,6 +770,20 @@ impl CharacterRepository {
             .execute(&self.pool)
             .await?;
         Ok(())
+    }
+
+    /// The characters whose birthday came since `since`, as `(charId, char_name, age)`. `since` is
+    /// bound as Java binds it (see [`SELECT_PENDING_BIRTHDAY_GIFTS`]).
+    // Java: CharacterBirthday.onDailyReset
+    pub async fn pending_birthday_gifts(&self, since: i64) -> Result<Vec<(i32, String, i32)>> {
+        let rows: Vec<(i32, String, i64)> = sqlx::query_as(SELECT_PENDING_BIRTHDAY_GIFTS)
+            .bind(since)
+            .fetch_all(&self.pool)
+            .await?;
+        Ok(rows
+            .into_iter()
+            .map(|(char_id, name, age)| (char_id, name, i32::try_from(age).unwrap_or(i32::MAX)))
+            .collect())
     }
 
     /// Deletes the character and every row that belongs to it, statement by statement in

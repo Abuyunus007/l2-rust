@@ -36,7 +36,8 @@ impl PacketSink for Sink {
 #[derive(Clone, Default)]
 struct Writes(Arc<Mutex<Vec<QuestWrite>>>);
 
-/// The grand boss writes and re-read requests (S-BOSS-01).
+/// The grand boss writes and re-read requests (S-BOSS-01), and the event rows of S-LEFT-01 (the
+/// item delete, the birthday query, the mails and their item rows).
 #[derive(Clone, Default)]
 struct BossCommands(Arc<Mutex<Vec<PersistCommand>>>);
 
@@ -48,7 +49,12 @@ impl Outbox for RecordingOutbox {
             self.0.0.lock().unwrap().push(write);
         } else if matches!(
             command,
-            PersistCommand::Boss(_) | PersistCommand::BossRereadRequest { .. }
+            PersistCommand::Boss(_)
+                | PersistCommand::BossRereadRequest { .. }
+                | PersistCommand::DeleteItemsOfItemId { .. }
+                | PersistCommand::BirthdayGiftsRequest { .. }
+                | PersistCommand::ItemRows { .. }
+                | PersistCommand::Mail(_)
         ) {
             self.1.0.lock().unwrap().push(command);
         }
@@ -312,7 +318,8 @@ impl ScriptTest {
         std::mem::take(&mut self.writes.0.lock().unwrap())
     }
 
-    /// The grand boss writes and re-read requests since the last call.
+    /// The grand boss writes and re-read requests since the last call, and the event rows of
+    /// S-LEFT-01 (`DeleteItemsOfItemId`, `BirthdayGiftsRequest`, `ItemRows`, `Mail`).
     pub fn take_boss(&self) -> Vec<PersistCommand> {
         std::mem::take(&mut self.boss.0.lock().unwrap())
     }

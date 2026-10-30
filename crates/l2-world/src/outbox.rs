@@ -287,6 +287,13 @@ pub enum PersistCommand {
     /// include the store sent before it. The answer comes back as `WorldCommand::ClassIndexLoaded`
     /// (S-SUB-01).
     ClassIndexRequest { owner: ObjectId, class_index: i32 },
+    /// Java `LongTimeEvent.destroyItemsOnEnd`: `DELETE FROM items WHERE item_id=?`. A global write,
+    /// only sent with `CycleDatabaseWrites` (D-53, `script/birthday.rs`, S-LEFT-01).
+    DeleteItemsOfItemId { item_id: i32 },
+    /// Asks the persistence task for the characters whose birthday came since `since_ms`
+    /// (`CharacterBirthday.onDailyReset`, only sent with `DailyResetDatabaseWrites`, D-49). The
+    /// answer comes back as `WorldCommand::BirthdayGiftsLoaded` (S-LEFT-01).
+    BirthdayGiftsRequest { since_ms: i64 },
     /// A write of `bbs_favorites` with Java's statement (S-HAND-01, see `community_board/`).
     /// Applied in order with the other commands.
     BbsFavorite(crate::community_board::FavoriteWrite),

@@ -499,10 +499,9 @@ fn spawn_npcs(ctx: &mut ScriptCtx<'_>, cfg: &EventConfig, end_date: i64) {
     }
 }
 
-/// Java `destroyItemsOnEnd()`: the items leave every online player's inventory.
-///
-/// Left out: `DELETE FROM items WHERE item_id=?` (the rows of offline characters): the world has
-/// no outbox request for it yet.
+/// Java `destroyItemsOnEnd()`: the items leave every online player's inventory, then
+/// `DELETE FROM items WHERE item_id=?` takes the rows of the offline characters. The delete is a
+/// global write: it goes out through the outbox only with `CycleDatabaseWrites` (D-53, D-15).
 fn destroy_items_on_end(ctx: &mut ScriptCtx<'_>, cfg: &EventConfig) {
     for &item_id in cfg.destroy_items_on_end {
         if ctx.world().item_template_name(item_id).is_none() {
@@ -513,6 +512,8 @@ fn destroy_items_on_end(ctx: &mut ScriptCtx<'_>, cfg: &EventConfig) {
         for player in ctx.online_players() {
             ctx.world_mut().destroy_item_by_item_id(player, item_id, -1, true);
         }
+        // Update database.
+        ctx.world_mut().delete_event_item_rows(item_id);
     }
 }
 
@@ -809,6 +810,39 @@ mod tests {
         t.enter(1, 40, vec![item(1000, 15_366, 3)]);
         t.world.run_as_script("TestEvent", |ctx| load(ctx, &PASSED));
         assert_eq!(t.count(1, 15_366), 0);
+    }
+
+    #[test]
+    fn the_item_rows_are_deleted_only_with_the_cycle_switch_on() {
+        use l2_world::outbox::PersistCommand;
+        use l2_world::script::ScriptSettings;
+
+        // `destroyItemsOnEnd` lists 15366 (it exists) and 99999 (it does not: no delete).
+        let mut t = world(&PASSED);
+        assert!(!period(&mut t));
+        assert!(
+            t.take_boss()
+                .iter()
+                .all(|c| !matches!(c, PersistCommand::DeleteItemsOfItemId { .. })),
+            "the switch is off by default"
+        );
+
+        let mut t = world(&PASSED);
+        t.world.set_script_settings(ScriptSettings {
+            cycle_database_writes: true,
+            ..ScriptSettings::default()
+        });
+        t.take_boss();
+        t.world.run_as_script("TestEvent", |ctx| load(ctx, &PASSED));
+        let deleted: Vec<i32> = t
+            .take_boss()
+            .into_iter()
+            .filter_map(|c| match c {
+                PersistCommand::DeleteItemsOfItemId { item_id } => Some(item_id),
+                _ => None,
+            })
+            .collect();
+        assert_eq!(deleted, [15_366]);
     }
 
     #[test]
