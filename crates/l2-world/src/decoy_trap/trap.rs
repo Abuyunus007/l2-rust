@@ -87,9 +87,7 @@ impl World {
         if let Some(old) = self.trap_of(player) {
             self.trap_unsummon(old);
         }
-        if self.npc_world.template(npc_id).is_none() {
-            return None;
-        }
+        self.npc_world.template(npc_id)?;
         let (x, y, z) = self.position_of(player)?;
         let heading = self.players.get(&player)?.core.heading;
         let instance = self.objects.get(&player).map_or(0, |e| e.instance_id);
@@ -295,8 +293,10 @@ impl World {
                 );
             }
             if remaining <= 0 {
-                let target_type = skill
-                    .and_then(|k| self.skill_table().and_then(|t| t.get(k.id, k.level).map(|s| s.target_type)));
+                let target_type = skill.and_then(|k| {
+                    self.skill_table()
+                        .and_then(|t| t.get(k.id, k.level).map(|s| s.target_type))
+                });
                 match target_type {
                     Some(TargetType::Aura | TargetType::FrontAura | TargetType::BehindAura) => {
                         self.trap_trigger(trap, trap);

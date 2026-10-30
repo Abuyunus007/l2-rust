@@ -35,7 +35,10 @@ impl EffectHandler for SummonTrap {
             return;
         }
         if self.npc_id <= 0 {
-            warn!("SummonTrap: Invalid NPC ID:{} in skill ID: {}", self.npc_id, cx.skill.id);
+            warn!(
+                "SummonTrap: Invalid NPC ID:{} in skill ID: {}",
+                self.npc_id, cx.skill.id
+            );
             return;
         }
         let player = cx.effected;

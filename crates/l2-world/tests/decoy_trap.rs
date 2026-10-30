@@ -6,7 +6,7 @@
 use std::sync::{Arc, Mutex};
 
 use l2_data::{
-    ArmorSets, EnchantHpBonus, HtmCache, Hennas, ItemTemplates, NpcLoadOptions, NpcTemplates,
+    ArmorSets, EnchantHpBonus, Hennas, HtmCache, ItemTemplates, NpcLoadOptions, NpcTemplates,
     PlayerTemplates, SkillTemplates, SpawnData, SpawnLoadOptions,
 };
 use l2_net::{Decode, PacketReader};
@@ -173,7 +173,13 @@ impl Script for Probe {
     fn setup(&self, s: &mut ScriptSetup) {
         s.add_trap_action_id(&[TRAP_NPC]);
     }
-    fn on_trap_action(&self, _ctx: &mut ScriptCtx<'_>, trap: ScriptNpc, trigger: ObjectId, action: TrapAction) {
+    fn on_trap_action(
+        &self,
+        _ctx: &mut ScriptCtx<'_>,
+        trap: ScriptNpc,
+        trigger: ObjectId,
+        action: TrapAction,
+    ) {
         self.0
             .0
             .lock()
@@ -247,7 +253,11 @@ impl Scene {
         world.set_id_factory(Arc::new(IdFactory::new(Vec::<i32>::new()).unwrap()));
         let root = std::env::temp_dir();
         let npcs = Arc::new(NpcTemplates::from_xml(NPCS, &NpcLoadOptions::default()).unwrap());
-        let spawns = Arc::new(SpawnData::load(&root.join("l2-no-spawns"), &npcs, &SpawnLoadOptions::default()));
+        let spawns = Arc::new(SpawnData::load(
+            &root.join("l2-no-spawns"),
+            &npcs,
+            &SpawnLoadOptions::default(),
+        ));
         world.set_npc_data(npcs, spawns);
         world.set_html_cache(Arc::new(HtmCache::load(&root.join("l2-no-html"), false)));
         let heard = Heard::default();
@@ -338,8 +348,14 @@ fn a_decoy_is_attacked_like_its_owner_and_dies_into_a_corpse() {
     s.world.apply_effects(ME, ME, SkillKey::new(SUMMON_DECOY, 1));
     let decoy = s.world.decoy_of(ME).unwrap();
     let goblin = s.world.spawn_npc_at(GOBLIN, X + 60, Y, Z, 0).unwrap();
-    assert!(s.world.is_auto_attackable_by(decoy, goblin), "monsters attack players");
-    assert!(!s.world.is_auto_attackable_by(decoy, P2), "an unflagged player is not attacked");
+    assert!(
+        s.world.is_auto_attackable_by(decoy, goblin),
+        "monsters attack players"
+    );
+    assert!(
+        !s.world.is_auto_attackable_by(decoy, P2),
+        "an unflagged player is not attacked"
+    );
 
     // DecoyClick: target only.
     s.world.handle(WorldCommand::Input {
@@ -361,7 +377,11 @@ fn a_decoy_is_attacked_like_its_owner_and_dies_into_a_corpse() {
     assert!(s.world.do_die(decoy, Some(goblin)));
     assert!(s.world.is_dead(decoy));
     assert!(s.world.has_decay_task(decoy));
-    assert_eq!(s.world.decoy_of(ME), Some(decoy), "the owner still has it as a corpse");
+    assert_eq!(
+        s.world.decoy_of(ME),
+        Some(decoy),
+        "the owner still has it as a corpse"
+    );
     s.world.delete_npc(goblin);
     s.advance(10_000);
     s.advance(10_000);
@@ -482,10 +502,16 @@ fn a_trap_goes_off_when_a_monster_comes_close() {
     s.advance(1100);
     assert!(s.world.trap_is_triggered(trap));
     let packets = s.p2.take();
-    assert!(!of(&packets, "NPC_INFO").is_empty(), "everybody sees a trap that went off");
+    assert!(
+        !of(&packets, "NPC_INFO").is_empty(),
+        "everybody sees a trap that went off"
+    );
     assert_eq!(s.heard.take(), [format!("TrapTriggered {TRAP_NPC} {}", goblin.0)]);
     s.advance(600);
-    assert!(!of(&s.p2.take(), "MAGIC_SKILL_USE").is_empty(), "the trap cast its skill");
+    assert!(
+        !of(&s.p2.take(), "MAGIC_SKILL_USE").is_empty(),
+        "the trap cast its skill"
+    );
     s.world.delete_npc(goblin);
     s.advance(1500);
     assert!(s.world.npc(trap).is_none(), "unsummoned after the cast");

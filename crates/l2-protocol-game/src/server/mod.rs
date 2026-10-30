@@ -124,8 +124,8 @@ pub mod store;
 pub mod summon;
 pub mod system_message;
 pub mod territory;
-pub mod trap_info;
 pub mod trade;
+pub mod trap_info;
 pub mod userinfo;
 pub mod vehicle;
 pub mod visibility;
@@ -287,7 +287,6 @@ pub use summon::{
     ExChangeNpcState, PetDelete, PetInfo, PetInventoryUpdate, PetItemList, PetStatusShow, PetStatusUpdate,
     Ride, SetSummonRemainTime, SummonInfo,
 };
-pub use trap_info::TrapInfo;
 pub use system_message::{ConfirmDlg, SystemMessage, SystemMessageParam};
 pub use territory::{
     DominionTerritory, ExDominionWarEnd, ExDominionWarStart, ExReplyDominionInfo, ExShowDominionRegistry,
@@ -297,6 +296,7 @@ pub use trade::{
     SendTradeRequest, TradeDone, TradeItemInfo, TradeOtherAdd, TradeOtherDone, TradeOwnAdd, TradeStart,
     TradeUpdate,
 };
+pub use trap_info::TrapInfo;
 pub use userinfo::UserInfo;
 pub use vehicle::{
     AirShipTeleport, ExAirShipInfo, ExAirShipStopMove, ExAirShipTeleportList, ExGetOffAirShip,

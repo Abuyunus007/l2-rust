@@ -249,11 +249,8 @@ impl EventKind {
             Self::AttackableFactionCall => "addFactionCallId",
             Self::AttackableAggroRangeEnter => "addAggroRangeEnterId",
             Self::CreatureSee => "addCreatureSeeId",
-<<<<<<< HEAD
             Self::TrapAction => "addTrapActionId",
-=======
             Self::PlayerSummonSpawn => "addSummonSpawnId",
->>>>>>> main
             _ => "",
         }
     }

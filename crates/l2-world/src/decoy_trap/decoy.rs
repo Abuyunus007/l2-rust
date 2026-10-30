@@ -22,7 +22,12 @@ impl World {
     /// the decoy of `owner`, spawned at the owner. `None` for an unknown template or when no object
     /// id is left. A decoy the owner had before is not touched: `setDecoy` replaces the reference
     /// and the old one lives out its life time.
-    pub fn summon_decoy(&mut self, owner: ObjectId, npc_id: i32, total_life_time_ms: i32) -> Option<ObjectId> {
+    pub fn summon_decoy(
+        &mut self,
+        owner: ObjectId,
+        npc_id: i32,
+        total_life_time_ms: i32,
+    ) -> Option<ObjectId> {
         let templates = self.npc_world.templates_arc()?;
         let template = templates.get(npc_id)?;
         let (x, y, z) = self.position_of(owner)?;

@@ -444,7 +444,12 @@ impl World {
 
     /// [`Self::script_has_listener`] with the NPC id of the container for a container that left
     /// the world before the queued event ran (a disarmed trap).
-    fn script_has_listener_for(&self, kind: EventKind, container: Option<ObjectId>, npc_hint: Option<i32>) -> bool {
+    fn script_has_listener_for(
+        &self,
+        kind: EventKind,
+        container: Option<ObjectId>,
+        npc_hint: Option<i32>,
+    ) -> bool {
         let npc_id = container
             .and_then(|c| self.npcs.get(&c))
             .map(|n| n.npc_id)

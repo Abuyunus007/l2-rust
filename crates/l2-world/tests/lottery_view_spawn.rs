@@ -877,19 +877,31 @@ fn the_drop_search_board_pages() {
     assert_eq!(pages.len(), 1, "{pages:?}");
     let page = &pages[0];
     assert!(page.contains("NAVIGATION"), "{page}");
-    assert!(page.contains("background=\"icon.accessary_apprentice_earring_i00\""), "{page}");
-    assert!(page.contains("bypass _bbs_search_drop 112 1 $order $level"), "{page}");
+    assert!(
+        page.contains("background=\"icon.accessary_apprentice_earring_i00\""),
+        "{page}"
+    );
+    assert!(
+        page.contains("bypass _bbs_search_drop 112 1 $order $level"),
+        "{page}"
+    );
     assert!(page.contains("&#112;"), "{page}");
     // One row of two cells, then the padding rows up to seven lines.
     assert_eq!(page.matches("<tr><td height=36></td></tr>").count(), 6, "{page}");
     let pages = s.board("_bbs_search_item adena");
-    assert!(pages[0].contains("<tr><td width=100 align=CENTER>No Match</td></tr>"), "{pages:?}");
+    assert!(
+        pages[0].contains("<tr><td width=100 align=CENTER>No Match</td></tr>"),
+        "{pages:?}"
+    );
 
     // The drop page: Goblin (level 10) drops it at 12.5% with a rate of 1.
     let pages = s.board("_bbs_search_drop 112 1 0 0");
     let page = &pages[0];
     assert!(page.contains("<td width=30>10</td>"), "{page}");
-    assert!(page.contains("<a action=\"bypass _bbs_npc_trace 20001\">&@20001;</a>"), "{page}");
+    assert!(
+        page.contains("<a action=\"bypass _bbs_npc_trace 20001\">&@20001;</a>"),
+        "{page}"
+    );
     assert!(page.contains("<td width=80 align=CENTER>1.0-1.0</td>"), "{page}");
     assert!(page.contains("<td width=50 align=CENTER>12.50%</td>"), "{page}");
     assert!(page.contains("<td width=50 align=CENTER>Drop</td>"), "{page}");
@@ -907,13 +919,18 @@ fn the_drop_search_board_pages() {
     // The main page goes out in any case, with its placeholders (Java replaces only the navigation).
     assert_eq!(board_pages(&sent).len(), 1);
     let first = s.board_raw("_bbs_npc_trace 20001");
-    assert!(of::<l2_protocol_game::server::ShowMiniMap>(&first, ServerOpcode::ShowMinimap)
-        .iter()
-        .any(|m| m.map_id == -1));
+    assert!(
+        of::<l2_protocol_game::server::ShowMiniMap>(&first, ServerOpcode::ShowMinimap)
+            .iter()
+            .any(|m| m.map_id == -1)
+    );
     assert!(of::<l2_protocol_game::server::RadarControl>(&first, ServerOpcode::RadarControl).is_empty());
     s.advance(600);
     let later = of::<l2_protocol_game::server::RadarControl>(&s.me.take(), ServerOpcode::RadarControl);
-    let spots: Vec<_> = later.iter().map(|r| (r.show_radar, r.radar_type, r.x, r.y, r.z)).collect();
+    let spots: Vec<_> = later
+        .iter()
+        .map(|r| (r.show_radar, r.radar_type, r.x, r.y, r.z))
+        .collect();
     assert_eq!(
         spots,
         [

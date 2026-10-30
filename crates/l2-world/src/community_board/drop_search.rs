@@ -188,10 +188,8 @@ impl World {
                             },
                         );
                         let due = self.tick + TimerWheel::ms_to_ticks(500);
-                        self.timers.schedule_at(
-                            due,
-                            TimerKind::Board(BoardTimer::RadarTrace { player, x, y, z }),
-                        );
+                        self.timers
+                            .schedule_at(due, TimerKind::Board(BoardTimer::RadarTrace { player, x, y, z }));
                     }
                 }
             }
@@ -291,7 +289,14 @@ impl World {
     }
 
     /// The `_bbs_search_drop` page.
-    fn build_drop_page(&self, player: ObjectId, html: &str, item_id: i32, page: i32, list: &[CbDrop]) -> Option<String> {
+    fn build_drop_page(
+        &self,
+        player: ObjectId,
+        html: &str,
+        item_id: i32,
+        page: i32,
+        list: &[CbDrop],
+    ) -> Option<String> {
         let settings = &self.settings.drops;
         let killer = self.npc_view_killer(player);
         let items = self.item_templates();

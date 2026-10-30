@@ -135,8 +135,7 @@ pub use clanhall::{
 pub use combat::{AggroInfo, CombatSettings, CombatState, HitOutcome, HitTask};
 pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
 pub use community_board::{
-    BoardTimer,
-    CommunityBoardSettings, FavoriteAnswer, FavoriteEntry, FavoriteRead, FavoriteWrite,
+    BoardTimer, CommunityBoardSettings, FavoriteAnswer, FavoriteEntry, FavoriteRead, FavoriteWrite,
 };
 pub use contacts::{ContactWrite, ContactsInput, FriendSummary};
 pub use craft::{

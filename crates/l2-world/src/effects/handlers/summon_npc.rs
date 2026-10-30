@@ -68,12 +68,7 @@ impl EffectHandler for SummonNpc {
             // TODO in Java: "Implement proper signet skills." The `EffectPoint` creature is not in
             // the world, so a signet's effect point is not made.
             "EffectPoint" => {}
-            _ => world.summon_npc_effect_spawn(
-                player,
-                self.npc_id,
-                self.despawn_delay,
-                self.random_offset,
-            ),
+            _ => world.summon_npc_effect_spawn(player, self.npc_id, self.despawn_delay, self.random_offset),
         }
     }
 }

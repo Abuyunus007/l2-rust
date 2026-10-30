@@ -2281,7 +2281,10 @@ mod tests {
         t.world.run_as_script(NAME, |ctx| {
             CrystalCaverns.on_trap_action(ctx, trap_npc, Oid(1), TrapAction::TrapDisarmed);
         });
-        assert!(t.world.instance(id).unwrap().npcs.len() > before, "room 1 spawned");
+        assert!(
+            t.world.instance(id).unwrap().npcs.len() > before,
+            "room 1 spawned"
+        );
     }
 
     #[test]
