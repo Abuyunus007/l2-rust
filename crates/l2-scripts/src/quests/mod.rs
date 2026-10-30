@@ -113,6 +113,7 @@ pub mod q00124_meeting_the_elroki;
 pub mod q00125_the_name_of_evil1;
 pub mod q00126_the_name_of_evil2;
 pub mod q00128_pailaka_song_of_ice_and_fire;
+pub mod q00129_pailaka_devils_legacy;
 pub mod q00132_matras_curiosity;
 pub mod q00146_the_zero_hour;
 pub mod q00147_path_to_becoming_an_elite_mercenary;
@@ -519,6 +520,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00125_the_name_of_evil1::Q00125TheNameOfEvil1);
     r.add(q00126_the_name_of_evil2::Q00126TheNameOfEvil2);
     r.add(q00128_pailaka_song_of_ice_and_fire::Q00128PailakaSongOfIceAndFire);
+    r.add(q00129_pailaka_devils_legacy::Q00129PailakaDevilsLegacy);
     r.add(q00132_matras_curiosity::Q00132MatrasCuriosity);
     r.add(q00146_the_zero_hour::Q00146TheZeroHour);
     r.add(q00147_path_to_becoming_an_elite_mercenary::Q00147PathToBecomingAnEliteMercenary);
