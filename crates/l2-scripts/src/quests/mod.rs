@@ -272,6 +272,7 @@ pub mod q00350_enhance_your_weapon;
 pub mod q00351_black_swan;
 pub mod q00352_help_rood_raise_a_new_pet;
 pub mod q00354_conquest_of_alligator_island;
+pub mod q00355_family_honor;
 pub mod q00356_dig_up_the_sea_of_spores;
 pub mod q00357_warehouse_keepers_ambition;
 pub mod q00358_illegitimate_child_of_the_goddess;
@@ -707,6 +708,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00351_black_swan::Q00351BlackSwan);
     r.add(q00352_help_rood_raise_a_new_pet::Q00352HelpRoodRaiseANewPet);
     r.add(q00354_conquest_of_alligator_island::Q00354ConquestOfAlligatorIsland);
+    r.add(q00355_family_honor::Q00355FamilyHonor);
     r.add(q00356_dig_up_the_sea_of_spores::Q00356DigUpTheSeaOfSpores);
     r.add(q00357_warehouse_keepers_ambition::Q00357WarehouseKeepersAmbition);
     r.add(q00358_illegitimate_child_of_the_goddess::Q00358IllegitimateChildOfTheGoddess);
