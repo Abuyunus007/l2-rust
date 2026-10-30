@@ -218,6 +218,12 @@ pub mod q00309_for_a_good_cause;
 pub mod q00317_catch_the_wind;
 pub mod q00450_grave_robber_rescue;
 pub mod q00504_competition_for_the_bandit_stronghold;
+pub mod q00606_battle_against_varka_silenos;
+pub mod q00607_prove_your_courage_ketra;
+pub mod q00608_slay_the_enemy_commander_ketra;
+pub mod q00612_battle_against_ketra_orcs;
+pub mod q00613_prove_your_courage_varka;
+pub mod q00614_slay_the_enemy_commander_varka;
 
 use l2_world::ScriptRegistry;
 
@@ -436,4 +442,10 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00317_catch_the_wind::Q00317CatchTheWind);
     r.add(q00450_grave_robber_rescue::Q00450GraveRobberRescue);
     r.add(q00504_competition_for_the_bandit_stronghold::Q00504CompetitionForTheBanditStronghold);
+    r.add(q00606_battle_against_varka_silenos::Q00606BattleAgainstVarkaSilenos);
+    r.add(q00607_prove_your_courage_ketra::Q00607ProveYourCourageKetra);
+    r.add(q00608_slay_the_enemy_commander_ketra::Q00608SlayTheEnemyCommanderKetra);
+    r.add(q00612_battle_against_ketra_orcs::Q00612BattleAgainstKetraOrcs);
+    r.add(q00613_prove_your_courage_varka::Q00613ProveYourCourageVarka);
+    r.add(q00614_slay_the_enemy_commander_varka::Q00614SlayTheEnemyCommanderVarka);
 }
