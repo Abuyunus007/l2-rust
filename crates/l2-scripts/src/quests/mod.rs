@@ -257,6 +257,7 @@ pub mod q00697_defend_the_hall_of_erosion;
 pub mod q00698_block_the_lords_escape;
 pub mod q00699_guardian_of_the_skies;
 pub mod q00701_proof_of_existence;
+pub mod q00710_path_to_becoming_a_lord_giran;
 pub mod q00713_path_to_becoming_a_lord_aden;
 
 use l2_world::ScriptRegistry;
@@ -516,4 +517,5 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00691_matras_suspicious_request::Q00691MatrasSuspiciousRequest);
     r.add(q00690_judes_request::Q00690JudesRequest);
     r.add(q00713_path_to_becoming_a_lord_aden::Q00713PathToBecomingALordAden);
+    r.add(q00710_path_to_becoming_a_lord_giran::Q00710PathToBecomingALordGiran);
 }
