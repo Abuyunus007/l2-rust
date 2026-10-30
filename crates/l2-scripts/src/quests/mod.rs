@@ -271,6 +271,7 @@ pub mod q10269_to_the_seed_of_destruction;
 pub mod q10282_to_the_seed_of_annihilation;
 pub mod q00906_the_call_of_valakas;
 pub mod q10276_mutated_kaneus_gludio;
+pub mod q10277_mutated_kaneus_dion;
 
 use l2_world::ScriptRegistry;
 
@@ -542,4 +543,5 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00907_dragon_trophy_valakas::Q00907DragonTrophyValakas);
     r.add(q00906_the_call_of_valakas::Q00906TheCallOfValakas);
     r.add(q10276_mutated_kaneus_gludio::Q10276MutatedKaneusGludio);
+    r.add(q10277_mutated_kaneus_dion::Q10277MutatedKaneusDion);
 }
