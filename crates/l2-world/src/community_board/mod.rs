@@ -22,9 +22,7 @@
 // read after an add or a delete includes it.
 //
 // # Left out, with the card that brings it
-// - `DropSearchBoard` (`_bbs_search_item`, `_bbs_search_drop`, `_bbs_npc_trace`): it needs the drop
-//   rates with the player's bonus multipliers and the premium rates (`PlayerStat.getBonusDrop*`),
-//   and `Custom/dropsearch` pages; with `NpcViewMod`, which shares that code (S-HAND-02).
+// - `DropSearchBoard` is `drop_search.rs` (S-HAND-04).
 // - The custom commands of `HomeBoard` (`_bbsmultisell`, `_bbsexcmultisell`, `_bbssell`,
 //   `_bbsteleport`, `_bbsbuff`, `_bbsheal`, `_bbsdelevel`, `_bbspremium`): `CommunityBoard.ini`
 //   keeps their lists (`CommunityTeleportList`, `CommunityAvailableBuffs`) as maps the generated
@@ -32,6 +30,7 @@
 //   Java server that has not registered it.
 
 mod clan_board;
+mod drop_search;
 mod favorites;
 mod home;
 mod region;
@@ -43,6 +42,7 @@ use l2_protocol_game::server::{ShowBoard, SystemMessage};
 use l2_util::ObjectId;
 use tracing::warn;
 
+pub use drop_search::BoardTimer;
 pub use favorites::{FavoriteAnswer, FavoriteEntry, FavoriteRead, FavoriteWrite};
 
 use crate::world::World;
@@ -81,6 +81,8 @@ pub struct CommunityBoardWorld {
     pub(crate) settings: CommunityBoardSettings,
     /// `addBypass(player, title, bypass)`: `"<title>&<bypass>"`, the page "add to favorites" saves.
     bypasses: HashMap<ObjectId, String>,
+    /// `DropSearchBoard.DROP_INDEX_CACHE`, built on the first command.
+    pub(crate) drop_index: Option<drop_search::DropIndex>,
 }
 
 /// The boards (Java: one `IParseBoardHandler` each).
@@ -94,6 +96,7 @@ pub(crate) enum Board {
     Mail,
     Memo,
     Friends,
+    DropSearch,
 }
 
 impl Board {
@@ -114,6 +117,9 @@ impl Board {
         ("_bbstopics", Board::Memo),
         ("_friendlist", Board::Friends),
         ("_friendblocklist", Board::Friends),
+        ("_bbs_search_item", Board::DropSearch),
+        ("_bbs_search_drop", Board::DropSearch),
+        ("_bbs_npc_trace", Board::DropSearch),
     ];
 
     /// Java `CommunityBoardHandler.getHandler(cmd)`.
@@ -190,6 +196,7 @@ impl World {
             Board::Mail => self.mail_board_command(id, command),
             Board::Memo => self.memo_board_command(id, command),
             Board::Friends => self.friends_board_command(id, command),
+            Board::DropSearch => self.drop_search_board_command(id, command),
         }
     }
 
@@ -229,7 +236,7 @@ impl World {
             // `RegionBoard`, `MailBoard` and `MemoBoard` implement `IWriteBoardHandler` with a
             // `// TODO: Implement.` that does nothing.
             Board::Region | Board::Mail | Board::Memo => {}
-            Board::Home | Board::Homepage | Board::Favorite | Board::Friends => {
+            Board::Home | Board::Homepage | Board::Favorite | Board::Friends | Board::DropSearch => {
                 warn!("CommunityBoardHandler: {board:?}Board doesn't implement write!");
             }
         }

@@ -177,6 +177,9 @@ impl World {
             | NpcClass::FortCommander
             | NpcClass::Npc
             | NpcClass::Summon => false,
+            // `Decoy.isAutoAttackable`: the owner's answer; `Trap.isAutoAttackable`: `!canBeSeen`.
+            NpcClass::Decoy => self.decoy_auto_attackable(target, attacker),
+            NpcClass::Trap => self.trap_auto_attackable(target, Some(attacker)),
         }
     }
 

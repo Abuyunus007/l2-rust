@@ -87,6 +87,12 @@ impl World {
         if let Some(attackable) = self.tamed_beast_auto_attackable(target) {
             return attackable;
         }
+        // `Decoy.isAutoAttackable` (the owner's) and `Trap.isAutoAttackable` (S-HAND-04).
+        match self.npcs.get(&target).map(|n| n.class) {
+            Some(crate::npc::NpcClass::Decoy) => return self.decoy_auto_attackable(target, attacker),
+            Some(crate::npc::NpcClass::Trap) => return self.trap_auto_attackable(target, Some(attacker)),
+            _ => {}
+        }
         // `FortCommander.isAutoAttackable` (M7-FORT-01).
         if self
             .npcs
@@ -435,6 +441,14 @@ impl World {
     fn npc_click(&mut self, player: ObjectId, npc: ObjectId, interact: bool) {
         // `TamedBeast.onAction` (S-API-05).
         if self.tamed_beast_click(player, npc, interact) {
+            return;
+        }
+        // `DecoyClick` and `TrapClick` (S-HAND-04): the click only targets.
+        if matches!(
+            self.npcs.get(&npc).map(|n| n.class),
+            Some(crate::npc::NpcClass::Decoy | crate::npc::NpcClass::Trap)
+        ) {
+            self.decoy_trap_click(player, npc);
             return;
         }
         // `Artefact` has a click handler of its own (`ArtefactClick`, S-HAND-01).

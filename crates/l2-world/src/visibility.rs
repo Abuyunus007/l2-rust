@@ -303,6 +303,11 @@ impl World {
     /// Java `Creature.broadcastPacket`: every player who can see `id` gets the packet (not `id`
     /// itself; a player sends its own copy with `send`).
     pub fn broadcast_packet(&self, id: ObjectId, packet: &impl Encode) {
+        // `Trap.broadcastPacket`: only who may see the trap (S-HAND-04).
+        if self.is_trap(id) {
+            self.trap_broadcast(id, packet);
+            return;
+        }
         let bytes = packet.to_bytes();
         for viewer in self.visible_players(id) {
             if self.is_visible_for(id, viewer) {

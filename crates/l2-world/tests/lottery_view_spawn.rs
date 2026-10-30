@@ -281,6 +281,18 @@ impl Scene {
             "data/html/mods/NpcView/DropList.htm",
             "<html><body>%name% %menuButtons% %pages% %items%</body></html>",
         );
+        write(
+            "data/html/CommunityBoard/Custom/navigation.html",
+            "<nav>NAVIGATION</nav>",
+        );
+        write(
+            "data/html/CommunityBoard/Custom/dropsearch/main.html",
+            "<html>%navigation%<table>%searchResult%</table><table>%pages%</table></html>",
+        );
+        write(
+            "data/spawns/test.xml",
+            r#"<list enabled="true"><spawn><npc id="20001" x="-71000" y="258000" z="-3100" heading="0" respawnDelay="30" /></spawn></list>"#,
+        );
         let persisted = Persisted::default();
         let mut world = World::new(
             WorldRng::from_seed(5),
@@ -293,10 +305,13 @@ impl Scene {
             ..RegenSettings::default()
         });
         world.set_id_factory(Arc::new(IdFactory::new(Vec::<i32>::new()).unwrap()));
-        world.set_npc_data(
-            Arc::new(NpcTemplates::from_xml(NPCS, &NpcLoadOptions::default()).unwrap()),
-            Arc::new(SpawnData::default()),
-        );
+        let npcs = Arc::new(NpcTemplates::from_xml(NPCS, &NpcLoadOptions::default()).unwrap());
+        let spawns = Arc::new(SpawnData::load(
+            root.path(),
+            &npcs,
+            &l2_data::SpawnLoadOptions::default(),
+        ));
+        world.set_npc_data(npcs, spawns);
         world.set_html_cache(Arc::new(HtmCache::load(root.path(), false)));
         world.set_flood_settings(FloodSettings::java_defaults());
         let me = Log::default();
@@ -817,4 +832,111 @@ fn spawn_protection_ends_with_the_first_action_or_its_time() {
     s.world.set_spawn_protection(ME, true);
     s.world.set_spawn_protection(ME, false);
     assert!(!s.world.is_spawn_protected(ME));
+}
+
+// ---------------------------------------------------------------------------------- DropSearchBoard
+
+/// The pages `DropSearchBoard` sends to a player: the content of the `ShowBoard` packets that have
+/// one (`separateAndSend` sends the page in the first of three).
+fn board_pages(out: &[Vec<u8>]) -> Vec<String> {
+    of::<l2_protocol_game::server::ShowBoard>(out, ServerOpcode::ShowBoard)
+        .into_iter()
+        .filter_map(|b| b.content.strip_prefix("101\u{8}").map(str::to_owned))
+        .collect()
+}
+
+impl Scene {
+    /// Everything the command made the world send to the player.
+    fn board_raw(&mut self, command: &str) -> Vec<Vec<u8>> {
+        // The bypass flood protector lets one command through per interval.
+        self.advance(1000);
+        self.me.take();
+        self.world.handle(WorldCommand::Input {
+            session: SessionId(u64::try_from(ME.0).unwrap()),
+            input: ClientInput::Bypass {
+                command: command.to_owned(),
+            },
+        });
+        self.me.take()
+    }
+
+    fn board(&mut self, command: &str) -> Vec<String> {
+        board_pages(&self.board_raw(command))
+    }
+}
+
+/// `_bbs_search_item` lists the items with drops whose name has the text (adena never), the page
+/// of an item lists its droppers sorted by level with the rates applied and the pages row, and
+/// `_bbs_npc_trace` sends the mini map and, 500 ms later, the radar marker of the first spawn.
+#[test]
+fn the_drop_search_board_pages() {
+    let mut s = Scene::new(vec![]);
+
+    // The search: "earring" finds item 112; adena is blocked even when its name matches.
+    let pages = s.board("_bbs_search_item earring");
+    assert_eq!(pages.len(), 1, "{pages:?}");
+    let page = &pages[0];
+    assert!(page.contains("NAVIGATION"), "{page}");
+    assert!(
+        page.contains("background=\"icon.accessary_apprentice_earring_i00\""),
+        "{page}"
+    );
+    assert!(
+        page.contains("bypass _bbs_search_drop 112 1 $order $level"),
+        "{page}"
+    );
+    assert!(page.contains("&#112;"), "{page}");
+    // One row of two cells, then the padding rows up to seven lines.
+    assert_eq!(page.matches("<tr><td height=36></td></tr>").count(), 6, "{page}");
+    let pages = s.board("_bbs_search_item adena");
+    assert!(
+        pages[0].contains("<tr><td width=100 align=CENTER>No Match</td></tr>"),
+        "{pages:?}"
+    );
+
+    // The drop page: Goblin (level 10) drops it at 12.5% with a rate of 1.
+    let pages = s.board("_bbs_search_drop 112 1 0 0");
+    let page = &pages[0];
+    assert!(page.contains("<td width=30>10</td>"), "{page}");
+    assert!(
+        page.contains("<a action=\"bypass _bbs_npc_trace 20001\">&@20001;</a>"),
+        "{page}"
+    );
+    assert!(page.contains("<td width=80 align=CENTER>1.0-1.0</td>"), "{page}");
+    assert!(page.contains("<td width=50 align=CENTER>12.50%</td>"), "{page}");
+    assert!(page.contains("<td width=50 align=CENTER>Drop</td>"), "{page}");
+    assert!(
+        page.contains("<tr><td><a action=\"bypass -h _bbs_search_drop 112 1 $order $level\">1</a></td></tr>"),
+        "{page}"
+    );
+    // An item nobody drops, or a bad number: Java throws, nothing is sent.
+    assert!(s.board("_bbs_search_drop 999 1 0 0").is_empty());
+    assert!(s.board("_bbs_search_drop x 1 0 0").is_empty());
+
+    // The trace: a monster without a spawn only gets a message; Goblin has one.
+    let sent = s.board_raw("_bbs_npc_trace 30990");
+    assert_eq!(messages(&sent).len(), 1, "\"Cannot find any spawn.\"");
+    // The main page goes out in any case, with its placeholders (Java replaces only the navigation).
+    assert_eq!(board_pages(&sent).len(), 1);
+    let first = s.board_raw("_bbs_npc_trace 20001");
+    assert!(
+        of::<l2_protocol_game::server::ShowMiniMap>(&first, ServerOpcode::ShowMinimap)
+            .iter()
+            .any(|m| m.map_id == -1)
+    );
+    assert!(of::<l2_protocol_game::server::RadarControl>(&first, ServerOpcode::RadarControl).is_empty());
+    s.advance(600);
+    let later = of::<l2_protocol_game::server::RadarControl>(&s.me.take(), ServerOpcode::RadarControl);
+    let spots: Vec<_> = later
+        .iter()
+        .map(|r| (r.show_radar, r.radar_type, r.x, r.y, r.z))
+        .collect();
+    assert_eq!(
+        spots,
+        [
+            (2, 2, -71_000, 258_000, -3_100),
+            (0, 1, -71_000, 258_000, -3_100),
+            (0, 2, -71_000, 258_000, -3_100)
+        ]
+    );
 }

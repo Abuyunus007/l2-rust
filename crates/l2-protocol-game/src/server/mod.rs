@@ -125,6 +125,7 @@ pub mod summon;
 pub mod system_message;
 pub mod territory;
 pub mod trade;
+pub mod trap_info;
 pub mod userinfo;
 pub mod vehicle;
 pub mod visibility;
@@ -295,6 +296,7 @@ pub use trade::{
     SendTradeRequest, TradeDone, TradeItemInfo, TradeOtherAdd, TradeOtherDone, TradeOwnAdd, TradeStart,
     TradeUpdate,
 };
+pub use trap_info::TrapInfo;
 pub use userinfo::UserInfo;
 pub use vehicle::{
     AirShipTeleport, ExAirShipInfo, ExAirShipStopMove, ExAirShipTeleportList, ExGetOffAirShip,

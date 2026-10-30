@@ -2,8 +2,7 @@
 //! corridors and the fortress to Tiat's throne; each Tiat killed counts for the seed's stage.
 // Java: dist/game/data/scripts/ai/areas/Gracia/instances/SeedOfDestruction/SeedOfDestruction.java
 //
-// Not modelled (no world counterpart): the traps of the corridors (`addTrap` of the ids 18720 to
-// 18774: the world has no trap NPC), `Attackable.setSeeThroughSilentMove(true)` (silent move is
+// Not modelled (no world counterpart): `Attackable.setSeeThroughSilentMove(true)` (silent move is
 // not modelled) and `setIsRaidMinion(true)` of a Soldier of Bravery that comes back.
 //
 // D-54: Sergeant Allenos decides on the seed's state; his talk re-reads `SoDState` first.
@@ -1042,8 +1041,9 @@ impl SeedOfDestruction {
         is_immobilized: bool,
     ) {
         for mob in spawn_table {
-            // traps: the world has no trap NPC (see the top)
+            // traps
             if (18720..=18774).contains(&mob[0]) {
+                ctx.add_trap(mob[0], mob[1], mob[2], mob[3], mob[4], instance_id);
                 continue;
             }
 
@@ -1398,6 +1398,7 @@ mod tests {
         <npc id="22551" type="Monster" level="80" name="Mob"/>
         <npc id="22552" type="Monster" level="80" name="Mob"/>
         <npc id="22596" type="Monster" level="80" name="Mob"/>
+        <npc id="18720" type="Folk" level="80" name="Trap"/>
         <npc id="18776" type="Monster" level="81" name="Obelisk"/>
         <npc id="29163" type="GrandBoss" level="82" name="Tiat">
             <stats><vitals hp="10000" hpRegen="0" mp="100" mpRegen="0" /></stats></npc>
@@ -1507,6 +1508,25 @@ mod tests {
         // KillTiatPart1: the ending movie.
         t.wait_ms(300);
         assert!(t.world.is_playing_movie(Oid(1)));
+    }
+
+    /// The corridor rows with a trap id (18720 to 18774) make a trap (`addTrap`), not a spawn: no
+    /// owner, invulnerable, hidden, and not in the kill table.
+    #[test]
+    fn the_corridor_traps_are_traps() {
+        let (mut t, alenos) = setup(true, "1");
+        talk(&mut t, 1, alenos);
+        let instance = t.world.instance_id_of(Oid(1));
+        t.world.run_as_script(NAME, |ctx| {
+            SeedOfDestruction::spawn(ctx, instance, &[[18720, -245888, 213056, -12376, 0]], true, false);
+        });
+        let traps = t.npcs_of(18720);
+        assert_eq!(traps.len(), 1);
+        assert!(t.world.is_trap(traps[0]));
+        assert!(t.world.is_invul(traps[0]));
+        assert_eq!(t.world.trap_owner(traps[0]), None);
+        assert_eq!(t.world.instance_id_of(traps[0]), instance);
+        assert!(!state_npcs(&mut t, instance).contains(&traps[0]));
     }
 
     fn state_npcs(t: &mut ScriptTest, instance: i32) -> Vec<Oid> {

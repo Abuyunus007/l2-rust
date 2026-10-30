@@ -14,17 +14,9 @@ mod tests {
 
     const ROOT: &str = r"C:\l2-rust\l2jmobius\dist\game\data\scripts\handlers";
 
-    /// Java classes of `actions/click` that are left, with the reason.
-    const CLICK_LEFT: &[(&str, &str)] = &[
-        (
-            "DecoyClick",
-            "no Decoy creature exists: the decoy skill effect is not a world object yet (own card: a creature kind, the effect, its AI)",
-        ),
-        (
-            "TrapClick",
-            "no skill trap creature exists (only zone traps): own card with the SummonTrap effect and the trap AI",
-        ),
-    ];
+    /// Java classes of `actions/click` that are left, with the reason (none: `DecoyClick` and
+    /// `TrapClick` are `World::decoy_trap_click`, S-HAND-04).
+    const CLICK_LEFT: &[(&str, &str)] = &[];
 
     /// `bypass/npc` classes that are left. The ported ones are found by their command words
     /// (S-HAND-03 ported `Loto` and `NpcViewMod`).
@@ -142,13 +134,6 @@ mod tests {
         for class in java_classes(&dir) {
             let source = std::fs::read_to_string(dir.join(format!("{class}.java"))).unwrap();
             let words = words_after(&source, "COMMAND");
-            if class == "DropSearchBoard" {
-                assert!(
-                    words.iter().all(|w| Board::find(w).is_none()),
-                    "DropSearchBoard is left"
-                );
-                continue;
-            }
             for word in words {
                 assert!(Board::find(&word).is_some(), "{class}: {word}");
             }
