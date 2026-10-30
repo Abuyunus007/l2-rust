@@ -448,6 +448,7 @@ pub mod q10281_mutated_kaneus_rune;
 pub mod q10282_to_the_seed_of_annihilation;
 pub mod q10283_request_of_ice_merchant;
 pub mod q10284_acquisition_of_divine_sword;
+pub mod q10285_meeting_sirra;
 pub mod q10286_reunion_with_sirra;
 pub mod q10287_story_of_those_left;
 pub mod q10288_secret_mission;
@@ -913,6 +914,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q10282_to_the_seed_of_annihilation::Q10282ToTheSeedOfAnnihilation);
     r.add(q10283_request_of_ice_merchant::Q10283RequestOfIceMerchant);
     r.add(q10284_acquisition_of_divine_sword::Q10284AcquisitionOfDivineSword);
+    r.add(q10285_meeting_sirra::Q10285MeetingSirra);
     r.add(q10286_reunion_with_sirra::Q10286ReunionWithSirra);
     r.add(q10287_story_of_those_left::Q10287StoryOfThoseLeft);
     r.add(q10288_secret_mission::Q10288SecretMission);
