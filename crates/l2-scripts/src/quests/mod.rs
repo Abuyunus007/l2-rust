@@ -281,6 +281,7 @@ pub mod q00360_plunder_their_supplies;
 pub mod q00362_bards_mandolin;
 pub mod q00363_sorrowful_sound_of_flute;
 pub mod q00364_jovial_accordion;
+pub mod q00365_devils_legacy;
 pub mod q00366_silver_haired_shaman;
 pub mod q00368_trespassing_into_the_holy_ground;
 pub mod q00369_collector_of_jewels;
@@ -717,6 +718,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00362_bards_mandolin::Q00362BardsMandolin);
     r.add(q00363_sorrowful_sound_of_flute::Q00363SorrowfulSoundOfFlute);
     r.add(q00364_jovial_accordion::Q00364JovialAccordion);
+    r.add(q00365_devils_legacy::Q00365DevilsLegacy);
     r.add(q00366_silver_haired_shaman::Q00366SilverHairedShaman);
     r.add(q00368_trespassing_into_the_holy_ground::Q00368TrespassingIntoTheHolyGround);
     r.add(q00369_collector_of_jewels::Q00369CollectorOfJewels);
