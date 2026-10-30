@@ -13,6 +13,7 @@ pub mod chamber_of_delusion_tower;
 pub mod chamber_of_delusion_west;
 pub mod crystal_caverns;
 pub mod dark_cloud_mansion;
+pub mod ice_queens_castle;
 pub mod jinia_guild_hideout1;
 pub mod jinia_guild_hideout2;
 pub mod jinia_guild_hideout3;
@@ -178,6 +179,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(chamber_of_delusion_west::ChamberOfDelusionWest);
     r.add(crystal_caverns::CrystalCaverns);
     r.add(dark_cloud_mansion::DarkCloudMansion);
+    r.add(ice_queens_castle::IceQueensCastle);
     r.add(jinia_guild_hideout1::JiniaGuildHideout1);
     r.add(jinia_guild_hideout2::JiniaGuildHideout2);
     r.add(jinia_guild_hideout3::JiniaGuildHideout3);
