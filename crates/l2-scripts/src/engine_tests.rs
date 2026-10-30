@@ -362,3 +362,28 @@ fn the_test_world_has_clans_with_residences_summons_and_skills() {
             .is_none()
     );
 }
+
+#[test]
+fn the_seed_map_shows_the_states_the_seed_managers_keep() {
+    use l2_protocol_game::server::ExShowSeedMapInfo;
+    let mut t = setup();
+    t.take();
+    // Nothing stored yet: both managers start at 1.
+    t.input(1, l2_world::ClientInput::SeedPhase);
+    let map: ExShowSeedMapInfo = decode(&t.take()[0].1);
+    assert_eq!(map, ExShowSeedMapInfo::new(1, 1));
+    assert_eq!(
+        map.entries.iter().map(|e| e.state).collect::<Vec<_>>(),
+        [2771, 2766]
+    );
+    t.world.run_as_script(NAME, |ctx| {
+        ctx.set_global_variable("SoDState", "2");
+        ctx.set_global_variable("SoI_stage", "5");
+    });
+    t.input(1, l2_world::ClientInput::SeedPhase);
+    let map: ExShowSeedMapInfo = decode(&t.take()[0].1);
+    assert_eq!(
+        map.entries.iter().map(|e| e.state).collect::<Vec<_>>(),
+        [2772, 2770]
+    );
+}

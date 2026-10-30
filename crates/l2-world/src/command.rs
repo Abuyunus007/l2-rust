@@ -289,6 +289,8 @@ pub enum ClientInput {
     Petition(crate::petition::PetitionInput),
     /// Java `RequestSSQStatus` (M8-SS-01, `sevensigns/status.rs`).
     SsqStatus { page: i8 },
+    /// Java `RequestSeedPhase`: the Seed map (`ExShowSeedMapInfo`, S-API-05).
+    SeedPhase,
     /// The quest journal and tutorial packets (`RequestQuestList`, `RequestQuestAbort`,
     /// `RequestTutorial*`), see `script/packets.rs`.
     Quest(crate::script::packets::QuestInput),

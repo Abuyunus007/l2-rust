@@ -25,6 +25,19 @@ impl World {
         self.broadcast_clan_info_update(clan_id);
     }
 
+    /// Java `RequestSeedPhase`: `ExShowSeedMapInfo` with the Seed of Destruction state
+    /// (`SeedOfDestructionManager.getSoDState()`, the `SoDState` global variable, 1 until stored)
+    /// and the Seed of Infinity stage (`SeedOfInfinityManager.getCurrentStage()`, `SoI_stage`,
+    /// 1 until stored), as the two manager scripts keep them.
+    pub(crate) fn on_request_seed_phase(&mut self, player: ObjectId) {
+        let sod_state = self.scripts.globals.get_int("SoDState", 1);
+        let soi_stage = self.scripts.globals.get_int("SoI_stage", 1);
+        self.send(
+            player,
+            &l2_protocol_game::server::ExShowSeedMapInfo::new(sod_state, soi_stage),
+        );
+    }
+
     /// Java `npc.isRandomWalkingEnabled()` (the script switch, a route walker, the spawn's and
     /// the template's settings, see `ai/attackable.rs`).
     pub fn npc_is_random_walking_enabled(&self, npc: ObjectId) -> bool {
