@@ -392,6 +392,7 @@ pub mod q00696_conquer_the_hall_of_erosion;
 pub mod q00697_defend_the_hall_of_erosion;
 pub mod q00698_block_the_lords_escape;
 pub mod q00699_guardian_of_the_skies;
+pub mod q00700_cursed_life;
 pub mod q00701_proof_of_existence;
 pub mod q00710_path_to_becoming_a_lord_giran;
 pub mod q00713_path_to_becoming_a_lord_aden;
@@ -794,6 +795,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00697_defend_the_hall_of_erosion::Q00697DefendTheHallOfErosion);
     r.add(q00698_block_the_lords_escape::Q00698BlockTheLordsEscape);
     r.add(q00699_guardian_of_the_skies::Q00699GuardianOfTheSkies);
+    r.add(q00700_cursed_life::Q00700CursedLife);
     r.add(q00701_proof_of_existence::Q00701ProofOfExistence);
     r.add(q00710_path_to_becoming_a_lord_giran::Q00710PathToBecomingALordGiran);
     r.add(q00713_path_to_becoming_a_lord_aden::Q00713PathToBecomingALordAden);
