@@ -464,12 +464,12 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-QR-10](S/S-QR-10.md) | Remaining quests Q00367..Q00417 (8) | sonnet | spot | Q batches | merged |
 | [S-QR-11](S/S-QR-11.md) | Remaining quests Q00419..Q00511 (7) | sonnet | spot | Q batches | merged |
 | [S-QR-12](S/S-QR-12.md) | Remaining quests Q00551..Q00692 (10) | sonnet | spot | Q batches | merged |
-| [S-QR-13](S/S-QR-13.md) | Remaining quests Q00693..Q10270 (13) | sonnet | spot | Q batches | ready |
+| [S-QR-13](S/S-QR-13.md) | Remaining quests Q00693..Q10270 (13) | sonnet | spot | Q batches | merged |
 | [S-QR-14](S/S-QR-14.md) | Remaining quests Q10272..Q10285 (4) | sonnet | spot | Q batches | merged |
-| [S-QR-15](S/S-QR-15.md) | Leftover quests of S-QR-02 (5) | sonnet | spot | Q batches | running |
+| [S-QR-15](S/S-QR-15.md) | Leftover quests of S-QR-02 (5) | sonnet | spot | Q batches | merged |
 | [S-LEFT-01](S/S-LEFT-01.md) | Script milestone stragglers | sonnet | full | API-05 | running |
-| S-ADMIN-08 | Admin words of the script systems | haiku | review | API-01, VM-01 | ready (card written when API-01 merges) |
-| S-E2E-01 | End to end | sonnet | review | Q, VM-01, BOSS-01, INST-01 | ready (card written when API-01 merges) |
+| [S-ADMIN-08](S/S-ADMIN-08.md) | Admin words of the script systems | sonnet | spot | API-05 | running |
+| [S-E2E-01](S/S-E2E-01.md) | End to end | sonnet | full | Q, VM-01, BOSS-01, INST-01 | ready |
 | S-RUN-01 | Runbook and milestone checks | opus | review | E2E-01 | ready (card written when API-01 merges) |
 
 ## Milestone test results
