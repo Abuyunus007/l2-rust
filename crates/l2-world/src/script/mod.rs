@@ -36,6 +36,7 @@ mod area_api;
 mod area_help;
 mod area_spawns;
 pub mod ctx;
+mod event_api;
 pub mod events;
 #[cfg(test)]
 mod events_tests;
