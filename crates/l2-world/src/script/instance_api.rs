@@ -360,6 +360,12 @@ impl World {
         self.set_intention_idle(id);
     }
 
+    /// Java `player.broadcastPacket(packet)`: the player first, then everybody who sees him
+    /// (S-INST-03, Cavern of the Pirate Captain).
+    pub fn broadcast_player_packet(&self, player: ObjectId, packet: &impl l2_net::Encode) {
+        self.broadcast_with_self(player, packet);
+    }
+
     /// Java `npc.isMyLord(player)` (S-INST-03, Castle Dungeon).
     pub fn npc_is_my_lord(&self, npc: ObjectId, player: ObjectId) -> bool {
         self.fort_is_my_lord(npc, player)

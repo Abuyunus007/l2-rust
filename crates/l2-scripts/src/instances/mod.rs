@@ -4,6 +4,7 @@
 //! order (Java's load order is the folder listing).
 
 pub mod castle_dungeon;
+pub mod cavern_of_the_pirate_captain;
 pub(crate) mod chamber;
 pub mod chamber_of_delusion_east;
 pub mod chamber_of_delusion_north;
@@ -171,6 +172,7 @@ mod tests {
 /// Registers every instance script, folder by folder in Java's order.
 pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(castle_dungeon::CastleDungeon);
+    r.add(cavern_of_the_pirate_captain::CavernOfThePirateCaptain);
     r.add(chamber_of_delusion_east::ChamberOfDelusionEast);
     r.add(chamber_of_delusion_north::ChamberOfDelusionNorth);
     r.add(chamber_of_delusion_south::ChamberOfDelusionSouth);
