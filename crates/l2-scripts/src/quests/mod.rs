@@ -234,6 +234,7 @@ pub mod q00450_grave_robber_rescue;
 pub mod q00616_magical_power_of_fire_part2;
 pub mod q00617_gather_the_flames;
 pub mod q00618_into_the_flame;
+pub mod q00621_egg_delivery;
 pub mod q00623_the_finest_food;
 pub mod q00624_the_finest_ingredients_part1;
 pub mod q00626_a_dark_twilight;
@@ -491,6 +492,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00616_magical_power_of_fire_part2::Q00616MagicalPowerOfFirePart2);
     r.add(q00617_gather_the_flames::Q00617GatherTheFlames);
     r.add(q00618_into_the_flame::Q00618IntoTheFlame);
+    r.add(q00621_egg_delivery::Q00621EggDelivery);
     r.add(q00623_the_finest_food::Q00623TheFinestFood);
     r.add(q00624_the_finest_ingredients_part1::Q00624TheFinestIngredientsPart1);
     r.add(q00626_a_dark_twilight::Q00626ADarkTwilight);
