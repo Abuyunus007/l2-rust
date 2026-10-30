@@ -115,28 +115,26 @@ impl Script for Q10277MutatedKaneusDion {
                     .to_owned();
                 }
                 STARTED => {
-                    htmltext = if ctx.has_quest_items(player, TISSUE_CH)
-                        && ctx.has_quest_items(player, TISSUE_SF)
-                    {
-                        "30071-05.html"
-                    } else {
-                        "30071-04.html"
-                    }
-                    .to_owned();
+                    htmltext =
+                        if ctx.has_quest_items(player, TISSUE_CH) && ctx.has_quest_items(player, TISSUE_SF) {
+                            "30071-05.html"
+                        } else {
+                            "30071-04.html"
+                        }
+                        .to_owned();
                 }
                 COMPLETED => htmltext = "30071-06.html".to_owned(),
                 _ => {}
             },
             MIRIEN => match qs.state(ctx) {
                 STARTED => {
-                    htmltext = if ctx.has_quest_items(player, TISSUE_CH)
-                        && ctx.has_quest_items(player, TISSUE_SF)
-                    {
-                        "30461-02.html"
-                    } else {
-                        "30461-01.html"
-                    }
-                    .to_owned();
+                    htmltext =
+                        if ctx.has_quest_items(player, TISSUE_CH) && ctx.has_quest_items(player, TISSUE_SF) {
+                            "30461-02.html"
+                        } else {
+                            "30461-01.html"
+                        }
+                        .to_owned();
                 }
                 COMPLETED => htmltext = ctx.get_already_completed_msg(player),
                 _ => {}
@@ -237,7 +235,10 @@ mod tests {
             ]
         );
         assert!(t.quest_page(1, lukas).contains("30071-06.html"));
-        assert!(t.quest_page(1, mirien).contains("This quest has already been completed."));
+        assert!(
+            t.quest_page(1, mirien)
+                .contains("This quest has already been completed.")
+        );
     }
 
     #[test]

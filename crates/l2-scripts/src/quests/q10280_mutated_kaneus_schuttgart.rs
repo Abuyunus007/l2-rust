@@ -115,28 +115,26 @@ impl Script for Q10280MutatedKaneusSchuttgart {
                     .to_owned();
                 }
                 STARTED => {
-                    htmltext = if ctx.has_quest_items(player, TISSUE_VS)
-                        && ctx.has_quest_items(player, TISSUE_KB)
-                    {
-                        "31981-05.htm"
-                    } else {
-                        "31981-04.htm"
-                    }
-                    .to_owned();
+                    htmltext =
+                        if ctx.has_quest_items(player, TISSUE_VS) && ctx.has_quest_items(player, TISSUE_KB) {
+                            "31981-05.htm"
+                        } else {
+                            "31981-04.htm"
+                        }
+                        .to_owned();
                 }
                 COMPLETED => htmltext = "31981-06.htm".to_owned(),
                 _ => {}
             },
             ATRAXIA => match qs.state(ctx) {
                 STARTED => {
-                    htmltext = if ctx.has_quest_items(player, TISSUE_VS)
-                        && ctx.has_quest_items(player, TISSUE_KB)
-                    {
-                        "31972-02.htm"
-                    } else {
-                        "31972-01.htm"
-                    }
-                    .to_owned();
+                    htmltext =
+                        if ctx.has_quest_items(player, TISSUE_VS) && ctx.has_quest_items(player, TISSUE_KB) {
+                            "31972-02.htm"
+                        } else {
+                            "31972-01.htm"
+                        }
+                        .to_owned();
                 }
                 COMPLETED => htmltext = ctx.get_already_completed_msg(player),
                 _ => {}
@@ -235,7 +233,10 @@ mod tests {
             ]
         );
         assert!(t.quest_page(1, vishotsky).contains("31981-06.htm"));
-        assert!(t.quest_page(1, atraxia).contains("This quest has already been completed."));
+        assert!(
+            t.quest_page(1, atraxia)
+                .contains("This quest has already been completed.")
+        );
     }
 
     #[test]

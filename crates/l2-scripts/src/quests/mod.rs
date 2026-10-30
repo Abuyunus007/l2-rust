@@ -263,19 +263,20 @@ pub mod q00385_yoke_of_the_past;
 pub mod q00450_grave_robber_rescue;
 pub mod q00903_the_call_of_antharas;
 pub mod q00904_dragon_trophy_antharas;
+pub mod q00906_the_call_of_valakas;
 pub mod q00907_dragon_trophy_valakas;
 pub mod q00998_fallen_angel_select;
 pub mod q10267_journey_to_gracia;
 pub mod q10268_to_the_seed_of_infinity;
 pub mod q10269_to_the_seed_of_destruction;
-pub mod q10282_to_the_seed_of_annihilation;
-pub mod q00906_the_call_of_valakas;
+pub mod q10274_collecting_in_the_air;
 pub mod q10276_mutated_kaneus_gludio;
 pub mod q10277_mutated_kaneus_dion;
 pub mod q10278_mutated_kaneus_heine;
 pub mod q10279_mutated_kaneus_oren;
 pub mod q10280_mutated_kaneus_schuttgart;
 pub mod q10281_mutated_kaneus_rune;
+pub mod q10282_to_the_seed_of_annihilation;
 
 use l2_world::ScriptRegistry;
 
@@ -552,4 +553,5 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q10279_mutated_kaneus_oren::Q10279MutatedKaneusOren);
     r.add(q10280_mutated_kaneus_schuttgart::Q10280MutatedKaneusSchuttgart);
     r.add(q10281_mutated_kaneus_rune::Q10281MutatedKaneusRune);
+    r.add(q10274_collecting_in_the_air::Q10274CollectingInTheAir);
 }

@@ -115,28 +115,26 @@ impl Script for Q10278MutatedKaneusHeine {
                     .to_owned();
                 }
                 STARTED => {
-                    htmltext = if ctx.has_quest_items(player, TISSUE_BO)
-                        && ctx.has_quest_items(player, TISSUE_WB)
-                    {
-                        "30916-05.htm"
-                    } else {
-                        "30916-04.htm"
-                    }
-                    .to_owned();
+                    htmltext =
+                        if ctx.has_quest_items(player, TISSUE_BO) && ctx.has_quest_items(player, TISSUE_WB) {
+                            "30916-05.htm"
+                        } else {
+                            "30916-04.htm"
+                        }
+                        .to_owned();
                 }
                 COMPLETED => htmltext = "30916-06.htm".to_owned(),
                 _ => {}
             },
             MINEVIA => match qs.state(ctx) {
                 STARTED => {
-                    htmltext = if ctx.has_quest_items(player, TISSUE_BO)
-                        && ctx.has_quest_items(player, TISSUE_WB)
-                    {
-                        "30907-02.htm"
-                    } else {
-                        "30907-01.htm"
-                    }
-                    .to_owned();
+                    htmltext =
+                        if ctx.has_quest_items(player, TISSUE_BO) && ctx.has_quest_items(player, TISSUE_WB) {
+                            "30907-02.htm"
+                        } else {
+                            "30907-01.htm"
+                        }
+                        .to_owned();
                 }
                 COMPLETED => htmltext = ctx.get_already_completed_msg(player),
                 _ => {}
@@ -237,7 +235,10 @@ mod tests {
             ]
         );
         assert!(t.quest_page(1, gosta).contains("30916-06.htm"));
-        assert!(t.quest_page(1, minevia).contains("This quest has already been completed."));
+        assert!(
+            t.quest_page(1, minevia)
+                .contains("This quest has already been completed.")
+        );
     }
 
     #[test]

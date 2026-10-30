@@ -3,7 +3,7 @@
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, QuestSound, QuestType, STARTED};
-use l2_world::{QuestWrite, Script, ScriptCtx, ScriptNpc, ScriptSetup};
+use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
 
 // NPC
 const THEODRIC: i32 = 30755;
@@ -131,7 +131,7 @@ impl Script for Q00904DragonTrophyAntharas {
 #[cfg(test)]
 mod tests {
     use l2_util::ObjectId as Oid;
-    use l2_world::ScriptRegistry;
+    use l2_world::{QuestWrite, ScriptRegistry};
 
     use super::*;
     use crate::testing::{Pages, ScriptTest, item, rows};

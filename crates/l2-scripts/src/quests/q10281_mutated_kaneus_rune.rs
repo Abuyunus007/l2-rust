@@ -215,7 +215,10 @@ mod tests {
             ]
         );
         assert!(t.quest_page(1, mathias).contains("31340-06.htm"));
-        assert!(t.quest_page(1, kayan).contains("This quest has already been completed."));
+        assert!(
+            t.quest_page(1, kayan)
+                .contains("This quest has already been completed.")
+        );
     }
 
     #[test]

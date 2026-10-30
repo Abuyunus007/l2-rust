@@ -115,28 +115,26 @@ impl Script for Q10276MutatedKaneusGludio {
                     .to_owned();
                 }
                 STARTED => {
-                    htmltext = if ctx.has_quest_items(player, TISSUE_TK)
-                        && ctx.has_quest_items(player, TISSUE_OA)
-                    {
-                        "30332-05.htm"
-                    } else {
-                        "30332-04.htm"
-                    }
-                    .to_owned();
+                    htmltext =
+                        if ctx.has_quest_items(player, TISSUE_TK) && ctx.has_quest_items(player, TISSUE_OA) {
+                            "30332-05.htm"
+                        } else {
+                            "30332-04.htm"
+                        }
+                        .to_owned();
                 }
                 COMPLETED => htmltext = "30332-06.htm".to_owned(),
                 _ => {}
             },
             ROHMER => match qs.state(ctx) {
                 STARTED => {
-                    htmltext = if ctx.has_quest_items(player, TISSUE_TK)
-                        && ctx.has_quest_items(player, TISSUE_OA)
-                    {
-                        "30344-02.htm"
-                    } else {
-                        "30344-01.htm"
-                    }
-                    .to_owned();
+                    htmltext =
+                        if ctx.has_quest_items(player, TISSUE_TK) && ctx.has_quest_items(player, TISSUE_OA) {
+                            "30344-02.htm"
+                        } else {
+                            "30344-01.htm"
+                        }
+                        .to_owned();
                 }
                 COMPLETED => htmltext = ctx.get_already_completed_msg(player),
                 _ => {}
@@ -237,7 +235,10 @@ mod tests {
             ]
         );
         assert!(t.quest_page(1, bathis).contains("30332-06.htm"));
-        assert!(t.quest_page(1, rohmer).contains("This quest has already been completed."));
+        assert!(
+            t.quest_page(1, rohmer)
+                .contains("This quest has already been completed.")
+        );
     }
 
     #[test]
