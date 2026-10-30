@@ -6,11 +6,6 @@
 // - `addAcquireSkillId` / `onAcquireSkill` (`ON_PLAYER_SKILL_LEARN` of the trainer): the engine
 //   has no such listener yet, so the list is not shown again after a skill is learned (the
 //   player opens it again from the page).
-// - The transformation skill tree (`showTransformSkillList`, `getAvailableTransformSkills`) is
-//   not loaded (`skills/learn.rs`): `LearnTransformationSkill` of a player who may transform
-//   logs and shows nothing.
-// - A certification book in the private warehouse is reported like Java, but not destroyed
-//   there (the warehouse containers have no destroy path for a script yet).
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
@@ -34,19 +29,13 @@ const QUEST_VAR_NAMES: [&str; 4] = [
 ];
 /// Java `SubClassSkills.class.getSimpleName()` (`custom/Validators/SubClassSkills`).
 const SUB_CLASS_SKILLS: &str = "SubClassSkills";
-/// Java `Q00136_MoreThanMeetsTheEye` (`RequestAcquireSkill.canTransform`).
-const MORE_THAN_MEETS_THE_EYE: &str = "Q00136_MoreThanMeetsTheEye";
 
 /// Java `ai.others.AvantGarde.AvantGarde`.
 pub struct AvantGarde;
 
 /// Java `RequestAcquireSkill.canTransform(player)`.
 fn can_transform(ctx: &ScriptCtx<'_>, player: ObjectId) -> bool {
-    if ctx.world().avant_garde_settings().1 {
-        return true;
-    }
-    ctx.player_quest_state(player, MORE_THAN_MEETS_THE_EYE)
-        .is_some_and(|qs| qs.is_completed())
+    ctx.world().can_transform(player)
 }
 
 /// Java `StringUtil.isNumeric(text)`.
@@ -55,11 +44,6 @@ fn is_numeric(text: &str) -> bool {
 }
 
 impl AvantGarde {
-    /// Java `showTransformSkillList(player)`: the transformation tree is not loaded.
-    fn show_transform_skill_list(player: ObjectId) {
-        warn!("AvantGarde: the transformation skill tree is not loaded; no list for {player}.");
-    }
-
     /// Java `CancelCertification`, after the checks: the certification skills and books go, the
     /// variables become "0", the fee is paid.
     fn cancel_certifications(ctx: &mut ScriptCtx<'_>, player: ObjectId) -> Option<String> {
@@ -116,17 +100,14 @@ impl AvantGarde {
                                         && (it.loc == "INVENTORY" || it.loc == "PAPERDOLL")
                                 })
                             });
-                            let in_warehouse = ctx.world().player(player).is_some_and(|p| {
-                                p.data
-                                    .items
-                                    .iter()
-                                    .any(|it| it.object_id == item_obj_id && it.loc == "WAREHOUSE")
-                            });
+                            let in_warehouse = ctx.private_warehouse_item(player, item_obj_id);
                             if in_inventory {
                                 ctx.world_mut().destroy_item_object(player, item_obj_id, 1, false);
-                            } else if in_warehouse {
+                            } else if in_warehouse.is_some() {
                                 let name = ctx.player_name(player);
                                 warn!("Somehow {name} put a certification book into warehouse!");
+                                // `getWarehouse().destroyItem(DESTROY, item, 1, player, false)`.
+                                ctx.destroy_private_warehouse_item(player, item_obj_id, 1);
                             } else {
                                 let name = ctx.player_name(player);
                                 warn!("Somehow {name} deleted a certification book!");
@@ -198,7 +179,7 @@ impl Script for AvantGarde {
             }
             "LearnTransformationSkill" => {
                 if can_transform(ctx, player) {
-                    Self::show_transform_skill_list(player);
+                    ctx.world_mut().show_transform_skill_list(player);
                 } else {
                     htmltext = Some("32323-03.html".to_owned());
                 }

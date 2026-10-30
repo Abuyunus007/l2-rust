@@ -3,7 +3,6 @@
 // Java: dist/game/data/scripts/village_master/KamaelChange1/KamaelChange1.java
 
 use l2_util::ObjectId;
-use l2_world::subclass::categories::class_in_category;
 use l2_world::subclass::{CategoryType, Race};
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
 
@@ -48,7 +47,10 @@ impl KamaelChange1 {
     /// Java `ClassChangeRequested(player, classId)`.
     fn class_change_requested(ctx: &mut ScriptCtx<'_>, player: ObjectId, class_id: i32) -> Option<String> {
         let mut htmltext = None;
-        if class_in_category(CategoryType::KamaelSecondClassGroup, class_id) {
+        if ctx
+            .world()
+            .id_in_category(CategoryType::KamaelSecondClassGroup, class_id)
+        {
             let player_class = class_of(ctx, player);
             if in_category(ctx, player, CategoryType::KamaelSecondClassGroup) {
                 htmltext = Some("32191-10.htm"); // master_all_kamael004a

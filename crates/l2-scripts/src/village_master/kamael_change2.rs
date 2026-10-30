@@ -3,7 +3,6 @@
 // Java: dist/game/data/scripts/village_master/KamaelChange2/KamaelChange2.java
 
 use l2_util::ObjectId;
-use l2_world::subclass::categories::class_in_category;
 use l2_world::subclass::{CategoryType, Race};
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
 
@@ -103,7 +102,10 @@ impl KamaelChange2 {
         class_id: i32,
     ) -> Option<String> {
         let mut htmltext = None;
-        if class_in_category(CategoryType::KamaelThirdClassGroup, class_id) {
+        if ctx
+            .world()
+            .id_in_category(CategoryType::KamaelThirdClassGroup, class_id)
+        {
             let male_npc = NPCS_MALE.contains(&npc.id);
             let player_class = class_of(ctx, player);
             if in_category(ctx, player, CategoryType::KamaelFirstClassGroup) {

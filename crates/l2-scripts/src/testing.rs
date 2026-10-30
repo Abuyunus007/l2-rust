@@ -158,6 +158,8 @@ impl ScriptTest {
         let spawns = Arc::new(SpawnData::load(root.path(), &npcs, &SpawnLoadOptions::default()));
         world.set_npc_data(npcs, spawns);
         world.set_html_cache(Arc::new(HtmCache::load(root.path(), false)));
+        // The class groups of `CategoryData.xml` that the class change scripts read.
+        world.set_category_data(Arc::new(l2_world::subclass::categories::fixture::class_groups()));
         prepare(&mut world, root.path());
         world.install_scripts(scripts);
         Self {

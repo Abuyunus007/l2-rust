@@ -192,6 +192,15 @@ const TREES: &str = r#"<list>
 <item id="10280" count="1" />
 </skill>
 </skillTree>
+<skillTree type="transformSkillTree">
+<skill skillName="Transform Onyx Beast" skillId="617" skillLevel="1" getLevel="50" />
+<skill skillName="Transform Onyx Beast" skillId="617" skillLevel="2" getLevel="60" />
+<skill skillName="Transform Death Blader" skillId="618" skillLevel="1" getLevel="55">
+<preRequisiteSkill id="617" lvl="1" />
+</skill>
+<skill skillName="Transform Orc Only" skillId="619" skillLevel="1" getLevel="55"><race>ORC</race></skill>
+<skill skillName="Transform Too High" skillId="620" skillLevel="1" getLevel="80" />
+</skillTree>
 </list>"#;
 
 fn passive(id: i32, levels: i32) -> String {
@@ -203,7 +212,7 @@ fn passive(id: i32, levels: i32) -> String {
 
 fn skills_xml() -> String {
     format!(
-        r#"<list>{}{}{}{}{}
+        r#"<list>{}{}{}{}{}{}{}{}{}
 <skill id="9001" levels="1" name="Might"><operateType>A2</operateType><targetType>SELF</targetType>
 <hitTime>1500</hitTime><isMagic>1</isMagic><mpConsume>5</mpConsume><reuseDelay>60000</reuseDelay>
 <abnormalTime>60</abnormalTime><abnormalType>PA_UP</abnormalType><abnormalLevel>1</abnormalLevel>
@@ -218,6 +227,10 @@ fn skills_xml() -> String {
         passive(1012, 1),
         passive(1013, 1),
         passive(631, 1),
+        passive(617, 2),
+        passive(618, 1),
+        passive(619, 1),
+        passive(620, 1),
     )
 }
 
@@ -957,6 +970,112 @@ fn a_certification_skill_needs_the_book() {
             .contains(&SystemMessageId::YouDoNotHaveTheNecessaryMaterialsOrPrerequisitesToLearnThisSkill)
     );
     assert!(!s.skill_ids().contains(&631));
+}
+
+/// `getAvailableTransformSkills`: the level and the race of the player, the next level of a known
+/// skill, level 1 of an unknown one. Prerequisites are not looked at here.
+#[test]
+fn the_transform_skill_list_follows_level_race_and_known_levels() {
+    let mut s = Scene::new(Me::default(), SubclassSettings::default());
+    let ids = |s: &Scene| {
+        let mut v: Vec<(i32, i32)> = s
+            .world
+            .available_transform_skills(ME)
+            .iter()
+            .map(|l| (l.skill_id, l.skill_level))
+            .collect();
+        v.sort_unstable();
+        v
+    };
+    // Level 76 human: not the orc line (619), not the line above the level (620), not level 2 of a
+    // skill the player does not know.
+    assert_eq!(ids(&s), [(617, 1), (618, 1)]);
+    s.world.show_transform_skill_list(ME);
+    let out = s.log.take();
+    assert!(names(&out).contains(&"ACQUIRE_SKILL_LIST".to_owned()));
+    // Knowing 617 level 1 offers level 2.
+    let me = Me {
+        skills: vec![skill(617, 1)],
+        ..Me::default()
+    };
+    let s = Scene::new(me, SubclassSettings::default());
+    assert_eq!(ids(&s), [(617, 2), (618, 1)]);
+}
+
+/// Nothing to learn: the plain message (the transform lines are not `learnedByNpc`, so Java's
+/// `getMinLevelForNewSkill` finds no level to come back at).
+#[test]
+fn an_empty_transform_list_sends_the_plain_message() {
+    let me = Me {
+        level: 49,
+        ..Me::default()
+    };
+    let mut s = Scene::new(me, SubclassSettings::default());
+    assert!(s.world.available_transform_skills(ME).is_empty());
+    s.world.show_transform_skill_list(ME);
+    let out = s.log.take();
+    assert!(
+        message_ids(&out).contains(&SystemMessageId::ThereAreNoOtherSkillsToLearn),
+        "{:?}",
+        names(&out)
+    );
+}
+
+/// `RequestAcquireSkill` `TRANSFORM`: refused without the quest, learned with
+/// `AltTransformationWithoutQuest`.
+#[test]
+fn a_transform_skill_needs_the_quest_or_the_setting() {
+    let request = || ClientInput::AcquireSkill {
+        id: 617,
+        level: 1,
+        skill_type: l2_protocol_game::server::AcquireSkillType::Transform,
+        sub_type: 0,
+    };
+    let mut s = Scene::new(Me::default(), SubclassSettings::default());
+    s.subclass("0");
+    let out = s.input(request());
+    assert!(
+        message_ids(&out).contains(&SystemMessageId::YouHaveNotCompletedTheNecessaryQuestForSkillAcquisition)
+    );
+    assert!(!s.skill_ids().contains(&617));
+
+    let settings = SubclassSettings {
+        allow_transform_without_quest: true,
+        ..SubclassSettings::default()
+    };
+    let mut s = Scene::new(Me::default(), settings);
+    assert!(s.world.can_transform(ME));
+    s.subclass("0");
+    let out = s.input(request());
+    assert!(
+        names(&out).contains(&"ACQUIRE_SKILL_DONE".to_owned()),
+        "{:?}",
+        names(&out)
+    );
+    assert!(s.skill_ids().contains(&617));
+}
+
+/// `canTransform` with the quest: only a completed `Q00136_MoreThanMeetsTheEye` counts.
+#[test]
+fn a_completed_more_than_meets_the_eye_allows_transform_skills() {
+    let started = Me {
+        quests: vec![("Q00136_MoreThanMeetsTheEye", "Started")],
+        ..Me::default()
+    };
+    assert!(
+        !Scene::new(started, SubclassSettings::default())
+            .world
+            .can_transform(ME)
+    );
+    let done = Me {
+        quests: vec![("Q00136_MoreThanMeetsTheEye", "Completed")],
+        ..Me::default()
+    };
+    assert!(
+        Scene::new(done, SubclassSettings::default())
+            .world
+            .can_transform(ME)
+    );
 }
 
 /// `MaxSubclass` subclasses are the limit: the add page is the fail page.
