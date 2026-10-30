@@ -19,7 +19,7 @@
 // stored. If the INSERT fails Java keeps a running announcement that is in no table (it cannot be
 // removed). Here the timer starts when the row is stored, so a failed INSERT starts nothing.
 //
-// Left out: `EventAnnouncement` (made by the event scripts, M8). Its rows have no table.
+// `EventAnnouncement` (made by the event scripts, S-EVENT-01) has no row: see `add_event_announcement`.
 
 use std::collections::BTreeMap;
 
@@ -177,6 +177,9 @@ pub(crate) struct AnnouncementTable {
     pending: BTreeMap<u32, PendingAnnouncement>,
     next_ticket: u32,
     next_generation: u64,
+    /// `EventAnnouncement._startDate` / `_endDate` (ms) by id: an event announcement shows only
+    /// while now is inside (S-EVENT-01).
+    event_windows: BTreeMap<i32, (i64, i64)>,
 }
 
 /// Java `System.lineSeparator()`.
@@ -327,7 +330,7 @@ impl World {
             AnnouncementType::Event,
         ] {
             for announcement in self.admin.ctl.announcements.map.values() {
-                if announcement.kind == kind {
+                if announcement.kind == kind && self.event_announcement_is_valid(announcement.id) {
                     packets.push(CreatureSay {
                         sender_object_id: 0,
                         chat_type: if kind == AnnouncementType::Critical {
@@ -343,6 +346,54 @@ impl World {
             }
         }
         packets
+    }
+
+    /// Java `EventAnnouncement` constructor + `AnnouncementsTable.addAnnouncement` (S-EVENT-01):
+    /// an announcement of the `EVENT` type that players hear when they enter the world between
+    /// `start_ms` and `end_ms`. It has no row (`storeMe` does nothing). The id comes from the id
+    /// factory like Java's `IdManager.getNextId()`; `None` when no factory is installed.
+    pub fn add_event_announcement(&mut self, start_ms: i64, end_ms: i64, content: &str) -> Option<i32> {
+        let id = self.npc_world.ids.as_ref()?.allocate().ok()?.0;
+        let table = &mut self.admin.ctl.announcements;
+        table.map.insert(
+            id,
+            Announcement {
+                id,
+                kind: AnnouncementType::Event,
+                content: content.to_owned(),
+                author: "N/A".to_owned(),
+                auto: None,
+            },
+        );
+        table.event_windows.insert(id, (start_ms, end_ms));
+        Some(id)
+    }
+
+    /// Java `AnnouncementsTable.deleteAnnouncement(id)` of an event announcement: `deleteMe`
+    /// releases the id.
+    pub fn delete_event_announcement(&mut self, id: i32) -> bool {
+        let table = &mut self.admin.ctl.announcements;
+        table.event_windows.remove(&id);
+        let removed = table
+            .map
+            .get(&id)
+            .is_some_and(|a| a.kind == AnnouncementType::Event)
+            && table.map.remove(&id).is_some();
+        if removed && let Some(ids) = self.npc_world.ids.as_ref() {
+            ids.release(ObjectId(id));
+        }
+        removed
+    }
+
+    /// Java `IAnnouncement.isValid()`: only an event announcement has a window.
+    fn event_announcement_is_valid(&self, id: i32) -> bool {
+        match self.admin.ctl.announcements.event_windows.get(&id) {
+            Some(&(start, end)) => {
+                let now = crate::world::unix_ms_now();
+                now >= start && now <= end
+            }
+            None => true,
+        }
     }
 
     /// The answer to `AnnouncementWrite::Insert`: the id the database gave, or a failure.
