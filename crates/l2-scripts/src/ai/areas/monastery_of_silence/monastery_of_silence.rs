@@ -90,7 +90,10 @@ impl Script for MonasteryOfSilence {
                     if (ctx.get_random(100) < 30) && !ctx.is_dead(object) && !ctx.is_in_combat(object) {
                         // NOTE(java-quirk): the script value tested is the scarecrow's (`npc`),
                         // the one set is the captain's (`character`).
-                        if (character.id == CAPTAIN) && (ctx.get_random(100) < 10) && ctx.is_script_value(npc, 0) {
+                        if (character.id == CAPTAIN)
+                            && (ctx.get_random(100) < 10)
+                            && ctx.is_script_value(npc, 0)
+                        {
                             if let Some(text) = ctx.get_random_entry(&SOLINA_KNIGHTS_MSG) {
                                 ctx.broadcast_npc_say(character, ChatType::NpcGeneral, text, &[]);
                             }
@@ -136,7 +139,9 @@ impl Script for MonasteryOfSilence {
             KNIGHT => {
                 if (ctx.get_random(100) < 10)
                     && (ctx.most_hated(npc) == Some(player))
-                    && ctx.world_mut().check_do_cast_conditions_of(npc.object_id, WARRIOR_THRUSTING)
+                    && ctx
+                        .world_mut()
+                        .check_do_cast_conditions_of(npc.object_id, WARRIOR_THRUSTING)
                 {
                     ctx.world_mut().set_npc_target(npc.object_id, Some(player));
                     ctx.world_mut().do_cast(npc.object_id, WARRIOR_THRUSTING);
@@ -159,7 +164,9 @@ impl Script for MonasteryOfSilence {
             GUIDE => {
                 if (ctx.get_random(100) < 3)
                     && (ctx.most_hated(npc) == Some(player))
-                    && ctx.world_mut().check_do_cast_conditions_of(npc.object_id, ORDEAL_STRIKE)
+                    && ctx
+                        .world_mut()
+                        .check_do_cast_conditions_of(npc.object_id, ORDEAL_STRIKE)
                 {
                     ctx.world_mut().set_npc_target(npc.object_id, Some(player));
                     ctx.world_mut().do_cast(npc.object_id, ORDEAL_STRIKE);
@@ -168,7 +175,9 @@ impl Script for MonasteryOfSilence {
             SEEKER => {
                 if (ctx.get_random(100) < 33)
                     && (ctx.most_hated(npc) == Some(player))
-                    && ctx.world_mut().check_do_cast_conditions_of(npc.object_id, SAVER_STRIKE)
+                    && ctx
+                        .world_mut()
+                        .check_do_cast_conditions_of(npc.object_id, SAVER_STRIKE)
                 {
                     ctx.world_mut().set_npc_target(npc.object_id, Some(npc.object_id));
                     ctx.world_mut().do_cast(npc.object_id, SAVER_STRIKE);
@@ -184,11 +193,23 @@ impl Script for MonasteryOfSilence {
         }
     }
 
-    fn on_npc_hate(&self, ctx: &mut ScriptCtx<'_>, _mob: ScriptNpc, player: ObjectId, _is_summon: bool) -> bool {
+    fn on_npc_hate(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        _mob: ScriptNpc,
+        player: ObjectId,
+        _is_summon: bool,
+    ) -> bool {
         ctx.active_weapon_item_id(player).is_some()
     }
 
-    fn on_aggro_range_enter(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, _is_summon: bool) {
+    fn on_aggro_range_enter(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        player: ObjectId,
+        _is_summon: bool,
+    ) {
         if ctx.active_weapon_item_id(player).is_some() {
             let mut skill = None;
             match npc.id {
@@ -242,7 +263,11 @@ impl Script for MonasteryOfSilence {
         targets: &[ObjectId],
         _is_summon: bool,
     ) {
-        if ctx.world_mut().script_skill_has_effect_type(skill, &[EffectType::Aggression]) && !targets.is_empty() {
+        if ctx
+            .world_mut()
+            .script_skill_has_effect_type(skill, &[EffectType::Aggression])
+            && !targets.is_empty()
+        {
             for obj in targets {
                 if *obj == npc.object_id {
                     if let Some(text) = ctx.get_random_entry(&DIVINITY_MSG) {

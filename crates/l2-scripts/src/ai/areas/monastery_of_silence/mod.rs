@@ -4,6 +4,7 @@
 
 pub mod etis_van_etina;
 pub mod etis_van_etina_phantom;
+#[allow(clippy::module_inception)]
 pub mod monastery_of_silence;
 
 use l2_world::ScriptRegistry;

@@ -53,7 +53,10 @@ impl Script for EtisVanEtina {
             && let Some(npc) = npc
             && !ctx.is_dead(npc.object_id)
         {
-            let phase = ctx.world_mut().npc_variables_mut(npc.object_id).get_int("phase", PHASE_NORMAL);
+            let phase = ctx
+                .world_mut()
+                .npc_variables_mut(npc.object_id)
+                .get_int("phase", PHASE_NORMAL);
             // NOTE: `getMaxRecoverableHp()` is the maximum HP less the penalty of effects that
             // lower it; the world has no such penalty for an NPC, so it is `getMaxHp()` here.
             if (phase == PHASE_NORMAL) && (ctx.npc_current_hp(npc) < (f64::from(ctx.npc_max_hp(npc)) * 0.5)) {
@@ -63,7 +66,9 @@ impl Script for EtisVanEtina {
             }
 
             let vars = ctx.world_mut().npc_variables_mut(npc.object_id);
-            if (vars.get_int("phase", PHASE_NORMAL) == PHASE_TRANSFORM) && !vars.get_bool("phantomsAlive", false) {
+            if (vars.get_int("phase", PHASE_NORMAL) == PHASE_TRANSFORM)
+                && !vars.get_bool("phantomsAlive", false)
+            {
                 let dr = ctx.add_spawn_at(PHANTOM_REAL, npc.object_id, true, 0);
                 let df = ctx.add_spawn_at(PHANTOM_FAKE, npc.object_id, true, 0);
                 let target = ctx.target_of(npc.object_id);
@@ -95,7 +100,10 @@ impl Script for EtisVanEtina {
         receiver: ScriptNpc,
         _reference: Option<ObjectId>,
     ) -> Option<String> {
-        if event_name == EVT_PHANTOM_REAL_DEAD && (receiver.id == ETIS_VAN_ETINA) && !ctx.is_dead(receiver.object_id) {
+        if event_name == EVT_PHANTOM_REAL_DEAD
+            && (receiver.id == ETIS_VAN_ETINA)
+            && !ctx.is_dead(receiver.object_id)
+        {
             ctx.world_mut()
                 .npc_variables_mut(receiver.object_id)
                 .set_bool("phantomsAlive", false);
@@ -135,7 +143,10 @@ mod tests {
             let npc = ctx.script_npc(etis).unwrap();
             assert!(ctx.has_quest_timer(THINK_TIMER, Some(npc), None));
         });
-        assert_eq!(t.world.npc_variables(etis).unwrap().get_int("phase", -1), PHASE_NORMAL);
+        assert_eq!(
+            t.world.npc_variables(etis).unwrap().get_int("phase", -1),
+            PHASE_NORMAL
+        );
         t.kill(1, etis);
         t.world.run_as_script("EtisVanEtina", |ctx| {
             let npc = ctx.script_npc(etis).unwrap();

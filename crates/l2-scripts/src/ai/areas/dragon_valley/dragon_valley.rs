@@ -99,7 +99,11 @@ pub struct DragonValley;
 
 /// Java `attacker.getSummon()` when `isSummon`, else the attacker.
 fn playable_of(ctx: &ScriptCtx<'_>, player: ObjectId, is_summon: bool) -> Option<ObjectId> {
-    if is_summon { ctx.summon_of(player) } else { Some(player) }
+    if is_summon {
+        ctx.summon_of(player)
+    } else {
+        Some(player)
+    }
 }
 
 fn manage_morale_boost(ctx: &mut ScriptCtx<'_>, player: ObjectId, npc: ScriptNpc) {
@@ -110,7 +114,9 @@ fn manage_morale_boost(ctx: &mut ScriptCtx<'_>, player: ObjectId, npc: ScriptNpc
         for member in &members {
             if (ctx.player_level(*member) >= MIN_LEVEL)
                 && (ctx.player_class_level(*member) >= CLASS_LEVEL)
-                && ctx.distance_3d(npc.object_id, *member).is_some_and(|d| d < MIN_DISTANCE)
+                && ctx
+                    .distance_3d(npc.object_id, *member)
+                    .is_some_and(|d| d < MIN_DISTANCE)
             {
                 // NOTE(java-quirk): `CLASS_POINTS.get(..)` of a class that is not in the map
                 // would throw (unboxing null); every third-profession class is in it.
@@ -127,7 +133,10 @@ fn manage_morale_boost(ctx: &mut ScriptCtx<'_>, player: ObjectId, npc: ScriptNpc
         }
 
         for member in members {
-            if ctx.distance_3d(npc.object_id, member).is_some_and(|d| d < MIN_DISTANCE) {
+            if ctx
+                .distance_3d(npc.object_id, member)
+                .is_some_and(|d| d < MIN_DISTANCE)
+            {
                 let skill = match morale_boost_lv {
                     1 => MORALE_BOOST1,
                     2 => MORALE_BOOST2,
@@ -199,10 +208,16 @@ impl Script for DragonValley {
             && let Some(npc) = npc
             && !ctx.is_dead(npc.object_id)
         {
-            let playable = ctx.world().npc_variables(npc.object_id).map(|v| v.get_int("playable", 0));
+            let playable = ctx
+                .world()
+                .npc_variables(npc.object_id)
+                .map(|v| v.get_int("playable", 0));
             let playable = playable.filter(|id| *id != 0).map(ObjectId);
             if let Some(playable) = playable {
-                if ctx.distance_3d(npc.object_id, playable).is_some_and(|d| d < 250.0) {
+                if ctx
+                    .distance_3d(npc.object_id, playable)
+                    .is_some_and(|d| d < 250.0)
+                {
                     ctx.disable_core_ai(npc, true);
                     ctx.world_mut().do_cast(npc.object_id, SELF_DESTRUCTION);
                 } else {
@@ -263,7 +278,13 @@ impl Script for DragonValley {
         // (22826, 22823, 22828): the world's `NpcInfo` has no such flag a script can set.
     }
 
-    fn on_spell_finished(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: Option<ObjectId>, skill: SkillKey) {
+    fn on_spell_finished(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        player: Option<ObjectId>,
+        skill: SkillKey,
+    ) {
         if skill == SELF_DESTRUCTION {
             ctx.world_mut().do_die(npc.object_id, player);
         }
@@ -298,7 +319,10 @@ mod tests {
         let ghosts = t.npcs_of(EXPLODING_ORC_GHOST);
         assert!(!ghosts.is_empty());
         // The ghost has the killer marked (`getVariables().set("playable", ..)`).
-        assert_eq!(t.world.npc_variables(ghosts[0]).unwrap().get_int("playable", 0), 1);
+        assert_eq!(
+            t.world.npc_variables(ghosts[0]).unwrap().get_int("playable", 0),
+            1
+        );
     }
 
     #[test]

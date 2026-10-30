@@ -57,7 +57,10 @@ impl Script for DragonVortex {
             "RAIDBOSS" => {
                 let (npc, player) = (npc?, player?);
                 if ctx.has_quest_items(player, LARGE_DRAGON_BONE) {
-                    let busy = ctx.world_mut().npc_variables_mut(npc.object_id).get_bool(I_QUEST0, false);
+                    let busy = ctx
+                        .world_mut()
+                        .npc_variables_mut(npc.object_id)
+                        .get_bool(I_QUEST0, false);
                     if !busy {
                         ctx.take_items(player, LARGE_DRAGON_BONE, 1);
                         let random = ctx.get_random(100);

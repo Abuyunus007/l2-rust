@@ -69,7 +69,8 @@ impl GrowthCapableMob {
             if ctx.get_random(100) < SPECIAL_SPICE_CHANCES[0] {
                 if ctx.get_random(100) < SPECIAL_SPICE_CHANCES[1] {
                     return Some(success);
-                } else if (skill_id == SKILL_BLESSED_GOLDEN_SPICE) || (skill_id == SKILL_SGRADE_GOLDEN_SPICE) {
+                } else if (skill_id == SKILL_BLESSED_GOLDEN_SPICE) || (skill_id == SKILL_SGRADE_GOLDEN_SPICE)
+                {
                     return self.npc_id_for_skill(SKILL_GOLDEN_SPICE);
                 } else {
                     return self.npc_id_for_skill(SKILL_CRYSTAL_SPICE);
@@ -290,12 +291,31 @@ mod tests {
     #[test]
     fn the_growth_table_is_javas() {
         let kookaburra = growth_capable_mob(18873).unwrap();
-        assert_eq!((kookaburra.chance, kookaburra.growth_level, kookaburra.tame_npc_id), (100, 0, 18869));
+        assert_eq!(
+            (kookaburra.chance, kookaburra.growth_level, kookaburra.tame_npc_id),
+            (100, 0, 18869)
+        );
         assert_eq!(kookaburra.npc_id_for_skill(SKILL_GOLDEN_SPICE), Some(18874));
-        assert_eq!(kookaburra.npc_id_for_skill(SKILL_SGRADE_CRYSTAL_SPICE), Some(18879));
-        assert_eq!(kookaburra.npc_id_for_skill(SKILL_BLESSED_GOLDEN_SPICE), Some(18869));
-        assert_eq!(growth_capable_mob(18877).unwrap().npc_id_for_skill(SKILL_CRYSTAL_SPICE), Some(18879));
-        assert_eq!(growth_capable_mob(18883).unwrap().npc_id_for_skill(SKILL_GOLDEN_SPICE), Some(18885));
+        assert_eq!(
+            kookaburra.npc_id_for_skill(SKILL_SGRADE_CRYSTAL_SPICE),
+            Some(18879)
+        );
+        assert_eq!(
+            kookaburra.npc_id_for_skill(SKILL_BLESSED_GOLDEN_SPICE),
+            Some(18869)
+        );
+        assert_eq!(
+            growth_capable_mob(18877)
+                .unwrap()
+                .npc_id_for_skill(SKILL_CRYSTAL_SPICE),
+            Some(18879)
+        );
+        assert_eq!(
+            growth_capable_mob(18883)
+                .unwrap()
+                .npc_id_for_skill(SKILL_GOLDEN_SPICE),
+            Some(18885)
+        );
         assert_eq!(growth_capable_mob(18894).unwrap().tame_npc_id, 18872);
         assert!(growth_capable_mob(18879).is_none());
     }
@@ -314,7 +334,10 @@ mod tests {
                 ctx,
                 npc,
                 ObjectId(1),
-                SkillKey { id: SKILL_GOLDEN_SPICE, level: 1 },
+                SkillKey {
+                    id: SKILL_GOLDEN_SPICE,
+                    level: 1,
+                },
                 &[calf],
                 false,
             );

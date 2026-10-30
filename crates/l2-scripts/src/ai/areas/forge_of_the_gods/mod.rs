@@ -2,6 +2,7 @@
 //!
 //! One module per script, sorted by name; one `add` line per script in [`register`].
 
+#[allow(clippy::module_inception)]
 pub mod forge_of_the_gods;
 pub mod rooney;
 

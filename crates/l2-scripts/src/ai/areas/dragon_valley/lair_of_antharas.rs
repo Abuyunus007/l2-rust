@@ -72,11 +72,23 @@ impl Script for LairOfAntharas {
                 }
             }
 
-            ctx.add_timer(&format!("CHECK_HOME_{}", npc.object_id.0), None, 10_000, Some(npc), None);
+            ctx.add_timer(
+                &format!("CHECK_HOME_{}", npc.object_id.0),
+                None,
+                10_000,
+                Some(npc),
+                None,
+            );
         }
     }
 
-    fn on_aggro_range_enter(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, _player: ObjectId, _is_summon: bool) {
+    fn on_aggro_range_enter(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        _player: ObjectId,
+        _is_summon: bool,
+    ) {
         if ctx.is_script_value(npc, 0) && (ctx.get_random(100) < KNORIKS_CHANCE) {
             if ctx.get_random(100) < KNORIKS_CHANCE2 {
                 ctx.set_script_value(npc, 1);
@@ -136,7 +148,13 @@ impl Script for LairOfAntharas {
         ctx.world_mut().set_on_kill_delay(npc.object_id, 0);
         if (npc.id == DRAGON_GUARD) || (npc.id == DRAGON_MAGE) {
             ctx.set_random_walking(npc, false);
-            ctx.add_timer(&format!("CHECK_HOME_{}", npc.object_id.0), None, 10_000, Some(npc), None);
+            ctx.add_timer(
+                &format!("CHECK_HOME_{}", npc.object_id.0),
+                None,
+                10_000,
+                Some(npc),
+                None,
+            );
         }
     }
 }

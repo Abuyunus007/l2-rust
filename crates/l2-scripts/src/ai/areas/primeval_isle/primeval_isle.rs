@@ -115,7 +115,13 @@ impl Script for PrimevalIsle {
         s.add_creature_see_id(&MONSTERS);
     }
 
-    fn on_spell_finished(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, _player: Option<ObjectId>, skill: SkillKey) {
+    fn on_spell_finished(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        _player: Option<ObjectId>,
+        skill: SkillKey,
+    ) {
         if skill.id == CREW_SKILL.id {
             ctx.start_quest_timer("START_INVUL", 4000, Some(npc), None, false);
             if let Some(target) = ctx.target_of(npc.object_id)
@@ -158,7 +164,11 @@ impl Script for PrimevalIsle {
                 if let Some(npc) = npc
                     && !ctx.is_dead(npc.object_id)
                 {
-                    let skill = if npc.id == SPRIGNANT[0] { ANESTHESIA } else { DEADLY_POISON };
+                    let skill = if npc.id == SPRIGNANT[0] {
+                        ANESTHESIA
+                    } else {
+                        DEADLY_POISON
+                    };
                     ctx.world_mut().do_cast(npc.object_id, skill);
                     ctx.start_quest_timer("USE_SKILL", 15_000, Some(npc), None, false);
                 }
@@ -177,10 +187,7 @@ impl Script for PrimevalIsle {
             "TREX_ATTACK" => {
                 if let (Some(npc), Some(player)) = (npc, player) {
                     ctx.set_script_value(npc, 0);
-                    if ctx
-                        .distance_3d(npc.object_id, player)
-                        .is_some_and(|d| d <= 800.0)
-                    {
+                    if ctx.distance_3d(npc.object_id, player).is_some_and(|d| d <= 800.0) {
                         cast_at(ctx, npc, Some(player), LONGRANGEDMAGIC1);
                         ctx.add_attack_desire(npc, player, 999);
                     }
@@ -198,7 +205,8 @@ impl Script for PrimevalIsle {
                 if let Some(npc) = npc
                     && !ctx.is_dead(npc.object_id)
                 {
-                    ctx.world_mut().apply_effects(npc.object_id, npc.object_id, INVIN_BUFF_ON);
+                    ctx.world_mut()
+                        .apply_effects(npc.object_id, npc.object_id, INVIN_BUFF_ON);
                 }
             }
             _ => {}
@@ -224,21 +232,27 @@ impl Script for PrimevalIsle {
                     ctx.set_running(npc);
 
                     let distance = 3000.0_f64;
-                    if let (Some((cx, cy, _)), Some((nx, ny, _))) =
-                        (ctx.world().position_of(creature), ctx.world().position_of(npc.object_id))
-                    {
+                    if let (Some((cx, cy, _)), Some((nx, ny, _))) = (
+                        ctx.world().position_of(creature),
+                        ctx.world().position_of(npc.object_id),
+                    ) {
                         let heading = heading_from_points(cx, cy, nx, ny);
                         let angle = heading_to_degree(heading);
                         let radian = angle.to_radians();
                         let (sin, cos) = (radian.sin(), radian.cos());
                         let new_x = (f64::from(nx) + (cos * distance)) as i32;
                         let new_y = (f64::from(ny) + (sin * distance)) as i32;
-                        if let Some((x, y, z)) = ctx.world().npc_valid_location_toward(npc.object_id, new_x, new_y) {
+                        if let Some((x, y, z)) =
+                            ctx.world().npc_valid_location_toward(npc.object_id, new_x, new_y)
+                        {
                             ctx.npc_move_to(npc, x, y, z);
                         }
                     }
                 } else if ag_type == 1 {
-                    let multiplier = ctx.world_mut().npc_variables_mut(npc.object_id).get_int("SKILL_MULTIPLER", 0);
+                    let multiplier = ctx
+                        .world_mut()
+                        .npc_variables_mut(npc.object_id)
+                        .get_int("SKILL_MULTIPLER", 0);
                     if ctx.get_random(100) <= (prob_physical_special1 * multiplier) {
                         if let Some(skill) = physical_special1
                             && !ctx.world_mut().is_skill_disabled_of(npc.object_id, skill)
@@ -253,14 +267,23 @@ impl Script for PrimevalIsle {
                     }
                 }
             }
-        } else if ctx.script_npc(creature).is_some_and(|c| VEGETABLE.contains(&c.id)) {
+        } else if ctx
+            .script_npc(creature)
+            .is_some_and(|c| VEGETABLE.contains(&c.id))
+        {
             cast_at(ctx, npc, Some(creature), CREW_SKILL);
             ctx.set_running(npc);
             ctx.set_intention_attack(npc, creature);
         }
     }
 
-    fn on_aggro_range_enter(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, _is_summon: bool) {
+    fn on_aggro_range_enter(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        player: ObjectId,
+        _is_summon: bool,
+    ) {
         if ctx.is_script_value(npc, 0) {
             ctx.set_script_value(npc, 1);
             ctx.broadcast_npc_say_text(npc, ChatType::NpcGeneral, "?");
@@ -281,7 +304,11 @@ impl Script for PrimevalIsle {
         if npc.id == EGG {
             if (ctx.get_random(100) <= 80) && ctx.is_script_value(npc, 0) {
                 ctx.set_script_value(npc, 1);
-                let playable = if is_summon { ctx.summon_of(attacker) } else { Some(attacker) };
+                let playable = if is_summon {
+                    ctx.summon_of(attacker)
+                } else {
+                    Some(attacker)
+                };
                 for object in ctx.world().visible_objects_in_range(npc.object_id, 500) {
                     if !ctx.world().is_attackable_npc(object) {
                         continue;
@@ -301,7 +328,8 @@ impl Script for PrimevalIsle {
                     if !ctx.world_mut().is_skill_disabled_of(npc.object_id, SELFBUFF1) {
                         ctx.world_mut().do_cast(npc.object_id, SELFBUFF1);
                     }
-                } else if ctx.is_script_value(npc, 1) && !ctx.world_mut().is_skill_disabled_of(npc.object_id, SELFBUFF2)
+                } else if ctx.is_script_value(npc, 1)
+                    && !ctx.world_mut().is_skill_disabled_of(npc.object_id, SELFBUFF2)
                 {
                     ctx.world_mut().do_cast(npc.object_id, SELFBUFF2);
                 }
@@ -312,32 +340,45 @@ impl Script for PrimevalIsle {
                 ctx.world_mut().do_cast(npc.object_id, SELFBUFF1);
             }
 
-            if ctx.distance_3d(npc.object_id, attacker).is_some_and(|d| d > 100.0) {
-                if !ctx.world_mut().is_skill_disabled_of(npc.object_id, LONGRANGEDMAGIC1)
+            if ctx
+                .distance_3d(npc.object_id, attacker)
+                .is_some_and(|d| d > 100.0)
+            {
+                if !ctx
+                    .world_mut()
+                    .is_skill_disabled_of(npc.object_id, LONGRANGEDMAGIC1)
                     && (ctx.get_random(100) <= (10 * ctx.get_script_value(npc)))
                 {
                     cast_at(ctx, npc, Some(attacker), LONGRANGEDMAGIC1);
                 }
             } else {
-                if !ctx.world_mut().is_skill_disabled_of(npc.object_id, LONGRANGEDMAGIC1)
+                if !ctx
+                    .world_mut()
+                    .is_skill_disabled_of(npc.object_id, LONGRANGEDMAGIC1)
                     && (ctx.get_random(100) <= (10 * ctx.get_script_value(npc)))
                 {
                     cast_at(ctx, npc, target, LONGRANGEDMAGIC1);
                 }
 
-                if !ctx.world_mut().is_skill_disabled_of(npc.object_id, PHYSICALSPECIAL1)
+                if !ctx
+                    .world_mut()
+                    .is_skill_disabled_of(npc.object_id, PHYSICALSPECIAL1)
                     && (ctx.get_random(100) <= (5 * ctx.get_script_value(npc)))
                 {
                     cast_at(ctx, npc, target, PHYSICALSPECIAL1);
                 }
 
-                if !ctx.world_mut().is_skill_disabled_of(npc.object_id, PHYSICALSPECIAL2)
+                if !ctx
+                    .world_mut()
+                    .is_skill_disabled_of(npc.object_id, PHYSICALSPECIAL2)
                     && (ctx.get_random(100) <= (3 * ctx.get_script_value(npc)))
                 {
                     cast_at(ctx, npc, target, PHYSICALSPECIAL2);
                 }
 
-                if !ctx.world_mut().is_skill_disabled_of(npc.object_id, PHYSICALSPECIAL3)
+                if !ctx
+                    .world_mut()
+                    .is_skill_disabled_of(npc.object_id, PHYSICALSPECIAL3)
                     && (ctx.get_random(100) <= (5 * ctx.get_script_value(npc)))
                 {
                     cast_at(ctx, npc, target, PHYSICALSPECIAL3);
@@ -357,7 +398,11 @@ impl Script for PrimevalIsle {
                 .set_int("SKILL_MULTIPLER", multiplier);
 
             if (hp_percent(ctx, npc) <= 30.0)
-                && (ctx.world_mut().npc_variables_mut(npc.object_id).get_int("SELFBUFF_USED", 0) == 0)
+                && (ctx
+                    .world_mut()
+                    .npc_variables_mut(npc.object_id)
+                    .get_int("SELFBUFF_USED", 0)
+                    == 0)
             {
                 target = ctx.most_hated(npc);
                 ctx.world_mut().clear_aggro_list(npc.object_id);
@@ -365,7 +410,9 @@ impl Script for PrimevalIsle {
                 if let Some(buff) = self_range_buff1
                     && !ctx.world_mut().is_skill_disabled_of(npc.object_id, buff)
                 {
-                    ctx.world_mut().npc_variables_mut(npc.object_id).set_int("SELFBUFF_USED", 1);
+                    ctx.world_mut()
+                        .npc_variables_mut(npc.object_id)
+                        .set_int("SELFBUFF_USED", 1);
                     ctx.world_mut().do_cast(npc.object_id, buff);
                     ctx.set_running(npc);
                     if let Some(target) = target {
@@ -375,7 +422,10 @@ impl Script for PrimevalIsle {
             }
 
             if target.is_some() {
-                let multiplier = ctx.world_mut().npc_variables_mut(npc.object_id).get_int("SKILL_MULTIPLER", 0);
+                let multiplier = ctx
+                    .world_mut()
+                    .npc_variables_mut(npc.object_id)
+                    .get_int("SKILL_MULTIPLER", 0);
                 if (ctx.get_random(100) <= (prob_physical_special1 * multiplier))
                     && let Some(skill) = physical_special1
                     && !ctx.world_mut().is_skill_disabled_of(npc.object_id, skill)
@@ -413,7 +463,13 @@ impl Script for PrimevalIsle {
                     ctx.use_summon_item_forced(player, DEINONYCHUS);
                 }
 
-                ctx.show_on_screen_npc_string(player, NpcStringId::LifeStoneFromTheBeginningAcquired, 2, 6000, &[]);
+                ctx.show_on_screen_npc_string(
+                    player,
+                    NpcStringId::LifeStoneFromTheBeginningAcquired,
+                    2,
+                    6000,
+                    &[],
+                );
             } else {
                 ctx.show_on_screen_npc_string(
                     player,
@@ -436,7 +492,13 @@ impl Script for PrimevalIsle {
 
             if collect_ghost == 1 {
                 ctx.cancel_quest_timer("GHOST_DESPAWN", Some(npc), None);
-                ctx.start_quest_timer("GHOST_DESPAWN", i64::from(collect_despawn) * 60_000, Some(npc), None, false);
+                ctx.start_quest_timer(
+                    "GHOST_DESPAWN",
+                    i64::from(collect_despawn) * 60_000,
+                    Some(npc),
+                    None,
+                    false,
+                );
             }
         } else {
             let vars = ctx.world_mut().npc_variables_mut(npc.object_id);
@@ -468,8 +530,20 @@ mod tests {
         let raptor = t.spawn(22196, 20);
         let sprigant = t.spawn(SPRIGNANT[0], 30);
         t.ticks(2);
-        assert_eq!(t.world.npc_variables(raptor).unwrap().get_int("SKILL_MULTIPLER", 0), 1);
-        assert_eq!(t.world.npc_variables(raptor).unwrap().get_int("SELFBUFF_USED", -1), 0);
+        assert_eq!(
+            t.world
+                .npc_variables(raptor)
+                .unwrap()
+                .get_int("SKILL_MULTIPLER", 0),
+            1
+        );
+        assert_eq!(
+            t.world
+                .npc_variables(raptor)
+                .unwrap()
+                .get_int("SELFBUFF_USED", -1),
+            0
+        );
         t.world.run_as_script("PrimevalIsle", |ctx| {
             let npc = ctx.script_npc(sprigant).unwrap();
             assert!(ctx.has_quest_timer("USE_SKILL", Some(npc), None));

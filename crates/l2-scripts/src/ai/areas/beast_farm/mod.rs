@@ -2,6 +2,7 @@
 //!
 //! One module per script, sorted by name; one `add` line per script in [`register`].
 
+#[allow(clippy::module_inception)]
 pub mod beast_farm;
 pub mod feedable_beasts;
 pub mod tunatun;

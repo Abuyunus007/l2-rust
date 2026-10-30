@@ -40,12 +40,75 @@ const TAMED_BEASTS: [i32; 6] = [
 
 // all mobs that can eat...
 const FEEDABLE_BEASTS: [i32; 69] = [
-    21451, 21452, 21453, 21454, 21455, 21456, 21457, 21458, 21459, 21460, 21461, 21462, 21463, 21464, 21465,
-    21466, 21467, 21468, 21469, 21470, 21471, 21472, 21473, 21474, 21475, 21476, 21477, 21478, 21479, 21480,
-    21481, 21482, 21483, 21484, 21485, 21486, 21487, 21488, 21489, 21490, 21491, 21492, 21493, 21494, 21495,
-    21496, 21497, 21498, 21499, 21500, 21501, 21502, 21503, 21504, 21505, 21506, 21507, 21824, 21825, 21826,
-    21827, 21828, 21829, TRAINED_BUFFALO1, TRAINED_BUFFALO2, TRAINED_COUGAR1, TRAINED_COUGAR2,
-    TRAINED_KOOKABURRA1, TRAINED_KOOKABURRA2,
+    21451,
+    21452,
+    21453,
+    21454,
+    21455,
+    21456,
+    21457,
+    21458,
+    21459,
+    21460,
+    21461,
+    21462,
+    21463,
+    21464,
+    21465,
+    21466,
+    21467,
+    21468,
+    21469,
+    21470,
+    21471,
+    21472,
+    21473,
+    21474,
+    21475,
+    21476,
+    21477,
+    21478,
+    21479,
+    21480,
+    21481,
+    21482,
+    21483,
+    21484,
+    21485,
+    21486,
+    21487,
+    21488,
+    21489,
+    21490,
+    21491,
+    21492,
+    21493,
+    21494,
+    21495,
+    21496,
+    21497,
+    21498,
+    21499,
+    21500,
+    21501,
+    21502,
+    21503,
+    21504,
+    21505,
+    21506,
+    21507,
+    21824,
+    21825,
+    21826,
+    21827,
+    21828,
+    21829,
+    TRAINED_BUFFALO1,
+    TRAINED_BUFFALO2,
+    TRAINED_COUGAR1,
+    TRAINED_COUGAR2,
+    TRAINED_KOOKABURRA1,
+    TRAINED_KOOKABURRA2,
 ];
 
 /// Java `MAD_COW_POLYMORPH`.
@@ -110,7 +173,10 @@ struct GrowthCapableMob {
 
 impl GrowthCapableMob {
     fn mobs_of(&self, spice: i32) -> Option<&'static [&'static [i32]]> {
-        self.spice_to_mob.iter().find(|(s, _)| *s == spice).map(|(_, mobs)| *mobs)
+        self.spice_to_mob
+            .iter()
+            .find(|(s, _)| *s == spice)
+            .map(|(_, mobs)| *mobs)
     }
 
     /// Java `getMob(spice, mobType, classType)`.
@@ -170,7 +236,11 @@ fn growth_capable_mob(npc_id: i32) -> Option<GrowthCapableMob> {
     let crystal = CRYSTAL_SPICE;
     Some(match npc_id {
         // Alpen Kookabura
-        21451 => mob(0, 100, vec![(gold, KOOKABURA_0_GOLD), (crystal, KOOKABURA_0_CRYSTAL)]),
+        21451 => mob(
+            0,
+            100,
+            vec![(gold, KOOKABURA_0_GOLD), (crystal, KOOKABURA_0_CRYSTAL)],
+        ),
         21452 | 21454 => mob(1, 40, vec![(gold, KOOKABURA_1_GOLD_1)]),
         21453 | 21455 => mob(1, 40, vec![(gold, KOOKABURA_1_GOLD_2)]),
         21456 | 21458 => mob(1, 40, vec![(crystal, KOOKABURA_1_CRYSTAL_1)]),
@@ -459,10 +529,21 @@ mod tests {
         assert_eq!((calf.growth_level, calf.chance), (0, 100));
         assert_eq!(calf.get_mob(GOLDEN_SPICE, 0, 0), Some(21452));
         assert_eq!(calf.get_mob(CRYSTAL_SPICE, 0, 0), Some(21456));
-        assert_eq!(growth_capable_mob(21479).unwrap().get_mob(GOLDEN_SPICE, 1, 1), Some(TRAINED_BUFFALO2));
+        assert_eq!(
+            growth_capable_mob(21479).unwrap().get_mob(GOLDEN_SPICE, 1, 1),
+            Some(TRAINED_BUFFALO2)
+        );
         // Java's quirk: Buffalo_1_Gold_2 holds 21481 twice over (21480 is missing).
-        assert_eq!(growth_capable_mob(21472).unwrap().get_mob(GOLDEN_SPICE, 0, 0), Some(21481));
-        assert!(growth_capable_mob(21451).unwrap().get_mob(SKILL_GOLDEN_SPICE, 0, 0).is_none());
+        assert_eq!(
+            growth_capable_mob(21472).unwrap().get_mob(GOLDEN_SPICE, 0, 0),
+            Some(21481)
+        );
+        assert!(
+            growth_capable_mob(21451)
+                .unwrap()
+                .get_mob(SKILL_GOLDEN_SPICE, 0, 0)
+                .is_none()
+        );
         assert!(growth_capable_mob(21824).is_none());
     }
 
@@ -479,13 +560,19 @@ mod tests {
                 ctx,
                 npc,
                 ObjectId(1),
-                SkillKey { id: SKILL_GOLDEN_SPICE, level: 1 },
+                SkillKey {
+                    id: SKILL_GOLDEN_SPICE,
+                    level: 1,
+                },
                 &[calf],
                 false,
             );
         });
         assert!(!t.in_world(calf));
-        let grown: Vec<ObjectId> = [21452, 21453, 21454, 21455].iter().flat_map(|id| t.npcs_of(*id)).collect();
+        let grown: Vec<ObjectId> = [21452, 21453, 21454, 21455]
+            .iter()
+            .flat_map(|id| t.npcs_of(*id))
+            .collect();
         assert_eq!(grown.len(), 1);
         t.world.run_as_script("FeedableBeasts", |ctx| {
             assert_eq!(ctx.state::<FeedInfo>().0.get(&grown[0].0), Some(&1));

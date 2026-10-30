@@ -33,10 +33,10 @@ const TRAINING_RANGE: i32 = 1500;
 struct Actions(i32, i32, i32, i64);
 
 const SOLDIER_SOCIAL_ACTIONS: [Actions; 4] = [
-    Actions(4, -1, 2, 2333),  // SCE_TRAINING_ACTION_A
-    Actions(1, -1, 2, 4333),  // SCE_TRAINING_ACTION_B
-    Actions(6, 5, 4, 1000),   // SCE_TRAINING_ACTION_C
-    Actions(7, -1, 2, 1000),  // SCE_TRAINING_ACTION_D
+    Actions(4, -1, 2, 2333), // SCE_TRAINING_ACTION_A
+    Actions(1, -1, 2, 4333), // SCE_TRAINING_ACTION_B
+    Actions(6, 5, 4, 1000),  // SCE_TRAINING_ACTION_C
+    Actions(7, -1, 2, 1000), // SCE_TRAINING_ACTION_D
 ];
 
 /// Java `npc.getVariables().getInt(name)` (0 when unset).
@@ -45,7 +45,9 @@ fn var(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, name: &str) -> i32 {
 }
 
 fn set_var(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, name: &str, value: i32) {
-    ctx.world_mut().npc_variables_mut(npc.object_id).set_int(name, value);
+    ctx.world_mut()
+        .npc_variables_mut(npc.object_id)
+        .set_int(name, value);
 }
 
 /// Java `handleSocialAction(npc, action, firstCall)`.
@@ -133,8 +135,12 @@ impl Script for SelMahumDrill {
                                 ctx.broadcast_npc_social_action(npc, CHIEF_SOCIAL_ACTIONS[idx as usize]);
                                 // Pass social action index to soldiers via script value
                                 set_var(ctx, npc, "SOCIAL_ACTION_NEXT_INDEX", idx);
-                                ctx.world_mut()
-                                    .broadcast_event(npc.object_id, "do_social_action", TRAINING_RANGE, None);
+                                ctx.world_mut().broadcast_event(
+                                    npc.object_id,
+                                    "do_social_action",
+                                    TRAINING_RANGE,
+                                    None,
+                                );
                             }
                         }
 
@@ -149,7 +155,9 @@ impl Script for SelMahumDrill {
             }
             "reset_busy_state" => {
                 if let Some(npc) = npc {
-                    ctx.world_mut().npc_variables_mut(npc.object_id).remove("BUSY_STATE");
+                    ctx.world_mut()
+                        .npc_variables_mut(npc.object_id)
+                        .remove("BUSY_STATE");
                     ctx.disable_core_ai(npc, false);
                 }
             }
@@ -186,7 +194,8 @@ impl Script for SelMahumDrill {
         _skill: Option<SkillKey>,
     ) {
         if (ctx.get_random(10) < 1) && MAHUM_SOLDIERS.contains(&npc.id) {
-            ctx.world_mut().broadcast_event(npc.object_id, "ATTACKED", 1000, None);
+            ctx.world_mut()
+                .broadcast_event(npc.object_id, "ATTACKED", 1000, None);
         }
     }
 
@@ -302,7 +311,10 @@ mod tests {
 
     #[test]
     fn the_actions_are_java_s() {
-        assert_eq!(soldier_action(2).map(|a| (a.0, a.1, a.2, a.3)), Some((6, 5, 4, 1000)));
+        assert_eq!(
+            soldier_action(2).map(|a| (a.0, a.1, a.2, a.3)),
+            Some((6, 5, 4, 1000))
+        );
         assert!(soldier_action(4).is_none());
     }
 }

@@ -34,7 +34,9 @@ fn first_player_in_range(ctx: &ScriptCtx<'_>, npc: ScriptNpc, range: i32) -> Opt
     ctx.world()
         .visible_objects_in_range(npc.object_id, range)
         .into_iter()
-        .find(|p| ctx.world().player(*p).is_some() && !ctx.is_dead(*p) && !ctx.world().is_object_invisible(*p))
+        .find(|p| {
+            ctx.world().player(*p).is_some() && !ctx.is_dead(*p) && !ctx.world().is_object_invisible(*p)
+        })
 }
 
 /// Java `ai.areas.MonasteryOfSilence.EtisVanEtinaPhantom`.
@@ -110,7 +112,13 @@ impl Script for EtisVanEtinaPhantom {
         None
     }
 
-    fn on_spell_finished(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, _player: Option<ObjectId>, skill: SkillKey) {
+    fn on_spell_finished(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        npc: ScriptNpc,
+        _player: Option<ObjectId>,
+        skill: SkillKey,
+    ) {
         if ctx.is_dead(npc.object_id) {
             return;
         }
@@ -133,9 +141,10 @@ impl Script for EtisVanEtinaPhantom {
             return None;
         }
 
-        if event_name == EVT_BOSS_DEAD {
-            ctx.delete_npc(receiver);
-        } else if event_name == EVT_PHANTOM_REAL_DEAD && receiver.id == PHANTOM_FAKE {
+        // Java has two `if` branches with the same body: the boss died (every phantom goes),
+        // or the real phantom died (the fake one goes).
+        if event_name == EVT_BOSS_DEAD || (event_name == EVT_PHANTOM_REAL_DEAD && receiver.id == PHANTOM_FAKE)
+        {
             ctx.delete_npc(receiver);
         }
 
@@ -144,7 +153,10 @@ impl Script for EtisVanEtinaPhantom {
 
     fn on_spawn(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
         let mut target = None;
-        let target_id = ctx.world_mut().npc_variables_mut(npc.object_id).get_int("etisTargetId", 0);
+        let target_id = ctx
+            .world_mut()
+            .npc_variables_mut(npc.object_id)
+            .get_int("etisTargetId", 0);
         if target_id > 0 {
             let p = ObjectId(target_id);
             if ctx.world().player(p).is_some() && !ctx.is_dead(p) {

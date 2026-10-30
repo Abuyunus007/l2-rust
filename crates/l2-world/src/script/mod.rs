@@ -30,9 +30,9 @@
 
 pub mod admin;
 pub mod ai_help;
+pub mod api;
 mod area_help;
 mod area_spawns;
-pub mod api;
 pub mod ctx;
 pub mod events;
 #[cfg(test)]

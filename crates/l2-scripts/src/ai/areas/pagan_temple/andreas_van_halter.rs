@@ -85,7 +85,19 @@ fn broadcast_cinematic(ctx: &ScriptCtx<'_>, boss: Option<ScriptNpc>, packet: &im
 
 /// Java `new SpecialCamera(_camera, force, angle1, angle2, time, duration, 0, 0, 1, 0, 0)`.
 fn camera_shot(camera: ScriptNpc, force: i32, angle1: i32, angle2: i32, time: i32) -> SpecialCamera {
-    SpecialCamera::new(camera.object_id.0, force, angle1, angle2, time, 5000, 0, 0, 1, 0, 0)
+    SpecialCamera::new(
+        camera.object_id.0,
+        force,
+        angle1,
+        angle2,
+        time,
+        5000,
+        0,
+        0,
+        1,
+        0,
+        0,
+    )
 }
 
 fn despawn_ephemeral(ctx: &mut ScriptCtx<'_>) {
@@ -282,7 +294,8 @@ impl Script for AndreasVanHalter {
                     ctx.state::<RaidState>().spawned.push(camera);
                 }
 
-                ctx.world_mut().set_npc_target(boss.object_id, Some(victim.object_id));
+                ctx.world_mut()
+                    .set_npc_target(boss.object_id, Some(victim.object_id));
                 ctx.world_mut().do_cast(boss.object_id, RITUAL_SKILL);
                 ctx.set_immobilized(boss, true);
                 if let Some((x, y, z)) = ctx.world().position_of(boss.object_id) {
@@ -411,10 +424,26 @@ mod tests {
             let npc = ctx.script_npc(boss).unwrap();
             assert!(ctx.has_quest_timer("RESET_CHECK", Some(npc), None));
             for _ in 0..15 {
-                AndreasVanHalter.on_kill(ctx, ScriptNpc { object_id: ObjectId(0), id: CAPTAIN_ROYAL_GUARD_A }, ObjectId(1), false);
+                AndreasVanHalter.on_kill(
+                    ctx,
+                    ScriptNpc {
+                        object_id: ObjectId(0),
+                        id: CAPTAIN_ROYAL_GUARD_A,
+                    },
+                    ObjectId(1),
+                    false,
+                );
             }
             assert_eq!(ctx.state::<RaidState>().status, STATUS_DORMANT);
-            AndreasVanHalter.on_kill(ctx, ScriptNpc { object_id: ObjectId(0), id: CAPTAIN_ROYAL_GUARD_A }, ObjectId(1), false);
+            AndreasVanHalter.on_kill(
+                ctx,
+                ScriptNpc {
+                    object_id: ObjectId(0),
+                    id: CAPTAIN_ROYAL_GUARD_A,
+                },
+                ObjectId(1),
+                false,
+            );
             assert_eq!(ctx.state::<RaidState>().status, STATUS_CINEMATIC);
             assert!(ctx.has_quest_timer("CINEMATIC_1", Some(npc), None));
         });

@@ -46,7 +46,9 @@ impl Script for Tunatun {
                 return Some("31537-01.html".to_owned());
             }
 
-            let qs_exists = ctx.player_quest_state(player, Q00020_BRING_UP_WITH_LOVE).is_some();
+            let qs_exists = ctx
+                .player_quest_state(player, Q00020_BRING_UP_WITH_LOVE)
+                .is_some();
             if !qs_exists && ctx.player_level(player) < MIN_LEVEL {
                 return Some("31537-02.html".to_owned());
             } else if qs_exists || ctx.player_level(player) >= MIN_LEVEL {

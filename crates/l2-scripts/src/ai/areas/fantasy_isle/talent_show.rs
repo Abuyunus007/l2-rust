@@ -174,7 +174,8 @@ fn move_to(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, x: i32, y: i32, z: i32) {
 
 /// Java `npc.broadcastPacket(new PlaySound(1, file, 0, 0, 0, 0, 0))`.
 fn play_sound(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, file: &str) {
-    ctx.world().broadcast_packet(npc.object_id, &PlaySound::with_unknown1(1, file));
+    ctx.world()
+        .broadcast_packet(npc.object_id, &PlaySound::with_unknown1(1, file));
 }
 
 /// Java `addSpawn(npcId, x, y, z, heading, false, despawnDelay)`.
@@ -195,7 +196,9 @@ impl Script for TalentShow {
     }
 
     fn setup(&self, s: &mut ScriptSetup) {
-        s.add_spawn_id(&[32433, 32431, 32432, 32442, 32443, 32444, 32445, 32446, 32424, 32425, 32426, 32427, 32428]);
+        s.add_spawn_id(&[
+            32433, 32431, 32432, 32442, 32443, 32444, 32445, 32446, 32424, 32425, 32426, 32427, 32428,
+        ]);
     }
 
     // The Java constructor `scheduleTimer()`.

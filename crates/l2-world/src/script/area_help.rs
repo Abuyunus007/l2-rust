@@ -3,13 +3,13 @@
 // Java: config/PlayerConfig.java (AUTO_LOOT), entity/actor/Npc.java (broadcastSocialAction),
 //       entity/actor/Creature.java (getTemplate().getParameters())
 
-use l2_protocol_game::server::{SocialAction, ValidateLocation};
 use l2_data::npc::NpcParam;
+use l2_protocol_game::server::{SocialAction, ValidateLocation};
 use l2_util::ObjectId;
 
 use super::ScriptNpc;
-use crate::effects::SkillKey;
 use super::ctx::ScriptCtx;
+use crate::effects::SkillKey;
 
 impl ScriptCtx<'_> {
     /// Java `PlayerConfig.AUTO_LOOT` (`AutoLoot` of `Player.ini`).
@@ -92,7 +92,8 @@ impl ScriptCtx<'_> {
         let Some(template) = templates.get(item_id) else {
             return;
         };
-        self.world_mut().summon_items_on_use(player, &item, template, true);
+        self.world_mut()
+            .summon_items_on_use(player, &item, template, true);
     }
 
     /// Java `npc.isInMySpawnGroup(other)`: both NPCs have a spawn and the spawns have the same

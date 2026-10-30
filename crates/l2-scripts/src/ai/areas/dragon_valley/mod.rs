@@ -2,6 +2,7 @@
 //!
 //! One module per script, sorted by name; one `add` line per script in [`register`].
 
+#[allow(clippy::module_inception)]
 pub mod dragon_valley;
 pub mod dragon_vortex;
 pub mod lair_of_antharas;

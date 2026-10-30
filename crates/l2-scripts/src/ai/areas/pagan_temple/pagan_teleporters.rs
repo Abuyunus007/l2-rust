@@ -78,7 +78,9 @@ impl Script for PaganTeleporters {
     fn on_talk(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId) -> Option<String> {
         match npc.id {
             32034 => {
-                if !ctx.has_at_least_one_quest_item(player, &[VISITORS_MARK, FADED_VISITORS_MARK, PAGANS_MARK]) {
+                if !ctx
+                    .has_at_least_one_quest_item(player, &[VISITORS_MARK, FADED_VISITORS_MARK, PAGANS_MARK])
+                {
                     return Some("noItem.htm".to_owned());
                 }
 
@@ -131,7 +133,8 @@ mod tests {
     fn the_gatekeeper_shows_no_item_without_a_mark_and_the_mirror_teleports() {
         let mut registry = ScriptRegistry::new();
         registry.add(PaganTeleporters);
-        let pages = Pages::of(&PaganTeleporters).plain(&["noItem.htm", "FadedMark.htm"])
+        let pages = Pages::of(&PaganTeleporters)
+            .plain(&["noItem.htm", "FadedMark.htm"])
             .file(
                 "data/html/default/32034.htm",
                 r#"<html><body><a action="bypass Script PaganTeleporters">x</a></body></html>"#,

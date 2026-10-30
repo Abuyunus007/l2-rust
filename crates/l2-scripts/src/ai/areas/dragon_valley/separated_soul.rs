@@ -53,7 +53,10 @@ impl Script for SeparatedSoul {
         player: Option<ObjectId>,
     ) -> Option<String> {
         let player = player?;
-        let loc = LOCATIONS.iter().find(|(name, _)| *name == event).map(|(_, loc)| *loc);
+        let loc = LOCATIONS
+            .iter()
+            .find(|(name, _)| *name == event)
+            .map(|(_, loc)| *loc);
         if let Some((x, y, z)) = loc {
             if ctx.player_level(player) >= MIN_LEVEL {
                 ctx.teleport_player(player, x, y, z, 0, true);
@@ -105,7 +108,10 @@ mod tests {
         t.enter(
             1,
             80,
-            vec![item(9001, WILL_OF_ANTHARAS, 1), item(9002, SEALED_BLOOD_CRYSTAL, 1)],
+            vec![
+                item(9001, WILL_OF_ANTHARAS, 1),
+                item(9002, SEALED_BLOOD_CRYSTAL, 1),
+            ],
         );
         t.enter(2, 79, vec![]);
         t.talk(1, soul);

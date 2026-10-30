@@ -74,12 +74,21 @@ mod tests {
         t.enter(1, 75, vec![]);
         // The world RNG is seeded: kill until the key lands on the ground (AutoLoot is off).
         let mut kills = 0;
-        while t.world.nearest_ground_item(ObjectId(1), ANTEROOM_KEY, 2_000).is_none() && kills < 500 {
+        while t
+            .world
+            .nearest_ground_item(ObjectId(1), ANTEROOM_KEY, 2_000)
+            .is_none()
+            && kills < 500
+        {
             let mob = t.spawn(ZOMBIE_WORKER, 20);
             t.kill(1, mob);
             kills += 1;
         }
-        assert!(t.world.nearest_ground_item(ObjectId(1), ANTEROOM_KEY, 2_000).is_some());
+        assert!(
+            t.world
+                .nearest_ground_item(ObjectId(1), ANTEROOM_KEY, 2_000)
+                .is_some()
+        );
         assert_eq!(t.count(1, ANTEROOM_KEY), 0);
     }
 }
