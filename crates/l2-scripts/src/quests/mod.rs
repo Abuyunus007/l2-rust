@@ -143,6 +143,7 @@ pub mod q00320_bones_tell_the_future;
 pub mod q00324_sweetest_venom;
 pub mod q00325_grim_collector;
 pub mod q00326_vanquish_remnants;
+pub mod q00327_recover_the_farmland;
 pub mod q00328_sense_for_business;
 pub mod q00329_curiosity_of_a_dwarf;
 pub mod q00331_arrow_of_vengeance;
@@ -290,6 +291,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00324_sweetest_venom::Q00324SweetestVenom);
     r.add(q00325_grim_collector::Q00325GrimCollector);
     r.add(q00326_vanquish_remnants::Q00326VanquishRemnants);
+    r.add(q00327_recover_the_farmland::Q00327RecoverTheFarmland);
     r.add(q00328_sense_for_business::Q00328SenseForBusiness);
     r.add(q00329_curiosity_of_a_dwarf::Q00329CuriosityOfADwarf);
     r.add(q00331_arrow_of_vengeance::Q00331ArrowOfVengeance);
