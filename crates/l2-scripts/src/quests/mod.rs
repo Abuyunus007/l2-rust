@@ -142,6 +142,7 @@ pub mod q00320_bones_tell_the_future;
 pub mod q00324_sweetest_venom;
 pub mod q00326_vanquish_remnants;
 pub mod q00328_sense_for_business;
+pub mod q00329_curiosity_of_a_dwarf;
 pub mod q00450_grave_robber_rescue;
 
 use l2_world::ScriptRegistry;
@@ -285,5 +286,6 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00324_sweetest_venom::Q00324SweetestVenom);
     r.add(q00326_vanquish_remnants::Q00326VanquishRemnants);
     r.add(q00328_sense_for_business::Q00328SenseForBusiness);
+    r.add(q00329_curiosity_of_a_dwarf::Q00329CuriosityOfADwarf);
     r.add(q00450_grave_robber_rescue::Q00450GraveRobberRescue);
 }
