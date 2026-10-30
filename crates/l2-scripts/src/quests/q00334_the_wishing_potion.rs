@@ -308,16 +308,15 @@ impl Script for Q00334TheWishingPotion {
             }
             FAIRY_RUPINA => {
                 if qs.get_int(ctx, FLAG) == 1 {
-                    let html;
                     // NOTE(java-quirk): `getRandom(4) < 4` is always true, the second branch never runs.
-                    if ctx.get_random(4) < 4 {
+                    let html = if ctx.get_random(4) < 4 {
                         ctx.give_items(player, NECKLACE_OF_GRACE, 1);
                         qs.set(ctx, FLAG, "0");
-                        html = "30742-01.html";
+                        "30742-01.html"
                     } else {
                         give_random_fabric(ctx, player);
-                        html = "30742-02.html";
-                    }
+                        "30742-02.html"
+                    };
 
                     qs.set(ctx, FLAG, "0");
                     ctx.delete_npc(npc);
