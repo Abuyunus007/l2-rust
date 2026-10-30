@@ -431,7 +431,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-INST-03](S/S-INST-03.md) | Ice Queen, Nornil, Jinia and the small instances | sonnet | full | API-01 | merged |
 | [S-INST-04](S/S-INST-04.md) | Seven Signs instances | sonnet | full | API-01 | merged |
 | [S-TW-01](S/S-TW-01.md) | Territory War quests | sonnet | full | API-01 | merged |
-| [S-EVENT-01](S/S-EVENT-01.md) | Seasonal events | sonnet | full | API-01 | ready |
+| [S-EVENT-01](S/S-EVENT-01.md) | Seasonal events | sonnet | full | API-01 | merged |
 | [S-Q-01](S/S-Q-01.md) | Quests Q00002..Q00033 (32 quests) | haiku | spot | PILOT-01 | merged |
 | [S-Q-02](S/S-Q-02.md) | Quests Q00034..Q00064 (24 quests) | haiku | spot | PILOT-01 | merged |
 | [S-Q-03](S/S-Q-03.md) | Quests Q00065..Q00108 (43 quests) | haiku | spot | PILOT-01 | merged |
