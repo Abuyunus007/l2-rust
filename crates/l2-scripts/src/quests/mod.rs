@@ -317,6 +317,7 @@ pub mod q00616_magical_power_of_fire_part2;
 pub mod q00617_gather_the_flames;
 pub mod q00618_into_the_flame;
 pub mod q00619_relics_of_the_old_empire;
+pub mod q00620_four_goblets;
 pub mod q00621_egg_delivery;
 pub mod q00622_specialty_liquor_delivery;
 pub mod q00623_the_finest_food;
@@ -738,6 +739,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00617_gather_the_flames::Q00617GatherTheFlames);
     r.add(q00618_into_the_flame::Q00618IntoTheFlame);
     r.add(q00619_relics_of_the_old_empire::Q00619RelicsOfTheOldEmpire);
+    r.add(q00620_four_goblets::Q00620FourGoblets);
     r.add(q00621_egg_delivery::Q00621EggDelivery);
     r.add(q00622_specialty_liquor_delivery::Q00622SpecialtyLiquorDelivery);
     r.add(q00623_the_finest_food::Q00623TheFinestFood);
