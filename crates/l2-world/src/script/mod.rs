@@ -31,6 +31,8 @@
 pub mod admin;
 pub mod ai_help;
 pub mod api;
+mod area_help;
+mod area_spawns;
 pub mod ctx;
 mod event_api;
 pub mod events;
@@ -68,6 +70,7 @@ use l2_util::ObjectId;
 use tracing::{info, warn};
 
 pub use api::{Script, ScriptItem, ScriptNpc};
+pub use area_spawns::NamedSpawn;
 pub use ctx::ScriptCtx;
 pub use events::{DamageInfo, ScriptEvent, TerminateReturn, TrapAction};
 pub use globals::{GlobalVariables, GlobalVariablesWrite};

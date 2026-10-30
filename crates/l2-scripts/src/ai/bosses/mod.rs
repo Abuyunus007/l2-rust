@@ -12,26 +12,36 @@
 //!
 //! [`World::reread_grand_boss_for_script`]: l2_world::World::reread_grand_boss_for_script
 
+pub mod anais;
 pub mod antharas;
 pub mod baium;
 pub mod beleth;
 pub mod core;
+pub mod dr_chaos;
 pub mod frintezza;
 pub mod orfen;
 pub mod queen_ant;
+pub mod queen_shyeed;
+pub mod sailren;
+pub mod seer_ugoros;
 pub mod valakas;
 
 use l2_world::{ScriptCtx, ScriptRegistry};
 
 /// Registers every script of the folder.
 pub(crate) fn register(r: &mut ScriptRegistry) {
+    r.add(anais::Anais);
     r.add(antharas::Antharas);
     r.add(baium::Baium);
     r.add(beleth::Beleth);
     r.add(core::Core);
+    r.add(dr_chaos::DrChaos);
     frintezza::register(r);
     r.add(orfen::Orfen);
     r.add(queen_ant::QueenAnt);
+    r.add(queen_shyeed::QueenShyeed);
+    r.add(sailren::Sailren);
+    r.add(seer_ugoros::SeerUgoros);
     r.add(valakas::Valakas);
 }
 
