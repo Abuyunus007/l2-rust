@@ -6,6 +6,7 @@ pub mod fantasy_isle;
 pub mod forge_of_the_gods;
 pub mod gracia;
 pub mod hellbound;
+pub mod monastery_of_silence;
 pub mod pagan_temple;
 pub mod primeval_isle;
 
@@ -19,6 +20,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     forge_of_the_gods::register(r);
     gracia::register(r);
     hellbound::register(r);
+    monastery_of_silence::register(r);
     pagan_temple::register(r);
     primeval_isle::register(r);
 }

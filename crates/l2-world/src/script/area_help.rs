@@ -4,9 +4,11 @@
 //       entity/actor/Creature.java (getTemplate().getParameters())
 
 use l2_protocol_game::server::{SocialAction, ValidateLocation};
+use l2_data::npc::NpcParam;
 use l2_util::ObjectId;
 
 use super::ScriptNpc;
+use crate::effects::SkillKey;
 use super::ctx::ScriptCtx;
 
 impl ScriptCtx<'_> {
@@ -46,6 +48,56 @@ impl ScriptCtx<'_> {
     /// Java `npc.asAttackable().returnHome()`.
     pub fn return_home(&mut self, npc: ScriptNpc) {
         self.world_mut().return_home(npc.object_id);
+    }
+
+    /// Java `npc.getTemplate().getParameters().getObject(name, SkillHolder.class)`: a
+    /// `<skill name=".." id=".." level=".."/>` parameter of the template.
+    pub fn npc_template_skill(&self, npc: ScriptNpc, name: &str) -> Option<SkillKey> {
+        match self.world().npc_template(npc.object_id)?.parameters.get(name)? {
+            NpcParam::Skill { id, level } => Some(SkillKey::new(*id, *level)),
+            _ => None,
+        }
+    }
+
+    /// Java `npc.getTemplate().getParameters().getInt(name, default)`.
+    pub fn npc_template_int(&self, npc: ScriptNpc, name: &str, default: i32) -> i32 {
+        self.world()
+            .npc_template_param_int(npc.object_id, name)
+            .unwrap_or(default)
+    }
+
+    /// Java `player.isInventoryUnder80(includeQuestInv)`: the inventory holds at most 80% of
+    /// its limit.
+    pub fn is_inventory_under_80(&self, player: ObjectId, include_quest: bool) -> bool {
+        let Some(view) = self.world().stats(player) else {
+            return false;
+        };
+        let size = if include_quest {
+            view.non_quest_size() + self.world().quest_size(player)
+        } else {
+            view.non_quest_size()
+        };
+        f64::from(size) <= f64::from(view.inventory_limit()) * 0.8
+    }
+
+    /// Java `ItemHandler.getInstance().getHandler(item.getEtcItem()).onItemUse(player, item, true)`
+    /// for the first inventory item `item_id` (a summon item): does nothing without the item.
+    pub fn use_summon_item_forced(&mut self, player: ObjectId, item_id: i32) {
+        let Some(item) = self.world().inventory_item_by_item_id(player, item_id).cloned() else {
+            return;
+        };
+        let Some(templates) = self.world().item_templates() else {
+            return;
+        };
+        let Some(template) = templates.get(item_id) else {
+            return;
+        };
+        self.world_mut().summon_items_on_use(player, &item, template, true);
+    }
+
+    /// Java `player.hasPet()`.
+    pub fn has_pet(&self, owner: ObjectId) -> bool {
+        self.world().has_pet(owner)
     }
 
     /// Java `player.sendMessage(text)`: a system message with a plain text.
