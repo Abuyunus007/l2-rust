@@ -422,7 +422,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-HAND-04](S/S-HAND-04.md) | Decoys, traps and the drop search board | sonnet | full | HAND-03 | ready |
 | [S-DATA-01](S/S-DATA-01.md) | Category data, ClassMaster.xml, transformation tree, small script helpers | sonnet | full | VM-01 | merged |
 | [S-API-05](S/S-API-05.md) | Engine gaps the script batches found (soul crystals, traps, tamed beasts, ...) | opus | full | Q batches | in-progress |
-| [S-AI-08](S/S-AI-08.md) | The AI scripts the AI batches left | sonnet | full | AI batches | in-progress |
+| [S-AI-08](S/S-AI-08.md) | The AI scripts the AI batches left | sonnet | full | AI batches | merged |
 | [S-BOSS-01](S/S-BOSS-01.md) | Antharas, Valakas, Baium | opus | full | API-01 | merged |
 | [S-BOSS-02](S/S-BOSS-02.md) | Beleth, Frintezza, Core, Orfen, Queen Ant | sonnet | full | API-01 | merged |
 | [S-BOSS-03](S/S-BOSS-03.md) | Sailren, Seer Ugoros, Dr. Chaos, Anais, Queen Shyeed | sonnet | full | API-01 | merged |
@@ -431,7 +431,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-INST-03](S/S-INST-03.md) | Ice Queen, Nornil, Jinia and the small instances | sonnet | full | API-01 | merged |
 | [S-INST-04](S/S-INST-04.md) | Seven Signs instances | sonnet | full | API-01 | merged |
 | [S-TW-01](S/S-TW-01.md) | Territory War quests | sonnet | full | API-01 | merged |
-| [S-EVENT-01](S/S-EVENT-01.md) | Seasonal events | sonnet | full | API-01 | ready |
+| [S-EVENT-01](S/S-EVENT-01.md) | Seasonal events | sonnet | full | API-01 | merged |
 | [S-Q-01](S/S-Q-01.md) | Quests Q00002..Q00033 (32 quests) | haiku | spot | PILOT-01 | merged |
 | [S-Q-02](S/S-Q-02.md) | Quests Q00034..Q00064 (24 quests) | haiku | spot | PILOT-01 | merged |
 | [S-Q-03](S/S-Q-03.md) | Quests Q00065..Q00108 (43 quests) | haiku | spot | PILOT-01 | merged |
@@ -452,9 +452,9 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-Q-18](S/S-Q-18.md) | Quests Q00651..Q00713 (30 quests) | haiku | spot | PILOT-01 | merged |
 | [S-Q-19](S/S-Q-19.md) | Quests Q00714..Q10285 (32 quests) | haiku | spot | PILOT-01 | merged |
 | [S-Q-20](S/S-Q-20.md) | Quests Q10286..Q10505 (16 quests) | haiku | spot | PILOT-01 | merged |
-| [S-QR-01](S/S-QR-01.md) | Remaining quests Q00022..Q00064 (7) | sonnet | spot | Q batches | in-progress |
+| [S-QR-01](S/S-QR-01.md) | Remaining quests Q00022..Q00064 (7) | sonnet | spot | Q batches | merged |
 | [S-QR-02](S/S-QR-02.md) | Remaining quests Q00065..Q00120 (7) | sonnet | spot | Q batches | merged |
-| [S-QR-03](S/S-QR-03.md) | Remaining quests Q00123..Q00139 (13) | sonnet | spot | Q batches | in-progress |
+| [S-QR-03](S/S-QR-03.md) | Remaining quests Q00123..Q00139 (13) | sonnet | spot | Q batches | merged |
 | [S-QR-04](S/S-QR-04.md) | Remaining quests Q00140..Q00194 (14) | sonnet | spot | Q batches | ready |
 | [S-QR-05](S/S-QR-05.md) | Remaining quests Q00195..Q00218 (8) | sonnet | spot | Q batches | ready |
 | [S-QR-06](S/S-QR-06.md) | Remaining quests Q00219..Q00230 (6) | sonnet | spot | Q batches | ready |

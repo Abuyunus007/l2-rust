@@ -97,4 +97,12 @@ impl World {
             .and_then(|t| t.get(skill.id, skill.level).map(|s| s.effect_point))
             .unwrap_or(0)
     }
+
+    /// Java `skill.getMpConsume()` of a skill by id and level: the template's own value, not the
+    /// creature's `getMpConsume(skill)` (0 for an unknown skill).
+    pub fn script_skill_mp_consume(&self, skill: crate::effects::SkillKey) -> i32 {
+        self.skill_table()
+            .and_then(|t| t.get(skill.id, skill.level).map(|s| s.mp_consume))
+            .unwrap_or(0)
+    }
 }

@@ -245,7 +245,7 @@ impl World {
     }
 
     /// Java `NpcTemplate.canTeach(playerClass)`.
-    fn can_teach(&self, npc_template_id: i32, class: ClassId) -> bool {
+    pub(crate) fn can_teach(&self, npc_template_id: i32, class: ClassId) -> bool {
         // If the player is on a third class, fetch the class teacher information for its parent
         // class.
         let class = if class.class_level() == 3 {
