@@ -270,7 +270,7 @@ fn npcs_enter_and_leave_the_zones_scripts_listen_to() {
         NPCS,
         "",
         &[("data/zones/probe.xml", &zones)],
-        |world, root| load_zones(world, root),
+        load_zones,
     );
     // Spawned outside: nothing. Spawned inside: the enter.
     let outside = t.spawn(NPC_ID, 0);
