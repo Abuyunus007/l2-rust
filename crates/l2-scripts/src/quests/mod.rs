@@ -279,6 +279,7 @@ pub mod q00359_for_a_sleepless_deadman;
 pub mod q00360_plunder_their_supplies;
 pub mod q00362_bards_mandolin;
 pub mod q00366_silver_haired_shaman;
+pub mod q00367_electrifying_recharge;
 pub mod q00368_trespassing_into_the_holy_ground;
 pub mod q00369_collector_of_jewels;
 pub mod q00370_an_elder_sows_seeds;
@@ -712,6 +713,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00360_plunder_their_supplies::Q00360PlunderTheirSupplies);
     r.add(q00362_bards_mandolin::Q00362BardsMandolin);
     r.add(q00366_silver_haired_shaman::Q00366SilverHairedShaman);
+    r.add(q00367_electrifying_recharge::Q00367ElectrifyingRecharge);
     r.add(q00368_trespassing_into_the_holy_ground::Q00368TrespassingIntoTheHolyGround);
     r.add(q00369_collector_of_jewels::Q00369CollectorOfJewels);
     r.add(q00370_an_elder_sows_seeds::Q00370AnElderSowsSeeds);

@@ -28,6 +28,12 @@ impl World {
         Some((skill.mp_consume, skill.hp_consume))
     }
 
+    /// Java `skill.getReuseHashCode()`; `None` for a skill the table does not have (S-QR-10).
+    pub fn script_skill_reuse_hash_code(&self, key: SkillKey) -> Option<i32> {
+        let table = self.skill_table()?;
+        Some(table.get(key.id, key.level)?.reuse_hash_code)
+    }
+
     /// Java `npc.getCurrentMp()`.
     pub fn script_npc_current_mp(&self, npc: ObjectId) -> f64 {
         self.npc(npc).map_or(0.0, |n| n.core.cur_mp)
