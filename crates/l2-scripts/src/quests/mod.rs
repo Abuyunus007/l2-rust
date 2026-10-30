@@ -133,6 +133,7 @@ pub mod q00275_dark_winged_spies;
 pub mod q00295_dreaming_of_the_skies;
 pub mod q00303_collect_arrowheads;
 pub mod q00317_catch_the_wind;
+pub mod q00337_audience_with_the_land_dragon;
 pub mod q00338_alligator_hunter;
 pub mod q00340_subjugation_of_lizardmen;
 pub mod q00341_hunting_for_wild_beasts;
@@ -279,6 +280,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00317_catch_the_wind::Q00317CatchTheWind);
     r.add(q00338_alligator_hunter::Q00338AlligatorHunter);
     r.add(q00341_hunting_for_wild_beasts::Q00341HuntingForWildBeasts);
+    r.add(q00337_audience_with_the_land_dragon::Q00337AudienceWithTheLandDragon);
     r.add(q00340_subjugation_of_lizardmen::Q00340SubjugationOfLizardmen);
     r.add(q00344_1000_years_the_end_of_lamentation::Q00344ThousandYearsTheEndOfLamentation);
     r.add(q00343_under_the_shadow_of_the_ivory_tower::Q00343UnderTheShadowOfTheIvoryTower);
