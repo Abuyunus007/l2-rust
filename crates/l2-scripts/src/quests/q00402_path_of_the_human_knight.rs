@@ -677,6 +677,7 @@ mod tests {
     }
 
     /// One coin: the NPC's badge events (`path`), the monsters' drops, then the NPC's coin page.
+    #[allow(clippy::too_many_arguments)]
     fn coin(
         t: &mut ScriptTest,
         npc: Oid,
