@@ -253,6 +253,8 @@ pub mod q00688_defeat_the_elrokian_raiders;
 pub mod q00696_conquer_the_hall_of_erosion;
 pub mod q00697_defend_the_hall_of_erosion;
 pub mod q00698_block_the_lords_escape;
+pub mod q00699_guardian_of_the_skies;
+pub mod q00701_proof_of_existence;
 
 use l2_world::ScriptRegistry;
 
@@ -506,4 +508,6 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00659_id_rather_be_collecting_fairy_breath::Q00659IdRatherBeCollectingFairyBreath);
     r.add(q00688_defeat_the_elrokian_raiders::Q00688DefeatTheElrokianRaiders);
     r.add(q00661_making_the_harvest_grounds_safe::Q00661MakingTheHarvestGroundsSafe);
+    r.add(q00699_guardian_of_the_skies::Q00699GuardianOfTheSkies);
+    r.add(q00701_proof_of_existence::Q00701ProofOfExistence);
 }
