@@ -249,6 +249,7 @@ impl EventKind {
             Self::AttackableFactionCall => "addFactionCallId",
             Self::AttackableAggroRangeEnter => "addAggroRangeEnterId",
             Self::CreatureSee => "addCreatureSeeId",
+            Self::TrapAction => "addTrapActionId",
             Self::PlayerSummonSpawn => "addSummonSpawnId",
             _ => "",
         }
@@ -572,6 +573,12 @@ impl ScriptSetup {
         self.add(EventKind::OlympiadMatchResult, &[]);
     }
 
+    /// Java `addTrapActionId(npcIds)` (S-HAND-04): the script hears `ON_TRAP_ACTION` of the traps
+    /// with these NPC ids (`on_trap_action`).
+    pub fn add_trap_action_id(&mut self, npc_ids: &[i32]) {
+        self.add(EventKind::TrapAction, npc_ids);
+    }
+
     /// `@RegisterEvent(ON_NPC_MANOR_BYPASS)` + `@RegisterType(NPC)` + `@Id(..)` (S-API-04).
     pub fn add_npc_manor_bypass_id(&mut self, npc_ids: &[i32]) {
         self.add(EventKind::NpcManorBypass, npc_ids);
@@ -599,6 +606,8 @@ pub(crate) struct Listeners {
     can_see_me: std::collections::HashSet<(ScriptId, i32)>,
     /// Java `_registeredIds`, per script.
     registered: HashMap<ScriptId, Vec<(EventKind, i32)>>,
+    /// The kind of every listener a script registered, in Java's `Quest._listeners` order (S-ADMIN-08).
+    listener_order: HashMap<ScriptId, Vec<EventKind>>,
     /// The zone ids with an `ON_CREATURE_ZONE_ENTER` or `EXIT` listener, sorted (the NPC zone
     /// check reads it on every NPC move, S-API-05).
     zone_ids: Vec<i32>,
@@ -616,12 +625,14 @@ impl Listeners {
         npc_known: Option<&dyn Fn(i32) -> bool>,
     ) {
         for (kind, ids) in &setup.listeners {
-            if kind.register_type() == RegisterType::Global {
+            if kind.register_type() == RegisterType::Global && ids.is_empty() {
                 self.global.entry(*kind).or_default().push(script);
+                self.listener_order.entry(script).or_default().push(*kind);
                 continue;
             }
             for &id in ids {
-                if kind.register_type() == RegisterType::Npc
+                // `addTrapActionId(ids)`: the global kind `TrapAction` registered by NPC id.
+                if (kind.register_type() == RegisterType::Npc || *kind == EventKind::TrapAction)
                     && let Some(known) = npc_known
                     && !known(id)
                 {
@@ -649,8 +660,39 @@ impl Listeners {
                 // a script that registers an id twice gets two listeners there, and here.
                 entry.push(script);
                 self.registered.entry(script).or_default().push((*kind, id));
+                self.listener_order.entry(script).or_default().push(*kind);
             }
         }
+    }
+
+    /// Java `Quest.unload()`'s `_listeners.forEach(unregisterMe)`: every listener of the script
+    /// goes (S-ADMIN-08).
+    pub(crate) fn unregister(&mut self, script: ScriptId) {
+        for scripts in self.by_id.values_mut() {
+            scripts.retain(|s| *s != script);
+        }
+        self.by_id.retain(|_, scripts| !scripts.is_empty());
+        for scripts in self.global.values_mut() {
+            scripts.retain(|s| *s != script);
+        }
+        self.global.retain(|_, scripts| !scripts.is_empty());
+        self.can_see_me.retain(|(s, _)| *s != script);
+        self.registered.remove(&script);
+        self.listener_order.remove(&script);
+        self.zone_ids = self
+            .by_id
+            .keys()
+            .filter(|(kind, _)| matches!(kind, EventKind::CreatureZoneEnter | EventKind::CreatureZoneExit))
+            .map(|(_, id)| *id)
+            .collect();
+        self.zone_ids.sort_unstable();
+        self.zone_ids.dedup();
+    }
+
+    /// The kind of each listener of the script, in the order it registered them (Java
+    /// `quest.getListeners()`), repeats included.
+    pub(crate) fn listener_kinds_in_order(&self, script: ScriptId) -> Vec<EventKind> {
+        self.listener_order.get(&script).cloned().unwrap_or_default()
     }
 
     /// The scripts listening to `kind` for `id`, in dispatch order.
@@ -676,27 +718,6 @@ impl Listeners {
     /// The zone ids some script listens to (`ON_CREATURE_ZONE_ENTER` / `EXIT`), sorted.
     pub(crate) fn listened_zone_ids(&self) -> &[i32] {
         &self.zone_ids
-    }
-
-    /// Every kind the script registered (the ids and the global ones), without repeats.
-    pub(crate) fn registered_kinds(&self, script: ScriptId) -> Vec<EventKind> {
-        let mut kinds: Vec<EventKind> = Vec::new();
-        let mut add = |kind: EventKind| {
-            if !kinds.contains(&kind) {
-                kinds.push(kind);
-            }
-        };
-        if let Some(ids) = self.registered.get(&script) {
-            for (kind, _) in ids {
-                add(*kind);
-            }
-        }
-        for (kind, scripts) in &self.global {
-            if scripts.contains(&script) {
-                add(*kind);
-            }
-        }
-        kinds
     }
 
     /// Every `(kind, id)` the script registered for ids.

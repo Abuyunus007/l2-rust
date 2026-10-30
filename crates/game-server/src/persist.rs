@@ -600,6 +600,25 @@ pub trait PlayerStore: Send + 'static {
         async { Ok(()) }
     }
 
+    /// `DELETE FROM items WHERE item_id=?` of a long time event that ended (S-LEFT-01, only sent
+    /// with `CycleDatabaseWrites`, D-53).
+    fn delete_items_of_item_id(
+        &mut self,
+        _item_id: i32,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// The characters whose birthday came since `since_ms` as `(charId, char_name, age)`
+    /// (`CharacterBirthday`, S-LEFT-01, only asked for with `DailyResetDatabaseWrites`, D-49). A
+    /// store without a database has none.
+    fn load_pending_birthday_gifts(
+        &mut self,
+        _since_ms: i64,
+    ) -> impl Future<Output = Result<Vec<(i32, String, i32)>, PersistError>> + Send {
+        async { Ok(Vec::new()) }
+    }
+
     /// The named `global_variables` rows read again (D-50, D-54, S-API-04). A store without a
     /// database has no rows.
     fn load_global_variable_rows(
@@ -1479,6 +1498,27 @@ async fn run<S: PlayerStore>(
                 // Java logs a failed statement and goes on (no retry).
                 if let Err(e) = store.store_boss_write(&write).await {
                     error!("Boss data could NOT be stored ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::DeleteItemsOfItemId { item_id }) => {
+                // Java logs a failed statement and goes on (no retry).
+                if let Err(e) = store.delete_items_of_item_id(item_id).await {
+                    warn!("could not delete the items {item_id} of an ended event: {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::BirthdayGiftsRequest { since_ms }) => {
+                // Not a write: the answer goes back to the world (D-15). A failed query is
+                // reported as a failure; Java logs it and counts no gift.
+                let result = match store.load_pending_birthday_gifts(since_ms).await {
+                    Ok(rows) => Ok(rows),
+                    Err(e) => {
+                        warn!("Could not check the birthdays: {e}");
+                        Err(())
+                    }
+                };
+                let answer = l2_world::WorldCommand::BirthdayGiftsLoaded { result };
+                if !acks.send_to_world(answer) {
+                    warn!("The birthday gifts could not be handed to the world.");
                 }
             }
             OutboxMessage::Persist(PersistCommand::GlobalVariablesRereadRequest { token, names }) => {
@@ -5652,6 +5692,18 @@ impl PlayerStore for DbStore {
         Ok(self.global_variables.load_variables(names).await?)
     }
 
+    async fn delete_items_of_item_id(&mut self, item_id: i32) -> Result<(), PersistError> {
+        self.items.delete_items_of_item_id(item_id).await?;
+        Ok(())
+    }
+
+    async fn load_pending_birthday_gifts(
+        &mut self,
+        since_ms: i64,
+    ) -> Result<Vec<(i32, String, i32)>, PersistError> {
+        Ok(self.characters.pending_birthday_gifts(since_ms).await?)
+    }
+
     async fn store_instance_time(&mut self, write: &InstanceTimeWrite) -> Result<(), PersistError> {
         match *write {
             InstanceTimeWrite::Set {
@@ -6509,6 +6561,10 @@ mod tests {
 
     #[derive(Debug, Clone, PartialEq)]
     enum Call {
+        /// `DELETE FROM items WHERE item_id=?` (S-LEFT-01).
+        DeleteItemsOfItemId(i32),
+        /// The birthday query with its `since_ms` (S-LEFT-01).
+        BirthdayRead(i64),
         Store(String),
         Offline(i32),
         /// Item changes: owner, object ids written, object ids deleted.
@@ -6814,6 +6870,22 @@ mod tests {
                     rows: Vec::new(),
                 },
             })
+        }
+
+        async fn delete_items_of_item_id(&mut self, item_id: i32) -> Result<(), PersistError> {
+            self.calls
+                .lock()
+                .unwrap()
+                .push(Call::DeleteItemsOfItemId(item_id));
+            Ok(())
+        }
+
+        async fn load_pending_birthday_gifts(
+            &mut self,
+            since_ms: i64,
+        ) -> Result<Vec<(i32, String, i32)>, PersistError> {
+            self.calls.lock().unwrap().push(Call::BirthdayRead(since_ms));
+            Ok(vec![(7, "Bday".to_owned(), 3)])
         }
 
         async fn load_global_variable_rows(
@@ -7301,6 +7373,38 @@ mod tests {
             l2_world::WorldCommand::GlobalVariablesReread { token, result } => {
                 assert_eq!(token, 4);
                 assert_eq!(result, Ok(vec![("Respawn".to_owned(), Some("999".to_owned()))]));
+            }
+            other => panic!("{other:?}"),
+        }
+    }
+
+    /// The event item delete and the birthday query of S-LEFT-01: the delete is a write, the query
+    /// is answered to the world in order as `WorldCommand::BirthdayGiftsLoaded`.
+    #[tokio::test]
+    async fn the_event_item_delete_and_the_birthday_query_reach_the_store() {
+        let (world_tx, world_rx) = std::sync::mpsc::channel();
+        let acks = LeftAcks::default();
+        acks.set_world(crate::state::WorldHandle::new(world_tx));
+        let store = Recording::default();
+        let calls = Arc::clone(&store.calls);
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
+        let task = spawn(store, rx, notice_tx, NO_WAIT, acks);
+        let send = |command: PersistCommand| tx.send(OutboxMessage::Persist(command)).unwrap();
+        send(PersistCommand::DeleteItemsOfItemId { item_id: 15_366 });
+        send(PersistCommand::BirthdayGiftsRequest { since_ms: 123 });
+        drop(tx);
+        tokio::time::timeout(Duration::from_secs(10), task)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            *calls.lock().unwrap(),
+            vec![Call::DeleteItemsOfItemId(15_366), Call::BirthdayRead(123)]
+        );
+        match world_rx.try_recv().unwrap() {
+            l2_world::WorldCommand::BirthdayGiftsLoaded { result } => {
+                assert_eq!(result, Ok(vec![(7, "Bday".to_owned(), 3)]));
             }
             other => panic!("{other:?}"),
         }

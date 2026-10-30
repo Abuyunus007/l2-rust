@@ -198,6 +198,10 @@ pub enum TimerKind {
     /// The period change, the global save and the auto spawns of the Seven Signs, see
     /// `sevensigns/`.
     SevenSigns(crate::sevensigns::SevenSignsTimer),
+    /// The tasks of decoys and skill traps, see `decoy_trap/`.
+    DecoyTrap(crate::decoy_trap::DecoyTrapTimer),
+    /// The radar marker of the drop search board's NPC trace, see `community_board/drop_search.rs`.
+    Board(crate::community_board::BoardTimer),
     /// The quest timers, the delayed kill notifications and the script despawns, see `script/`.
     Script(crate::script::timers::ScriptTimer),
 }

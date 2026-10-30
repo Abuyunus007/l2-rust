@@ -123,15 +123,16 @@ fn say(ctx: &mut ScriptCtx<'_>, npc: ObjectId, text: NpcStringId) {
 /// Java `Minigame.initRoom(manager)`.
 fn init_room(ctx: &mut ScriptCtx<'_>, manager: ObjectId) -> MinigameRoom {
     let mut burners = Vec::new();
-    for id in ctx.world().npc_ids() {
-        let is_burner = ctx
-            .world()
-            .npc(id)
-            .is_some_and(|n| n.npc_id == BURNER && !n.decayed);
-        if is_burner && burners.len() <= 8 && ctx.check_if_in_range(1000, manager, id, false) {
+    // `SpawnTable.getInstance().getSpawns(BURNER)` and the NPC each spawn made last. A spawn
+    // without one (`getLastSpawn()` is null) is never in range.
+    for spawn in ctx.spawns_of(BURNER) {
+        let Some(last_spawn) = spawn.last_spawn else {
+            continue;
+        };
+        if burners.len() <= 8 && ctx.check_if_in_range(1000, manager, last_spawn, false) {
             // `lastSpawn.setAutoAttackable(true)`.
-            ctx.world_mut().set_npc_auto_attackable(id, true);
-            burners.push(id);
+            ctx.world_mut().set_npc_auto_attackable(last_spawn, true);
+            burners.push(last_spawn);
         }
     }
     MinigameRoom {
@@ -467,9 +468,33 @@ mod tests {
             "32758-07.html",
             "32758-08.html",
         ]);
+        // Nine burners of the spawn table, east of the manager.
+        let spawns: String = (0..9)
+            .map(|i| {
+                format!(
+                    r#"<npc id="18913" x="{}" y="{}" z="{}" heading="0" respawnDelay="60" />"#,
+                    crate::testing::X + 100 + i * 10,
+                    crate::testing::Y,
+                    crate::testing::Z
+                )
+            })
+            .collect();
+        let pages = pages.file(
+            "data/spawns/burners.xml",
+            &format!(
+                r#"<?xml version="1.0"?><list enabled="true"><spawn name="burners">{spawns}</spawn></list>"#
+            ),
+        );
         let mut t = ScriptTest::with_pages(registry, NPCS, ITEMS, pages);
         // The burners exist before Sumiel, as `initRoom` reads them at his spawn.
-        let burners: Vec<ObjectId> = (0..9).map(|i| t.spawn(BURNER, 100 + i * 10)).collect();
+        t.world.spawn_all_npcs(false);
+        let burners: Vec<ObjectId> = t
+            .world
+            .spawns_of(BURNER)
+            .into_iter()
+            .filter_map(|s| s.last_spawn)
+            .collect();
+        assert_eq!(burners.len(), 9);
         let sumiel = t.spawn(SUMIEL, 20);
         t.enter(1, 80, vec![item(1001, 15540, 1)]);
         t.enter(2, 80, vec![]);

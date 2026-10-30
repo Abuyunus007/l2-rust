@@ -31,6 +31,7 @@ pub mod crystallize;
 pub mod cursed;
 pub mod data;
 pub mod death;
+pub mod decoy_trap;
 pub mod dialog;
 pub mod door;
 pub mod duel;
@@ -134,7 +135,7 @@ pub use clanhall::{
 pub use combat::{AggroInfo, CombatSettings, CombatState, HitOutcome, HitTask};
 pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand};
 pub use community_board::{
-    CommunityBoardSettings, FavoriteAnswer, FavoriteEntry, FavoriteRead, FavoriteWrite,
+    BoardTimer, CommunityBoardSettings, FavoriteAnswer, FavoriteEntry, FavoriteRead, FavoriteWrite,
 };
 pub use contacts::{ContactWrite, ContactsInput, FriendSummary};
 pub use craft::{
@@ -149,6 +150,7 @@ pub use data::{
     WorldSettings,
 };
 pub use death::DeathSettings;
+pub use decoy_trap::{DECOY_HATE_SKILL_ID, DecoyTrapTimer};
 pub use dialog::{HtmlActionScope, INTERACTION_DISTANCE, PlayerTalk, TalkSettings};
 pub use door::{Door, DoorSnapshot, Fence, StaticObject, WorldObstacles};
 pub use effects::apply::ApplyMode;

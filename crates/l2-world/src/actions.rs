@@ -206,7 +206,7 @@ impl World {
     }
 
     /// Java `Creature.isInsideRadius2D(object, radius)`: strictly inside.
-    fn is_inside_radius_2d(&self, id: ObjectId, other: ObjectId, radius: f64) -> bool {
+    pub(crate) fn is_inside_radius_2d(&self, id: ObjectId, other: ObjectId, radius: f64) -> bool {
         match (self.position_of(id), self.position_of(other)) {
             (Some(a), Some(b)) => distance_2d(a, b) < radius,
             _ => false,

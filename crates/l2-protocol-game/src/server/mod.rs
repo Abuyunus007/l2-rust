@@ -125,6 +125,7 @@ pub mod summon;
 pub mod system_message;
 pub mod territory;
 pub mod trade;
+pub mod trap_info;
 pub mod userinfo;
 pub mod vehicle;
 pub mod visibility;
@@ -197,7 +198,7 @@ pub use items::{
     read_item_updates, write_inventory_block, write_item, write_item_elemental_and_enchant,
     write_item_updates,
 };
-pub use leftover::{ExRpItemLink, ShopPreviewInfo};
+pub use leftover::{ExChangeClientEffectInfo, ExRpItemLink, ShopPreviewInfo};
 pub use mail::{
     ExChangePostState, ExMailArrived, ExNoticePostArrived, ExNoticePostSent, ExReplyPostItemList,
     ExReplyReceivedPost, ExReplySentPost, ExShowReceivedPostList, ExShowSentPostList, ReceivedPostEntry,
@@ -295,6 +296,7 @@ pub use trade::{
     SendTradeRequest, TradeDone, TradeItemInfo, TradeOtherAdd, TradeOtherDone, TradeOwnAdd, TradeStart,
     TradeUpdate,
 };
+pub use trap_info::TrapInfo;
 pub use userinfo::UserInfo;
 pub use vehicle::{
     AirShipTeleport, ExAirShipInfo, ExAirShipStopMove, ExAirShipTeleportList, ExGetOffAirShip,

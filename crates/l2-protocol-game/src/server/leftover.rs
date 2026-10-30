@@ -104,6 +104,46 @@ impl Decode for ExRpItemLink {
     }
 }
 
+// Java: gameserver/network/serverpackets/ExChangeClientEffectInfo.java
+/// A change of the client's zone state, fog or post effect (`0xFE` 0x00C2,
+/// `EX_CHANGE_CLIENT_EFFECT_INFO`): Freya's castle uses it to switch the zone effect.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct ExChangeClientEffectInfo {
+    /// 0 = ChangeZoneState, 1 = SetL2Fog, 2 = postEffectData.
+    pub kind: i32,
+    pub key: i32,
+    pub value: i32,
+}
+
+impl ExChangeClientEffectInfo {
+    pub const OPCODE: ServerOpcode = ServerOpcode::ExChangeClientEffectInfo;
+    /// Java `STATIC_FREYA_DEFAULT`.
+    pub const STATIC_FREYA_DEFAULT: Self = Self::new(0, 0, 1);
+    /// Java `STATIC_FREYA_DESTROYED`.
+    pub const STATIC_FREYA_DESTROYED: Self = Self::new(0, 0, 2);
+
+    pub const fn new(kind: i32, key: i32, value: i32) -> Self {
+        Self { kind, key, value }
+    }
+}
+
+impl Encode for ExChangeClientEffectInfo {
+    fn encode(&self, w: &mut PacketWriter) {
+        write_opcode(w, Self::OPCODE);
+        w.i32(self.kind).i32(self.key).i32(self.value);
+    }
+}
+
+impl Decode for ExChangeClientEffectInfo {
+    fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
+        Ok(Self {
+            kind: r.i32()?,
+            key: r.i32()?,
+            value: r.i32()?,
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -154,6 +194,25 @@ mod tests {
         assert_eq!(
             ExRpItemLink::decode(&mut PacketReader::new(&bytes[3..])).unwrap(),
             packet
+        );
+    }
+
+    #[test]
+    fn ex_change_client_effect_info_layout_and_round_trip() {
+        let packet = ExChangeClientEffectInfo::STATIC_FREYA_DESTROYED;
+        let bytes = bytes_of(&packet);
+        // 0xFE, the ex id 0x00C2, then type, key and value.
+        assert_eq!(&bytes[..3], &[0xFE, 0xC2, 0x00]);
+        assert_eq!(&bytes[3..], &[0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0]);
+        assert_eq!(
+            ExChangeClientEffectInfo::decode(&mut PacketReader::new(&bytes[3..])).unwrap(),
+            packet
+        );
+        assert_eq!(ExChangeClientEffectInfo::STATIC_FREYA_DEFAULT.value, 1);
+        let fog = ExChangeClientEffectInfo::new(1, 5, 7);
+        assert_eq!(
+            ExChangeClientEffectInfo::decode(&mut PacketReader::new(&bytes_of(&fog)[3..])).unwrap(),
+            fog
         );
     }
 }

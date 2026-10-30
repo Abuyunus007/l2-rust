@@ -7,11 +7,11 @@
 // as strings, because `onEnterInstance` runs inside `World::enter_instance` without a
 // `ScriptCtx`. An NPC in a parameter is its object id.
 
-use l2_net::{Encode, PacketWriter};
 use l2_protocol_game::server::{
-    ActionFailed, ChatType, ExSendUiEvent, OnEventTrigger, SystemMessage, SystemMessageParam, write_opcode,
+    ActionFailed, ChatType, ExChangeClientEffectInfo, ExSendUiEvent, OnEventTrigger, SystemMessage,
+    SystemMessageParam,
 };
-use l2_protocol_game::{NpcStringId, ServerOpcode, SystemMessageId};
+use l2_protocol_game::{NpcStringId, SystemMessageId};
 use l2_util::ObjectId;
 use l2_world::effects::SkillKey;
 use l2_world::mount::MountType;
@@ -126,33 +126,6 @@ const SC_BOSS_FREYA_ENDING_A: i32 = 19;
 const SC_BOSS_FREYA_ENDING_B: i32 = 20;
 const SC_BOSS_FREYA_DEFEAT: i32 = 22;
 const SC_ICE_HEAVYKNIGHT_SPAWN: i32 = 23;
-
-/// Java `ExChangeClientEffectInfo` (`STATIC_FREYA_DEFAULT` is `(0, 0, 1)`, `STATIC_FREYA_DESTROYED`
-/// `(0, 0, 2)`). The protocol crate has no such packet yet, so the script carries it.
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct ExChangeClientEffectInfo {
-    kind: i32,
-    key: i32,
-    value: i32,
-}
-
-const STATIC_FREYA_DEFAULT: ExChangeClientEffectInfo = ExChangeClientEffectInfo {
-    kind: 0,
-    key: 0,
-    value: 1,
-};
-const STATIC_FREYA_DESTROYED: ExChangeClientEffectInfo = ExChangeClientEffectInfo {
-    kind: 0,
-    key: 0,
-    value: 2,
-};
-
-impl Encode for ExChangeClientEffectInfo {
-    fn encode(&self, w: &mut PacketWriter) {
-        write_opcode(w, ServerOpcode::ExChangeClientEffectInfo);
-        w.i32(self.kind).i32(self.key).i32(self.value);
-    }
-}
 
 /// Java `instances.IceQueensCastleBattle.IceQueensCastleBattle`.
 pub struct IceQueensCastleBattle;
@@ -397,8 +370,10 @@ impl Script for IceQueensCastleBattle {
                     "STAGE_3_START" => {
                         for players in players_inside(ctx.world(), instance_id) {
                             if ctx.world().player(players).is_some() {
-                                ctx.world()
-                                    .broadcast_player_packet(players, &STATIC_FREYA_DESTROYED);
+                                ctx.world().broadcast_player_packet(
+                                    players,
+                                    &ExChangeClientEffectInfo::STATIC_FREYA_DESTROYED,
+                                );
 
                                 for emmiter_id in EMMITERS {
                                     ctx.world().send(
@@ -710,8 +685,10 @@ impl Script for IceQueensCastleBattle {
 
                         for players in players_inside(ctx.world(), instance_id) {
                             if ctx.world().player(players).is_some() {
-                                ctx.world()
-                                    .broadcast_player_packet(players, &STATIC_FREYA_DEFAULT);
+                                ctx.world().broadcast_player_packet(
+                                    players,
+                                    &ExChangeClientEffectInfo::STATIC_FREYA_DEFAULT,
+                                );
                             }
                         }
 
@@ -1649,7 +1626,7 @@ fn on_enter_instance(world: &mut World, player: ObjectId, instance_id: i32, firs
 
         for players in &players_inside {
             if world.player(*players).is_some() {
-                world.broadcast_player_packet(*players, &STATIC_FREYA_DEFAULT);
+                world.broadcast_player_packet(*players, &ExChangeClientEffectInfo::STATIC_FREYA_DEFAULT);
 
                 for emmiter_id in EMMITERS {
                     world.send(
@@ -1702,7 +1679,6 @@ fn manage_player_enter(world: &mut World, player: ObjectId, instance_id: i32) {
 
 #[cfg(test)]
 mod tests {
-    use l2_net::PacketWriter;
     use l2_util::ObjectId as Oid;
     use l2_world::{InstanceWorld, ScriptRegistry};
 
@@ -1789,16 +1765,6 @@ mod tests {
 
     fn status(t: &ScriptTest, instance_id: i32) -> i32 {
         t.world.instance_world(instance_id).unwrap().status()
-    }
-
-    #[test]
-    fn the_effect_packet_is_the_opcode_and_three_ints() {
-        let mut w = PacketWriter::new();
-        STATIC_FREYA_DESTROYED.encode(&mut w);
-        let bytes = w.into_bytes();
-        // 0xFE, then the extended opcode, then type 0, key 0, value 2.
-        assert_eq!(bytes[0], 0xFE);
-        assert_eq!(&bytes[bytes.len() - 12..], [0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0]);
     }
 
     #[test]

@@ -349,7 +349,8 @@ impl World {
             }
             return;
         }
-        if !self.is_npc(target) {
+        // A decoy is a `Creature`: `Creature.reduceCurrentHp` (S-HAND-04).
+        if !self.is_npc(target) && !self.is_decoy(target) {
             return;
         }
         // `UCTower.reduceCurrentHp`: a hit of its own team does nothing (M8-GAMES-01).

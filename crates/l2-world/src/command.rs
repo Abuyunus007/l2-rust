@@ -444,6 +444,11 @@ pub enum WorldCommand {
         token: u64,
         result: Result<Vec<(String, Option<String>)>, ()>,
     },
+    /// The answer to `PersistCommand::BirthdayGiftsRequest`: `(charId, char_name, age)` of each
+    /// character found, or `Err` when the query failed (S-LEFT-01).
+    BirthdayGiftsLoaded {
+        result: Result<Vec<(i32, String, i32)>, ()>,
+    },
     /// The answer to `PersistCommand::OfflinePetRowsRequest`: the pet items and inventory rows of
     /// an owner who is offline, or `Err` when the read failed (M6-FU-09).
     OfflinePetRowsLoaded {
@@ -609,6 +614,11 @@ impl fmt::Debug for WorldCommand {
             Self::GlobalVariablesReread { token, result } => write!(
                 f,
                 "GlobalVariablesReread({token}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
+            Self::BirthdayGiftsLoaded { result } => write!(
+                f,
+                "BirthdayGiftsLoaded({})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
             Self::OfflinePetRowsLoaded {

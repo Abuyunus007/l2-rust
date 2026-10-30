@@ -8,7 +8,9 @@
 
 use std::sync::{Arc, Mutex};
 
-use l2_data::{HtmCache, ItemTemplates, NpcLoadOptions, NpcTemplates, SpawnData, SpawnLoadOptions};
+use l2_data::{
+    HtmCache, ItemTemplates, NpcLoadOptions, NpcTemplates, SpawnData, SpawnLoadOptions, Transforms,
+};
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::ServerOpcode;
 use l2_protocol_game::server::{NpcHtmlMessage, NpcQuestHtmlMessage};
@@ -34,7 +36,8 @@ impl PacketSink for Sink {
 #[derive(Clone, Default)]
 struct Writes(Arc<Mutex<Vec<QuestWrite>>>);
 
-/// The grand boss writes and re-read requests (S-BOSS-01).
+/// The grand boss writes and re-read requests (S-BOSS-01), and the event rows of S-LEFT-01 (the
+/// item delete, the birthday query, the mails and their item rows).
 #[derive(Clone, Default)]
 struct BossCommands(Arc<Mutex<Vec<PersistCommand>>>);
 
@@ -46,7 +49,12 @@ impl Outbox for RecordingOutbox {
             self.0.0.lock().unwrap().push(write);
         } else if matches!(
             command,
-            PersistCommand::Boss(_) | PersistCommand::BossRereadRequest { .. }
+            PersistCommand::Boss(_)
+                | PersistCommand::BossRereadRequest { .. }
+                | PersistCommand::DeleteItemsOfItemId { .. }
+                | PersistCommand::BirthdayGiftsRequest { .. }
+                | PersistCommand::ItemRows { .. }
+                | PersistCommand::Mail(_)
         ) {
             self.1.0.lock().unwrap().push(command);
         }
@@ -56,7 +64,7 @@ impl Outbox for RecordingOutbox {
 }
 
 /// Item names, stackability and the item templates (for `give_items`).
-struct Data(StatData);
+struct Data(StatData, Option<Arc<Transforms>>);
 
 impl StaticData for Data {
     fn item(&self, item_id: i32) -> Option<ItemStatic> {
@@ -82,6 +90,9 @@ impl StaticData for Data {
     }
     fn stat_data(&self) -> Option<&StatData> {
         Some(&self.0)
+    }
+    fn transforms(&self) -> Option<&Arc<Transforms>> {
+        self.1.as_ref()
     }
     fn item_name(&self, item_id: i32) -> Option<String> {
         self.0.items.get(item_id).map(|t| t.name.clone())
@@ -109,6 +120,10 @@ pub struct ScriptTest {
     boss: BossCommands,
     /// The world's id factory (for objects a helper spawns besides NPCs).
     ids: Arc<IdFactory>,
+    /// The tables behind the world's static data, kept so [`ScriptTest::set_skills`] and
+    /// [`ScriptTest::set_transformations`] add one without dropping the other.
+    stat: StatData,
+    forms: Option<Arc<Transforms>>,
     _root: tempfile::TempDir,
 }
 
@@ -149,10 +164,11 @@ impl ScriptTest {
             Box::new(RecordingOutbox(writes.clone(), boss.clone())),
         );
         let items = Arc::new(ItemTemplates::from_xml(&format!("<list>{items}</list>")).unwrap());
-        world.set_static_data(Box::new(Data(StatData {
+        let stat = StatData {
             items,
             ..StatData::default()
-        })));
+        };
+        world.set_static_data(Box::new(Data(stat.clone(), None)));
         let ids = Arc::new(IdFactory::new(Vec::<i32>::new()).unwrap());
         world.set_id_factory(Arc::clone(&ids));
         let npcs = Arc::new(
@@ -171,6 +187,8 @@ impl ScriptTest {
             writes,
             boss,
             ids,
+            stat,
+            forms: None,
             _root: root,
         }
     }
@@ -300,7 +318,8 @@ impl ScriptTest {
         std::mem::take(&mut self.writes.0.lock().unwrap())
     }
 
-    /// The grand boss writes and re-read requests since the last call.
+    /// The grand boss writes and re-read requests since the last call, and the event rows of
+    /// S-LEFT-01 (`DeleteItemsOfItemId`, `BirthdayGiftsRequest`, `ItemRows`, `Mail`).
     pub fn take_boss(&self) -> Vec<PersistCommand> {
         std::mem::take(&mut self.boss.0.lock().unwrap())
     }
@@ -484,17 +503,57 @@ impl ScriptTest {
     /// Installs skill templates (`<skill>` elements of the datapack format) next to the item
     /// templates `items` (the same text as the test's `ITEMS`), for `cast_skill` and skill checks.
     pub fn set_skills(&mut self, items: &str, skills: &str) {
-        let items = Arc::new(ItemTemplates::from_xml(&format!("<list>{items}</list>")).unwrap());
-        let skills = Arc::new(l2_data::SkillTemplates::from_xml(
+        self.stat.items = Arc::new(ItemTemplates::from_xml(&format!("<list>{items}</list>")).unwrap());
+        self.stat.skills = Arc::new(l2_data::SkillTemplates::from_xml(
             &format!("<list>{skills}</list>"),
             &l2_data::skill::EnchantSkillGroups::default(),
             &l2_data::SkillLoadOptions::default(),
         ));
-        self.world.set_static_data(Box::new(Data(StatData {
-            items,
-            skills,
-            ..StatData::default()
-        })));
+        self.install_data();
+    }
+
+    /// Installs transformation templates (`<transform>` elements of the datapack's
+    /// `data/stats/transformations` format) so `World::transform_player` can make a form.
+    /// Keeps the skill table of [`ScriptTest::set_skills`].
+    pub fn set_transformations(&mut self, transforms: &str) {
+        self.forms = Some(Arc::new(
+            Transforms::from_xml(&format!("<list>{transforms}</list>")).unwrap(),
+        ));
+        self.install_data();
+    }
+
+    /// Installs skill trees (`<skillTree>` elements of the datapack's `skillTrees` format) for the
+    /// trainers and `isSkillAllowed`.
+    pub fn set_skill_trees(&mut self, trees: &str) {
+        let xml = format!("<list>{trees}</list>");
+        self.world
+            .set_skill_trees(Arc::new(l2_data::SkillTrees::from_xml(&xml).unwrap()));
+    }
+
+    /// Installs the trainer lists (`<npc id=".."><classId>..</classId></npc>` elements of
+    /// `SkillLearn.xml`): which classes an NPC teaches.
+    pub fn set_skill_learn(&mut self, npcs: &str) {
+        let xml = format!("<list>{npcs}</list>");
+        self.world
+            .set_skill_learn_data(Arc::new(l2_data::SkillLearnData::from_xml(&xml).unwrap()));
+    }
+
+    fn install_data(&mut self) {
+        self.world
+            .set_static_data(Box::new(Data(self.stat.clone(), self.forms.clone())));
+    }
+
+    /// Sets what `creature.getLastSkillCast()` returns, as if `creature` had cast `skill` (a
+    /// script that asks "did he cast Spoil?" is reached without a real cast).
+    pub fn set_last_skill_cast(&mut self, creature: i32, skill: SkillKey) {
+        self.world
+            .test_set_last_skill_cast(ObjectId(creature), Some(skill));
+    }
+
+    /// Marks a monster as spoiled by `spoiler` (Java `Attackable.setSpoilerObjectId`, what the
+    /// Spoil effect does), so a script's `isSpoiled()` check can be reached without casting.
+    pub fn set_spoiled(&mut self, npc: ObjectId, spoiler: i32) {
+        self.world.test_set_spoiler(npc, Some(ObjectId(spoiler)));
     }
 }
 

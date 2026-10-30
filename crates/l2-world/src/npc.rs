@@ -72,6 +72,11 @@ pub enum NpcClass {
     /// A summon's creature (`Servitor`, `Pet`: `summon/`). Never made from a spawn
     /// (`from_type` answers `None` for those types); not an NPC for Java's `isNpc()`.
     Summon,
+    /// `Decoy` (a `Creature`, not an `Npc`): the owner's copy a skill summons. Never made from a
+    /// spawn (`from_type` answers `None`), see `decoy_trap/`.
+    Decoy,
+    /// `Trap` (an `Npc`): a skill's or a script's trap. Never made from a spawn, see `decoy_trap/`.
+    Trap,
 }
 
 impl NpcClass {
@@ -179,7 +184,9 @@ impl NpcClass {
             | Self::QuestGuard
             | Self::Defender
             | Self::FortCommander
-            | Self::Summon => false,
+            | Self::Summon
+            | Self::Decoy
+            | Self::Trap => false,
         }
     }
 }
@@ -1085,6 +1092,12 @@ impl World {
 
     /// Java `Npc.sendInfo(player)`.
     pub(crate) fn send_npc_info(&mut self, subject: ObjectId, viewer: ObjectId) {
+        // `Decoy.sendInfo` is a `CharInfo`, `Trap.sendInfo` a `TrapInfo` for who may see it.
+        match self.npcs.get(&subject).map(|n| n.class) {
+            Some(NpcClass::Decoy) => return self.send_decoy_info(subject, viewer),
+            Some(NpcClass::Trap) => return self.send_trap_info(subject, viewer),
+            _ => {}
+        }
         if !self.is_visible_for(subject, viewer) {
             return;
         }

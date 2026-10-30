@@ -345,6 +345,8 @@ impl World {
         self.cancel_decay_task(id);
         self.decay(id);
         self.forget_npc_ai(id);
+        // The owner forgets its decoy or trap (`setDecoy(null)`, `setTrap(null)`, S-HAND-04).
+        self.decoy_trap_forget(id);
         // The spoiler and the sweep items go with the corpse; the object id comes back on
         // respawn (`Attackable.onSpawn` clears them).
         self.death.spoil.remove(&id);

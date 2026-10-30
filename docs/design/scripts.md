@@ -388,7 +388,7 @@ test loops "kill until the count is reached" instead of guessing the number of k
   `set_npc_script_value` / `is_npc_script_value`, `set_lethalable(id, false)` (the lethal effect respects it), `is_overhit`,
   `overhit_attacker`, `overhit_damage`, `overhit_enabled`, `set_overhit_values` (the over-hit skill flag and the over-hit exp bonus work).
 
-Not fired yet (no Rust counterpart): `ON_TRAP_ACTION` (no trap NPC in the world), the `OnPlayerClan*` events, template-level
+Not fired yet (no Rust counterpart): the `OnPlayerClan*` events, template-level
 (item) listeners of `ON_PLAYER_ITEM_PICKUP`, `ON_CREATURE_ATTACK/ATTACKED` for NPC attacks outside `do_attack`.
 
 ## Added by S-API-05
@@ -425,10 +425,39 @@ Not fired yet (no Rust counterpart): `ON_TRAP_ACTION` (no trap NPC in the world)
 - **Tests:** `t.clan_with_residence(leader, name, castle, fort)`, `t.summon(owner, npc_id)`, `t.set_skills(items, skills)`.
 - `RequestSeedPhase` (`ExShowSeedMapInfo`), `.hellbound`, `//gracia_seeds` (`script/gracia_admin.rs`).
 
+## Added by S-HAND-04
+
+- **Traps:** `ctx.add_trap(trap_id, x, y, z, heading, instance_id)` (Java `addTrap`: no owner, no life time, invulnerable; the template
+  may be of any type, the Crystal Caverns trap is a `Folk`). `s.add_trap_action_id(&[..])` (Java `addTrapActionId`) registers
+  `ON_TRAP_ACTION` by trap NPC id; `s.set_on_trap_action()` still hears every trap. `on_trap_action(ctx, trap, trigger, action)` gets
+  `TrapAction::{TrapTriggered, TrapDetected, TrapDisarmed}` (queued; a disarmed trap is deleted before the hook runs, `trap.id` is
+  still its template). World API: `World::{spawn_trap, summon_trap, trap_set_detected, trap_unsummon, trap_can_be_seen, trap_of,
+  trap_owner, trap_skill, is_trap}`. `Trap.broadcastPacket` is kept: `ctx.broadcast_npc_say` of a trap reaches only the players who
+  detected it (nobody, for a script's trap).
+- **Decoys:** `World::{summon_decoy, decoy_of, decoy_owner, is_decoy}`; the `SummonNpc` effect (Decoy and plain NPC branches; the
+  `EffectPoint` branch is not made), `SummonTrap`, `TrapDetect`, `TrapRemove` are registered.
+- **Drop search board:** `_bbs_search_item`, `_bbs_search_drop`, `_bbs_npc_trace` (`community_board/drop_search.rs`).
+## Admin words: reload, unload, load (S-ADMIN-08, D-16)
+
+Java recompiles a script file for `//quest_reload`, `//script_load` and `//reload quest`. A Rust script is compiled in, so
+these words do **unload-then-load of the same code** (`World::unload_script` / `load_script` / `reload_script`, `script/mod.rs`):
+
+- **Unload** (`//script_unload <name|id>`): `on_save`, the quest timers and the `TimerExecutor` timers stop (their
+  `on_timer_cancel` runs), the script leaves `by_name` and every listener table, its `script_state` is dropped. The players keep
+  their quest states (they are `character_quests` rows); the `ScriptId` stays, the script is only marked unloaded (`ids()` skips it,
+  `find_any(name)` still finds it).
+- **Load** (`//script_load <path>`): the file name (folders and `.java`/`.rs` dropped) is the script's name. An unloaded script
+  runs `setup` and `on_load` again and registers its listeners after the others (a recompiled class does the same); a loaded one
+  is reloaded (Java replaces a script of the same name). An unknown name answers "Failed to load script!". New Rust code needs a restart.
+- **Reload** (`//quest_reload`, `//reload quest [name|id]`): unload then load. `//reload quest` without argument does it for every
+  script (`reloadAllScripts`). `//reload script` and `//reload scripts` do not exist in Java (the usage line answers).
+- **`//charquestmenu` / `//setcharquest`** build their pages from the target's in-memory quest states instead of Java's SELECT
+  (D-15; the states are the rows, every change is written through). A `CREATED` state has no `<state>` row and is not listed.
+  `setcharquest` changes go through `Qs` (`character_quests` writes as Java, D-39).
+
 ## Not in the engine yet (follow-ups)
 
-Premium rates (M9), the multilingual chooser strings (M9), the remaining `EventType`s listed above as not fired, the trap
-creature (`addTrap`, `ON_TRAP_ACTION`: S-HAND-04), the transfer skill trees.
+Premium rates (M9), the multilingual chooser strings (M9), the remaining `EventType`s listed above as not fired, the transfer skill trees.
 
 Found by S-PILOT-01: the tutorial's player listeners (now engine events since S-API-04: wire its `pub` entry points to them); `setup` cannot read the (since S-API-05 `setup_with` can)
 configuration (Java constructors do: `if (!PlayerConfig.DISABLE_TUTORIAL) addStartNpc(..)`), so such
