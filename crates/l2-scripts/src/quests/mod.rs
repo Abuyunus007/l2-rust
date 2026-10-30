@@ -385,6 +385,22 @@ pub mod q10280_mutated_kaneus_schuttgart;
 pub mod q10281_mutated_kaneus_rune;
 pub mod q10282_to_the_seed_of_annihilation;
 pub mod q10283_request_of_ice_merchant;
+pub mod q10286_reunion_with_sirra;
+pub mod q10287_story_of_those_left;
+pub mod q10288_secret_mission;
+pub mod q10289_fade_to_black;
+pub mod q10290_land_dragon_conqueror;
+pub mod q10291_fire_dragon_destroyer;
+pub mod q10292_seven_signs_girl_of_doubt;
+pub mod q10293_seven_signs_forbidden_book_of_the_elmore_aden_kingdom;
+pub mod q10294_seven_signs_to_the_monastery_of_silence;
+pub mod q10295_seven_signs_solinas_tomb;
+pub mod q10296_seven_signs_one_who_seeks_the_power_of_the_seal;
+pub mod q10501_zaken_embroidered_soul_cloak;
+pub mod q10502_freya_embroidered_soul_cloak;
+pub mod q10503_frintezza_embroidered_soul_cloak;
+pub mod q10504_jewel_of_antharas;
+pub mod q10505_jewel_of_valakas;
 pub mod territory_war;
 
 use l2_world::ScriptRegistry;
@@ -771,5 +787,23 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q10281_mutated_kaneus_rune::Q10281MutatedKaneusRune);
     r.add(q10282_to_the_seed_of_annihilation::Q10282ToTheSeedOfAnnihilation);
     r.add(q10283_request_of_ice_merchant::Q10283RequestOfIceMerchant);
+    r.add(q10286_reunion_with_sirra::Q10286ReunionWithSirra);
+    r.add(q10287_story_of_those_left::Q10287StoryOfThoseLeft);
+    r.add(q10288_secret_mission::Q10288SecretMission);
+    r.add(q10289_fade_to_black::Q10289FadeToBlack);
+    r.add(q10290_land_dragon_conqueror::Q10290LandDragonConqueror);
+    r.add(q10291_fire_dragon_destroyer::Q10291FireDragonDestroyer);
+    r.add(q10292_seven_signs_girl_of_doubt::Q10292SevenSignsGirlOfDoubt);
+    r.add(q10293_seven_signs_forbidden_book_of_the_elmore_aden_kingdom::Q10293SevenSignsForbiddenBookOfTheElmoreAdenKingdom);
+    r.add(q10294_seven_signs_to_the_monastery_of_silence::Q10294SevenSignsToTheMonasteryOfSilence);
+    r.add(q10295_seven_signs_solinas_tomb::Q10295SevenSignsSolinasTomb);
+    r.add(
+        q10296_seven_signs_one_who_seeks_the_power_of_the_seal::Q10296SevenSignsOneWhoSeeksThePowerOfTheSeal,
+    );
+    r.add(q10501_zaken_embroidered_soul_cloak::Q10501ZakenEmbroideredSoulCloak);
+    r.add(q10502_freya_embroidered_soul_cloak::Q10502FreyaEmbroideredSoulCloak);
+    r.add(q10503_frintezza_embroidered_soul_cloak::Q10503FrintezzaEmbroideredSoulCloak);
+    r.add(q10504_jewel_of_antharas::Q10504JewelOfAntharas);
+    r.add(q10505_jewel_of_valakas::Q10505JewelOfValakas);
     territory_war::register(r);
 }
