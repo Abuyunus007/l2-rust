@@ -321,8 +321,8 @@ mod tests {
         assert_eq!(
             t.take_writes(),
             [
-                rows::insert(NAME, "cond", "1"),
-                rows::insert(NAME, "<state>", "Started")
+                rows::of(2, rows::insert(NAME, "cond", "1")),
+                rows::of(2, rows::insert(NAME, "<state>", "Started"))
             ]
         );
         assert!(t.quest_page(2, holly).contains("30839-03.html"));
