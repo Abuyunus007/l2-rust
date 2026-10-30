@@ -360,6 +360,11 @@ impl World {
         self.set_intention_idle(id);
     }
 
+    /// Java `npc.isMyLord(player)` (S-INST-03, Castle Dungeon).
+    pub fn npc_is_my_lord(&self, npc: ObjectId, player: ObjectId) -> bool {
+        self.fort_is_my_lord(npc, player)
+    }
+
     /// `if (instance.getReenterType() == InstanceReenterType.ON_ENTER) handleReenterTime(world)`.
     pub fn handle_reenter_time_on_enter(&mut self, instance_id: i32) {
         if self
