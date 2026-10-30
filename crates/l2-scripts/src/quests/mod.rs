@@ -288,6 +288,7 @@ pub mod q00372_legacy_of_insolence;
 pub mod q00373_supplier_of_reagents;
 pub mod q00376_exploration_of_the_giants_cave_part1;
 pub mod q00377_exploration_of_the_giants_cave_part2;
+pub mod q00378_grand_feast;
 pub mod q00379_fantasy_wine;
 pub mod q00380_bring_out_the_flavor_of_ingredients;
 pub mod q00381_lets_become_a_royal_member;
@@ -724,6 +725,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00373_supplier_of_reagents::Q00373SupplierOfReagents);
     r.add(q00376_exploration_of_the_giants_cave_part1::Q00376ExplorationOfTheGiantsCavePart1);
     r.add(q00377_exploration_of_the_giants_cave_part2::Q00377ExplorationOfTheGiantsCavePart2);
+    r.add(q00378_grand_feast::Q00378GrandFeast);
     r.add(q00379_fantasy_wine::Q00379FantasyWine);
     r.add(q00380_bring_out_the_flavor_of_ingredients::Q00380BringOutTheFlavorOfIngredients);
     r.add(q00381_lets_become_a_royal_member::Q00381LetsBecomeARoyalMember);
