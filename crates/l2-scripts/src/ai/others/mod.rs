@@ -70,6 +70,7 @@ pub mod varka_ketra;
 pub mod warrior_fishing_block;
 pub mod wasted_corpse;
 pub mod weaver_olf;
+pub mod wyvern_manager;
 
 use l2_world::ScriptRegistry;
 use l2_world::subclass::categories::ClassMasterConfig;
@@ -120,6 +121,7 @@ pub(crate) fn register_with(r: &mut ScriptRegistry, class_master: ClassMasterCon
     r.add(nevits_herald::NevitsHerald);
     r.add(priest_of_blessing::PriestOfBlessing);
     r.add(weaver_olf::WeaverOlf);
+    r.add(wyvern_manager::WyvernManager);
     r.add(town_pets::TownPets);
     r.add(sin_eater::SinEater);
     r.add(servitors::Servitors);

@@ -32,6 +32,7 @@ pub mod admin;
 pub mod ai_help;
 pub mod api;
 mod area_api;
+
 mod area_help;
 mod area_spawns;
 pub mod ctx;
@@ -54,6 +55,7 @@ pub mod player_help;
 pub mod qs;
 pub mod quest_helpers;
 pub mod reread;
+mod residence_api;
 mod see;
 pub mod setup;
 pub mod sound;
@@ -151,6 +153,10 @@ pub struct ScriptSettings {
     pub knightsepaulette_points: i32,
     /// `FeatureConfig.BALLISTA_POINTS` (`KillBallistaPoints`, Ballista).
     pub ballista_points: i32,
+    /// `FeatureConfig.ALLOW_WYVERN_ALWAYS` (`AllowRideWyvernAlways`, WyvernManager).
+    pub allow_wyvern_always: bool,
+    /// `FeatureConfig.ALLOW_WYVERN_DURING_SIEGE` (`AllowRideWyvernDuringSiege`).
+    pub allow_wyvern_during_siege: bool,
     /// `PlayerConfig.DISABLE_TUTORIAL` (`DisableTutorial` of `Player.ini`): `Q00255_Tutorial`
     /// does nothing.
     pub disable_tutorial: bool,
@@ -236,6 +242,8 @@ impl Default for ScriptSettings {
             bloodoath_points: 200,
             knightsepaulette_points: 20,
             ballista_points: 30,
+            allow_wyvern_always: false,
+            allow_wyvern_during_siege: true,
             disable_tutorial: false,
             rate_hb_trust_increase: 1.0,
             rate_hb_trust_decrease: 1.0,

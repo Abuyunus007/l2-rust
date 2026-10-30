@@ -558,6 +558,8 @@ pub fn script_settings(config: &GameConfig, config_dir: &Path) -> l2_world::Scri
         bloodoath_points: config.feature.bloodoath_points,
         knightsepaulette_points: config.feature.knightsepaulette_points,
         ballista_points: config.feature.ballista_points,
+        allow_wyvern_always: config.feature.allow_wyvern_always,
+        allow_wyvern_during_siege: config.feature.allow_wyvern_during_siege,
         disable_tutorial: config.player.disable_tutorial,
         rate_hb_trust_increase: rates.rate_hb_trust_increase,
         rate_hb_trust_decrease: rates.rate_hb_trust_decrease,
