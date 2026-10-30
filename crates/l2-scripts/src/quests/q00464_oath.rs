@@ -222,8 +222,18 @@ mod tests {
             .page("32596-01.html", &["32596-02.html"])
             .page("32596-02.html", &["32596-03.html"])
             .page("32596-03.html", &["32596-04.html"])
-            .plain(&["32596-04.html", "32596-04a.html", "32596-04b.html", "32596-04c.html"])
-            .plain(&["32596-04d.html", "32596-04e.html", "32596-04f.html", "32596-04g.html"])
+            .plain(&[
+                "32596-04.html",
+                "32596-04a.html",
+                "32596-04b.html",
+                "32596-04c.html",
+            ])
+            .plain(&[
+                "32596-04d.html",
+                "32596-04e.html",
+                "32596-04f.html",
+                "32596-04g.html",
+            ])
             .page("30657-01.html", &["end_quest"])
             .plain(&["30657-02.html"])
             .npcs(&[32596, 30657]);
@@ -263,7 +273,10 @@ mod tests {
         assert_eq!((t.count(1, STRONGBOX), t.count(1, BOOK)), (0, 1));
         assert_eq!(
             t.take_writes(),
-            [rows::insert(NAME, "cond", "1"), rows::insert(NAME, "<state>", "Started")]
+            [
+                rows::insert(NAME, "cond", "1"),
+                rows::insert(NAME, "<state>", "Started")
+            ]
         );
         // A second use only tells the quest runs.
         assert_eq!(use_strongbox(&mut t), Some("strongbox-02.html".to_owned()));
@@ -323,11 +336,11 @@ mod tests {
         for _ in 0..2000 {
             let solina = t.spawn(22789, 60);
             t.kill(1, solina);
-            let dropped = t
-                .world
-                .ground_item_ids()
-                .into_iter()
-                .any(|id| t.world.ground_item(id).is_some_and(|g| g.data.item_id == STRONGBOX));
+            let dropped = t.world.ground_item_ids().into_iter().any(|id| {
+                t.world
+                    .ground_item(id)
+                    .is_some_and(|g| g.data.item_id == STRONGBOX)
+            });
             if dropped {
                 // Dropped on the ground, not into the bag.
                 assert_eq!(t.count(1, STRONGBOX), 0);

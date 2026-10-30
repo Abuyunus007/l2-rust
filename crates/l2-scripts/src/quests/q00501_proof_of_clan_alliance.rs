@@ -76,7 +76,9 @@ pub struct Q00501ProofOfClanAlliance;
 
 /// Java `hasAbnormal(player)`: the player has the `FATAL_POISON` abnormal.
 fn has_abnormal(ctx: &ScriptCtx<'_>, player: ObjectId) -> bool {
-    ctx.world().script_buff_abnormal_level(player, "FATAL_POISON").is_some()
+    ctx.world()
+        .script_buff_abnormal_level(player, "FATAL_POISON")
+        .is_some()
 }
 
 /// Java `getLeaderQuestState(player, getName())`: the quest state of the clan leader, who has to
@@ -228,7 +230,9 @@ impl Script for Q00501ProofOfClanAlliance {
                         ctx.set_script_value(npc, 0);
                         for (x, y, z) in LOCS {
                             let id = ctx.get_random_range(BOX_OF_ATHREA_1, BOX_OF_ATHREA_5);
-                            if let Some(boxed) = ctx.add_spawn_summoned(npc, id, x, y, z, 0, false, 300_000, 0) {
+                            if let Some(boxed) =
+                                ctx.add_spawn_summoned(npc, id, x, y, z, 0, false, 300_000, 0)
+                            {
                                 ctx.disable_core_ai(boxed, true);
                                 ctx.set_random_walking(boxed, false);
                             }
@@ -557,7 +561,10 @@ mod tests {
         t.event(1, NAME, "30756-06.html");
         assert!(t.event(1, NAME, "30756-07.html").contains("30756-07.html"));
         let writes = t.take_writes();
-        assert!(writes.contains(&rows::insert(NAME, "<state>", "Started")), "{writes:?}");
+        assert!(
+            writes.contains(&rows::insert(NAME, "<state>", "Started")),
+            "{writes:?}"
+        );
 
         // Kalis sends the leader to the statues (memo 1 -> 2, cond 2).
         assert!(t.quest_page(1, kalis).contains("30759-01.html"));
@@ -571,7 +578,8 @@ mod tests {
         assert!(t.quest_page(1, statue).contains("30757-01a.html"));
 
         // Three symbols: Kalis poisons, the recipe comes, cond 3 memo 3.
-        t.world.run_as_script(NAME, |ctx| ctx.give_items(Oid(1), SYMBOL_OF_LOYALTY, 3));
+        t.world
+            .run_as_script(NAME, |ctx| ctx.give_items(Oid(1), SYMBOL_OF_LOYALTY, 3));
         t.take_writes();
         let _ = t.quest_page(1, kalis);
         t.world.run_as_script(NAME, |ctx| {
@@ -657,10 +665,16 @@ mod tests {
         });
         t.take_writes();
         assert!(t.quest_page(1, npcs[0]).contains("30756-09.html"));
-        assert_eq!((t.count(1, ALLIANCE_MANIFESTO), t.count(1, VOUCHER_OF_FAITH)), (1, 0));
+        assert_eq!(
+            (t.count(1, ALLIANCE_MANIFESTO), t.count(1, VOUCHER_OF_FAITH)),
+            (1, 0)
+        );
         assert_eq!(
             t.take_writes(),
-            [rows::delete(NAME, false), rows::update(NAME, "<state>", "Completed")]
+            [
+                rows::delete(NAME, false),
+                rows::update(NAME, "<state>", "Completed")
+            ]
         );
     }
 }

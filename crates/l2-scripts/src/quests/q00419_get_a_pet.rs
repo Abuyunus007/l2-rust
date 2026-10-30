@@ -379,7 +379,8 @@ impl Script for Q00419GetAPet {
         } else if qs.state(ctx) == STARTED {
             match npc.id {
                 PET_MENAGER_MARTIN => {
-                    if let Some((_, drop)) = LISTS.iter().find(|(list, _)| ctx.has_quest_items(player, *list)) {
+                    if let Some((_, drop)) = LISTS.iter().find(|(list, _)| ctx.has_quest_items(player, *list))
+                    {
                         htmltext = if ctx.get_quest_items_count(player, *drop) < 50 {
                             if !ctx.has_quest_items(player, *drop) {
                                 "30731-09.html"
@@ -510,7 +511,10 @@ mod tests {
         assert_eq!(t.count(1, ANIMAL_SLAYERS_1ST_LIST), 1);
         assert_eq!(
             t.take_writes(),
-            [rows::insert(NAME, "cond", "1"), rows::insert(NAME, "<state>", "Started")]
+            [
+                rows::insert(NAME, "cond", "1"),
+                rows::insert(NAME, "<state>", "Started")
+            ]
         );
         assert!(t.quest_page(1, martin).contains("30731-09.html"));
         // The Blade Spider always drops (100%).

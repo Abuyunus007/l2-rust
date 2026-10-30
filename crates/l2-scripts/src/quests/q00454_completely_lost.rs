@@ -254,7 +254,9 @@ impl Script for Q00454CompletelyLost {
                         v.set_int("quest_escort", 1);
                         if is_in_party(ctx, player) {
                             let leader_id = party_leader_id(ctx, player);
-                            ctx.world_mut().npc_variables_mut(npc.object_id).set_int("partyId", leader_id);
+                            ctx.world_mut()
+                                .npc_variables_mut(npc.object_id)
+                                .set_int("partyId", leader_id);
                         }
 
                         qs.set_memo_state(ctx, 1);
@@ -284,8 +286,12 @@ impl Script for Q00454CompletelyLost {
                 {
                     if is_in_party(ctx, leader) {
                         qs.set_memo_state(ctx, 2);
-                        ctx.world_mut()
-                            .script_send_event("SCE_A_SEED_ESCORT_QUEST_START", npc.object_id, npc.object_id, None);
+                        ctx.world_mut().script_send_event(
+                            "SCE_A_SEED_ESCORT_QUEST_START",
+                            npc.object_id,
+                            npc.object_id,
+                            None,
+                        );
                         htmltext = Some("32738-06.html".to_owned());
                     } else {
                         htmltext = Some("32738-05a.html".to_owned());
@@ -296,8 +302,12 @@ impl Script for Q00454CompletelyLost {
                 if qs.is_memo_state(ctx, 1) {
                     qs.set_memo_state(ctx, 2);
                     htmltext = Some("32738-06.html".to_owned());
-                    ctx.world_mut()
-                        .script_send_event("SCE_A_SEED_ESCORT_QUEST_START", npc.object_id, npc.object_id, None);
+                    ctx.world_mut().script_send_event(
+                        "SCE_A_SEED_ESCORT_QUEST_START",
+                        npc.object_id,
+                        npc.object_id,
+                        None,
+                    );
                     if let Some(leader) = leader_of(ctx, npc)
                         && is_in_party(ctx, leader)
                     {
@@ -346,7 +356,9 @@ impl Script for Q00454CompletelyLost {
                 ctx.start_quest_timer("CHECK_TIMER", 1000, Some(receiver), None, false);
                 ctx.start_quest_timer("TIME_LIMIT1", 60_000, Some(receiver), None, false);
                 ctx.set_script_value(receiver, 2);
-                ctx.world_mut().npc_variables_mut(receiver.object_id).set_int("quest_escort", 99);
+                ctx.world_mut()
+                    .npc_variables_mut(receiver.object_id)
+                    .set_int("quest_escort", 99);
             }
             "SCE_A_SEED_ESCORT_QUEST_SUCCESS" | "SCE_A_SEED_ESCORT_QUEST_FAILURE" => {
                 let success = event_name == "SCE_A_SEED_ESCORT_QUEST_SUCCESS";
@@ -393,11 +405,16 @@ impl Script for Q00454CompletelyLost {
                 ctx.world_mut().npc_set_intention_idle(npc.object_id);
                 // Quest.addMoveToDesire(npc, MOVE_TO, 10000000): `setIntentionMoveTo(loc)`.
                 ctx.npc_move_to(npc, MOVE_TO.0, MOVE_TO.1, MOVE_TO.2);
-                ctx.world_mut()
-                    .script_send_event("SCE_A_SEED_ESCORT_QUEST_SUCCESS", npc.object_id, npc.object_id, None);
-                if let (Some((nx, ny, _)), Some((ex, ey, _))) =
-                    (ctx.world().position_of(npc.object_id), ctx.world().position_of(nearby))
-                {
+                ctx.world_mut().script_send_event(
+                    "SCE_A_SEED_ESCORT_QUEST_SUCCESS",
+                    npc.object_id,
+                    npc.object_id,
+                    None,
+                );
+                if let (Some((nx, ny, _)), Some((ex, ey, _))) = (
+                    ctx.world().position_of(npc.object_id),
+                    ctx.world().position_of(nearby),
+                ) {
                     ctx.set_npc_heading(npc, heading_from_points(nx, ny, ex, ey));
                 }
                 ctx.start_quest_timer("SAY_TIMER2", 2000, Some(npc), None, false);
@@ -600,7 +617,9 @@ mod tests {
         assert!(t.quest_page(1, soldier).contains("32738-01.htm"));
         assert!(t.event(1, NAME, "32738-04.htm").contains("32738-04.htm"));
         assert_eq!(
-            t.world.npc_variables(soldier).map(|v| v.get_int("quest_escort", 0)),
+            t.world
+                .npc_variables(soldier)
+                .map(|v| v.get_int("quest_escort", 0)),
             Some(1)
         );
         assert_eq!(
@@ -608,7 +627,10 @@ mod tests {
             Some(1)
         );
         let writes = t.take_writes();
-        assert!(writes.contains(&rows::insert(NAME, "<state>", "Started")), "{writes:?}");
+        assert!(
+            writes.contains(&rows::insert(NAME, "<state>", "Started")),
+            "{writes:?}"
+        );
         // Alone: "the party leader must be in a party".
         assert!(t.event(1, NAME, "agree1").contains("32738-05a.html"));
     }
@@ -631,7 +653,9 @@ mod tests {
         assert!(t.world.is_npc_script_value(soldier, 2));
         assert_eq!(t.world.creature_target(soldier), Some(Oid(1)));
         assert_eq!(
-            t.world.npc_variables(soldier).map(|v| v.get_int("quest_escort", 0)),
+            t.world
+                .npc_variables(soldier)
+                .map(|v| v.get_int("quest_escort", 0)),
             Some(99)
         );
         // A newcomer is told the escort left.
@@ -705,7 +729,10 @@ mod tests {
             let r = Q00454CompletelyLost.on_creature_attacked(ctx, Oid(1), soldier);
             assert_eq!(r, Some(TerminateReturn::new(true)));
             // Anything else is none of its business.
-            assert_eq!(Q00454CompletelyLost.on_creature_attacked(ctx, soldier, Oid(1)), None);
+            assert_eq!(
+                Q00454CompletelyLost.on_creature_attacked(ctx, soldier, Oid(1)),
+                None
+            );
         });
         assert!(t.world.is_npc_script_value(soldier, 1));
         t.wait_ms(2_100);

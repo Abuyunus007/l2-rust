@@ -163,7 +163,13 @@ impl Q00511AwlUnderFoot {
         } else if fort_state == 2 {
             return Some("FortressWarden-02b.htm".to_owned());
         } else if is_enter
-            && ctx.state::<State>().re_enter_time.get(&npc.id).copied().unwrap_or(0) > ctx.now_ms()
+            && ctx
+                .state::<State>()
+                .re_enter_time
+                .get(&npc.id)
+                .copied()
+                .unwrap_or(0)
+                > ctx.now_ms()
         {
             return Some("FortressWarden-07.htm".to_owned());
         }
@@ -196,10 +202,7 @@ impl Q00511AwlUnderFoot {
         ret_value: Option<String>,
     ) -> Option<String> {
         // check for existing instances for this player
-        let existing = ctx
-            .world()
-            .player_instance_world(player)
-            .map(|w| w.instance_id);
+        let existing = ctx.world().player_instance_world(player).map(|w| w.instance_id);
 
         // existing instance
         if let Some(instance_id) = existing {
@@ -272,7 +275,11 @@ impl Q00511AwlUnderFoot {
         }
 
         // Java `player.getClan().getName()`: the clan exists (`checkFortCondition` checked it).
-        let clan = ctx.world().clan_of(player).map(|c| c.name.clone()).unwrap_or_default();
+        let clan = ctx
+            .world()
+            .clan_of(player)
+            .map(|c| c.name.clone())
+            .unwrap_or_default();
         ctx.get_htm(player, "FortressWarden-08.htm")
             .map(|page| page.replace("%clan%", &clan))
     }
@@ -418,7 +425,11 @@ impl Script for Q00511AwlUnderFoot {
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, _is_summon: bool) {
         // Java `InstanceManager.getWorld(npc) instanceof FAUWorld`.
-        let Some(instance_id) = ctx.world().instance_world_of(npc.object_id).map(|w| w.instance_id) else {
+        let Some(instance_id) = ctx
+            .world()
+            .instance_world_of(npc.object_id)
+            .map(|w| w.instance_id)
+        else {
             return;
         };
         if !ctx.state::<State>().worlds.contains(&instance_id) {
@@ -512,7 +523,8 @@ mod tests {
         let mut instance_id = 0;
         t.world.run_as_script(NAME, |ctx| {
             instance_id = ctx.world_mut().create_dynamic_instance(0);
-            ctx.world_mut().add_instance_world(InstanceWorld::new(instance_id, 22));
+            ctx.world_mut()
+                .add_instance_world(InstanceWorld::new(instance_id, 22));
             ctx.state::<State>().worlds.insert(instance_id);
             if let Some(world) = ctx.world_mut().instance_world_mut(instance_id) {
                 world.add_allowed(Oid(1));
@@ -594,7 +606,13 @@ mod tests {
 
         // The first raid appears after two minutes.
         t.world.run_as_script(NAME, |ctx| {
-            ctx.start_quest_timer(&format!("SPAWN_RAID_{instance_id}"), RAID_SPAWN_DELAY, None, None, false);
+            ctx.start_quest_timer(
+                &format!("SPAWN_RAID_{instance_id}"),
+                RAID_SPAWN_DELAY,
+                None,
+                None,
+                false,
+            );
         });
         t.wait_ms(120_100);
         let first: Vec<_> = RAIDS1.iter().flat_map(|id| t.npcs_of(*id)).collect();
@@ -651,7 +669,8 @@ mod tests {
         t.enter(1, 70, vec![]);
         let instance_id = dungeon(&mut t);
         t.world.run_as_script(NAME, |ctx| {
-            let page = Q00511AwlUnderFoot.on_event(ctx, &format!("SPAWN_RAID_{instance_id}"), None, Some(Oid(1)));
+            let page =
+                Q00511AwlUnderFoot.on_event(ctx, &format!("SPAWN_RAID_{instance_id}"), None, Some(Oid(1)));
             // Any other event is echoed, as in Java; but no raid appears.
             assert_eq!(page, Some(format!("SPAWN_RAID_{instance_id}")));
         });

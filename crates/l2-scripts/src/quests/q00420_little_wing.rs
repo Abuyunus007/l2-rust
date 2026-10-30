@@ -315,7 +315,9 @@ impl Script for Q00420LittleWing {
             }
             "30747-12.html" => {
                 if qs.is_cond(ctx, 7) {
-                    if qs.get_int(ctx, "fairy_stone") == 1 || ctx.get_quest_items_count(player, FAIRY_DUST) == 0 {
+                    if qs.get_int(ctx, "fairy_stone") == 1
+                        || ctx.get_quest_items_count(player, FAIRY_DUST) == 0
+                    {
                         Self::give_reward(ctx, player);
                         qs.exit_quest(ctx, true, true);
                         htmltext = Some("30747-16.html".to_owned());
@@ -417,10 +419,18 @@ impl Script for Q00420LittleWing {
         _skill: Option<SkillKey>,
     ) {
         let qs = ctx.get_quest_state(attacker, false);
-        if qs.is_some() && ctx.get_quest_items_count(attacker, DELUXE_FAIRY_STONE) > 0 && ctx.get_random(100) < 30 {
+        if qs.is_some()
+            && ctx.get_quest_items_count(attacker, DELUXE_FAIRY_STONE) > 0
+            && ctx.get_random(100) < 30
+        {
             ctx.take_items(attacker, DELUXE_FAIRY_STONE, -1);
             ctx.play_sound(attacker, QuestSound::ItemsoundQuestMiddle);
-            ctx.broadcast_npc_say(npc, ChatType::NpcGeneral, NpcStringId::TheStoneTheElvenStoneBroke, &[]);
+            ctx.broadcast_npc_say(
+                npc,
+                ChatType::NpcGeneral,
+                NpcStringId::TheStoneTheElvenStoneBroke,
+                &[],
+            );
         }
     }
 
@@ -771,7 +781,10 @@ mod tests {
         t.event(1, NAME, "30829-02.htm");
         assert_eq!(
             t.take_writes(),
-            [rows::insert(NAME, "cond", "1"), rows::insert(NAME, "<state>", "Started")]
+            [
+                rows::insert(NAME, "cond", "1"),
+                rows::insert(NAME, "<state>", "Started")
+            ]
         );
 
         // Cronos: the plain list (fairy_stone 1).
@@ -826,10 +839,7 @@ mod tests {
         assert_eq!(t.count(1, EXARION_EGG), 20);
         assert!(t.quest_page(1, mimyu).contains("30747-10.html"));
         assert!(t.quest_page(1, exarion).contains("30748-04.html"));
-        assert_eq!(
-            (t.count(1, EXARION_EGG), t.count(1, EXARION_SCALE)),
-            (1, 0)
-        );
+        assert_eq!((t.count(1, EXARION_EGG), t.count(1, EXARION_SCALE)), (1, 0));
 
         // Mimyu: the flute (no fairy dust: the plain branch), the quest ends repeatable.
         t.take_writes();

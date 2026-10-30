@@ -8,7 +8,7 @@
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;
 use l2_util::ObjectId;
-use l2_world::script::{STARTED, COMPLETED, CREATED};
+use l2_world::script::{COMPLETED, CREATED, STARTED};
 use l2_world::{Qs, Script, ScriptCtx, ScriptNpc, ScriptSetup};
 
 // NPCs
@@ -291,7 +291,8 @@ impl Script for Q00503PursuitOfClanAmbition {
                 htmltext = Some(event.to_owned());
             }
             "SPAWN_WITCH" => {
-                if let Some(athrea) = ctx.add_spawn(WITCH_ATHREA, 160688, 21296, -3714, 0, false, 180_000, 0) {
+                if let Some(athrea) = ctx.add_spawn(WITCH_ATHREA, 160688, 21296, -3714, 0, false, 180_000, 0)
+                {
                     ctx.broadcast_npc_say(athrea, ChatType::NpcGeneral, NpcStringId::WarAndDeath, &[]);
                 }
                 if let Some(kalis) = ctx.add_spawn(WITCH_KALIS, 160690, 21176, -3712, 0, false, 180_000, 0) {
@@ -307,6 +308,9 @@ impl Script for Q00503PursuitOfClanAmbition {
         htmltext
     }
 
+    // Java keeps the two identical branches of the Grave Guard (a 50 % roll from memo 8505 on, a
+    // sure spawn at 8510).
+    #[allow(clippy::if_same_then_else)]
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, _is_summon: bool) {
         let Some(qs) = ctx.get_quest_state(killer, false) else {
             return;
@@ -436,13 +440,23 @@ impl Script for Q00503PursuitOfClanAmbition {
                         } else if memo == 2000 {
                             htmltext = "30760-10.html".to_owned();
                         } else if memo == 3000 {
-                            htmltext = if !leader { "30760-11t.html" } else { "30760-11.html" }.to_owned();
+                            htmltext = if !leader {
+                                "30760-11t.html"
+                            } else {
+                                "30760-11.html"
+                            }
+                            .to_owned();
                         } else if memo == 4000 {
                             htmltext = "30760-13.html".to_owned();
                         } else if memo == 5000 {
                             htmltext = "30760-14.html".to_owned();
                         } else if memo == 6000 {
-                            htmltext = if !leader { "30760-15t.html" } else { "30760-15.html" }.to_owned();
+                            htmltext = if !leader {
+                                "30760-15t.html"
+                            } else {
+                                "30760-15.html"
+                            }
+                            .to_owned();
                         } else if memo == 7000 {
                             htmltext = "30760-17.html".to_owned();
                         } else if (8000..8700).contains(&memo) {
@@ -452,14 +466,21 @@ impl Script for Q00503PursuitOfClanAmbition {
                         } else if memo == 9000 && !leader {
                             htmltext = "30760-19t.html".to_owned();
                         } else if memo == 10000 {
-                            htmltext = if !leader { "30760-24t.html" } else { "30760-24.html" }.to_owned();
+                            htmltext = if !leader {
+                                "30760-24t.html"
+                            } else {
+                                "30760-24.html"
+                            }
+                            .to_owned();
                         }
                     }
                 }
                 HEAD_BLACKSMITH_KUSTO => {
                     if lqs.is_some() && !leader {
                         htmltext = "30512-01a.html".to_owned();
-                    } else if !ctx.has_at_least_one_quest_item(player, &[BROOCH_OF_THE_MAGPIE, BLACK_ANVIL_COIN]) {
+                    } else if !ctx
+                        .has_at_least_one_quest_item(player, &[BROOCH_OF_THE_MAGPIE, BLACK_ANVIL_COIN])
+                    {
                         htmltext = "30512-01.html".to_owned();
                     } else if ctx.has_quest_items(player, BROOCH_OF_THE_MAGPIE) {
                         htmltext = "30512-02.html".to_owned();
@@ -718,7 +739,10 @@ mod tests {
         assert_eq!(t.count(1, 3866), 1);
         assert_eq!(memo(&mut t), 1000);
         let writes = t.take_writes();
-        assert!(writes.contains(&rows::insert(NAME, "<state>", "Started")), "{writes:?}");
+        assert!(
+            writes.contains(&rows::insert(NAME, "<state>", "Started")),
+            "{writes:?}"
+        );
 
         // Martien takes the letter and sends the leader to the corpses (memo 2000, cond 2).
         assert!(t.quest_page(1, npcs[1]).contains("30645-02.html"));
@@ -753,7 +777,10 @@ mod tests {
         t.quest_page(1, npcs[4]);
         t.event(1, NAME, "30763-02.html");
         assert_eq!(memo(&mut t), 2111);
-        assert_eq!((t.count(1, BROOCH_OF_THE_MAGPIE), t.count(1, MIST_DRAKES_EGG)), (1, 10));
+        assert_eq!(
+            (t.count(1, BROOCH_OF_THE_MAGPIE), t.count(1, MIST_DRAKES_EGG)),
+            (1, 10)
+        );
         assert!(!t.in_world(npcs[4]));
     }
 
