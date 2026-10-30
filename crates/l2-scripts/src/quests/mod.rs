@@ -253,6 +253,7 @@ pub mod q00636_truth_beyond;
 pub mod q00637_through_once_more;
 pub mod q00638_seekers_of_the_holy_grail;
 pub mod q00639_guardians_of_the_holy_grail;
+pub mod q00640_the_zero_hour;
 pub mod q00641_attack_sailren;
 pub mod q00642_a_powerful_primeval_creature;
 pub mod q00644_grave_robber_annihilation;
@@ -514,6 +515,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00637_through_once_more::Q00637ThroughOnceMore);
     r.add(q00638_seekers_of_the_holy_grail::Q00638SeekersOfTheHolyGrail);
     r.add(q00639_guardians_of_the_holy_grail::Q00639GuardiansOfTheHolyGrail);
+    r.add(q00640_the_zero_hour::Q00640TheZeroHour);
     r.add(q00641_attack_sailren::Q00641AttackSailren);
     r.add(q00642_a_powerful_primeval_creature::Q00642APowerfulPrimevalCreature);
     r.add(q00644_grave_robber_annihilation::Q00644GraveRobberAnnihilation);
