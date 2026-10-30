@@ -210,6 +210,34 @@ impl ScriptCtx<'_> {
         self.world.is_in_party(player)
     }
 
+    /// Java `creature.getActiveWeaponInstance()` as its item id (`None` without a weapon in the
+    /// right hand). Used by the path quests' `checkWeapon` (Q00401, Q00404, ...).
+    pub fn active_weapon_item_id(&self, player: ObjectId) -> Option<i32> {
+        use l2_protocol_game::server::charscreen::paperdoll;
+        let object = self.world.paperdoll_object(player, paperdoll::RHAND)?;
+        self.world.inventory_item(player, object).map(|item| item.item_id)
+    }
+
+    /// Java `checkWeapon` of the orc monk quest: no weapon in the right hand
+    /// (`getActiveWeaponInstance() == null`), or a fist or dual fist weapon.
+    pub fn has_no_weapon_or_fist(&self, player: ObjectId) -> bool {
+        use l2_data::item::types::WeaponType;
+        use l2_protocol_game::server::charscreen::paperdoll;
+        let Some(object) = self.world.paperdoll_object(player, paperdoll::RHAND) else {
+            return true;
+        };
+        let Some(item) = self.world.inventory_item(player, object) else {
+            return true;
+        };
+        let Some(templates) = self.world.item_templates() else {
+            return false;
+        };
+        templates
+            .get(item.item_id)
+            .and_then(|t| t.weapon())
+            .is_some_and(|w| matches!(w.weapon_type, WeaponType::Fist | WeaponType::DualFist))
+    }
+
     /// Java `PlayerConfig.ALT_PARTY_RANGE` (`AltPartyRange`).
     pub fn alt_party_range(&self) -> i32 {
         self.world.settings.party.alt_party_range
