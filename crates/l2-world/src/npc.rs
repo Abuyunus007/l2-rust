@@ -1037,6 +1037,26 @@ impl World {
         self.create_npc(template, class, None, None, (x, y, z), heading, in_water, enchant)
     }
 
+    /// [`World::spawn_npc_at`] with the class of a Java instance class the template's `type`
+    /// does not give (`new TamedBeast(..)` of a `TamedBeast` template is a `Monster`, S-API-05).
+    pub(crate) fn spawn_npc_at_as(
+        &mut self,
+        npc_id: i32,
+        class: NpcClass,
+        (x, y, z): (i32, i32, i32),
+        heading: i32,
+    ) -> Option<ObjectId> {
+        let templates = self.npc_world.templates.clone()?;
+        let template = templates.get(npc_id)?;
+        let in_water = self.npc_world.water.as_ref().is_some_and(|f| f(x, y, z));
+        let enchant = if self.npc_world.settings.enable_random_enchant_effect {
+            self.rng().get(4, 21)
+        } else {
+            template.weapon_enchant
+        };
+        self.create_npc(template, class, None, None, (x, y, z), heading, in_water, enchant)
+    }
+
     /// Java `Npc.deleteMe()`: the NPC goes out of view for everybody and out of the world. Its
     /// minions go with it (`Monster.deleteMe` -> `MinionList.onMasterDie(true)`). Like Java it
     /// is `onDecay()`: the spawn counts one NPC less and, unless the spawn was told to stop
@@ -1096,7 +1116,9 @@ impl World {
         let viewer_karma = self.players.get(&viewer).map_or(0, |p| p.data.karma);
 
         let name = if template.using_server_side_name {
-            template.name.clone()
+            // `npc.getName()`: a script's `setName` first (S-API-05).
+            self.npc_custom_name(subject)
+                .map_or_else(|| template.name.clone(), str::to_owned)
         } else {
             String::new()
         };

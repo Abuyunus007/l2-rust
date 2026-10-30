@@ -65,6 +65,7 @@ pub mod soul_crystal;
 pub mod sound;
 mod spawn;
 pub mod state;
+pub mod tamed_beast;
 pub mod timer_executor;
 pub mod timers;
 
@@ -316,6 +317,8 @@ pub(crate) struct ScriptWorld {
     pub(crate) npc_links: npc_links::NpcLinks,
     /// `LevelUpCrystalData` (`data/LevelUpCrystalData.xml`), read by Q00350 (S-API-05).
     pub(crate) level_up_crystals: std::sync::Arc<l2_data::LevelUpCrystalData>,
+    /// The tamed beasts and their owners (S-API-05).
+    pub(crate) tamed: tamed_beast::TamedBeasts,
 }
 
 impl ScriptWorld {

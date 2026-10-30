@@ -128,6 +128,8 @@ pub(crate) struct NpcExtra {
     quest_guard_not_auto_attackable: bool,
     /// `QuestGuard._isPassive`.
     quest_guard_passive: bool,
+    /// `Npc.setName(name)` of a script (S-API-05): `getName()` instead of the template's.
+    custom_name: Option<String>,
 }
 
 /// The extras of every NPC that has some.
@@ -502,6 +504,17 @@ impl World {
             percentage = 25.0;
         }
         (percentage / 100.0) * exp
+    }
+
+    /// Java `npc.setName(name)`: the name `NpcInfo` shows (with `usingServerSideName`), until
+    /// the NPC decays.
+    pub fn set_npc_name(&mut self, npc: ObjectId, name: &str) {
+        self.npc_extra_mut(npc).custom_name = Some(name.to_owned());
+    }
+
+    /// Java `npc.getName()` after a script's `setName`; `None` without one.
+    pub fn npc_custom_name(&self, npc: ObjectId) -> Option<&str> {
+        self.scripts.npc_extras.by_npc.get(&npc)?.custom_name.as_deref()
     }
 
     /// Java `Attackable.absorbSoul()`.

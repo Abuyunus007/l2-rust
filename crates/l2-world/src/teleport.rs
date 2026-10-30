@@ -405,8 +405,9 @@ impl World {
         if self.settings.teleport.player_teleport_protection > 0 && !self.is_in_olympiad_mode(id) {
             self.set_teleport_protection(id, true);
         }
-        // Not modelled: the tamed beasts (`TamedBeast`), the movie holder and the auto play
-        // tasks (`AutoPlayConfig`, Custom).
+        // "Trained beast is lost after teleport." (S-API-05)
+        self.tamed_beasts_on_owner_teleport(id);
+        // Not modelled: the movie holder and the auto play tasks (`AutoPlayConfig`, Custom).
         // "Modify the position of the pet if necessary."
         self.summon_follow_owner_teleport(id);
         // A dimensional rift member who arrives outside the waiting room is alive again

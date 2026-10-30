@@ -387,3 +387,105 @@ fn the_seed_map_shows_the_states_the_seed_managers_keep() {
         [2772, 2770]
     );
 }
+
+// ---------------------------------------------------------------------- tamed beasts (S-API-05)
+
+const BEAST_NPCS: &str = r#"<npc id="16013" type="TamedBeast" level="67" name="Trained Buffalo"/>
+    <npc id="18869" type="TamedBeast" level="83" name="Kookaburra"/>"#;
+const BEAST_ITEMS: &str = r#"
+    <item id="6643" type="EtcItem" name="Golden Spice"><set name="is_stackable" val="true"/></item>
+    <item id="15474" type="EtcItem" name="Golden Spice"><set name="is_stackable" val="true"/></item>"#;
+
+fn beast_world() -> ScriptTest {
+    let mut registry = ScriptRegistry::new();
+    registry.add(Probe);
+    ScriptTest::new(registry, BEAST_NPCS, BEAST_ITEMS, &[])
+}
+
+#[test]
+fn a_tamed_beast_follows_its_owner_and_leaves_without_food() {
+    let mut t = beast_world();
+    t.enter(1, 60, vec![]);
+    let beast = t
+        .world
+        .spawn_tamed_beast(16_013, Oid(1), 2188, (X + 50, Y, crate::testing::Z), false)
+        .unwrap();
+    assert!(t.world.is_tamed_beast(beast));
+    assert_eq!(t.world.tamed_beast_owner(beast), Some(Oid(1)));
+    assert_eq!(t.world.trained_beasts(Oid(1)), [beast]);
+    assert_eq!(t.world.tamed_beast_food_type(beast), 2188);
+    assert_eq!(t.world.tamed_beast_remaining_time(beast), 1_200_000);
+    // Not a Freya beast: others may attack it.
+    assert!(t.world.is_auto_attackable_by(beast, Oid(1)));
+
+    // Food extends the time, up to 20 minutes.
+    t.world.tamed_beast_on_receive_food(beast);
+    assert_eq!(t.world.tamed_beast_remaining_time(beast), 1_200_000);
+
+    // Without spice the time runs one minute per check; below 15 minutes it is over.
+    t.wait_ms(60_050);
+    assert_eq!(t.world.tamed_beast_remaining_time(beast), 1_140_000);
+    t.world.tamed_beast_on_receive_food(beast);
+    assert_eq!(t.world.tamed_beast_remaining_time(beast), 1_160_000);
+    // 1 100 000, 1 040 000, 980 000, 920 000: still here; 860 000 is below 15 minutes.
+    t.wait_ms(4 * 60_000);
+    assert_eq!(t.world.tamed_beast_remaining_time(beast), 920_000);
+    assert!(t.in_world(beast));
+    t.wait_ms(60_000);
+    assert!(!t.in_world(beast));
+    assert!(!t.world.is_tamed_beast(beast));
+    assert!(t.world.trained_beasts(Oid(1)).is_empty());
+}
+
+#[test]
+fn a_freya_beast_eats_its_spice_every_minute_and_is_not_attackable() {
+    let mut t = beast_world();
+    t.enter(1, 85, vec![crate::testing::item(500, 15_474, 2)]);
+    let beast = t
+        .world
+        .spawn_tamed_beast(18_869, Oid(1), 15_474, (X + 50, Y, crate::testing::Z), true)
+        .unwrap();
+    assert!(t.world.is_freya_beast(beast));
+    assert!(!t.world.is_auto_attackable_by(beast, Oid(1)));
+    t.take();
+    t.wait_ms(60_050);
+    assert_eq!(t.count(1, 15_474), 1);
+    assert!(names_to(&t.take(), 1).contains(&"SOCIAL_ACTION".to_owned()));
+    t.wait_ms(60_000);
+    assert_eq!(t.count(1, 15_474), 0);
+    // No spice left: the beast goes at the next check.
+    t.wait_ms(60_000);
+    assert!(!t.in_world(beast));
+
+    // A click on a Freya beast targets it, the second one does nothing.
+    let beast = t
+        .world
+        .spawn_tamed_beast(18_869, Oid(1), 15_474, (X + 50, Y, crate::testing::Z), true)
+        .unwrap();
+    t.take();
+    t.talk(1, beast);
+    assert_eq!(t.world.target_of(Oid(1)), Some(beast));
+    let names = names_to(&t.take(), 1);
+    // One `ActionFailed` after each click, and the beast's own refusal of the second one.
+    assert_eq!(
+        names.iter().filter(|n| *n == "ACTION_FAIL").count(),
+        3,
+        "{names:?}"
+    );
+}
+
+#[test]
+fn the_beasts_are_lost_when_the_owner_teleports() {
+    let mut t = beast_world();
+    t.enter(1, 60, vec![]);
+    let beast = t
+        .world
+        .spawn_tamed_beast(16_013, Oid(1), 2188, (X + 50, Y, crate::testing::Z), false)
+        .unwrap();
+    t.world.run_as_script(NAME, |ctx| {
+        ctx.teleport_player(Oid(1), X + 3_000, Y, crate::testing::Z, 0, false);
+    });
+    t.input(1, l2_world::ClientInput::Appearing);
+    assert!(!t.in_world(beast));
+    assert!(t.world.trained_beasts(Oid(1)).is_empty());
+}

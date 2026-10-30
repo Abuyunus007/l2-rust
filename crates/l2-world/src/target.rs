@@ -83,6 +83,10 @@ impl World {
 
     /// Java `target.isAutoAttackable(attacker)` for a player attacker.
     pub fn is_auto_attackable_by(&self, target: ObjectId, attacker: ObjectId) -> bool {
+        // `TamedBeast.isAutoAttackable`: `!_isFreyaBeast` (S-API-05).
+        if let Some(attackable) = self.tamed_beast_auto_attackable(target) {
+            return attackable;
+        }
         // `FortCommander.isAutoAttackable` (M7-FORT-01).
         if self
             .npcs
@@ -428,6 +432,10 @@ impl World {
 
     /// `NpcClick.onAction`.
     fn npc_click(&mut self, player: ObjectId, npc: ObjectId, interact: bool) {
+        // `TamedBeast.onAction` (S-API-05).
+        if self.tamed_beast_click(player, npc, interact) {
+            return;
+        }
         // `Artefact` has a click handler of its own (`ArtefactClick`, S-HAND-01).
         if self.npc_template(npc).is_some_and(|t| t.npc_type == "Artefact") {
             self.artefact_click(player, npc, interact);

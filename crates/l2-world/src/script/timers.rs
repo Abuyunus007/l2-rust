@@ -31,6 +31,11 @@ pub enum ScriptTimer {
     },
     /// Java `Npc.scheduleDespawn(delay)`'s `DespawnTask`: `deleteMe()`.
     Despawn(ObjectId),
+    /// A task of a tamed beast (`tamed_beast.rs`, S-API-05).
+    TamedBeast {
+        beast: ObjectId,
+        task: super::tamed_beast::TamedBeastTask,
+    },
 }
 
 /// One running Java `QuestTimer`.
@@ -233,6 +238,7 @@ impl World {
             ScriptTimer::Despawn(npc) => {
                 self.delete_npc(npc);
             }
+            ScriptTimer::TamedBeast { beast, task } => self.on_tamed_beast_timer(beast, task),
         }
         self.script_drain();
     }
