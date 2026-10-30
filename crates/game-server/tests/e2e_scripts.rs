@@ -1030,3 +1030,225 @@ fn a_subclass_is_added_switched_and_cancelled() {
     let data = w.player_data(0);
     assert_eq!((data.class_id, data.profile.class_index, data.level), (new_class, 1, 40));
 }
+
+const BATHIS: i32 = 30332;
+/// The template of Kamaloka (Hall of the Abyss, level 23) and its boss.
+const KAMALOKA_TEMPLATE: i32 = 57;
+const KAMALOKA_BOSS: i32 = 18554;
+
+/// 3. A Kamaloka entered by a party of two, the boss killed inside, the way out and the re-enter
+/// time (CP-Sc).
+#[test]
+fn a_kamaloka_is_entered_its_boss_killed_and_the_reenter_time_holds() {
+    let opts = Opts::new(
+        false,
+        vec![
+            Hero::new("Leader").gm().level(25),
+            Hero::new("Friend").level(25),
+        ],
+    );
+    let Some(mut w) = Bare::start(&opts) else {
+        return;
+    };
+    let (leader, friend) = (w.me(0), w.me(1));
+    w.enter_player(0);
+    w.enter_player(1);
+    w.input_of(
+        0,
+        ClientInput::JoinParty {
+            name: "Friend".to_owned(),
+            distribution_type_id: 0,
+        },
+    );
+    w.input_of(1, ClientInput::AnswerJoinParty { response: 1 });
+    assert!(w.world.is_in_party_with(leader, friend), "the party was not made");
+    w.quiet_of(0);
+    w.quiet_of(1);
+
+    // Captain Bathis: the Hall of the Abyss, level 23.
+    let captain = w.spawn_npc(0, BATHIS, 30);
+    let talked = w.talk(0, captain);
+    let talked = w.follow(0, &talked, "Script");
+    assert!(pages(&talked).last().unwrap().contains("Do you wish to enter Kamaloka"));
+    let entered = w.follow(0, &talked, "Script Kamaloka 0");
+    let instance = w.world.instance_id_of(leader);
+    assert!(instance != 0, "the leader is in an instance");
+    assert_eq!(w.world.instance_id_of(friend), instance, "the party goes in together");
+    assert_eq!(
+        w.world.instance(instance).map(|i| i.template_id),
+        Some(KAMALOKA_TEMPLATE)
+    );
+    assert!(names(&entered).contains(&"TELEPORT_TO_LOCATION".to_owned()), "{:?}", names(&entered));
+    let friend_got = w.quiet_of(1);
+    assert!(names(&friend_got).contains(&"TELEPORT_TO_LOCATION".to_owned()));
+    w.input_of(0, act::appearing());
+    w.input_of(1, act::appearing());
+    w.quiet_of(0);
+    w.quiet_of(1);
+
+    // The boss of the hall waits inside: the leader kills it and the instance ends.
+    let boss = w
+        .world
+        .npc_ids()
+        .into_iter()
+        .find(|n| w.world.npc(*n).map(|npc| npc.npc_id) == Some(KAMALOKA_BOSS) && w.world.instance_id_of(*n) == instance)
+        .expect("the boss of the hall");
+    w.world.do_die(boss, Some(leader));
+    w.run_ms(3_000);
+    let done = w.log.take(Bare::id_of(0));
+    assert!(
+        has_message(
+            &done,
+            SystemMessageId::InstantZoneS1SEntryHasBeenRestrictedYouCanCheckTheNextPossibleEntryTimeByUsingTheCommandInstancezone
+        ),
+        "{:?}",
+        message_ids(&done)
+    );
+    // The re-enter time of both players is the next 06:30 (a `character_instance_time` row each).
+    let now = now_ms();
+    for who in [leader, friend] {
+        let time = w.rows.instance_times.get(&(who.0, KAMALOKA_TEMPLATE)).copied().unwrap();
+        assert!(time > now && time <= now + 86_400_000, "{time} vs {now}");
+    }
+
+    // After the 5 minutes the instance gives the party back to the world.
+    w.run_ms(5 * 60_000);
+    w.quiet_of(0);
+    assert_eq!(w.world.instance_id_of(leader), 0, "the leader is out");
+    assert_eq!(w.world.instance_id_of(friend), 0, "the friend is out");
+
+    // A second try the same day is refused for the member who may not re-enter yet.
+    let talked = w.talk(0, captain);
+    let talked = w.follow(0, &talked, "Script");
+    let again = w.follow(0, &talked, "Script Kamaloka 0");
+    assert!(has_message(&again, SystemMessageId::C1MayNotReEnterYet), "{:?}", message_ids(&again));
+    assert_eq!(w.world.instance_id_of(leader), 0);
+}
+
+const TYPHOON: i32 = 25539;
+const GUST: i32 = 5434;
+
+/// The object ids of the NPCs called `npc_id` that are in the world.
+fn npcs_of(w: &Bare, npc_id: i32) -> Vec<ObjectId> {
+    w.world
+        .npc_ids()
+        .into_iter()
+        .filter(|id| w.world.npc(*id).is_some_and(|n| n.npc_id == npc_id && !n.decayed))
+        .collect()
+}
+
+/// The places `ai/others/RandomSpawn` sends Typhoon to.
+const TYPHOON_PLACES: [(i32, i32, i32); 10] = [
+    (-20641, 255370, -3235),
+    (-16157, 250993, -3058),
+    (-18269, 250721, -3151),
+    (-16532, 254864, -3223),
+    (-19055, 253489, -3440),
+    (-9684, 254256, -3148),
+    (-6209, 251924, -3189),
+    (-10547, 251359, -2929),
+    (-7254, 254997, -3261),
+    (-4883, 253171, -3322),
+];
+
+/// 4. A raid boss and its AI: Typhoon (Hellbound) is sent to one of its places by `RandomSpawn`,
+/// casts its Gust on a timer once it is there and again when a player comes into its aggro range.
+#[test]
+fn a_raid_boss_ai_starts_the_fight() {
+    let opts = Opts::new(false, vec![Hero::new("Slayer").gm().level(80).class(GLADIATOR)]);
+    let Some(mut w) = Bare::start(&opts) else {
+        return;
+    };
+    w.enter_player(0);
+    let created = w.do_of(0, act::admin(&format!("spawn {TYPHOON}")));
+    assert!(texts(&created).iter().any(|t| t.starts_with("Created Typhoon")), "{:?}", texts(&created));
+    let boss = npcs_of(&w, TYPHOON);
+    assert_eq!(boss.len(), 1);
+    let boss = boss[0];
+
+    // `RandomSpawn.onSpawn`: 100 ms later the boss is at one of its places, away from the GM.
+    let (x, y, z) = w.world.position_of(boss).unwrap();
+    assert!(
+        TYPHOON_PLACES.iter().any(|(px, py, _)| (px - x).abs() <= 200 && (py - y).abs() <= 200),
+        "{:?}",
+        (x, y, z)
+    );
+
+    // The GM goes there: the boss gets a player in its aggro range and the Gust goes off; the
+    // timer of `onSpawn` repeats it every 5 seconds.
+    w.log.take(Bare::id_of(0));
+    w.do_of(0, act::admin(&format!("move_to {} {} {}", x + 60, y, z)));
+    w.input_of(0, act::appearing());
+    w.run_ms(12_000);
+    let fight = w.log.take(Bare::id_of(0));
+    let casts: Vec<_> = all::<l2_protocol_game::server::MagicSkillUse>(&fight, "MAGIC_SKILL_USE")
+        .into_iter()
+        .filter(|c| c.creature_id == boss.0)
+        .collect();
+    assert!(casts.len() >= 2, "{} casts of the boss in {:?}", casts.len(), names(&fight));
+    assert!(casts.iter().all(|c| c.skill_id == GUST));
+}
+
+const QUEEN_ANT: i32 = 29001;
+const QUEEN_NEST: (i32, i32, i32) = (-21_610, 181_594, -5_734);
+const ALIVE: i32 = 0;
+const DEAD: i32 = 1;
+
+/// A world whose `grandboss_data` has Queen Ant with this `status` and `respawn_time`.
+fn queen_world(status: i32, respawn_time: i64, cycle_writes: bool) -> Option<Bare> {
+    let mut opts = Opts::new(cycle_writes, vec![Hero::new("Watcher").gm().level(40)]);
+    opts.seed.grand_bosses = vec![scripts_db::grand_boss_row(QUEEN_ANT, status, respawn_time, QUEEN_NEST)];
+    let mut w = Bare::start(&opts)?;
+    w.enter_player(0);
+    w.run_ms(5_000);
+    Some(w)
+}
+
+fn boss_writes(w: &Bare) -> Vec<l2_world::BossWrite> {
+    w.commands()
+        .into_iter()
+        .filter_map(|c| match c {
+            PersistCommand::Boss(write) => Some(write),
+            _ => None,
+        })
+        .collect()
+}
+
+/// 4. D-54: a grand boss whose row (Sieghardt's) says dead stays unspawned on Kain, whatever the
+/// respawn time says, and Kain writes nothing to the row.
+#[test]
+fn a_grand_boss_whose_row_says_dead_stays_unspawned() {
+    // Dead, respawn time in the future: the unlock timer waits.
+    let Some(w) = queen_world(DEAD, now_ms() + 3_600_000, false) else {
+        return;
+    };
+    assert!(npcs_of(&w, QUEEN_ANT).is_empty(), "Queen Ant is not spawned");
+    assert_eq!(w.world.grand_boss_status(QUEEN_ANT), Some(DEAD));
+    assert!(boss_writes(&w).is_empty(), "{:?}", boss_writes(&w));
+
+    // Dead, respawn time passed: Kain reads the row again and the row still says dead.
+    let Some(w) = queen_world(DEAD, now_ms() - 60_000, false) else {
+        return;
+    };
+    assert!(npcs_of(&w, QUEEN_ANT).is_empty(), "Queen Ant is not spawned");
+    assert_eq!(w.world.grand_boss_status(QUEEN_ANT), Some(DEAD));
+    assert!(boss_writes(&w).is_empty(), "{:?}", boss_writes(&w));
+}
+
+/// 4. The same boss with an alive row runs on Kain, and with the switch on (the Rust server alone
+/// on the database) a dead row whose respawn time has passed brings her back.
+#[test]
+fn a_grand_boss_whose_row_says_alive_is_spawned() {
+    let Some(w) = queen_world(ALIVE, 0, false) else {
+        return;
+    };
+    let queen = npcs_of(&w, QUEEN_ANT);
+    assert_eq!(queen.len(), 1, "Queen Ant is spawned");
+    let (x, y, _) = w.world.position_of(queen[0]).unwrap();
+    assert!((x - QUEEN_NEST.0).abs() < 1_000 && (y - QUEEN_NEST.1).abs() < 1_000);
+
+    let Some(w) = queen_world(DEAD, now_ms() - 60_000, true) else {
+        return;
+    };
+    assert_eq!(npcs_of(&w, QUEEN_ANT).len(), 1, "Kain owns the row with the switch on");
+}
