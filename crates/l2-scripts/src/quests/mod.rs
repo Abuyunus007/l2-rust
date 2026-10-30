@@ -385,6 +385,7 @@ pub mod q00661_making_the_harvest_grounds_safe;
 pub mod q00688_defeat_the_elrokian_raiders;
 pub mod q00690_judes_request;
 pub mod q00691_matras_suspicious_request;
+pub mod q00693_defeating_dragonkin_remnants;
 pub mod q00696_conquer_the_hall_of_erosion;
 pub mod q00697_defend_the_hall_of_erosion;
 pub mod q00698_block_the_lords_escape;
@@ -784,6 +785,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00688_defeat_the_elrokian_raiders::Q00688DefeatTheElrokianRaiders);
     r.add(q00690_judes_request::Q00690JudesRequest);
     r.add(q00691_matras_suspicious_request::Q00691MatrasSuspiciousRequest);
+    r.add(q00693_defeating_dragonkin_remnants::Q00693DefeatingDragonkinRemnants);
     r.add(q00696_conquer_the_hall_of_erosion::Q00696ConquerTheHallOfErosion);
     r.add(q00697_defend_the_hall_of_erosion::Q00697DefendTheHallOfErosion);
     r.add(q00698_block_the_lords_escape::Q00698BlockTheLordsEscape);
