@@ -17,7 +17,8 @@
 // `NoStoreZone`, `NoRestartZone`, `NoSummonFriendZone`, `ResidenceTeleportZone`,
 // `ResidenceHallTeleportZone`, `LandingZone`, `NoLandingZone`, `HqZone`, `ConditionZone`,
 // `CastleZone`, `FortZone`, `ScriptZone`, `DerbyTrackZone`, `EffectZone` (the altered/danger
-// flags; the skills it applies are M4). Every other type is loaded and found by lookups, but
+// flags and, since S-AI-07, the skills it applies: `ApplySkill`, `addSkill`, `removeSkill`,
+// `clearSkills`, `removeEffectsOnExit`; see "EffectZone" below). Every other type is loaded and found by lookups, but
 // entering it does nothing (`SiegeZone` is the siege's, `siege/zone.rs`, M7-SIEGE-01),
 // `OlympiadStadiumZone`, `BossZone`, `FishingZone`, `RespawnZone` (restart points
 // only). `WaterZone` is `water.rs`. `SwampZone` and `DamageZone`, the castle traps, are in `zone_trap.rs` (M7-FU-03). `FlagPvPZone` flags the player (M6-DUEL-01); its
@@ -111,6 +112,11 @@ pub(crate) struct ZoneContext {
     pub water_tasks: std::collections::HashMap<ObjectId, crate::timer::TimerId>,
     /// The pending falling damage by player (`water.rs`).
     pub(crate) falling: std::collections::HashMap<ObjectId, crate::water::FallingDamage>,
+    /// `EffectZone._skills` of the zones whose skills a script changed (`addSkill`,
+    /// `removeSkill`, `clearSkills`), by zone id; the others have their `skillIdLvl` parameter.
+    pub(crate) effect_skills: std::collections::HashMap<i32, Vec<(i32, i32)>>,
+    /// The running `EffectZone.ApplySkill` tasks (`_task`) by zone id.
+    pub(crate) effect_tasks: std::collections::HashMap<i32, crate::timer::TimerId>,
 }
 
 /// The zones a zone holds a creature in, as Java's `_characterList` identifies them: a zone id
@@ -672,6 +678,8 @@ impl World {
             ZoneKind::Script => self.set_inside(id, ZoneId::Script, true),
             ZoneKind::DerbyTrack => self.set_inside(id, ZoneId::MonsterTrack, true),
             ZoneKind::Effect => {
+                // "if (_skills != null)": the `ApplySkill` task starts with the first one in.
+                self.effect_zone_start_task(zone);
                 self.set_inside(id, ZoneId::Altered, true);
                 if show_danger_icon(zone) {
                     self.set_inside(id, ZoneId::DangerArea, true);
@@ -781,6 +789,7 @@ impl World {
                         self.send_etc_status_update(id);
                     }
                 }
+                self.effect_zone_exit(id, zone);
             }
             ZoneKind::FlagPvp => {
                 if self.pvp_flag_of(id) > 0 {
@@ -938,4 +947,251 @@ fn condition_flags(zone: &Zone) -> (bool, bool) {
 /// `EffectZone._isShowDangerIcon` (default true).
 fn show_danger_icon(zone: &Zone) -> bool {
     zone.param("showDangerIcon").is_none_or(parse_bool)
+}
+
+// ---------------------------------------------------------------------------------- EffectZone
+//
+// Java `EffectZone`: while players are inside, a task (`ApplySkill`, `initialDelay` then every
+// `reuse` milliseconds) gives each living player, with `chance` percent, every skill of the zone
+// he is not affected by yet. The skills come from `skillIdLvl` ("id-level;id-level") or are added
+// by scripts (`addSkill`, the Seed of Annihilation buffs); `maxDynamicSkillCount` makes an empty
+// list scripts fill.
+//
+// NOTE: Java keeps `_skills` in a `ConcurrentHashMap`; the skills are given here in the order
+// they were added (an added id that is there already keeps its place).
+// NOTE(java-quirk): `ThreadPool.scheduleAtFixedRate(.., initialDelay, reuse)`: an initial delay
+// of 0 runs the first pass on the next tick.
+
+/// `EffectZone` defaults: `_chance`, `_initialDelay`, `_reuse`.
+const EFFECT_DEFAULT_CHANCE: i32 = 100;
+const EFFECT_DEFAULT_INITIAL_DELAY_MS: i64 = 0;
+const EFFECT_DEFAULT_REUSE_MS: i64 = 30_000;
+
+/// The parameters `EffectZone.setParameter` keeps, read from the zone's raw `<stat>` list in file
+/// order (a later `skillIdLvl` or `maxDynamicSkillCount` replaces the list).
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct EffectParams {
+    chance: i32,
+    initial_delay_ms: i64,
+    reuse_ms: i64,
+    bypass_conditions: bool,
+    remove_effects_on_exit: bool,
+    /// `_skills`: `None` is Java's `null` (no skill list, no task).
+    skills: Option<Vec<(i32, i32)>>,
+}
+
+impl EffectParams {
+    fn of(zone: &Zone) -> Self {
+        let mut p = Self {
+            chance: EFFECT_DEFAULT_CHANCE,
+            initial_delay_ms: EFFECT_DEFAULT_INITIAL_DELAY_MS,
+            reuse_ms: EFFECT_DEFAULT_REUSE_MS,
+            bypass_conditions: false,
+            remove_effects_on_exit: false,
+            skills: None,
+        };
+        // A number `Integer.parseInt` rejects is skipped (Java's loader throws).
+        let int = |value: &str| value.trim().parse::<i32>().ok();
+        for (name, value) in &zone.params {
+            match name.as_str() {
+                "chance" => p.chance = int(value).unwrap_or(p.chance),
+                "initialDelay" => p.initial_delay_ms = int(value).map_or(p.initial_delay_ms, i64::from),
+                "reuse" => p.reuse_ms = int(value).map_or(p.reuse_ms, i64::from),
+                "bypassSkillConditions" => p.bypass_conditions = parse_bool(value),
+                "maxDynamicSkillCount" => p.skills = Some(Vec::new()),
+                "removeEffectsOnExit" => p.remove_effects_on_exit = parse_bool(value),
+                "skillIdLvl" => {
+                    let mut skills: Vec<(i32, i32)> = Vec::new();
+                    for skill in value.split(';') {
+                        let split: Vec<&str> = skill.split('-').collect();
+                        if split.len() != 2 {
+                            debug!(
+                                "EffectZone {}: invalid config property -> skillsIdLvl \"{skill}\"",
+                                zone.id
+                            );
+                            continue;
+                        }
+                        if let (Some(id), Some(level)) = (int(split[0]), int(split[1])) {
+                            put_skill(&mut skills, id, level);
+                        }
+                    }
+                    p.skills = Some(skills);
+                }
+                _ => {}
+            }
+        }
+        p
+    }
+}
+
+/// `_skills.put(id, level)`.
+fn put_skill(skills: &mut Vec<(i32, i32)>, id: i32, level: i32) {
+    match skills.iter_mut().find(|(skill, _)| *skill == id) {
+        Some(entry) => entry.1 = level,
+        None => skills.push((id, level)),
+    }
+}
+
+impl World {
+    /// The effect zone of that id (Java `ZoneManager.getZoneById(id, EffectZone.class)`).
+    fn effect_zone(&self, zone_id: i32) -> Option<Zone> {
+        self.zoning
+            .zones
+            .as_ref()
+            .and_then(|z| z.get_of_type(zone_id, "EffectZone"))
+            .cloned()
+    }
+
+    /// `EffectZone._skills` of a zone: what scripts made of it, else its parameters.
+    fn effect_zone_skills(&self, zone: &Zone) -> Option<Vec<(i32, i32)>> {
+        match self.zoning.effect_skills.get(&zone.id) {
+            Some(skills) => Some(skills.clone()),
+            None => EffectParams::of(zone).skills,
+        }
+    }
+
+    /// Java `ZoneManager.getZoneByName(name)`: the id of the first zone with that name.
+    pub fn zone_id_by_name(&self, name: &str) -> Option<i32> {
+        self.zoning
+            .zones
+            .as_ref()?
+            .iter()
+            .find(|z| z.name.as_deref() == Some(name))
+            .map(|z| z.id)
+    }
+
+    /// Java `EffectZone.addSkill(skillId, skillLevel)`: a level below 1 removes the skill.
+    pub fn effect_zone_add_skill(&mut self, zone_id: i32, skill_id: i32, skill_level: i32) {
+        if skill_level < 1 {
+            self.effect_zone_remove_skill(zone_id, skill_id);
+            return;
+        }
+        let Some(zone) = self.effect_zone(zone_id) else {
+            return;
+        };
+        // "if (_skills == null) _skills = new ConcurrentHashMap<>(3)".
+        let mut skills = self.effect_zone_skills(&zone).unwrap_or_default();
+        put_skill(&mut skills, skill_id, skill_level);
+        self.zoning.effect_skills.insert(zone_id, skills);
+    }
+
+    /// Java `EffectZone.removeSkill(skillId)`.
+    pub fn effect_zone_remove_skill(&mut self, zone_id: i32, skill_id: i32) {
+        let Some(zone) = self.effect_zone(zone_id) else {
+            return;
+        };
+        if let Some(mut skills) = self.effect_zone_skills(&zone) {
+            skills.retain(|(id, _)| *id != skill_id);
+            self.zoning.effect_skills.insert(zone_id, skills);
+        }
+    }
+
+    /// Java `EffectZone.clearSkills()`.
+    pub fn effect_zone_clear_skills(&mut self, zone_id: i32) {
+        let Some(zone) = self.effect_zone(zone_id) else {
+            return;
+        };
+        if self.effect_zone_skills(&zone).is_some() {
+            self.zoning.effect_skills.insert(zone_id, Vec::new());
+        }
+    }
+
+    /// Java `EffectZone.getSkillLevel(skillId)`: 0 without that skill.
+    pub fn effect_zone_skill_level(&self, zone_id: i32, skill_id: i32) -> i32 {
+        self.effect_zone(zone_id)
+            .and_then(|zone| self.effect_zone_skills(&zone))
+            .and_then(|skills| {
+                skills
+                    .iter()
+                    .find(|(id, _)| *id == skill_id)
+                    .map(|(_, level)| *level)
+            })
+            .unwrap_or(0)
+    }
+
+    /// The `_task == null` block of `EffectZone.onEnter`.
+    fn effect_zone_start_task(&mut self, zone: &Zone) {
+        if self.zoning.effect_tasks.contains_key(&zone.id) || self.effect_zone_skills(zone).is_none() {
+            return;
+        }
+        let delay = EffectParams::of(zone).initial_delay_ms;
+        let timer = self.schedule_zone_timer(crate::zone_trap::ZoneTimer::EffectZone(zone.id), delay);
+        self.zoning.effect_tasks.insert(zone.id, timer);
+    }
+
+    /// The rest of `EffectZone.onExit(creature)` for a player: the skills of a
+    /// `removeEffectsOnExit` zone go, and the task stops with the last one out.
+    fn effect_zone_exit(&mut self, id: ObjectId, zone: &Zone) {
+        let params = EffectParams::of(zone);
+        if params.remove_effects_on_exit
+            && let Some(skills) = self.effect_zone_skills(zone)
+        {
+            let table = self.skill_table();
+            for (skill_id, level) in skills {
+                let exists = table.as_ref().is_some_and(|t| t.get(skill_id, level).is_some());
+                if exists && self.is_affected_by_skill(id, skill_id) {
+                    self.stop_skill_effects(id, crate::effects::SkillFinishType::Removed, skill_id);
+                }
+            }
+        }
+        if self.zone_players_of(zone).is_empty()
+            && let Some(timer) = self.zoning.effect_tasks.remove(&zone.id)
+        {
+            self.timers.cancel(timer);
+        }
+    }
+
+    /// The players a zone holds (Java `getCharactersInside()`, players only), by object id.
+    fn zone_players_of(&self, zone: &Zone) -> Vec<ObjectId> {
+        let mut inside: Vec<ObjectId> = self
+            .players
+            .iter()
+            .filter(|(_, p)| p.zones.is_member(zone))
+            .map(|(id, _)| *id)
+            .collect();
+        inside.sort();
+        inside
+    }
+
+    /// `EffectZone.ApplySkill.run()`.
+    pub(crate) fn on_effect_zone_run(&mut self, zone_id: i32) {
+        // The timer that fired is spent; the task goes on only by scheduling the next pass.
+        self.zoning.effect_tasks.remove(&zone_id);
+        let Some(zone) = self.effect_zone(zone_id) else {
+            return;
+        };
+        let inside = self.zone_players_of(&zone);
+        if inside.is_empty() {
+            return;
+        }
+        let params = EffectParams::of(&zone);
+        // A period of 0 would be an `IllegalArgumentException` in Java; one tick is the floor.
+        let timer = self.schedule_zone_timer(
+            crate::zone_trap::ZoneTimer::EffectZone(zone_id),
+            params.reuse_ms.max(1),
+        );
+        self.zoning.effect_tasks.insert(zone_id, timer);
+        // `isEnabled()`: `default_enabled` (nothing switches an effect zone at run time).
+        if !zone.param("default_enabled").is_none_or(parse_bool) {
+            return;
+        }
+        let skills = self.effect_zone_skills(&zone).unwrap_or_default();
+        let table = self.skill_table();
+        for player in inside {
+            if self.is_dead(player) || self.rng().below(100) >= params.chance {
+                continue;
+            }
+            for &(skill_id, level) in &skills {
+                if !table.as_ref().is_some_and(|t| t.get(skill_id, level).is_some()) {
+                    continue;
+                }
+                let key = crate::effects::SkillKey::new(skill_id, level);
+                if (params.bypass_conditions || self.check_skill_condition(player, player, key))
+                    && !self.is_affected_by_skill(player, skill_id)
+                {
+                    self.apply_effects(player, player, key);
+                }
+            }
+        }
+    }
 }

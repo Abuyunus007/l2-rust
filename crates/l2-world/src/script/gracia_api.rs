@@ -72,3 +72,29 @@ impl World {
         self.broadcast_info(npc);
     }
 }
+
+// S-AI-07: the Gracia instances.
+impl World {
+    /// Java `skill.hasEffectType(types...)` of a skill by id and level (false for an unknown
+    /// skill).
+    pub fn script_skill_has_effect_type(
+        &mut self,
+        skill: crate::effects::SkillKey,
+        types: &[crate::effects::registry::EffectType],
+    ) -> bool {
+        let Some(table) = self.skill_table() else {
+            return false;
+        };
+        let Some(template) = table.get(skill.id, skill.level) else {
+            return false;
+        };
+        self.skill_has_effect_type(template, types)
+    }
+
+    /// Java `skill.getEffectPoint()` (0 for an unknown skill).
+    pub fn script_skill_effect_point(&self, skill: crate::effects::SkillKey) -> i32 {
+        self.skill_table()
+            .and_then(|t| t.get(skill.id, skill.level).map(|s| s.effect_point))
+            .unwrap_or(0)
+    }
+}

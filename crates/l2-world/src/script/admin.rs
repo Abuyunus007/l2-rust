@@ -22,6 +22,7 @@ type Outcome = Result<(), JavaException>;
 pub(crate) fn register(handlers: &mut AdminHandlers) {
     handlers.register("admin_show_quests", admin_show_quests);
     handlers.register("admin_quest_info", admin_quest_info);
+    super::hellbound_api::register(handlers);
 }
 
 const PAGE: &str = "data/html/admin/npc-quests.htm";

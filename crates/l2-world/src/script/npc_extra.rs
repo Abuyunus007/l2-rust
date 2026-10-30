@@ -120,6 +120,10 @@ pub(crate) struct NpcExtra {
     see_through_silent_move: bool,
     /// `!_isMortal` (the default is mortal).
     immortal: bool,
+    /// `!QuestGuard._isAutoAttackable` (Java's default is true).
+    quest_guard_not_auto_attackable: bool,
+    /// `QuestGuard._isPassive`.
+    quest_guard_passive: bool,
 }
 
 /// The extras of every NPC that has some.
@@ -318,6 +322,116 @@ impl World {
             .by_npc
             .get(&id)
             .is_some_and(|e| e.not_lethalable)
+    }
+
+    /// Java `QuestGuard.setAutoAttackable(value)`.
+    pub fn set_quest_guard_auto_attackable(&mut self, id: ObjectId, value: bool) {
+        self.npc_extra_mut(id).quest_guard_not_auto_attackable = !value;
+    }
+
+    /// Java `QuestGuard._isAutoAttackable`.
+    pub fn is_quest_guard_auto_attackable(&self, id: ObjectId) -> bool {
+        !self
+            .scripts
+            .npc_extras
+            .by_npc
+            .get(&id)
+            .is_some_and(|e| e.quest_guard_not_auto_attackable)
+    }
+
+    /// Java `QuestGuard.setPassive(value)`.
+    pub fn set_quest_guard_passive(&mut self, id: ObjectId, value: bool) {
+        self.npc_extra_mut(id).quest_guard_passive = value;
+    }
+
+    /// Java `QuestGuard.isPassive()`.
+    pub fn is_quest_guard_passive(&self, id: ObjectId) -> bool {
+        self.scripts
+            .npc_extras
+            .by_npc
+            .get(&id)
+            .is_some_and(|e| e.quest_guard_passive)
+    }
+
+    /// Java `skill.hasEffectType(EffectType.HEAL)` of a skill a script names by id and level;
+    /// `false` for a skill the table does not have (S-BOSS-02).
+    pub fn skill_has_heal_effect(&mut self, key: crate::effects::SkillKey) -> bool {
+        let Some(table) = self.skill_table() else {
+            return false;
+        };
+        let Some(skill) = table.get(key.id, key.level) else {
+            return false;
+        };
+        self.skill_has_effect_type(skill, &[crate::effects::EffectType::Heal])
+    }
+
+    /// Java `skill.isSuicideAttack()` of a skill a script names by id and level; `false` for a
+    /// skill the table does not have (S-BOSS-02).
+    pub fn skill_is_suicide_attack(&self, key: crate::effects::SkillKey) -> bool {
+        self.skill_table()
+            .and_then(|table| table.get(key.id, key.level).map(|s| s.is_suicide_attack))
+            .unwrap_or(false)
+    }
+
+    /// Java `npc.setRHandId(itemId)` (S-BOSS-02).
+    pub fn set_npc_right_hand(&mut self, npc: ObjectId, item_id: i32) {
+        if let Some(n) = self.npcs.get_mut(&npc) {
+            n.right_hand = item_id;
+        }
+    }
+
+    /// Java `npc.setLHandId(itemId)` (S-BOSS-02).
+    pub fn set_npc_left_hand(&mut self, npc: ObjectId, item_id: i32) {
+        if let Some(n) = self.npcs.get_mut(&npc) {
+            n.left_hand = item_id;
+        }
+    }
+
+    /// Java `NpcConfig.RAID_DISABLE_CURSE` (`DisableRaidCurse`).
+    pub fn raid_curse_disabled(&self) -> bool {
+        self.settings.cast.raid_disable_curse
+    }
+
+    /// Java `master.getMinionList().onMinionDie(minion, respawnDelay)`: the minion leaves the
+    /// list and comes back after `respawn_ms` (`-1` the default, `0` never).
+    pub fn minion_died(&mut self, master: ObjectId, minion: ObjectId, respawn_ms: i32) {
+        self.minion_list_on_minion_die(master, minion, respawn_ms);
+    }
+
+    /// Java `Attackable.useMagic(skill)` (S-BOSS-02): the checks, then `setIntentionCast(skill,
+    /// target)` at what the NPC has targeted (`getFirstOfTargetList` of a single-target skill).
+    pub fn attackable_use_magic(&mut self, npc: ObjectId, key: crate::effects::SkillKey) {
+        let Some(table) = self.skill_table() else {
+            return;
+        };
+        let Some(skill) = table.get(key.id, key.level) else {
+            return;
+        };
+        if self.is_alike_dead(npc)
+            || skill.is_passive()
+            || self.is_casting_now(npc)
+            || self.is_skill_disabled(npc, skill)
+        {
+            return;
+        }
+        let (hp, mp) = self.core_of(npc).map_or((0.0, 0.0), |c| (c.cur_hp, c.cur_mp));
+        if mp < f64::from(self.mp_consume(npc, skill) + self.mp_initial_consume(npc, skill))
+            || hp <= f64::from(skill.hp_consume)
+        {
+            return;
+        }
+        if !skill.is_static() {
+            if skill.is_magic() {
+                if self.is_muted(npc) {
+                    return;
+                }
+            } else if self.is_physical_muted(npc) {
+                return;
+            }
+        }
+        if let Some(target) = self.creature_target(npc) {
+            self.set_intention_cast(npc, key, Some(target));
+        }
     }
 
     /// Java `Attackable.overhitEnabled(status)`.

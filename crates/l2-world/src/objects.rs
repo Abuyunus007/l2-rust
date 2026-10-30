@@ -89,6 +89,8 @@ pub struct Npc {
     pub spawn: Option<usize>,
     /// Java `Monster._master`: the monster whose minion this is.
     pub leader: Option<ObjectId>,
+    /// Java `Attackable._isRaidMinion` set by a script (`setIsRaidMinion(true)`, S-BOSS-02).
+    pub raid_minion: bool,
     /// Java `_isDecayed`.
     pub decayed: bool,
     /// Java `isInsideZone(ZoneId.WATER)`, decided when it spawned (NPCs do not move before M4).

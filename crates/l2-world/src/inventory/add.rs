@@ -57,7 +57,7 @@ impl World {
 
     /// Java `ItemContainer.getInventoryItemCount(itemId, -1)`: the count of a stackable item, else
     /// how many there are.
-    pub(crate) fn inventory_item_count(&self, player: ObjectId, item_id: i32) -> i64 {
+    pub fn inventory_item_count(&self, player: ObjectId, item_id: i32) -> i64 {
         let Some(p) = self.players.get(&player) else {
             return 0;
         };
