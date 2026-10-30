@@ -327,6 +327,7 @@ pub mod q00458_perfect_form;
 pub mod q00461_rumble_in_the_base;
 pub mod q00463_i_must_be_a_genius;
 pub mod q00464_oath;
+pub mod q00501_proof_of_clan_alliance;
 pub mod q00504_competition_for_the_bandit_stronghold;
 pub mod q00508_a_clans_reputation;
 pub mod q00509_a_clans_fame;
@@ -747,6 +748,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00461_rumble_in_the_base::Q00461RumbleInTheBase);
     r.add(q00463_i_must_be_a_genius::Q00463IMustBeaGenius);
     r.add(q00464_oath::Q00464Oath);
+    r.add(q00501_proof_of_clan_alliance::Q00501ProofOfClanAlliance);
     r.add(q00504_competition_for_the_bandit_stronghold::Q00504CompetitionForTheBanditStronghold);
     r.add(q00508_a_clans_reputation::Q00508AClansReputation);
     r.add(q00512_blade_under_foot::Q00512BladeUnderFoot);
