@@ -233,6 +233,7 @@ pub mod q00609_magical_power_of_water_part1;
 pub mod q00612_battle_against_ketra_orcs;
 pub mod q00613_prove_your_courage_varka;
 pub mod q00614_slay_the_enemy_commander_varka;
+pub mod q00615_magical_power_of_fire_part1;
 
 use l2_world::ScriptRegistry;
 
@@ -466,4 +467,5 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00612_battle_against_ketra_orcs::Q00612BattleAgainstKetraOrcs);
     r.add(q00613_prove_your_courage_varka::Q00613ProveYourCourageVarka);
     r.add(q00614_slay_the_enemy_commander_varka::Q00614SlayTheEnemyCommanderVarka);
+    r.add(q00615_magical_power_of_fire_part1::Q00615MagicalPowerOfFirePart1);
 }
