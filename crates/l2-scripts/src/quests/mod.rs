@@ -231,6 +231,7 @@ pub mod q00328_sense_for_business;
 pub mod q00329_curiosity_of_a_dwarf;
 pub mod q00331_arrow_of_vengeance;
 pub mod q00450_grave_robber_rescue;
+pub mod q00624_the_finest_ingredients_part1;
 pub mod q00629_clean_up_the_swamp_of_screams;
 pub mod q00635_into_the_dimensional_rift;
 pub mod q00636_truth_beyond;
@@ -473,6 +474,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00329_curiosity_of_a_dwarf::Q00329CuriosityOfADwarf);
     r.add(q00331_arrow_of_vengeance::Q00331ArrowOfVengeance);
     r.add(q00450_grave_robber_rescue::Q00450GraveRobberRescue);
+    r.add(q00624_the_finest_ingredients_part1::Q00624TheFinestIngredientsPart1);
     r.add(q00629_clean_up_the_swamp_of_screams::Q00629CleanUpTheSwampOfScreams);
     r.add(q00635_into_the_dimensional_rift::Q00635IntoTheDimensionalRift);
     r.add(q00636_truth_beyond::Q00636TruthBeyond);
