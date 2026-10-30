@@ -38,6 +38,8 @@ pub mod monument_of_heroes;
 pub mod muscle_bomber;
 pub mod nevits_herald;
 pub mod newbie_guide;
+pub mod npc_buffers;
+pub mod npc_buffers_data;
 pub mod non_lethalable_npcs;
 pub mod oracle_teleport;
 pub mod polymorphing_angel;
@@ -119,6 +121,7 @@ pub(crate) fn register_with(r: &mut ScriptRegistry, class_master: ClassMasterCon
     r.add(symbol_maker::SymbolMaker);
     r.add(valakas_teleporters::ValakasTeleporters);
     r.add(newbie_guide::NewbieGuide);
+    r.add(npc_buffers::NpcBuffers);
     r.add(varka_ketra::VarkaKetra);
     r.add(support_unit_captain::SupportUnitCaptain);
     r.add(oracle_teleport::OracleTeleport);

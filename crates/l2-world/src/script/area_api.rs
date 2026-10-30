@@ -91,6 +91,32 @@ impl World {
         self.is_in_surrounding_region(npc, other)
     }
 
+    /// Java `skill.getAffectRange()` of a skill by id and level (0 for an unknown skill).
+    pub fn script_skill_affect_range(&self, skill: SkillKey) -> i32 {
+        self.skill_table()
+            .and_then(|t| t.get(skill.id, skill.level).map(|s| s.affect_range))
+            .unwrap_or(0)
+    }
+
+    /// Java `player.getKarma()`.
+    pub fn script_player_karma(&self, player: ObjectId) -> i32 {
+        self.karma_of_player(player)
+    }
+
+    /// Java `World.forEachVisibleObjectInRange(npc, Creature.class, range, ..)`: the players, NPCs
+    /// and summons the NPC sees within `range`.
+    pub fn script_visible_creatures_in_range(&self, npc: ObjectId, range: i32) -> Vec<ObjectId> {
+        self.visible_objects_in_range(npc, range)
+            .into_iter()
+            .filter(|o| self.player(*o).is_some() || self.npc(*o).is_some() || self.is_summon(*o))
+            .collect()
+    }
+
+    /// Java `player.updatePvPStatus(target)`.
+    pub fn script_update_pvp_status(&mut self, player: ObjectId, target: ObjectId) {
+        self.update_pvp_status_target(player, target);
+    }
+
     /// Java `GameTimeTaskManager.isNight()`.
     pub fn script_is_night(&self) -> bool {
         Self::is_night_now()
