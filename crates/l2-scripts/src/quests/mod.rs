@@ -238,6 +238,7 @@ pub mod q00621_egg_delivery;
 pub mod q00622_specialty_liquor_delivery;
 pub mod q00623_the_finest_food;
 pub mod q00624_the_finest_ingredients_part1;
+pub mod q00625_the_finest_ingredients_part2;
 pub mod q00626_a_dark_twilight;
 pub mod q00627_heart_in_search_of_power;
 pub mod q00628_hunt_golden_ram;
@@ -497,6 +498,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00622_specialty_liquor_delivery::Q00622SpecialtyLiquorDelivery);
     r.add(q00623_the_finest_food::Q00623TheFinestFood);
     r.add(q00624_the_finest_ingredients_part1::Q00624TheFinestIngredientsPart1);
+    r.add(q00625_the_finest_ingredients_part2::Q00625TheFinestIngredientsPart2);
     r.add(q00626_a_dark_twilight::Q00626ADarkTwilight);
     r.add(q00627_heart_in_search_of_power::Q00627HeartInSearchOfPower);
     r.add(q00628_hunt_golden_ram::Q00628HuntGoldenRam);
