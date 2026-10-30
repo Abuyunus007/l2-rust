@@ -33,6 +33,7 @@ pub mod hunting_grounds_teleport;
 pub mod katenar;
 pub mod kier;
 pub mod manor_manager;
+pub mod minigame;
 pub mod monument_of_heroes;
 pub mod muscle_bomber;
 pub mod nevits_herald;
@@ -106,6 +107,7 @@ pub(crate) fn register_with(r: &mut ScriptRegistry, class_master: ClassMasterCon
     r.add(katenar::Katenar);
     r.add(kier::Kier);
     r.add(manor_manager::ManorManager);
+    r.add(minigame::Minigame);
     r.add(monument_of_heroes::MonumentOfHeroes);
     r.add(muscle_bomber::MuscleBomber);
     r.add(avant_garde::AvantGarde);
