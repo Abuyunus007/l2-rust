@@ -277,6 +277,9 @@ pub mod q00414_path_of_the_orc_raider;
 pub mod q00415_path_of_the_orc_monk;
 pub mod q00416_path_of_the_orc_shaman;
 pub mod q00450_grave_robber_rescue;
+pub mod q10501_zaken_embroidered_soul_cloak;
+pub mod q10502_freya_embroidered_soul_cloak;
+pub mod q10503_frintezza_embroidered_soul_cloak;
 
 use l2_world::ScriptRegistry;
 
@@ -554,4 +557,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00415_path_of_the_orc_monk::Q00415PathOfTheOrcMonk);
     r.add(q00416_path_of_the_orc_shaman::Q00416PathOfTheOrcShaman);
     r.add(q00450_grave_robber_rescue::Q00450GraveRobberRescue);
+    r.add(q10501_zaken_embroidered_soul_cloak::Q10501ZakenEmbroideredSoulCloak);
+    r.add(q10502_freya_embroidered_soul_cloak::Q10502FreyaEmbroideredSoulCloak);
+    r.add(q10503_frintezza_embroidered_soul_cloak::Q10503FrintezzaEmbroideredSoulCloak);
 }
