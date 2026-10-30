@@ -200,6 +200,15 @@ impl Qs {
         }
     }
 
+    /// Java `removeNotifyOfDeath(creature)` (`Player.removeNotifyQuestOfDeath(qs)`): the quest's
+    /// `on_death` no longer runs when that player dies.
+    pub fn remove_notify_of_death(self, ctx: &mut ScriptCtx<'_>, creature: ObjectId) {
+        let name = ctx.world.scripts.name_of(self.script).to_owned();
+        if let Some(quests) = ctx.world.scripts.players.get_mut(&creature) {
+            quests.notify_of_death.retain(|n| *n != name);
+        }
+    }
+
     /// Java `startQuest()`: `cond` 1, the state `Started`, the accept sound. Only for a created
     /// state of a quest that is not custom.
     pub fn start_quest(self, ctx: &mut ScriptCtx<'_>) {
