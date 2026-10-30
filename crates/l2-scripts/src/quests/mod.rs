@@ -177,6 +177,7 @@ pub mod q00225_test_of_the_searcher;
 pub mod q00226_test_of_the_healer;
 pub mod q00228_test_of_magus;
 pub mod q00231_test_of_the_maestro;
+pub mod q00232_test_of_the_lord;
 pub mod q00235_mimirs_elixir;
 pub mod q00237_winds_of_change;
 pub mod q00238_success_failure_of_business;
@@ -601,6 +602,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00226_test_of_the_healer::Q00226TestOfTheHealer);
     r.add(q00228_test_of_magus::Q00228TestOfMagus);
     r.add(q00231_test_of_the_maestro::Q00231TestOfTheMaestro);
+    r.add(q00232_test_of_the_lord::Q00232TestOfTheLord);
     r.add(q00235_mimirs_elixir::Q00235MimirsElixir);
     r.add(q00237_winds_of_change::Q00237WindsOfChange);
     r.add(q00238_success_failure_of_business::Q00238SuccessFailureOfBusiness);
