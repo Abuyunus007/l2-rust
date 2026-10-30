@@ -5,6 +5,9 @@
 #[allow(clippy::module_inception)]
 pub mod forge_of_the_gods;
 pub mod rooney;
+pub mod tar_beetle;
+pub mod tar_beetle_data;
+pub mod tar_beetle_spawn;
 
 use l2_world::ScriptRegistry;
 
@@ -12,4 +15,5 @@ use l2_world::ScriptRegistry;
 pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(forge_of_the_gods::ForgeOfTheGods);
     r.add(rooney::Rooney);
+    r.add(tar_beetle::TarBeetle);
 }
