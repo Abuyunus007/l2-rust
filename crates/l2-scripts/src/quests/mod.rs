@@ -387,6 +387,7 @@ pub mod q00690_judes_request;
 pub mod q00691_matras_suspicious_request;
 pub mod q00693_defeating_dragonkin_remnants;
 pub mod q00694_break_through_the_hall_of_suffering;
+pub mod q00695_defend_the_hall_of_suffering;
 pub mod q00696_conquer_the_hall_of_erosion;
 pub mod q00697_defend_the_hall_of_erosion;
 pub mod q00698_block_the_lords_escape;
@@ -788,6 +789,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00691_matras_suspicious_request::Q00691MatrasSuspiciousRequest);
     r.add(q00693_defeating_dragonkin_remnants::Q00693DefeatingDragonkinRemnants);
     r.add(q00694_break_through_the_hall_of_suffering::Q00694BreakThroughTheHallOfSuffering);
+    r.add(q00695_defend_the_hall_of_suffering::Q00695DefendTheHallOfSuffering);
     r.add(q00696_conquer_the_hall_of_erosion::Q00696ConquerTheHallOfErosion);
     r.add(q00697_defend_the_hall_of_erosion::Q00697DefendTheHallOfErosion);
     r.add(q00698_block_the_lords_escape::Q00698BlockTheLordsEscape);
