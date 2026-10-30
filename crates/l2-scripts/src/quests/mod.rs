@@ -333,6 +333,7 @@ pub mod q00504_competition_for_the_bandit_stronghold;
 pub mod q00508_a_clans_reputation;
 pub mod q00509_a_clans_fame;
 pub mod q00510_a_clans_prestige;
+pub mod q00511_awl_under_foot;
 pub mod q00512_blade_under_foot;
 pub mod q00601_watching_eyes;
 pub mod q00602_shadow_of_light;
@@ -753,6 +754,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00503_pursuit_of_clan_ambition::Q00503PursuitOfClanAmbition);
     r.add(q00504_competition_for_the_bandit_stronghold::Q00504CompetitionForTheBanditStronghold);
     r.add(q00508_a_clans_reputation::Q00508AClansReputation);
+    r.add(q00511_awl_under_foot::Q00511AwlUnderFoot);
     r.add(q00512_blade_under_foot::Q00512BladeUnderFoot);
     r.add(q00509_a_clans_fame::Q00509AClansFame);
     r.add(q00510_a_clans_prestige::Q00510AClansPrestige);
