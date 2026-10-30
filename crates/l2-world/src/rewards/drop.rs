@@ -1123,6 +1123,12 @@ impl World {
         self.death.spoil.get(&id).and_then(|s| s.spoiler)
     }
 
+    /// Test hook for the script harness (`ScriptTest::set_spoiled`): the Spoil effect without a
+    /// cast. Game code uses [`World::set_spoiler`].
+    pub fn test_set_spoiler(&mut self, id: ObjectId, spoiler: Option<ObjectId>) {
+        self.set_spoiler(id, spoiler);
+    }
+
     /// Java `Attackable.setSpoilerObjectId(id)`.
     pub(crate) fn set_spoiler(&mut self, id: ObjectId, spoiler: Option<ObjectId>) {
         self.death.spoil.entry(id).or_default().spoiler = spoiler;

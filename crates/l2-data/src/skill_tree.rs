@@ -150,6 +150,9 @@ pub struct SkillTrees {
     /// Java `_transformSkillTree` (AvantGarde's transformation skills), in the order of Java's
     /// `ConcurrentHashMap`.
     transform: Vec<SkillLearn>,
+    /// Java `_transferSkillTrees`: the transfer skills (the healers' pomander skills) of each class
+    /// that has a tree, every tree in the order of Java's `HashMap`.
+    transfer: BTreeMap<ClassId, Vec<SkillLearn>>,
 }
 
 impl SkillTrees {
@@ -184,6 +187,11 @@ impl SkillTrees {
         log_loaded(Self::LOADER, gathered.sub_pledge.len(), "sub-pledge skills");
         log_loaded(Self::LOADER, gathered.sub_class.len(), "sub-class skills");
         log_loaded(Self::LOADER, gathered.transform.len(), "transform skills");
+        log_loaded(
+            Self::LOADER,
+            gathered.transfer.values().map(|(tree, _)| tree.len()).sum(),
+            &format!("transfer skills for {} transfer skill trees", gathered.transfer.len()),
+        );
         let dwarven_only = gathered
             .fishing
             .values()
@@ -235,6 +243,7 @@ impl SkillTrees {
             sub_class_order,
             transform,
             transform_order,
+            transfer,
         } = gathered;
         let mut complete = BTreeMap::new();
         let mut java_order = BTreeMap::new();
@@ -281,6 +290,16 @@ impl SkillTrees {
             game_master_aura: in_java_order(game_master_aura, game_master_aura_order),
             sub_class: in_java_order(sub_class, sub_class_order),
             transform: in_java_order(transform, transform_order),
+            transfer: transfer
+                .into_iter()
+                .map(|(class, (mut tree, order))| {
+                    let lines = java_hash_map_order(&order)
+                        .into_iter()
+                        .filter_map(|key| tree.remove(&key))
+                        .collect();
+                    (class, lines)
+                })
+                .collect(),
         }
     }
 
@@ -447,6 +466,42 @@ impl SkillTrees {
             .find(|l| l.skill_id == skill_id && l.skill_level == skill_level)
     }
 
+    /// Java `getTransferSkillTree(playerClass).values()`: the transfer tree of the class, or of its
+    /// parent from the third class on ("if new classes are implemented over 3rd class, we use a
+    /// recursive call"). Java throws a `NullPointerException` on `.values()` of a class without a
+    /// tree; this returns an empty slice.
+    pub fn transfer_skill_tree(&self, class: ClassId) -> &[SkillLearn] {
+        let mut class = class;
+        while class.class_level() >= 3 {
+            let Some(parent) = class.enum_parent() else {
+                break;
+            };
+            class = parent;
+        }
+        self.transfer.get(&class).map_or(&[], Vec::as_slice)
+    }
+
+    /// The tree `getAvailableTransferSkills` walks: the class's own, or its parent's for a third
+    /// class (one step only, "a different way should be implemented" over the third class).
+    pub fn available_transfer_tree(&self, class: ClassId) -> &[SkillLearn] {
+        let class = if class.class_level() == 3 {
+            class.enum_parent().unwrap_or(class)
+        } else {
+            class
+        };
+        self.transfer.get(&class).map_or(&[], Vec::as_slice)
+    }
+
+    /// Java `getTransferSkill(id, lvl, playerClass)`: the line in the transfer tree of the
+    /// parent of `class` (the trees belong to the third class's parent).
+    pub fn transfer_skill(&self, skill_id: i32, skill_level: i32, class: ClassId) -> Option<&SkillLearn> {
+        let parent = class.enum_parent()?;
+        self.transfer
+            .get(&parent)?
+            .iter()
+            .find(|l| l.skill_id == skill_id && l.skill_level == skill_level)
+    }
+
     /// True when no class tree was loaded.
     pub fn is_empty(&self) -> bool {
         self.complete.is_empty()
@@ -609,6 +664,8 @@ struct Gathered {
     /// Java `_transformSkillTree` and the keys in the order they were first put.
     transform: BTreeMap<(i32, i32), SkillLearn>,
     transform_order: Vec<(i32, i32)>,
+    /// Java `_transferSkillTrees`: a tree element replaces the tree of its class.
+    transfer: BTreeMap<ClassId, (BTreeMap<(i32, i32), SkillLearn>, Vec<(i32, i32)>)>,
 }
 
 impl Gathered {
@@ -624,6 +681,23 @@ impl Gathered {
                             .or_insert_with(|| player_class(parent_id));
                     }
                 }
+            }
+            if tree.kind == "transferSkillTree" {
+                let Some(class) = player_class(class_id) else {
+                    warn!("SkillTreeData: transfer skill tree for unknown class id {class_id} skipped.");
+                    continue;
+                };
+                let mut map = BTreeMap::new();
+                let mut order = Vec::new();
+                for skill in tree.skills {
+                    let learn = skill.into_learn();
+                    let key = (learn.skill_id, learn.skill_level);
+                    if map.insert(key, learn).is_none() {
+                        order.push(key);
+                    }
+                }
+                self.transfer.insert(class, (map, order));
+                continue;
             }
             // The clan trees are kept for the clan trainers (M6-CLAN-03), the fishing tree for the
             // fishermen (M6-FU-10).
@@ -663,7 +737,7 @@ impl Gathered {
                 }
                 continue;
             }
-            // Only the trees above and the class trees are kept. Other trees (transfer, transform, ...) are not loaded.
+            // Only the trees above and the class trees are kept.
             if tree.kind != "classSkillTree" {
                 continue;
             }
@@ -874,6 +948,21 @@ mod tests {
 
     fn keys(skills: &[&SkillLearn]) -> Vec<(i32, i32)> {
         skills.iter().map(|s| (s.skill_id, s.skill_level)).collect()
+    }
+
+    #[test]
+    fn the_transfer_tree_belongs_to_the_class_before_the_third_class() {
+        let trees = SkillTrees::from_xml(XML).unwrap();
+        // Bishop (16) has the tree; Cardinal (97, third class) uses its parent's.
+        assert_eq!(trees.transfer_skill_tree(ClassId(16)).len(), 1);
+        assert_eq!(trees.transfer_skill_tree(ClassId(97)).len(), 1);
+        assert_eq!(trees.available_transfer_tree(ClassId(97)).len(), 1);
+        // The class of another branch has none (Java would throw).
+        assert!(trees.transfer_skill_tree(ClassId(0)).is_empty());
+        // `getTransferSkill` looks in the tree of the *parent* of the class.
+        assert!(trees.transfer_skill(500, 1, ClassId(97)).is_some());
+        assert!(trees.transfer_skill(500, 2, ClassId(97)).is_none());
+        assert!(trees.transfer_skill(500, 1, ClassId(16)).is_none());
     }
 
     #[test]

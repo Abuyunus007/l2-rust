@@ -23,13 +23,12 @@
 // - The class tree (`AcquireSkillType.CLASS`) is learned here, the clan trees at the clan
 //   trainer (`PLEDGE` and `SUBPLEDGE`, `clan/skills.rs`, M6-CLAN-03), the fishing tree at the
 //   fisherman (`FISHING`, `fishing/skills.rs`, M6-FU-10) and the certification skills of the
-//   sub-class tree at Avant-Garde (`SUBCLASS`, S-VM-01). The transform and transfer trees are not
-//   loaded, so those requests find no `SkillLearn` and are ignored, which is what Java does for a
-//   skill that is not in a tree.
+//   sub-class tree at Avant-Garde (`SUBCLASS`, S-VM-01), the transform tree at Avant-Garde
+//   (`TRANSFORM`) and the transfer tree at the healer trainers (`TRANSFER`, S-LEFT-01).
 // - The script event `ON_PLAYER_SKILL_LEARN` (D-05).
-// - `isSkillAllowed` knows the class, fishing, transform and collect trees (S-API-05); the GM and
-//   transfer trees are not loaded. That cannot change what `AutoLearnSkills` learns (their skill ids
-//   are never in a class tree), see [`World::is_skill_allowed`].
+// - `isSkillAllowed` knows the class, fishing, transform, collect and transfer trees; the GM
+//   trees are not loaded. That cannot change what `AutoLearnSkills` learns (their skill ids are
+//   never in a class tree), see [`World::is_skill_allowed`].
 // - Stopping the effect of a toggle skill that is learned again (`giveAvailableSkills`) waits for
 //   the effect engine.
 
@@ -376,9 +375,8 @@ fn trees_allow(trees: &l2_data::SkillTrees, class: ClassId, race: i32, skill_id:
     {
         return true;
     }
-    // NOTE: the transfer trees (`getTransferSkill`, the healers' transfer skills) are not loaded
-    // yet (`l2_data::skill_tree`), so they are not checked.
-    false
+    // Java: "Exclude Transfer Skills from this check."
+    trees.transfer_skill(skill_id, level, class).is_some()
 }
 
 impl World {
@@ -778,11 +776,17 @@ impl World {
             self.send_plain_acquire_skill_info(player, skill_type, &learn);
             return;
         }
+        if skill_type == AcquireSkillType::Transfer {
+            let Some(learn) = self.transfer_learn(player, skill_id, level) else {
+                return;
+            };
+            self.send_plain_acquire_skill_info(player, skill_type, &learn);
+            return;
+        }
         let Some(learning_class) = self.learning_class_of(player) else {
             return;
         };
-        // Only the class, clan, fishing and collect trees are loaded: `getSkillLearn` finds
-        // nothing for the other types.
+        // The other types (the GM trees) are not loaded: `getSkillLearn` finds nothing.
         if skill_type != AcquireSkillType::Class {
             debug!("{player}: RequestAcquireSkillInfo of {skill_type:?} is not ported");
             return;
@@ -990,8 +994,16 @@ impl World {
             }
             return;
         }
-        // Only the class, clan, fishing and collect trees are loaded: `getSkillLearn` finds
-        // nothing for the other types.
+        if skill_type == AcquireSkillType::Transfer {
+            let Some(learn) = self.transfer_learn(player, skill_id, level) else {
+                return;
+            };
+            if self.check_player_skill(player, trainer, &learn, skill_type) {
+                self.give_skill(player, trainer, skill_id, level, skill_type);
+            }
+            return;
+        }
+        // The other types (the GM trees) are not loaded: `getSkillLearn` finds nothing.
         if skill_type != AcquireSkillType::Class {
             debug!("{player}: RequestAcquireSkill of {skill_type:?} is not ported");
             return;
@@ -1158,6 +1170,83 @@ impl World {
             }
         }
         result
+    }
+
+    /// Installs the skill trees alone (`set_exp_data` takes them with the experience tables).
+    /// For tests and tools; call before players enter.
+    pub fn set_skill_trees(&mut self, skill_trees: std::sync::Arc<l2_data::SkillTrees>) {
+        self.rewards.skill_trees = skill_trees;
+    }
+
+    /// `getSkillLearn(TRANSFER, id, lvl, player)`: Java `getTransferSkill(id, lvl,
+    /// player.getPlayerClass())`.
+    fn transfer_learn(&self, player: ObjectId, skill_id: i32, level: i32) -> Option<SkillLearn> {
+        let class = self.player_class_of(player)?;
+        self.rewards
+            .skill_trees
+            .transfer_skill(skill_id, level, class)
+            .cloned()
+    }
+
+    /// Java `SkillTreeData.getAvailableTransferSkills(player)`: the lines of the transfer tree of
+    /// the player's class (of its parent for a third class) whose skill the player does not know.
+    pub fn available_transfer_skills(&self, player: ObjectId) -> Vec<SkillLearn> {
+        let Some(class) = self.player_class_of(player) else {
+            return Vec::new();
+        };
+        self.rewards
+            .skill_trees
+            .available_transfer_tree(class)
+            .iter()
+            // If player doesn't know this transfer skill.
+            .filter(|skill| self.known_skill_level(player, skill.skill_id) == 0)
+            .cloned()
+            .collect()
+    }
+
+    /// The `AcquireSkillList(TRANSFER)` part of `HealerTrainer`'s `SkillTransferLearn`: the
+    /// available transfer skills that exist as skills, or "There are no other skills to learn."
+    pub fn show_transfer_skill_list(&mut self, player: ObjectId) {
+        let mut list = AcquireSkillList::new(AcquireSkillType::Transfer);
+        let mut count = 0;
+        for s in self.available_transfer_skills(player) {
+            if self.skill_template_exists(s.skill_id, s.skill_level) {
+                count += 1;
+                list.add_skill(s.skill_id, s.skill_level, s.skill_level, s.level_up_sp, 0);
+            }
+        }
+        if count > 0 {
+            self.send(player, &list);
+        } else {
+            self.send(
+                player,
+                &SystemMessage::new(SystemMessageId::ThereAreNoOtherSkillsToLearn),
+            );
+        }
+    }
+
+    /// The loop of `HealerTrainer`'s `SkillTransferCleanse`: every transfer skill the player knows
+    /// is removed and its items are handed back (`ItemProcessType.REFUND`); the fee is taken once,
+    /// and only if a skill was removed.
+    pub fn cleanse_transfer_skills(&mut self, player: ObjectId, fee: i64) {
+        let Some(class) = self.player_class_of(player) else {
+            return;
+        };
+        let tree: Vec<SkillLearn> = self.rewards.skill_trees.transfer_skill_tree(class).to_vec();
+        let mut has_skills = false;
+        for learn in tree {
+            if self.known_skill_level(player, learn.skill_id) != 0 {
+                self.player_remove_skill(player, learn.skill_id);
+                for item in &learn.required_items {
+                    self.add_item(player, item.item_id, item.count, true);
+                }
+                has_skills = true;
+            }
+        }
+        // Adena gets reduced once.
+        if has_skills {
+            self.reduce_adena(player, fee, true);
+        }
     }
 
     /// Java `RequestAcquireSkill.canTransform(player)`: `AltTransformationWithoutQuest`, or the
@@ -1627,6 +1716,24 @@ mod tests {
         // Not in any tree, or another level.
         assert!(!trees_allow(&trees, fighter, human, 617, 2));
         assert!(!trees_allow(&trees, fighter, human, 9999, 1));
+    }
+
+    #[test]
+    fn the_transfer_tree_allows_its_skills_to_the_children_of_its_class() {
+        let trees = SkillTrees::from_xml(
+            r#"<list>
+            <skillTree type="transferSkillTree" classId="16">
+                <skill skillId="1013" skillLevel="32" getLevel="76"><item id="15307" count="1" /></skill>
+            </skillTree>
+            </list>"#,
+        )
+        .unwrap();
+        let (human, cardinal, bishop) = (0, ClassId(97), ClassId(16));
+        // `getTransferSkill` looks in the tree of the parent of the class: Bishop's tree for a
+        // Cardinal, none for the Bishop himself (his parent is the Cleric).
+        assert!(trees_allow(&trees, cardinal, human, 1013, 32));
+        assert!(!trees_allow(&trees, bishop, human, 1013, 32));
+        assert!(!trees_allow(&trees, cardinal, human, 1013, 31));
     }
 
     #[test]

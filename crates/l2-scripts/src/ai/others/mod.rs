@@ -14,6 +14,7 @@ pub mod black_judge;
 pub mod black_marketeer_of_mammon;
 pub mod blackdagger_wing;
 pub mod bleeding_fly;
+pub mod cabale_buffer;
 pub mod clan_trader;
 pub mod class_master;
 pub mod crimson_hatu_otis;
