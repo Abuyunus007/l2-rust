@@ -587,4 +587,30 @@ mod tests {
             rows::update(NAME, "<state>", "Completed")
         ]));
     }
+
+    #[test]
+    fn the_guardian_is_spawned_once_and_its_death_moves_the_cond() {
+        let (mut t, yumi, _, _) = setup();
+        t.enter(1, 70, vec![]);
+        t.world.run_as_script(PAVEL_THE_GIANT, |ctx| {
+            let qs = ctx.get_quest_state(Oid(1), true).unwrap();
+            qs.set_state(ctx, COMPLETED);
+        });
+        t.quest_page(1, yumi);
+        t.event(1, NAME, "32041-04.htm");
+        cond(&mut t, 10);
+
+        assert_eq!(ev(&mut t, "32047-15b.html").as_deref(), Some("32047-15b.html"));
+        let golems = t.npcs_of(GUARDIAN);
+        assert_eq!(golems.len(), 1);
+        assert!(t.take_writes().contains(&rows::insert(NAME, "spawned", "1")));
+        // A second request while the guardian lives shows the "already there" page.
+        assert_eq!(ev(&mut t, "32047-15b.html").as_deref(), Some("32047-17b.html"));
+
+        t.kill(1, golems[0]);
+        assert!(t.take_writes().contains(&rows::update(NAME, "cond", "11")));
+        // The kill cancelled the despawn timer: nothing is written five minutes later.
+        t.wait_ms(301_000);
+        assert!(t.take_writes().is_empty());
+    }
 }

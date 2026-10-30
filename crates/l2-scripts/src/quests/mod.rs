@@ -117,6 +117,7 @@ pub mod q00116_beyond_the_hills_of_winter;
 pub mod q00117_the_ocean_of_distant_stars;
 pub mod q00118_to_lead_and_be_led;
 pub mod q00119_last_imperial_prince;
+pub mod q00120_pavels_last_research;
 pub mod q00121_pavel_the_giant;
 pub mod q00122_ominous_news;
 pub mod q00123_the_leader_and_the_follower;
@@ -609,6 +610,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00117_the_ocean_of_distant_stars::Q00117TheOceanOfDistantStars);
     r.add(q00118_to_lead_and_be_led::Q00118ToLeadAndBeLed);
     r.add(q00119_last_imperial_prince::Q00119LastImperialPrince);
+    r.add(q00120_pavels_last_research::Q00120PavelsLastResearch);
     r.add(q00111_elrokian_hunters_proof::Q00111ElrokianHuntersProof);
     r.add(q00112_walk_of_fate::Q00112WalkOfFate);
     r.add(q00121_pavel_the_giant::Q00121PavelTheGiant);
