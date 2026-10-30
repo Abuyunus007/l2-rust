@@ -51,6 +51,7 @@ pub mod shadow_summoner;
 pub mod sin_eater;
 pub mod sin_wardens;
 pub mod soul_trader;
+pub mod steel_citadel_teleport;
 pub mod strongholds_teleports;
 pub mod subclass_certification;
 pub mod support_unit_captain;
@@ -106,6 +107,7 @@ pub(crate) fn register_with(r: &mut ScriptRegistry, class_master: ClassMasterCon
     r.add(class_master::ClassMaster::new(class_master));
     r.add(manor_manager::ManorManager);
     r.add(monument_of_heroes::MonumentOfHeroes);
+    r.add(steel_citadel_teleport::SteelCitadelTeleport);
     r.add(subclass_certification::SubclassCertification);
     r.add(symbol_maker::SymbolMaker);
     r.add(valakas_teleporters::ValakasTeleporters);

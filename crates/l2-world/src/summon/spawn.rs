@@ -95,6 +95,7 @@ impl World {
             spawn: None,
             leader: None,
             decayed: false,
+            raid_minion: false,
             in_water: self.npc_world.is_water_at(location.x, location.y, location.z),
             right_hand: 0,
             left_hand: 0,

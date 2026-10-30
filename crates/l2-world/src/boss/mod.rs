@@ -111,6 +111,24 @@ pub struct GrandBossSettings {
     pub baium_spawn_random: i32,
     /// `BAIUM_RECOGNIZE_HERO` (`BaiumRecognizeHero`).
     pub baium_recognize_hero: bool,
+    /// `CORE_SPAWN_INTERVAL` (`IntervalOfCoreSpawn`), hours (S-BOSS-02).
+    pub core_spawn_interval: i32,
+    /// `CORE_SPAWN_RANDOM` (`RandomOfCoreSpawn`), hours.
+    pub core_spawn_random: i32,
+    /// `ORFEN_SPAWN_INTERVAL` (`IntervalOfOrfenSpawn`), hours.
+    pub orfen_spawn_interval: i32,
+    /// `ORFEN_SPAWN_RANDOM` (`RandomOfOrfenSpawn`), hours.
+    pub orfen_spawn_random: i32,
+    /// `QUEEN_ANT_SPAWN_INTERVAL` (`IntervalOfQueenAntSpawn`), hours.
+    pub queen_ant_spawn_interval: i32,
+    /// `QUEEN_ANT_SPAWN_RANDOM` (`RandomOfQueenAntSpawn`), hours.
+    pub queen_ant_spawn_random: i32,
+    /// `BELETH_SPAWN_INTERVAL` (`IntervalOfBelethSpawn`), hours.
+    pub beleth_spawn_interval: i32,
+    /// `BELETH_SPAWN_RANDOM` (`RandomOfBelethSpawn`), hours.
+    pub beleth_spawn_random: i32,
+    /// `BELETH_MIN_PLAYERS` (`BelethMinPlayers`).
+    pub beleth_min_players: i32,
 }
 
 impl Default for GrandBossSettings {
@@ -127,6 +145,15 @@ impl Default for GrandBossSettings {
             baium_spawn_interval: 168,
             baium_spawn_random: 48,
             baium_recognize_hero: true,
+            core_spawn_interval: 60,
+            core_spawn_random: 24,
+            orfen_spawn_interval: 48,
+            orfen_spawn_random: 20,
+            queen_ant_spawn_interval: 36,
+            queen_ant_spawn_random: 17,
+            beleth_spawn_interval: 192,
+            beleth_spawn_random: 148,
+            beleth_min_players: 36,
         }
     }
 }
