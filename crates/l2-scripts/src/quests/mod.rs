@@ -218,6 +218,7 @@ pub mod q00309_for_a_good_cause;
 pub mod q00317_catch_the_wind;
 pub mod q00450_grave_robber_rescue;
 pub mod q00461_rumble_in_the_base;
+pub mod q00463_i_must_be_a_genius;
 pub mod q00504_competition_for_the_bandit_stronghold;
 pub mod q00508_a_clans_reputation;
 pub mod q00509_a_clans_fame;
@@ -449,6 +450,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00317_catch_the_wind::Q00317CatchTheWind);
     r.add(q00450_grave_robber_rescue::Q00450GraveRobberRescue);
     r.add(q00461_rumble_in_the_base::Q00461RumbleInTheBase);
+    r.add(q00463_i_must_be_a_genius::Q00463IMustBeaGenius);
     r.add(q00504_competition_for_the_bandit_stronghold::Q00504CompetitionForTheBanditStronghold);
     r.add(q00508_a_clans_reputation::Q00508AClansReputation);
     r.add(q00512_blade_under_foot::Q00512BladeUnderFoot);
