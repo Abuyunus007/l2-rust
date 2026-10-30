@@ -108,6 +108,7 @@ pub mod q00118_to_lead_and_be_led;
 pub mod q00119_last_imperial_prince;
 pub mod q00121_pavel_the_giant;
 pub mod q00122_ominous_news;
+pub mod q00123_the_leader_and_the_follower;
 pub mod q00124_meeting_the_elroki;
 pub mod q00128_pailaka_song_of_ice_and_fire;
 pub mod q00132_matras_curiosity;
@@ -511,6 +512,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00112_walk_of_fate::Q00112WalkOfFate);
     r.add(q00121_pavel_the_giant::Q00121PavelTheGiant);
     r.add(q00122_ominous_news::Q00122OminousNews);
+    r.add(q00123_the_leader_and_the_follower::Q00123TheLeaderAndTheFollower);
     r.add(q00124_meeting_the_elroki::Q00124MeetingTheElroki);
     r.add(q00128_pailaka_song_of_ice_and_fire::Q00128PailakaSongOfIceAndFire);
     r.add(q00132_matras_curiosity::Q00132MatrasCuriosity);
