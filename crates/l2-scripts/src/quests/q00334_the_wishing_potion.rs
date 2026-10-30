@@ -95,13 +95,7 @@ fn give_random_fabric(ctx: &mut ScriptCtx<'_>, player: ObjectId) {
 
 /// The shared tail of the three demon kings' death: they shout, then either the next one comes
 /// or the killer gets a fabric.
-fn demon_chain(
-    ctx: &mut ScriptCtx<'_>,
-    npc: ScriptNpc,
-    killer: ObjectId,
-    shout: NpcStringId,
-    next: i32,
-) {
+fn demon_chain(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, shout: NpcStringId, next: i32) {
     ctx.broadcast_npc_say(npc, ChatType::Shout, shout, &[]);
     if ctx.get_random(2) == 0 {
         ctx.add_spawn_at(next, npc.object_id, true, 0);
@@ -117,9 +111,8 @@ fn get_random_player_from_party(
     player: ObjectId,
     npc: ScriptNpc,
 ) -> Option<ObjectId> {
-    let started = |ctx: &ScriptCtx<'_>, p: ObjectId| {
-        ctx.player_quest_state(p, NAME).is_some_and(|q| q.is_started())
-    };
+    let started =
+        |ctx: &ScriptCtx<'_>, p: ObjectId| ctx.player_quest_state(p, NAME).is_some_and(|q| q.is_started());
     let mut candidates: Vec<ObjectId> = Vec::new();
     if started(ctx, player) {
         candidates.push(player);
@@ -145,7 +138,13 @@ fn get_random_player_from_party(
 
 /// One ingredient kill: give `item` with 1 in 10 when the player has both recipes and not the
 /// item, and finish with cond 4 when `complete` (the other seven) are in the bag.
-fn ingredient(ctx: &mut ScriptCtx<'_>, qs: l2_world::script::Qs, killer: ObjectId, item: i32, complete: &[i32]) {
+fn ingredient(
+    ctx: &mut ScriptCtx<'_>,
+    qs: l2_world::script::Qs,
+    killer: ObjectId,
+    item: i32,
+    complete: &[i32],
+) {
     if ctx.has_all_quest_items(killer, &[Q_POTION_RECIPE_1, Q_POTION_RECIPE_2])
         && !ctx.has_quest_items(killer, item)
         && ctx.get_random(10) == 0
@@ -199,7 +198,11 @@ impl Script for Q00334TheWishingPotion {
             GREAT_DEMON_KING,
             SECRET_KEEPER_TREE,
         ]);
-        s.add_kill_id(&[DLORD_ALEXANDROSANCHES, ABYSSKING_BONAPARTERIUS, EVILOVERLORD_RAMSEBALIUS]);
+        s.add_kill_id(&[
+            DLORD_ALEXANDROSANCHES,
+            ABYSSKING_BONAPARTERIUS,
+            EVILOVERLORD_RAMSEBALIUS,
+        ]);
         s.add_spawn_id(&[
             GRIMA,
             SUCCUBUS_OF_SEDUCTION,
@@ -531,7 +534,12 @@ impl Script for Q00334TheWishingPotion {
                         return Some("30738-14.html".to_owned());
                     }
                     2336008 => {
-                        ctx.broadcast_npc_say(npc, ChatType::Shout, NpcStringId::OkEverybodyPrayFervently, &[]);
+                        ctx.broadcast_npc_say(
+                            npc,
+                            ChatType::Shout,
+                            NpcStringId::OkEverybodyPrayFervently,
+                            &[],
+                        );
                         ctx.start_quest_timer("2336009", 4 * 1000, Some(npc), Some(player), false);
                     }
                     2336009 => {
@@ -544,7 +552,12 @@ impl Script for Q00334TheWishingPotion {
                         ctx.start_quest_timer("2336010", 4 * 1000, Some(npc), Some(player), false);
                     }
                     2336010 => {
-                        ctx.broadcast_npc_say(npc, ChatType::Shout, NpcStringId::OneTwoMayYourDreamsComeTrue, &[]);
+                        ctx.broadcast_npc_say(
+                            npc,
+                            ChatType::Shout,
+                            NpcStringId::OneTwoMayYourDreamsComeTrue,
+                            &[],
+                        );
                         let wish = qs.get_int(ctx, I_QUEST0);
                         let i0 = match wish {
                             1 => ctx.get_random(2),
@@ -857,7 +870,13 @@ mod tests {
         let mut registry = ScriptRegistry::new();
         registry.add(Q00334TheWishingPotion);
         let pages = Pages::of(&Q00334TheWishingPotion)
-            .plain(&["30738-01.htm", "30738-04.htm", "30738-07.html", "30738-16.html", "30557-01.html"])
+            .plain(&[
+                "30738-01.htm",
+                "30738-04.htm",
+                "30738-07.html",
+                "30738-16.html",
+                "30557-01.html",
+            ])
             .page("30738-02.html", &["1"])
             .page("30738-03.htm", &["QUEST_ACCEPTED"])
             .page("30738-06.html", &["2"])

@@ -112,7 +112,11 @@ fn below_five(ctx: &ScriptCtx<'_>, player: ObjectId) -> bool {
 /// The "good, better, best" part of Jonas' pick: how many of the white sap, the golden honey and
 /// the brown bundle the player brought.
 fn rare_count(ctx: &ScriptCtx<'_>, player: ObjectId) -> i64 {
-    sum(ctx, player, &[WHITE_MANDRAGORA_SAP, GOLDEN_HONEY, BROWN_MOSS_BUNDLE])
+    sum(
+        ctx,
+        player,
+        &[WHITE_MANDRAGORA_SAP, GOLDEN_HONEY, BROWN_MOSS_BUNDLE],
+    )
 }
 
 /// `takeItems(.., -1)` of the list and the ingredients, then the dish.
@@ -289,7 +293,8 @@ impl Script for Q00330AdeptOfTaste {
         let Some(qs) = ctx.get_quest_state(killer, false) else {
             return;
         };
-        if !(qs.is_started(ctx) && ctx.check_if_in_range(ctx.alt_party_range(), npc.object_id, killer, true)) {
+        if !(qs.is_started(ctx) && ctx.check_if_in_range(ctx.alt_party_range(), npc.object_id, killer, true))
+        {
             return;
         }
         match npc.id {
@@ -321,7 +326,8 @@ impl Script for Q00330AdeptOfTaste {
                 }
             }
             BLOODY_BEE => {
-                if below_five(ctx, killer) && ctx.has_all_quest_items(killer, &[INGREDIENT_LIST, JACOBS_INSECT_BOOK])
+                if below_five(ctx, killer)
+                    && ctx.has_all_quest_items(killer, &[INGREDIENT_LIST, JACOBS_INSECT_BOOK])
                 {
                     let i0 = ctx.get_random(100);
                     if i0 < 80 {
@@ -356,7 +362,8 @@ impl Script for Q00330AdeptOfTaste {
                 }
             }
             STINGER_WASP => {
-                if below_five(ctx, killer) && ctx.has_all_quest_items(killer, &[INGREDIENT_LIST, JACOBS_INSECT_BOOK])
+                if below_five(ctx, killer)
+                    && ctx.has_all_quest_items(killer, &[INGREDIENT_LIST, JACOBS_INSECT_BOOK])
                 {
                     let i0 = ctx.get_random(100);
                     if i0 < 92 {
@@ -518,7 +525,8 @@ impl Script for Q00330AdeptOfTaste {
                 ACCESSORY_MERCHANT_SONIA => {
                     let list = ctx.has_quest_items(player, INGREDIENT_LIST);
                     let book = ctx.has_quest_items(player, SONIAS_BOTANY_BOOK);
-                    let saps = ctx.has_at_least_one_quest_item(player, &[RED_MANDRAGORA_SAP, WHITE_MANDRAGORA_SAP]);
+                    let saps =
+                        ctx.has_at_least_one_quest_item(player, &[RED_MANDRAGORA_SAP, WHITE_MANDRAGORA_SAP]);
                     if list && below_five(ctx, player) && !book && !saps {
                         ctx.give_items(player, SONIAS_BOTANY_BOOK, 1);
                         htmltext = set("30062-01.html");
@@ -544,7 +552,8 @@ impl Script for Q00330AdeptOfTaste {
                 PRIESTESS_GLYVKA => {
                     let list = ctx.has_quest_items(player, INGREDIENT_LIST);
                     let book = ctx.has_quest_items(player, GLYVKAS_BOTANY_BOOK);
-                    let bundles = ctx.has_at_least_one_quest_item(player, &[GREEN_MOSS_BUNDLE, BROWN_MOSS_BUNDLE]);
+                    let bundles =
+                        ctx.has_at_least_one_quest_item(player, &[GREEN_MOSS_BUNDLE, BROWN_MOSS_BUNDLE]);
                     if list && below_five(ctx, player) && !book && !bundles {
                         ctx.give_items(player, GLYVKAS_BOTANY_BOOK, 1);
                         htmltext = set("30067-01.html");
@@ -687,7 +696,13 @@ mod tests {
         let mut registry = ScriptRegistry::new();
         registry.add(Q00330AdeptOfTaste);
         let pages = Pages::of(&Q00330AdeptOfTaste)
-            .plain(&["30469-01.htm", "30469-03.htm", "30062-01.html", "30062-06.html", "30461-02t1.html"])
+            .plain(&[
+                "30469-01.htm",
+                "30469-03.htm",
+                "30062-01.html",
+                "30062-06.html",
+                "30461-02t1.html",
+            ])
             .page("30469-02.htm", &["30469-03.htm"])
             .page("30469-06.html", &[])
             .plain(&["30469-06t1.html"])
@@ -728,7 +743,11 @@ mod tests {
     #[test]
     fn mandragoras_drop_roots_for_the_book() {
         let (mut t, _, _, jonas) = setup();
-        t.enter(1, 24, vec![item(10, INGREDIENT_LIST, 1), item(11, SONIAS_BOTANY_BOOK, 1)]);
+        t.enter(
+            1,
+            24,
+            vec![item(10, INGREDIENT_LIST, 1), item(11, SONIAS_BOTANY_BOOK, 1)],
+        );
         t.quest_page(1, jonas);
         t.event(1, NAME, "30469-03.htm");
         for _ in 0..30 {
@@ -751,7 +770,10 @@ mod tests {
             ctx.give_items(Oid(1), JONASS_1ST_STEAK_DISH, 1);
         });
         assert!(t.quest_page(1, mirien).contains("30461-02t1.html"));
-        assert_eq!((t.count(1, JONASS_1ST_STEAK_DISH), t.count(1, MIRIENS_REVIEW_1)), (0, 1));
+        assert_eq!(
+            (t.count(1, JONASS_1ST_STEAK_DISH), t.count(1, MIRIENS_REVIEW_1)),
+            (0, 1)
+        );
 
         assert!(t.quest_page(1, jonas).contains("30469-06t1.html"));
         assert_eq!(t.count(1, MIRIENS_REVIEW_1), 0);

@@ -255,7 +255,11 @@ impl Script for Q00242PossessorOfAPreciousSoul2 {
                         ctx.take_items(player, ORB_OF_BINDING, 1);
                         ctx.do_die(npc, npc.object_id);
 
-                        st.set(ctx, "cornerstones", &(st.get_int(ctx, "cornerstones") + 1).to_string());
+                        st.set(
+                            ctx,
+                            "cornerstones",
+                            &(st.get_int(ctx, "cornerstones") + 1).to_string(),
+                        );
                         if st.get_int(ctx, "cornerstones") == 4 {
                             st.set_cond(ctx, 10, false);
                         }

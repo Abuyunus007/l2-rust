@@ -96,8 +96,18 @@ const MIN_LEVEL: i32 = 25;
 const ADENA_ID: i32 = 57;
 
 const CARGO_BOXES: [i32; 4] = [CARGO_BOX_1ST, CARGO_BOX_2ND, CARGO_BOX_3RD, CARGO_BOX_4TH];
-const ORDERS: [i32; 4] = [SOPHYAS_1ST_ORDER, SOPHYAS_2ND_ORDER, SOPHYAS_3RD_ORDER, SOPHYAS_4TH_ORDER];
-const TROPHIES: [i32; 4] = [UNDEAD_ASH, BLOODY_AXE_INSIGNIA, DELU_LIZARDMAN_FANG, STAKATO_TALON];
+const ORDERS: [i32; 4] = [
+    SOPHYAS_1ST_ORDER,
+    SOPHYAS_2ND_ORDER,
+    SOPHYAS_3RD_ORDER,
+    SOPHYAS_4TH_ORDER,
+];
+const TROPHIES: [i32; 4] = [
+    UNDEAD_ASH,
+    BLOODY_AXE_INSIGNIA,
+    DELU_LIZARDMAN_FANG,
+    STAKATO_TALON,
+];
 const STATUE_PARTS: [i32; 4] = [
     STATUE_OF_SHILEN_HEAD,
     STATUE_OF_SHILEN_TORSO,
@@ -560,7 +570,8 @@ impl Script for Q00333HuntOfTheBlackLion {
         let Some(qs) = ctx.get_quest_state(killer, false) else {
             return;
         };
-        if !(qs.is_started(ctx) && ctx.check_if_in_range(ctx.alt_party_range(), npc.object_id, killer, true)) {
+        if !(qs.is_started(ctx) && ctx.check_if_in_range(ctx.alt_party_range(), npc.object_id, killer, true))
+        {
             return;
         }
         let first = |ctx: &mut ScriptCtx<'_>, half: Option<i32>, box_chance: i32| {
@@ -682,12 +693,13 @@ impl Script for Q00333HuntOfTheBlackLion {
                     .to_owned();
                 }
                 BLACKSMITH_RUPIO => {
-                    htmltext = if sum(ctx, player, &STATUE_PARTS) >= 1 || sum(ctx, player, &TABLET_PARTS) >= 1 {
-                        "30471-02.html"
-                    } else {
-                        "30471-01.html"
-                    }
-                    .to_owned();
+                    htmltext =
+                        if sum(ctx, player, &STATUE_PARTS) >= 1 || sum(ctx, player, &TABLET_PARTS) >= 1 {
+                            "30471-02.html"
+                        } else {
+                            "30471-01.html"
+                        }
+                        .to_owned();
                 }
                 IRON_GATES_LOCKIRIN => {
                     htmltext = if !ctx.has_quest_items(player, COMPLETE_ANCIENT_TABLET) {
@@ -753,7 +765,14 @@ mod tests {
         registry.add(Q00333HuntOfTheBlackLion);
         let pages = Pages::of(&Q00333HuntOfTheBlackLion)
             .page("30735-02.htm", &["30735-04.htm"])
-            .plain(&["30735-01.htm", "30735-03.htm", "30735-04.htm", "30735-10.html", "30735-22.html", "30735-26.html"])
+            .plain(&[
+                "30735-01.htm",
+                "30735-03.htm",
+                "30735-04.htm",
+                "30735-10.html",
+                "30735-22.html",
+                "30735-26.html",
+            ])
             .page("30735-14.html", &["30735-10.html", "30735-26.html"])
             .page("30737-02.html", &["30737-06.html"])
             .plain(&["30737-03.html"])
