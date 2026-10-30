@@ -40,6 +40,7 @@ use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{NpcHtmlMessage, NpcInfo, SystemMessage, SystemMessageParam};
 use l2_testkit::fake_game_client::{names_of, packet_name};
 use l2_world::script::QuestInput;
+use l2_world::SubclassWrite;
 use l2_world::{
     BossLoad, ClientInput, IdFactory, ItemData, LeaveReason, LsEvent, ObjectId, Outbox, PacketSink,
     PersistCommand, PlayerData, PlayerProfile, SessionId, StaticData, World, WorldCommand, WorldRng,
@@ -325,6 +326,8 @@ struct Hero {
     level: i32,
     position: (i32, i32, i32),
     items: Vec<(i32, i64)>,
+    /// `(skill id, level)` of the class the character plays.
+    skills: Vec<(i32, i32)>,
 }
 
 impl Hero {
@@ -339,6 +342,7 @@ impl Hero {
             level: 1,
             position: TALKING_ISLAND,
             items: Vec::new(),
+            skills: Vec::new(),
         }
     }
 
@@ -365,6 +369,11 @@ impl Hero {
 
     fn with_items(mut self, items: &[(i32, i64)]) -> Self {
         self.items.extend_from_slice(items);
+        self
+    }
+
+    fn with_skills(mut self, skills: &[(i32, i32)]) -> Self {
+        self.skills.extend_from_slice(skills);
         self
     }
 }
@@ -454,6 +463,7 @@ impl Bare {
         );
         world.set_augmentation_data(datapack.augmentation_data.clone());
         world.spawn_door_data(&datapack, &ids).unwrap();
+        world.set_class_list(Arc::clone(&datapack.class_list));
         world.set_instance_settings(game_server::world_data::instance_settings(&config, &config_dir));
         world.set_instance_data(Arc::clone(&datapack.instances));
         world.set_walking_routes(Arc::clone(&datapack.routes));
@@ -674,7 +684,14 @@ fn bare_player(datapack: &Datapack, index: usize, hero: &Hero, seed: &Seed) -> P
         max_cp: 1_000.0,
         online_time: 0,
         items,
-        skills: vec![],
+        skills: hero
+            .skills
+            .iter()
+            .map(|(skill_id, skill_level)| l2_world::SkillData {
+                skill_id: *skill_id,
+                skill_level: *skill_level,
+            })
+            .collect(),
         shortcuts: vec![],
         profile: PlayerProfile::default(),
     };
@@ -858,4 +875,158 @@ fn a_first_village_quest_from_talk_to_reward_and_abort() {
     assert_eq!(w.items_of(0, LORDS_MARK), 0);
     let listed = all::<l2_protocol_game::server::QuestList>(&aborted, "QUEST_LIST");
     assert!(listed.last().unwrap().quests.iter().all(|q| q.quest_id != 257));
+}
+
+const VILLAGE_MASTER: &str = "ElfHumanFighterChange1";
+const PABRIS: i32 = 30066;
+const MEDALLION_OF_WARRIOR: i32 = 1145;
+const SHADOW_COUPON_D: i32 = 8869;
+
+/// 2. The first class change at a village master (CP-Sb).
+#[test]
+fn the_first_class_change_at_a_village_master() {
+    let opts = Opts::new(
+        false,
+        vec![Hero::new("Fighter").gm().level(20).with_items(&[(MEDALLION_OF_WARRIOR, 1)])],
+    );
+    let Some(mut w) = Bare::start(&opts) else {
+        return;
+    };
+    w.enter_player(0);
+    let pabris = w.spawn_npc(0, PABRIS, 30);
+    let talked = w.talk(0, pabris);
+    let list = w.follow(0, &talked, "Script ElfHumanFighterChange1");
+    assert!(pages(&list).last().unwrap().contains("Warrior"), "{:?}", pages(&list));
+    let info = w.follow(0, &list, "30066-02.htm");
+    // The page of the Warrior has the link that asks for the change.
+    let changed = w.follow(0, &info, "ElfHumanFighterChange1 1");
+    assert!(pages(&changed).last().unwrap().contains("Congratulations! You are now a Warrior"));
+    assert!(names(&changed).contains(&"MAGIC_SKILL_USE".to_owned()), "the class change effect");
+    assert!(has_message(&changed, SystemMessageId::CongratulationsYouVeCompletedAClassTransfer));
+    let data = w.player_data(0);
+    assert_eq!((data.class_id, data.base_class), (WARRIOR, WARRIOR));
+    assert_eq!(w.items_of(0, MEDALLION_OF_WARRIOR), 0, "the proof is taken");
+    assert_eq!(w.items_of(0, SHADOW_COUPON_D), 15);
+    assert!(names(&changed).contains(&"USER_INFO".to_owned()));
+}
+
+const HANNAVALT: i32 = 30109;
+const DYE: i32 = 37;
+const DYE_ITEM: i32 = 4481;
+const POWER_STRIKE: i32 = 3;
+
+/// Hannavalt's page and its "Sub Class" link.
+fn sub_class_menu(w: &mut Bare, master: i32) -> Vec<Vec<u8>> {
+    let talked = w.talk(0, master);
+    w.follow(0, &talked, "Subclass 0")
+}
+
+/// 2. A subclass added, switched to, replaced and the base class back (CP-Sb): the skills and the
+/// dye follow the class.
+#[test]
+fn a_subclass_is_added_switched_and_cancelled() {
+    let opts = Opts::new(
+        false,
+        vec![
+            Hero::new("Fighter")
+                .gm()
+                .level(76)
+                .class(GLADIATOR)
+                .with_items(&[(DYE_ITEM, 10)])
+                .with_skills(&[(POWER_STRIKE, 1)]),
+        ],
+    );
+    let Some(mut w) = Bare::start(&opts) else {
+        return;
+    };
+    let me = w.me(0).0;
+    w.enter_player(0);
+
+    // A dye on the Gladiator (a real client request): slot 1.
+    let equipped = w.do_of(0, ClientInput::Henna(l2_world::HennaInput::Equip { symbol_id: DYE }));
+    assert!(has_message(&equipped, SystemMessageId::TheSymbolHasBeenAdded), "{:?}", message_ids(&equipped));
+    assert_eq!(w.player_data(0).profile.hennas, [DYE, 0, 0]);
+    assert_eq!(w.items_of(0, DYE_ITEM), 0);
+
+    // Hannavalt's page: the sub class menu, then "add".
+    let master = w.spawn_npc(0, HANNAVALT, 30);
+    let talked = w.talk(0, master);
+    let menu = w.follow(0, &talked, "Subclass 0");
+    let add = w.follow(0, &menu, "Subclass 1");
+    let offered = links(&pages(&add).pop().unwrap());
+    assert!(offered.iter().any(|c| c.ends_with("Subclass 4 3")), "{offered:?}");
+    let added = w.follow(0, &add, "Subclass 4 3");
+    assert!(has_message(&added, SystemMessageId::TheNewSubclassHasBeenAdded), "{:?}", message_ids(&added));
+    assert!(pages(&added).last().unwrap().contains("You've added a new subclass"), "{:?}", pages(&added));
+    let writes: Vec<SubclassWrite> = w
+        .commands()
+        .into_iter()
+        .filter_map(|c| match c {
+            PersistCommand::Subclass(write) => Some(write),
+            _ => None,
+        })
+        .collect();
+    let [SubclassWrite::Add { holder, skills: sub_skills, .. }] = writes.as_slice() else {
+        panic!("{writes:?}");
+    };
+    assert_eq!((holder.class_id, holder.class_index, holder.level), (3, 1, 40));
+    assert!(!sub_skills.is_empty(), "the skills of the new class up to level 40");
+    // The new class is active: its level, no dye, its skills (the base class' ones are stored).
+    let data = w.player_data(0);
+    assert_eq!((data.class_id, data.base_class, data.profile.class_index, data.level), (3, GLADIATOR, 1, 40));
+    assert_eq!(data.profile.hennas, [0, 0, 0]);
+    assert_eq!(data.skills, *sub_skills);
+    assert!(w.rows.has_skill(me, 0, POWER_STRIKE), "the base class' skills were stored");
+
+    // Back to the base class: the level, the skills and the dye come back.
+    let menu = sub_class_menu(&mut w, master);
+    let menu = w.follow(0, &menu, "Subclass 2");
+    let back = w.follow(0, &menu, "Subclass 5 0");
+    assert!(has_message(&back, SystemMessageId::YouHaveSuccessfullySwitchedToYourSubclass));
+    let data = w.player_data(0);
+    assert_eq!((data.class_id, data.profile.class_index, data.level), (GLADIATOR, 0, 76));
+    assert_eq!(data.profile.hennas, [DYE, 0, 0]);
+    assert!(data.skills.iter().any(|s| s.skill_id == POWER_STRIKE));
+    assert!(names(&back).contains(&"SKILL_LIST".to_owned()));
+    assert!(names(&back).contains(&"HENNA_INFO".to_owned()));
+
+    // And to the subclass again: no dye.
+    let menu = sub_class_menu(&mut w, master);
+    let menu = w.follow(0, &menu, "Subclass 2");
+    w.follow(0, &menu, "Subclass 5 1");
+    let data = w.player_data(0);
+    assert_eq!((data.class_id, data.profile.class_index, data.level), (3, 1, 40));
+    assert_eq!(data.profile.hennas, [0, 0, 0]);
+
+    // Cancel it and take another class in its place (index 1 again).
+    let menu = sub_class_menu(&mut w, master);
+    let menu = w.follow(0, &menu, "Subclass 3");
+    let choice = w.follow(0, &menu, "Subclass 6 1");
+    let page = pages(&choice).pop().unwrap();
+    let replace = links(&page)
+        .into_iter()
+        .find(|c| c.contains("Subclass 7 1 "))
+        .unwrap_or_else(|| panic!("{page}"));
+    let new_class: i32 = replace.rsplit(' ').next().unwrap().parse().unwrap();
+    let replaced = w.do_of(0, act::bypass(&replace));
+    assert!(has_message(&replaced, SystemMessageId::TheNewSubclassHasBeenAdded), "{:?}", message_ids(&replaced));
+    let writes: Vec<SubclassWrite> = w
+        .commands()
+        .into_iter()
+        .filter_map(|c| match c {
+            PersistCommand::Subclass(write) => Some(write),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        matches!(writes[1], SubclassWrite::Delete { class_index: 1, .. }),
+        "{:?}",
+        writes[1]
+    );
+    assert!(matches!(
+        writes[2],
+        SubclassWrite::Add { holder, .. } if holder.class_id == new_class && holder.class_index == 1
+    ));
+    let data = w.player_data(0);
+    assert_eq!((data.class_id, data.profile.class_index, data.level), (new_class, 1, 40));
 }

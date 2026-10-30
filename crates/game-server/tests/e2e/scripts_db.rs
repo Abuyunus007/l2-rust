@@ -222,6 +222,13 @@ impl Rows {
         }
     }
 
+    /// Whether `character_skills` has the skill for the class index.
+    pub fn has_skill(&self, char_id: i32, class_index: i32, skill_id: i32) -> bool {
+        self.skills
+            .get(&(char_id, class_index))
+            .is_some_and(|skills| skills.iter().any(|s| s.skill_id == skill_id))
+    }
+
     /// The value of a `character_quests` row.
     pub fn quest_var(&self, char_id: i32, name: &str, var: &str) -> Option<&str> {
         self.quests
