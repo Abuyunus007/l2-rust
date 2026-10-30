@@ -216,6 +216,7 @@ pub mod q00307_control_device_of_the_giants;
 pub mod q00308_reed_field_maintenance;
 pub mod q00309_for_a_good_cause;
 pub mod q00317_catch_the_wind;
+pub mod q00423_take_your_best_shot;
 pub mod q00450_grave_robber_rescue;
 
 use l2_world::ScriptRegistry;
@@ -433,5 +434,6 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00308_reed_field_maintenance::Q00308ReedFieldMaintenance);
     r.add(q00309_for_a_good_cause::Q00309ForAGoodCause);
     r.add(q00317_catch_the_wind::Q00317CatchTheWind);
+    r.add(q00423_take_your_best_shot::Q00423TakeYourBestShot);
     r.add(q00450_grave_robber_rescue::Q00450GraveRobberRescue);
 }
