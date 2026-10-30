@@ -291,3 +291,36 @@ fn npcs_enter_and_leave_the_zones_scripts_listen_to() {
     assert_eq!(zone_events(&mut t), [format!("exit {} 70000", inside.0)]);
     assert!(t.world.npc_script_zones(inside).is_empty());
 }
+
+#[test]
+fn point_in_range_walking_region_and_right_hand() {
+    let mut t = setup();
+    let npc = t.spawn(NPC_ID, 20);
+    let far = t.spawn(NPC_ID, 100_000);
+    t.world.set_npc_right_hand(npc, 6_579);
+    t.world.run_as_script(NAME, |ctx| {
+        let n = ctx.script_npc(npc).unwrap();
+        // `radiusMax` 0 or below `radiusMin`: the NPC's place.
+        assert_eq!(
+            ctx.get_point_in_range(n, 0, 0),
+            Some((X + 20, Y, crate::testing::Z))
+        );
+        assert_eq!(
+            ctx.get_point_in_range(n, 50, 10),
+            Some((X + 20, Y, crate::testing::Z))
+        );
+        for _ in 0..20 {
+            let (x, y, z) = ctx.get_point_in_range(n, 100, 200).unwrap();
+            let d = f64::from(x - (X + 20)).hypot(f64::from(y - Y));
+            // The cast truncates, so the distance can be up to 1.5 below the radius.
+            assert!((98.0..=201.0).contains(&d), "{d}");
+            assert_eq!(z, crate::testing::Z);
+        }
+        assert!(ctx.is_in_surrounding_region(npc, Oid(1)));
+        assert!(!ctx.is_in_surrounding_region(npc, far));
+        assert_eq!(ctx.right_hand_item(n), 6_579);
+        // A script's `setRandomWalking(false)` turns it off whatever the template says.
+        ctx.set_random_walking(n, false);
+        assert!(!ctx.is_random_walking_enabled(n));
+    });
+}

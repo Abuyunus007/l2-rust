@@ -24,6 +24,12 @@ impl World {
     pub fn broadcast_pledge_info_update(&self, clan_id: i32) {
         self.broadcast_clan_info_update(clan_id);
     }
+
+    /// Java `npc.isRandomWalkingEnabled()` (the script switch, a route walker, the spawn's and
+    /// the template's settings, see `ai/attackable.rs`).
+    pub fn npc_is_random_walking_enabled(&self, npc: ObjectId) -> bool {
+        self.is_random_walking_enabled(npc)
+    }
 }
 
 impl ScriptCtx<'_> {
@@ -100,6 +106,52 @@ impl ScriptCtx<'_> {
     /// Java `npc.isMyLord(player)`.
     pub fn is_my_lord(&self, npc: ScriptNpc, player: ObjectId) -> bool {
         self.world().is_my_lord(npc.object_id, player)
+    }
+
+    /// Java `npc.isRandomWalkingEnabled()`.
+    pub fn is_random_walking_enabled(&self, npc: ScriptNpc) -> bool {
+        self.world().npc_is_random_walking_enabled(npc.object_id)
+    }
+
+    /// Java `npc.getPointInRange(radiusMin, radiusMax)`: a point `Rnd.get(min, max)` away at a
+    /// random angle (`Rnd.nextDouble() * 2 * PI`), at the NPC's z; the NPC's own place when
+    /// `radiusMax` is 0 or below `radiusMin`. `None` when the NPC is not in the world.
+    pub fn get_point_in_range(
+        &mut self,
+        npc: ScriptNpc,
+        radius_min: i32,
+        radius_max: i32,
+    ) -> Option<(i32, i32, i32)> {
+        let (x, y, z) = self.world().position_of(npc.object_id)?;
+        if radius_max == 0 || radius_max < radius_min {
+            return Some((x, y, z));
+        }
+        let radius = f64::from(self.get_random_range(radius_min, radius_max));
+        let angle = self.world_mut().rng().next_f64() * 2.0 * std::f64::consts::PI;
+        // `(int) (x + radius * cos(angle))`: Java's cast truncates toward zero.
+        Some((
+            (f64::from(x) + radius * angle.cos()) as i32,
+            (f64::from(y) + radius * angle.sin()) as i32,
+            z,
+        ))
+    }
+
+    /// Java `a.isInSurroundingRegion(b)`: `b`'s world region is one of the 3x3 regions around
+    /// `a`'s (`false` when either has no region).
+    pub fn is_in_surrounding_region(&self, a: ObjectId, b: ObjectId) -> bool {
+        let world = self.world();
+        match (
+            world.object(a).and_then(|e| e.region),
+            world.object(b).and_then(|e| e.region),
+        ) {
+            (Some(mine), Some(theirs)) => theirs.surrounding().contains(&mine),
+            _ => false,
+        }
+    }
+
+    /// Java `npc.getRightHandItem()`: the item id the NPC holds in its right hand (0 for none).
+    pub fn right_hand_item(&self, npc: ScriptNpc) -> i32 {
+        self.world().npc(npc.object_id).map_or(0, |n| n.right_hand)
     }
 
     /// Java `addSpawn(summoner, npcId, pos, randomOffset, despawnDelay)` with `pos` the place
