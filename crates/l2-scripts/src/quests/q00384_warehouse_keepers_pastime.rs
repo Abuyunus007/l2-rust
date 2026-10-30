@@ -72,7 +72,7 @@ pub struct Q00384WarehouseKeepersPastime;
 
 /// Java `createBingoBoard(qs)`: `Collections.shuffle` of 1..9 (Fisher-Yates from the end, with the
 /// world RNG instead of a fresh `java.util.Random`).
-fn create_bingo_board(ctx: &mut ScriptCtx<'_>, qs: Qs) {
+pub(crate) fn create_bingo_board(ctx: &mut ScriptCtx<'_>, qs: Qs) {
     let mut arr = [1, 2, 3, 4, 5, 6, 7, 8, 9];
     for i in (2..=arr.len()).rev() {
         let j = ctx.get_random(i as i32) as usize;
@@ -92,7 +92,7 @@ fn numbers_of(ctx: &ScriptCtx<'_>, qs: Qs) -> String {
 }
 
 /// Java `getMatchedBingoLineCount(qs)`: the lines (rows, columns, diagonals) fully chosen.
-fn matched_bingo_line_count(ctx: &ScriptCtx<'_>, qs: Qs) -> usize {
+pub(crate) fn matched_bingo_line_count(ctx: &ScriptCtx<'_>, qs: Qs) -> usize {
     let selected = selected_of(ctx, qs);
     let q: Vec<&str> = selected.split(' ').collect();
     const LINES: [[usize; 3]; 8] = [
@@ -117,7 +117,7 @@ fn matched_bingo_line_count(ctx: &ScriptCtx<'_>, qs: Qs) -> usize {
 }
 
 /// Java `selectBingoNumber(qs, num)`: the cell where `num` lies shows it from now on.
-fn select_bingo_number(ctx: &mut ScriptCtx<'_>, qs: Qs, num: i32) {
+pub(crate) fn select_bingo_number(ctx: &mut ScriptCtx<'_>, qs: Qs, num: i32) {
     let numbers = numbers_of(ctx, qs);
     let mut pos = 0;
     for (i, n) in numbers.split(' ').enumerate() {
@@ -135,7 +135,7 @@ fn select_bingo_number(ctx: &mut ScriptCtx<'_>, qs: Qs, num: i32) {
 }
 
 /// Java `isSelectedBingoNumber(qs, num)`: `selected.contains(num)`.
-fn is_selected_bingo_number(ctx: &ScriptCtx<'_>, qs: Qs, num: i32) -> bool {
+pub(crate) fn is_selected_bingo_number(ctx: &ScriptCtx<'_>, qs: Qs, num: i32) -> bool {
     selected_of(ctx, qs).contains(&num.to_string())
 }
 
@@ -149,12 +149,12 @@ fn number_from_bingo_board(ctx: &ScriptCtx<'_>, qs: Qs, index: usize) -> i32 {
 }
 
 /// Java `getBingoSelectCount(qs)`: the digits in `selected`.
-fn bingo_select_count(ctx: &ScriptCtx<'_>, qs: Qs) -> usize {
+pub(crate) fn bingo_select_count(ctx: &ScriptCtx<'_>, qs: Qs) -> usize {
     selected_of(ctx, qs).chars().filter(char::is_ascii_digit).count()
 }
 
 /// Java `fillBoard(qs, html)`: chosen cells show their number, the others "?".
-fn fill_board(ctx: &ScriptCtx<'_>, qs: Qs, html: Option<String>) -> Option<String> {
+pub(crate) fn fill_board(ctx: &ScriptCtx<'_>, qs: Qs, html: Option<String>) -> Option<String> {
     let mut result = html?;
     for i0 in 0..9 {
         let i1 = number_from_bingo_board(ctx, qs, i0);
@@ -169,7 +169,7 @@ fn fill_board(ctx: &ScriptCtx<'_>, qs: Qs, html: Option<String>) -> Option<Strin
 }
 
 /// Java `colorBoard(qs, html)`: chosen cells red, the others white, every number shown.
-fn color_board(ctx: &ScriptCtx<'_>, qs: Qs, html: Option<String>) -> Option<String> {
+pub(crate) fn color_board(ctx: &ScriptCtx<'_>, qs: Qs, html: Option<String>) -> Option<String> {
     let mut result = html?;
     for i0 in 0..9 {
         let i1 = number_from_bingo_board(ctx, qs, i0);
@@ -185,7 +185,13 @@ fn color_board(ctx: &ScriptCtx<'_>, qs: Qs, html: Option<String>) -> Option<Stri
 }
 
 /// Java `takeHtml(player, qs, num, npcId)`: a number of the second to the fifth pick.
-fn take_html(ctx: &mut ScriptCtx<'_>, player: ObjectId, qs: Qs, num: i32, npc_id: i32) -> Option<String> {
+pub(crate) fn take_html(
+    ctx: &mut ScriptCtx<'_>,
+    player: ObjectId,
+    qs: Qs,
+    num: i32,
+    npc_id: i32,
+) -> Option<String> {
     let page = |ctx: &ScriptCtx<'_>, n: i32| ctx.get_htm(player, &format!("{npc_id}-{n}.html"));
     let html;
     if !is_selected_bingo_number(ctx, qs, num) {

@@ -296,6 +296,7 @@ pub mod q00382_kails_magic_coin;
 pub mod q00383_treasure_hunt;
 pub mod q00384_warehouse_keepers_pastime;
 pub mod q00385_yoke_of_the_past;
+pub mod q00386_stolen_dignity;
 pub mod q00401_path_of_the_warrior;
 pub mod q00402_path_of_the_human_knight;
 pub mod q00403_path_of_the_rogue;
@@ -735,6 +736,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00383_treasure_hunt::Q00383TreasureHunt);
     r.add(q00384_warehouse_keepers_pastime::Q00384WarehouseKeepersPastime);
     r.add(q00385_yoke_of_the_past::Q00385YokeOfThePast);
+    r.add(q00386_stolen_dignity::Q00386StolenDignity);
     r.add(q00401_path_of_the_warrior::Q00401PathOfTheWarrior);
     r.add(q00402_path_of_the_human_knight::Q00402PathOfTheHumanKnight);
     r.add(q00403_path_of_the_rogue::Q00403PathOfTheRogue);
