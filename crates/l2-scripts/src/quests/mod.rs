@@ -224,6 +224,7 @@ pub mod q00451_luciens_altar;
 pub mod q00452_finding_the_lost_soldiers;
 pub mod q00453_not_strong_enough_alone;
 pub mod q00455_wings_of_sand;
+pub mod q00456_dont_know_dont_care;
 pub mod q00457_lost_and_found;
 pub mod q00458_perfect_form;
 
@@ -450,6 +451,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00452_finding_the_lost_soldiers::Q00452FindingTheLostSoldiers);
     r.add(q00453_not_strong_enough_alone::Q00453NotStrongEnoughAlone);
     r.add(q00455_wings_of_sand::Q00455WingsOfSand);
+    r.add(q00456_dont_know_dont_care::Q00456DontKnowDontCare);
     r.add(q00457_lost_and_found::Q00457LostAndFound);
     r.add(q00458_perfect_form::Q00458PerfectForm);
 }
