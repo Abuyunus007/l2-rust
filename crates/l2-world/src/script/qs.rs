@@ -267,6 +267,13 @@ impl Qs {
         set(ctx.world, self, RESTART_VAR, &value.to_string());
     }
 
+    /// The calendar of `setRestartTime` (the next 6:30, seconds and milliseconds of now) as a
+    /// time, for scripts that build it themselves (Q00694's `finishInstance`).
+    pub fn next_restart_time_ms(self, ctx: &ScriptCtx<'_>) -> i64 {
+        let now = ctx.now_ms();
+        restart_time(now, l2_util::time::local_offset_millis(now))
+    }
+
     /// Java `isNowAvailable()`: the restart time has passed.
     pub fn is_now_available(self, ctx: &ScriptCtx<'_>) -> bool {
         // NOTE(java-quirk): `Long.parseLong` of a bad value throws in Java; it counts as "not
