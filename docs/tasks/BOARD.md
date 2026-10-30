@@ -414,7 +414,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-VM-01](S/S-VM-01.md) | Class change, ClassMaster, certifications, noble quest | opus | full | API-01, SUB-01 | merged |
 | [S-AI-01](S/S-AI-01.md) | Gracia AIs | sonnet | spot | API-01 | merged |
 | [S-AI-02](S/S-AI-02.md) | Hellbound AIs | sonnet | spot | API-01 | merged |
-| [S-AI-03](S/S-AI-03.md) | Area AIs part 1 | sonnet | spot | API-01 | ready |
+| [S-AI-03](S/S-AI-03.md) | Area AIs part 1 | sonnet | spot | API-01 | in-progress |
 | [S-AI-04](S/S-AI-04.md) | Area AIs part 2 | sonnet | spot | API-01 | ready |
 | [S-AI-05](S/S-AI-05.md) | Other AIs part 1 (A..M) | sonnet | spot | API-01 | merged |
 | [S-AI-06](S/S-AI-06.md) | Other AIs part 2 (N..Z) | sonnet | spot | API-01 | merged |
@@ -423,7 +423,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-DATA-01](S/S-DATA-01.md) | Category data, ClassMaster.xml, transformation tree, small script helpers | sonnet | full | VM-01 | merged |
 | [S-BOSS-01](S/S-BOSS-01.md) | Antharas, Valakas, Baium | opus | full | API-01 | merged |
 | [S-BOSS-02](S/S-BOSS-02.md) | Beleth, Frintezza, Core, Orfen, Queen Ant | sonnet | full | API-01 | merged |
-| [S-BOSS-03](S/S-BOSS-03.md) | Sailren, Seer Ugoros, Dr. Chaos, Anais, Queen Shyeed | sonnet | full | API-01 | ready |
+| [S-BOSS-03](S/S-BOSS-03.md) | Sailren, Seer Ugoros, Dr. Chaos, Anais, Queen Shyeed | sonnet | full | API-01 | in-progress |
 | [S-INST-01](S/S-INST-01.md) | Kamaloka and Pailaka instances | sonnet | full | API-01 | merged |
 | [S-INST-02](S/S-INST-02.md) | Crystal Caverns, Dark Cloud Mansion, Chambers of Delusion | sonnet | full | API-01 | merged |
 | [S-INST-03](S/S-INST-03.md) | Ice Queen, Nornil, Jinia and the small instances | sonnet | full | API-01 | ready |
