@@ -6873,7 +6873,10 @@ mod tests {
         }
 
         async fn delete_items_of_item_id(&mut self, item_id: i32) -> Result<(), PersistError> {
-            self.calls.lock().unwrap().push(Call::DeleteItemsOfItemId(item_id));
+            self.calls
+                .lock()
+                .unwrap()
+                .push(Call::DeleteItemsOfItemId(item_id));
             Ok(())
         }
 

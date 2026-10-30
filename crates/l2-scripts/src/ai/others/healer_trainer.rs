@@ -198,7 +198,13 @@ mod tests {
         t.set_skill_trees(TRANSFER_TREE);
         t.set_skill_learn(r#"<npc id="30022"><classId>16</classId></npc>"#);
         let trainer = t.spawn(30022, 20);
-        t.enter_as(1, 80, l2_world::script::race::HUMAN, player_class::CARDINAL, items);
+        t.enter_as(
+            1,
+            80,
+            l2_world::script::race::HUMAN,
+            player_class::CARDINAL,
+            items,
+        );
         // The bypass of a link works only from the page that shows it.
         t.talk(1, trainer);
         t.event(1, "HealerTrainer", "SkillTransfer");

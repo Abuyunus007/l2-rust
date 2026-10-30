@@ -211,7 +211,8 @@ mod tests {
     #[test]
     fn a_failed_birthday_query_sends_nothing() {
         let mut t = birthday_world(true);
-        t.world.handle(WorldCommand::BirthdayGiftsLoaded { result: Err(()) });
+        t.world
+            .handle(WorldCommand::BirthdayGiftsLoaded { result: Err(()) });
         assert!(t.take_boss().is_empty());
     }
 

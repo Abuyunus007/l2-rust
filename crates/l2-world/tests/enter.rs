@@ -1107,6 +1107,9 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                     | PersistCommand::BossRereadRequest { .. }
                     | PersistCommand::GlobalVariablesRereadRequest { .. },
                 ) => "boss",
+                Out::Persist(
+                    PersistCommand::DeleteItemsOfItemId { .. } | PersistCommand::BirthdayGiftsRequest { .. },
+                ) => "event",
                 Out::Persist(PersistCommand::Cursed(_)) => "cursed",
                 Out::Persist(PersistCommand::Olympiad(_) | PersistCommand::OlympiadRereadRequest { .. }) => {
                     "olympiad"

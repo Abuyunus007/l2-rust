@@ -36,7 +36,8 @@ impl World {
         }
         // Last 24 hours.
         let since_ms = unix_ms_now() - 24 * 60 * 60 * 1000;
-        self.outbox.persist(PersistCommand::BirthdayGiftsRequest { since_ms });
+        self.outbox
+            .persist(PersistCommand::BirthdayGiftsRequest { since_ms });
     }
 
     /// The answer of the birthday query (`WorldCommand::BirthdayGiftsLoaded`): one mail with the
@@ -106,6 +107,7 @@ impl World {
         if !self.scripts.settings.cycle_database_writes {
             return;
         }
-        self.outbox.persist(PersistCommand::DeleteItemsOfItemId { item_id });
+        self.outbox
+            .persist(PersistCommand::DeleteItemsOfItemId { item_id });
     }
 }

@@ -81,7 +81,10 @@ fn broadcast_say(
 /// casting speed and effect resistance. Blessing of Prophecy (winner): fighters +25% max load and
 /// effect resistance, mystics +25% magic cancel resist and effect resistance.
 fn handle_cast(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, skill_id: i32) -> bool {
-    let near = match (ctx.world().position_of(npc.object_id), ctx.world().position_of(player)) {
+    let near = match (
+        ctx.world().position_of(npc.object_id),
+        ctx.world().position_of(player),
+    ) {
         (Some((nx, ny, nz)), Some((px, py, pz))) => {
             let (dx, dy, dz) = (i64::from(nx - px), i64::from(ny - py), i64::from(nz - pz));
             // `calculateDistance3D(..) < radius`.
@@ -133,7 +136,11 @@ fn cabale_ai(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
         }
 
         let player_cabal = ctx.ss_player_cabal(player);
-        let name = ctx.world().player(player).map(|p| p.data.name.clone()).unwrap_or_default();
+        let name = ctx
+            .world()
+            .player(player)
+            .map(|p| p.data.name.clone())
+            .unwrap_or_default();
         if player_cabal == winning_cabal && player_cabal != CABAL_NULL && npc.id == ORATOR_NPC_ID {
             if !ctx.is_mage_class(player) {
                 if handle_cast(ctx, npc, player, ORATOR_FIGTER) {
@@ -312,7 +319,11 @@ mod tests {
         registry.add(CabaleBuffer);
         let mut t = ScriptTest::new(registry, NPCS, "", &[]);
         t.set_skills("", SKILLS);
-        load_cycle(&mut t, true, &[(1, "dawn"), (2, "dawn"), (3, "dusk"), (4, "dusk")]);
+        load_cycle(
+            &mut t,
+            true,
+            &[(1, "dawn"), (2, "dawn"), (3, "dusk"), (4, "dusk")],
+        );
         let human = l2_world::script::race::HUMAN;
         t.enter_as(1, 80, human, player_class::DREADNOUGHT, vec![]);
         t.enter_as(2, 80, human, player_class::ARCHMAGE, vec![]);
@@ -379,7 +390,8 @@ mod tests {
         }
         assert!(!seen.is_empty());
         assert!(
-            seen.iter().all(|id| *id == PREACHER_FIGTER || *id == PREACHER_MAGE),
+            seen.iter()
+                .all(|id| *id == PREACHER_FIGTER || *id == PREACHER_MAGE),
             "{seen:?}"
         );
     }
@@ -392,7 +404,13 @@ mod tests {
         let mut t = ScriptTest::new(registry, NPCS, "", &[]);
         t.set_skills("", SKILLS);
         load_cycle(&mut t, true, &[(1, "dusk")]);
-        t.enter_as(1, 80, l2_world::script::race::HUMAN, player_class::DREADNOUGHT, vec![]);
+        t.enter_as(
+            1,
+            80,
+            l2_world::script::race::HUMAN,
+            player_class::DREADNOUGHT,
+            vec![],
+        );
         let orator = t.spawn(ORATOR_NPC_ID, 20);
         assert_eq!(cast_after_run(&mut t, orator), None);
     }

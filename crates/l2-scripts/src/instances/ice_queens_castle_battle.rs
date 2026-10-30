@@ -370,8 +370,10 @@ impl Script for IceQueensCastleBattle {
                     "STAGE_3_START" => {
                         for players in players_inside(ctx.world(), instance_id) {
                             if ctx.world().player(players).is_some() {
-                                ctx.world()
-                                    .broadcast_player_packet(players, &ExChangeClientEffectInfo::STATIC_FREYA_DESTROYED);
+                                ctx.world().broadcast_player_packet(
+                                    players,
+                                    &ExChangeClientEffectInfo::STATIC_FREYA_DESTROYED,
+                                );
 
                                 for emmiter_id in EMMITERS {
                                     ctx.world().send(
@@ -683,8 +685,10 @@ impl Script for IceQueensCastleBattle {
 
                         for players in players_inside(ctx.world(), instance_id) {
                             if ctx.world().player(players).is_some() {
-                                ctx.world()
-                                    .broadcast_player_packet(players, &ExChangeClientEffectInfo::STATIC_FREYA_DEFAULT);
+                                ctx.world().broadcast_player_packet(
+                                    players,
+                                    &ExChangeClientEffectInfo::STATIC_FREYA_DEFAULT,
+                                );
                             }
                         }
 

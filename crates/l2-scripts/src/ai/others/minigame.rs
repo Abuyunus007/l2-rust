@@ -481,7 +481,9 @@ mod tests {
             .collect();
         let pages = pages.file(
             "data/spawns/burners.xml",
-            &format!(r#"<?xml version="1.0"?><list enabled="true"><spawn name="burners">{spawns}</spawn></list>"#),
+            &format!(
+                r#"<?xml version="1.0"?><list enabled="true"><spawn name="burners">{spawns}</spawn></list>"#
+            ),
         );
         let mut t = ScriptTest::with_pages(registry, NPCS, ITEMS, pages);
         // The burners exist before Sumiel, as `initRoom` reads them at his spawn.

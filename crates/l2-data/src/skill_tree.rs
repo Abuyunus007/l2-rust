@@ -190,7 +190,10 @@ impl SkillTrees {
         log_loaded(
             Self::LOADER,
             gathered.transfer.values().map(|(tree, _)| tree.len()).sum(),
-            &format!("transfer skills for {} transfer skill trees", gathered.transfer.len()),
+            &format!(
+                "transfer skills for {} transfer skill trees",
+                gathered.transfer.len()
+            ),
         );
         let dwarven_only = gathered
             .fishing
@@ -620,6 +623,9 @@ fn player_class(id: i32) -> Option<ClassId> {
         .filter(|class| class.race().is_some())
 }
 
+/// One tree with the keys in the order they were first put.
+type GatheredTree = (BTreeMap<(i32, i32), SkillLearn>, Vec<(i32, i32)>);
+
 /// What the files say, before the complete trees are built.
 #[derive(Default)]
 struct Gathered {
@@ -665,7 +671,7 @@ struct Gathered {
     transform: BTreeMap<(i32, i32), SkillLearn>,
     transform_order: Vec<(i32, i32)>,
     /// Java `_transferSkillTrees`: a tree element replaces the tree of its class.
-    transfer: BTreeMap<ClassId, (BTreeMap<(i32, i32), SkillLearn>, Vec<(i32, i32)>)>,
+    transfer: BTreeMap<ClassId, GatheredTree>,
 }
 
 impl Gathered {
