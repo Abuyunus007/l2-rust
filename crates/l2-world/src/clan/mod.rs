@@ -562,6 +562,16 @@ impl World {
         self.clan_of(id).is_some_and(|c| c.leader == Some(id))
     }
 
+    /// Java `clan.getLeader().getPlayer()`: the leader's object id while the leader is in the
+    /// world, `None` when the leader is offline or the clan has no leader member.
+    pub fn clan_online_leader(&self, clan_id: i32) -> Option<ObjectId> {
+        let clan = self.clan(clan_id)?;
+        let leader = clan.leader?;
+        clan.member(leader)
+            .is_some_and(|m| m.has_player)
+            .then_some(leader)
+    }
+
     /// Java `Player.getAllyId()`.
     pub fn ally_id_of(&self, id: ObjectId) -> i32 {
         self.clan_of(id).map_or(0, |c| c.ally_id)
