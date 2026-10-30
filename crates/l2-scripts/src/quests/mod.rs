@@ -307,6 +307,7 @@ pub mod q00414_path_of_the_orc_raider;
 pub mod q00415_path_of_the_orc_monk;
 pub mod q00416_path_of_the_orc_shaman;
 pub mod q00418_path_of_the_artisan;
+pub mod q00419_get_a_pet;
 pub mod q00421_little_wings_big_adventure;
 pub mod q00422_repent_your_sins;
 pub mod q00423_take_your_best_shot;
@@ -761,6 +762,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00614_slay_the_enemy_commander_varka::Q00614SlayTheEnemyCommanderVarka);
     r.add(q00615_magical_power_of_fire_part1::Q00615MagicalPowerOfFirePart1);
     r.add(q00418_path_of_the_artisan::Q00418PathOfTheArtisan);
+    r.add(q00419_get_a_pet::Q00419GetAPet);
     r.add(q00421_little_wings_big_adventure::Q00421LittleWingsBigAdventure);
     r.add(q00422_repent_your_sins::Q00422RepentYourSins);
     r.add(q00423_take_your_best_shot::Q00423TakeYourBestShot);
