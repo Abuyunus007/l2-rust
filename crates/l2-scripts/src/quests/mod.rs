@@ -133,6 +133,7 @@ pub mod q00275_dark_winged_spies;
 pub mod q00295_dreaming_of_the_skies;
 pub mod q00303_collect_arrowheads;
 pub mod q00310_only_what_remains;
+pub mod q00311_expulsion_of_evil_spirits;
 pub mod q00312_take_advantage_of_the_crisis;
 pub mod q00313_collect_spores;
 pub mod q00316_destroy_plague_carriers;
@@ -279,6 +280,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(q00295_dreaming_of_the_skies::Q00295DreamingOfTheSkies);
     r.add(q00303_collect_arrowheads::Q00303CollectArrowheads);
     r.add(q00310_only_what_remains::Q00310OnlyWhatRemains);
+    r.add(q00311_expulsion_of_evil_spirits::Q00311ExpulsionOfEvilSpirits);
     r.add(q00312_take_advantage_of_the_crisis::Q00312TakeAdvantageOfTheCrisis);
     r.add(q00313_collect_spores::Q00313CollectSpores);
     r.add(q00316_destroy_plague_carriers::Q00316DestroyPlagueCarriers);
