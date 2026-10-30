@@ -965,6 +965,18 @@ impl World {
 
     /// Java `Attackable.doItemDrop(mainDamageDealer)`.
     pub fn do_item_drop(&mut self, dying: ObjectId, main_damage_dealer: Option<ObjectId>) {
+        self.do_item_drop_template(dying, None, main_damage_dealer);
+    }
+
+    /// Java `Attackable.doItemDrop(npcTemplate, mainDamageDealer)`: the drop list of another
+    /// template (`template_override`) is rolled for the dying NPC (S-AI-04, Dark Water Dragon's
+    /// Fafurion drops the list of NPC 18485).
+    pub fn do_item_drop_template(
+        &mut self,
+        dying: ObjectId,
+        template_override: Option<i32>,
+        main_damage_dealer: Option<ObjectId>,
+    ) {
         // `FestivalMonster.doItemDrop`: a blood offering for the killer's party leader (M8-FEST-01).
         if !self.festival_monster_drop(dying, main_damage_dealer) {
             return;
@@ -1011,12 +1023,14 @@ impl World {
             seeded: self.is_seeded(dying),
         };
         let settings = self.settings.drops.clone();
-        let drop_template_id = self.chest_drop_template_id(dying, npc_id);
+        let drop_template_id =
+            template_override.unwrap_or_else(|| self.chest_drop_template_id(dying, npc_id));
+        let spoil_template_id = template_override.unwrap_or(npc_id);
         // `if (isSpoiled()) _sweepItems.set(calculateDrops(SPOIL, this, player))`: the spoil
         // list rolls before the DROP list, so a seeded run draws in Java's order.
         if self.is_spoiled(dying) {
             let sweep_items = self.with_rng(|world, rng| {
-                world.npc_world.template(npc_id).map(|npc_template| {
+                world.npc_world.template(spoil_template_id).map(|npc_template| {
                     calculate_drops(
                         &settings,
                         &templates,

@@ -1,0 +1,14 @@
+//! `data/scripts/ai/areas/SilentValley`: the Silent Valley scripts.
+//!
+//! One module per script, sorted by name; one `add` line per script in [`register`].
+
+// Java names the folder and its main script alike.
+#[allow(clippy::module_inception)]
+pub mod silent_valley;
+
+use l2_world::ScriptRegistry;
+
+/// Registers every script of the folder.
+pub(crate) fn register(r: &mut ScriptRegistry) {
+    r.add(silent_valley::SilentValley);
+}
