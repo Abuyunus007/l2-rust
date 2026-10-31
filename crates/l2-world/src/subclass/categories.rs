@@ -229,7 +229,7 @@ mod tests {
     /// Every fixture category against the reference datapack; skipped when it is not there.
     #[test]
     fn the_fixture_matches_category_data() {
-        let root = std::path::Path::new(r"C:\l2-rust\l2jmobius\dist\game");
+        let root = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game"));
         if !root.join("data/CategoryData.xml").is_file() {
             eprintln!("skipped: {} does not exist", root.display());
             return;

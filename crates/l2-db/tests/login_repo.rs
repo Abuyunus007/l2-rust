@@ -19,10 +19,22 @@ use sqlx::mysql::{MySqlConnectOptions, MySqlConnection};
 use sqlx::{AssertSqlSafe, Connection};
 
 const SCHEMA: [&str; 4] = [
-    include_str!("../sql/login/account_data.sql"),
-    include_str!("../sql/login/accounts.sql"),
-    include_str!("../sql/login/accounts_ipauth.sql"),
-    include_str!("../sql/login/gameservers.sql"),
+    include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../dist/db_installer/sql/login/account_data.sql"
+    )),
+    include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../dist/db_installer/sql/login/accounts.sql"
+    )),
+    include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../dist/db_installer/sql/login/accounts_ipauth.sql"
+    )),
+    include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../dist/db_installer/sql/login/gameservers.sql"
+    )),
 ];
 
 static COUNTER: AtomicU32 = AtomicU32::new(0);

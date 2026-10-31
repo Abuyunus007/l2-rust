@@ -15,7 +15,7 @@ use l2_db::{BotReportDbRow, BotReportRepository, Pool, connect_with};
 use sqlx::mysql::{MySqlConnectOptions, MySqlConnection};
 use sqlx::{AssertSqlSafe, Connection};
 
-const SCHEMA: [&str; 1] = [include_str!("../sql/game/bot_reported_char_data.sql")];
+const SCHEMA: [&str; 1] = [l2_db::game_sql!("bot_reported_char_data")];
 
 static COUNTER: AtomicU32 = AtomicU32::new(0);
 

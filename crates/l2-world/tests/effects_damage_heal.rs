@@ -1,7 +1,7 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
 //! The damage and healing effect handlers (M5-EFX-01), each on a real skill of the datapack
-//! (skipped when `C:\l2-rust\l2jmobius` is missing) and, where a rule needs exact numbers, on a
+//! (skipped when `dist/` is missing) and, where a rule needs exact numbers, on a
 //! small synthetic skill. Expected behaviour comes from the Java handlers in
 //! `dist/game/data/scripts/handlers/skill/effects/`.
 //!
@@ -278,7 +278,7 @@ fn datapack() -> Option<Arc<SkillTemplates>> {
         .get_or_init(|| {
             let root = std::env::var_os("L2JMOBIUS_GAME_DIR")
                 .map(PathBuf::from)
-                .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+                .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
             if !root.join("data/stats/skills").is_dir() {
                 eprintln!("skipped: {} has no datapack", root.display());
                 return None;

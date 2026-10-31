@@ -6,7 +6,7 @@
 //!
 //! The pages and teleport lists are small files in a temporary datapack root. The checks against
 //! the recorded Java session and against the real datapack skip when the fixture or
-//! `C:\l2-rust\l2jmobius` is missing.
+//! `dist/` is missing.
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -1431,7 +1431,7 @@ fn escape_matches_the_recorded_java_session() {
 // ---------------------------------------------------------------------------------- real data
 
 fn datapack_root() -> Option<PathBuf> {
-    let root = PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game");
+    let root = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game"));
     root.join("data/html/teleporter/30006.htm")
         .is_file()
         .then_some(root)

@@ -18,11 +18,11 @@ use tokio::net::TcpStream;
 
 /// The id tables the startup scan reads (Java `DatabaseIdManager`).
 const ID_TABLES: [&str; 5] = [
-    include_str!("../../l2-db/sql/game/characters.sql"),
-    include_str!("../../l2-db/sql/game/items.sql"),
-    include_str!("../../l2-db/sql/game/clan_data.sql"),
-    include_str!("../../l2-db/sql/game/itemsonground.sql"),
-    include_str!("../../l2-db/sql/game/messages.sql"),
+    l2_db::game_sql!("characters"),
+    l2_db::game_sql!("items"),
+    l2_db::game_sql!("clan_data"),
+    l2_db::game_sql!("itemsonground"),
+    l2_db::game_sql!("messages"),
 ];
 
 /// Port 0, loopback only, and a datapack folder relative to the server root.

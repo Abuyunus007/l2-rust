@@ -479,7 +479,7 @@ mod tests {
     #[test]
     fn real_datapack_when_present() {
         let root = std::env::var_os("L2JMOBIUS_GAME_DIR").map_or_else(
-            || std::path::PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"),
+            || std::path::PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")),
             Into::into,
         );
         if !root.join("data/stats/cubics").is_dir() {

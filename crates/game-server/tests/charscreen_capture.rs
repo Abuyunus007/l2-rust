@@ -3,7 +3,7 @@
 //!
 //! Needs two things that CI does not have, and skips with a printed note without them:
 //! `L2_CAPTURE_DIR` (a folder with `*.jsonl` captures, format: `l2-proxy` capture.rs) and the
-//! Java datapack (`L2_DATAPACK_ROOT`, default `C:\l2-rust\l2jmobius\dist\game`).
+//! Java datapack (`L2_DATAPACK_ROOT`, default `dist/game`).
 //!
 //! What is checked:
 //! * the answer order after each character screen packet,
@@ -117,7 +117,7 @@ fn records() -> Option<Vec<Record>> {
 fn datapack_root() -> Option<PathBuf> {
     let root = std::env::var_os("L2_DATAPACK_ROOT")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+        .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
     if root.join("data").is_dir() {
         Some(root)
     } else {

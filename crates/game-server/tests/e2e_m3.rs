@@ -75,7 +75,7 @@ const PROTOCOL: i32 = 273;
 const START_ADENA: i64 = 1_000;
 const ADENA_ID: i32 = 57;
 
-/// Every table of the game schema (the files of `crates/l2-db/sql/game`), so the game server
+/// Every table of the game schema (the files of `dist/db_installer/sql/game`), so the game server
 /// finds whatever it reads or writes.
 const GAME_SCHEMA: &[&str] = l2_db::GAME_SCHEMA;
 

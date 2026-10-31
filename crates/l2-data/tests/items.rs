@@ -2,7 +2,7 @@
 //! Loads the real Java item files (197 files, 19199 items). Skipped when the folder does not
 //! exist (CI).
 //!
-//! The folder defaults to `C:\l2-rust\l2jmobius\dist\game`; set `L2JMOBIUS_GAME_DIR` to use another.
+//! The folder defaults to `dist/game`; set `L2JMOBIUS_GAME_DIR` to use another.
 //! The expected numbers were counted from the XML with an independent script (every `<item>`
 //! element, `<set>` values with the last one winning); Java's own count line is
 //! `Loaded 19199 items in total.`
@@ -16,7 +16,7 @@ use l2_data::item::{
 fn game_dir() -> Option<PathBuf> {
     let dir = std::env::var_os("L2JMOBIUS_GAME_DIR")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+        .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
     if dir.join("data").is_dir() {
         Some(dir)
     } else {

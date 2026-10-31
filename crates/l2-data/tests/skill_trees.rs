@@ -1,7 +1,7 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 //! Loads the real Java datapack's skill trees. Skipped when the folder does not exist (CI).
 //!
-//! The folder defaults to `C:\l2-rust\l2jmobius\dist\game`; set `L2JMOBIUS_GAME_DIR` to use another.
+//! The folder defaults to `dist/game`; set `L2JMOBIUS_GAME_DIR` to use another.
 //! The expected starting skills are read from the Java XML files and Java's `CharacterCreate` rule,
 //! not from a character created on a server.
 
@@ -12,7 +12,7 @@ use l2_data::{ClassId, Datapack};
 fn game_dir() -> Option<PathBuf> {
     let dir = std::env::var_os("L2JMOBIUS_GAME_DIR")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+        .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
     if dir.join("data").is_dir() {
         Some(dir)
     } else {

@@ -674,7 +674,7 @@ fn the_registry_has_every_java_handler_and_buff_is_ported() {
 fn game_root() -> Option<PathBuf> {
     let root = std::env::var_os("L2JMOBIUS_GAME_DIR")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+        .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
     if root.join("data/stats/skills").is_dir() {
         Some(root)
     } else {

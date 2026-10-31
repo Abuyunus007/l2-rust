@@ -121,7 +121,10 @@ mod tests {
     /// The ids of `THIRD_CLASS_GROUP` in the reference datapack; skipped when it is not there.
     #[test]
     fn the_third_class_group_matches_category_data() {
-        let path = std::path::Path::new(r"C:\l2-rust\l2jmobius\dist\game\data\categoryData.xml");
+        let path = std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../dist/game/data/categoryData.xml"
+        ));
         let Ok(text) = std::fs::read_to_string(path) else {
             eprintln!("skipped: {} does not exist", path.display());
             return;

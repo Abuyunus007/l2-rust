@@ -1390,7 +1390,7 @@ mod tests {
 
     #[test]
     fn the_shipped_files_load() {
-        let root = Path::new(r"C:\l2-rust\l2jmobius\dist\game");
+        let root = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game"));
         if !root.join("data/EnchantItemData.xml").is_file() {
             eprintln!("skipped: the Java datapack is not here");
             return;

@@ -194,7 +194,7 @@ mod tests {
 
     #[test]
     fn the_shipped_file_loads_when_the_reference_folder_exists() {
-        let root = Path::new("C:/l2-rust/l2jmobius/dist/game");
+        let root = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game"));
         if !root.join("data/CursedWeapons.xml").exists() {
             eprintln!("skipped: the reference datapack is not here");
             return;

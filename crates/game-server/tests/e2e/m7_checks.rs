@@ -66,7 +66,8 @@ fn the_seed_statements_name_columns_the_schema_has() {
         let Some(table) = table else { continue };
         if statement.starts_with("INSERT") {
             assert!(
-                schema.contains(&format!("CREATE TABLE IF NOT EXISTS `{table}`")),
+                (schema.contains(&format!("CREATE TABLE IF NOT EXISTS `{table}`"))
+                    || schema.contains(&format!("CREATE TABLE `{table}`"))),
                 "no table {table} for {statement}"
             );
             // The column list in the parentheses.

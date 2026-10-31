@@ -2,7 +2,7 @@
 //! Loads the real Java datapack for experience, initial equipment and initial shortcuts. Skipped
 //! when the folder does not exist (CI).
 //!
-//! The folder defaults to `C:\l2-rust\l2jmobius\dist\game`; set `L2JMOBIUS_GAME_DIR` to use another.
+//! The folder defaults to `dist/game`; set `L2JMOBIUS_GAME_DIR` to use another.
 //! Expected numbers are the Java server's: experience up to level 86, max level 85, 11 classes with
 //! starting equipment (73 items), 5 global shortcuts, 4 class shortcut lists, no enabled macro.
 
@@ -13,7 +13,7 @@ use l2_data::{ClassId, Datapack, ShortcutType};
 fn game_dir() -> Option<PathBuf> {
     let dir = std::env::var_os("L2JMOBIUS_GAME_DIR")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+        .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
     if dir.join("data").is_dir() {
         Some(dir)
     } else {

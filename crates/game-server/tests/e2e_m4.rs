@@ -78,7 +78,7 @@ const LEVEL_UP_ACTION: i32 = 2122;
 /// `RequestRestartPoint`: the death window's "To Village".
 const TO_VILLAGE: i32 = 0;
 
-/// Every table of the game schema (the files of `crates/l2-db/sql/game`), so the game server
+/// Every table of the game schema (the files of `dist/db_installer/sql/game`), so the game server
 /// finds whatever it reads or writes.
 const GAME_SCHEMA: &[&str] = l2_db::GAME_SCHEMA;
 

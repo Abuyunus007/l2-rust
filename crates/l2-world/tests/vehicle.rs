@@ -623,7 +623,10 @@ fn board_the_gludio_gracia_air_ship() {
 #[test]
 fn the_boat_paths_are_the_ones_of_the_java_scripts() {
     use l2_world::vehicle::boat_routes as r;
-    let root = std::path::Path::new(r"C:\l2-rust\l2jmobius\dist\game\data\scripts\vehicles");
+    let root = std::path::Path::new(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../dist/game/data/scripts/vehicles"
+    ));
     if !root.is_dir() {
         eprintln!("the Java scripts are not here; skipping");
         return;
@@ -698,8 +701,12 @@ fn the_boat_paths_are_the_ones_of_the_java_scripts() {
 #[test]
 fn the_air_ship_paths_are_the_ones_of_the_java_scripts() {
     use l2_world::vehicle::controller as c;
-    let root = std::path::Path::new(r"C:\l2-rust\l2jmobius\dist\game\data\scripts\ai\areas\Gracia\vehicles");
-    if !root.is_dir() {
+    let root = std::path::Path::new(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../dist/game/data/scripts/ai/areas/Gracia/vehicles"
+    ));
+    // dist/ has the script folders but not their `.java` sources (D-55).
+    if !root.join("SoDController").join("SoDController.java").is_file() {
         eprintln!("the Java scripts are not here; skipping");
         return;
     }

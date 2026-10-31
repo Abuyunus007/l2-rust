@@ -2,7 +2,7 @@
 //! Loads the real Java html files and teleporter lists. Skipped when the datapack folder does not
 //! exist (CI).
 //!
-//! The folder defaults to `C:\l2-rust\l2jmobius\dist\game`; set `L2JMOBIUS_GAME_DIR` to use another.
+//! The folder defaults to `dist/game`; set `L2JMOBIUS_GAME_DIR` to use another.
 //! The expected numbers were counted from the files with grep (198 teleporter XML files, one
 //! `<npc id=` each, no `<npcs>` alias) and by walking the folders in the test itself.
 
@@ -14,7 +14,7 @@ use l2_data::{HtmCache, TeleportType, TeleporterData};
 fn game_dir() -> Option<PathBuf> {
     let dir = std::env::var_os("L2JMOBIUS_GAME_DIR")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+        .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
     if dir.join("data").is_dir() {
         Some(dir)
     } else {

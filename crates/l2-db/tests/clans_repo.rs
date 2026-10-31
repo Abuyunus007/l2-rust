@@ -16,14 +16,14 @@ use sqlx::mysql::{MySqlConnectOptions, MySqlConnection};
 use sqlx::{AssertSqlSafe, Connection};
 
 const SCHEMA: [&str; 8] = [
-    include_str!("../sql/game/characters.sql"),
-    include_str!("../sql/game/clan_data.sql"),
-    include_str!("../sql/game/clan_privs.sql"),
-    include_str!("../sql/game/clan_subpledges.sql"),
-    include_str!("../sql/game/clan_skills.sql"),
-    include_str!("../sql/game/clan_notices.sql"),
-    include_str!("../sql/game/clan_wars.sql"),
-    include_str!("../sql/game/crests.sql"),
+    l2_db::game_sql!("characters"),
+    l2_db::game_sql!("clan_data"),
+    l2_db::game_sql!("clan_privs"),
+    l2_db::game_sql!("clan_subpledges"),
+    l2_db::game_sql!("clan_skills"),
+    l2_db::game_sql!("clan_notices"),
+    l2_db::game_sql!("clan_wars"),
+    l2_db::game_sql!("crests"),
 ];
 
 static COUNTER: AtomicU32 = AtomicU32::new(0);

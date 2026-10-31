@@ -1,6 +1,6 @@
 //! Parses every `.ini` of the Java distribution. Skipped when that folder does not exist (CI).
 //!
-//! The folder defaults to `C:\l2-rust\l2jmobius\dist`; set `L2JMOBIUS_DIST` to use another one.
+//! The folder defaults to `dist`; set `L2JMOBIUS_DIST` to use another one.
 
 use std::path::{Path, PathBuf};
 
@@ -9,7 +9,7 @@ use l2_config::IniFile;
 fn dist_dir() -> PathBuf {
     std::env::var_os("L2JMOBIUS_DIST")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist"))
+        .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist")))
 }
 
 fn collect_ini_files(dir: &Path, out: &mut Vec<PathBuf>) {

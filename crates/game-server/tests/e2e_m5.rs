@@ -81,7 +81,7 @@ const SOULSHOT_ID: i32 = 1835;
 const CUR_HP: i32 = 0x09;
 const CUR_MP: i32 = 0x0b;
 
-/// Every table of the game schema (the files of `crates/l2-db/sql/game`), so the game server
+/// Every table of the game schema (the files of `dist/db_installer/sql/game`), so the game server
 /// finds whatever it reads or writes.
 const GAME_SCHEMA: &[&str] = l2_db::GAME_SCHEMA;
 

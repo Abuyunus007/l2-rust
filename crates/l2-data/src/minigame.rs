@@ -477,7 +477,7 @@ mod tests {
 
     #[test]
     fn the_shipped_files_load_when_present() {
-        let root = Path::new("C:/l2-rust/l2jmobius/dist/game");
+        let root = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game"));
         if !root.join("data/UndergroundColiseum.xml").exists() {
             eprintln!("skipped: the datapack is not here");
             return;

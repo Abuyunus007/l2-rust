@@ -1941,10 +1941,9 @@ mod tests {
     /// the Java checkout is not there (CI).
     #[test]
     fn options_from_the_shipped_config_enable_custom_data() {
-        let root = std::env::var("L2J_ROOT").unwrap_or_else(|_| r"C:\l2-rust\l2jmobius".to_string());
-        let dir = Path::new(&root).join("dist").join("game").join("config");
+        let dir = l2_testkit::game_dir().join("config");
         if !dir.is_dir() {
-            eprintln!("skipped: no Java dist config at {}", dir.display());
+            eprintln!("skipped: no dist config at {}", dir.display());
             return;
         }
         let config = GameConfig::load(&dir).unwrap();

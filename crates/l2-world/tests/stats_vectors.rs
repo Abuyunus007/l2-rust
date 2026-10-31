@@ -4,7 +4,7 @@
 //! `UserInfo` / `NpcInfo` number, the raw doubles behind them, the 31 `calcStat` probes, the base
 //! stat bonus tables and the function lists of `stats_func_trace.json`.
 //!
-//! The creatures are built from the real datapack (skipped when `C:\l2-rust\l2jmobius\dist\game`
+//! The creatures are built from the real datapack (skipped when `dist/game`
 //! or `L2JMOBIUS_GAME_DIR` is missing, like in CI) the way the Java harness built them: the gear
 //! equipped in the listed order (the paperdoll slot as `Inventory.equipItem` picks it), then the
 //! listed skills in order, then the weight and grade penalties.
@@ -73,7 +73,7 @@ struct Tables {
 fn game_root() -> Option<PathBuf> {
     let root = std::env::var_os("L2JMOBIUS_GAME_DIR")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+        .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
     if root.join("data/stats/skills").is_dir() {
         Some(root)
     } else {

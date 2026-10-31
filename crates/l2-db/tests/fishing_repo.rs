@@ -16,8 +16,8 @@ use sqlx::mysql::{MySqlConnectOptions, MySqlConnection};
 use sqlx::{AssertSqlSafe, Connection};
 
 const SCHEMA: [&str; 2] = [
-    include_str!("../sql/game/fishing_championship.sql"),
-    include_str!("../sql/game/global_variables.sql"),
+    l2_db::game_sql!("fishing_championship"),
+    l2_db::game_sql!("global_variables"),
 ];
 
 static COUNTER: AtomicU32 = AtomicU32::new(0);

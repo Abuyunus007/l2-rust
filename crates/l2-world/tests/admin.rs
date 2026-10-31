@@ -1316,7 +1316,7 @@ fn loc_without_map_regions_prints_the_coordinates() {
 
 #[test]
 fn loc_names_the_area_with_the_real_map_regions() {
-    let root = std::path::PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game");
+    let root = std::path::PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game"));
     if !root.join("data").join("zones").is_dir() {
         eprintln!("skipped: {} has no data/zones", root.display());
         return;

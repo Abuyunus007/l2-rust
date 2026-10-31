@@ -1582,7 +1582,7 @@ fn a_busy_npc_answers_with_the_busy_page() {
 fn game_dir() -> Option<std::path::PathBuf> {
     let dir = std::env::var_os("L2JMOBIUS_GAME_DIR")
         .map(std::path::PathBuf::from)
-        .unwrap_or_else(|| std::path::PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+        .unwrap_or_else(|| std::path::PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
     if dir.join("data").is_dir() {
         Some(dir)
     } else {

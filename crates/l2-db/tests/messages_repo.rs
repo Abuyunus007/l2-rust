@@ -13,7 +13,7 @@ use l2_db::{MessageRepository, MessageRow, Pool, connect_with};
 use sqlx::mysql::{MySqlConnectOptions, MySqlConnection};
 use sqlx::{AssertSqlSafe, Connection};
 
-const SCHEMA: &str = include_str!("../sql/game/messages.sql");
+const SCHEMA: &str = l2_db::game_sql!("messages");
 
 static COUNTER: AtomicU32 = AtomicU32::new(0);
 

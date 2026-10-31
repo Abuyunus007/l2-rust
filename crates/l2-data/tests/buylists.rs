@@ -1,6 +1,6 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 //! The real Java buy lists and merchant price configs. Skipped with a printed message when the
-//! folder does not exist (CI). The folder defaults to `C:\l2-rust\l2jmobius\dist\game`; set
+//! folder does not exist (CI). The folder defaults to `dist/game`; set
 //! `L2JMOBIUS_GAME_DIR` to use another.
 
 use std::path::PathBuf;
@@ -10,7 +10,7 @@ use l2_data::{BuyListOptions, BuyLists, ItemTemplates, MerchantPriceConfigs};
 fn game_dir() -> Option<PathBuf> {
     let dir = std::env::var_os("L2JMOBIUS_GAME_DIR")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+        .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
     if dir.join("data/buylists").is_dir() {
         Some(dir)
     } else {

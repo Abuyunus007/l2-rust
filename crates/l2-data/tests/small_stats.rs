@@ -3,7 +3,7 @@
 //! skipped when the folder does not exist (CI). The rest are small inline files for the defaults,
 //! the bounds and the Java rules that are easy to get wrong.
 //!
-//! The folder defaults to `C:\l2-rust\l2jmobius\dist\game`; set `L2JMOBIUS_GAME_DIR` to use
+//! The folder defaults to `dist/game`; set `L2JMOBIUS_GAME_DIR` to use
 //! another. Expected numbers are the Java server's: 204 armor sets (13 more `<set>` elements are
 //! commented out in the files), 6 enchant HP grades, 180 hennas.
 
@@ -16,7 +16,7 @@ use l2_data::{ArmorSets, ClassId, Datapack, EnchantHpBonus, Hennas, HitCondition
 fn game_dir() -> Option<PathBuf> {
     let dir = std::env::var_os("L2JMOBIUS_GAME_DIR")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+        .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
     if dir.join("data").is_dir() {
         Some(dir)
     } else {

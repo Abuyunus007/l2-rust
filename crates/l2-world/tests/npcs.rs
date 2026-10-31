@@ -438,7 +438,7 @@ fn friendly_mobs_are_attackable_for_players_with_karma_only() {
 
 // ------------------------------------------------------------------ the reference folders
 
-const REFERENCE: &str = r"C:\l2-rust\l2jmobius\dist\game";
+const REFERENCE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game");
 
 fn reference_root() -> Option<PathBuf> {
     let root = PathBuf::from(REFERENCE);

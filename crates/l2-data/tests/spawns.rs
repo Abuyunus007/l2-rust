@@ -2,7 +2,7 @@
 //! Spawn data: the rules of Java's `SpawnData` on small files, and the real Java spawn files.
 //!
 //! The real files are skipped with a printed message when the folder does not exist (CI). The
-//! folder defaults to `C:\l2-rust\l2jmobius\dist\game`; set `L2JMOBIUS_GAME_DIR` to use another.
+//! folder defaults to `dist/game`; set `L2JMOBIUS_GAME_DIR` to use another.
 
 use std::fs;
 use std::path::PathBuf;
@@ -55,7 +55,7 @@ fn territory(name: &str, nodes: &str) -> String {
 fn game_dir() -> Option<PathBuf> {
     let dir = std::env::var_os("L2JMOBIUS_GAME_DIR")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+        .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
     if dir.join("data").is_dir() {
         Some(dir)
     } else {

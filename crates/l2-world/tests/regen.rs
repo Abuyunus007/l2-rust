@@ -4,7 +4,7 @@
 //! wheel, the status listeners and the `StatusUpdate` packets.
 //!
 //! Most tests use synthetic templates written inline, so they run in CI. The vector test reads the
-//! datapack (`C:\l2-rust\l2jmobius\dist\game`) and `java-vectors/out/formulas_regen.json` and skips
+//! datapack (`dist/game`) and `java-vectors/out/formulas_regen.json` and skips
 //! with a message when either is missing.
 // Java: entity/actor/status/{CreatureStatus,PlayerStatus}.java, mechanics/stats/Formulas.java
 //       (calcHpRegen, calcMpRegen, calcCpRegen, getRegeneratePeriod)
@@ -488,7 +488,7 @@ fn a_players_listeners_are_not_sent_its_hp_java_quirk() {
 fn game_root() -> Option<PathBuf> {
     let root = std::env::var_os("L2JMOBIUS_GAME_DIR")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+        .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
     if root.join("data/stats/skills").is_dir() {
         Some(root)
     } else {

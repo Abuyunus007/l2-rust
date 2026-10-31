@@ -2,7 +2,7 @@
 //! Loads the real Java NPC files (124 files in `data/stats/npcs`, 15 more in `custom`). Skipped
 //! when the folder does not exist (CI).
 //!
-//! The folder defaults to `C:\l2-rust\l2jmobius\dist\game`; set `L2JMOBIUS_GAME_DIR` to use another.
+//! The folder defaults to `dist/game`; set `L2JMOBIUS_GAME_DIR` to use another.
 //! The expected numbers were counted from the XML with an independent script (every `<npc>`
 //! element, values converted with Java's rules); Java's own count lines are
 //! `NpcData: Loaded 10461 NPCs.` and, with `CustomNpcData`, `NpcData: Loaded 23 custom NPCs.`
@@ -18,7 +18,7 @@ use l2_data::{NpcLoadOptions, NpcTemplates};
 fn game_dir() -> Option<PathBuf> {
     let dir = std::env::var_os("L2JMOBIUS_GAME_DIR")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+        .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
     if dir.join("data").is_dir() {
         Some(dir)
     } else {

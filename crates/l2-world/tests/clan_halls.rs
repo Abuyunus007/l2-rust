@@ -2868,7 +2868,7 @@ fn the_clan_hall_list_names_the_owners() {
 
 /// The datapack's pages (skipped without it): the links the code builds and the ones it replaces
 /// in the pages are the ones the client sends, so the bypass validation lets the commands through.
-const DIST_GAME: &str = r"C:\l2-rust\l2jmobius\dist\game";
+const DIST_GAME: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game");
 
 /// Installs the datapack's html; `false` (with a printed note) when it is not there.
 fn real_pages(s: &mut Scene) -> bool {

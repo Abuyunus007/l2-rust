@@ -21,7 +21,7 @@
 //! into a throwaway MariaDB when `L2_TEST_DATABASE_URL` is set.
 //!
 //! The datapack and the Java checkout are needed: every test prints a note and returns when
-//! `C:\l2-rust\l2jmobius\dist\game` (or `L2JMOBIUS_GAME_DIR`) is missing, as in CI.
+//! `dist/game` (or `L2JMOBIUS_GAME_DIR`) is missing, as in CI.
 
 #[path = "e2e/scripts_db.rs"]
 mod scripts_db;
@@ -70,7 +70,7 @@ const TALKING_ISLAND: (i32, i32, i32) = (-71_338, 258_271, -3_104);
 /// The `dist/game` folder of the Java checkout, `None` (and a printed note) without it.
 fn game_dir() -> Option<PathBuf> {
     let dir = std::env::var("L2JMOBIUS_GAME_DIR").map_or_else(
-        |_| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"),
+        |_| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")),
         PathBuf::from,
     );
     if dir.join("data").join("stats").is_dir() && dir.join("config").join("AccessLevels.xml").is_file() {

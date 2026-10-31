@@ -1175,7 +1175,7 @@ fn a_timer_that_does_not_apply_is_dropped_on_restore() {
 fn the_whole_datapack_loads_its_capsuled_items() {
     let root = std::env::var_os("L2JMOBIUS_GAME_DIR")
         .map(std::path::PathBuf::from)
-        .unwrap_or_else(|| std::path::PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+        .unwrap_or_else(|| std::path::PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
     let root = root.as_path();
     if !root.join("data/stats/items").is_dir() {
         eprintln!("skipped: {} has no item files", root.display());

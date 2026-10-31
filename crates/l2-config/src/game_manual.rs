@@ -626,13 +626,14 @@ mod tests {
     /// The real `dist/game/config` values parse (skips when the Java checkout is missing).
     #[test]
     fn dist_values_parse() {
-        let root = std::env::var("L2J_ROOT").unwrap_or_else(|_| r"C:\l2-rust\l2jmobius".to_string());
-        let dir = std::path::Path::new(&root)
-            .join("dist")
-            .join("game")
-            .join("config");
+        // l2-testkit depends on crates that depend on l2-config, so the path is built here.
+        let dist = std::env::var_os("L2JMOBIUS_DIST").map_or_else(
+            || std::path::PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist")),
+            std::path::PathBuf::from,
+        );
+        let dir = dist.join("game").join("config");
         if !dir.is_dir() {
-            eprintln!("skipped: no Java dist config at {}", dir.display());
+            eprintln!("skipped: no dist config at {}", dir.display());
             return;
         }
         let config = crate::GameConfig::load(&dir).unwrap();

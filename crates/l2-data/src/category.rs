@@ -162,7 +162,7 @@ mod tests {
     /// Every block of the shipped file loads: no unknown name, no empty parse.
     #[test]
     fn the_shipped_file_loads_every_category() {
-        let root = Path::new(r"C:\l2-rust\l2jmobius\dist\game");
+        let root = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game"));
         let path = root.join("data/CategoryData.xml");
         let Ok(text) = std::fs::read_to_string(&path) else {
             eprintln!("skipped: {} does not exist", path.display());
