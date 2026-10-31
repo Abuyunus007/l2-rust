@@ -11,6 +11,7 @@
 //! block: send requests with `cx.bridge.request(..)` and handle the answers in
 //! [`View::on_event`], which receives every [`BridgeEvent`].
 
+pub mod accounts;
 pub mod connection;
 pub mod data_browser;
 pub mod geodata;
@@ -37,6 +38,7 @@ pub enum ViewId {
     Connection,
     Servers,
     Players,
+    Accounts,
     Logs,
     Packets,
     Data,
@@ -44,10 +46,11 @@ pub enum ViewId {
 }
 
 impl ViewId {
-    pub const ALL: [ViewId; 7] = [
+    pub const ALL: [ViewId; 8] = [
         ViewId::Connection,
         ViewId::Servers,
         ViewId::Players,
+        ViewId::Accounts,
         ViewId::Logs,
         ViewId::Packets,
         ViewId::Data,
@@ -59,6 +62,7 @@ impl ViewId {
             ViewId::Connection => "Connection",
             ViewId::Servers => "Servers",
             ViewId::Players => "Players",
+            ViewId::Accounts => "Accounts",
             ViewId::Logs => "Logs",
             ViewId::Packets => "Packets",
             ViewId::Data => "Data",
@@ -73,6 +77,7 @@ impl ViewId {
             ViewId::Connection
                 | ViewId::Servers
                 | ViewId::Players
+                | ViewId::Accounts
                 | ViewId::Logs
                 | ViewId::Packets
                 | ViewId::Data
@@ -87,6 +92,7 @@ impl ViewId {
             ViewId::Connection
             | ViewId::Servers
             | ViewId::Players
+            | ViewId::Accounts
             | ViewId::Logs
             | ViewId::Packets
             | ViewId::Data
@@ -101,6 +107,7 @@ pub struct Views {
     pub connection: connection::ConnectionView,
     pub servers: servers::ServersView,
     pub players: players::PlayersView,
+    pub accounts: accounts::AccountsView,
     pub logs: logs::LogsView,
     pub packets: packets::PacketsView,
     pub data: data_browser::DataBrowserView,
@@ -114,6 +121,7 @@ impl Views {
             ViewId::Connection => Some(&mut self.connection),
             ViewId::Servers => Some(&mut self.servers),
             ViewId::Players => Some(&mut self.players),
+            ViewId::Accounts => Some(&mut self.accounts),
             ViewId::Logs => Some(&mut self.logs),
             ViewId::Packets => Some(&mut self.packets),
             ViewId::Data => Some(&mut self.data),
@@ -125,6 +133,7 @@ impl Views {
         self.connection.on_event(event);
         self.servers.on_event(event);
         self.players.on_event(event);
+        self.accounts.on_event(event);
         self.logs.on_event(event);
         self.packets.on_event(event);
     }
