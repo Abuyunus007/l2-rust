@@ -11,9 +11,12 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 
-use l2_admin_api::{AdminHandler, GamePlayer, GameStatus, Request, Response, Session, Token};
+use l2_admin_api::{
+    AdminHandler, GameAction, GameInfo, GamePlayer, GameStatus, PlayerAction, Request, Response, Session,
+    TOWNS, Token,
+};
 use l2_config::IniFile;
-use l2_world::{AdminQuery, OnlinePlayer, WorldCommand};
+use l2_world::{AdminQuery, GuiReply, GuiRequest, OnlinePlayer, WorldCommand};
 use tokio::net::TcpListener;
 use tracing::{info, warn};
 
@@ -125,10 +128,209 @@ impl AdminHandler for GameAdmin {
                 },
                 Err(message) => Response::Error { message },
             },
+            Request::GameAdmin { action, .. } => game_action(&self.state, action).await,
             _ => Response::Error {
                 message: "not supported by the game server".into(),
             },
         }
+    }
+}
+
+/// The longest reason, message or command the endpoint passes on.
+const MAX_TEXT_CHARS: usize = 400;
+
+/// Runs one GM action in the world and turns the answer into a response. Every action is a
+/// `//command` of the virtual GM (see `l2_world::admin::console`), so it takes the same code
+/// path as a GM's chat command.
+async fn game_action(state: &GameState, action: GameAction) -> Response {
+    let request = match build_request(state, action).await {
+        Ok(request) => request,
+        Err(message) => return Response::Error { message },
+    };
+    match gui_query(state, request).await {
+        Ok(GuiReply::Lines(lines)) => Response::GameReply { lines },
+        Ok(GuiReply::Info(info)) => Response::GameInfo {
+            info: GameInfo {
+                uptime_secs: info.uptime_secs,
+                online: info.online,
+                memory_bytes: info.memory_bytes,
+                threads: thread_count(),
+                ticks: info.ticks,
+                tick_ms: info.tick_ms,
+                shutdown_in_secs: info.shutdown_in_secs,
+            },
+        },
+        Err(message) => Response::Error { message },
+    }
+}
+
+/// One line of text: control characters become spaces, the ends are trimmed, the length is capped.
+fn one_line(text: &str) -> String {
+    let cleaned: String = text
+        .chars()
+        .map(|c| if c.is_control() { ' ' } else { c })
+        .collect();
+    cleaned.trim().chars().take(MAX_TEXT_CHARS).collect()
+}
+
+/// A character or account name as a command word: no spaces or control characters.
+fn command_word(name: &str) -> Result<&str, String> {
+    let name = name.trim();
+    if name.is_empty() || name.chars().any(|c| c.is_whitespace() || c.is_control()) {
+        return Err(format!("'{name}' is not a usable name"));
+    }
+    Ok(name)
+}
+
+fn gui_command(command: String, with_html: bool) -> GuiRequest {
+    GuiRequest::Command { command, with_html }
+}
+
+async fn build_request(state: &GameState, action: GameAction) -> Result<GuiRequest, String> {
+    match action {
+        GameAction::Player { name, action } => {
+            let name = command_word(&name)?.to_owned();
+            match action {
+                PlayerAction::Kick => Ok(gui_command(format!("kick {name}"), false)),
+                PlayerAction::Jail { minutes, reason } => Ok(punishment(
+                    &name,
+                    "CHARACTER",
+                    "JAIL",
+                    minutes,
+                    &reason,
+                    "Jailed by admin",
+                )),
+                PlayerAction::BanChar { minutes, reason } => Ok(punishment(
+                    &name,
+                    "CHARACTER",
+                    "BAN",
+                    minutes,
+                    &reason,
+                    "Banned by admin",
+                )),
+                PlayerAction::ChatBan { minutes, reason } => Ok(punishment(
+                    &name,
+                    "CHARACTER",
+                    "CHAT_BAN",
+                    minutes,
+                    &reason,
+                    "Chat banned by admin",
+                )),
+                PlayerAction::BanAccount { minutes, reason } => {
+                    // The account punishment is keyed by the account name, not the character's.
+                    let players = online_players(state).await?;
+                    let account = players
+                        .iter()
+                        .find(|p| p.name.eq_ignore_ascii_case(&name))
+                        .map(|p| p.account.clone())
+                        .ok_or_else(|| format!("{name} is not online."))?;
+                    let account = command_word(&account)?;
+                    Ok(punishment(
+                        account,
+                        "ACCOUNT",
+                        "BAN",
+                        minutes,
+                        &reason,
+                        "Banned by admin",
+                    ))
+                }
+                PlayerAction::Teleport { town } => {
+                    let (_, x, y, z) = TOWNS
+                        .iter()
+                        .find(|(n, ..)| n.eq_ignore_ascii_case(town.trim()))
+                        .copied()
+                        .ok_or_else(|| format!("unknown town '{town}'"))?;
+                    Ok(GuiRequest::Teleport { name, x, y, z })
+                }
+                PlayerAction::Message { text } => {
+                    let text = one_line(&text);
+                    if text.is_empty() {
+                        return Err("the message is empty".into());
+                    }
+                    Ok(GuiRequest::Message { name, text })
+                }
+            }
+        }
+        GameAction::Announce { text, critical } => {
+            let text = one_line(&text);
+            if text.is_empty() {
+                return Err("the announcement is empty".into());
+            }
+            let word = if critical { "announce_crit" } else { "announce" };
+            Ok(gui_command(format!("{word} {text}"), false))
+        }
+        GameAction::Command { command } => {
+            let command = one_line(&command);
+            if command.trim_start_matches('/').trim().is_empty() {
+                return Err("the command is empty".into());
+            }
+            Ok(gui_command(command, true))
+        }
+        GameAction::Shutdown { seconds, restart } => {
+            let word = if restart {
+                "server_restart"
+            } else {
+                "server_shutdown"
+            };
+            Ok(gui_command(format!("{word} {seconds}"), false))
+        }
+        GameAction::AbortShutdown => Ok(gui_command("server_abort".into(), false)),
+        GameAction::ServerInfo => Ok(GuiRequest::Info),
+    }
+}
+
+/// `//punishment_add <key> <affect> <type> <minutes> <reason>`: what the `//jail` and `//ban_*`
+/// shortcuts call, with minutes 0 and a fixed reason. 0 minutes = forever.
+fn punishment(
+    key: &str,
+    affect: &str,
+    kind: &str,
+    minutes: u32,
+    reason: &str,
+    default_reason: &str,
+) -> GuiRequest {
+    let reason = one_line(reason);
+    let reason = if reason.is_empty() {
+        default_reason
+    } else {
+        &reason
+    };
+    gui_command(
+        format!("punishment_add {key} {affect} {kind} {minutes} {reason}"),
+        false,
+    )
+}
+
+/// The threads of this process (Linux reads `/proc`; elsewhere the standard library cannot tell,
+/// so 0).
+fn thread_count() -> u32 {
+    std::fs::read_to_string("/proc/self/status")
+        .ok()
+        .and_then(|text| {
+            text.lines()
+                .find_map(|line| line.strip_prefix("Threads:"))
+                .and_then(|n| n.trim().parse().ok())
+        })
+        .unwrap_or(0)
+}
+
+/// Sends a GUI request to the world and waits for the answer (same pattern as
+/// [`online_players`]).
+async fn gui_query(state: &GameState, request: GuiRequest) -> Result<GuiReply, String> {
+    let (reply, answer) = tokio::sync::oneshot::channel();
+    let query = AdminQuery::Gui(
+        request,
+        Box::new(move |answer| {
+            let _ = reply.send(answer);
+        }),
+    );
+    if !state.world.send(WorldCommand::Admin(query)) {
+        return Err("the world is not running".into());
+    }
+    match tokio::time::timeout(WORLD_ANSWER_TIMEOUT, answer).await {
+        Ok(Ok(answer)) => Ok(answer),
+        Ok(Err(_)) => Err("the world is shutting down".into()),
+        Err(_) => Err("the world did not answer in time".into()),
     }
 }
 
@@ -163,6 +365,10 @@ pub fn game_status(players: Vec<OnlinePlayer>) -> GameStatus {
                 class_id: p.class_id,
                 ip: p.ip.map(|ip| ip.to_string()),
                 online_since_ms: p.online_since_unix_ms,
+                clan: p.clan,
+                x: p.x,
+                y: p.y,
+                z: p.z,
             })
             .collect(),
     }
@@ -349,6 +555,10 @@ Token = t
             online_secs: 5,
             online_since_unix_ms: 1_700_000_000_000,
             ip: Some(IpAddr::from([10, 0, 0, 7])),
+            clan: Some("Bears".into()),
+            x: 1,
+            y: 2,
+            z: 3,
         }]);
         assert_eq!(
             status,
@@ -360,7 +570,301 @@ Token = t
                     class_id: 88,
                     ip: Some("10.0.0.7".into()),
                     online_since_ms: 1_700_000_000_000,
+                    clan: Some("Bears".into()),
+                    x: 1,
+                    y: 2,
+                    z: 3,
                 }]
+            }
+        );
+    }
+
+    /// Static data whose master level may use the commands the GUI sends.
+    struct GmData {
+        rights: l2_world::AdminRights,
+    }
+
+    impl l2_world::StaticData for GmData {
+        fn item(&self, _item_id: i32) -> Option<l2_world::ItemStatic> {
+            None
+        }
+        fn skill_is_passive(&self, _skill_id: i32) -> bool {
+            false
+        }
+        fn exp_percent(&self, _exp: i64, _level: i32) -> f64 {
+            0.0
+        }
+        fn access_level(&self, level: i32) -> l2_world::AccessLevelStatic {
+            if level >= 100 {
+                l2_world::AccessLevelStatic {
+                    name_color: 0,
+                    title_color: 0,
+                    is_gm: true,
+                }
+            } else {
+                l2_world::AccessLevelStatic::USER
+            }
+        }
+        fn admin_rights(&self) -> Option<&l2_world::AdminRights> {
+            Some(&self.rights)
+        }
+        fn master_access_level(&self) -> i32 {
+            100
+        }
+    }
+
+    fn gm_data() -> GmData {
+        let mut rights = l2_world::AdminRights::default();
+        rights.add_level(0, 0);
+        rights.add_level(100, 0);
+        for command in [
+            "kick",
+            "announce",
+            "announce_crit",
+            "server_shutdown",
+            "server_restart",
+            "server_abort",
+            "punishment_add",
+            "teleport_character",
+        ] {
+            rights.add_command(command, 100, false);
+        }
+        GmData { rights }
+    }
+
+    /// An endpoint on port 0 over a world that knows GM rights, with two characters in it.
+    async fn gm_endpoint() -> (crate::Server, l2_admin_api::AdminClient, tempfile::TempDir) {
+        use crate::test_support::idle_server_with;
+        use l2_admin_api::AdminClient;
+
+        let config = tempfile::tempdir().unwrap();
+        std::fs::write(
+            config.path().join(ADMIN_CONFIG_FILE),
+            "Enabled = True\nBind = 127.0.0.1:0\nToken = t\n",
+        )
+        .unwrap();
+        let mut server = idle_server_with(|world| world.set_static_data(Box::new(gm_data())));
+        start(&mut server, config.path()).await.unwrap();
+        let addr = server.admin_addr().unwrap();
+        let (client, _events) = AdminClient::connect(&format!("ws://{addr}"), "t").await.unwrap();
+        for (session, id, name) in [(1, 0x6000_0001, "Zed"), (2, 0x6000_0002, "Amy")] {
+            assert!(server.state().world.send(WorldCommand::EnterWorld {
+                session: SessionId(session),
+                player: Box::new(player_data(id, name)),
+                sink: Box::new(NullSink),
+                ip: None,
+            }));
+        }
+        (server, client, config)
+    }
+
+    async fn game_request(client: &l2_admin_api::AdminClient, action: GameAction) -> Response {
+        client
+            .request(Request::GameAdmin { server: None, action })
+            .await
+            .unwrap()
+    }
+
+    async fn names(client: &l2_admin_api::AdminClient) -> Vec<String> {
+        let Response::GameStatus { status } = client
+            .request(Request::GetGameStatus { server: None })
+            .await
+            .unwrap()
+        else {
+            panic!("expected a game status");
+        };
+        status.players.into_iter().map(|p| p.name).collect()
+    }
+
+    fn lines(response: Response) -> Vec<String> {
+        match response {
+            Response::GameReply { lines } => lines,
+            other => panic!("expected a reply, got {other:?}"),
+        }
+    }
+
+    #[tokio::test]
+    async fn the_endpoint_kicks_bans_and_jails_through_the_world() {
+        let (server, client, _config) = gm_endpoint().await;
+        let kick = PlayerAction::Kick;
+        let reply = game_request(
+            &client,
+            GameAction::Player {
+                name: "Zed".into(),
+                action: kick,
+            },
+        )
+        .await;
+        assert_eq!(lines(reply), ["You kicked Zed from the game."]);
+        assert_eq!(names(&client).await, ["Amy"]);
+
+        let jail = PlayerAction::Jail {
+            minutes: 30,
+            reason: "botting".into(),
+        };
+        let reply = game_request(
+            &client,
+            GameAction::Player {
+                name: "Amy".into(),
+                action: jail,
+            },
+        )
+        .await;
+        assert_eq!(
+            lines(reply),
+            ["Punishment JAIL have been applied to: CHARACTER Amy!"]
+        );
+
+        // A ban kicks the character, as `//ban_char` does.
+        let ban = PlayerAction::BanChar {
+            minutes: 0,
+            reason: String::new(),
+        };
+        let reply = game_request(
+            &client,
+            GameAction::Player {
+                name: "Amy".into(),
+                action: ban,
+            },
+        )
+        .await;
+        assert_eq!(
+            lines(reply),
+            ["Punishment BAN have been applied to: CHARACTER Amy!"]
+        );
+        assert!(names(&client).await.is_empty());
+        server.shutdown(false).await;
+    }
+
+    #[tokio::test]
+    async fn the_endpoint_announces_and_runs_console_commands() {
+        let (server, client, _config) = gm_endpoint().await;
+        let reply = game_request(
+            &client,
+            GameAction::Announce {
+                text: "Maintenance soon".into(),
+                critical: true,
+            },
+        )
+        .await;
+        // The virtual GM is online while the command runs, so it hears the announcement too.
+        assert_eq!(lines(reply), ["[critical announcement] Maintenance soon"]);
+        let reply = game_request(
+            &client,
+            GameAction::Command {
+                command: "nonsense".into(),
+            },
+        )
+        .await;
+        assert_eq!(lines(reply), ["The command 'nonsense' does not exist!"]);
+
+        // Bad input is refused before it reaches the world.
+        for action in [
+            GameAction::Announce {
+                text: "  ".into(),
+                critical: false,
+            },
+            GameAction::Command { command: "//".into() },
+            GameAction::Player {
+                name: "two words".into(),
+                action: PlayerAction::Kick,
+            },
+            GameAction::Player {
+                name: "Amy".into(),
+                action: PlayerAction::Teleport {
+                    town: "Atlantis".into(),
+                },
+            },
+        ] {
+            assert!(matches!(
+                game_request(&client, action).await,
+                Response::Error { .. }
+            ));
+        }
+        server.shutdown(false).await;
+    }
+
+    #[tokio::test]
+    async fn the_endpoint_counts_down_and_aborts() {
+        let (server, client, _config) = gm_endpoint().await;
+        let reply = game_request(
+            &client,
+            GameAction::Shutdown {
+                seconds: 120,
+                restart: false,
+            },
+        )
+        .await;
+        assert_eq!(
+            lines(reply),
+            ["The server will be coming down in 120 second(s). Please find a safe place to log out."]
+        );
+        let Response::GameInfo { info } = game_request(&client, GameAction::ServerInfo).await else {
+            panic!("expected the server info");
+        };
+        assert_eq!(info.online, 2);
+        assert!(info.shutdown_in_secs.is_some());
+        assert_eq!(info.tick_ms, 50);
+
+        let reply = game_request(&client, GameAction::AbortShutdown).await;
+        assert_eq!(
+            lines(reply),
+            ["[announcement] Server aborts aborting and continues normal operation!"]
+        );
+        server.shutdown(false).await;
+    }
+
+    #[tokio::test]
+    async fn the_endpoint_teleports_to_a_town_and_whispers() {
+        let (server, client, _config) = gm_endpoint().await;
+        let reply = game_request(
+            &client,
+            GameAction::Player {
+                name: "amy".into(),
+                action: PlayerAction::Teleport { town: "Giran".into() },
+            },
+        )
+        .await;
+        assert_eq!(lines(reply), Vec::<String>::new());
+        let reply = game_request(
+            &client,
+            GameAction::Player {
+                name: "Amy".into(),
+                action: PlayerAction::Message { text: "hi".into() },
+            },
+        )
+        .await;
+        assert_eq!(lines(reply), ["Message sent to Amy."]);
+        server.shutdown(false).await;
+    }
+
+    #[test]
+    fn requests_are_built_from_one_clean_line() {
+        assert_eq!(one_line("a\nb\tc  "), "a b c");
+        assert_eq!(one_line(&"x".repeat(500)).chars().count(), MAX_TEXT_CHARS);
+        assert!(command_word("Amy").is_ok());
+        assert!(command_word("A my").is_err());
+        assert!(command_word("").is_err());
+        assert_eq!(
+            punishment(
+                "Amy",
+                "CHARACTER",
+                "JAIL",
+                30,
+                " caught\nbotting ",
+                "Jailed by admin"
+            ),
+            GuiRequest::Command {
+                command: "punishment_add Amy CHARACTER JAIL 30 caught botting".into(),
+                with_html: false
+            }
+        );
+        // The shortcuts' own reason when the GM gave none.
+        assert_eq!(
+            punishment("acc", "ACCOUNT", "BAN", 0, "", "Banned by admin"),
+            GuiRequest::Command {
+                command: "punishment_add acc ACCOUNT BAN 0 Banned by admin".into(),
+                with_html: false
             }
         );
     }

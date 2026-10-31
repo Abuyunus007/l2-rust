@@ -13,6 +13,7 @@
 
 pub mod connection;
 pub mod data_browser;
+pub mod game_admin;
 pub mod geodata;
 pub mod logs;
 pub mod packets;
@@ -37,6 +38,7 @@ pub enum ViewId {
     Connection,
     Servers,
     Players,
+    GameAdmin,
     Logs,
     Packets,
     Data,
@@ -44,10 +46,11 @@ pub enum ViewId {
 }
 
 impl ViewId {
-    pub const ALL: [ViewId; 7] = [
+    pub const ALL: [ViewId; 8] = [
         ViewId::Connection,
         ViewId::Servers,
         ViewId::Players,
+        ViewId::GameAdmin,
         ViewId::Logs,
         ViewId::Packets,
         ViewId::Data,
@@ -59,6 +62,7 @@ impl ViewId {
             ViewId::Connection => "Connection",
             ViewId::Servers => "Servers",
             ViewId::Players => "Players",
+            ViewId::GameAdmin => "Game admin",
             ViewId::Logs => "Logs",
             ViewId::Packets => "Packets",
             ViewId::Data => "Data",
@@ -73,6 +77,7 @@ impl ViewId {
             ViewId::Connection
                 | ViewId::Servers
                 | ViewId::Players
+                | ViewId::GameAdmin
                 | ViewId::Logs
                 | ViewId::Packets
                 | ViewId::Data
@@ -87,6 +92,7 @@ impl ViewId {
             ViewId::Connection
             | ViewId::Servers
             | ViewId::Players
+            | ViewId::GameAdmin
             | ViewId::Logs
             | ViewId::Packets
             | ViewId::Data
@@ -101,6 +107,7 @@ pub struct Views {
     pub connection: connection::ConnectionView,
     pub servers: servers::ServersView,
     pub players: players::PlayersView,
+    pub game_admin: game_admin::GameAdminView,
     pub logs: logs::LogsView,
     pub packets: packets::PacketsView,
     pub data: data_browser::DataBrowserView,
@@ -114,6 +121,7 @@ impl Views {
             ViewId::Connection => Some(&mut self.connection),
             ViewId::Servers => Some(&mut self.servers),
             ViewId::Players => Some(&mut self.players),
+            ViewId::GameAdmin => Some(&mut self.game_admin),
             ViewId::Logs => Some(&mut self.logs),
             ViewId::Packets => Some(&mut self.packets),
             ViewId::Data => Some(&mut self.data),
@@ -125,6 +133,7 @@ impl Views {
         self.connection.on_event(event);
         self.servers.on_event(event);
         self.players.on_event(event);
+        self.game_admin.on_event(event);
         self.logs.on_event(event);
         self.packets.on_event(event);
     }

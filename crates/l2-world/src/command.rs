@@ -318,12 +318,18 @@ pub enum LeaveReason {
 /// thread, so it must only hand the value over, e.g. into a channel).
 pub enum AdminQuery {
     OnlinePlayers(Box<dyn FnOnce(Vec<OnlinePlayer>) + Send>),
+    /// The admin GUI (G-03): run a request as the virtual console GM, see `admin/console.rs`.
+    Gui(
+        crate::admin::console::GuiRequest,
+        Box<dyn FnOnce(crate::admin::console::GuiReply) + Send>,
+    ),
 }
 
 impl fmt::Debug for AdminQuery {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::OnlinePlayers(_) => f.write_str("OnlinePlayers(..)"),
+            Self::Gui(request, _) => write!(f, "Gui({request:?})"),
         }
     }
 }
