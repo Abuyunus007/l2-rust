@@ -9,14 +9,17 @@ use std::path::{Path, PathBuf};
 use l2_config::game::CLASSES;
 use l2_config::{GameConfig, IniFile};
 
-/// `$L2J_ROOT/dist/game/config`, if the Java checkout exists.
+/// The repo's `dist/game/config` (`L2JMOBIUS_DIST` overrides), if it exists.
 fn dist_config_dir() -> Option<PathBuf> {
-    let root = std::env::var("L2J_ROOT").unwrap_or_else(|_| r"C:\l2-rust\l2jmobius".to_string());
-    let dir = Path::new(&root).join("dist").join("game").join("config");
+    let dist = std::env::var_os("L2JMOBIUS_DIST").map_or_else(
+        || PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist")),
+        PathBuf::from,
+    );
+    let dir = dist.join("game").join("config");
     if dir.is_dir() {
         Some(dir)
     } else {
-        eprintln!("skipped: no Java dist config at {}", dir.display());
+        eprintln!("skipped: no dist config at {}", dir.display());
         None
     }
 }

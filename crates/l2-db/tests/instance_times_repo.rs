@@ -14,7 +14,7 @@ use l2_db::{InstanceTimeRepository, InstanceTimeRow, Pool, connect_with};
 use sqlx::mysql::{MySqlConnectOptions, MySqlConnection};
 use sqlx::{AssertSqlSafe, Connection};
 
-const SCHEMA: [&str; 1] = [include_str!("../sql/game/character_instance_time.sql")];
+const SCHEMA: [&str; 1] = [l2_db::game_sql!("character_instance_time")];
 
 static COUNTER: AtomicU32 = AtomicU32::new(0);
 

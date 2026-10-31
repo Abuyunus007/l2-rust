@@ -13,7 +13,7 @@
 //!   and the test checks that Rust made exactly these calls in this order, then that the drop list
 //!   (item id, count) is the same.
 //! - A second test runs the same cases with the templates the Rust loaders read from the reference
-//!   datapack (`L2_DATAPACK_ROOT`, default `C:\l2-rust\l2jmobius\dist\game`), which also checks the
+//!   datapack (`L2_DATAPACK_ROOT`, default `dist/game`), which also checks the
 //!   post-processing of the lists (items that do not exist dropped, the sorting by chance). It
 //!   skips when the datapack is missing.
 //! - Files that are missing skip with a message (CI has all of them: they are committed).
@@ -431,7 +431,7 @@ fn every_vector_case_matches_java() {
 fn datapack_root() -> Option<PathBuf> {
     let root = std::env::var_os("L2_DATAPACK_ROOT")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+        .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
     root.join("data/stats/npcs").is_dir().then_some(root)
 }
 

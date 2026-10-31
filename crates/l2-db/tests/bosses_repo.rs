@@ -17,10 +17,10 @@ use sqlx::mysql::{MySqlConnectOptions, MySqlConnection};
 use sqlx::{AssertSqlSafe, Connection};
 
 const SCHEMA: [&str; 4] = [
-    include_str!("../sql/game/grandboss_data.sql"),
-    include_str!("../sql/game/grandboss_list.sql"),
-    include_str!("../sql/game/raidboss_spawnlist.sql"),
-    include_str!("../sql/game/character_raid_points.sql"),
+    l2_db::game_sql!("grandboss_data"),
+    l2_db::game_sql!("grandboss_list"),
+    l2_db::game_sql!("raidboss_spawnlist"),
+    l2_db::game_sql!("character_raid_points"),
 ];
 
 static COUNTER: AtomicU32 = AtomicU32::new(0);

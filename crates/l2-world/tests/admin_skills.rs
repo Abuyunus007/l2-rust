@@ -1486,7 +1486,10 @@ fn placeholders(page: &str) -> std::collections::BTreeSet<String> {
 /// above stand for the real pages. Skips without the reference datapack.
 #[test]
 fn the_test_pages_have_the_placeholders_of_the_shipped_pages() {
-    let dir = Path::new(r"C:\l2-rust\l2jmobius\dist\game\data\html\admin");
+    let dir = Path::new(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../dist/game/data/html/admin"
+    ));
     if !dir.is_dir() {
         eprintln!("skipped: the reference datapack is not here");
         return;

@@ -2,7 +2,7 @@
 //! Loads the real Java zone and map region files and checks them against the real Java
 //! `ZoneManager` / `MapRegionData`. Skipped when the folder does not exist (CI).
 //!
-//! The folder defaults to `C:\l2-rust\l2jmobius\dist\game`; set `L2JMOBIUS_GAME_DIR` to use another.
+//! The folder defaults to `dist/game`; set `L2JMOBIUS_GAME_DIR` to use another.
 //!
 //! The expected numbers come from running the unmodified Java classes (`ZoneManager.getInstance()`,
 //! `MapRegionData.getInstance()`, JDK 25) over the same files: Java's own log line is
@@ -23,7 +23,7 @@ use l2_data::{Location, Zone};
 fn game_dir() -> Option<PathBuf> {
     let dir = std::env::var_os("L2JMOBIUS_GAME_DIR")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+        .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
     if dir.join("data").join("zones").is_dir() {
         Some(dir)
     } else {

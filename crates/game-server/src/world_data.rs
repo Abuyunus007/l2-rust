@@ -2406,7 +2406,7 @@ BotReportPointsResetHour = noon
     fn the_shipped_admin_files_give_a_master_every_listed_command() {
         let root = std::env::var_os("L2JMOBIUS_GAME_DIR")
             .map(PathBuf::from)
-            .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+            .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
         let config = root.join("config");
         if !config.join(AccessLevels::COMMANDS_FILE).is_file() {
             eprintln!("skipped: {} has no admin config", config.display());
@@ -2481,7 +2481,7 @@ BotReportPointsResetHour = noon
     fn the_real_datapack_gives_the_stats_of_the_recorded_character() {
         let root = std::env::var_os("L2JMOBIUS_GAME_DIR")
             .map(PathBuf::from)
-            .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+            .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
         if !root.join("data/stats/statBonus.xml").is_file() {
             eprintln!("skipped: {} has no datapack", root.display());
             return;
@@ -2645,7 +2645,7 @@ RewardLowExpKillsChance = 250
     fn the_shipped_vitality_values_are_read() {
         let root = std::env::var_os("L2JMOBIUS_GAME_DIR")
             .map(PathBuf::from)
-            .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+            .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
         let config_dir = root.join("config");
         if !config_dir.join("Rates.ini").is_file() {
             eprintln!("skipped: {} has no Rates.ini", config_dir.display());
@@ -2759,7 +2759,7 @@ FloodProtectorPlayerActionInterval = 1
     fn the_shipped_flood_protector_ini_is_read_completely() {
         use l2_world::FloodKind;
 
-        let root = PathBuf::from("C:/l2-rust/l2jmobius/dist/game/config");
+        let root = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game/config"));
         if !root.join(FLOOD_PROTECTOR_FILE).exists() {
             eprintln!("skipped: the reference config folder is missing");
             return;

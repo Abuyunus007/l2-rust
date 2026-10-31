@@ -1080,8 +1080,10 @@ fn by_creature(cases: &[Value]) -> BTreeMap<&str, Vec<&Value>> {
 /// states of a creature have to match with one choice of stat model per stat.
 #[test]
 fn regen_vectors_with_the_datapack() {
-    let root = std::env::var_os("L2JMOBIUS_GAME_DIR")
-        .map_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"), PathBuf::from);
+    let root = std::env::var_os("L2JMOBIUS_GAME_DIR").map_or_else(
+        || PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")),
+        PathBuf::from,
+    );
     if !root.join("data/stats/players/templates").is_dir() || !root.join("data/stats/npcs").is_dir() {
         eprintln!("skipped: {} has no datapack", root.display());
         return;

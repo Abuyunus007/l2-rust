@@ -13,11 +13,11 @@ use sqlx::{AssertSqlSafe, Connection};
 
 /// The five tables Java's IdManager scans.
 const SCHEMA: [&str; 5] = [
-    include_str!("../sql/game/characters.sql"),
-    include_str!("../sql/game/items.sql"),
-    include_str!("../sql/game/clan_data.sql"),
-    include_str!("../sql/game/itemsonground.sql"),
-    include_str!("../sql/game/messages.sql"),
+    l2_db::game_sql!("characters"),
+    l2_db::game_sql!("items"),
+    l2_db::game_sql!("clan_data"),
+    l2_db::game_sql!("itemsonground"),
+    l2_db::game_sql!("messages"),
 ];
 
 /// The Rust range of D-39 (`l2_world::RUST_FIRST_OBJECT_ID`..=`RUST_LAST_OBJECT_ID`).

@@ -2,7 +2,7 @@
 //! The walking routes: the real `data/Routes.xml` (counts and spot checks).
 //!
 //! Skipped with a printed message when the folder does not exist (CI). The folder defaults to
-//! `C:\l2-rust\l2jmobius\dist\game`; set `L2JMOBIUS_GAME_DIR` to use another.
+//! `dist/game`; set `L2JMOBIUS_GAME_DIR` to use another.
 
 use std::path::PathBuf;
 
@@ -10,8 +10,10 @@ use l2_data::Routes;
 use l2_data::route::{REPEAT_GO_FIRST, REPEAT_RANDOM, REPEAT_TELE_FIRST};
 
 fn game_dir() -> Option<PathBuf> {
-    let dir = std::env::var_os("L2JMOBIUS_GAME_DIR")
-        .map_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"), PathBuf::from);
+    let dir = std::env::var_os("L2JMOBIUS_GAME_DIR").map_or_else(
+        || PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")),
+        PathBuf::from,
+    );
     if dir.join("data").join("Routes.xml").is_file() {
         Some(dir)
     } else {

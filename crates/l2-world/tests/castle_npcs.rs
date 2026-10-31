@@ -1114,7 +1114,10 @@ fn every_npc_id_belongs_to_one_script() {
 /// switch labels of the Java scripts). Skipped without the datapack.
 #[test]
 fn the_links_of_the_real_pages_are_events_of_the_scripts() {
-    let root = std::path::Path::new(r"C:\l2-rust\l2jmobius\dist\game\data\scripts\ai\others");
+    let root = std::path::Path::new(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../dist/game/data/scripts/ai/others"
+    ));
     if !root.exists() {
         eprintln!("skipped: the datapack is not here");
         return;

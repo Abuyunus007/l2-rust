@@ -6,7 +6,7 @@
 //! arrows, a move asked during an attack waits for its end.
 //!
 //! The scenarios use small synthetic templates (they run in CI). The vector replay builds the
-//! vector creatures from the real datapack (skipped when `C:\l2-rust\l2jmobius\dist\game` or
+//! vector creatures from the real datapack (skipped when `dist/game` or
 //! `L2JMOBIUS_GAME_DIR` is missing) and runs `combat::hit::calc_hit_simple`, the very function the
 //! attack uses, with the recorded `Rnd` draws.
 
@@ -745,7 +745,7 @@ fn bystanders_see_the_attack() {
 fn game_root() -> Option<PathBuf> {
     let root = std::env::var_os("L2JMOBIUS_GAME_DIR")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+        .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
     if root.join("data/stats/skills").is_dir() {
         Some(root)
     } else {

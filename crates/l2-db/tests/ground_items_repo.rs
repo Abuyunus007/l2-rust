@@ -64,7 +64,7 @@ impl TestDb {
         .unwrap();
 
         let pool = connect_with(admin_options.database(&name), 10).await.unwrap();
-        for statement in statements(include_str!("../sql/game/itemsonground.sql")) {
+        for statement in statements(l2_db::game_sql!("itemsonground")) {
             sqlx::query(AssertSqlSafe(statement))
                 .execute(&pool)
                 .await

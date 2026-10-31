@@ -12,7 +12,10 @@ mod tests {
     use crate::community_board::Board;
     use crate::inventory::handlers::ItemHandlerKind;
 
-    const ROOT: &str = r"C:\l2-rust\l2jmobius\dist\game\data\scripts\handlers";
+    const ROOT: &str = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../dist/game/data/scripts/handlers"
+    );
 
     /// Java classes of `actions/click` that are left, with the reason (none: `DecoyClick` and
     /// `TrapClick` are `World::decoy_trap_click`, S-HAND-04).

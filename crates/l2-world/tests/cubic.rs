@@ -1008,7 +1008,7 @@ fn a_resisted_debuff_tells_the_owner_and_applies_nothing() {
 fn game_root() -> Option<PathBuf> {
     let root = std::env::var_os("L2JMOBIUS_GAME_DIR")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"));
+        .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")));
     if root.join("data/stats/skills").is_dir() && root.join("data/stats/cubics").is_dir() {
         Some(root)
     } else {

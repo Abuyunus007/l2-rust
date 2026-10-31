@@ -1199,8 +1199,10 @@ fn the_retail_category_chances_come_from_the_config() {
 
 /// The shipped datapack, when the reference folder is there.
 fn shipped() -> Option<PathBuf> {
-    let root = std::env::var_os("L2JMOBIUS_GAME_DIR")
-        .map_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"), PathBuf::from);
+    let root = std::env::var_os("L2JMOBIUS_GAME_DIR").map_or_else(
+        || PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")),
+        PathBuf::from,
+    );
     if root.join("data/stats/augmentation").is_dir() {
         Some(root)
     } else {

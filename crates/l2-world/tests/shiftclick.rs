@@ -479,7 +479,10 @@ fn an_npc_without_a_spawn_shows_dashes() {
 /// The pages of the shipped datapack have no placeholder that the handler does not fill.
 #[test]
 fn the_shipped_pages_are_filled_completely() {
-    let dist = Path::new(r"C:\l2-rust\l2jmobius\dist\game\data\html\admin");
+    let dist = Path::new(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../dist/game/data/html/admin"
+    ));
     let (Ok(npcinfo), Ok(doorinfo)) = (
         std::fs::read_to_string(dist.join("npcinfo.htm")),
         std::fs::read_to_string(dist.join("doorinfo.htm")),

@@ -782,7 +782,10 @@ mod tests {
     /// The category lists match `categoryData.xml` of the reference datapack; skipped without it.
     #[test]
     fn category_lists_match_the_datapack() {
-        let path = std::path::Path::new(r"C:\l2-rust\l2jmobius\dist\game\data\categoryData.xml");
+        let path = std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../dist/game/data/categoryData.xml"
+        ));
         let Ok(text) = std::fs::read_to_string(path) else {
             eprintln!("skipped: {} does not exist", path.display());
             return;

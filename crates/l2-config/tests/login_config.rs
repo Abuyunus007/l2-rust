@@ -13,7 +13,7 @@ const PROCESSORS: i32 = 8;
 fn dist_login_config() -> PathBuf {
     std::env::var_os("L2JMOBIUS_DIST")
         .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist"))
+        .unwrap_or_else(|| PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist")))
         .join("login")
         .join("config")
 }

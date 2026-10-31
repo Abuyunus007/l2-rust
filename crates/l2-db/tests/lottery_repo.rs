@@ -14,10 +14,7 @@ use l2_db::{LotteryRepository, Pool, connect_with};
 use sqlx::mysql::{MySqlConnectOptions, MySqlConnection};
 use sqlx::{AssertSqlSafe, Connection};
 
-const SCHEMA: [&str; 2] = [
-    include_str!("../sql/game/lottery.sql"),
-    include_str!("../sql/game/items.sql"),
-];
+const SCHEMA: [&str; 2] = [l2_db::game_sql!("lottery"), l2_db::game_sql!("items")];
 
 static COUNTER: AtomicU32 = AtomicU32::new(0);
 

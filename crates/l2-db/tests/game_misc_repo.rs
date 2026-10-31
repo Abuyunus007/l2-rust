@@ -23,19 +23,19 @@ use sqlx::{AssertSqlSafe, Connection};
 
 /// The tables of the item, skill, shortcut and subclass repositories.
 const SCHEMA: [&str; 13] = [
-    include_str!("../sql/game/items.sql"),
-    include_str!("../sql/game/item_attributes.sql"),
-    include_str!("../sql/game/item_elementals.sql"),
-    include_str!("../sql/game/item_variables.sql"),
-    include_str!("../sql/game/character_skills.sql"),
-    include_str!("../sql/game/character_skills_save.sql"),
-    include_str!("../sql/game/character_item_reuse_save.sql"),
-    include_str!("../sql/game/character_shortcuts.sql"),
-    include_str!("../sql/game/character_subclasses.sql"),
-    include_str!("../sql/game/character_macroses.sql"),
-    include_str!("../sql/game/character_reco_bonus.sql"),
-    include_str!("../sql/game/clan_data.sql"),
-    include_str!("../sql/game/character_variables.sql"),
+    l2_db::game_sql!("items"),
+    l2_db::game_sql!("item_attributes"),
+    l2_db::game_sql!("item_elementals"),
+    l2_db::game_sql!("item_variables"),
+    l2_db::game_sql!("character_skills"),
+    l2_db::game_sql!("character_skills_save"),
+    l2_db::game_sql!("character_item_reuse_save"),
+    l2_db::game_sql!("character_shortcuts"),
+    l2_db::game_sql!("character_subclasses"),
+    l2_db::game_sql!("character_macroses"),
+    l2_db::game_sql!("character_reco_bonus"),
+    l2_db::game_sql!("clan_data"),
+    l2_db::game_sql!("character_variables"),
 ];
 
 static COUNTER: AtomicU32 = AtomicU32::new(0);

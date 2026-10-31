@@ -1019,7 +1019,7 @@ fn a_hit_leader_calls_its_minions() {
 
 // ------------------------------------------------------------------ the real world
 
-const REFERENCE: &str = r"C:\l2-rust\l2jmobius\dist\game";
+const REFERENCE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game");
 
 /// With the real datapack (skipped without it): about 42,000 NPCs spawn and none of them thinks;
 /// when a player stands in a hunting ground, only the monsters around it do, and a tick stays

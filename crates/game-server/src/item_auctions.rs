@@ -492,7 +492,10 @@ mod tests {
 
     #[test]
     fn the_shipped_file_parses() {
-        let path = std::path::Path::new("C:/l2-rust/l2jmobius/dist/game/data/ItemAuctions.xml");
+        let path = std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../dist/game/data/ItemAuctions.xml"
+        ));
         let Ok(bytes) = std::fs::read(path) else {
             eprintln!("skipped: the reference datapack is not here");
             return;

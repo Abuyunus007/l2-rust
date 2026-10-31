@@ -1179,7 +1179,10 @@ fn debug_stops_when_the_gm_leaves() {
 /// has to be registered.
 #[test]
 fn the_links_of_the_pages_reach_registered_commands() {
-    let dir = std::path::Path::new(r"C:\l2-rust\l2jmobius\dist\game\data\html\admin");
+    let dir = std::path::Path::new(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../dist/game/data/html/admin"
+    ));
     if !dir.is_dir() {
         eprintln!("skipped: no Java html at {}", dir.display());
         return;

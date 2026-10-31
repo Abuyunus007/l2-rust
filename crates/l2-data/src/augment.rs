@@ -505,7 +505,7 @@ mod tests {
     #[test]
     fn the_shipped_tables_load() {
         let root = std::env::var_os("L2JMOBIUS_GAME_DIR").map_or_else(
-            || std::path::PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"),
+            || std::path::PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")),
             Into::into,
         );
         if !root.join("data/stats/augmentation").is_dir() {

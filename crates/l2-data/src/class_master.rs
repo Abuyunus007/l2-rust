@@ -390,7 +390,7 @@ mod tests {
 
     #[test]
     fn the_shipped_file_is_disabled_with_its_two_options() {
-        let root = Path::new(r"C:\l2-rust\l2jmobius\dist\game");
+        let root = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game"));
         let path = root.join("config/ClassMaster.xml");
         let Ok(text) = std::fs::read_to_string(&path) else {
             eprintln!("skipped: {} does not exist", path.display());

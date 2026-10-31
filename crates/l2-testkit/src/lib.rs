@@ -17,6 +17,7 @@
 
 pub mod bytes;
 pub mod capture_compare;
+pub mod dist;
 pub mod fake_game_client;
 pub mod fake_game_server;
 pub mod fake_login_client;
@@ -25,3 +26,4 @@ pub mod vectors;
 pub mod wait;
 
 pub use bytes::{assert_bytes_eq, from_hex, to_hex};
+pub use dist::{dist_dir, game_dir, login_dir, sql_dir};

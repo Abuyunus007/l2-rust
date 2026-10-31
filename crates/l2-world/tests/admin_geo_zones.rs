@@ -1410,7 +1410,7 @@ fn the_builder_forgets_a_gm_who_left() {
 
 #[test]
 fn the_real_pages_have_no_placeholder_left() {
-    let root = PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game");
+    let root = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game"));
     if !root
         .join("data")
         .join("html")

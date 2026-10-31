@@ -1445,7 +1445,7 @@ mod tests {
 
     #[test]
     fn the_shipped_transform_tree_loads() {
-        let root = std::path::Path::new(r"C:\l2-rust\l2jmobius\dist\game");
+        let root = std::path::Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game"));
         if !root.is_dir() {
             eprintln!("skipped: {} does not exist", root.display());
             return;

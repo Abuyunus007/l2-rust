@@ -863,8 +863,10 @@ fn static_objects_are_sent_as_static_object_info() {
 // The real datapack
 
 fn game_dir() -> Option<PathBuf> {
-    let dir = std::env::var_os("L2JMOBIUS_GAME_DIR")
-        .map_or_else(|| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"), PathBuf::from);
+    let dir = std::env::var_os("L2JMOBIUS_GAME_DIR").map_or_else(
+        || PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game")),
+        PathBuf::from,
+    );
     if dir.join("data").join("Doors.xml").is_file() {
         Some(dir)
     } else {

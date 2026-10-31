@@ -391,7 +391,7 @@ mod tests {
 
     #[test]
     fn the_shipped_file_loads() {
-        let root = Path::new(r"C:\l2-rust\l2jmobius\dist\game");
+        let root = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game"));
         if !root.join("data/Seeds.xml").exists() {
             eprintln!("skipped: the Java reference folder is not there");
             return;

@@ -6,7 +6,7 @@ use std::path::Path;
 
 use l2_data::PetDataTable;
 
-const DATAPACK: &str = r"C:\l2-rust\l2jmobius\dist\game";
+const DATAPACK: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game");
 
 fn table() -> Option<PetDataTable> {
     let root = Path::new(DATAPACK);

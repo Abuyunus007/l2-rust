@@ -19,3 +19,20 @@ Update to a newer L2JMobius release (keeps the Rust-only files):
 ```bash
 python tools/sync-dist.py <path to the L2JMobius release's dist folder>
 ```
+
+## Tests and `dist/`
+
+The tests read this folder (D-55): `l2_testkit::{dist_dir, game_dir, login_dir, sql_dir}` find it
+from the repo root, and crates that cannot use `l2-testkit` build the same path from
+`CARGO_MANIFEST_DIR`. `L2JMOBIUS_DIST` / `L2JMOBIUS_GAME_DIR` still override it. The database
+test schema is built from `db_installer/sql` at compile time (`crates/l2-db/build.rs`, seed rows
+left out), so there is no second copy of the tables.
+
+## What still needs L2JMobius
+
+Only things that read the Java sources, not the datapack:
+
+- `codegen` (`L2J_ROOT`): generates code from the Java classes.
+- `java-vectors/`: the harness that runs the real Java classes.
+- Tests that compare against `.java` files (boat and air ship paths, the handler audit, the
+  `PlayerClass` enum, the Castle script links) skip with a message while `dist/` has no `.java`.

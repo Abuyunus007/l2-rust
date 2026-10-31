@@ -18,10 +18,22 @@ use sqlx::{AssertSqlSafe, Connection};
 
 /// The login schema, including the sample row of game server 2 in `gameservers`.
 const SCHEMA: [&str; 4] = [
-    include_str!("../../l2-db/sql/login/account_data.sql"),
-    include_str!("../../l2-db/sql/login/accounts.sql"),
-    include_str!("../../l2-db/sql/login/accounts_ipauth.sql"),
-    include_str!("../../l2-db/sql/login/gameservers.sql"),
+    include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../dist/db_installer/sql/login/account_data.sql"
+    )),
+    include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../dist/db_installer/sql/login/accounts.sql"
+    )),
+    include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../dist/db_installer/sql/login/accounts_ipauth.sql"
+    )),
+    include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../dist/db_installer/sql/login/gameservers.sql"
+    )),
 ];
 
 /// The hex id of the sample row in `gameservers.sql` (game server 2), as Java prints it.

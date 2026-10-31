@@ -84,7 +84,7 @@ const ENTER_WORLD_PACKETS: [&str; 26] = [
     "SKILL_LIST",
 ];
 
-/// Every table of the game schema (the files of `crates/l2-db/sql/game`), so the game server
+/// Every table of the game schema (the files of `dist/db_installer/sql/game`), so the game server
 /// finds whatever it reads or writes.
 const GAME_SCHEMA: &[&str] = l2_db::GAME_SCHEMA;
 

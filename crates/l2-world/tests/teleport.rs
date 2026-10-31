@@ -6,7 +6,7 @@
 //! ZoneRegion, Player.revalidateZone, MapRegionData.
 //!
 //! The zones come from small XML files written to a temporary datapack root; the checks against
-//! the real datapack and the recorded Java session skip when `C:\l2-rust\l2jmobius` or the
+//! the real datapack and the recorded Java session skip when `dist/` or the
 //! fixture is missing.
 
 use std::path::{Path, PathBuf};
@@ -662,7 +662,7 @@ fn without_zone_data_there_are_no_zone_packets() {
 // ------------------------------------------------------------ real data and Java captures
 
 fn datapack_root() -> Option<PathBuf> {
-    let root = PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game");
+    let root = PathBuf::from(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game"));
     if root.join("data").join("zones").is_dir() {
         Some(root)
     } else {

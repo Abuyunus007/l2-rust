@@ -655,7 +655,7 @@ mod tests {
     /// file id.
     #[test]
     fn the_shipped_instances_load() {
-        let root = Path::new(r"C:\l2-rust\l2jmobius\dist\game");
+        let root = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game"));
         if !root.join("data").join("instances").is_dir() {
             eprintln!("skipped: the reference datapack is not on this machine");
             return;
