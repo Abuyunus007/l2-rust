@@ -68,6 +68,11 @@ pub enum Request {
     GetGameStatus {
         server: Option<String>,
     },
+    /// Login server (relayed by the supervisor with `server` set): account management (G-04).
+    Accounts {
+        server: Option<String>,
+        action: AccountsAction,
+    },
     /// Server endpoint: shut down cleanly (D-38). `restart: true` = exit code 2. The supervisor
     /// sends this before it falls back to a kill.
     Shutdown {
@@ -82,6 +87,7 @@ pub enum Response {
     Servers { servers: Vec<ServerStatus> },
     LoginStatus { status: LoginStatus },
     GameStatus { status: GameStatus },
+    Accounts { result: AccountsResult },
     Error { message: String },
 }
 
@@ -176,9 +182,147 @@ pub struct GamePlayer {
     pub online_since_ms: i64,
 }
 
+/// Accounts per page of [`AccountsAction::Search`].
+pub const ACCOUNTS_PAGE_SIZE: u32 = 50;
+
+/// What the Accounts view asks the login server to do. Passwords travel in clear text over the
+/// admin connection (token protected, D-30) and are never logged: `Debug` hides them.
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "action", rename_all = "snake_case")]
+pub enum AccountsAction {
+    /// Logins starting with `prefix` (empty = all), [`ACCOUNTS_PAGE_SIZE`] per page, `page` from 0.
+    Search {
+        prefix: String,
+        page: u32,
+    },
+    /// The `lastIP` of one account (shown on demand).
+    LastIp {
+        login: String,
+    },
+    Create {
+        login: String,
+        password: String,
+        access_level: i32,
+    },
+    SetPassword {
+        login: String,
+        password: String,
+    },
+    SetAccessLevel {
+        login: String,
+        access_level: i32,
+    },
+    /// Sets `accessLevel = -1` (what Java's AccountManager does).
+    Ban {
+        login: String,
+    },
+    /// Back to access level 0 (Java's AccountManager has no unban; it sets "0 - User").
+    Unban {
+        login: String,
+    },
+    /// Deletes the `accounts` row only, like Java's AccountManager.
+    Delete {
+        login: String,
+    },
+}
+
+impl std::fmt::Debug for AccountsAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Search { prefix, page } => f
+                .debug_struct("Search")
+                .field("prefix", prefix)
+                .field("page", page)
+                .finish(),
+            Self::LastIp { login } => f.debug_struct("LastIp").field("login", login).finish(),
+            Self::Create {
+                login, access_level, ..
+            } => f
+                .debug_struct("Create")
+                .field("login", login)
+                .field("password", &"<redacted>")
+                .field("access_level", access_level)
+                .finish(),
+            Self::SetPassword { login, .. } => f
+                .debug_struct("SetPassword")
+                .field("login", login)
+                .field("password", &"<redacted>")
+                .finish(),
+            Self::SetAccessLevel { login, access_level } => f
+                .debug_struct("SetAccessLevel")
+                .field("login", login)
+                .field("access_level", access_level)
+                .finish(),
+            Self::Ban { login } => f.debug_struct("Ban").field("login", login).finish(),
+            Self::Unban { login } => f.debug_struct("Unban").field("login", login).finish(),
+            Self::Delete { login } => f.debug_struct("Delete").field("login", login).finish(),
+        }
+    }
+}
+
+/// Answer to [`Request::Accounts`]. Failures come back as [`Response::Error`].
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum AccountsResult {
+    Page(AccountPage),
+    /// `ip: None` = the account never logged in.
+    LastIp {
+        login: String,
+        ip: Option<String>,
+    },
+    /// The action worked. `access_level` is the new level after ban, unban and set-level.
+    Done {
+        login: String,
+        access_level: Option<i32>,
+    },
+}
+
+/// One page of the account list.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AccountPage {
+    pub page: u32,
+    pub page_size: u32,
+    /// Accounts matching the prefix, over all pages.
+    pub total: u64,
+    pub accounts: Vec<AccountSummary>,
+}
+
+/// A row of the account list. Never carries the password hash or the IP.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AccountSummary {
+    pub login: String,
+    pub access_level: i32,
+    /// Unix time in milliseconds of the last login, 0 = never.
+    pub last_active_ms: i64,
+    pub last_server: Option<i32>,
+    /// `access_level < 0`.
+    pub banned: bool,
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn debug_never_shows_passwords() {
+        let create = AccountsAction::Create {
+            login: "bob".into(),
+            password: "hunter2".into(),
+            access_level: 0,
+        };
+        let set = AccountsAction::SetPassword {
+            login: "bob".into(),
+            password: "hunter2".into(),
+        };
+        let request = Request::Accounts {
+            server: None,
+            action: create.clone(),
+        };
+        for text in [format!("{create:?}"), format!("{set:?}"), format!("{request:?}")] {
+            assert!(!text.contains("hunter2"), "{text}");
+            assert!(text.contains("bob"));
+        }
+    }
 
     /// Snapshot of the JSON for every message shape. A change here is a protocol change:
     /// update `docs/admin-api.md` and consider bumping [`PROTOCOL_VERSION`].
@@ -312,6 +456,65 @@ mod tests {
                     response: Response::GameStatus { status: game },
                 },
                 r#"{"type":"response","id":7,"response":{"kind":"game_status","status":{"players":[{"name":"Amy","account":"acc1","level":80,"class_id":88,"ip":"127.0.0.1","online_since_ms":1700000000000}]}}}"#,
+            ),
+            (
+                Message::Request {
+                    id: 8,
+                    request: Request::Accounts {
+                        server: Some("login".into()),
+                        action: AccountsAction::Search {
+                            prefix: "al".into(),
+                            page: 0,
+                        },
+                    },
+                },
+                r#"{"type":"request","id":8,"request":{"kind":"accounts","server":"login","action":{"action":"search","prefix":"al","page":0}}}"#,
+            ),
+            (
+                Message::Request {
+                    id: 9,
+                    request: Request::Accounts {
+                        server: None,
+                        action: AccountsAction::Create {
+                            login: "bob".into(),
+                            password: "pw".into(),
+                            access_level: 0,
+                        },
+                    },
+                },
+                r#"{"type":"request","id":9,"request":{"kind":"accounts","server":null,"action":{"action":"create","login":"bob","password":"pw","access_level":0}}}"#,
+            ),
+            (
+                Message::Response {
+                    id: 8,
+                    response: Response::Accounts {
+                        result: AccountsResult::Page(AccountPage {
+                            page: 0,
+                            page_size: 50,
+                            total: 1,
+                            accounts: vec![AccountSummary {
+                                login: "alice".into(),
+                                access_level: -1,
+                                last_active_ms: 5,
+                                last_server: Some(1),
+                                banned: true,
+                            }],
+                        }),
+                    },
+                },
+                r#"{"type":"response","id":8,"response":{"kind":"accounts","result":{"kind":"page","page":0,"page_size":50,"total":1,"accounts":[{"login":"alice","access_level":-1,"last_active_ms":5,"last_server":1,"banned":true}]}}}"#,
+            ),
+            (
+                Message::Response {
+                    id: 10,
+                    response: Response::Accounts {
+                        result: AccountsResult::Done {
+                            login: "alice".into(),
+                            access_level: Some(0),
+                        },
+                    },
+                },
+                r#"{"type":"response","id":10,"response":{"kind":"accounts","result":{"kind":"done","login":"alice","access_level":0}}}"#,
             ),
             (
                 Message::Event {

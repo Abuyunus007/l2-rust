@@ -81,8 +81,8 @@ pub use game::{RandomSpawnRepository, RandomSpawnRow};
 pub use game::{RecipeBookRow, RecipeRepository, RecipeShopRow};
 pub use game::{SubclassRepository, SubclassRow, SubclassValues};
 pub use login::{
-    AccountInfoRow, ChangePasswordResult, GameServerRow, IpAuthKind, IpAuthRow, LoginRepository, TracertHops,
-    hash_password, hex_to_string, string_to_hex,
+    AccountInfoRow, AccountListRow, ChangePasswordResult, GameServerRow, IpAuthKind, IpAuthRow,
+    LoginRepository, TracertHops, escape_like, hash_password, hex_to_string, string_to_hex,
 };
 pub use pool::{Pool, connect, connect_options, connect_with, pool_max_size, pool_min_idle};
 pub use schema::GAME_SCHEMA;

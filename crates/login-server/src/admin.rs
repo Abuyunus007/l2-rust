@@ -13,6 +13,7 @@ use l2_config::IniFile;
 use tokio::net::TcpListener;
 use tracing::{info, warn};
 
+use crate::accounts::{AccountStore, AccountsService};
 use crate::state::{LoginState, ServerStatus};
 use crate::{Server, StartupError};
 
@@ -86,6 +87,7 @@ pub async fn start(server: &mut Server, config_dir: &Path) -> Result<(), Startup
     info!("Admin endpoint listening on {}.", settings.bind);
     let handler = Arc::new(LoginAdmin {
         state: Arc::clone(server.state()),
+        accounts: AccountsService::new(server.state().repository.clone()),
         pushing: Mutex::default(),
     });
     server.spawn(l2_admin_api::serve(
@@ -97,13 +99,15 @@ pub async fn start(server: &mut Server, config_dir: &Path) -> Result<(), Startup
     Ok(())
 }
 
-struct LoginAdmin {
+struct LoginAdmin<S> {
     state: Arc<LoginState>,
+    /// The Accounts view's actions (G-04).
+    accounts: AccountsService<S>,
     /// Sessions that already have a status pusher.
     pushing: Mutex<HashSet<u64>>,
 }
 
-impl LoginAdmin {
+impl<S: AccountStore> LoginAdmin<S> {
     /// After a client's first status request, push changes to it until it disconnects.
     fn ensure_pusher(&self, session: &Session) {
         let first = self
@@ -137,7 +141,7 @@ impl LoginAdmin {
     }
 }
 
-impl AdminHandler for LoginAdmin {
+impl<S: AccountStore> AdminHandler for LoginAdmin<S> {
     async fn handle(&self, request: Request, session: &Session) -> Response {
         match request {
             Request::GetLoginStatus { .. } => {
@@ -154,6 +158,13 @@ impl AdminHandler for LoginAdmin {
                 self.state.request_shutdown(restart);
                 Response::Ok
             }
+            // Nothing here logs the request: it holds passwords (its Debug hides them anyway).
+            Request::Accounts { action, .. } => match self.accounts.run(action).await {
+                Ok(result) => Response::Accounts { result },
+                Err(e) => Response::Error {
+                    message: e.to_string(),
+                },
+            },
             _ => Response::Error {
                 message: "not supported by the login server".into(),
             },
@@ -227,6 +238,7 @@ mod tests {
 
     #[tokio::test]
     async fn shutdown_request_over_the_protocol_stops_the_server() {
+        use crate::accounts::memory::MemoryAccountStore;
         use crate::state::ExitReason;
         use crate::state::test_support::{default_config, state_with};
         use l2_admin_api::AdminClient;
@@ -234,6 +246,7 @@ mod tests {
         let (state, mut requests) = state_with(default_config());
         let handler = Arc::new(LoginAdmin {
             state: Arc::new(state),
+            accounts: AccountsService::new(MemoryAccountStore::default()),
             pushing: Mutex::default(),
         });
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
@@ -254,6 +267,81 @@ mod tests {
         let reply = client.request(Request::Shutdown { restart: true }).await.unwrap();
         assert_eq!(reply, Response::Ok);
         assert_eq!(requests.recv().await, Some(ExitReason::Restart));
+    }
+
+    #[tokio::test]
+    async fn accounts_round_trip_over_the_protocol() {
+        use crate::accounts::memory::MemoryAccountStore;
+        use crate::state::test_support::{default_config, state_with};
+        use l2_admin_api::{AccountsAction, AccountsResult, AdminClient};
+
+        let (state, _requests) = state_with(default_config());
+        let handler = Arc::new(LoginAdmin {
+            state: Arc::new(state),
+            accounts: AccountsService::new(MemoryAccountStore::default()),
+            pushing: Mutex::default(),
+        });
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let addr = listener.local_addr().unwrap();
+        tokio::spawn(l2_admin_api::serve(
+            listener,
+            "login".into(),
+            Token::new("t"),
+            handler,
+        ));
+        let (client, _events) = AdminClient::connect(&format!("ws://{addr}"), "t").await.unwrap();
+        let ask = |action| client.request(Request::Accounts { server: None, action });
+
+        let created = ask(AccountsAction::Create {
+            login: "alice".into(),
+            password: "pw".into(),
+            access_level: 0,
+        })
+        .await
+        .unwrap();
+        assert_eq!(
+            created,
+            Response::Accounts {
+                result: AccountsResult::Done {
+                    login: "alice".into(),
+                    access_level: Some(0)
+                }
+            }
+        );
+        let banned = ask(AccountsAction::Ban {
+            login: "alice".into(),
+        })
+        .await
+        .unwrap();
+        assert!(matches!(banned, Response::Accounts { .. }));
+        let listed = ask(AccountsAction::Search {
+            prefix: "al".into(),
+            page: 0,
+        })
+        .await
+        .unwrap();
+        let Response::Accounts {
+            result: AccountsResult::Page(page),
+        } = listed
+        else {
+            panic!("{listed:?}")
+        };
+        assert_eq!(page.total, 1);
+        assert!(page.accounts[0].banned);
+
+        let again = ask(AccountsAction::Create {
+            login: "alice".into(),
+            password: "pw".into(),
+            access_level: 0,
+        })
+        .await
+        .unwrap();
+        assert_eq!(
+            again,
+            Response::Error {
+                message: "account 'alice' already exists".into()
+            }
+        );
     }
 
     #[test]

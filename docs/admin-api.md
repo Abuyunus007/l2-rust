@@ -38,6 +38,7 @@ Requests may be answered out of order. Match responses by `id`. An empty configu
 | `unsubscribe_logs` | | supervisor | `ok` |
 | `get_login_status` | `server` (supervisor: which LS to ask; LS itself: null) | supervisor → LS | `login_status` |
 | `get_game_status` | `server` (GS itself: null) | GS endpoint, or the supervisor (relays to the named server) | `game_status` |
+| `accounts` | `server` (LS itself: null), `action`: AccountsAction | LS endpoint, or the supervisor (relays to the named server) | `accounts` or `error` |
 | `shutdown` | `restart` (bool) | server endpoints only (the supervisor sends it on stop, D-38) | `ok`, then the server exits (code 0, or 2 with `restart`) |
 
 ### Responses
@@ -48,6 +49,7 @@ Requests may be answered out of order. Match responses by `id`. An empty configu
 | `servers` | `servers`: list of ServerStatus |
 | `login_status` | `status`: LoginStatus |
 | `game_status` | `status`: GameStatus |
+| `accounts` | `result`: AccountsResult |
 
 ### Events
 | kind | Fields | Sent when |
@@ -61,6 +63,8 @@ Requests may be answered out of order. Match responses by `id`. An empty configu
 - **LogLine:** `server`, `seq` (per server, increasing), `ts_ms`, `level` (`error` / `warn` / `info` / `debug` / `trace` / null), `target`, `message`
 - **LoginStatus:** `game_servers` (list of `id`, `name`, `authed`, `online`, `max_players`, `status`), `authed_clients`
 - **GameStatus:** `players`: list of GamePlayer, sorted by `name`. The list is the characters in the world now (not the accounts on the LS).
+- **AccountsAction** (tag `action`, G-04): `search` (`prefix`, `page` from 0; 50 per page), `last_ip` (`login`), `create` (`login`, `password`, `access_level`), `set_password` (`login`, `password`), `set_access_level` (`login`, `access_level`), `ban` / `unban` / `delete` (`login`). Passwords are clear text on the (token protected) connection, hashed by the login server (SHA-1, Base64), never logged or returned. `ban` writes `accessLevel = -1`, `unban` writes 0 (only on banned accounts), `delete` removes only the `accounts` row (like Java's AccountManager).
+- **AccountsResult** (tag `kind`): `page` (`page`, `page_size`, `total`, `accounts`: list of `login`, `access_level`, `last_active_ms`, `last_server`, `banned`), `last_ip` (`login`, `ip` or null), `done` (`login`, `access_level` or null). Failures are `error` responses.
 - **GamePlayer:** `name`, `account`, `level`, `class_id`, `ip` (the client address; `null` when the session didn't report one), `online_since_ms` (Unix time in ms when the character entered the world)
 
 ## Settings (Rust-only files, D-36)
