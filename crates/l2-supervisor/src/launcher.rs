@@ -135,10 +135,15 @@ pub fn run_folder_candidates(gui_exe: &Path, cwd: &Path) -> Vec<PathBuf> {
     list
 }
 
-/// The remembered folder wins if it still has a `supervisor.ini`; otherwise the first candidate
-/// that has one.
+/// A `supervisor.ini` next to the GUI exe wins (a release package: the GUI belongs to the
+/// servers it ships with, whatever another copy of the GUI remembered). Then the remembered folder
+/// if it still has a `supervisor.ini`, then the first candidate that has one.
 pub fn find_run_folder(remembered: Option<&Path>, gui_exe: &Path, cwd: &Path) -> Option<PathBuf> {
     let has_ini = |dir: &Path| dir.join(INI_NAME).is_file();
+    let exe_dir = gui_exe.parent().filter(|dir| !dir.as_os_str().is_empty());
+    if let Some(dir) = exe_dir.filter(|dir| has_ini(dir)) {
+        return Some(dir.to_path_buf());
+    }
     remembered
         .filter(|dir| !dir.as_os_str().is_empty() && has_ini(dir))
         .map(Path::to_path_buf)
@@ -390,12 +395,19 @@ mod tests {
     }
 
     #[test]
-    fn exe_folder_is_the_last_resort() {
+    fn an_ini_next_to_the_exe_wins_over_everything() {
         let root = tempfile::tempdir().unwrap();
         let exe_dir = root.path().join("bundle");
         std::fs::create_dir_all(&exe_dir).unwrap();
         write_ini(&exe_dir, "");
         let found = find_run_folder(None, &exe_dir.join("gui"), &root.path().join("elsewhere"));
+        assert_eq!(found, Some(exe_dir.clone()));
+
+        // A package's GUI ignores the folder another copy of the GUI remembered.
+        let other = root.path().join("repo/run");
+        std::fs::create_dir_all(&other).unwrap();
+        write_ini(&other, "");
+        let found = find_run_folder(Some(&other), &exe_dir.join("gui"), &root.path().join("elsewhere"));
         assert_eq!(found, Some(exe_dir));
     }
 

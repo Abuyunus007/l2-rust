@@ -139,7 +139,7 @@ pub struct Resolved {
 ///
 /// * A typed address is a remote or hand-made setup: connect there, start nothing.
 /// * Otherwise `supervisor.ini` gives address and token and the supervisor is started when nobody
-///   listens. The typed token still wins over the file's.
+///   listens. The file's token is used; a typed token only counts with a typed address.
 pub fn resolve(input: &ResolveInput) -> Resolved {
     let run_folder = launcher::find_run_folder(input.remembered.as_deref(), &input.gui_exe, &input.cwd);
 
@@ -203,10 +203,13 @@ pub fn resolve(input: &ResolveInput) -> Resolved {
     }
 }
 
-fn target_of(info: &ConnectionInfo, input: &ResolveInput) -> Option<Target> {
+/// For the local supervisor the file's token is the truth: a typed token is often one an older
+/// GUI saved for another folder, and an empty file token makes the supervisor refuse everyone.
+fn target_of(info: &ConnectionInfo, _input: &ResolveInput) -> Option<Target> {
+    let token = info.token.clone();
     Some(Target {
         url: info.url(),
-        token: input.token_override.clone().unwrap_or_else(|| info.token.clone()),
+        token,
     })
 }
 
@@ -362,7 +365,7 @@ mod tests {
     }
 
     #[test]
-    fn the_file_gives_url_and_token_and_a_typed_token_overrides() {
+    fn the_file_gives_url_and_token_and_a_typed_token_is_ignored() {
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let port = listener.local_addr().unwrap().port();
         let dir = tempfile::tempdir().unwrap();
@@ -380,7 +383,11 @@ mod tests {
 
         let mut typed = input(dir.path());
         typed.token_override = Some("typed".into());
-        assert_eq!(resolve(&typed).target.unwrap().token, "typed");
+        assert_eq!(
+            resolve(&typed).target.unwrap().token,
+            "from-file",
+            "a stale typed token is ignored"
+        );
     }
 
     #[test]
