@@ -478,7 +478,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 |---|---|---|---|---|---|
 | [T-DIST-01](T/T-DIST-01.md) | Tests and the DB schema use the repo's dist/ | sonnet | spot | — | merged |
 | [T-DBI-01](T/T-DBI-01.md) | Database installer (GUI and console) | sonnet | full | — | merged |
-| [T-VEC-01](T/T-VEC-01.md) | Java-source tests read committed fact files | sonnet | spot | T-DIST-01 | running |
+| [T-VEC-01](T/T-VEC-01.md) | Java-source tests read committed fact files | sonnet | spot | T-DIST-01 | merged |
 
 ## Milestone test results
 
