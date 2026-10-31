@@ -480,6 +480,16 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [T-DBI-01](T/T-DBI-01.md) | Database installer (GUI and console) | sonnet | full | — | merged |
 | [T-VEC-01](T/T-VEC-01.md) | Java-source tests read committed fact files | sonnet | spot | T-DIST-01 | merged |
 
+## GUI: everything from the admin GUI (approved 2026-10-31)
+
+| Card | Title | Model | Review | Depends | Status |
+|---|---|---|---|---|---|
+| [G-01](G/G-01.md) | The GUI starts the supervisor and connects by itself | sonnet | full | — | running |
+| [G-02](G/G-02.md) | Setup wizard and built-in database installer | sonnet | full | G-01 | ready |
+| [G-03](G/G-03.md) | Game admin: players, punishments, announcements, console, shutdown | sonnet | full | — | running |
+| [G-04](G/G-04.md) | Accounts: search, create, password, access level, ban | sonnet | full | — | running |
+| [G-05](G/G-05.md) | Config editor | sonnet | spot | — | running |
+
 ## Milestone test results
 
 ### M1 (2026-10-18)
