@@ -32,7 +32,10 @@ left out), so there is no second copy of the tables.
 
 Only things that read the Java sources, not the datapack:
 
-- `codegen` (`L2J_ROOT`): generates code from the Java classes.
-- `java-vectors/`: the harness that runs the real Java classes.
-- Tests that compare against `.java` files (boat and air ship paths, the handler audit, the
-  `PlayerClass` enum, the Castle script links) skip with a message while `dist/` has no `.java`.
+- `codegen` (`L2J_ROOT`): generates code from the Java classes, and the JSON facts the tests
+  compare with (`cargo run -p codegen -- java-facts`).
+- `java-vectors/` (`build.*`): the harness that runs the real Java classes.
+
+No test opens a `.java` file. The tests that compare the port with Java source text (boat and air
+ship paths, the handler audit, the `PlayerClass` races) read the committed
+`java-vectors/out/java_facts/*.json` through `l2_testkit::java_facts` and run everywhere.

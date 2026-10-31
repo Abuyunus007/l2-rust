@@ -619,41 +619,15 @@ fn board_the_gludio_gracia_air_ship() {
 
 // ---------------------------------------------------------------------------------- the data
 
-/// Every path of the boat scripts, as the Java sources have it.
+/// Every path of the boat scripts, as the Java sources have it (`boat_routes.json`, written by
+/// `codegen java-facts`).
 #[test]
 fn the_boat_paths_are_the_ones_of_the_java_scripts() {
     use l2_world::vehicle::boat_routes as r;
-    let root = std::path::Path::new(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../dist/game/data/scripts/vehicles"
-    ));
-    if !root.is_dir() {
-        eprintln!("the Java scripts are not here; skipping");
-        return;
-    }
-    let java = |name: &str| std::fs::read_to_string(root.join(format!("{name}.java"))).unwrap();
-    let points = |src: &str, array: &str| -> Vec<(i32, i32, i32, i32, i32)> {
-        let start = src.find(&format!("VehiclePathPoint[] {array} =")).unwrap();
-        let end = start + src[start..].find("};").unwrap();
-        src[start..end]
-            .split("new VehiclePathPoint(")
-            .skip(1)
-            .map(|p| {
-                let n: Vec<i32> = p[..p.find(')').unwrap()]
-                    .split(',')
-                    .map(|v| v.trim().parse().unwrap())
-                    .collect();
-                if n.len() == 3 {
-                    (n[0], n[1], n[2], 350, 4000)
-                } else {
-                    (n[0], n[1], n[2], n[3], n[4])
-                }
-            })
-            .collect()
-    };
-    let rust = |path: &[l2_world::PathPoint]| -> Vec<(i32, i32, i32, i32, i32)> {
+    let facts = l2_testkit::java_facts::boat_routes();
+    let rust = |path: &[l2_world::PathPoint]| -> Vec<[i32; 5]> {
         path.iter()
-            .map(|p| (p.x, p.y, p.z, p.move_speed, p.rotation_speed))
+            .map(|p| [p.x, p.y, p.z, p.move_speed, p.rotation_speed])
             .collect()
     };
     let cases: [(&str, &str, &[l2_world::PathPoint]); 10] = [
@@ -693,100 +667,49 @@ fn the_boat_paths_are_the_ones_of_the_java_scripts() {
         ("BoatGludinRune", "RUNE_DOCK", &r::GLUDIN_RUNE_RUNE_DOCK),
     ];
     for (file, array, path) in cases {
-        assert_eq!(rust(path), points(&java(file), array), "{file} {array}");
+        let java = facts
+            .files
+            .get(file)
+            .and_then(|arrays| arrays.get(array))
+            .unwrap_or_else(|| panic!("{file} {array} is not in boat_routes.json"));
+        assert_eq!(&rust(path), java, "{file} {array}");
     }
 }
 
-/// The docks and the Gludio-Gracia paths against the Java sources.
+/// The docks and the Gludio-Gracia paths against the Java sources (`air_ship_routes.json`).
 #[test]
 fn the_air_ship_paths_are_the_ones_of_the_java_scripts() {
     use l2_world::vehicle::controller as c;
-    let root = std::path::Path::new(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/../../dist/game/data/scripts/ai/areas/Gracia/vehicles"
-    ));
-    // dist/ has the script folders but not their `.java` sources (D-55).
-    if !root.join("SoDController").join("SoDController.java").is_file() {
-        eprintln!("the Java scripts are not here; skipping");
-        return;
-    }
-    let numbers = |text: &str| -> Vec<(i32, i32, i32, i32, i32)> {
-        text.split("new VehiclePathPoint(")
-            .skip(1)
-            .map(|p| {
-                let n: Vec<i32> = p[..p.find(')').unwrap()]
-                    .split(',')
-                    .map(|v| v.trim().parse().unwrap())
-                    .collect();
-                if n.len() == 3 {
-                    (n[0], n[1], n[2], 350, 4000)
-                } else {
-                    (n[0], n[1], n[2], n[3], n[4])
-                }
-            })
-            .collect()
-    };
-    let rust = |path: &[l2_world::PathPoint]| -> Vec<(i32, i32, i32, i32, i32)> {
+    let facts = l2_testkit::java_facts::air_ship_routes();
+    let rust = |path: &[l2_world::PathPoint]| -> Vec<[i32; 5]> {
         path.iter()
-            .map(|p| (p.x, p.y, p.z, p.move_speed, p.rotation_speed))
+            .map(|p| [p.x, p.y, p.z, p.move_speed, p.rotation_speed])
             .collect()
     };
     for def in &c::CONTROLLERS {
-        let src = std::fs::read_to_string(root.join(def.name).join(format!("{}.java", def.name))).unwrap();
-        let section = |name: &str| {
-            let start = src.find(&format!("{name} =")).unwrap();
-            let end = start + src[start..].find("};").unwrap();
-            src[start..end].to_owned()
-        };
-        assert_eq!(
-            rust(def.arrival),
-            numbers(&section("ARRIVAL")),
-            "{} arrival",
-            def.name
-        );
-        assert_eq!(
-            rust(def.depart),
-            numbers(&section("DEPART")),
-            "{} depart",
-            def.name
-        );
+        let java = facts
+            .controllers
+            .get(def.name)
+            .unwrap_or_else(|| panic!("{} is not in air_ship_routes.json", def.name));
+        assert_eq!(rust(def.arrival), java.arrival, "{} arrival", def.name);
+        assert_eq!(rust(def.depart), java.depart, "{} depart", def.name);
         let teleports: Vec<_> = def.teleports.iter().map(|t| rust(t)).collect();
-        // The rows are the groups at depth 2 of the braces.
-        let java_teleports = {
-            let all = section("TELEPORTS");
-            let (mut depth, mut row, mut out) = (0, String::new(), Vec::new());
-            for ch in all.chars() {
-                match ch {
-                    '{' => depth += 1,
-                    '}' => {
-                        if depth == 2 {
-                            out.push(numbers(&row));
-                            row.clear();
-                        }
-                        depth -= 1;
-                    }
-                    _ if depth == 2 => row.push(ch),
-                    _ => {}
-                }
-            }
-            out
-        };
-        assert_eq!(teleports, java_teleports, "{} teleports", def.name);
-        assert!(src.contains(&format!("DOCK_ZONE = {}", def.dock_zone)));
-        assert!(src.contains(&format!("CONTROLLER_ID = {}", def.npc_id)));
-        assert!(src.contains(&format!("LOCATION = {}", def.location_id)));
+        assert_eq!(teleports, java.teleports, "{} teleports", def.name);
+        assert_eq!(java.dock_zone, def.dock_zone, "{} DOCK_ZONE", def.name);
+        assert_eq!(java.controller_id, def.npc_id, "{} CONTROLLER_ID", def.name);
+        assert_eq!(java.location, def.location_id, "{} LOCATION", def.name);
     }
-    let src =
-        std::fs::read_to_string(root.join("AirShipGludioGracia").join("AirShipGludioGracia.java")).unwrap();
     for (array, path) in [
         ("GLUDIO_TO_WARPGATE", &c::GLUDIO_TO_WARPGATE[..]),
         ("WARPGATE_TO_GRACIA", &c::WARPGATE_TO_GRACIA[..]),
         ("GRACIA_TO_WARPGATE", &c::GRACIA_TO_WARPGATE[..]),
         ("WARPGATE_TO_GLUDIO", &c::WARPGATE_TO_GLUDIO[..]),
     ] {
-        let start = src.find(&format!("{array} =")).unwrap();
-        let end = start + src[start..].find("};").unwrap();
-        assert_eq!(rust(path), numbers(&src[start..end]), "{array}");
+        let java = facts
+            .gludio_gracia
+            .get(array)
+            .unwrap_or_else(|| panic!("{array} is not in air_ship_routes.json"));
+        assert_eq!(&rust(path), java, "{array}");
     }
 }
 

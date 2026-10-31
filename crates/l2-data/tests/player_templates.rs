@@ -86,33 +86,14 @@ fn class_list_names_and_parents() {
     assert_eq!(list.get_by_id(136).unwrap().parent, Some(ClassId(135)));
 }
 
-/// `ClassId::race` must agree with Java's `PlayerClass` enum for all 103 ids.
+/// `ClassId::race` must agree with Java's `PlayerClass` enum for all 103 ids
+/// (`player_classes.json`, written by `codegen java-facts`).
 #[test]
 fn race_table_matches_java_player_class_enum() {
-    let path = PathBuf::from(
-        r"C:\l2-rust\l2jmobius\java\org\l2jmobius\gameserver\entity\actor\enums\player\PlayerClass.java",
-    );
-    let Ok(source) = std::fs::read_to_string(&path) else {
-        eprintln!("skipped: {} does not exist", path.display());
-        return;
-    };
+    let facts = l2_testkit::java_facts::player_classes();
     let mut checked = 0;
-    for line in source.lines() {
-        // e.g. `	WARLOCK(14, true, true, Race.HUMAN, WIZARD),`
-        let Some((_, rest)) = line.trim().split_once('(') else {
-            continue;
-        };
-        let Some((id, rest)) = rest.split_once(',') else {
-            continue;
-        };
-        let Ok(id) = id.trim().parse::<u16>() else {
-            continue;
-        };
-        let Some((_, race)) = rest.split_once("Race.") else {
-            continue;
-        };
-        let race = race.split(',').next().unwrap();
-        let expected = match race {
+    for (id, race) in &facts.races {
+        let expected = match race.as_str() {
             "HUMAN" => Race::Human,
             "ELF" => Race::Elf,
             "DARK_ELF" => Race::DarkElf,
@@ -121,7 +102,7 @@ fn race_table_matches_java_player_class_enum() {
             "KAMAEL" => Race::Kamael,
             other => panic!("unexpected race {other}"),
         };
-        assert_eq!(ClassId(id).race(), Some(expected), "class {id}");
+        assert_eq!(ClassId(*id).race(), Some(expected), "class {id}");
         checked += 1;
     }
     assert_eq!(checked, 103);

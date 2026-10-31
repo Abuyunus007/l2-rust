@@ -4,6 +4,7 @@
 //! style function (see `opcodes.rs`, the reference), add it to [`Target`] and to `run` in `main.rs`.
 
 pub mod config;
+pub mod java_facts;
 pub mod messages;
 pub mod opcodes;
 
