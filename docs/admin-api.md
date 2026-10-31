@@ -39,6 +39,7 @@ Requests may be answered out of order. Match responses by `id`. An empty configu
 | `get_login_status` | `server` (supervisor: which LS to ask; LS itself: null) | supervisor → LS | `login_status` |
 | `get_game_status` | `server` (GS itself: null) | GS endpoint, or the supervisor (relays to the named server) | `game_status` |
 | `shutdown` | `restart` (bool) | server endpoints only (the supervisor sends it on stop, D-38) | `ok`, then the server exits (code 0, or 2 with `restart`) |
+| `stop_supervisor` | none | supervisor | `ok` at once; stops all servers in reverse `Servers` order, then the supervisor exits and the connection closes (G-01) |
 
 ### Responses
 | kind | Fields |

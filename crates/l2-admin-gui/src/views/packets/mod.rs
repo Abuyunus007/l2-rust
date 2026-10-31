@@ -428,6 +428,7 @@ mod tests {
     fn run_frames(view: &mut PacketsView, settings: &mut Settings, frames: usize) {
         let bridge = Bridge::spawn(None).unwrap();
         let conn = ConnState::default();
+        let launch = crate::launch::LaunchHandle::detached();
         let ctx = egui::Context::default();
         for _ in 0..frames {
             let input = egui::RawInput {
@@ -442,6 +443,7 @@ mod tests {
                     settings,
                     conn: &conn,
                     bridge: &bridge,
+                    launch: &launch,
                 };
                 view.ui(ui, &mut cx);
             });

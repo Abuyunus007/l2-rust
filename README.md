@@ -184,8 +184,20 @@ On Linux, leave out the `.exe`.
 target/release/l2-supervisor run/supervisor.ini
 ```
 
-Then start `target/release/l2-admin-gui`. Connect it to `127.0.0.1:7900` with the supervisor's
-token, and start the servers from the **Servers** view. You can also start the servers without
+Or just start `target/release/l2-admin-gui`: it finds `run/supervisor.ini` (the repo's `run/`,
+then `./run`, then its own folder), reads `Listen` and `Token` from it and, when nobody listens,
+starts `l2-supervisor` (from the GUI's folder) detached, with its output in
+`run/log/supervisor.log`. Closing the GUI leaves the supervisor and the servers running. The
+**Connection** view has "Choose run folder" for other layouts and "Stop supervisor" (stops all
+servers cleanly, then the supervisor exits). Address and token fields there are optional
+overrides. The status bar says why the supervisor is not running (missing `supervisor.ini`, empty
+`Token`, port used by another program, `l2-supervisor` missing). Without a `supervisor.ini` the
+GUI points here: the setup wizard (a later card) will create it; until then copy the example as
+shown above. A second supervisor is never started: the supervisor writes `run/supervisor.pid`
+and the GUI checks it and the port first.
+
+Start the servers from the **Servers** view (**Start all** in `Servers` order, **Stop all** in
+reverse). You can also start the servers without
 the supervisor: `login-server` from `run/login`, and `game-server --root .` from `run/game`.
 
 The game server is ready when its log shows `Game server is ready.` It loads the datapack and
