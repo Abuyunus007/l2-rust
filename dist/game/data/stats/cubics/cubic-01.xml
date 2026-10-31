@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/cubics.xsd">
+	<!--
+		High Five Storm Cubic.
+		Offensive cubic that periodically casts Cubic Strike on valid enemy targets.
+		Attribute guide.
+		duration: active lifetime in seconds.
+		delay: action interval in seconds.
+		maxCount: maximum successful actions before the cubic stops or is consumed.
+		useUp: when greater than 0, the cubic is removed after reaching maxCount.
+		power: base magical power used by offensive cubic calculations.
+		selectionMode: skill selection rule used when multiple skills are available.
+		targetType: base target routing used by the cubic runtime.
+		Levels 8-12 are enchant template levels for High Five cubic skills.
+	-->
+	<cubic id="1" level="1" slot="1" duration="900" delay="10" maxCount="30" useUp="1" power="282.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4049" level="1" /> <!-- Cubic Strike -->
+		</skills>
+	</cubic>
+	<cubic id="1" level="2" slot="1" duration="900" delay="10" maxCount="30" useUp="1" power="434.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4049" level="2" /> <!-- Cubic Strike -->
+		</skills>
+	</cubic>
+	<cubic id="1" level="3" slot="1" duration="900" delay="10" maxCount="30" useUp="1" power="677.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4049" level="3" /> <!-- Cubic Strike -->
+		</skills>
+	</cubic>
+	<cubic id="1" level="4" slot="1" duration="900" delay="10" maxCount="30" useUp="1" power="919.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4049" level="4" /> <!-- Cubic Strike -->
+		</skills>
+	</cubic>
+	<cubic id="1" level="5" slot="1" duration="900" delay="10" maxCount="30" useUp="1" power="1141.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4049" level="5" /> <!-- Cubic Strike -->
+		</skills>
+	</cubic>
+	<cubic id="1" level="6" slot="1" duration="900" delay="10" maxCount="30" useUp="1" power="1394.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4049" level="6" /> <!-- Cubic Strike -->
+		</skills>
+	</cubic>
+	<cubic id="1" level="7" slot="1" duration="900" delay="10" maxCount="30" useUp="1" power="1673.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4049" level="7" /> <!-- Cubic Strike -->
+		</skills>
+	</cubic>
+	<cubic id="1" level="8" slot="1" duration="900" delay="10" maxCount="30" useUp="1" power="1975.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4049" level="8" /> <!-- Cubic Strike -->
+		</skills>
+	</cubic>
+	<cubic id="1" level="9" slot="1" duration="900" delay="10" maxCount="30" useUp="1" power="2378.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4049" level="9" /> <!-- Cubic Strike -->
+		</skills>
+	</cubic>
+	<cubic id="1" level="10" slot="1" duration="900" delay="10" maxCount="30" useUp="1" power="2423.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4049" level="10" /> <!-- Cubic Strike -->
+		</skills>
+	</cubic>
+	<cubic id="1" level="11" slot="1" duration="900" delay="10" maxCount="30" useUp="1" power="2423.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4049" level="11" /> <!-- Cubic Strike -->
+		</skills>
+	</cubic>
+	<cubic id="1" level="12" slot="1" duration="900" delay="10" maxCount="30" useUp="1" power="2423.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4049" level="12" /> <!-- Cubic Strike -->
+		</skills>
+	</cubic>
+</list>

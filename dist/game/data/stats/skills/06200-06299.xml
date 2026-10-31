@@ -1,0 +1,1402 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/skills.xsd">
+	<skill id="6200" levels="1" name="NPC Transform Dispel">
+		<!-- Cancels transformation. -->
+		<icon>icon.skilltransform2</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>900</castRange>
+		<effectPoint>10</effectPoint>
+		<effectRange>1500</effectRange>
+		<hitTime>2500</hitTime>
+		<magicLevel>56</magicLevel>
+		<conditions>
+			<player canUntransform="true" />
+		</conditions>
+		<effects>
+			<effect name="DispelBySlot">
+				<dispel>TRANSFORM,-1</dispel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6201" levels="1" name="Transformation Condition - Frog">
+		<!-- Transformed into a frog. -->
+		<icon>icon.skilltransform3</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>520</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<castRange>900</castRange>
+		<effectPoint>10</effectPoint>
+		<effectRange>1500</effectRange>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>111</id>
+				<mul stat="weightLimit">11</mul>
+				<add stat="weightPenalty">9000</add>
+				<add stat="inventoryLimit">8</add>
+			</effect>
+			<effect name="DispelBySlotProbability">
+				<dispel>IMPROVE_SPEED_AVOID_UP;SPEED_UP</dispel>
+				<rate>100</rate>
+			</effect>
+			<effect name="BlockAbnormalSlot">
+				<slot>IMPROVE_SPEED_AVOID_UP;SPEED_UP</slot>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6202" levels="1" name="Transformation Condition - Young Child">
+		<!-- Transformed into a young child. -->
+		<icon>icon.skilltransform3</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>460</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<castRange>900</castRange>
+		<effectPoint>10</effectPoint>
+		<effectRange>1500</effectRange>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>112</id>
+				<mul stat="weightLimit">11</mul>
+				<add stat="weightPenalty">9000</add>
+				<add stat="inventoryLimit">8</add>
+			</effect>
+			<effect name="DispelBySlotProbability">
+				<dispel>IMPROVE_SPEED_AVOID_UP;SPEED_UP</dispel>
+				<rate>100</rate>
+			</effect>
+			<effect name="BlockAbnormalSlot">
+				<slot>IMPROVE_SPEED_AVOID_UP;SPEED_UP</slot>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6203" levels="1" name="Transformed Condition - Native">
+		<!-- Transformed into a native. -->
+		<icon>icon.skilltransform3</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>215</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<castRange>900</castRange>
+		<effectPoint>10</effectPoint>
+		<effectRange>1500</effectRange>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>124</id>
+				<mul stat="weightLimit">11</mul>
+				<add stat="weightPenalty">9000</add>
+				<add stat="inventoryLimit">8</add>
+			</effect>
+			<effect name="DispelBySlotProbability">
+				<dispel>IMPROVE_SPEED_AVOID_UP;SPEED_UP</dispel>
+				<rate>100</rate>
+			</effect>
+			<effect name="BlockAbnormalSlot">
+				<slot>IMPROVE_SPEED_AVOID_UP;SPEED_UP</slot>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6204" levels="1" name="Transformed Condition - Guards of the Dawn">
+		<!-- Transformed into a Guard of the Dawn. -->
+		<icon>icon.skilltransform3</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>-1</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<castRange>900</castRange>
+		<effectPoint>10</effectPoint>
+		<effectRange>1500</effectRange>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>113</id>
+				<mul stat="weightLimit">11</mul>
+				<add stat="weightPenalty">9000</add>
+				<add stat="inventoryLimit">8</add>
+			</effect>
+			<effect name="DispelBySlotProbability">
+				<dispel>IMPROVE_SPEED_AVOID_UP;SPEED_UP</dispel>
+				<rate>100</rate>
+			</effect>
+			<effect name="BlockAbnormalSlot">
+				<slot>IMPROVE_SPEED_AVOID_UP;SPEED_UP</slot>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6205" levels="19" name="Strider Bite">
+		<!-- Level 1: Commands the mounted strider to bite the enemies at the front. Attacks the enemy with 1649 Power added to P. Atk., causes bleed for 20 seconds, and makes him consume 67 HP every second. Over-hit and Critical are possible. -->
+		<!-- Level 2: Commands the mounted strider to bite the enemies at the front. Attacks the enemy with 2045 Power added to P. Atk., causes bleed for 20 seconds, and makes him consume 77 HP every second. Over-hit and Critical are possible. -->
+		<!-- Level 3: Commands the mounted strider to bite the enemies at the front. Attacks the enemy with 2476 Power added to P. Atk., causes bleed for 20 seconds, and makes him consume 77 HP every second. Over-hit and Critical are possible. -->
+		<!-- Level 4: Commands the mounted strider to bite the enemies at the front. Attacks the enemy with 2927 Power added to P. Atk., causes bleed for 20 seconds, and makes him consume 84 HP every second. Over-hit and Critical are possible. -->
+		<!-- Level 5: Commands the mounted strider to bite the enemies at the front. Attacks the enemy with 3108 Power added to P. Atk., causes bleed for 20 seconds, and makes him consume 84 HP every second. Over-hit and Critical are possible. -->
+		<!-- Level 6: Commands the mounted strider to bite the enemies at the front. Attacks the enemy with 3288 Power added to P. Atk., causes bleed for 20 seconds, and makes him consume 84 HP every second. Over-hit and Critical are possible. -->
+		<!-- Level 7: Commands the mounted strider to bite the enemies at the front. Attacks the enemy with 3464 Power added to P. Atk., causes bleed for 20 seconds, and makes him consume 84 HP every second. Over-hit and Critical are possible. -->
+		<!-- Level 8: Commands the mounted strider to bite the enemies at the front. Attacks the enemy with 3636 Power added to P. Atk., causes bleed for 20 seconds, and makes him consume 84 HP every second. Over-hit and Critical are possible. -->
+		<!-- Level 9: Commands the mounted strider to bite the enemies at the front. Attacks the enemy with 3801 Power added to P. Atk., causes bleed for 20 seconds, and makes him consume 87 HP every second. Over-hit and Critical are possible. -->
+		<!-- Level 10: Commands the mounted strider to bite the enemies at the front. Attacks the enemy with 3881 Power added to P. Atk., causes bleed for 20 seconds, and makes him consume 87 HP every second. Over-hit and Critical are possible. -->
+		<!-- Level 11: Commands the mounted strider to bite the enemies at the front. Attacks the enemy with 3959 Power added to P. Atk., causes bleed for 20 seconds, and makes him consume 87 HP every second. Over-hit and Critical are possible. -->
+		<!-- Level 12: Commands the mounted strider to bite the enemies at the front. Attacks the enemy with 4034 Power added to P. Atk., causes bleed for 20 seconds, and makes him consume 87 HP every second. Over-hit and Critical are possible. -->
+		<!-- Level 13: Commands the mounted strider to bite the enemies at the front. Attacks the enemy with 4107 Power added to P. Atk., causes bleed for 20 seconds, and makes him consume 87 HP every second. Over-hit and Critical are possible. -->
+		<!-- Level 14: Commands the mounted strider to bite the enemies at the front. Attacks the enemy with 4176 Power added to P. Atk., causes bleed for 20 seconds, and makes him consume 87 HP every second. Over-hit and Critical are possible. -->
+		<!-- Level 15: Commands the mounted strider to bite the enemies at the front. Attacks the enemy with 4243 Power added to P. Atk., causes bleed for 20 seconds, and makes him consume 87 HP every second. Over-hit and Critical are possible. -->
+		<!-- Level 16: Commands the mounted strider to bite the enemies at the front. Attacks the enemy with 4307 Power added to P. Atk., causes bleed for 20 seconds, and makes him consume 87 HP every second. Over-hit and Critical are possible. -->
+		<!-- Level 17: Commands the mounted strider to bite the enemies at the front. Attacks the enemy with 4367 Power added to P. Atk., causes bleed for 20 seconds, and makes him consume 87 HP every second. Over-hit and Critical are possible. -->
+		<!-- Level 18: Commands the mounted strider to bite the enemies at the front. Attacks the enemy with 4424 Power added to P. Atk., causes bleed for 20 seconds, and makes him consume 87 HP every second. Over-hit and Critical are possible. -->
+		<!-- Level 19: Commands the mounted strider to bite the enemies at the front. Attacks the enemy with 4477 Power added to P. Atk., causes bleed for 20 seconds, and makes him consume 89 HP every second. Over-hit and Critical are possible. -->
+		<table name="#dot">65 75 75 82 82 82 82 82 85 85 85 85 85 85 85 85 85 85 87</table>
+		<table name="#effectPoints">-523 -566 -604 -635 -646 -655 -662 -669 -676 -679 -681 -684 -687 -689 -692 -694 -696 -698 -700</table>
+		<table name="#magicLevel">55 60 65 70 72 74 76 78 80 81 82 83 84 85 86 87 88 89 90</table>
+		<table name="#mpConsume">68 76 82 89 91 94 96 98 100 100 101 102 103 103 104 104 105 105 105</table>
+		<table name="#power">1649 2045 2476 2927 3108 3288 3464 3636 3801 3881 3959 4034 4107 4176 4243 4307 4367 4424 4477</table>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>6</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>BLEEDING</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<coolTime>720</coolTime>
+		<effectPoint>#effectPoints</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>1080</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<nextActionAttack>true</nextActionAttack>
+		<overHit>true</overHit>
+		<power>#power</power>
+		<reuseDelay>3000</reuseDelay>
+		<trait>BLEED</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="DamOverTime" ticks="5">
+				<power>#dot</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6206" levels="19" name="Strider Fear">
+		<!-- Frightens the enemy and causes him to flee for 10 seconds. -->
+		<table name="#effectPoints">-523 -566 -604 -635 -646 -655 -662 -669 -676 -679 -681 -684 -687 -689 -692 -694 -696 -698 -700</table>
+		<table name="#magicLevel">55 60 65 70 72 74 76 78 80 81 82 83 84 85 86 87 88 89 90</table>
+		<table name="#mpConsume">40 44 48 52 53 55 56 57 58 58 59 59 60 60 60 61 61 61 61</table>
+		<table name="#mpInitialConsume">10 11 12 13 14 14 14 15 15 15 15 15 15 15 15 16 16 16 16</table>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>TURN_FLEE</abnormalType>
+		<abnormalVisualEffect>TURN_FLEE</abnormalVisualEffect>
+		<activateRate>40</activateRate>
+		<affectLimit>6-12</affectLimit>
+		<affectRange>300</affectRange>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>#effectPoints</effectPoint>
+		<hitTime>4000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<reuseDelay>5000</reuseDelay>
+		<trait>DERANGEMENT</trait>
+		<effects>
+			<effect name="Fear" />
+		</effects>
+	</skill>
+	<skill id="6207" levels="1" name="Strider Dash">
+		<!-- Increases one's own Speed by 66 for 15 seconds. -->
+		<icon>icon.action108</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>2</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>SPEED_UP_SPECIAL</abnormalType>
+		<effectPoint>438</effectPoint>
+		<hitTime>1000</hitTime>
+		<magicLevel>56</magicLevel>
+		<mpConsume>55</mpConsume>
+		<reuseDelay>30000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="runSpd">66</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6208" levels="1" name="Blessed Guidance">
+		<!-- Blessed Guidance. For 10 seconds, increases accuracy by 2. -->
+		<icon>icon.skill1240</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>HIT_UP</abnormalType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6209" levels="4" name="Weapon Grade Penalty">
+		<!-- Level 1: The equipped weapon's grade doesn't match your level, so the following penalties are incurred: Decrease in accuracy by 16, Critical Rate by 10%, Critical Damage by 10%, Atk. Spd. by 10%, and P. Atk. by 10%. -->
+		<!-- Level 2: The equipped weapon's grade doesn't match your level, so the following penalties are incurred: Decrease in accuracy by 16, Critical Rate by 20%, Critical Damage by 20%, Atk. Spd. by 10%, and P. Atk. by 10%. -->
+		<!-- Level 3: The equipped weapon's grade doesn't match your level, so the following penalties are incurred: Decrease in accuracy by 16, Critical Rate by 30%, Critical Damage by 30%, Atk. Spd. by 10%, and P. Atk. by 10%. -->
+		<!-- Level 4: The equipped weapon's grade doesn't match your level, so the following penalties are incurred: Decrease in accuracy by 16, Critical Rate by 40%, Critical Damage by 40%, Atk. Spd. by 10%, and P. Atk. by 10%. -->
+		<table name="#cAtk">0.9 0.8 0.7 0.6</table>
+		<table name="#icons">icon.skill6209_1 icon.skill6209_2 icon.skill6209_3 icon.skill6209_4</table>
+		<table name="#critRate">0.9 0.8 0.7 0.6</table>
+		<icon>#icons</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+		<stayAfterDeath>true</stayAfterDeath>
+		<effects>
+			<effect name="Buff">
+				<sub stat="accCombat">16</sub>
+				<mul stat="critRate">#critRate</mul>
+				<mul stat="critDmg">#cAtk</mul>
+				<mul stat="pAtkSpd">0.9</mul>
+				<mul stat="pAtk">0.9</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6213" levels="4" name="Armor Grade Penalty">
+		<!-- Level 1: When equipped with armor or accessories whose grade doesn't fit with your level, a penalty is incurred with decreases in evasion by 2.5, Atk. Spd./Casting Spd./Speed by 16.67%. -->
+		<!-- Level 2: When equipped with armor or accessories whose grade doesn't fit with your level, a penalty is incurred with decreases in evasion by 5, Atk. Spd./Casting Spd./Speed by 30.56%. -->
+		<!-- Level 3: When equipped with armor or accessories whose grade doesn't fit with your level, a penalty is incurred with decreases in evasion by 7.5, Atk. Spd./Casting Spd./Speed by 42.13%. -->
+		<!-- Level 4: When equipped with armor or accessories whose grade doesn't fit with your level, a penalty is incurred with decreases in evasion by 10, Atk. Spd./Casting Spd./Speed by 51.77%. -->
+		<table name="#amount">0.8333 0.6944 0.5787 0.4823</table>
+		<table name="#icons">icon.skill6213_1 icon.skill6213_2 icon.skill6213_3 icon.skill6213_4</table>
+		<table name="#rEvas">2.5 5 7.5 10</table>
+		<icon>#icons</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+		<stayAfterDeath>true</stayAfterDeath>
+		<effects>
+			<effect name="Buff">
+				<sub stat="rEvas">#rEvas</sub>
+				<mul stat="pAtkSpd">#amount</mul>
+				<mul stat="mAtkSpd">#amount</mul>
+				<mul stat="runSpd">#amount</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6217" levels="1" name="Raid Boss - Level 81">
+		<!-- Evil existence trying to invade the real world along the border between dreams and reality. It is recognized differently by different people, as if it were created by a collection of nightmares. -->
+		<icon>icon.skillraid</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6218" levels="1" name="Raid Boss - Level 81">
+		<!-- Evil existence trying to invade the real world along the border between dreams and reality. It is recognized differently by different people, as if it were created by a collection of nightmares. -->
+		<icon>icon.skillraid</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6219" levels="1" name="Raid Boss - Level 81">
+		<!-- Evil existence trying to invade the real world along the border between dreams and reality. It is recognized differently by different people, as if it were created by a collection of nightmares. -->
+		<icon>icon.skillraid</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6220" levels="1" name="Raid Boss - Level 81">
+		<!-- Evil existence trying to invade the real world along the border between dreams and reality. It is recognized differently by different people, as if it were created by a collection of nightmares. -->
+		<icon>icon.skillraid</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6221" levels="1" name="Raid Boss - Level 82">
+		<!-- Evil existence trying to invade the real world along the border between dreams and reality. It is recognized differently by different people, as if it were created by a collection of nightmares. -->
+		<icon>icon.skillraid</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6222" levels="1" name="Raid Boss - Level 84">
+		<!-- Evil existence trying to invade the real world along the border between dreams and reality. It is recognized differently by different people, as if it were created by a collection of nightmares. -->
+		<icon>icon.skillraid</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6223" levels="1" name="Raid Boss - Level 84">
+		<!-- Leader of the Cannibalistic Stakatos appointed by the Stakato Queen Shyeed to guard their nest. Unlike other Stakatos, it has the ability to jump through invisible space. -->
+		<icon>icon.skillraid</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6224" levels="1" name="Raid Boss - Level 84">
+		<!-- Leader of the Cannibalistic Stakatos appointed by the Stakato Queen Shyeed to guard their nest. Unlike other Stakatos, it has the ability to jump through invisible space. -->
+		<icon>icon.skillraid</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6225" levels="1" name="Raid Boss - Level 84">
+		<!-- Leader of the Cannibalistic Stakatos appointed by the Stakato Queen Shyeed to guard their nest. Unlike other Stakatos, it has the ability to jump through invisible space. -->
+		<icon>icon.skillraid</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6226" levels="1" name="Raid Boss - Level 84">
+		<!-- Leader of the Cannibalistic Stakatos appointed by the Stakato Queen Shyeed to guard their nest. Unlike other Stakatos, it has the ability to jump through invisible space. -->
+		<icon>icon.skillraid</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6227" levels="1" name="Raid Boss - Level 84">
+		<!-- Queen of the Spike Stakatos who commands and propagates the Spike Stakatos. It knows that its life is coming to an end, and it orders the nest guarded so that it is a good environment for the next Stakato Queen to grow up. -->
+		<icon>icon.skillraid</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6228" levels="1" name="Raid Boss - Level 83">
+		<!-- One of the monsters born of the Goddess Shilen. When the Great Sprite Gildor is weakened, it leads the Tasaba Lizardmen into the Reed Field, but when the Tasaba Lizardmen are wiped out by the appearance of the Mucrokians, it spews tremendous anger. -->
+		<icon>icon.skillraid</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6229" levels="1" name="Raid Boss - Level 84">
+		<!-- Water sprite born from the powerful waters of Innadril. It is greatly beloved by the Goddess Eva. It's a trickster that does whatever it wants, like snatching babies or causing floods in the middle of the night. Eva fears retaliation one day because of Lian's severe tricks, and she puts him in the care of guardian spirits. -->
+		<icon>icon.skillraid</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6230" levels="1" name="Raid Boss - Level 82">
+		<!-- Because of the item that was made in the image of the giants by the Ivory Tower magicians, it believes it is a giant itself. It is controlled by Hekaton Prime, and it guards the cave that was once the fortress of the giants. -->
+		<icon>icon.skillraid</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6231" levels="1" name="Raid Boss - Level 82">
+		<!-- Lifeform created by the giants that were fleeing by night the wrath of Einhasad. It was improved with a Monster Eye as its foundation and it was created to exterminate the pursuers of the gods. At one time, it broke free from the control of the giants and fought against them. Its mind is now controlled by Hekaton prime, and it again protects the giants. -->
+		<icon>icon.skillraid</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6232" levels="1" name="Raid Boss - Level 83">
+		<!-- Last Lesser Giant hiding deep inside the Giant's Cave. Though it is physically the same as the other Lesser Giants, it contains the secret of the ancient lesser giant civilization, and it protects this secret. It is currently controlled by Hekaton Prime. -->
+		<icon>icon.skillraid</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6233" levels="1" name="Raid Boss - Level 83">
+		<!-- Control device created by the ancient giants civilization. It has outgrown its original research goal. It's only goal now is to protect the cave. It is transforming it into a powerful protected fortress by controlling the minds of the other races and by maintaining the Giant's Cave. -->
+		<icon>icon.skillraid</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6234" levels="1" name="Presentation - Adena Firework">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>80</magicLevel>
+	</skill>
+	<skill id="6235" levels="1" name="Blessed Focus">
+		<!-- Blessing's Focus. Increases Critical Rate for 1 minute. -->
+		<icon>icon.skill1077</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>SIGNAL_B</abnormalType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6236" levels="1" name="Presentation - Party Recall">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6237" levels="1" name="Speed Decrease">
+		<!-- Speed is reduced by 80% for 10 seconds. -->
+		<icon>icon.skill1160</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>SPEED_DOWN</abnormalType>
+		<abnormalVisualEffect>SPEED_DOWN</abnormalVisualEffect>
+		<affectRange>300</affectRange>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>84</magicLevel>
+		<effects>
+			<effect name="Debuff">
+				<mul stat="runSpd">0.2</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6238" levels="1" name="Speed Decrease">
+		<!-- Speed/Casting Spd./Atk. Spd. are reduced by 50% for 20 seconds. -->
+		<icon>icon.skill1160</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>4</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>SPEED_DOWN</abnormalType>
+		<abnormalVisualEffect>SPEED_DOWN</abnormalVisualEffect>
+		<affectRange>200</affectRange>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<element>3</element> <!-- Earth -->
+		<elementPower>20</elementPower>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>84</magicLevel>
+		<power>18162</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Debuff">
+				<mul stat="runSpd">0.5</mul>
+				<mul stat="pAtkSpd">0.5</mul>
+				<mul stat="mAtkSpd">0.5</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6239" levels="1" name="Proof of Space and Time">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<coolTime>1000</coolTime>
+		<hitTime>2700</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>55</magicLevel>
+		<reuseDelay>86400000</reuseDelay>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Restoration">
+				<itemId>15352</itemId>
+				<itemCount>1</itemCount>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6240" levels="5" name="Heatstroke">
+		<!-- Level 1: Heatstroke stage 1. Inflicted with heatstroke. You are extremely hot and fatigued. -->
+		<!-- Level 2: Heatstroke stage 2. Inflicted with heatstroke. You are extremely hot and fatigued. -->
+		<!-- Level 3: Heatstroke stage 3. Inflicted with heatstroke. You are extremely hot and fatigued. -->
+		<!-- Level 4: Heatstroke stage 4. Inflicted with heatstroke. You are extremely hot and fatigued. -->
+		<!-- Level 5: Heatstroke stage 5. Inflicted with heatstroke. You are extremely hot and fatigued. -->
+		<table name="#abnormalLevels">1 2 3 4 5</table>
+		<icon>icon.etc_ashes_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>86400</abnormalTime>
+		<abnormalType>SIGNAL_D</abnormalType>
+		<effectPoint>-100</effectPoint>
+		<isDebuff>true</isDebuff>
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="6241" levels="1" name="Heatstroke Prevention Effect - Gludio">
+		<!-- Heatstroke Prevention Effect - Prevention effect received in the Gludio region. Effect that minimizes the damage incurred from heatstroke. -->
+		<icon>icon.skill1184</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>604800</abnormalTime>
+		<abnormalType>EVENT_TERRITORY</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6242" levels="1" name="Heatstroke Prevention Effect - Dion">
+		<!-- Heatstroke Prevention Effect - Prevention effect received in the Dion region. Effect that minimizes the damage incurred from heatstroke. -->
+		<icon>icon.skill1184</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>604800</abnormalTime>
+		<abnormalType>EVENT_TERRITORY</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6243" levels="1" name="Heatstroke Prevention Effect - Giran">
+		<!-- Heatstroke Prevention Effect - Prevention effect received in the Giran region. Effect that minimizes the damage incurred from heatstroke. -->
+		<icon>icon.skill1184</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>604800</abnormalTime>
+		<abnormalType>EVENT_TERRITORY</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6244" levels="1" name="Heatstroke Prevention Effect - Oren">
+		<!-- Heatstroke Prevention Effect - Prevention effect received in the Oren region. Effect that minimizes the damage incurred from heatstroke. -->
+		<icon>icon.skill1184</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>604800</abnormalTime>
+		<abnormalType>EVENT_TERRITORY</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6245" levels="1" name="Heatstroke Prevention Effect - Aden">
+		<!-- Heatstroke Prevention Effect - Prevention effect received in the Aden region. Effect that minimizes the damage incurred from heatstroke. -->
+		<icon>icon.skill1184</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>604800</abnormalTime>
+		<abnormalType>EVENT_TERRITORY</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6246" levels="1" name="Heatstroke Prevention Effect - Innadril">
+		<!-- Heatstroke Prevention Effect - Prevention effect received in the Innadril region. Effect that minimizes the damage incurred from heatstroke. -->
+		<icon>icon.skill1184</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>604800</abnormalTime>
+		<abnormalType>EVENT_TERRITORY</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6247" levels="1" name="Heatstroke Prevention Effect - Goddard">
+		<!-- Heatstroke Prevention Effect - Prevention effect received in the Goddard region. Effect that minimizes the damage incurred from heatstroke. -->
+		<icon>icon.skill1184</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>604800</abnormalTime>
+		<abnormalType>EVENT_TERRITORY</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6248" levels="1" name="Heatstroke Prevention Effect - Rune">
+		<!-- Heatstroke Prevention Effect - Prevention effect received in the Rune region. Effect that minimizes the damage incurred from heatstroke. -->
+		<icon>icon.skill1184</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>604800</abnormalTime>
+		<abnormalType>EVENT_TERRITORY</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6249" levels="1" name="Heatstroke Prevention Effect -Schuttgart">
+		<!-- Heatstroke Prevention Effect - Prevention effect received in the Schuttgart region. Effect that minimizes the damage incurred from heatstroke. -->
+		<icon>icon.skill1184</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>604800</abnormalTime>
+		<abnormalType>EVENT_TERRITORY</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6250" levels="1" name="Severe Heatstroke">
+		<!-- Severe heatstroke. Humidity is summoned. -->
+		<icon>icon.etc_ashes_red_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>5</abnormalTime>
+		<abnormalType>SIGNAL_D</abnormalType>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>-1111</effectPoint>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="6251" levels="1" name="Summon Humidity">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>85</magicLevel>
+		<effects>
+			<effect name="SummonNpc">
+				<npcId>13270</npcId>
+				<npcCount>1</npcCount>
+				<despawnDelay>7200</despawnDelay>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6252" levels="1" name="Humidity Attack">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-1111</effectPoint>
+		<magicLevel>85</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="6253" levels="1" name="Heatstroke Prevention Effect - Gludio">
+		<!-- Heatstroke Prevention Effect - Prevention effect received in the Gludio region. Effect that minimizes the damage incurred from heatstroke. -->
+		<icon>icon.skill1184</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>604800</abnormalTime>
+		<abnormalType>EVENT_TERRITORY</abnormalType>
+		<effectPoint>100</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6254" levels="1" name="Heatstroke Prevention Effect - Dion">
+		<!-- Heatstroke Prevention Effect - Prevention effect received in the Dion region. Effect that minimizes the damage incurred from heatstroke. -->
+		<icon>icon.skill1184</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>604800</abnormalTime>
+		<abnormalType>EVENT_TERRITORY</abnormalType>
+		<effectPoint>100</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6255" levels="1" name="Heatstroke Prevention Effect - Giran">
+		<!-- Heatstroke Prevention Effect - Prevention effect received in the Giran region. Effect that minimizes the damage incurred from heatstroke. -->
+		<icon>icon.skill1184</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>604800</abnormalTime>
+		<abnormalType>EVENT_TERRITORY</abnormalType>
+		<effectPoint>100</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6256" levels="1" name="Heatstroke Prevention Effect - Oren">
+		<!-- Heatstroke Prevention Effect - Prevention effect received in the Oren region. Effect that minimizes the damage incurred from heatstroke. -->
+		<icon>icon.skill1184</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>604800</abnormalTime>
+		<abnormalType>EVENT_TERRITORY</abnormalType>
+		<effectPoint>100</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6257" levels="1" name="Heatstroke Prevention Effect - Aden">
+		<!-- Heatstroke Prevention Effect - Prevention effect received in the Aden region. Effect that minimizes the damage incurred from heatstroke. -->
+		<icon>icon.skill1184</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>604800</abnormalTime>
+		<abnormalType>EVENT_TERRITORY</abnormalType>
+		<effectPoint>100</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6258" levels="1" name="Heatstroke Prevention Effect - Innadril">
+		<!-- Heatstroke Prevention Effect - Prevention effect received in the Innadril region. Effect that minimizes the damage incurred from heatstroke. -->
+		<icon>icon.skill1184</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>604800</abnormalTime>
+		<abnormalType>EVENT_TERRITORY</abnormalType>
+		<effectPoint>100</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6259" levels="1" name="Heatstroke Prevention Effect - Goddard">
+		<!-- Heatstroke Prevention Effect - Prevention effect received in the Goddard region. Effect that minimizes the damage incurred from heatstroke. -->
+		<icon>icon.skill1184</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>604800</abnormalTime>
+		<abnormalType>EVENT_TERRITORY</abnormalType>
+		<effectPoint>100</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6260" levels="1" name="Heatstroke Prevention Effect - Rune">
+		<!-- Heatstroke Prevention Effect - Prevention effect received in the Rune region. Effect that minimizes the damage incurred from heatstroke. -->
+		<icon>icon.skill1184</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>604800</abnormalTime>
+		<abnormalType>EVENT_TERRITORY</abnormalType>
+		<effectPoint>100</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6261" levels="1" name="Heatstroke Prevention Effect - Schuttgart">
+		<!-- Heatstroke Prevention Effect - Prevention effect received in the Schuttgart region. Effect that minimizes the damage incurred from heatstroke. -->
+		<icon>icon.skill1184</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>604800</abnormalTime>
+		<abnormalType>EVENT_TERRITORY</abnormalType>
+		<effectPoint>100</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6262" levels="1" name="EMP Power">
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>150</affectRange>
+		<hitTime>2000</hitTime>
+		<coolTime>500</coolTime>
+		<reuseDelay>30000</reuseDelay>
+		<mpConsume>78</mpConsume>
+		<magicLevel>76</magicLevel>
+		<power>2959</power>
+		<effectPoint>-100</effectPoint>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6263" levels="1" name="EMP Shock">
+		<!-- Momentarily causes shock and stuns the enemy for 2 seconds. -->
+		<icon>icon.skill0100</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>2</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>77</magicLevel>
+		<mpConsume>78</mpConsume>
+		<reuseDelay>30000</reuseDelay>
+		<trait>SHOCK</trait>
+		<effects>
+			<effect name="PhysicalDamage">
+				<power>2959</power>
+			</effect>
+			<effect name="Stun" />
+		</effects>
+	</skill>
+	<skill id="6264" levels="1" name="Golem Boom">
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>50</affectRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-689</effectPoint>
+		<magicLevel>75</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+	</skill>
+	<skill id="6265" levels="1" name="Smoke">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<coolTime>500</coolTime>
+		<effectPoint>-689</effectPoint>
+		<magicLevel>75</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+	</skill>
+	<skill id="6266" levels="1" name="Shock">
+		<!-- Momentarily causes shock and stuns the enemy for 30 seconds. -->
+		<icon>icon.skill0100</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>84</magicLevel>
+		<trait>SHOCK</trait>
+	</skill>
+	<skill id="6267" levels="1" name="Power Attack">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-574</effectPoint>
+		<magicLevel>84</magicLevel>
+	</skill>
+	<skill id="6268" levels="1" name="Power Attack">
+		<operateType>A1</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<effectPoint>-273</effectPoint>
+		<fanRange>0,0,300,90</fanRange>
+		<magicLevel>84</magicLevel>
+	</skill>
+	<skill id="6269" levels="1" name="Poison Gas">
+		<!-- Poisons the enemy for 10 seconds and inflicts 345 HP damage per second. -->
+		<icon>icon.skill4036</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>10</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>POISON</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>-1</magicLevel>
+		<trait>POISON</trait>
+	</skill>
+	<skill id="6270" levels="1" name="Grima Power Up">
+		<icon>icon.skill4036</icon>
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<magicLevel>84</magicLevel>
+		<trait>POISON</trait>
+	</skill>
+	<skill id="6271" levels="5" name="Grima Power Up">
+		<!-- Level 1: Increase Physical Attack by 10%. -->
+		<!-- Level 2: Increase Physical Attack by 20%. -->
+		<!-- Level 3: Increase Physical Attack by 30%. -->
+		<!-- Level 4: Increase Physical Attack by 40%. -->
+		<!-- Level 5: Increase Physical Attack by 50%. -->
+		<table name="#abnormalLevels">1 2 3 4 5</table>
+		<icon>icon.skill1068</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>PA_UP</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+	</skill>
+	<skill id="6272" levels="1" name="Underbug Defense Up">
+		<!-- Increase each of P. Def. and M. Def. by 30%. -->
+		<icon>icon.skill1040</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>PD_UP</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+	</skill>
+	<skill id="6273" levels="1" name="Underbug Self Blasting">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-676</effectPoint>
+		<magicLevel>85</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+		<trait>POISON</trait>
+	</skill>
+	<skill id="6274" levels="1" name="Eternal Blizzard">
+		<icon>icon.skill6274</icon>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>3000</affectRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-1000</effectPoint>
+		<element>1</element> <!-- Water -->
+		<elementPower>180</elementPower>
+		<hitTime>10000</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>165</mpConsume>
+		<power>38976</power>
+		<reuseDelay>10000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="CallSkill">
+				<skillId>6662</skillId>
+				<skillLevel>2</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6275" levels="1" name="Eternal Blizzard">
+		<icon>icon.skill6274</icon>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>3000</affectRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-1000</effectPoint>
+		<element>1</element> <!-- Water -->
+		<elementPower>180</elementPower>
+		<hitTime>7000</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>166</mpConsume>
+		<power>45256</power>
+		<reuseDelay>10000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="CallSkill">
+				<skillId>6662</skillId>
+				<skillLevel>2</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6276" levels="1" name="Eternal Blizzard">
+		<icon>icon.skill6274</icon>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>3000</affectRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-1000</effectPoint>
+		<element>1</element> <!-- Water -->
+		<elementPower>180</elementPower>
+		<hitTime>10000</hitTime>
+		<magicLevel>85</magicLevel>
+		<reuseDelay>10000</reuseDelay>
+	</skill>
+	<skill id="6277" levels="1" name="Summon Spirits">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>800</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-689</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>1500</hitTime>
+		<magicLevel>85</magicLevel>
+		<reuseDelay>10000</reuseDelay>
+	</skill>
+	<skill id="6278" levels="1" name="Ice Ball">
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>250</affectRange>
+		<castRange>800</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-689</effectPoint>
+		<effectRange>1100</effectRange>
+		<element>1</element> <!-- Water -->
+		<elementPower>20</elementPower>
+		<hitTime>3000</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>168</mpConsume>
+		<power>18560</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6279" levels="1" name="Attack Nearby Range">
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>450</affectRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-689</effectPoint>
+		<element>1</element> <!-- Water -->
+		<elementPower>20</elementPower>
+		<hitTime>5000</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>168</mpConsume>
+		<power>18560</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6280" levels="1" name="Death Clack">
+		<!-- Freya's Cruel Sentence. Verdict will be made after 10 seconds. -->
+		<icon>icon.skill6280</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>DEATH_CLACK</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<basicProperty>CON</basicProperty>
+		<castRange>1500</castRange>
+		<coolTime>800</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1100</effectRange>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<mpConsume>85</mpConsume>
+		<endEffects>
+			<effect name="CallSkill">
+				<skillId>6281</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</endEffects>
+	</skill>
+	<skill id="6281" levels="1" name="Cold Judgement">
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>300</affectRange>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<isTriggeredSkill>true</isTriggeredSkill>
+		<magicLevel>85</magicLevel>
+		<power>18560</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6282" levels="1" name="Reflect Magic">
+		<!-- Reflects magic damage back to the enemy for 10 seconds. -->
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>REFLECT_MAGIC_DD</abnormalType>
+		<effectPoint>204</effectPoint>
+		<magicLevel>85</magicLevel>
+		<mpConsume>85</mpConsume>
+		<reuseDelay>45000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="vengeanceMdam">20</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6283" levels="1" name="Ice Storm">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>1100</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-689</effectPoint>
+		<effectRange>1200</effectRange>
+		<element>1</element> <!-- Water -->
+		<elementPower>20</elementPower>
+		<hitTime>3500</hitTime>
+		<magicLevel>85</magicLevel>
+		<power>18560</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6284" levels="1" name="Freya's Bless">
+		<!-- Increase P.Atk, P.Def. and Atk. Spd. by 15%. -->
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>PA_UP</abnormalType>
+		<coolTime>500</coolTime>
+		<effectPoint>1</effectPoint>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pDef">1.15</mul>
+				<mul stat="pAtk">1.15</mul>
+				<mul stat="pAtkSpd">1.15</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6285" levels="1" name="Rage of Ice">
+		<!-- Increases Casting Spd. by 15% for 20 minutes. -->
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>CASTING_TIME_DOWN</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mAtkSpd">1.15</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6286" levels="1" name="Bless of Sword">
+		<!-- Increase HP Recovery Bonus by 15% and P. Def by 10% for 20 minutes. -->
+		<icon>icon.skill6286</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>2</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>PD_UP</abnormalType>
+		<castRange>650</castRange>
+		<effectPoint>1</effectPoint>
+		<effectRange>900</effectRange>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pDef">1.1</mul>
+				<mul stat="regHp">1.15</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6287" levels="1" name="Bless of Sword">
+		<icon>icon.skill6286</icon>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>1100</affectRange>
+		<castRange>650</castRange>
+		<effectRange>900</effectRange>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<effects>
+			<effect name="CpHealPercent">
+				<power>100</power>
+			</effect>
+			<effect name="HealPercent">
+				<power>100</power>
+			</effect>
+			<effect name="ManaHealPercent">
+				<power>100</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6288" levels="1" name="Jinia's Prayer">
+		<!-- Increase P.Def. and M.Def. by 300%. -->
+		<icon>icon.skill6288</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>SIGNAL_A</abnormalType>
+		<affectRange>1000</affectRange>
+		<effectPoint>1</effectPoint>
+		<hitTime>5000</hitTime>
+		<magicLevel>85</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pDef">4</mul>
+				<mul stat="mDef">4</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6289" levels="1" name="Kegor's Courage">
+		<!-- Increase P.Atk. by 300%, M. Atk. by 300%, Atk. Spd. by 25% and Casting Spd. by 25%. -->
+		<icon>icon.skill6289</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>SIGNAL_B</abnormalType>
+		<affectRange>1000</affectRange>
+		<effectPoint>1</effectPoint>
+		<hitTime>5000</hitTime>
+		<magicLevel>85</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtk">3</mul>
+				<mul stat="mAtk">3</mul>
+				<mul stat="pAtkSpd">1.25</mul>
+				<mul stat="mAtkSpd">1.25</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6290" levels="1" name="Power Strike">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>150</castRange>
+		<effectPoint>-574</effectPoint>
+		<effectRange>400</effectRange>
+		<element>1</element> <!-- Water -->
+		<elementPower>20</elementPower>
+		<hitTime>2500</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>123</mpConsume>
+		<power>4563</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6291" levels="1" name="Power Strike">
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>300</affectRange>
+		<effectPoint>-574</effectPoint>
+		<element>1</element> <!-- Water -->
+		<elementPower>20</elementPower>
+		<hitTime>3500</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>123</mpConsume>
+		<power>4563</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6292" levels="1" name="Rush">
+		<operateType>DA1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>900</castRange>
+		<coolTime>200</coolTime>
+		<effectPoint>-574</effectPoint>
+		<effectRange>1100</effectRange>
+		<element>1</element> <!-- Water -->
+		<elementPower>20</elementPower>
+		<flyType>CHARGE</flyType>
+		<hitTime>500</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpInitialConsume>20</mpInitialConsume>
+		<nextActionAttack>true</nextActionAttack>
+		<power>4563</power>
+		<conditions msgId="113" addName="1">
+			<target mindistance="250" />
+		</conditions>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="EnemyCharge" />
+		</effects>
+	</skill>
+	<skill id="6293" levels="1" name="Power Strike">
+		<operateType>A1</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<affectRange>250</affectRange>
+		<castRange>40</castRange>
+		<effectPoint>-574</effectPoint>
+		<effectRange>400</effectRange>
+		<element>1</element> <!-- Water -->
+		<elementPower>20</elementPower>
+		<fanRange>0,0,250,60</fanRange>
+		<hitTime>2500</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>123</mpConsume>
+		<power>4563</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6294" levels="1" name="Leader's Roar">
+		<!-- Increase P.Atk. by 15%. -->
+		<icon>icon.skill1040</icon>
+		<operateType>A2</operateType>
+		<targetType>CLAN</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>PA_UP</abnormalType>
+		<affectRange>500</affectRange>
+		<effectPoint>1</effectPoint>
+		<hitTime>34400</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<mpConsume>66</mpConsume>
+		<mpInitialConsume>17</mpInitialConsume>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtk">1.15</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6295" levels="1" name="Point Target">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>800</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-689</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>2500</hitTime>
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6296" levels="1" name="Rush">
+		<operateType>DA1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>900</castRange>
+		<coolTime>200</coolTime>
+		<effectPoint>-574</effectPoint>
+		<effectRange>1100</effectRange>
+		<element>1</element> <!-- Water -->
+		<elementPower>20</elementPower>
+		<flyType>CHARGE</flyType>
+		<hitTime>500</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpInitialConsume>20</mpInitialConsume>
+		<nextActionAttack>true</nextActionAttack>
+		<power>4563</power>
+		<conditions msgId="113" addName="1">
+			<target mindistance="250" />
+		</conditions>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="EnemyCharge" />
+		</effects>
+	</skill>
+	<skill id="6297" levels="1" name="Cylinder Throw">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>1100</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-689</effectPoint>
+		<effectRange>1400</effectRange>
+		<element>1</element> <!-- Water -->
+		<elementPower>20</elementPower>
+		<hitTime>2500</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>123</mpConsume>
+		<power>4563</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6298" levels="1" name="Summon Follower Knight">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>900</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>1</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>1500</hitTime>
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6299" levels="1" name="Breath of Ice Palace - Ice Storm">
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>200</affectRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-689</effectPoint>
+		<element>1</element> <!-- Water -->
+		<elementPower>20</elementPower>
+		<hitTime>3000</hitTime>
+		<magicLevel>85</magicLevel>
+		<power>1547</power>
+		<reuseDelay>15000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="CallSkill">
+				<skillId>6662</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+</list>

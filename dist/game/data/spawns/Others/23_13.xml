@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list enabled="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/spawns.xsd">
+	<spawn name="23_13">
+		<npc id="32052" x="113518" y="-153755" z="-1528" heading="16963" respawnDelay="60" /> <!-- Obi -->
+		<npc id="32053" x="113509" y="-155266" z="-1528" heading="3356" respawnDelay="60" periodOfDay="day" /> <!-- Abey -->
+		<npc id="32054" x="122269" y="-140689" z="-1522" heading="47229" respawnDelay="60" /> <!-- Ghost of a Railroad Engineer -->
+		<npc id="32055" x="113791" y="-155542" z="-1528" heading="23964" respawnDelay="60" periodOfDay="night" /> <!-- Ghost of an Ancient Railroad Engineer -->
+		<npc id="32076" x="113224" y="-154991" z="-1528" heading="57687" respawnDelay="60" /> <!-- Box -->
+	</spawn>
+</list>

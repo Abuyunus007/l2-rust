@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/teleporterData.xsd">
+	<npc id="32648"> <!-- News Informer -->
+		<teleport type="OTHER">
+			<location x="169018" y="-116303" z="-2432" feeCount="10000" /> <!-- News Informer -> Forge of the Gods -->
+			<location x="11235" y="-24026" z="-3640" feeCount="10000" /> <!-- News Informer -> Primeval Isle Wharf -->
+			<location x="174491" y="50942" z="-4360" feeCount="10000" /> <!-- News Informer -> The Giant's Cave -->
+			<location x="68693" y="-110438" z="-1904" feeCount="10000" /> <!-- News Informer -> Den of Evil -->
+			<location x="171946" y="-173352" z="3440" feeCount="10000" /> <!-- News Informer -> Mithril Mines Western Entrance -->
+			<location x="178591" y="-184615" z="360" feeCount="10000" /> <!-- News Informer -> Mithril Mines Eastern Entrance -->
+			<location x="87691" y="162835" z="-3520" feeCount="10000" /> <!-- News Informer -> Field of Silence -->
+			<location x="82192" y="226128" z="-3656" feeCount="10000" /> <!-- News Informer -> Field of Whispers -->
+			<location x="47692" y="-115745" z="-3744" feeCount="10000" /> <!-- News Informer -> Crypts of Disgrace -->
+			<location x="89513" y="-44800" z="-2136" feeCount="10000" /> <!-- News Informer -> Stakato Nest -->
+			<location x="83551" y="147945" z="-3400" feeCount="100000" castleId="3" /> <!-- News Informer -> Town of Giran -->
+			<location x="146783" y="25808" z="-2008" feeCount="100000" castleId="5" /> <!-- News Informer -> Town of Aden -->
+			<location x="82971" y="53207" z="-1488" feeCount="100000" castleId="4" /> <!-- News Informer -> Town of Oren -->
+			<location x="43835" y="-47749" z="-792" feeCount="100000" castleId="8" /> <!-- News Informer -> Rune Township -->
+			<location x="148024" y="-55281" z="-2728" feeCount="100000" castleId="7" /> <!-- News Informer -> Town of Goddard -->
+		</teleport>
+	</npc>
+</list>

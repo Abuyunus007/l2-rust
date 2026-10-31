@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list enabled="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/spawns.xsd">
+	<spawn name="25_18">
+		<npc id="30978" x="181472" y="7158" z="-2725" heading="32768" respawnDelay="60" /> <!-- Holy Ark of Secrecy 2 -->
+	</spawn>
+</list>

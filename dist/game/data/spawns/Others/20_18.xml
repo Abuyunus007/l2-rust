@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list enabled="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/spawns.xsd">
+	<spawn name="20_18">
+		<npc id="4327" x="1828" y="21917" z="-3345" heading="49730" /> <!-- Worshipper -->
+		<npc id="4328" x="1703" y="21815" z="-3348" heading="40172" /> <!-- Altar Guard -->
+		<npc id="4328" x="1970" y="21840" z="-3348" heading="56189" /> <!-- Altar Guard -->
+		<npc id="30129" x="28384" y="11008" z="-4232" heading="32000" respawnDelay="60" /> <!-- Mitraell -->
+		<npc id="30130" x="25856" y="10832" z="-3720" heading="24576" respawnDelay="60" /> <!-- Undrias -->
+		<npc id="30131" x="28384" y="11056" z="-4232" heading="32000" respawnDelay="60" /> <!-- Newbie Helper -->
+		<npc id="30132" x="28225" y="12998" z="-3720" heading="16500" respawnDelay="60" /> <!-- Cecktinon -->
+		<npc id="30133" x="27921" y="12991" z="-3720" heading="16500" respawnDelay="60" /> <!-- Kartia -->
+		<npc id="30134" x="9670" y="15537" z="-4568" heading="5892" respawnDelay="60" /> <!-- Jasmine -->
+		<npc id="30135" x="10761" y="17970" z="-4554" heading="49152" respawnDelay="60" /> <!-- Iria -->
+		<npc id="30136" x="10823" y="18013" z="-4554" heading="61440" respawnDelay="60" /> <!-- Payne -->
+		<npc id="30137" x="11951" y="15661" z="-4554" heading="28672" respawnDelay="60" /> <!-- Vollodos -->
+		<npc id="30138" x="12009" y="15704" z="-4554" heading="16384" respawnDelay="60" /> <!-- Minaless -->
+		<npc id="30139" x="13380" y="17430" z="-4536" heading="14384" respawnDelay="60" /> <!-- Dorankus -->
+		<npc id="30140" x="13464" y="17751" z="-4536" heading="47000" respawnDelay="60" /> <!-- Erviante -->
+		<npc id="30141" x="11012" y="14128" z="-4240" heading="14500" respawnDelay="60" /> <!-- Talloth -->
+		<npc id="30143" x="11283" y="14226" z="-4240" heading="31000" respawnDelay="60" /> <!-- Trudy -->
+		<npc id="30144" x="10344" y="14445" z="-4240" heading="63640" respawnDelay="60" /> <!-- Harne -->
+		<npc id="30145" x="11258" y="14431" z="-4240" heading="46500" respawnDelay="60" /> <!-- Vlasty -->
+		<npc id="30224" x="15120" y="15656" z="-4376" heading="14384" respawnDelay="60" /> <!-- Rayla -->
+		<npc id="30305" x="10315" y="14293" z="-4240" heading="4096" respawnDelay="60" /> <!-- Vellior -->
+		<npc id="30307" x="10580" y="17574" z="-4552" heading="14000" respawnDelay="60" /> <!-- Karrod -->
+		<npc id="30346" x="6532" y="19903" z="-3688" heading="30000" respawnDelay="60" /> <!-- Kayleen -->
+		<npc id="30347" x="6449" y="19619" z="-3688" heading="30000" respawnDelay="60" /> <!-- Marion -->
+		<npc id="30348" x="17306" y="13592" z="-3720" heading="0" respawnDelay="60" /> <!-- Nelsya -->
+		<npc id="30349" x="17102" y="13002" z="-3744" heading="24834" respawnDelay="60" /> <!-- Jenna -->
+		<npc id="30350" x="13763" y="17501" z="-4542" heading="30768" respawnDelay="60" /> <!-- Carlon -->
+		<npc id="30351" x="12328" y="14947" z="-4568" heading="21000" respawnDelay="60" /> <!-- Astaron -->
+		<npc id="30352" x="10301" y="18870" z="-4568" heading="55344" respawnDelay="60" /> <!-- Karina -->
+		<npc id="30353" x="13081" y="18444" z="-4568" heading="46152" respawnDelay="60" /> <!-- Jughead -->
+		<npc id="30354" x="12311" y="17470" z="-4568" heading="40960" respawnDelay="60" /> <!-- Jewel -->
+		<npc id="30355" x="15272" y="16310" z="-4376" heading="47352" respawnDelay="60" /> <!-- Roselyn -->
+		<npc id="30356" x="7496" y="17388" z="-4376" heading="13384" respawnDelay="60" /> <!-- Altima -->
+		<npc id="30357" x="7644" y="18048" z="-4376" heading="47052" respawnDelay="60" /> <!-- Kristin -->
+		<npc id="30358" x="10775" y="14190" z="-4240" heading="14500" respawnDelay="60" /> <!-- Thifiell -->
+		<npc id="30359" x="11235" y="14078" z="-4240" heading="24576" respawnDelay="60" /> <!-- Kaitar -->
+		<npc id="30360" x="10447" y="14620" z="-4240" heading="46500" respawnDelay="60" /> <!-- Harant -->
+		<npc id="30600" x="12111" y="16686" z="-4584" heading="63240" respawnDelay="60" /> <!-- Newbie Guide -->
+		<npc id="30992" x="9656" y="15578" z="-4568" heading="6000" respawnDelay="60" /> <!-- Lottery Ticket Seller -->
+		<npc id="31031" x="10675" y="16263" z="-4579" heading="16384" respawnDelay="5" /> <!-- Broadcasting Tower -->
+		<npc id="31034" x="9712" y="27448" z="-3680" heading="61638" respawnDelay="60" /> <!-- Sentry -->
+		<npc id="31034" x="11766" y="6788" z="-2904" heading="4870" respawnDelay="60" /> <!-- Sentry -->
+		<npc id="31034" x="24078" y="12029" z="-3632" heading="45499" respawnDelay="60" /> <!-- Sentry -->
+		<npc id="31034" x="25028" y="23321" z="-3416" heading="31447" respawnDelay="60" /> <!-- Sentry -->
+		<npc id="31034" x="27021" y="4588" z="-3536" heading="27195" respawnDelay="60" /> <!-- Sentry -->
+		<npc id="31360" x="10976" y="14616" z="-4246" heading="0" respawnDelay="60" /> <!-- Alhena -->
+		<npc id="31361" x="23436" y="11152" z="-3728" heading="0" respawnDelay="60" /> <!-- Kreed -->
+		<npc id="31564" x="11648" y="15872" z="-4552" heading="0" respawnDelay="60" /> <!-- Mishini -->
+		<npc id="31688" x="9680" y="16672" z="-4568" heading="14000" respawnDelay="60" /> <!-- Grand Olympiad Manager -->
+		<npc id="31770" x="9760" y="16656" z="-4568" heading="14000" respawnDelay="60" /> <!-- Monument of Heroes -->
+		<npc id="31777" x="12100" y="16635" z="-4584" heading="63000" respawnDelay="60" /> <!-- Adventure Guildsman -->
+		<npc id="31778" x="16864" y="15024" z="-4136" heading="30000" respawnDelay="60" /> <!-- Adventure Guildsman -->
+		<npc id="31779" x="6256" y="18768" z="-4024" heading="57000" respawnDelay="60" /> <!-- Adventure Guildsman -->
+		<npc id="31845" x="1240" y="23478" z="-3384" heading="16562" respawnDelay="60" /> <!-- Bloody Pixy -->
+		<npc id="31845" x="7050" y="3711" z="-2640" heading="61304" respawnDelay="60" /> <!-- Bloody Pixy -->
+		<npc id="31845" x="23171" y="13053" z="-3608" heading="53541" respawnDelay="60" /> <!-- Bloody Pixy -->
+		<npc id="31845" x="26099" y="6528" z="-3688" heading="45147" respawnDelay="60" /> <!-- Bloody Pixy -->
+		<npc id="31850" x="10087" y="28179" z="-3632" heading="28165" respawnDelay="60" /> <!-- Blight Treant -->
+		<npc id="31850" x="12664" y="7110" z="-3008" heading="37605" respawnDelay="60" /> <!-- Blight Treant -->
+		<npc id="31850" x="22714" y="19954" z="-3408" heading="36373" respawnDelay="60" /> <!-- Blight Treant -->
+		<npc id="31850" x="28950" y="15732" z="-3640" heading="55944" respawnDelay="60" /> <!-- Blight Treant -->
+		<npc id="31850" x="30450" y="7364" z="-3704" heading="37092" respawnDelay="60" /> <!-- Blight Treant -->
+		<npc id="32478" x="13436" y="17248" z="-4568" heading="47500" respawnDelay="60" /> <!-- Dimensional Merchant -->
+		<npc id="35231" x="9383" y="17746" z="-4568" heading="46256" respawnDelay="60" /> <!-- Manor Manager -->
+	</spawn>
+</list>

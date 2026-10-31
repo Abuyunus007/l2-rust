@@ -1,0 +1,1906 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/skills.xsd">
+	<skill id="5300" levels="9" name="NPC(party) - Physical Range Long Range Attack - Dark">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">227 234 240 246 250 252 254 256 259</table>
+		<table name="#power">8711 12027 12324 12415 12497 12563 12606 12606 12606</table>
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>150</affectRange>
+		<castRange>500</castRange>
+		<coolTime>800</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1000</effectRange>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>3200</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5301" levels="9" name="Stun">
+		<!-- You are stunned and temporarily prohibited from movement. -->
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">13066 18040 18486 18623 18745 18844 18909 18909 18909</table>
+		<icon>icon.skill0100</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>9</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<coolTime>660</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>200</effectRange>
+		<hitTime>830</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<nextActionAttack>true</nextActionAttack>
+		<power>#power</power>
+		<trait>SHOCK</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Stun" />
+		</effects>
+	</skill>
+	<skill id="5302" levels="9" name="Poison">
+		<!-- Level 1: A toxin that gradually reduces HP. Effect 8. -->
+		<!-- Level 2: A toxin that gradually reduces HP. Effect 8. -->
+		<!-- Level 3: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 4: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 5: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 6: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 7: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 8: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 9: A toxin that gradually reduces HP. Effect 10. -->
+		<table name="#abnormalLevels">8 8 9 9 9 10 10 10 10</table>
+		<table name="#dot">286 286 314 314 314 338 338 338 338</table>
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">13066 18040 18486 18623 18745 18844 18909 18909 18909</table>
+		<icon>icon.skill4035</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>POISON</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<coolTime>660</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>200</effectRange>
+		<hitTime>830</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<trait>POISON</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="DamOverTime" ticks="5">
+				<power>#dot</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5303" levels="9" name="Bleed">
+		<!-- Level 1: Inflicts a wound that reduces HP. Effect 8. -->
+		<!-- Level 2: Inflicts a wound that reduces HP. Effect 8. -->
+		<!-- Level 3: Inflicts a wound that reduces HP. Effect 9. -->
+		<!-- Level 4: Inflicts a wound that reduces HP. Effect 9. -->
+		<!-- Level 5: Inflicts a wound that reduces HP. Effect 9. -->
+		<!-- Level 6: Inflicts a wound that reduces HP. Effect 10. -->
+		<!-- Level 7: Inflicts a wound that reduces HP. Effect 10. -->
+		<!-- Level 8: Inflicts a wound that reduces HP. Effect 10. -->
+		<!-- Level 9: Inflicts a wound that reduces HP. Effect 10. -->
+		<table name="#abnormalLevels">8 8 9 9 9 10 10 10 10</table>
+		<table name="#dot">145 145 157 157 157 168 168 168 168</table>
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">13066 18040 18486 18623 18745 18844 18909 18909 18909</table>
+		<icon>icon.skill0096</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>BLEEDING</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<coolTime>660</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>200</effectRange>
+		<hitTime>830</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<trait>BLEED</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="DamOverTime" ticks="5">
+				<power>#dot</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5304" levels="9" name="Paralysis">
+		<!-- You are stunned and temporarily prohibited from movement. -->
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">13066 18040 18486 18623 18745 18844 18909 18909 18909</table>
+		<icon>icon.skill1170</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>PARALYZE</abnormalType>
+		<abnormalVisualEffect>PARALYZE</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>MEN</basicProperty>
+		<castRange>40</castRange>
+		<coolTime>660</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>200</effectRange>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>830</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<nextActionAttack>true</nextActionAttack>
+		<power>#power</power>
+		<trait>PARALYZE</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Paralyze" />
+		</effects>
+	</skill>
+	<skill id="5305" levels="9" name="Poison">
+		<!-- Level 1: A toxin that gradually reduces HP. Effect 8. -->
+		<!-- Level 2: A toxin that gradually reduces HP. Effect 8. -->
+		<!-- Level 3: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 4: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 5: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 6: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 7: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 8: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 9: A toxin that gradually reduces HP. Effect 10. -->
+		<table name="#dot">381 381 418 418 418 450 450 450 450</table>
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">13066 18040 18486 18623 18745 18844 18909 18909 18909</table>
+		<icon>icon.skill4035</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>8</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>POISON</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<activateRate>60</activateRate>
+		<basicProperty>CON</basicProperty>
+		<coolTime>800</coolTime>
+		<effectPoint>-100</effectPoint>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<trait>POISON</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="DamOverTime" ticks="5">
+				<power>#dot</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5306" levels="9" name="Paralysis">
+		<!-- You are stunned and temporarily prohibited from movement. -->
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">13066 18040 18486 18623 18745 18844 18909 18909 18909</table>
+		<icon>icon.skill1170</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>PARALYZE</abnormalType>
+		<abnormalVisualEffect>PARALYZE</abnormalVisualEffect>
+		<activateRate>60</activateRate>
+		<affectRange>150</affectRange>
+		<basicProperty>MEN</basicProperty>
+		<coolTime>800</coolTime>
+		<effectPoint>-100</effectPoint>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<trait>PARALYZE</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Paralyze" />
+		</effects>
+	</skill>
+	<skill id="5307" levels="9" name="Stun">
+		<!-- You are stunned and temporarily prohibited from movement. -->
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">13066 18040 18486 18623 18745 18844 18909 18909 18909</table>
+		<icon>icon.skill0100</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>9</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>900</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1400</effectRange>
+		<hitTime>4500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<nextActionAttack>true</nextActionAttack>
+		<power>#power</power>
+		<trait>SHOCK</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Stun" />
+		</effects>
+	</skill>
+	<skill id="5308" levels="9" name="Poison">
+		<!-- Level 1: A toxin that gradually reduces HP. Effect 8. -->
+		<!-- Level 2: A toxin that gradually reduces HP. Effect 8. -->
+		<!-- Level 3: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 4: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 5: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 6: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 7: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 8: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 9: A toxin that gradually reduces HP. Effect 10. -->
+		<table name="#abnormalLevels">8 8 9 9 9 10 10 10 10</table>
+		<table name="#dot">286 286 314 314 314 338 338 338 338</table>
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">13066 18040 18486 18623 18745 18844 18909 18909 18909</table>
+		<icon>icon.skill4035</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>POISON</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>900</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1400</effectRange>
+		<hitTime>4500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<trait>POISON</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="DamOverTime" ticks="5">
+				<power>#dot</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5309" levels="9" name="Bleed">
+		<!-- Level 1: Inflicts a wound that reduces HP. Effect 8. -->
+		<!-- Level 2: Inflicts a wound that reduces HP. Effect 8. -->
+		<!-- Level 3: Inflicts a wound that reduces HP. Effect 9. -->
+		<!-- Level 4: Inflicts a wound that reduces HP. Effect 9. -->
+		<!-- Level 5: Inflicts a wound that reduces HP. Effect 9. -->
+		<!-- Level 6: Inflicts a wound that reduces HP. Effect 10. -->
+		<!-- Level 7: Inflicts a wound that reduces HP. Effect 10. -->
+		<!-- Level 8: Inflicts a wound that reduces HP. Effect 10. -->
+		<!-- Level 9: Inflicts a wound that reduces HP. Effect 10. -->
+		<table name="#abnormalLevels">8 8 9 9 9 10 10 10 10</table>
+		<table name="#dot">145 145 157 157 157 168 168 168 168</table>
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">13066 18040 18486 18623 18745 18844 18909 18909 18909</table>
+		<icon>icon.skill0096</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>BLEEDING</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>900</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1400</effectRange>
+		<hitTime>4500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<trait>BLEED</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="DamOverTime" ticks="5">
+				<power>#dot</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5310" levels="9" name="NPC(party) - Magic Close Range DD - less powerful">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 69 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">124 128 131 133 135 137 138 138 138</table>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>150</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>650</effectRange>
+		<hitTime>1500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5311" levels="9" name="NPC(party) - Magic Close Range DD - less powerful">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 60 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">75 77 79 80 81 82 83 83 83</table>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>200</affectRange>
+		<effectPoint>-100</effectPoint>
+		<hitTime>1000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5312" levels="9" name="NPC(party) -Magic Single Long Range DD - Fire">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 60 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">124 128 131 133 135 137 138 138 138</table>
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>40</affectRange>
+		<castRange>900</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1400</effectRange>
+		<element>0</element> <!-- Fire -->
+		<elementPower>20</elementPower>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5313" levels="9" name="NPC(party) -Magic Range Long Range DD - Fire">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 60 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">75 77 79 80 81 82 83 83 83</table>
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>200</affectRange>
+		<castRange>500</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1000</effectRange>
+		<element>0</element> <!-- Fire -->
+		<elementPower>20</elementPower>
+		<hitTime>5000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5314" levels="9" name="NPC(party) -Magic Range Close Range DD - Fire">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 60 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">75 77 79 80 81 82 83 83 83</table>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>200</affectRange>
+		<effectPoint>-100</effectPoint>
+		<element>0</element>
+		<elementPower>20</elementPower>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5315" levels="9" name="NPC(party) -Magic Range Close Range DD - Fire(Self-Destruction)">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#power">75 77 79 80 81 82 83 83 83</table>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>200</affectRange>
+		<effectPoint>-100</effectPoint>
+		<element>0</element> <!-- Fire -->
+		<elementPower>20</elementPower>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<power>#power</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5316" levels="9" name="NPC(party) -Magic Single Long Range DD - Water">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 60 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">124 128 131 133 135 137 138 138 138</table>
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>40</affectRange>
+		<castRange>900</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1400</effectRange>
+		<element>1</element> <!-- Water -->
+		<elementPower>20</elementPower>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5317" levels="9" name="NPC(party) -Magic Range Long Range DD - Water">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 60 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">75 77 79 80 81 82 83 83 83</table>
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>200</affectRange>
+		<castRange>500</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1000</effectRange>
+		<element>1</element> <!-- Water -->
+		<elementPower>20</elementPower>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5318" levels="9" name="NPC(party) -Magic Range Close Range DD - Water">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 60 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">75 77 79 80 81 82 83 83 83</table>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>200</affectRange>
+		<effectPoint>-100</effectPoint>
+		<element>1</element> <!-- Water -->
+		<elementPower>20</elementPower>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5319" levels="9" name="NPC(party) -Magic Single Long Range DD - Wind">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5320" levels="9" name="NPC(party) -Magic Range Long Range DD - Wind">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5321" levels="9" name="NPC(party) -Magic Range Close Range DD - Wind">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5322" levels="9" name="NPC(party) -Magic Single Long Range DD - Earth">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5323" levels="9" name="NPC(party) -Magic Range Long Range DD - Earth">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5324" levels="9" name="NPC(party) -Magic Range Close Range DD - Earth">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5325" levels="9" name="NPC(party) -Magic Single Long Range DD - Holy">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5326" levels="9" name="NPC(party) -Magic Range Long Range DD - Holy">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5327" levels="9" name="NPC(party) -Magic Range Close Range DD - Holy">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5328" levels="9" name="NPC(party) -Magic Single Long Range DD - Dark">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 60 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">124 128 131 133 135 137 138 138 138</table>
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>40</affectRange>
+		<castRange>900</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1400</effectRange>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5329" levels="9" name="NPC(party) -Magic Range Long Range DD - Holy">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 60 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">75 77 79 80 81 82 83 83 83</table>
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>200</affectRange>
+		<castRange>500</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1000</effectRange>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5330" levels="9" name="NPC(party) -Magic Range Close Range DD - Holy">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 60 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">75 77 79 80 81 82 83 83 83</table>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>200</affectRange>
+		<effectPoint>-100</effectPoint>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5331" levels="9" name="NPC HP Drain">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">69 72 73 75 77 77 78 78 79</table>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>600</castRange>
+		<effectPoint>-100</effectPoint>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>250</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5332" levels="9" name="NPC MP Burn">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 60 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">186 192 196 199 202 205 207 207 207</table>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>600</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1100</effectRange>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="MagicalDamageMp" />
+		</effects>
+	</skill>
+	<skill id="5333" levels="9" name="Poison">
+		<!-- Level 1: A toxin that gradually reduces HP. Effect 8. -->
+		<!-- Level 2: A toxin that gradually reduces HP. Effect 8. -->
+		<!-- Level 3: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 4: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 5: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 6: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 7: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 8: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 9: A toxin that gradually reduces HP. Effect 10. -->
+		<table name="#abnormalLevels">8 8 9 9 9 10 10 10 10</table>
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 60 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">75 77 79 80 81 82 83 83 83</table>
+		<icon>icon.skill4035</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>POISON</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>600</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>4000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpInitialConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<trait>POISON</trait>
+		<effects>
+			<effect name="MagicalDamage" />
+			<effect name="Debuff" />
+		</effects>
+	</skill>
+	<skill id="5334" levels="9" name="NPC(party) - Physical Single Close Range Attack">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">12777 17637 18051 18163 18259 18333 18380 18380 18380</table>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<coolTime>660</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>200</effectRange>
+		<hitTime>830</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5335" levels="9" name="NPC(party) - Physical Single Long Range Attack">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">151 156 160 164 167 168 169 171 173</table>
+		<table name="#power">34070 47031 48135 48433 48691 48886 49012 49012 49012</table>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>900</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1400</effectRange>
+		<hitTime>4500</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5336" levels="9" name="NPC(party) - Physical Range Close Range Attack">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>150</affectRange>
+		<coolTime>800</coolTime>
+		<effectPoint>-100</effectPoint>
+		<hitTime>1000</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>12777</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5337" levels="9" name="NPC(party) - Physical Range Long Range Attack">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<coolTime>800</coolTime>
+		<effectPoint>-100</effectPoint>
+		<hitTime>3200</hitTime>
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5338" levels="9" name="NPC(party) - Physical Single Close Range Attack - Fire">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">12777 17637 18051 18163 18259 18333 18380 18380 18380</table>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<coolTime>660</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>200</effectRange>
+		<element>0</element> <!-- Fire -->
+		<elementPower>20</elementPower>
+		<hitTime>830</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5339" levels="9" name="NPC(party) - Physical Single Long Range Attack - Fire">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4500</hitTime>
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5340" levels="9" name="NPC(party) - Physical Range Close Range Attack - Fire">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>150</affectRange>
+		<coolTime>800</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>300</effectRange>
+		<element>0</element> <!-- Fire -->
+		<elementPower>20</elementPower>
+		<hitTime>1000</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>12777</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5341" levels="9" name="NPC(party) - Physical Range Long Range Attack - Fire">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<coolTime>800</coolTime>
+		<effectPoint>-100</effectPoint>
+		<hitTime>3200</hitTime>
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5342" levels="9" name="NPC(party) - Physical Single Close Range Attack - Water">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">12777 17637 18051 18163 18259 18333 18380 18380 18380</table>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<coolTime>660</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>200</effectRange>
+		<element>1</element> <!-- Water -->
+		<elementPower>20</elementPower>
+		<hitTime>830</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5343" levels="9" name="NPC(party) - Physical Single Long Range Attack - Water">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4500</hitTime>
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5344" levels="9" name="NPC(party) - Physical Range Close Range Attack - Water">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<coolTime>800</coolTime>
+		<effectPoint>-100</effectPoint>
+		<hitTime>1000</hitTime>
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5345" levels="9" name="NPC(party) - Physical Range Long Range Attack - Water">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<coolTime>800</coolTime>
+		<effectPoint>-100</effectPoint>
+		<hitTime>3200</hitTime>
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5346" levels="9" name="NPC(party) - Physical Single Close Range Attack - Wind">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">12777 17637 18051 18163 18259 18333 18380 18380 18380</table>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<coolTime>660</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>200</effectRange>
+		<element>2</element> <!-- Wind -->
+		<elementPower>20</elementPower>
+		<hitTime>830</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5347" levels="9" name="NPC(party) - Physical Single Long Range Attack - Wind">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4500</hitTime>
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5348" levels="9" name="NPC(party) - Physical Range Close Range Attack - Wind">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<coolTime>800</coolTime>
+		<effectPoint>-100</effectPoint>
+		<hitTime>1000</hitTime>
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5349" levels="9" name="NPC(party) - Physical Range Long Range Attack - Wind">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<coolTime>800</coolTime>
+		<effectPoint>-100</effectPoint>
+		<hitTime>3200</hitTime>
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5350" levels="9" name="NPC(party) - Physical Single Close Range Attack - Earth">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">12777 17637 18051 18163 18259 18333 18380 18380 18380</table>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<coolTime>660</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>200</effectRange>
+		<element>3</element> <!-- Earth -->
+		<elementPower>20</elementPower>
+		<hitTime>830</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5351" levels="9" name="NPC(party) - Physical Single Long Range Attack - Earth">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4500</hitTime>
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5352" levels="9" name="NPC(party) - Physical Range Close Range Attack - Earth">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>150</affectRange>
+		<coolTime>800</coolTime>
+		<effectPoint>-100</effectPoint>
+		<element>3</element> <!-- Earth -->
+		<elementPower>20</elementPower>
+		<hitTime>1000</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>12777</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5353" levels="9" name="NPC(party) - Physical Range Long Range Attack - Earth">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<coolTime>800</coolTime>
+		<effectPoint>-100</effectPoint>
+		<hitTime>3200</hitTime>
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5354" levels="9" name="NPC(party) - Physical Single Close Range Attack - Holy">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<coolTime>660</coolTime>
+		<effectPoint>-100</effectPoint>
+		<hitTime>830</hitTime>
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5355" levels="9" name="NPC(party) - Physical Single Long Range Attack - Holy">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4500</hitTime>
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5356" levels="9" name="NPC(party) - Physical Range Close Range Attack - Holy">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>150</affectRange>
+		<coolTime>800</coolTime>
+		<effectPoint>-100</effectPoint>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>1000</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>12777</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5357" levels="9" name="NPC(party) - Physical Range Long Range Attack - Holy">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<coolTime>800</coolTime>
+		<effectPoint>-100</effectPoint>
+		<hitTime>3200</hitTime>
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5358" levels="9" name="NPC(party) - Physical Single Close Range Attack - Dark">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">12777 17637 18051 18163 18259 18333 18380 18380 18380</table>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<coolTime>660</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>200</effectRange>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>830</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5359" levels="9" name="NPC(party) - Physical Single Long Range Attack - Dark">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">151 156 160 164 167 168 169 171 173</table>
+		<table name="#power">34070 47031 48135 48433 48691 48886 49012 49012 49012</table>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>900</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1400</effectRange>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>4500</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5360" levels="9" name="NPC(party) - Physical Range Close Range Attack - Dark">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>150</affectRange>
+		<coolTime>800</coolTime>
+		<effectPoint>-100</effectPoint>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>1000</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>12777</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5361" levels="9" name="NPC(party) - Physical Range Long Range Attack - Dark">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<coolTime>800</coolTime>
+		<effectPoint>-100</effectPoint>
+		<hitTime>3200</hitTime>
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5362" levels="9" name="Stun">
+		<!-- You are stunned and temporarily prohibited from movement. -->
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">12777 17637 18051 18163 18259 18333 18380 18380 18380</table>
+		<icon>icon.skill0100</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>9</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<coolTime>660</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>200</effectRange>
+		<hitTime>830</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<nextActionAttack>true</nextActionAttack>
+		<power>#power</power>
+		<trait>SHOCK</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Stun" />
+		</effects>
+	</skill>
+	<skill id="5363" levels="9" name="Poison">
+		<!-- Level 1: A toxin that gradually reduces HP. Effect 8. -->
+		<!-- Level 2: A toxin that gradually reduces HP. Effect 8. -->
+		<!-- Level 3: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 4: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 5: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 6: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 7: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 8: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 9: A toxin that gradually reduces HP. Effect 10. -->
+		<table name="#abnormalLevels">8 8 9 9 9 10 10 10 10</table>
+		<table name="#dot">286 286 314 314 314 338 338 338 338</table>
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">12777 17637 18051 18163 18259 18333 18380 18380 18380</table>
+		<icon>icon.skill4035</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>POISON</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<coolTime>660</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>200</effectRange>
+		<hitTime>830</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<trait>POISON</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="DamOverTime" ticks="5">
+				<power>#dot</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5364" levels="9" name="Bleed">
+		<!-- Level 1: Inflicts a wound that reduces HP. Effect 8. -->
+		<!-- Level 2: Inflicts a wound that reduces HP. Effect 8. -->
+		<!-- Level 3: Inflicts a wound that reduces HP. Effect 9. -->
+		<!-- Level 4: Inflicts a wound that reduces HP. Effect 9. -->
+		<!-- Level 5: Inflicts a wound that reduces HP. Effect 9. -->
+		<!-- Level 6: Inflicts a wound that reduces HP. Effect 10. -->
+		<!-- Level 7: Inflicts a wound that reduces HP. Effect 10. -->
+		<!-- Level 8: Inflicts a wound that reduces HP. Effect 10. -->
+		<!-- Level 9: Inflicts a wound that reduces HP. Effect 10. -->
+		<table name="#abnormalLevels">8 8 9 9 9 10 10 10 10</table>
+		<table name="#dot">145 145 157 157 157 168 168 168 168</table>
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">12777 17637 18051 18163 18259 18333 18380 18380 18380</table>
+		<icon>icon.skill0096</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>BLEEDING</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<coolTime>660</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>200</effectRange>
+		<hitTime>830</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<trait>BLEED</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="DamOverTime" ticks="5">
+				<power>#dot</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5365" levels="9" name="Paralysis">
+		<!-- You are stunned and temporarily prohibited from movement. -->
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">12777 17637 18051 18163 18259 18333 18380 18380 18380</table>
+		<icon>icon.skill1170</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>PARALYZE</abnormalType>
+		<abnormalVisualEffect>PARALYZE</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>MEN</basicProperty>
+		<castRange>40</castRange>
+		<coolTime>660</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>200</effectRange>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>830</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<nextActionAttack>true</nextActionAttack>
+		<trait>PARALYZE</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Paralyze" />
+		</effects>
+	</skill>
+	<skill id="5366" levels="9" name="Poison">
+		<!-- Level 1: A toxin that gradually reduces HP. Effect 8. -->
+		<!-- Level 2: A toxin that gradually reduces HP. Effect 8. -->
+		<!-- Level 3: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 4: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 5: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 6: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 7: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 8: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 9: A toxin that gradually reduces HP. Effect 10. -->
+		<table name="#dot">381 381 418 418 418 450 450 450 450</table>
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">12777 17637 18051 18163 18259 18333 18380 18380 18380</table>
+		<icon>icon.skill4035</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>8</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>POISON</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<activateRate>60</activateRate>
+		<affectRange>150</affectRange>
+		<basicProperty>CON</basicProperty>
+		<coolTime>800</coolTime>
+		<effectPoint>-100</effectPoint>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<trait>POISON</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="DamOverTime" ticks="5">
+				<power>#dot</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5367" levels="9" name="Paralysis">
+		<!-- You are stunned and temporarily prohibited from movement. -->
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">12777 17637 18051 18163 18259 18333 18380 18380 18380</table>
+		<icon>icon.skill1170</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>PARALYZE</abnormalType>
+		<abnormalVisualEffect>PARALYZE</abnormalVisualEffect>
+		<activateRate>60</activateRate>
+		<affectRange>150</affectRange>
+		<basicProperty>MEN</basicProperty>
+		<coolTime>800</coolTime>
+		<effectPoint>-100</effectPoint>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<nextActionAttack>true</nextActionAttack>
+		<trait>PARALYZE</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Paralyze" />
+		</effects>
+	</skill>
+	<skill id="5368" levels="9" name="Stun">
+		<!-- You are stunned and temporarily prohibited from movement. -->
+		<icon>icon.skill0100</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>9</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>75</magicLevel>
+		<nextActionAttack>true</nextActionAttack>
+		<trait>SHOCK</trait>
+	</skill>
+	<skill id="5369" levels="9" name="Poison">
+		<!-- Level 1: A toxin that gradually reduces HP. Effect 8. -->
+		<!-- Level 2: A toxin that gradually reduces HP. Effect 8. -->
+		<!-- Level 3: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 4: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 5: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 6: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 7: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 8: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 9: A toxin that gradually reduces HP. Effect 10. -->
+		<table name="#abnormalLevels">8 8 9 9 9 10 10 10 10</table>
+		<table name="#dot">286 286 314 314 314 338 338 338 338</table>
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">76 78 80 82 84 84 85 86 87</table>
+		<table name="#power">12777 17637 18051 18163 18259 18333 18380 18380 18380</table>
+		<icon>icon.skill4035</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>POISON</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>900</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1400</effectRange>
+		<hitTime>4500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<trait>POISON</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="DamOverTime" ticks="5">
+				<power>#dot</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5370" levels="9" name="Bleed">
+		<!-- Level 1: Inflicts a wound that reduces HP. Effect 8. -->
+		<!-- Level 2: Inflicts a wound that reduces HP. Effect 8. -->
+		<!-- Level 3: Inflicts a wound that reduces HP. Effect 9. -->
+		<!-- Level 4: Inflicts a wound that reduces HP. Effect 9. -->
+		<!-- Level 5: Inflicts a wound that reduces HP. Effect 9. -->
+		<!-- Level 6: Inflicts a wound that reduces HP. Effect 10. -->
+		<!-- Level 7: Inflicts a wound that reduces HP. Effect 10. -->
+		<!-- Level 8: Inflicts a wound that reduces HP. Effect 10. -->
+		<!-- Level 9: Inflicts a wound that reduces HP. Effect 10. -->
+		<table name="#abnormalLevels">8 8 9 9 9 10 10 10 10</table>
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<icon>icon.skill0096</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>BLEEDING</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<trait>BLEED</trait>
+	</skill>
+	<skill id="5371" levels="9" name="NPC(party) - Magic Close Range DD - less powerful">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 69 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">160 165 169 171 174 176 178 178 178</table>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>150</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>650</effectRange>
+		<hitTime>1500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5372" levels="9" name="NPC(party) - Magic Close Range DD - less powerful">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 69 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">96 99 101 103 104 106 107 107 107</table>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>200</affectRange>
+		<effectPoint>-100</effectPoint>
+		<hitTime>1000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5373" levels="9" name="NPC(party) -Magic Single Long Range DD - Fire">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5374" levels="9" name="NPC(party) -Magic Range Long Range DD - Fire">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 69 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">96 99 101 103 104 106 107 107 107</table>
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>200</affectRange>
+		<castRange>500</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1000</effectRange>
+		<element>0</element> <!-- Fire -->
+		<elementPower>20</elementPower>
+		<hitTime>5000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5375" levels="9" name="NPC(party) -Magic Range Close Range DD - Fire">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5376" levels="9" name="NPC(party) -Magic Range Close Range DD - Fire(Self-Destruction)">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#power">96 99 101 103 104 106 107 107 107</table>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>200</affectRange>
+		<effectPoint>-100</effectPoint>
+		<element>0</element> <!-- Fire -->
+		<elementPower>20</elementPower>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<isSuicideAttack>true</isSuicideAttack>
+		<magicLevel>#magicLevel</magicLevel>
+		<power>#power</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5377" levels="9" name="NPC(party) -Magic Single Long Range DD - Water">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5378" levels="9" name="NPC(party) -Magic Range Long Range DD - Water">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5379" levels="9" name="NPC(party) -Magic Range Close Range DD - Water">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5380" levels="9" name="NPC(party) -Magic Single Long Range DD - Wind">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 69 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">160 165 169 171 174 176 178 178 178</table>
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>40</affectRange>
+		<castRange>900</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1400</effectRange>
+		<element>2</element> <!-- Wind -->
+		<elementPower>20</elementPower>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5381" levels="9" name="NPC(party) -Magic Range Long Range DD - Wind">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5382" levels="9" name="NPC(party) -Magic Range Close Range DD - Wind">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 69 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">96 99 101 103 104 106 107 107 107</table>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>200</affectRange>
+		<effectPoint>-100</effectPoint>
+		<element>2</element> <!-- Wind -->
+		<elementPower>20</elementPower>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5383" levels="9" name="NPC(party) -Magic Single Long Range DD - Earth">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 69 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">160 165 169 171 174 176 178 178 178</table>
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>40</affectRange>
+		<castRange>900</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1400</effectRange>
+		<element>3</element> <!-- Earth -->
+		<elementPower>20</elementPower>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5384" levels="9" name="NPC(party) -Magic Range Long Range DD - Earth">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5385" levels="9" name="NPC(party) -Magic Range Close Range DD - Earth">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5386" levels="9" name="NPC(party) -Magic Single Long Range DD - Holy">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5387" levels="9" name="NPC(party) -Magic Range Long Range DD - Holy">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5388" levels="9" name="NPC(party) -Magic Range Close Range DD - Holy">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+	</skill>
+	<skill id="5389" levels="9" name="NPC(party) -Magic Single Long Range DD - Dark">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 69 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">160 165 169 171 174 176 178 178 178</table>
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>40</affectRange>
+		<castRange>900</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1400</effectRange>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5390" levels="9" name="NPC(party) -Magic Range Long Range DD - Holy">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 69 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">96 99 101 103 104 106 107 107 107</table>
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>200</affectRange>
+		<castRange>500</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1000</effectRange>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5391" levels="9" name="NPC(party) -Magic Range Close Range DD - Holy">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 69 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">96 99 101 103 104 106 107 107 107</table>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>200</affectRange>
+		<effectPoint>-100</effectPoint>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5392" levels="9" name="NPC HP Drain">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 69 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">160 165 169 171 174 176 178 178 178</table>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>600</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1100</effectRange>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<effects>
+			<effect name="HpDrain">
+				<power>0.9</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5393" levels="9" name="NPC MP Burn">
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 69 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">240 247 253 256 260 264 267 267 267</table>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>600</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1100</effectRange>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<effects>
+			<effect name="MagicalDamageMp" />
+		</effects>
+	</skill>
+	<skill id="5394" levels="9" name="Poison">
+		<!-- Level 1: A toxin that gradually reduces HP. Effect 8. -->
+		<!-- Level 2: A toxin that gradually reduces HP. Effect 8. -->
+		<!-- Level 3: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 4: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 5: A toxin that gradually reduces HP. Effect 9. -->
+		<!-- Level 6: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 7: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 8: A toxin that gradually reduces HP. Effect 10. -->
+		<!-- Level 9: A toxin that gradually reduces HP. Effect 10. -->
+		<table name="#abnormalLevels">8 8 9 9 9 10 10 10 10</table>
+		<table name="#magicLevel">75 78 81 84 87 90 93 96 99</table>
+		<table name="#mpConsume">55 57 58 60 61 61 62 62 63</table>
+		<table name="#mpInitialConsume">14 15 15 15 16 16 16 16 16</table>
+		<table name="#power">96 99 101 103 104 106 107 107 107</table>
+		<icon>icon.skill4035</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>POISON</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<affectRange>200</affectRange>
+		<basicProperty>CON</basicProperty>
+		<castRange>600</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1100</effectRange>
+		<element>1</element> <!-- Water -->
+		<elementPower>20</elementPower>
+		<hitTime>4000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<trait>POISON</trait>
+		<effects>
+			<effect name="MagicalDamage" />
+			<effect name="Debuff" />
+		</effects>
+	</skill>
+	<skill id="5395" levels="3" name="NPC Clan Buff - Super Might Haste">
+		<table name="#abnormalLevels">1 2 3</table>
+		<table name="#magicLevel">20 40 70</table>
+		<table name="#mpConsume">23 42 78</table>
+		<table name="#mpInitialConsume">6 11 20</table>
+		<table name="#pAtk">1.5 2.0 3.0</table>
+		<table name="#pAtkSpd">1.33 1.33 1.5</table>
+		<operateType>A2</operateType>
+		<targetType>CLAN</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>MULTI_BUFF</abnormalType>
+		<abnormalVisualEffect>BIG_BODY</abnormalVisualEffect>
+		<affectRange>900</affectRange>
+		<effectPoint>100</effectPoint>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<reuseDelay>8000</reuseDelay>
+		<effects>
+			<effect name="Grow">
+				<mul stat="pAtk">#pAtk</mul>
+				<mul stat="pAtkSpd">#pAtkSpd</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5396" levels="1" name="NPC - Spell Stance">
+		<operateType>CA5</operateType>
+		<targetType>ONE</targetType>
+		<abnormalVisualEffect>NONE</abnormalVisualEffect>
+		<castRange>400</castRange>
+		<channelingSkillId>5397</channelingSkillId>
+		<channelingTickInterval>2</channelingTickInterval>
+		<hitTime>15000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+	</skill>
+	<skill id="5397" levels="3" name="NPC - Spell Force">
+		<table name="#abnormalLevels">1 2 3</table>
+		<icon>icon.skill0427</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>MAGICAL_STANCE</abnormalType>
+		<effectPoint>100</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+	</skill>
+	<skill id="5398" levels="1" name="NPC - Combination Force">
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>300</affectRange>
+		<castRange>500</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1000</effectRange>
+		<element>0</element> <!-- Fire -->
+		<elementPower>20</elementPower>
+		<hitTime>5000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>99</magicLevel>
+		<mpConsume>63</mpConsume>
+		<mpInitialConsume>16</mpInitialConsume>
+		<power>657</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5399" levels="1" name="Heat of Desert">
+		<!-- Condition causing target to decrease HP by heat of desert. -->
+		<icon>icon.skill1230</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>5</abnormalTime>
+		<abnormalType>HOT_GROUND</abnormalType>
+		<activateRate>10</activateRate>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>1</magicLevel>
+		<conditions>
+			<and>
+				<game night="false" />
+				<not>
+					<target active_effect_id="2341" />
+				</not>
+			</and>
+		</conditions>
+		<effects>
+			<effect name="DamOverTime" ticks="5">
+				<power>75</power>
+			</effect>
+		</effects>
+	</skill>
+</list>

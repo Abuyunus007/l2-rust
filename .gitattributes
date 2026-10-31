@@ -4,3 +4,5 @@
 *.ps1 text eol=crlf
 *.png binary
 *.l2j binary
+# dist/ is a byte-exact copy of the L2JMobius release (CRLF pages included): no conversion.
+dist/** -text

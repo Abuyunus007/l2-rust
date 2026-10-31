@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list enabled="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/spawns.xsd">
+	<spawn name="23_11">
+		<npc id="31035" x="118325" y="-206758" z="-3632" heading="13897" respawnDelay="60" /> <!-- Defender -->
+		<npc id="31035" x="119843" y="-217462" z="-3504" heading="0" respawnDelay="60" /> <!-- Defender -->
+		<npc id="31035" x="120306" y="-200841" z="-3600" heading="34988" respawnDelay="60" /> <!-- Defender -->
+		<npc id="31035" x="129301" y="-201623" z="-3576" heading="64918" respawnDelay="60" /> <!-- Defender -->
+	</spawn>
+</list>

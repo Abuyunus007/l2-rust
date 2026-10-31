@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list enabled="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/spawns.xsd">
+	<spawn name="19_14">
+		<npc id="31036" x="-26140" y="-115295" z="-2200" heading="0" respawnDelay="60" /> <!-- Centurion -->
+		<npc id="31036" x="-21039" y="-126082" z="-2552" heading="0" respawnDelay="60" /> <!-- Centurion -->
+		<npc id="31036" x="-18125" y="-110686" z="-2216" heading="0" respawnDelay="60" /> <!-- Centurion -->
+		<npc id="31036" x="-17091" y="-124282" z="-2088" heading="0" respawnDelay="60" /> <!-- Centurion -->
+		<npc id="31036" x="-16602" y="-117132" z="-2144" heading="0" respawnDelay="60" /> <!-- Centurion -->
+		<npc id="31036" x="-2180" y="-104722" z="-2736" heading="0" respawnDelay="60" /> <!-- Centurion -->
+		<npc id="31036" x="-1589" y="-129313" z="-2688" heading="0" respawnDelay="60" /> <!-- Centurion -->
+	</spawn>
+</list>

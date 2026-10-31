@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/teleporterData.xsd">
+	<npc id="32378"> <!-- Fantasy Isle Paddies -->
+		<teleport type="OTHER">
+			<location x="-70293" y="-71029" z="-1416" /> <!-- Fantasy Isle -> Krateis Cube -->
+			<location x="-57328" y="-60566" z="-2360" /> <!-- Fantasy Isle -> Handys Block -->
+		</teleport>
+	</npc>
+</list>

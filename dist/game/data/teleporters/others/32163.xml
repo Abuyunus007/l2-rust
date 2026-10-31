@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/teleporterData.xsd">
+	<npc id="32163"> <!-- Ragara -->
+		<teleport type="OTHER">
+			<location x="-122410" y="73205" z="-2872" /> <!-- Kamael Vilage -> Stronghold I free -->
+			<location x="-95540" y="52150" z="-2024" /> <!-- Kamael Vilage -> Stronghold II free -->
+			<location x="-85928" y="37095" z="-2048" /> <!-- Kamael Vilage -> Stronghold III free -->
+		</teleport>
+	</npc>
+</list>

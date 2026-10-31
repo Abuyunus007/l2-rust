@@ -1,0 +1,2974 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/skills.xsd">
+	<skill id="700" levels="1" name="Divine Healer Group Heal">
+		<!-- Restores HP of a party member by 400 power and causes 27 HP recovery every second for 15 seconds. -->
+		<icon>icon.skill_transform_buff</icon>
+		<operateType>A2</operateType>
+		<targetType>PARTY</targetType>
+		<abnormalLevel>5</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>LIFE_FORCE_OTHERS</abnormalType>
+		<activateRate>0</activateRate>
+		<affectRange>1000</affectRange>
+		<effectPoint>661</effectPoint>
+		<hitTime>7000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>80</magicLevel>
+		<mpConsume>252</mpConsume>
+		<reuseDelay>6000</reuseDelay>
+		<effects>
+			<effect name="HealOverTime" ticks="1">
+				<power>27</power>
+			</effect>
+			<effect name="Heal">
+				<power>400</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="701" levels="1" name="Divine Healer Resurrection">
+		<!-- Resurrects a corpse. Restores the experience value about 70 percent additionally. -->
+		<icon>icon.skill_transform_etc</icon>
+		<operateType>A1</operateType>
+		<targetType>PC_BODY</targetType>
+		<castRange>400</castRange>
+		<effectPoint>661</effectPoint>
+		<effectRange>900</effectRange>
+		<hitTime>6000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>80</magicLevel>
+		<mpConsume>252</mpConsume>
+		<reuseDelay>30000</reuseDelay>
+		<conditions>
+			<player canResurrect="true" />
+		</conditions>
+		<effects>
+			<effect name="Resurrection">
+				<power>70</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="702" levels="1" name="Divine Healer Clans">
+		<!-- Cancel all the debuffs of the target. -->
+		<icon>icon.skill_transform_etc</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>600</castRange>
+		<effectPoint>676</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>80</magicLevel>
+		<mpConsume>59</mpConsume>
+		<reuseDelay>8000</reuseDelay>
+		<effects>
+			<effect name="DispelByCategory">
+				<slot>debuff</slot>
+				<rate>100</rate>
+				<max>10</max>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="703" levels="1" name="Sacrifice Healer">
+		<!-- Regenerate party member's HP and MP by sacrificing yourself. Usable only when MP is under 10 percent. -->
+		<icon>icon.skill_transform_etc</icon>
+		<operateType>A1</operateType>
+		<targetType>PARTY</targetType>
+		<affectRange>300</affectRange>
+		<effectPoint>676</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>80</magicLevel>
+		<reuseDelay>1800000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions msgId="113" addName="1">
+			<player mp="10" />
+		</conditions>
+		<effects>
+			<effect name="HealPercent">
+				<power>100</power>
+			</effect>
+			<effect name="ManaHealPercent">
+				<power>100</power>
+			</effect>
+		</effects>
+		<selfEffects>
+			<effect name="CallSkill">
+				<skillId>5602</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</selfEffects>
+	</skill>
+	<skill id="704" levels="1" name="Divine Enchanter Water Spirit">
+		<!-- For 2 minutes, receives help from a great spirit to increase the chance of prominent damage occurring through the target's magic damage by 2, MP Recovery Bonus by 20%, P. Atk. by 10%, P. Def. by 20%, Atk. Spd. by 20%, M. Atk. by 20%, M. Def. by 20%, Casting Spd. by 20%, and Resistance to de-buffs by 10%. Decreases Speed by 20% and MP consumption for skill use by 5%. Consumes 10 Spirit Ore. -->
+		<icon>icon.skill_transform_buff</icon>
+		<operateType>A2</operateType>
+		<targetType>PARTY_MEMBER</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>120</abnormalTime>
+		<abnormalType>MULTI_BUFF</abnormalType>
+		<castRange>400</castRange>
+		<effectPoint>669</effectPoint>
+		<effectRange>900</effectRange>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>10</itemConsumeCount>
+		<itemConsumeId>3031</itemConsumeId> <!-- Spirit Ore -->
+		<magicLevel>80</magicLevel>
+		<mpConsume>73</mpConsume>
+		<reuseDelay>4000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="mCritRate">2</add>
+				<mul stat="regMp">1.2</mul>
+				<mul stat="pAtk">1.1</mul>
+				<mul stat="pDef">1.2</mul>
+				<mul stat="pAtkSpd">1.2</mul>
+				<mul stat="mAtk">1.2</mul>
+				<mul stat="mDef">1.2</mul>
+				<mul stat="mAtkSpd">1.2</mul>
+				<sub stat="debuffVuln">10</sub>
+				<mul stat="runSpd">0.8</mul>
+				<mul stat="magicalMpConsumeRate">0.95</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="705" levels="1" name="Divine Enchanter Fire Spirit">
+		<!-- For 2 minutes, receives help from a great spirit to increase the target's Max MP by 20%, HP Recovery Bonus by 20%, the chance of prominent damage occurring through magic damage by 2, Critical Damages by 20%, P. Atk. by 10%, P. Def. by 20%, Atk. Spd. by 20%, M. Atk. by 20%, M. Def. by 20%, Casting Spd. by 20%, and Resistance to de-buffs by 10%. Decreases Speed by 20%. Consumes 10 Spirit Ore. -->
+		<icon>icon.skill_transform_buff</icon>
+		<operateType>A2</operateType>
+		<targetType>PARTY_MEMBER</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>120</abnormalTime>
+		<abnormalType>MULTI_BUFF</abnormalType>
+		<castRange>400</castRange>
+		<effectPoint>669</effectPoint>
+		<effectRange>900</effectRange>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>10</itemConsumeCount>
+		<itemConsumeId>3031</itemConsumeId> <!-- Spirit Ore -->
+		<magicLevel>80</magicLevel>
+		<mpConsume>73</mpConsume>
+		<reuseDelay>4000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="maxMp">1.2</mul>
+				<mul stat="regHp">1.2</mul>
+				<add stat="mCritRate">2</add>
+				<mul stat="critDmg">1.2</mul>
+				<mul stat="pAtk">1.1</mul>
+				<mul stat="pDef">1.2</mul>
+				<mul stat="pAtkSpd">1.2</mul>
+				<mul stat="mAtk">1.2</mul>
+				<mul stat="mDef">1.2</mul>
+				<mul stat="mAtkSpd">1.2</mul>
+				<add stat="accCombat">4</add>
+				<sub stat="debuffVuln">10</sub>
+				<mul stat="runSpd">0.8</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="706" levels="1" name="Divine Enchanter Wind Spirit">
+		<!-- For 2 minutes, receives help from a great spirit to increase the target's Max HP by 20%, Critical Rate by 20%, rate of Prominent Damage through magic damage by 20%, P. Atk. by 10%, P. Def. by 20%, Atk. Spd. by 20%, M. Atk. by 20%, M. Def. by 20%, Casting Spd. by 20%, and Resistance to de-buff by 10%. Decreases Speed by 20%. Bestows the ability to recover as HP 5% of the standard melee damage inflicted on the enemy. Consumes 10 Spirit Ore. -->
+		<icon>icon.skill_transform_buff</icon>
+		<operateType>A2</operateType>
+		<targetType>PARTY_MEMBER</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>120</abnormalTime>
+		<abnormalType>MULTI_BUFF</abnormalType>
+		<castRange>400</castRange>
+		<effectPoint>669</effectPoint>
+		<effectRange>900</effectRange>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>10</itemConsumeCount>
+		<itemConsumeId>3031</itemConsumeId> <!-- Spirit Ore -->
+		<magicLevel>80</magicLevel>
+		<mpConsume>73</mpConsume>
+		<reuseDelay>4000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="maxHp">1.2</mul>
+				<mul stat="critRate">1.2</mul>
+				<mul stat="mCritPower">1.2</mul>
+				<mul stat="pAtk">1.1</mul>
+				<mul stat="pDef">1.2</mul>
+				<mul stat="pAtkSpd">1.2</mul>
+				<mul stat="mAtk">1.2</mul>
+				<mul stat="mDef">1.2</mul>
+				<mul stat="mAtkSpd">1.2</mul>
+				<sub stat="debuffVuln">10</sub>
+				<mul stat="runSpd">0.8</mul>
+				<add stat="absorbDam">5</add> <!-- absorb 5% HP from damage inflicted on enemies -->
+			</effect>
+		</effects>
+	</skill>
+	<skill id="707" levels="1" name="Divine Enchanter Hero Spirit">
+		<!-- For 2 minutes, receives help from a great spirit to increase the target's Max MP by 20%, the chance of prominent damage occurring through magic damage by 2, Critical Damages by 20%, P. Atk. by 10%, P. Def. by 20%, Atk. Spd. by 20%, M. Atk. by 20%, M. Def. by 20%, Casting Spd. by 20%, and Resistance to de-buffs by 10%. Decreases Speed by 20%. Consumes 10 Spirit Ore. -->
+		<icon>icon.skill_transform_buff</icon>
+		<operateType>A2</operateType>
+		<targetType>PARTY_MEMBER</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>120</abnormalTime>
+		<abnormalType>MULTI_BUFF</abnormalType>
+		<castRange>400</castRange>
+		<effectPoint>669</effectPoint>
+		<effectRange>900</effectRange>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>10</itemConsumeCount>
+		<itemConsumeId>3031</itemConsumeId> <!-- Spirit Ore -->
+		<magicLevel>80</magicLevel>
+		<mpConsume>73</mpConsume>
+		<reuseDelay>4000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="maxHp">1.2</mul>
+				<add stat="mCritRate">2</add>
+				<mul stat="critDmg">1.2</mul>
+				<mul stat="pAtk">1.1</mul>
+				<mul stat="pDef">1.2</mul>
+				<mul stat="pAtkSpd">1.2</mul>
+				<mul stat="mAtk">1.2</mul>
+				<mul stat="mDef">1.2</mul>
+				<mul stat="mAtkSpd">1.2</mul>
+				<sub stat="debuffVuln">10</sub>
+				<add stat="accCombat">4</add>
+				<mul stat="runSpd">0.8</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="708" levels="1" name="Divine Enchanter Mass Binding">
+		<!-- Instantly apply Hold to surrounding enemies. Additional Hold is not available while effects last. -->
+		<icon>icon.skill_transform_debuff</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>ROOT_MAGICALLY</abnormalType>
+		<abnormalVisualEffect>ROOT</abnormalVisualEffect>
+		<activateRate>40</activateRate>
+		<affectLimit>10-10</affectLimit>
+		<affectRange>200</affectRange>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>-676</effectPoint>
+		<hitTime>4000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>80</magicLevel>
+		<mpConsume>109</mpConsume>
+		<reuseDelay>5000</reuseDelay>
+		<trait>HOLD</trait>
+		<effects>
+			<effect name="Root" />
+			<effect name="DefenceTrait">
+				<HOLD>100</HOLD>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="709" levels="1" name="Sacrifice Enchanter">
+		<!-- Increase all the party member's abilities by sacrificing yourself. Usable only when MP is under 10 percent. -->
+		<icon>icon.skill_transform_buff</icon>
+		<operateType>A2</operateType>
+		<targetType>PARTY</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>TRANSFORM_SCRIFICE</abnormalType>
+		<affectRange>300</affectRange>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>80</magicLevel>
+		<reuseDelay>1800000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions msgId="113" addName="1">
+			<player mp="10" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<add stat="runSpd">10</add>
+				<add stat="accCombat">2</add>
+				<mul stat="pDef">1.1</mul>
+				<mul stat="pAtk">1.1</mul>
+				<mul stat="pAtkSpd">1.1</mul>
+				<mul stat="critRate">1.1</mul>
+				<mul stat="critDmg">1.1</mul>
+				<mul stat="mDef">1.1</mul>
+				<mul stat="mAtk">1.1</mul>
+				<mul stat="mAtkSpd">1.1</mul>
+			</effect>
+		</effects>
+		<selfEffects>
+			<effect name="CallSkill">
+				<skillId>5602</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</selfEffects>
+	</skill>
+	<skill id="710" levels="1" name="Divine Summoner Summon Divine Beast">
+		<!-- Summons the divine beast. Consumes 2 Crystals: A grade - when summoning, and consumes additional 1 Crystal - A grade per hour. -->
+		<icon>icon.skill_transform_etc</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>15000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>2</itemConsumeCount>
+		<itemConsumeId>1461</itemConsumeId> <!-- Crystal (A-Grade) -->
+		<magicLevel>80</magicLevel>
+		<mpConsume>117</mpConsume>
+		<mpInitialConsume>28</mpInitialConsume>
+		<reuseDelay>5000</reuseDelay>
+		<conditions>
+			<player canSummon="true" />
+		</conditions>
+		<effects>
+			<effect name="Summon">
+				<npcId>14870</npcId>
+				<consumeItemId>1461</consumeItemId>
+				<consumeItemCount>1</consumeItemCount>
+				<lifeTime>3600</lifeTime>
+				<expMultiplier>0.7</expMultiplier>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="711" levels="1" name="Divine Summoner Transfer Pain">
+		<!-- Transfers some of the player's damage to the summoner. Consumes MP continuously. -->
+		<icon>icon.skill_transform_etc</icon>
+		<operateType>T</operateType>
+		<targetType>SELF</targetType>
+		<abnormalVisualEffect>NONE</abnormalVisualEffect>
+		<magicLevel>80</magicLevel>
+		<mpInitialConsume>72</mpInitialConsume>
+		<effects>
+			<effect name="MpConsumePerLevel" ticks="5">
+				<power>0.4</power>
+				<add stat="transDam">50</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="712" levels="1" name="Divine Summoner Final Servitor">
+		<!-- Temporarily causes the summoner to be possessed with the spirit of an ancient hero. Consumes 20 Spirit Ore. -->
+		<icon>icon.skill_transform_buff</icon>
+		<operateType>A2</operateType>
+		<targetType>SERVITOR</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>MULTI_BUFF</abnormalType>
+		<castRange>400</castRange>
+		<effectPoint>669</effectPoint>
+		<effectRange>900</effectRange>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>20</itemConsumeCount>
+		<itemConsumeId>3031</itemConsumeId> <!-- Spirit Ore -->
+		<magicLevel>80</magicLevel>
+		<mpConsume>57</mpConsume>
+		<mpInitialConsume>15</mpInitialConsume>
+		<reuseDelay>60000</reuseDelay>
+		<effects>
+			<effect name="MaxHp">
+				<power>20</power>
+				<type>PER</type>
+				<heal>true</heal>
+				<mul stat="critRate">1.2</mul>
+				<mul stat="pAtk">1.1</mul>
+				<mul stat="critDmg">1.2</mul>
+				<mul stat="pAtkSpd">1.2</mul>
+				<mul stat="runSpd">0.8</mul>
+				<add stat="accCombat">4</add>
+				<mul stat="pDef">1.2</mul>
+				<mul stat="mDef">1.2</mul>
+				<mul stat="mAtk">1.2</mul>
+				<mul stat="mAtkSpd">1.2</mul>
+				<sub stat="debuffVuln">20</sub>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="713" levels="1" name="Divine Summoner Servitor Hill">
+		<!-- Restores the servitor's HP by 991 power. -->
+		<icon>icon.skill_transform_etc</icon>
+		<operateType>A1</operateType>
+		<targetType>SERVITOR</targetType>
+		<castRange>600</castRange>
+		<effectPoint>1</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>80</magicLevel>
+		<mpConsume>127</mpConsume>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="Heal">
+				<power>991</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="714" levels="1" name="Sacrifice Summoner">
+		<!-- Increase the party member's critical abilities by sacrificing yourself. Usable only when MP is under 10 percent. -->
+		<icon>icon.skill_transform_buff</icon>
+		<operateType>A2</operateType>
+		<targetType>PARTY</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>TRANSFORM_SCRIFICE</abnormalType>
+		<affectRange>300</affectRange>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>80</magicLevel>
+		<reuseDelay>1800000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions msgId="113" addName="1">
+			<player mp="10" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<mul stat="critRate">1.2</mul>
+				<mul stat="critDmg">1.2</mul>
+			</effect>
+		</effects>
+		<selfEffects>
+			<effect name="CallSkill">
+				<skillId>5602</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</selfEffects>
+	</skill>
+	<skill id="715" levels="4" name="Zaken Energy Drain">
+		<!-- Exhausts enemy's HP/MP and absorbs some of HP. -->
+		<table name="#effectPoints">-307 -323 -335 -342</table>
+		<table name="#magicLevel">65 70 75 80</table>
+		<table name="#mpConsume">60 65 69 72</table>
+		<table name="#power">121 133 145 160</table>
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>100</affectRange>
+		<castRange>600</castRange>
+		<coolTime>2000</coolTime>
+		<effectPoint>#effectPoints</effectPoint>
+		<effectRange>1100</effectRange>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<reuseDelay>8000</reuseDelay>
+		<effects>
+			<effect name="HpDrain">
+				<power>0.4</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="716" levels="4" name="Zaken Hold">
+		<!-- Instantly apply Hold to the enemy. Additional Hold is not available while effects last. -->
+		<table name="#effectPoints">-307 -323 -335 -342</table>
+		<table name="#magicLevel">65 70 75 80</table>
+		<table name="#mpConsume">60 65 69 72</table>
+		<icon>icon.skill_transform_debuff</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>ROOT_MAGICALLY</abnormalType>
+		<abnormalVisualEffect>ROOT</abnormalVisualEffect>
+		<activateRate>95</activateRate>
+		<basicProperty>MEN</basicProperty>
+		<castRange>800</castRange>
+		<coolTime>2000</coolTime>
+		<effectPoint>#effectPoints</effectPoint>
+		<effectRange>1300</effectRange>
+		<hitTime>2000</hitTime>
+		<isDebuff>true</isDebuff>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<reuseDelay>2000</reuseDelay>
+		<trait>HOLD</trait>
+		<effects>
+			<effect name="Root" />
+		</effects>
+	</skill>
+	<skill id="717" levels="4" name="Zaken Concentrated Attack">
+		<!-- Level 1: Focuses on one specific place and attacks. Over-hit is possible. Power 2751. -->
+		<!-- Level 2: Focuses on one specific place and attacks. Over-hit is possible. Power 3252. -->
+		<!-- Level 3: Focuses on one specific place and attacks. Over-hit is possible. Power 3752. -->
+		<!-- Level 4: Focuses on one specific place and attacks. Over-hit is possible. Power 4224. -->
+		<table name="#effectPoints">-307 -323 -335 -342</table>
+		<table name="#magicLevel">65 70 75 80</table>
+		<table name="#mpConsume">60 65 69 72</table>
+		<table name="#power">2751 3252 3752 4224</table>
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>50</castRange>
+		<coolTime>900</coolTime>
+		<effectPoint>#effectPoints</effectPoint>
+		<effectRange>150</effectRange>
+		<hitTime>2100</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<overHit>true</overHit>
+		<power>#power</power>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="718" levels="4" name="Zaken Dancing Sword">
+		<!-- Level 1: Uses Dancing Swords to attack all at once. Over-hit is possible. Power 1651. -->
+		<!-- Level 2: Uses Dancing Swords to attack all at once. Over-hit is possible. Power 1951. -->
+		<!-- Level 3: Uses Dancing Swords to attack all at once. Over-hit is possible. Power 2251. -->
+		<!-- Level 4: Uses Dancing Swords to attack all at once. Over-hit is possible. Power 2534. -->
+		<table name="#effectPoints">-307 -323 -335 -342</table>
+		<table name="#magicLevel">65 70 75 80</table>
+		<table name="#mpConsume">60 65 69 72</table>
+		<table name="#power">1651 1951 2251 2534</table>
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>100</affectRange>
+		<coolTime>1500</coolTime>
+		<effectPoint>#effectPoints</effectPoint>
+		<hitTime>1500</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<overHit>true</overHit>
+		<power>#power</power>
+		<reuseDelay>15000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="719" levels="1" name="Zaken Vampiric Rage">
+		<!-- Absorbs some HP from damage inflicted on enemies. Excludes damage from skills or ranged attacks. Effect 4. -->
+		<icon>icon.skill_transform_buff</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>4</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>VAMPIRIC_ATTACK</abnormalType>
+		<castRange>400</castRange>
+		<effectPoint>604</effectPoint>
+		<effectRange>900</effectRange>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>65</magicLevel>
+		<mpConsume>48</mpConsume>
+		<mpInitialConsume>12</mpInitialConsume>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="absorbDam">9</add> <!-- absorb 9% HP from damage inflicted on enemies -->
+			</effect>
+		</effects>
+	</skill>
+	<skill id="720" levels="2" name="Anakim Divine Light Burst">
+		<!-- Level 1: Strong pound attack. Over-hit is possible. Power 3189. -->
+		<!-- Level 2: Strong pound attack. Over-hit is possible. Power 3590. -->
+		<table name="#effectPoints">-335 -342</table>
+		<table name="#magicLevel">75 80</table>
+		<table name="#mpConsume">69 72</table>
+		<table name="#power">3189 3590</table>
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<coolTime>720</coolTime>
+		<effectPoint>#effectPoints</effectPoint>
+		<effectRange>400</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>1080</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<nextActionAttack>true</nextActionAttack>
+		<overHit>true</overHit>
+		<power>#power</power>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="721" levels="2" name="Anakim Energy Attack">
+		<!-- Level 1: Concentrates energy and Fires it. Power 186. -->
+		<!-- Level 2: Concentrates energy and Fires it. Power 197. -->
+		<table name="#effectPoints">-335 -342</table>
+		<table name="#magicLevel">75 80</table>
+		<table name="#mpConsume">69 72</table>
+		<table name="#power">186 197</table>
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>200</affectRange>
+		<castRange>700</castRange>
+		<effectPoint>#effectPoints</effectPoint>
+		<effectRange>1200</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="722" levels="2" name="Anakim Divine Beam">
+		<!-- Level 1: Launch beam. Power 186. -->
+		<!-- Level 2: Launch beam. Power 197. -->
+		<table name="#effectPoints">-335 -342</table>
+		<table name="#magicLevel">75 80</table>
+		<table name="#mpConsume">69 72</table>
+		<table name="#power">186 197</table>
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>200</affectRange>
+		<castRange>700</castRange>
+		<effectPoint>#effectPoints</effectPoint>
+		<effectRange>1200</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>#power</power>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="723" levels="1" name="Anakim Sunshine">
+		<!-- Recover the party member's HP immediately. Power 1340. -->
+		<icon>icon.skill_transform_etc</icon>
+		<operateType>A1</operateType>
+		<targetType>PARTY</targetType>
+		<affectRange>1000</affectRange>
+		<effectPoint>789</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+		<mpConsume>20</mpConsume>
+		<mpInitialConsume>5</mpInitialConsume>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="Heal">
+				<power>1340</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="724" levels="1" name="Anakim Clans">
+		<!-- Cancel all of your debuffs. -->
+		<icon>icon.skill_transform_etc</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<effectPoint>659</effectPoint>
+		<hitTime>1500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+		<mpConsume>20</mpConsume>
+		<mpInitialConsume>5</mpInitialConsume>
+		<reuseDelay>8000</reuseDelay>
+		<effects>
+			<effect name="DispelByCategory">
+				<slot>debuff</slot>
+				<rate>100</rate>
+				<max>10</max>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="725" levels="2" name="Venom Power Smash">
+		<!-- Level 1: Unleashes a powerful strike. Over-hit is possible. Power 2626. -->
+		<!-- Level 2: Unleashes a powerful strike. Over-hit is possible. Power 2957. -->
+		<table name="#magicLevel">75 80</table>
+		<table name="#power">2626 2957</table>
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<coolTime>660</coolTime>
+		<effectPoint>-342</effectPoint>
+		<effectRange>200</effectRange>
+		<hitTime>830</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>88</mpConsume>
+		<overHit>true</overHit>
+		<power>#power</power>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="726" levels="2" name="Venom Sonic Storm">
+		<!-- Level 1: Attack the surrounding area by detonating the sword energy. Power 2626. -->
+		<!-- Level 2: Attack the surrounding area by detonating the sword energy. Power 2957. -->
+		<table name="#magicLevel">75 80</table>
+		<table name="#power">1576 1774</table>
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>150</affectRange>
+		<castRange>500</castRange>
+		<effectPoint>-342</effectPoint>
+		<effectRange>1000</effectRange>
+		<hitTime>1900</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>88</mpConsume>
+		<power>#power</power>
+		<reuseDelay>5000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="727" levels="1" name="Venom Disillusion">
+		<!-- Temporarily increases P. Atk. Effect 1. -->
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>PA_UP</abnormalType>
+		<effectPoint>138</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+		<mpConsume>28</mpConsume>
+		<mpInitialConsume>7</mpInitialConsume>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtk">1.08</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="728" levels="1" name="Gordon Beast Attack">
+		<!-- Inflicts a beast attack. Over-hit is possible. Power 2957. -->
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<coolTime>660</coolTime>
+		<effectPoint>-342</effectPoint>
+		<effectRange>200</effectRange>
+		<hitTime>830</hitTime>
+		<magicLevel>80</magicLevel>
+		<mpConsume>88</mpConsume>
+		<overHit>true</overHit>
+		<power>2957</power>
+		<reuseDelay>5000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="729" levels="1" name="Gordon Sword Stab">
+		<!-- Attacks the enemies in front of the player. Over-hit is possible. Power 2957. -->
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>150</affectRange>
+		<castRange>500</castRange>
+		<effectPoint>-342</effectPoint>
+		<effectRange>1000</effectRange>
+		<hitTime>1900</hitTime>
+		<magicLevel>80</magicLevel>
+		<mpConsume>88</mpConsume>
+		<overHit>true</overHit>
+		<power>1774</power>
+		<reuseDelay>5000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="730" levels="1" name="Gordon Press">
+		<!-- Instantly decrease Spd./Atk. Spd./Casting Spd. of surrounding enemies. Effect 3. -->
+		<icon>icon.skill_transform_debuff</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>ATTACK_TIME_UP</abnormalType>
+		<activateRate>60</activateRate>
+		<affectLimit>10-10</affectLimit>
+		<affectRange>200</affectRange>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>-1</effectPoint>
+		<hitTime>1500</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>80</magicLevel>
+		<mpConsume>87</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Debuff">
+				<mul stat="runSpd">0.77</mul>
+				<mul stat="pAtkSpd">0.77</mul>
+				<mul stat="mAtkSpd">0.77</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="731" levels="1" name="Ranku Dark Explosion">
+		<!-- Attack by detonating the devil's energy. Power 162. -->
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>300</affectRange>
+		<castRange>900</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1400</effectRange>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>3300</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>80</magicLevel>
+		<mpConsume>112</mpConsume>
+		<power>162</power>
+		<reuseDelay>15000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="732" levels="1" name="Ranku Stun Attack">
+		<!-- Causes damage and shock simultaneously. Puts the enemy into shock momentarily. Over-hit is possible. Power 1. -->
+		<icon>icon.skill_transform_debuff</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>9</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>50</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<coolTime>720</coolTime>
+		<effectPoint>-342</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>1080</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>80</magicLevel>
+		<mpConsume>19</mpConsume>
+		<nextActionAttack>true</nextActionAttack>
+		<overHit>true</overHit>
+		<power>1479</power>
+		<reuseDelay>3000</reuseDelay>
+		<trait>SHOCK</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Stun" />
+		</effects>
+	</skill>
+	<skill id="733" levels="1" name="Kechi Double Cutter">
+		<!-- Attacks by crossing a sword. Over-hit is possible. Power 2957. -->
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<coolTime>660</coolTime>
+		<effectPoint>-342</effectPoint>
+		<effectRange>200</effectRange>
+		<hitTime>830</hitTime>
+		<magicLevel>80</magicLevel>
+		<mpConsume>88</mpConsume>
+		<overHit>true</overHit>
+		<power>2957</power>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="734" levels="1" name="Kechi Air Blade">
+		<!-- Strikes a distant enemy by using sword energy. Critical hit is possible. Over-hit is possible. Power 1812. -->
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>600</castRange>
+		<effectPoint>-342</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>1900</hitTime>
+		<magicLevel>80</magicLevel>
+		<mpConsume>56</mpConsume>
+		<overHit>true</overHit>
+		<power>1812</power>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="735" levels="1" name="Devil Spinning Weapon">
+		<!-- Attack surrounding enemies by swinging the weapon. Power 162. -->
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>200</affectRange>
+		<effectPoint>-342</effectPoint>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>3300</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>80</magicLevel>
+		<mpConsume>87</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<power>162</power>
+		<reuseDelay>11000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="736" levels="1" name="Devil Seed">
+		<!-- Instant decreases HP. Serious damage will be caused by the fully grown seed if not canceled. -->
+		<icon>icon.skill_transform_debuff</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>9</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>DARK_SEED</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>100</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>900</castRange>
+		<coolTime>800</coolTime>
+		<effectPoint>-342</effectPoint>
+		<effectRange>1400</effectRange>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>3300</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>80</magicLevel>
+		<mpConsume>82</mpConsume>
+		<reuseDelay>2000</reuseDelay>
+		<trait>BLEED</trait>
+		<effects>
+			<effect name="DamOverTime" ticks="5">
+				<power>351</power>
+			</effect>
+		</effects>
+		<endEffects>
+			<effect name="CallSkill">
+				<skillId>5248</skillId>
+				<skillLevel>9</skillLevel>
+			</effect>
+		</endEffects>
+	</skill>
+	<skill id="737" levels="1" name="Devil Ultimate Defense">
+		<!-- Instantly and drastically increases Resistance to P. Def./M. Def. weakening and buff cancelling attacks. The player cannot move while the effect lasts. Effect 2. -->
+		<icon>icon.skill_transform_buff</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>PD_UP_SPECIAL</abnormalType>
+		<effectPoint>100</effectPoint>
+		<hitTime>1000</hitTime>
+		<magicLevel>80</magicLevel>
+		<mpConsume>10</mpConsume>
+		<reuseDelay>900000</reuseDelay>
+		<effects>
+			<effect name="ImmobileBuff">
+				<add stat="pDef">1800</add>
+				<add stat="mDef">1350</add>
+				<sub stat="cancelVuln">80</sub>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="738" levels="3" name="Heretic Heal">
+		<!-- Level 1: Recover the target's HP immediately. Power 892. -->
+		<!-- Level 2: Recover the target's HP immediately. Power 926. -->
+		<!-- Level 3: Recover the target's HP immediately. Power 956. -->
+		<table name="#amount">892 926 956</table>
+		<table name="#magicLevel">70 73 76</table>
+		<icon>icon.skill_transform_etc</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>600</castRange>
+		<effectPoint>575</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>5000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>48</mpConsume>
+		<mpInitialConsume>12</mpInitialConsume>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="Heal">
+				<power>#amount</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="739" levels="3" name="Heretic Battle Heal">
+		<!-- Level 1: Quickly restores the target's HP by 743 power. -->
+		<!-- Level 2: Quickly restores the target's HP by 772 power. -->
+		<!-- Level 3: Quickly restores the target's HP by 796 power. -->
+		<table name="#amount">743 772 796</table>
+		<table name="#effectPoints">595 617 637</table>
+		<table name="#magicLevel">70 73 76</table>
+		<table name="#mpConsume">136 142 146</table>
+		<table name="#mpInitialConsume">34 36 37</table>
+		<icon>icon.skill_transform_etc</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>600</castRange>
+		<effectPoint>#effectPoints</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="Heal">
+				<power>#amount</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="740" levels="3" name="Heretic Resurrection">
+		<!-- Level 1: Resurrects a corpse. Regenerate additional 50 percent of the experience value. -->
+		<!-- Level 2: Resurrects a corpse. Restores the experience value about 55 percent additionally. -->
+		<!-- Level 3: Resurrects a corpse. Restores the experience value about 60 percent additionally. -->
+		<table name="#effectPoints">595 617 637</table>
+		<table name="#magicLevel">70 73 76</table>
+		<table name="#mpConsume">182 189 195</table>
+		<table name="#mpInitialConsume">46 48 49</table>
+		<table name="#power">50 55 60</table>
+		<icon>icon.skill_transform_etc</icon>
+		<operateType>A1</operateType>
+		<targetType>PC_BODY</targetType>
+		<castRange>400</castRange>
+		<effectPoint>#effectPoints</effectPoint>
+		<effectRange>900</effectRange>
+		<hitTime>6000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<reuseDelay>30000</reuseDelay>
+		<conditions>
+			<player canResurrect="true" />
+		</conditions>
+		<effects>
+			<effect name="Resurrection">
+				<power>#power</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="741" levels="3" name="Heretic Heal Side Effect">
+		<!-- Cause side effects of the heal. Instantly make the enemy addicted. Effect 8. -->
+		<table name="#effectPoints">-323 -331 -337</table>
+		<table name="#magicLevel">70 73 76</table>
+		<table name="#mpConsume">52 54 56</table>
+		<table name="#mpInitialConsume">13 14 14</table>
+		<icon>icon.skill_transform_debuff</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>8</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>POISON</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<activateRate>70</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>600</castRange>
+		<effectPoint>#effectPoints</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>4000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<reuseDelay>3000</reuseDelay>
+		<trait>POISON</trait>
+		<effects>
+			<effect name="DamOverTime" ticks="5">
+				<power>52</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="742" levels="3" name="Veil Master Bursting Flame">
+		<!-- Level 1: Attack the enemy by unleashing dark flames. Power 112. -->
+		<!-- Level 2: Attack the enemy by unleashing dark flames. Power 117. -->
+		<!-- Level 3: Attack the enemy by unleashing dark flames. Power 122. -->
+		<table name="#magicLevel">70 73 76</table>
+		<table name="#mpConsume">68 70 73</table>
+		<table name="#mpInitialConsume">17 18 19</table>
+		<table name="#power">112 117 122</table>
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>600</castRange>
+		<effectPoint>-92</effectPoint>
+		<effectRange>1100</effectRange>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>1200</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="743" levels="3" name="Veil Master Dark Explosion">
+		<!-- Level 1: Detonate the soul to attack surrounding enemies. Power 56. -->
+		<!-- Level 2: Detonate the soul to attack surrounding enemies. Power 59. -->
+		<!-- Level 3: Detonate the soul to attack surrounding enemies. Power 61. -->
+		<table name="#effectPoints">-323 -331 -337</table>
+		<table name="#magicLevel">70 73 76</table>
+		<table name="#mpConsume">68 70 73</table>
+		<table name="#mpInitialConsume">17 18 19</table>
+		<table name="#power">56 59 61</table>
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectLimit>5-12</affectLimit>
+		<affectRange>200</affectRange>
+		<castRange>500</castRange>
+		<effectPoint>#effectPoints</effectPoint>
+		<effectRange>1000</effectRange>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>1800</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<reuseDelay>4000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="744" levels="3" name="Veil Master Dark Flare">
+		<!-- Level 1: Attack a large number of enemies by creating huge explosion. Power 112. -->
+		<!-- Level 2: Attack a large number of enemies by creating huge explosion. Power 117. -->
+		<!-- Level 3: Attack a large number of enemies by creating huge explosion. Power 122. -->
+		<table name="#magicLevel">70 73 76</table>
+		<table name="#mpConsume">68 70 73</table>
+		<table name="#mpInitialConsume">17 18 19</table>
+		<table name="#power">112 117 122</table>
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectLimit>5-12</affectLimit>
+		<affectRange>150</affectRange>
+		<effectPoint>-275</effectPoint>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>1800</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<reuseDelay>5000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="745" levels="3" name="Veil Master Dark Cure">
+		<!-- Cancel all the debuffs of the target. -->
+		<table name="#effectPoints">635 650 662</table>
+		<table name="#magicLevel">70 73 76</table>
+		<table name="#mpConsume">21 22 23</table>
+		<table name="#mpInitialConsume">6 6 6</table>
+		<icon>icon.skill_transform_etc</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>600</castRange>
+		<effectPoint>#effectPoints</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<reuseDelay>8000</reuseDelay>
+		<effects>
+			<effect name="DispelByCategory">
+				<slot>debuff</slot>
+				<rate>100</rate>
+				<max>10</max>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="746" levels="3" name="Saber Tooth Tiger Bite">
+		<!-- Level 1: Bites ferociously. Over-hit is possible. Power 1789. -->
+		<!-- Level 2: Bites ferociously. Over-hit is possible. Power 1955. -->
+		<!-- Level 3: Bites ferociously. Over-hit is possible. Power 2117. -->
+		<table name="#effectPoints">-648 -660 -671</table>
+		<table name="#magicLevel">70 73 76</table>
+		<table name="#power">1789 1955 2117</table>
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<coolTime>660</coolTime>
+		<effectPoint>#effectPoints</effectPoint>
+		<effectRange>200</effectRange>
+		<hitTime>830</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>88</mpConsume>
+		<nextActionAttack>true</nextActionAttack>
+		<overHit>true</overHit>
+		<power>#power</power>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="747" levels="3" name="Saber Tooth Tiger Fear">
+		<!-- Level 1: Inflicts damage on surrounding enemies and causes them to flee. Over-hit is possible. Power 895. -->
+		<!-- Level 2: Inflicts damage on surrounding enemies and causes them to flee. Over-hit is possible. Power 978. -->
+		<!-- Level 3: Inflicts damage on surrounding enemies and causes them to flee. Over-hit is possible. Power 1059. -->
+		<table name="#dmg">895 978 1059</table>
+		<table name="#effectPoints">-323 -331 -337</table>
+		<table name="#magicLevel">70 73 76</table>
+		<table name="#mpConsume">150 156 160</table>
+		<icon>icon.skill_transform_debuff</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>TURN_FLEE</abnormalType>
+		<abnormalVisualEffect>TURN_FLEE</abnormalVisualEffect>
+		<activateRate>60</activateRate>
+		<affectLimit>6-12</affectLimit>
+		<affectRange>150</affectRange>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>#effectPoints</effectPoint>
+		<hitTime>2000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<overHit>true</overHit>
+		<power>#dmg</power>
+		<reuseDelay>15000</reuseDelay>
+		<trait>DERANGEMENT</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Fear" />
+		</effects>
+	</skill>
+	<skill id="748" levels="1" name="Saber Tooth Tiger Sprint">
+		<!-- Temporarily increases your Spd. Effect 2. -->
+		<icon>icon.skill_transform_buff</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>2</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>SPEED_UP</abnormalType>
+		<effectPoint>495</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>70</magicLevel>
+		<mpConsume>19</mpConsume>
+		<mpInitialConsume>5</mpInitialConsume>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="runSpd">33</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="749" levels="3" name="Oel Mahum Stun Attack">
+		<!-- Level 1: Cause damage and shock together at the same time. Make the enemies shocked momentarily. Over-hit is possible. Power 895. -->
+		<!-- Level 2: Cause damage and shock together at the same time. Make the enemies shocked momentarily. Over-hit is possible. Power 978. -->
+		<!-- Level 3: Cause damage and shock together at the same time. Make the enemies shocked momentarily. Over-hit is possible. Power 1059. -->
+		<table name="#dmg">895 978 1059</table>
+		<table name="#effectPoints">-323 -331 -337</table>
+		<table name="#magicLevel">70 73 76</table>
+		<table name="#mpConsume">68 71 73</table>
+		<icon>icon.skill_transform_debuff</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>9</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>50</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<coolTime>720</coolTime>
+		<effectPoint>#effectPoints</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>1080</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<nextActionAttack>true</nextActionAttack>
+		<overHit>true</overHit>
+		<power>#dmg</power>
+		<reuseDelay>3000</reuseDelay>
+		<trait>SHOCK</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Stun" />
+		</effects>
+	</skill>
+	<skill id="750" levels="1" name="Oel Mahum Ultimate Defense">
+		<!-- Instantly and drastically increases Resistance to P. Def./M. Def., buff cancel attacks. The player cannot move while the effect lasts. Effect 2. -->
+		<icon>icon.skill_transform_buff</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>PD_UP_SPECIAL</abnormalType>
+		<effectPoint>100</effectPoint>
+		<hitTime>1000</hitTime>
+		<magicLevel>70</magicLevel>
+		<mpConsume>10</mpConsume>
+		<reuseDelay>900000</reuseDelay>
+		<effects>
+			<effect name="ImmobileBuff">
+				<add stat="pDef">1800</add>
+				<add stat="mDef">1350</add>
+				<sub stat="cancelVuln">80</sub>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="751" levels="3" name="Oel Mahum Arm Flourish">
+		<!-- Level 1: Flourish weapons to attack surrounding enemy. Over-hit is possible. Power 1073. -->
+		<!-- Level 2: Flourish weapons to attack surrounding enemy. Over-hit is possible. Power 1173. -->
+		<!-- Level 3: Flourish weapons to attack surrounding enemy. Over-hit is possible. Power 1271. -->
+		<table name="#dmg">1073 1173 1271</table>
+		<table name="#effectPoints">-323 -331 -337</table>
+		<table name="#magicLevel">70 73 76</table>
+		<table name="#mpConsume">71 74 77</table>
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<affectLimit>5-12</affectLimit>
+		<affectRange>80</affectRange>
+		<castRange>40</castRange>
+		<coolTime>720</coolTime>
+		<effectPoint>#effectPoints</effectPoint>
+		<effectRange>400</effectRange>
+		<fanRange>0,0,80,150</fanRange>
+		<hitTime>1080</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<nextActionAttack>true</nextActionAttack>
+		<overHit>true</overHit>
+		<power>#dmg</power>
+		<reuseDelay>4000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="752" levels="3" name="Doll Blader Sting">
+		<!-- Level 1: Causes injury by deadly attacks. Instantly causes the enemies to bleed. Over-hit is possible. Power 1193. Effect 3. -->
+		<!-- Level 2: Causes injury by deadly attacks. Instantly causes the enemies to bleed. Over-hit is possible. Power 1303. Effect 3. -->
+		<!-- Level 3: Causes injury by deadly attacks. Instantly causes the enemies to bleed. Over-hit is possible. Power 1412. Effect 3. -->
+		<table name="#effectPoints">-323 -331 -337</table>
+		<table name="#magicLevel">70 73 76</table>
+		<table name="#mpConsume">71 74 77</table>
+		<table name="#power">1193 1303 1412</table>
+		<icon>icon.skill_transform_debuff</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>BLEEDING</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>50</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<coolTime>720</coolTime>
+		<effectPoint>#effectPoints</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>1080</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<nextActionAttack>true</nextActionAttack>
+		<overHit>true</overHit>
+		<power>#power</power>
+		<reuseDelay>3000</reuseDelay>
+		<trait>BLEED</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="DamOverTime" ticks="5">
+				<power>134</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="753" levels="3" name="Doll Blader Throwing Knife">
+		<!-- Level 1: Throw a dagger to attack enemy in the distance. Over-hit is possible. Power 4769. -->
+		<!-- Level 2: Throw a dagger to attack enemy in the distance. Over-hit is possible. Power 5211. -->
+		<!-- Level 3: Throw a dagger to attack enemy in the distance. Over-hit is possible. Power 5645. -->
+		<table name="#effectPoints">-323 -331 -337</table>
+		<table name="#magicLevel">70 73 76</table>
+		<table name="#mpConsume">142 148 153</table>
+		<table name="#power">4769 5211 5645</table>
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>700</castRange>
+		<coolTime>800</coolTime>
+		<effectPoint>#effectPoints</effectPoint>
+		<effectRange>1200</effectRange>
+		<hitTime>3200</hitTime>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<overHit>true</overHit>
+		<power>#power</power>
+		<reuseDelay>6000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="754" levels="1" name="Doll Blader Clairvoyance">
+		<!-- Temporarily increase the probability of Critical Damage. Effect 3. -->
+		<icon>icon.skill_transform_buff</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>CRITICAL_PROB_UP</abnormalType>
+		<castRange>400</castRange>
+		<effectPoint>635</effectPoint>
+		<effectRange>900</effectRange>
+		<hitTime>4000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>70</magicLevel>
+		<mpConsume>52</mpConsume>
+		<mpInitialConsume>13</mpInitialConsume>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="critRate">1.3</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="755" levels="1" name="Protection of Rune">
+		<!-- M. Def. is increased by 15%, and when damage is incurred, additional M. Def. and Resistance to attributes are increased instantly depending on the probability. -->
+		<icon>icon.skill0755</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>81</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mDef">1.15</mul>
+			</effect>
+			<effect name="TriggerSkillByDamageReceived">
+				<attackerType>Creature</attackerType>
+				<minAttackerLevel>1</minAttackerLevel>
+				<maxAttackerLevel>99</maxAttackerLevel>
+				<minDamage>300</minDamage>
+				<chance>20</chance>
+				<skillId>5556</skillId>
+				<skillLevel>1</skillLevel> <!-- Protection Power -->
+				<targetType>SELF</targetType>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="756" levels="1" name="Protection of Elemental">
+		<!-- Resistance to elemental attributes is increased by 20, and when damage is incurred, M. Def. and Resistance to elemental attributes are additionally increased instantly depending on the probability. -->
+		<icon>icon.skill0756</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>81</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="fireRes">20</add>
+				<add stat="waterRes">20</add>
+				<add stat="windRes">20</add>
+				<add stat="earthRes">20</add>
+			</effect>
+			<effect name="TriggerSkillByDamageReceived">
+				<attackerType>Creature</attackerType>
+				<minAttackerLevel>1</minAttackerLevel>
+				<maxAttackerLevel>99</maxAttackerLevel>
+				<minDamage>100</minDamage>
+				<chance>20</chance>
+				<skillId>5556</skillId>
+				<skillLevel>1</skillLevel> <!-- Protection Power -->
+				<targetType>SELF</targetType>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="757" levels="1" name="Protection of Alignment">
+		<!-- Resistance to tendency attributes is increased by 20, and when damage is incurred, M. Def. and Resistance to elemental attributes are additionally increased instantly depending on the probability. -->
+		<icon>icon.skill0757</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>81</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="holyRes">20</add>
+				<add stat="darkRes">20</add>
+			</effect>
+			<effect name="TriggerSkillByDamageReceived">
+				<attackerType>Creature</attackerType>
+				<minAttackerLevel>1</minAttackerLevel>
+				<maxAttackerLevel>99</maxAttackerLevel>
+				<minDamage>100</minDamage>
+				<chance>20</chance>
+				<skillId>5556</skillId>
+				<skillLevel>1</skillLevel> <!-- Protection Power -->
+				<targetType>SELF</targetType>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="758" levels="1" name="Fighter's Will">
+		<!-- When using a short-range weapon, increases P. Atk. by 100 and Atk. Spd. by 10%. When attacking, has a chance to increases physical skills' Power and Critical Rate. -->
+		<icon>icon.skill0758</icon>
+		<operateType>P</operateType>
+		<magicLevel>81</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="pAtk">
+					<value>100</value>
+					<using kind="SWORD,BLUNT,DUAL,DUALFIST,DAGGER,DUALDAGGER,POLE,ANCIENTSWORD,RAPIER" />
+				</add>
+				<mul stat="pAtkSpd">
+					<value>1.1</value>
+					<using kind="SWORD,BLUNT,DUAL,DUALFIST,DAGGER,DUALDAGGER,POLE,ANCIENTSWORD,RAPIER" />
+				</mul>
+			</effect>
+			<effect name="TriggerSkillByDamageDealt">
+				<attackerType>Creature</attackerType>
+				<minAttackerLevel>1</minAttackerLevel>
+				<maxAttackerLevel>100</maxAttackerLevel>
+				<isCritical>false</isCritical>
+				<minDamage>1</minDamage>
+				<chance>3</chance>
+				<skillId>5559</skillId>
+				<skillLevel>1</skillLevel> <!-- Physical Pose -->
+				<targetType>SELF</targetType>
+				<allowWeapons>SWORD,BLUNT,DUAL,DUALFIST,DAGGER,DUALDAGGER,POLE,ANCIENTSWORD,RAPIER</allowWeapons>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="759" levels="1" name="Archer's Will">
+		<!-- When a bow/crossbow is used, Accuracy increases by 8 and range increases by 50. When attacking, the physical skill's power and Critical Rate are increased at a fixed rate. -->
+		<icon>icon.skill0759</icon>
+		<operateType>P</operateType>
+		<magicLevel>81</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="accCombat">
+					<value>8</value>
+					<using kind="CROSSBOW,BOW" />
+				</add>
+				<add stat="pAtkRange">
+					<value>50</value>
+					<using kind="CROSSBOW,BOW" />
+				</add>
+			</effect>
+			<effect name="TriggerSkillByDamageDealt">
+				<attackerType>Creature</attackerType>
+				<minAttackerLevel>1</minAttackerLevel>
+				<maxAttackerLevel>100</maxAttackerLevel>
+				<isCritical>false</isCritical>
+				<minDamage>1</minDamage>
+				<chance>3</chance>
+				<skillId>5559</skillId>
+				<skillLevel>1</skillLevel> <!-- Physical Pose -->
+				<targetType>SELF</targetType>
+				<allowWeapons>CROSSBOW,BOW</allowWeapons>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="760" levels="1" name="Anti Magic Armor">
+		<!-- Increases M. Def. by 5000 for 30 seconds. -->
+		<icon>icon.skill0760</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>2</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>PD_UP_SPECIAL</abnormalType>
+		<abnormalVisualEffect>ULTIMATE_DEFENCE</abnormalVisualEffect>
+		<effectPoint>679</effectPoint>
+		<hitTime>1000</hitTime>
+		<magicLevel>81</magicLevel>
+		<mpConsume>21</mpConsume>
+		<reuseDelay>900000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="mDef">5000</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="761" levels="1" name="Seed of Revenge">
+		<!-- One sows a seed of wrath himself. There is a chance that the Seed of Wrath will grow when being attacked. P. Atk. increases with growth. -->
+		<icon>icon.skill0761</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>SEED_OF_KNIGHT</abnormalType>
+		<effectPoint>679</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>81</magicLevel>
+		<mpConsume>29</mpConsume>
+		<mpInitialConsume>8</mpInitialConsume>
+		<reuseDelay>15000</reuseDelay>
+		<effects>
+			<effect name="TriggerSkillByDamageReceived">
+				<attackerType>Creature</attackerType>
+				<minAttackerLevel>1</minAttackerLevel>
+				<maxAttackerLevel>99</maxAttackerLevel>
+				<minDamage>1</minDamage>
+				<chance>8</chance>
+				<skillId>5561</skillId>
+				<skillLevel>1</skillLevel> <!-- Seed of Revenge -->
+				<targetType>SELF</targetType>
+				<add stat="pAtk">100</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="762" levels="1" name="Insane Crusher">
+		<!-- Unleashes a powerful strike with 8409 Power added to P. Atk. and Dark Curse to surrounding enemies when rage reaches its peak. Cancels at least one of the enemy's buffs, and drastically decreases Max CP, Resistance to de-buff attacks, and effectiveness of receiving HP recovery. Requires a sword or blunt weapon. Ignores shield defense. Critical and Over-hit are possible. -->
+		<icon>icon.skill0762</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>TOUCH_OF_DEATH</abnormalType>
+		<activateRate>70</activateRate>
+		<affectLimit>5-12</affectLimit>
+		<affectRange>300</affectRange>
+		<baseCritRate>50</baseCritRate>
+		<basicProperty>CON</basicProperty>
+		<coolTime>700</coolTime>
+		<effectPoint>-1357</effectPoint>
+		<hitTime>1300</hitTime>
+		<ignoreShld>true</ignoreShld>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>81</magicLevel>
+		<mpConsume>80</mpConsume>
+		<overHit>true</overHit>
+		<power>8409</power>
+		<reuseDelay>10000</reuseDelay>
+		<trait>DEATH</trait>
+		<conditions msgId="113" addName="1">
+			<and>
+				<using kind="SWORD,BLUNT" />
+				<player active_effect_id_lvl="5561,3" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Debuff">
+				<mul stat="maxCp">0.1</mul>
+				<add stat="debuffVuln">30</add>
+				<mul stat="healEffect">0.7</mul>
+			</effect>
+			<effect name="DispelByCategory">
+				<slot>buff</slot>
+				<rate>25</rate>
+				<max>5</max>
+			</effect>
+			<effect name="CpDamPercent">
+				<power>90</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="763" levels="1" name="Hell Scream">
+		<!-- Roars with the voice of hell. For 8 seconds, decreases the nearby enemies' P. Def. by 30%, M. Def. by 30%, Speed by 30%. Inflicts fear and causes them to flee. -->
+		<icon>icon.skill0763</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>8</abnormalTime>
+		<abnormalType>TURN_FLEE</abnormalType>
+		<abnormalVisualEffect>TURN_FLEE</abnormalVisualEffect>
+		<activateRate>90</activateRate>
+		<affectLimit>10-10</affectLimit>
+		<affectRange>200</affectRange>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>-6781</effectPoint>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>81</magicLevel>
+		<mpConsume>87</mpConsume>
+		<reuseDelay>75000</reuseDelay>
+		<trait>DERANGEMENT</trait>
+		<effects>
+			<effect name="Fear">
+				<mul stat="mDef">0.7</mul>
+				<mul stat="pDef">0.7</mul>
+				<mul stat="runSpd">0.7</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="764" levels="1" name="Song of Wind Storm" enchantGroup1="5" enchantGroup2="5">
+		<!-- For 2 minutes, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Increases the additional MP consumption when singing while sing/dance effect lasts. -->
+		<!-- Level 101 (+1 Time): For 2 minutes 8 seconds, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Time: Increases duration. -->
+		<!-- Level 102 (+2 Time): For 2 minutes 16 seconds, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Time: Increases duration. -->
+		<!-- Level 103 (+3 Time): For 2 minutes 24 seconds, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Time: Increases duration. -->
+		<!-- Level 104 (+4 Time): For 2 minutes 32 seconds, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Time: Increases duration. -->
+		<!-- Level 105 (+5 Time): For 2 minutes 40 seconds, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Time: Increases duration. -->
+		<!-- Level 106 (+6 Time): For 2 minutes 48 seconds, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Time: Increases duration. -->
+		<!-- Level 107 (+7 Time): For 2 minutes 56 seconds, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Time: Increases duration. -->
+		<!-- Level 108 (+8 Time): For 3 minutes 4 seconds, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Time: Increases duration. -->
+		<!-- Level 109 (+9 Time): For 3 minutes 12 seconds, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Time: Increases duration. -->
+		<!-- Level 110 (+10 Time): For 3 minutes 20 seconds, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Time: Increases duration. -->
+		<!-- Level 111 (+11 Time): For 3 minutes 28 seconds, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Time: Increases duration. -->
+		<!-- Level 112 (+12 Time): For 3 minutes 36 seconds, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Time: Increases duration. -->
+		<!-- Level 113 (+13 Time): For 3 minutes 44 seconds, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Time: Increases duration. -->
+		<!-- Level 114 (+14 Time): For 3 minutes 52 seconds, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Time: Increases duration. -->
+		<!-- Level 115 (+15 Time): For 4 minutes, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Time: Increases duration. -->
+		<!-- Level 201 (+1 Cost): For 2 minutes, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 202 (+2 Cost): For 2 minutes, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 203 (+3 Cost): For 2 minutes, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 204 (+4 Cost): For 2 minutes, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 205 (+5 Cost): For 2 minutes, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 206 (+6 Cost): For 2 minutes, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 207 (+7 Cost): For 2 minutes, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 208 (+8 Cost): For 2 minutes, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 209 (+9 Cost): For 2 minutes, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 210 (+10 Cost): For 2 minutes, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 211 (+11 Cost): For 2 minutes, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 212 (+12 Cost): For 2 minutes, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 213 (+13 Cost): For 2 minutes, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 214 (+14 Cost): For 2 minutes, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 215 (+15 Cost): For 2 minutes, increases a party member's Resistance to bows by 10 and Resistance to crossbows by 5. Additionally increases MP consumption when singing while song/dance is in effect. Enchant Cost: Decreases MP consumption. -->
+		<table name="#ench1AbnormalTimes">128 136 144 152 160 168 176 184 192 200 208 216 224 232 240</table>
+		<table name="#ench1EffectPoints">666 669 673 676 679 681 684 687 689 692 694 696 698 700 702</table>
+		<table name="#ench2EffectPoints">704 706 707 709 710 711 713 714 715 1 1 1 1 1 1</table>
+		<table name="#ench2MpConsume">59 58 57 56 55 54 53 52 51 50 49 48 47 46 45</table>
+		<icon>icon.skill0764</icon>
+		<operateType>A2</operateType>
+		<targetType>PARTY</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>120</abnormalTime>
+		<abnormalType>SONG_OF_WINDSTORM</abnormalType>
+		<affectRange>1000</affectRange>
+		<effectPoint>662</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>3</isMagic> <!-- Dance Skill -->
+		<magicLevel>76</magicLevel>
+		<mpConsume>60</mpConsume>
+		<reuseDelay>3000</reuseDelay>
+		<enchant1 name="abnormalTime">#ench1AbnormalTimes</enchant1>
+		<enchant1 name="effectPoint">#ench1EffectPoints</enchant1>
+		<enchant2 name="effectPoint">#ench2EffectPoints</enchant2>
+		<enchant2 name="mpConsume">#ench2MpConsume</enchant2>
+		<effects>
+			<effect name="DefenceTrait">
+				<BOW>10</BOW>
+				<CROSSBOW>5</CROSSBOW>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="765" levels="1" name="Dance of Blade Storm" enchantGroup1="5" enchantGroup2="5">
+		<!-- For 15 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. -->
+		<!-- Level 101 (+1 Time): For 16 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Time: Increases duration. -->
+		<!-- Level 102 (+2 Time): For 17 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Time: Increases duration. -->
+		<!-- Level 103 (+3 Time): For 18 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Time: Increases duration. -->
+		<!-- Level 104 (+4 Time): For 19 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Time: Increases duration. -->
+		<!-- Level 105 (+5 Time): For 20 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Time: Increases duration. -->
+		<!-- Level 106 (+6 Time): For 21 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Time: Increases duration. -->
+		<!-- Level 107 (+7 Time): For 22 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Time: Increases duration. -->
+		<!-- Level 108 (+8 Time): For 23 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Time: Increases duration. -->
+		<!-- Level 109 (+9 Time): For 24 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Time: Increases duration. -->
+		<!-- Level 110 (+10 Time): For 25 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Time: Increases duration. -->
+		<!-- Level 111 (+11 Time): For 26 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Time: Increases duration. -->
+		<!-- Level 112 (+12 Time): For 27 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Time: Increases duration. -->
+		<!-- Level 113 (+13 Time): For 28 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Time: Increases duration. -->
+		<!-- Level 114 (+14 Time): For 29 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Time: Increases duration. -->
+		<!-- Level 115 (+15 Time): For 30 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Time: Increases duration. -->
+		<!-- Level 201 (+1 Cost): For 15 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 202 (+2 Cost): For 15 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 203 (+3 Cost): For 15 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 204 (+4 Cost): For 15 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 205 (+5 Cost): For 15 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 206 (+6 Cost): For 15 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 207 (+7 Cost): For 15 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 208 (+8 Cost): For 15 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 209 (+9 Cost): For 15 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 210 (+10 Cost): For 15 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 211 (+11 Cost): For 15 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 212 (+12 Cost): For 15 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 213 (+13 Cost): For 15 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 214 (+14 Cost): For 15 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Cost: Decreases MP consumption. -->
+		<!-- Level 215 (+15 Cost): For 15 seconds, increases a party member's Resistance to bows by 45 and Resistance to crossbows by 25. Decreases M. Atk. by 99%. Additionally increases MP consumption when singing while song/dance is in effect. Requires a dualsword. Enchant Cost: Decreases MP consumption. -->
+		<table name="#ench1AbnormalTimes">18 21 24 27 30 33 36 39 42 45 48 51 54 57 60</table>
+		<table name="#ench1EffectPoints">666 669 673 676 679 681 684 687 689 692 694 696 698 700 702</table>
+		<table name="#ench2EffectPoints">704 706 707 709 710 711 713 714 715 1 1 1 1 1 1</table>
+		<table name="#ench2MpConsume">59 58 57 56 55 54 53 52 51 50 49 48 47 46 45</table>
+		<icon>icon.skill0765</icon>
+		<operateType>A2</operateType>
+		<targetType>PARTY</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>DANCE_OF_BLADESTORM</abnormalType>
+		<affectRange>1000</affectRange>
+		<effectPoint>662</effectPoint>
+		<hitTime>1500</hitTime>
+		<isMagic>3</isMagic> <!-- Dance Skill -->
+		<magicLevel>76</magicLevel>
+		<mpConsume>60</mpConsume>
+		<reuseDelay>150000</reuseDelay>
+		<enchant1 name="abnormalTime">#ench1AbnormalTimes</enchant1>
+		<enchant1 name="effectPoint">#ench1EffectPoints</enchant1>
+		<enchant2 name="effectPoint">#ench2EffectPoints</enchant2>
+		<enchant2 name="mpConsume">#ench2MpConsume</enchant2>
+		<conditions msgId="113" addName="1">
+			<using kind="DUAL" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mAtk">0.01</mul>
+			</effect>
+			<effect name="DefenceTrait">
+				<BOW>45</BOW>
+				<CROSSBOW>25</CROSSBOW>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="766" levels="1" name="Sixth Sense">
+		<!-- When stamina is at its limit, sensation reaches its peak to increase Evasion by 15 when HP is below 30%. -->
+		<icon>icon.skill0766</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>81</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="rEvas">
+					<value>15</value>
+					<player hp="30" />
+				</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="767" levels="1" name="Expose Weak Point">
+		<!-- Gives flesh and takes a bone. Decreases the enemy's P. Def. by temporarily exposing his weakness when receiving the enemy's attack. Increases the critical hit rate of general attacks. -->
+		<icon>icon.skill0767</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>81</magicLevel>
+		<effects>
+			<effect name="TriggerSkillByDamageReceived">
+				<attackerType>Creature</attackerType>
+				<minAttackerLevel>1</minAttackerLevel>
+				<maxAttackerLevel>99</maxAttackerLevel>
+				<minDamage>1</minDamage>
+				<chance>5</chance>
+				<skillId>5565</skillId>
+				<skillLevel>1</skillLevel> <!-- Expose Weak Point -->
+				<targetType>ONE</targetType>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="768" levels="1" name="Exciting Adventure">
+		<!-- Feels extreme excitement during a melee. For 30 seconds, increases Speed by 20, Evasion by 15, vital point attack rate by 30%, physical skill Evasion Rate by 40%, and Resistance to buff canceling attacks by 90. -->
+		<icon>icon.skill0768</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>2</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>AVOID_UP_SPECIAL</abnormalType>
+		<abnormalVisualEffect>ULTIMATE_DEFENCE</abnormalVisualEffect>
+		<effectPoint>679</effectPoint>
+		<hitTime>1000</hitTime>
+		<magicLevel>81</magicLevel>
+		<mpConsume>36</mpConsume>
+		<reuseDelay>900000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="runSpd">20</add>
+				<add stat="rEvas">15</add>
+				<mul stat="blowRate">1.3</mul>
+				<sub stat="cancelVuln">90</sub>
+				<add stat="pSkillEvas">40</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="769" levels="1" name="Wind Riding">
+		<!-- Storms the battlefield riding the Wind. For 30 seconds, increases Speed by 50, Evasion by 20, vital point attack rate by 20%, physical skill Evasion Rate by 75%, and Resistance to buff canceling attacks by 80. -->
+		<icon>icon.skill0769</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>2</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>AVOID_UP_SPECIAL</abnormalType>
+		<abnormalVisualEffect>ULTIMATE_DEFENCE</abnormalVisualEffect>
+		<effectPoint>679</effectPoint>
+		<hitTime>1000</hitTime>
+		<magicLevel>81</magicLevel>
+		<mpConsume>36</mpConsume>
+		<reuseDelay>900000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="runSpd">50</add>
+				<add stat="rEvas">20</add>
+				<mul stat="blowRate">1.2</mul>
+				<sub stat="cancelVuln">80</sub>
+				<add stat="pSkillEvas">75</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="770" levels="1" name="Ghost Walking">
+		<!-- Infiltrates the battlefield like a ghost. For 30 seconds, increases Speed by 33, Evasion by 15, vital point attack rate by 40%, physical skill Evasion Rate by 60%, and Resistance to buff canceling attacks by 90. -->
+		<icon>icon.skill0770</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>2</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>AVOID_UP_SPECIAL</abnormalType>
+		<abnormalVisualEffect>ULTIMATE_DEFENCE</abnormalVisualEffect>
+		<effectPoint>679</effectPoint>
+		<hitTime>1000</hitTime>
+		<magicLevel>81</magicLevel>
+		<mpConsume>36</mpConsume>
+		<reuseDelay>900000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="runSpd">33</add>
+				<add stat="rEvas">15</add>
+				<mul stat="blowRate">1.4</mul>
+				<sub stat="cancelVuln">90</sub>
+				<add stat="pSkillEvas">60</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="771" levels="1" name="Flame Hawk">
+		<!-- Shoots an arrow filled with the energy of the phoenix to attack the enemies with 8049 Power added to P. Atk. For 10 seconds, inflicts 300 fire damage every second. Requires a bow. Over-hit and Critical are possible. -->
+		<icon>icon.skill0771</icon>
+		<operateType>A1</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<affectLimit>5-12</affectLimit>
+		<affectRange>900</affectRange>
+		<baseCritRate>15</baseCritRate>
+		<castRange>900</castRange>
+		<coolTime>1000</coolTime>
+		<effectPoint>-686</effectPoint>
+		<effectRange>1400</effectRange>
+		<fanRange>0,0,900,40</fanRange>
+		<hitTime>3500</hitTime>
+		<magicLevel>83</magicLevel>
+		<mpConsume>160</mpConsume>
+		<overHit>true</overHit>
+		<power>8049</power>
+		<reuseDelay>75000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<using kind="BOW" />
+		</conditions>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="CallSkill">
+				<skillId>23298</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="772" levels="1" name="Arrow Rain">
+		<!-- Causes arrows to rain down from the sky to attack near the enemy with 7043 Power added to P. Atk. For 10 seconds, inflicts 300 wind damage every second. Requires a bow. Over-hit and Critical are possible. -->
+		<icon>icon.skill0772</icon>
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectLimit>5-12</affectLimit>
+		<affectRange>200</affectRange>
+		<baseCritRate>15</baseCritRate>
+		<castRange>600</castRange>
+		<coolTime>1000</coolTime>
+		<effectPoint>-686</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>4000</hitTime>
+		<magicLevel>83</magicLevel>
+		<mpConsume>160</mpConsume>
+		<overHit>true</overHit>
+		<power>7043</power>
+		<reuseDelay>75000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<using kind="BOW" />
+		</conditions>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="CallSkill">
+				<skillId>23299</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="773" levels="1" name="Ghost Piercing">
+		<!-- Shoots an arrow mixed with the energy of a ghost to attack the enemies in front with 8452 Power added to P. Atk. For 10 seconds, inflicts 300 dark damage every second. Requires a bow. Over-hit and Critical are possible. -->
+		<icon>icon.skill0773</icon>
+		<operateType>A1</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<affectLimit>5-12</affectLimit>
+		<affectRange>900</affectRange>
+		<baseCritRate>15</baseCritRate>
+		<castRange>900</castRange>
+		<coolTime>1000</coolTime>
+		<effectPoint>-686</effectPoint>
+		<effectRange>1400</effectRange>
+		<fanRange>0,0,900,100</fanRange>
+		<hitTime>3000</hitTime>
+		<magicLevel>83</magicLevel>
+		<mpConsume>160</mpConsume>
+		<overHit>true</overHit>
+		<power>8452</power>
+		<reuseDelay>75000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<using kind="BOW" />
+		</conditions>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="CallSkill">
+				<skillId>23300</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="774" levels="1" name="Dread Pool">
+		<!-- Fear spreads around the area. Decreases nearby enemies's Speed by 33%, P. Def. by 33%, and Evasion by 10. Inflicts fear and causes them to flee for 8 seconds. -->
+		<icon>icon.skill0774</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>8</abnormalTime>
+		<abnormalType>TURN_FLEE</abnormalType>
+		<abnormalVisualEffect>TURN_FLEE</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<affectLimit>10-10</affectLimit>
+		<affectRange>200</affectRange>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>-655</effectPoint>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>81</magicLevel>
+		<mpConsume>87</mpConsume>
+		<reuseDelay>75000</reuseDelay>
+		<trait>DERANGEMENT</trait>
+		<effects>
+			<effect name="Fear">
+				<mul stat="runSpd">0.67</mul>
+				<mul stat="pDef">0.67</mul>
+				<sub stat="rEvas">10</sub>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="775" levels="1" name="Weapon Blockade">
+		<!-- Cancels the opponent's weapon with a dazzling movement for 5 seconds. Need to recharge 2nd stage of Sword Energy. Requires a dualsword. -->
+		<icon>icon.skill0775</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>5</abnormalTime>
+		<abnormalType>DISARM</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>70</activateRate>
+		<basicProperty>STR</basicProperty>
+		<castRange>40</castRange>
+		<chargeConsume>2</chargeConsume>
+		<effectPoint>-679</effectPoint>
+		<effectRange>200</effectRange>
+		<hitTime>1500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>81</magicLevel>
+		<mpConsume>58</mpConsume>
+		<reuseDelay>15000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<and>
+				<using kind="DUAL" />
+				<player Charges="2" /> <!-- Need to recharge 2nd stage of Sword Energy. -->
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Disarm">
+				<mul stat="pAtk">0.6</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="776" levels="1" name="Force of Destruction">
+		<!-- Attacks the enemy with 4500 Power added to P. Atk. and penetrates the target with destructive energy. Chi Energy Stage 2 Recharge needed. Requires a hand-to-hand combat weapon. Over-hit and Critical are possible. -->
+		<icon>icon.skill0776</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>10</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>FORCE_OF_DESTRUCTION</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<baseCritRate>20</baseCritRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<chargeConsume>2</chargeConsume>
+		<effectPoint>-679</effectPoint>
+		<effectRange>200</effectRange>
+		<hitTime>1200</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>81</magicLevel>
+		<mpConsume>37</mpConsume>
+		<overHit>true</overHit>
+		<reuseDelay>15000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<and>
+				<using kind="DUALFIST" />
+				<player Charges="2" /> <!-- Chi Energy Stage 2 Recharge needed. -->
+			</and>
+		</conditions>
+		<effects>
+			<effect name="EnergyDamage">
+				<power>4500</power>
+				<criticalChance>20</criticalChance>
+			</effect>
+			<effect name="DamOverTime" ticks="1">
+				<power>80</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="777" levels="1" name="Demolition Impact">
+		<!-- Unleashes a shock of destruction to attack nearby enemies with 7475 Power added to P. Atk. Requires a two-handed sword/ blunt weapon. Over-hit and Critical are possible. -->
+		<icon>icon.skill0777</icon>
+		<operateType>A1</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<affectRange>500</affectRange>
+		<baseCritRate>15</baseCritRate>
+		<castRange>150</castRange>
+		<effectPoint>-686</effectPoint>
+		<effectRange>650</effectRange>
+		<fanRange>0,0,500,60</fanRange>
+		<hitTime>1200</hitTime>
+		<magicLevel>81</magicLevel>
+		<mpConsume>160</mpConsume>
+		<overHit>true</overHit>
+		<power>7475</power>
+		<reuseDelay>75000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<and>
+				<using kind="SWORD,BLUNT" />
+				<using slot="lrhand" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="778" levels="1" name="Golem Armor">
+		<!-- Transforms into a Golem with increased battle abilities. -->
+		<icon>icon.skill0778</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>-1</magicLevel>
+		<mpConsume>44</mpConsume>
+		<reuseDelay>3600000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>259</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="779" levels="1" name="Summon Smart Cubic">
+		<!-- Summons Smart Cubic. Cancels all the bad abnormal conditions which were cast on the master, and uses useful skills additionally. Consumes 38 Spirit Ore when summoning. -->
+		<icon>icon.skill0779</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>6000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>38</itemConsumeCount>
+		<itemConsumeId>3031</itemConsumeId> <!-- Spirit Ore -->
+		<magicLevel>80</magicLevel>
+		<mpConsume>59</mpConsume>
+		<mpInitialConsume>14</mpInitialConsume>
+		<reuseDelay>5000</reuseDelay>
+		<effects>
+			<effect name="SummonCubic">
+				<cubicId>10</cubicId>
+				<cubicDelay>10</cubicDelay>
+				<cubicDuration>900</cubicDuration>
+				<cubicMaxCount>50</cubicMaxCount>
+				<cubicSkillChance>30</cubicSkillChance>
+				<cubicPower>2106</cubicPower>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="780" levels="1" name="Summon Smart Cubic">
+		<!-- Summons Smart Cubic. Cancels all the bad abnormal conditions which were cast on the master, and uses useful skills additionally. Consumes 38 Spirit Ore when summoning. -->
+		<icon>icon.skill0779</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>6000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>38</itemConsumeCount>
+		<itemConsumeId>3031</itemConsumeId> <!-- Spirit Ore -->
+		<magicLevel>80</magicLevel>
+		<mpConsume>59</mpConsume>
+		<mpInitialConsume>14</mpInitialConsume>
+		<reuseDelay>5000</reuseDelay>
+		<effects>
+			<effect name="SummonCubic">
+				<cubicId>11</cubicId>
+				<cubicDelay>10</cubicDelay>
+				<cubicDuration>900</cubicDuration>
+				<cubicMaxCount>50</cubicMaxCount>
+				<cubicSkillChance>30</cubicSkillChance>
+				<cubicPower>2106</cubicPower>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="781" levels="1" name="Summon Smart Cubic">
+		<!-- Summons Smart Cubic. Cancels all the bad abnormal conditions which were cast on the master, and uses useful skills additionally. Consumes 38 Spirit Ore when summoning. -->
+		<icon>icon.skill0779</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>6000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>38</itemConsumeCount>
+		<itemConsumeId>3031</itemConsumeId> <!-- Spirit Ore -->
+		<magicLevel>80</magicLevel>
+		<mpConsume>59</mpConsume>
+		<mpInitialConsume>14</mpInitialConsume>
+		<reuseDelay>5000</reuseDelay>
+		<effects>
+			<effect name="SummonCubic">
+				<cubicId>12</cubicId>
+				<cubicDelay>10</cubicDelay>
+				<cubicDuration>900</cubicDuration>
+				<cubicMaxCount>50</cubicMaxCount>
+				<cubicSkillChance>30</cubicSkillChance>
+				<cubicPower>2106</cubicPower>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="782" levels="1" name="Summon Smart Cubic">
+		<!-- Summons Smart Cubic. Cancels all the bad abnormal conditions which were cast on the master, and uses useful skills additionally. Consumes 38 Spirit Ore when summoning. -->
+		<icon>icon.skill0779</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>6000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>38</itemConsumeCount>
+		<itemConsumeId>3031</itemConsumeId> <!-- Spirit Ore -->
+		<magicLevel>80</magicLevel>
+		<mpConsume>59</mpConsume>
+		<mpInitialConsume>14</mpInitialConsume>
+		<reuseDelay>5000</reuseDelay>
+		<effects>
+			<effect name="SummonCubic">
+				<cubicId>13</cubicId>
+				<cubicDelay>10</cubicDelay>
+				<cubicDuration>900</cubicDuration>
+				<cubicMaxCount>50</cubicMaxCount>
+				<cubicSkillChance>30</cubicSkillChance>
+				<cubicPower>2106</cubicPower>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="783" levels="1" name="Summon Smart Cubic">
+		<!-- Summons Smart Cubic. Cancels all the bad abnormal conditions which were cast on the master, and uses useful skills additionally. Consumes 38 Spirit Ore when summoning. -->
+		<icon>icon.skill0779</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>6000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>38</itemConsumeCount>
+		<itemConsumeId>3031</itemConsumeId> <!-- Spirit Ore -->
+		<magicLevel>80</magicLevel>
+		<mpConsume>59</mpConsume>
+		<mpInitialConsume>14</mpInitialConsume>
+		<reuseDelay>5000</reuseDelay>
+		<effects>
+			<effect name="SummonCubic">
+				<cubicId>14</cubicId>
+				<cubicDelay>10</cubicDelay>
+				<cubicDuration>900</cubicDuration>
+				<cubicMaxCount>50</cubicMaxCount>
+				<cubicSkillChance>30</cubicSkillChance>
+				<cubicPower>2106</cubicPower>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="784" levels="1" name="Spirit of Phoenix">
+		<!-- Share Phoenix's spirit and yours. There is a chance that the Spirit of Phoenix will expand when being attacked. Additional effects appear as it expands. -->
+		<icon>icon.skill0784</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>SEED_OF_KNIGHT</abnormalType>
+		<effectPoint>138</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>81</magicLevel>
+		<mpConsume>29</mpConsume>
+		<mpInitialConsume>8</mpInitialConsume>
+		<reuseDelay>15000</reuseDelay>
+		<effects>
+			<effect name="TriggerSkillByDamageReceived">
+				<attackerType>Creature</attackerType>
+				<minAttackerLevel>1</minAttackerLevel>
+				<maxAttackerLevel>99</maxAttackerLevel>
+				<minDamage>1</minDamage>
+				<chance>20</chance>
+				<skillId>5562</skillId>
+				<skillLevel>1</skillLevel> <!-- Spirit of Phoenix -->
+				<targetType>SELF</targetType>
+				<add stat="pDef">200</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="785" levels="1" name="Flame Icon">
+		<!-- Receives the will of the phoenix to drastically increase the fighting ability of party members. For 1 minute, increases Resistance to de-buff attacks by 40%, P. Def. by 50%, M. Def. by 50%, Atk. Spd. by 30%, Accuracy by 6, Speed by 30, and Resistance to buff canceling attacks by 40%. Decreases the effectiveness of received recovery magic by 80%. When a sword is equipped, increases Critical Rate by 100. When a blunt is equipped, increases Critical Damage by 100%. -->
+		<icon>icon.skill0785</icon>
+		<operateType>A2</operateType>
+		<targetType>PARTY</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>POSSESSION_SPECIAL</abnormalType>
+		<affectRange>1000</affectRange>
+		<effectPoint>835</effectPoint>
+		<hitTime>1800</hitTime>
+		<hpConsume>1253</hpConsume>
+		<magicLevel>81</magicLevel>
+		<reuseDelay>150000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<player active_effect_id_lvl="5562,3" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<sub stat="debuffVuln">40</sub>
+				<mul stat="pDef">1.5</mul>
+				<mul stat="mDef">1.5</mul>
+				<add stat="accCombat">6</add>
+				<add stat="runSpd">30</add>
+				<mul stat="pAtkSpd">1.3</mul>
+				<add stat="critRate">
+					<value>100</value>
+					<using kind="SWORD" />
+				</add>
+				<mul stat="critDmg">
+					<value>2</value>
+					<using kind="BLUNT" />
+				</mul>
+				<sub stat="cancelVuln">40</sub>
+				<mul stat="healEffect">0.2</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="786" levels="1" name="Eva's Will">
+		<!-- Show Will of Eva through yourself. There is a chance that the Will of Eva will expand when being attacked. Additional effects appear with growth. -->
+		<icon>icon.skill0786</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>SEED_OF_KNIGHT</abnormalType>
+		<effectPoint>138</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>81</magicLevel>
+		<mpConsume>29</mpConsume>
+		<mpInitialConsume>8</mpInitialConsume>
+		<reuseDelay>15000</reuseDelay>
+		<effects>
+			<effect name="TriggerSkillByDamageReceived">
+				<attackerType>Creature</attackerType>
+				<minAttackerLevel>1</minAttackerLevel>
+				<maxAttackerLevel>99</maxAttackerLevel>
+				<minDamage>1</minDamage>
+				<chance>20</chance>
+				<skillId>5563</skillId>
+				<skillLevel>1</skillLevel> <!-- Eva's Will -->
+				<targetType>SELF</targetType>
+				<add stat="mDef">200</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="787" levels="1" name="Touch of Eva">
+		<!-- Restores HP of party members by 50%. For 1 minute, increases Resistance to buff cancel attacks by 100% and the power of received HP recovery magic by 30%. Restores 50 HP every second. -->
+		<icon>icon.skill0787</icon>
+		<operateType>A2</operateType>
+		<targetType>PARTY</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>TOUCH_OF_LIFE</abnormalType>
+		<affectRange>1000</affectRange>
+		<castRange>40</castRange>
+		<effectPoint>835</effectPoint>
+		<effectRange>400</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>1800</hitTime>
+		<hpConsume>1253</hpConsume>
+		<magicLevel>81</magicLevel>
+		<reuseDelay>150000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<player active_effect_id_lvl="5563,3" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<sub stat="cancelVuln">100</sub>
+				<sub stat="debuffVuln">30</sub>
+				<mul stat="healEffect">1.3</mul>
+			</effect>
+			<effect name="HealOverTime" ticks="5">
+				<power>50</power>
+			</effect>
+			<effect name="HealPercent">
+				<power>50</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="788" levels="1" name="Pain of Shilen">
+		<!-- Shilen's pain becomes your own. Shilen's suffering wracks your body, having a chance to increase when you are being attacked. Additional effects appear with each increase. When level 3 is achieved, you can then use the Spirit of Shilen. -->
+		<icon>icon.skill0788</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>SEED_OF_KNIGHT</abnormalType>
+		<effectPoint>138</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>81</magicLevel>
+		<mpConsume>29</mpConsume>
+		<mpInitialConsume>8</mpInitialConsume>
+		<reuseDelay>15000</reuseDelay>
+		<effects>
+			<effect name="TriggerSkillByDamageReceived">
+				<attackerType>Creature</attackerType>
+				<minAttackerLevel>1</minAttackerLevel>
+				<maxAttackerLevel>99</maxAttackerLevel>
+				<minDamage>1</minDamage>
+				<chance>20</chance>
+				<skillId>5564</skillId>
+				<skillLevel>1</skillLevel> <!-- Pain of Shillien -->
+				<targetType>SELF</targetType>
+				<mul stat="critDmg">1.1</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="789" levels="1" name="Spirit of Shilen">
+		<!-- Receives the will of Shilen to drastically increase the fighting ability of party members. For 1 minute, increases P. Atk. by 30%, Speed by 30, Atk. Spd. by 30%, Critical Rate when a sword is equipped by 100, and Critical Damage when a blunt weapon is equipped by 100%. Recovers as HP 40% of standard melee damage inflicted on the enemy. Decreases the power of received HP recovery magic by 80%. -->
+		<icon>icon.skill0789</icon>
+		<operateType>A2</operateType>
+		<targetType>PARTY</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>POSSESSION_SPECIAL</abnormalType>
+		<affectRange>1000</affectRange>
+		<effectPoint>835</effectPoint>
+		<hitTime>1800</hitTime>
+		<hpConsume>1253</hpConsume>
+		<magicLevel>81</magicLevel>
+		<reuseDelay>150000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<player active_effect_id_lvl="5564,3" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtk">1.3</mul>
+				<mul stat="mAtk">1.3</mul>
+				<add stat="runSpd">30</add>
+				<mul stat="pAtkSpd">1.3</mul>
+				<add stat="critRate">
+					<value>100</value>
+					<using kind="SWORD" />
+				</add>
+				<mul stat="critDmg">
+					<value>2</value>
+					<using kind="BLUNT" />
+				</mul>
+				<add stat="absorbDam">40</add> <!-- Recovers as HP 40% of general close rate physical damage inflicted on the enemy -->
+				<mul stat="healEffect">0.2</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="790" levels="1" name="Wild Shot">
+		<!-- Fires bolt at random to attack enemies in front with 7475 Power added to P. Atk. Requires a crossbow. Over-hit and Critical are possible. Increases Power upon the consumption of up to 5 souls. -->
+		<icon>icon.skill0790</icon>
+		<operateType>A1</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<affectLimit>5-12</affectLimit>
+		<affectRange>900</affectRange>
+		<baseCritRate>15</baseCritRate>
+		<castRange>900</castRange>
+		<coolTime>1000</coolTime>
+		<effectPoint>-1</effectPoint>
+		<effectRange>1400</effectRange>
+		<fanRange>0,0,900,40</fanRange>
+		<hitTime>3500</hitTime>
+		<magicLevel>81</magicLevel>
+		<mpConsume>120</mpConsume>
+		<overHit>true</overHit>
+		<power>7475</power>
+		<reuseDelay>75000</reuseDelay>
+		<soulMaxConsumeCount>5</soulMaxConsumeCount>
+		<conditions msgId="113" addName="1">
+			<using kind="CROSSBOW" />
+		</conditions>
+		<effects>
+			<effect name="PhysicalSoulDamage" />
+		</effects>
+	</skill>
+	<skill id="791" levels="1" name="Lightning Shock">
+		<!-- Sends an electric current to attack nearby enemies with 69 Power added to M. Atk. Makes the enemy's body rigid for 5 seconds, then paralyzed for 5 seconds. Increases Power upon the consumption of up to 5 souls. -->
+		<icon>icon.skill0791</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalTime>5</abnormalTime>
+		<activateRate>50</activateRate>
+		<affectLimit>6-12</affectLimit>
+		<affectRange>150</affectRange>
+		<basicProperty>MEN</basicProperty>
+		<coolTime>720</coolTime>
+		<effectPoint>-1</effectPoint>
+		<hitTime>1080</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>81</magicLevel>
+		<mpConsume>52</mpConsume>
+		<power>69</power>
+		<reuseDelay>5000</reuseDelay>
+		<soulMaxConsumeCount>5</soulMaxConsumeCount>
+		<effects>
+			<effect name="MagicalSoulDamage" />
+			<effect name="Debuff">
+				<mul stat="pAtkSpd">0.5</mul>
+				<mul stat="runSpd">0.5</mul>
+				<mul stat="mAtkSpd">0.5</mul>
+			</effect>
+		</effects>
+		<endEffects>
+			<effect name="CallSkill">
+				<skillId>6092</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</endEffects>
+	</skill>
+	<skill id="792" levels="1" name="Betrayal Mark">
+		<!-- Stamps the Mark of Betrayal on the enemy. When attacking the enemy that has the mark, inflicts damage to the enemy's party with a fixed rate. -->
+		<icon>icon.skill0792</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>BETRAYAL_MARK</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<activateRate>70</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>600</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>1200</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>78</magicLevel>
+		<mpConsume>29</mpConsume>
+		<mpInitialConsume>8</mpInitialConsume>
+		<reuseDelay>11000</reuseDelay>
+		<effects>
+			<effect name="TriggerSkillByDamageReceived">
+				<attackerType>Creature</attackerType>
+				<minAttackerLevel>1</minAttackerLevel>
+				<maxAttackerLevel>99</maxAttackerLevel>
+				<minDamage>1</minDamage>
+				<chance>10</chance>
+				<skillId>5600</skillId>
+				<skillLevel>1</skillLevel> <!-- Betrayal Mark -->
+				<targetType>PARTY</targetType>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="793" levels="1" name="Rush Impact" enchantGroup1="6" enchantGroup2="6" enchantGroup3="6" enchantGroup4="6" enchantGroup5="6" enchantGroup6="6" enchantGroup7="6" enchantGroup8="6">
+		<!-- Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. -->
+		<!-- Level 101 (+1 Power): Rushes forward to attack the enemies in front with 4071 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Power: Increases Power. -->
+		<!-- Level 102 (+2 Power): Rushes forward to attack the enemies in front with 4102 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Power: Increases Power. -->
+		<!-- Level 103 (+3 Power): Rushes forward to attack the enemies in front with 4133 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Power: Increases Power. -->
+		<!-- Level 104 (+4 Power): Rushes forward to attack the enemies in front with 4164 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Power: Increases Power. -->
+		<!-- Level 105 (+5 Power): Rushes forward to attack the enemies in front with 4195 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Power: Increases Power. -->
+		<!-- Level 106 (+6 Power): Rushes forward to attack the enemies in front with 4226 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Power: Increases Power. -->
+		<!-- Level 107 (+7 Power): Rushes forward to attack the enemies in front with 4257 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Power: Increases Power. -->
+		<!-- Level 108 (+8 Power): Rushes forward to attack the enemies in front with 4289 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Power: Increases Power. -->
+		<!-- Level 109 (+9 Power): Rushes forward to attack the enemies in front with 4320 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Power: Increases Power. -->
+		<!-- Level 110 (+10 Power): Rushes forward to attack the enemies in front with 4351 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Power: Increases Power. -->
+		<!-- Level 111 (+11 Power): Rushes forward to attack the enemies in front with 4382 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Power: Increases Power. -->
+		<!-- Level 112 (+12 Power): Rushes forward to attack the enemies in front with 4413 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Power: Increases Power. -->
+		<!-- Level 113 (+13 Power): Rushes forward to attack the enemies in front with 4444 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Power: Increases Power. -->
+		<!-- Level 114 (+14 Power): Rushes forward to attack the enemies in front with 4475 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Power: Increases Power. -->
+		<!-- Level 115 (+15 Power): Rushes forward to attack the enemies in front with 4507 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Power: Increases Power. -->
+		<!-- Level 201 (+1 Cost): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Cost: MP consumption is increased. -->
+		<!-- Level 202 (+2 Cost): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Cost: MP consumption is increased. -->
+		<!-- Level 203 (+3 Cost): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Cost: MP consumption is increased. -->
+		<!-- Level 204 (+4 Cost): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Cost: MP consumption is increased. -->
+		<!-- Level 205 (+5 Cost): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Cost: MP consumption is increased. -->
+		<!-- Level 206 (+6 Cost): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Cost: MP consumption is increased. -->
+		<!-- Level 207 (+7 Cost): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Cost: MP consumption is increased. -->
+		<!-- Level 208 (+8 Cost): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Cost: MP consumption is increased. -->
+		<!-- Level 209 (+9 Cost): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Cost: MP consumption is increased. -->
+		<!-- Level 210 (+10 Cost): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Cost: MP consumption is increased. -->
+		<!-- Level 211 (+11 Cost): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Cost: MP consumption is increased. -->
+		<!-- Level 212 (+12 Cost): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Cost: MP consumption is increased. -->
+		<!-- Level 213 (+13 Cost): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Cost: MP consumption is increased. -->
+		<!-- Level 214 (+14 Cost): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Cost: MP consumption is increased. -->
+		<!-- Level 215 (+15 Cost): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Cost: MP consumption is increased. -->
+		<!-- Level 301 (+1 Chance): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant chance: Increases the success rate. -->
+		<!-- Level 302 (+2 Chance): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant chance: Increases the success rate. -->
+		<!-- Level 303 (+3 Chance): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant chance: Increases the success rate. -->
+		<!-- Level 304 (+4 Chance): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant chance: Increases the success rate. -->
+		<!-- Level 305 (+5 Chance): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant chance: Increases the success rate. -->
+		<!-- Level 306 (+6 Chance): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant chance: Increases the success rate. -->
+		<!-- Level 307 (+7 Chance): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant chance: Increases the success rate. -->
+		<!-- Level 308 (+8 Chance): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant chance: Increases the success rate. -->
+		<!-- Level 309 (+9 Chance): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant chance: Increases the success rate. -->
+		<!-- Level 310 (+10 Chance): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant chance: Increases the success rate. -->
+		<!-- Level 311 (+11 Chance): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant chance: Increases the success rate. -->
+		<!-- Level 312 (+12 Chance): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant chance: Increases the success rate. -->
+		<!-- Level 313 (+13 Chance): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant chance: Increases the success rate. -->
+		<!-- Level 314 (+14 Chance): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant chance: Increases the success rate. -->
+		<!-- Level 315 (+15 Chance): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant chance: Increases the success rate. -->
+		<!-- Level 401 (+1 Fire Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Fire Attack: Bestows Fire attribute by 4. -->
+		<!-- Level 402 (+2 Fire Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Fire Attack: Bestows Fire attribute by 7. -->
+		<!-- Level 403 (+3 Fire Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Fire Attack: Bestows Fire attribute by 10. -->
+		<!-- Level 404 (+4 Fire Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Fire Attack: Bestows Fire attribute by 14. -->
+		<!-- Level 405 (+5 Fire Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Fire Attack: Bestows Fire attribute by 17. -->
+		<!-- Level 406 (+6 Fire Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Fire Attack: Bestows Fire attribute by 20. -->
+		<!-- Level 407 (+7 Fire Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Fire Attack: Bestows Fire attribute by 24. -->
+		<!-- Level 408 (+8 Fire Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Fire Attack: Bestows Fire attribute by 27. -->
+		<!-- Level 409 (+9 Fire Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Fire Attack: Bestows Fire attribute by 30. -->
+		<!-- Level 410 (+10 Fire Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Fire Attack: Bestows Fire attribute by 34. -->
+		<!-- Level 411 (+11 Fire Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Fire Attack: Bestows Fire attribute by 37. -->
+		<!-- Level 412 (+12 Fire Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Fire Attack: Bestows Fire attribute by 40. -->
+		<!-- Level 413 (+13 Fire Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Fire Attack: Bestows Fire attribute by 43. -->
+		<!-- Level 414 (+14 Fire Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Fire Attack: Bestows Fire attribute by 47. -->
+		<!-- Level 415 (+15 Fire Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Fire Attack: Bestows Fire attribute by 50. -->
+		<!-- Level 501 (+1 Water Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Water Attack: Bestows Water attribute by 4. -->
+		<!-- Level 502 (+2 Water Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Water Attack: Bestows Water attribute by 7. -->
+		<!-- Level 503 (+3 Water Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Water Attack: Bestows Water attribute by 10. -->
+		<!-- Level 504 (+4 Water Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Water Attack: Bestows Water attribute by 14. -->
+		<!-- Level 505 (+5 Water Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Water Attack: Bestows Water attribute by 17. -->
+		<!-- Level 506 (+6 Water Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Water Attack: Bestows Water attribute by 20. -->
+		<!-- Level 507 (+7 Water Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Water Attack: Bestows Water attribute by 24. -->
+		<!-- Level 508 (+8 Water Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Water Attack: Bestows Water attribute by 27. -->
+		<!-- Level 509 (+9 Water Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Water Attack: Bestows Water attribute by 30. -->
+		<!-- Level 510 (+10 Water Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Water Attack: Bestows Water attribute by 34. -->
+		<!-- Level 511 (+11 Water Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Water Attack: Bestows Water attribute by 37. -->
+		<!-- Level 512 (+12 Water Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Water Attack: Bestows Water attribute by 40. -->
+		<!-- Level 513 (+13 Water Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Water Attack: Bestows Water attribute by 43. -->
+		<!-- Level 514 (+14 Water Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Water Attack: Bestows Water attribute by 47. -->
+		<!-- Level 515 (+15 Water Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Water Attack: Bestows Water attribute by 50. -->
+		<!-- Level 601 (+1 Wind Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Wind Attack: Bestowed Wind attribute by 4. -->
+		<!-- Level 602 (+2 Wind Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Wind Attack: Bestowed Wind attribute by 7. -->
+		<!-- Level 603 (+3 Wind Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Wind Attack: Bestowed Wind attribute by 10. -->
+		<!-- Level 604 (+4 Wind Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Wind Attack: Bestowed Wind attribute by 14. -->
+		<!-- Level 605 (+5 Wind Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Wind Attack: Bestowed Wind attribute by 17. -->
+		<!-- Level 606 (+6 Wind Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Wind Attack: Bestowed Wind attribute by 20. -->
+		<!-- Level 607 (+7 Wind Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Wind Attack: Bestowed Wind attribute by 24. -->
+		<!-- Level 608 (+8 Wind Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Wind Attack: Bestowed Wind attribute by 27. -->
+		<!-- Level 609 (+9 Wind Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Wind Attack: Bestowed Wind attribute by 30. -->
+		<!-- Level 610 (+10 Wind Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Wind Attack: Bestowed Wind attribute by 34. -->
+		<!-- Level 611 (+11 Wind Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Wind Attack: Bestowed Wind attribute by 37. -->
+		<!-- Level 612 (+12 Wind Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Wind Attack: Bestowed Wind attribute by 40. -->
+		<!-- Level 613 (+13 Wind Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Wind Attack: Bestowed Wind attribute by 43. -->
+		<!-- Level 614 (+14 Wind Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Wind Attack: Bestowed Wind attribute by 47. -->
+		<!-- Level 615 (+15 Wind Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Wind Attack: Bestowed Wind attribute by 50. -->
+		<!-- Level 701 (+1 Earth Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Earth Attack: Bestowed Earth attribute by 4. -->
+		<!-- Level 702 (+2 Earth Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Earth Attack: Bestowed Earth attribute by 7. -->
+		<!-- Level 703 (+3 Earth Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Earth Attack: Bestowed Earth attribute by 10. -->
+		<!-- Level 704 (+4 Earth Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Earth Attack: Bestowed Earth attribute by 14. -->
+		<!-- Level 705 (+5 Earth Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Earth Attack: Bestowed Earth attribute by 17. -->
+		<!-- Level 706 (+6 Earth Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Earth Attack: Bestowed Earth attribute by 20. -->
+		<!-- Level 707 (+7 Earth Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Earth Attack: Bestowed Earth attribute by 24. -->
+		<!-- Level 708 (+8 Earth Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Earth Attack: Bestowed Earth attribute by 27. -->
+		<!-- Level 709 (+9 Earth Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Earth Attack: Bestowed Earth attribute by 30. -->
+		<!-- Level 710 (+10 Earth Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Earth Attack: Bestowed Earth attribute by 34. -->
+		<!-- Level 711 (+11 Earth Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Earth Attack: Bestowed Earth attribute by 37. -->
+		<!-- Level 712 (+12 Earth Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Earth Attack: Bestowed Earth attribute by 40. -->
+		<!-- Level 713 (+13 Earth Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Earth Attack: Bestowed Earth attribute by 43. -->
+		<!-- Level 714 (+14 Earth Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Earth Attack: Bestowed Earth attribute by 47. -->
+		<!-- Level 715 (+15 Earth Attack): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant Earth Attack: Bestowed Earth attribute by 50. -->
+		<!-- Level 801 (+1 Duel): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant duel: Attacks with 4104 Power during PvP. -->
+		<!-- Level 802 (+2 Duel): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant duel: Attacks with 4168 Power during PvP. -->
+		<!-- Level 803 (+3 Duel): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant duel: Attacks with 4232 Power during PvP. -->
+		<!-- Level 804 (+4 Duel): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant duel: Attacks with 4297 Power during PvP. -->
+		<!-- Level 805 (+5 Duel): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant duel: Attacks with 4361 Power during PvP. -->
+		<!-- Level 806 (+6 Duel): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant duel: Attacks with 4425 Power during PvP. -->
+		<!-- Level 807 (+7 Duel): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant duel: Attacks with 4490 Power during PvP. -->
+		<!-- Level 808 (+8 Duel): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant duel: Attacks with 4554 Power during PvP. -->
+		<!-- Level 809 (+9 Duel): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant duel: Attacks with 4618 Power during PvP. -->
+		<!-- Level 810 (+10 Duel): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant duel: Attacks with 4683 Power during PvP. -->
+		<!-- Level 811 (+11 Duel): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant duel: Attacks with 4747 Power during PvP. -->
+		<!-- Level 812 (+12 Duel): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant duel: Attacks with 4811 Power during PvP. -->
+		<!-- Level 813 (+13 Duel): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant duel: Attacks with 4875 Power during PvP. -->
+		<!-- Level 814 (+14 Duel): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant duel: Attacks with 4940 Power during PvP. -->
+		<!-- Level 815 (+15 Duel): Rushes forward to attack the enemies in front with 4040 Power added to P. Atk. and inflicts Shock for 9 seconds. Requires an Ancient Sword weapon to be equipped. Increases Power upon the consumption of up to 5 souls. Enchant duel: Attacks with 5004 Power during PvP. -->
+		<table name="#ench1Power">4071 4102 4133 4164 4195 4226 4257 4289 4320 4351 4382 4413 4444 4475 4507</table>
+		<table name="#ench2Cost">80 78 76 74 72 70 68 66 64 62 59 57 55 53 51</table>
+		<table name="#ench3ActivateRates">61 62 64 65 66 68 69 70 72 73 74 76 77 78 80</table>
+		<table name="#ench8Duel">4104 4168 4232 4297 4361 4425 4490 4554 4618 4683 4747 4811 4875 4940 5004</table>
+		<table name="#enchElementAttack">4 7 10 14 17 20 24 27 30 34 37 40 43 47 50</table>
+		<table name="#enchMagicLvl">81 81 81 82 82 82 83 83 83 84 84 84 85 85 85</table>
+		<icon>icon.skill0793</icon>
+		<operateType>DA2</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>9</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>60</activateRate>
+		<affectLimit>5-12</affectLimit>
+		<affectRange>600</affectRange>
+		<basicProperty>CON</basicProperty>
+		<castRange>600</castRange>
+		<coolTime>200</coolTime>
+		<effectPoint>-669</effectPoint>
+		<effectRange>800</effectRange>
+		<fanRange>0,0,600,60</fanRange>
+		<flyType>CHARGE</flyType>
+		<hitTime>800</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>78</magicLevel>
+		<mpInitialConsume>83</mpInitialConsume>
+		<nextActionAttack>true</nextActionAttack>
+		<power>4040</power>
+		<soulMaxConsumeCount>5</soulMaxConsumeCount>
+		<trait>SHOCK</trait>
+		<enchant1 name="magicLevel">#enchMagicLvl</enchant1>
+		<enchant1 name="power">#ench1Power</enchant1>
+		<enchant2 name="magicLevel">#enchMagicLvl</enchant2>
+		<enchant2 name="mpInitialConsume">#ench2Cost</enchant2>
+		<enchant3 name="activateRate">#ench3ActivateRates</enchant3>
+		<enchant3 name="magicLevel">#enchMagicLvl</enchant3>
+		<enchant4 name="element">0</enchant4> <!-- Fire -->
+		<enchant4 name="elementPower">#enchElementAttack</enchant4>
+		<enchant4 name="magicLevel">#enchMagicLvl</enchant4>
+		<enchant5 name="element">1</enchant5> <!-- Water -->
+		<enchant5 name="elementPower">#enchElementAttack</enchant5>
+		<enchant5 name="magicLevel">#enchMagicLvl</enchant5>
+		<enchant6 name="element">2</enchant6> <!-- Wind -->
+		<enchant6 name="elementPower">#enchElementAttack</enchant6>
+		<enchant6 name="magicLevel">#enchMagicLvl</enchant6>
+		<enchant7 name="element">3</enchant7> <!-- Earth -->
+		<enchant7 name="elementPower">#enchElementAttack</enchant7>
+		<enchant7 name="magicLevel">#enchMagicLvl</enchant7>
+		<enchant8 name="magicLevel">#enchMagicLvl</enchant8>
+		<enchant8 name="pvpPower">#ench8Duel</enchant8>
+		<conditions msgId="113" addName="1">
+			<and>
+				<using kind="ANCIENTSWORD" />
+				<target mindistance="200" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="PhysicalSoulDamage" />
+			<effect name="Stun" />
+		</effects>
+		<enchant3effects>
+			<effect name="PhysicalSoulDamage" />
+			<effect name="Stun" />
+		</enchant3effects>
+	</skill>
+	<skill id="794" levels="1" name="Mass Disarm" enchantGroup1="6" enchantGroup2="6">
+		<!-- Disarms nearby enemies for 5 seconds. -->
+		<!-- Level 101 (+1 Chance): Disarms nearby enemies for 5 seconds. Enchant chance: Increases the success rate. -->
+		<!-- Level 102 (+2 Chance): Disarms nearby enemies for 5 seconds. Enchant chance: Increases the success rate. -->
+		<!-- Level 103 (+3 Chance): Disarms nearby enemies for 5 seconds. Enchant chance: Increases the success rate. -->
+		<!-- Level 104 (+4 Chance): Disarms nearby enemies for 5 seconds. Enchant chance: Increases the success rate. -->
+		<!-- Level 105 (+5 Chance): Disarms nearby enemies for 5 seconds. Enchant chance: Increases the success rate. -->
+		<!-- Level 106 (+6 Chance): Disarms nearby enemies for 5 seconds. Enchant chance: Increases the success rate. -->
+		<!-- Level 107 (+7 Chance): Disarms nearby enemies for 5 seconds. Enchant chance: Increases the success rate. -->
+		<!-- Level 108 (+8 Chance): Disarms nearby enemies for 5 seconds. Enchant chance: Increases the success rate. -->
+		<!-- Level 109 (+9 Chance): Disarms nearby enemies for 5 seconds. Enchant chance: Increases the success rate. -->
+		<!-- Level 110 (+10 Chance): Disarms nearby enemies for 5 seconds. Enchant chance: Increases the success rate. -->
+		<!-- Level 111 (+11 Chance): Disarms nearby enemies for 5 seconds. Enchant chance: Increases the success rate. -->
+		<!-- Level 112 (+12 Chance): Disarms nearby enemies for 5 seconds. Enchant chance: Increases the success rate. -->
+		<!-- Level 113 (+13 Chance): Disarms nearby enemies for 5 seconds. Enchant chance: Increases the success rate. -->
+		<!-- Level 114 (+14 Chance): Disarms nearby enemies for 5 seconds. Enchant chance: Increases the success rate. -->
+		<!-- Level 115 (+15 Chance): Disarms nearby enemies for 5 seconds. Enchant chance: Increases the success rate. -->
+		<!-- Level 201 (+1 Recycle): Disarms nearby enemies for 5 seconds. Enchant Recycle: Reuse time decreases. -->
+		<!-- Level 202 (+2 Recycle): Disarms nearby enemies for 5 seconds. Enchant Recycle: Reuse time decreases. -->
+		<!-- Level 203 (+3 Recycle): Disarms nearby enemies for 5 seconds. Enchant Recycle: Reuse time decreases. -->
+		<!-- Level 204 (+4 Recycle): Disarms nearby enemies for 5 seconds. Enchant Recycle: Reuse time decreases. -->
+		<!-- Level 205 (+5 Recycle): Disarms nearby enemies for 5 seconds. Enchant Recycle: Reuse time decreases. -->
+		<!-- Level 206 (+6 Recycle): Disarms nearby enemies for 5 seconds. Enchant Recycle: Reuse time decreases. -->
+		<!-- Level 207 (+7 Recycle): Disarms nearby enemies for 5 seconds. Enchant Recycle: Reuse time decreases. -->
+		<!-- Level 208 (+8 Recycle): Disarms nearby enemies for 5 seconds. Enchant Recycle: Reuse time decreases. -->
+		<!-- Level 209 (+9 Recycle): Disarms nearby enemies for 5 seconds. Enchant Recycle: Reuse time decreases. -->
+		<!-- Level 210 (+10 Recycle): Disarms nearby enemies for 5 seconds. Enchant Recycle: Reuse time decreases. -->
+		<!-- Level 211 (+11 Recycle): Disarms nearby enemies for 5 seconds. Enchant Recycle: Reuse time decreases. -->
+		<!-- Level 212 (+12 Recycle): Disarms nearby enemies for 5 seconds. Enchant Recycle: Reuse time decreases. -->
+		<!-- Level 213 (+13 Recycle): Disarms nearby enemies for 5 seconds. Enchant Recycle: Reuse time decreases. -->
+		<!-- Level 214 (+14 Recycle): Disarms nearby enemies for 5 seconds. Enchant Recycle: Reuse time decreases. -->
+		<!-- Level 215 (+15 Recycle): Disarms nearby enemies for 5 seconds. Enchant Recycle: Reuse time decreases. -->
+		<table name="#ench1ActivateRates">71 72 73 74 75 76 77 78 79 80 81 82 83 84 85</table>
+		<table name="#ench2Reuse">145000 140000 135000 130000 125000 120000 115000 110000 105000 100000 95000 90000 85000 80000 75000</table>
+		<table name="#enchMagicLvl">81 81 81 82 82 82 83 83 83 84 84 84 85 85 85</table>
+		<icon>icon.skill0794</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>5</abnormalTime>
+		<abnormalType>DISARM</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>70</activateRate>
+		<affectLimit>6-12</affectLimit>
+		<affectRange>200</affectRange>
+		<basicProperty>STR</basicProperty>
+		<effectPoint>-673</effectPoint>
+		<hitTime>1500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>79</magicLevel>
+		<mpConsume>58</mpConsume>
+		<reuseDelay>150000</reuseDelay>
+		<enchant1 name="activateRate">#ench1ActivateRates</enchant1>
+		<enchant1 name="magicLevel">#enchMagicLvl</enchant1>
+		<enchant2 name="magicLevel">#enchMagicLvl</enchant2>
+		<enchant2 name="reuseDelay">#ench2Reuse</enchant2>
+		<effects>
+			<effect name="Disarm">
+				<mul stat="pAtk">0.6</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="795" levels="1" name="Divine Knight Brandish">
+		<!-- Attacks the enemies in front by flourishing an ax. Over-hit is possible. Power 2322. -->
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<affectLimit>5-12</affectLimit>
+		<affectRange>200</affectRange>
+		<castRange>40</castRange>
+		<coolTime>660</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>400</effectRange>
+		<fanRange>0,0,200,180</fanRange>
+		<hitTime>830</hitTime>
+		<magicLevel>80</magicLevel>
+		<mpConsume>88</mpConsume>
+		<overHit>true</overHit>
+		<power>2322</power>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="796" levels="1" name="Divine Knight Explosion Attack">
+		<!-- Detonates the floor by striking it hard. Power 1900. -->
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectLimit>5-12</affectLimit>
+		<affectRange>100</affectRange>
+		<coolTime>660</coolTime>
+		<effectPoint>-100</effectPoint>
+		<hitTime>830</hitTime>
+		<magicLevel>80</magicLevel>
+		<mpConsume>88</mpConsume>
+		<power>1900</power>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="797" levels="1" name="Divine Rogue Piercing Attack">
+		<!-- Attacks all enemies, even the enemies behind you, with a strong thrust. Over-hit is possible. Power 2111. -->
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<affectLimit>5-12</affectLimit>
+		<affectRange>250</affectRange>
+		<castRange>40</castRange>
+		<coolTime>660</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>400</effectRange>
+		<fanRange>0,0,250,60</fanRange>
+		<hitTime>830</hitTime>
+		<magicLevel>80</magicLevel>
+		<mpConsume>88</mpConsume>
+		<overHit>true</overHit>
+		<power>2111</power>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="798" levels="1" name="Divine Warrior Assault Attack">
+		<!-- Poisons the enemy with an unexpected poison attack. Power 1689. Effect 3. -->
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>POISON</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>50</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<coolTime>720</coolTime>
+		<effectPoint>-340</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>1080</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>80</magicLevel>
+		<mpConsume>88</mpConsume>
+		<nextActionAttack>true</nextActionAttack>
+		<power>1689</power>
+		<reuseDelay>3000</reuseDelay>
+		<trait>POISON</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="DamOverTime" ticks="5">
+				<power>69</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="799" levels="3" name="Master Ability - Defense">
+		<!-- Increases P. Def. -->
+		<table name="#pDefHeavy">59.5 119 178.5</table>
+		<table name="#pDefLight">44.625 89.25 133.875</table>
+		<table name="#pDefMagic">29.75 59.5 89.25</table>
+		<icon>icon.skill0142</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<excludedFromCheck>true</excludedFromCheck>
+		<magicLevel>75</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="pDef">
+					<value>#pDefHeavy</value>
+					<using kind="HEAVY" />
+				</add>
+				<add stat="pDef">
+					<value>#pDefLight</value>
+					<using kind="LIGHT" />
+				</add>
+				<add stat="pDef">
+					<value>#pDefMagic</value>
+					<using kind="MAGIC" />
+				</add>
+			</effect>
+		</effects>
+	</skill>
+</list>

@@ -1,0 +1,2009 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/skills.xsd">
+	<skill id="22100" levels="1" name="Soul Scent">
+		<!-- When using a monster's corpse, comforts the monster's soul to borrow the monster's power temporarily. For 2 minutes, increases Max HP by 40%, Max MP by 40%, Max CP by 40%, physical P. Def. by 30%, M. Def. by 30%, Speed by 20, and M. Atk. by 45%. Decreases MP consumption during skill use by 10%. -->
+		<icon>BranchSys.icon.br_ghost_incense_i00</icon>
+		<operateType>A3</operateType>
+		<targetType>CORPSE_MOB</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>120</abnormalTime>
+		<abnormalType>BR_EVENT_BUF6</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<castRange>400</castRange>
+		<effectRange>900</effectRange>
+		<hitTime>1500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20603</itemConsumeId> <!-- Soul Scent (Event) -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>5000</reuseDelay>
+		<effects>
+			<effect name="ConsumeBody" />
+		</effects>
+		<selfEffects>
+			<effect name="Buff">
+				<mul stat="maxHp">1.4</mul>
+				<mul stat="maxMp">1.4</mul>
+				<mul stat="maxCp">1.4</mul>
+				<mul stat="pDef">1.3</mul>
+				<mul stat="mDef">1.3</mul>
+				<add stat="runSpd">20</add>
+				<mul stat="mAtk">1.45</mul>
+				<mul stat="magicalMpConsumeRate">0.9</mul>
+				<mul stat="physicalMpConsumeRate">0.9</mul>
+				<mul stat="danceMpConsumeRate">0.9</mul>
+			</effect>
+		</selfEffects>
+	</skill>
+	<skill id="22101" levels="1" name="Fortune of Love Box">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20629</itemConsumeId> <!-- Fortune of Love Box (event) -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="40">
+						<item id="20590" count="1" /> <!-- Summon of Love Bracelet 24-Hour Pack (Event) -->
+					</item>
+					<item chance="60">
+						<item id="9207" count="1" /> <!-- Quick Healing Potion (Event) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22102" levels="1" name="Soul Magic Box">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<coolTime>1000</coolTime>
+		<hitTime>2700</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>86400000</reuseDelay>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Restoration">
+				<itemId>20623</itemId>
+				<itemCount>1</itemCount>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22103" levels="1" name="Blessed Scroll of Escape (Event)">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>200</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20583</itemConsumeId> <!-- Blessed Scroll of Escape (event) -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<player canEscape="true" />
+				<not>
+					<player insideZoneId="10501, 10502, 10503, 10504, 10505, 10506, 10507, 10508" />
+				</not>
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Escape">
+				<escapeType>TOWN</escapeType>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22104" levels="1" name="Blessed Scroll of Resurrection (Event)">
+		<operateType>A1</operateType>
+		<targetType>PC_BODY</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<castRange>400</castRange>
+		<effectPoint>1</effectPoint>
+		<effectRange>600</effectRange>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20584</itemConsumeId> <!-- Blessed Scroll of Resurrection (event) -->
+		<magicLevel>1</magicLevel>
+		<conditions>
+			<player canResurrect="true" />
+		</conditions>
+		<effects>
+			<effect name="Resurrection">
+				<power>100</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22105" levels="1" name="Uldie Summon Scroll (Event)">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20707</itemConsumeId> <!-- Wooldy Summon Scroll (Event) -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>12000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<player active_skill_id="21120" />
+		</conditions>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SummonNpc">
+				<npcId>20</npcId>
+				<randomOffset>40</randomOffset>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22106" levels="1" name="Belldandy Summon Scroll (Event)">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20708</itemConsumeId> <!-- Verdandi Summon Scroll (Event) -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>12000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<player active_skill_id="21120" />
+		</conditions>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SummonNpc">
+				<npcId>21</npcId>
+				<randomOffset>40</randomOffset>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22107" levels="1" name="Skooldie Summon Scroll (Event)">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20709</itemConsumeId> <!-- Skooldy Summon Scroll (Event) -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>12000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<player active_skill_id="21120" />
+		</conditions>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SummonNpc">
+				<npcId>19</npcId>
+				<randomOffset>40</randomOffset>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22108" levels="1" name="Halloween Toy Chest">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20710</itemConsumeId> <!-- Halloween Toy Box (Event) -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="20">
+						<item id="20712" count="1" /> <!-- Super Strong Giant's Mask (Event) - Blessing of Skooldy : Protection of Darkness - 2 Hour Limited Period -->
+					</item>
+					<item chance="20">
+						<item id="20713" count="1" /> <!-- Mask of Silent Scream (Event) - Blessing of Skooldy : Protection of Darkness - 2 Hour Limited Period -->
+					</item>
+					<item chance="20">
+						<item id="20714" count="1" /> <!-- Spirit of Wrath Mask (Event) - Blessing of Skooldy : Protection of Darkness - 2 Hour Limited Period -->
+					</item>
+					<item chance="20">
+						<item id="20715" count="1" /> <!-- Undecaying Corpse Mask (Event) - Blessing of Skooldy : Protection of Darkness - 2 Hour Limited Period -->
+					</item>
+					<item chance="20">
+						<item id="20716" count="1" /> <!-- Planet X235 Alien Mask (Event) - Blessing of Skooldy : Protection of Darkness - 2 Hour Limited Period -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22109" levels="1" name="Shiny Halloween Toy Chest">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20717</itemConsumeId> <!-- Shiny Halloween Toy Box (Event) -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="20">
+						<item id="20718" count="1" /> <!-- Shiny Super Strong Giant's Mask (Event) - Blessing of Halloween - 4-Hour Limited Period -->
+					</item>
+					<item chance="20">
+						<item id="20719" count="1" /> <!-- Shiny Mask of Silent Scream (Event) - Blessing of Halloween - 4-Hour Limited Period -->
+					</item>
+					<item chance="20">
+						<item id="20720" count="1" /> <!-- Shiny Spirit of Wrath Mask (Event) - Blessing of Halloween - 4-Hour Limited Period -->
+					</item>
+					<item chance="20">
+						<item id="20721" count="1" /> <!-- Shiny Undecaying Corpse Mask (Event) - Blessing of Halloween - 4-Hour Limited Period -->
+					</item>
+					<item chance="20">
+						<item id="20722" count="1" /> <!-- Shiny Planet X235 Alien Mask (Event) - Blessing of Halloween - 4-Hour Limited Period -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22110" levels="1" name="Summon Lucky Lamp">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20728</itemConsumeId> <!-- Lucky Sky Lantern Summon Scroll -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="SummonNpc">
+				<npcId>22</npcId>
+				<npcCount>1</npcCount>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22111" levels="1" name="Summon Environment Lamp">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20729</itemConsumeId> <!-- Ambience Sky Lantern Summon Scroll -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="SummonNpc">
+				<npcId>23</npcId>
+				<npcCount>1</npcCount>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22112" levels="1" name="Summon Rolling Lamp">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20730</itemConsumeId> <!-- Sway Sky Lantern Summon Scroll -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="SummonNpc">
+				<npcId>24</npcId>
+				<npcCount>1</npcCount>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22113" levels="1" name="Summon Peace Lamp">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20731</itemConsumeId> <!-- Comfort Sky Lantern Summon Scroll -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="SummonNpc">
+				<npcId>25</npcId>
+				<npcCount>1</npcCount>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22114" levels="1" name="Scroll of Transformation Box">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20739</itemConsumeId> <!-- Morph Scroll Box -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="33">
+						<item id="20364" count="1" /> <!-- Transformation Scroll: Omen Beast -->
+					</item>
+					<item chance="33">
+						<item id="20365" count="1" /> <!-- Transformation Scroll: Death Blader -->
+					</item>
+					<item chance="34">
+						<item id="20366" count="1" /> <!-- Transformation Scroll: Grail Apostle -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22115" levels="1" name="White Bearded Santa's Weapon Exchange Ticket Box">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20758</itemConsumeId> <!-- Santa's Weapon Exchange Coupon Box -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="99.99949">
+						<item id="20755" count="1" /> <!-- Santa's Weapon Exchange Coupon - Regular - 24-hour limited period -->
+					</item>
+					<item chance="0.00051">
+						<item id="20757" count="1" /> <!-- Santa's Weapon Exchange Coupon - Jackpot - 24-hour limited period -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22116" levels="1" name="Summon Flames Box">
+		<icon>BranchSys.icon.br_fire_box_i00</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20788</itemConsumeId> <!-- Flame Box -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="SummonNpc">
+				<npcId>29</npcId>
+				<npcCount>1</npcCount>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22117" levels="1" name="Flames Box Firework">
+		<icon>icon.skill0788</icon>
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="22118" levels="1" name="Warmth of Kotatz">
+		<!-- The Warmth of Kotatz can be felt. HP regeneration is increased by 40%. CP regeneration is increased by 30%. MP regeneration is increased by 20%. -->
+		<icon>BranchSys.icon.br_kotatsu_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>99</abnormalLevel>
+		<abnormalTime>25</abnormalTime>
+		<abnormalType>HP_REGEN_UP</abnormalType>
+		<affectRange>200</affectRange>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="regCp">1.3</mul>
+				<mul stat="regHp">1.4</mul>
+				<mul stat="regMp">1.2</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22119" levels="1" name="Love for All Seasons">
+		<!-- For 1 hour, increases M. Atk. by 75% and the occurrence rate of damage that is caused by magic damage by 2. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_a_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>MULTI_BUFF</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20876</itemConsumeId> <!-- Love for All Seasons - Empower, Wild Magic -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mAtk">1.75</mul>
+				<add stat="mCritRate">2</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22120" levels="1" name="Happy New Year">
+		<!-- For 1 hour, increases Critical attack power by 35%, Critical attack rate by 30, and accuracy by 4. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_b_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>MULTI_BUFF</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20877</itemConsumeId> <!-- Happy New Year - Death Whisper, Focus, Guidance -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="critDmg">1.35</mul>
+				<mul stat="critRate">1.3</mul>
+				<add stat="accCombat">4</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22121" levels="1" name="Female Aniruddha">
+		<!-- For 1 hour, increases P. Def. by 15, M. Def. by 30%, and Shield defense rate by 15. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_c_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>MULTI_BUFF</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20878</itemConsumeId> <!-- Female Aniruddha - Shield, Magic Barrier, Blessed Shield -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mDef">1.3</mul>
+				<mul stat="pDef">1.15</mul>
+				<add stat="sDef">15</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22122" levels="1" name="Kung Hei Fat Choy">
+		<!-- Decreases a party member's P. Def. by 8%, M. Def. by 16%, and evasion by 4, and increases P. Atk. by 15%, M. Atk. by 16%, Atk. Spd. by 8%, Casting Spd. by 8%, and Speed by 8 for 1 hour. Recovers 9% of the standard short-range physical damage inflicted on the enemy as HP. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_d_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>MULTI_BUFF</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20879</itemConsumeId> <!-- Kung Hei Fat Choy - Might, Berserker Spirit, Vampiric Rage -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mAtk">1.16</mul>
+				<mul stat="mDef">0.84</mul>
+				<mul stat="pAtk">1.15</mul>
+				<mul stat="pAtk">1.08</mul>
+				<mul stat="pAtkSpd">1.08</mul>
+				<mul stat="pDef">0.92</mul>
+				<sub stat="rEvas">4</sub>
+				<add stat="runSpd">8</add>
+				<add stat="absorbDam">9</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22123" levels="1" name="Chinese Feast">
+		<!-- For 1 hour, decreases physical skill MP consumption by 20%, magic skill's MP consumption by 10%, and song/dance skill's MP consumption by 20%. Increases Casting Spd. by 30% and Max MP by 35%. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_e_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>MULTI_BUFF</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20880</itemConsumeId> <!-- Chinese Feast - Clarity, Acumen, Blessed Soul -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="danceMpConsumeRate">0.8</mul>
+				<mul stat="magicalMpConsumeRate">0.8</mul>
+				<mul stat="mAtkSpd">1.3</mul>
+				<mul stat="maxHp">1.35</mul>
+				<mul stat="physicalMpConsumeRate">0.9</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22124" levels="1" name="Hwa Gei Bu Gwi">
+		<!-- Increases Atk. Spd. by 33% and the weight penalty interval by 9000 for 1 hour. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_f_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>MULTI_BUFF</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20881</itemConsumeId> <!-- Hwa Gei Bu Gwi - Decrease Weight, Haste -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="weightPenalty">9000</add>
+				<add stat="pAtkSpd">33</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22125" levels="1" name="Fire Stamp">
+		<!-- For 1 hour, increases Speed by 33, evasion rate by 4, and Max HP by 35%. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_g_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>MULTI_BUFF</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20882</itemConsumeId> <!-- Fire Stamp - Wind Walk, Agility Blessed Body -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="maxHp">1.35</mul>
+				<add stat="rEvas">4</add>
+				<add stat="runSpd">33</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22126" levels="1" name="Baby Food Skill">
+		<icon>BranchSys.br_baby_food_i00</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>400</castRange>
+		<effectRange>500</effectRange>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20769</itemConsumeId> <!-- Rudolph Baby Food -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="109">
+			<target npcId="1538" />
+		</conditions>
+	</skill>
+	<skill id="22127" levels="1" name="Summon Warm Kotatz">
+		<icon>BranchSys.icon.br_kotatsu_i00</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20868</itemConsumeId> <!-- Kotatz -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>600000</reuseDelay>
+		<effects>
+			<effect name="SummonNpc">
+				<npcId>127</npcId>
+				<npcCount>1</npcCount>
+				<despawnDelay>7200</despawnDelay>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22128" levels="3" name="Rudolph's Joy">
+		<!-- Level 1: For 5 minutes, raises Atk. Spd. by 10% and magic Casting Spd. by 10%. -->
+		<!-- Level 2: For 5 minutes, raises Atk. Spd. by 15% and magic Casting Spd. by 15%. -->
+		<!-- Level 3: For 5 minutes, raises Atk. Spd. by 20% and magic Casting Spd. by 20%. -->
+		<table name="#abnormalLevels">1 2 3</table>
+		<table name="#AtkSpd">1.1 1.15 1.2</table>
+		<icon>icon.skill1256</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalInstant>true</abnormalInstant>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>BR_EVENT_BUF2</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>100</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtkSpd">#AtkSpd</mul>
+				<mul stat="mAtkSpd">#AtkSpd</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22129" levels="1" name="Red Dimensional Stone">
+		<!-- Pailaka Initialization -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20896</itemConsumeId> <!-- Red Dimensional Stone -->
+		<magicLevel>1</magicLevel>
+		<resetQuest>128;129;144</resetQuest>
+		<reuseDelay>18000000</reuseDelay>
+	</skill>
+	<skill id="22130" levels="1" name="Food of Doubt's Effect">
+		<!-- Food of Doubt's effect. Vitality is recovered for 20 minutes when acquiring Exp. -->
+		<icon>BranchSys.br_rudolf_food_unknown_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>VP_UP</abnormalType>
+		<abnormalVisualEffect>VP_UP</abnormalVisualEffect>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+	</skill>
+	<skill id="22131" levels="1" name="Red Firework Flames">
+		<!-- For 10 minutes, increases water attribute defense by 30 and STR by 1. -->
+		<icon>BranchSys.icon.br_firecracker_red_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>BR_EVENT_BUF10</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20870</itemConsumeId> <!-- Red Firework -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="STR">1</add>
+				<add stat="waterRes">30</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22132" levels="1" name="Gold Firework Flames">
+		<!-- For 10 minutes, increases Holy attribute defense by 30 and CON by 1. -->
+		<icon>BranchSys.icon.br_firecracker_gold_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>BR_EVENT_BUF10</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20871</itemConsumeId> <!-- Gold Firework -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="CON">1</add>
+				<add stat="holyRes">30</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22133" levels="1" name="Blue Firework Flames">
+		<!-- For 10 minutes, increases fire attribute defense by 30 and DEX by 1. -->
+		<icon>BranchSys.icon.br_firecracker_blue_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>BR_EVENT_BUF10</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20872</itemConsumeId> <!-- Blue Firework -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="DEX">1</add>
+				<add stat="fireRes">30</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22134" levels="1" name="Pink Firework Flames">
+		<!-- For 10 minutes, increases earth attribute defense by 30 and MEN by 1. -->
+		<icon>BranchSys.icon.br_firecracker_pink_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>BR_EVENT_BUF10</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20873</itemConsumeId> <!-- Pink Firework -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="MEN">1</add>
+				<add stat="earthRes">30</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22135" levels="1" name="White Firework Flames">
+		<!-- For 10 minutes, increases wind attribute defense by 30 and WIT by 1. -->
+		<icon>BranchSys.icon.br_firecracker_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>BR_EVENT_BUF10</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20874</itemConsumeId> <!-- White Firework -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="WIT">1</add>
+				<add stat="windRes">30</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22136" levels="1" name="Silver Firework Flames">
+		<!-- For 10 minutes, increases Resistance to Dark by 30 and INT by 1. -->
+		<icon>BranchSys.icon.br_firecracker_silver_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>BR_EVENT_BUF10</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20875</itemConsumeId> <!-- Silver Firework -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="INT">1</add>
+				<add stat="darkRes">30</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22137" levels="1" name="Star Food">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="VitalityPointUp">
+				<value>20000</value>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22138" levels="1" name="Mango Dessert">
+		<icon>BranchSys.icon.br_thai_desert_i00</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20899</itemConsumeId> <!-- Mango Dessert -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="VitalityPointUp">
+				<value>20000</value>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22139" levels="1" name="Branding Wind Walk">
+		<!-- Increases Speed by 33 for 1 hour. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_g_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>SPEED_UP</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="runSpd">33</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22140" levels="1" name="Hwa Gei Bu Gwi Haste">
+		<!-- Increases Atk. Spd. by 33% for 1 hour. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_f_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>ATTACK_TIME_DOWN</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtkSpd">1.33</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22141" levels="1" name="Branding Agility">
+		<!-- Increases evasion rate by 4 for 1 hour. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_g_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>AVOID_UP</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="rEvas">4</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22142" levels="1" name="Female Aniruddha's Shield">
+		<!-- Increases P. Def. by 15% for 1 hour. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_c_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>PD_UP</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pDef">1.15</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22143" levels="1" name="Happy New Year Death Whisper">
+		<!-- Increases Critical attack power by 35% for 1 hour. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_b_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>CRITICAL_DMG_UP</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="critRate">1.35</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22144" levels="1" name="Happy New Year Guidance">
+		<!-- Increases accuracy by 4 for 1 hour. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_b_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>HIT_UP</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="accCombat">4</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22145" levels="1" name="Love for All Seasons Empower">
+		<!-- Increases M. Atk. by 75% for 1 hour. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_a_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>MA_UP</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mAtk">1.75</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22146" levels="1" name="Chinese Feast Greater Acumen">
+		<!-- Increases Casting Spd. by 30% for 1 hour. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_e_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>CASTING_TIME_DOWN</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mAtkSpd">1.3</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22147" levels="1" name="Kung Hei Fat Choy Vampiric Rage">
+		<!-- For 1 hour, 9% of the standard short-range physical damage inflicted on the enemy is recovered as HP. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_d_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>VAMPIRIC_ATTACK</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="absorbDam">9</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22148" levels="1" name="Branding Blessed Body">
+		<!-- Increases Max HP by 35% for 1 hour. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_g_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>MAX_HP_UP</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="maxHp">1.35</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22149" levels="1" name="Kung Hei Fat Choy Berserker Spirit">
+		<!-- Decreases P. Def. by 8%, M. Def. by 16%, and evasion by 4, and increases P. Atk. by 8%, M. Atk. by 16%, Atk. Spd. by 8%, Casting Spd. by 8%, and Speed by 8 for 1 hour. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_d_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>BERSERKER</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mAtk">1.16</mul>
+				<mul stat="mDef">0.84</mul>
+				<mul stat="pAtk">1.08</mul>
+				<mul stat="pAtkSpd">1.08</mul>
+				<mul stat="pDef">0.92</mul>
+				<sub stat="rEvas">4</sub>
+				<add stat="runSpd">8</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22150" levels="1" name="Female Aniruddha's Magic Barrier">
+		<!-- Increases magic resistance by 30% for 1 hour. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_c_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>MD_UP</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mDef">1.3</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22151" levels="1" name="Chinese Feast Blessed Soul">
+		<!-- Increases Max MP by 35% for 1 hour. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_e_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>MAX_MP_UP</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="maxMp">1.35</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22152" levels="1" name="Chinese Feast Clarity">
+		<!-- For 1 hour, decreases physical skill MP consumption by 20%, magic skill's MP consumption by 10%, and song/dance skill's MP consumption by 20%. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_e_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>CHEAP_MAGIC</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="danceMpConsumeRate">0.8</mul>
+				<mul stat="magicalMpConsumeRate">0.9</mul>
+				<mul stat="physicalMpConsumeRate">0.8</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22153" levels="1" name="Love for All Seasons Wild Magic">
+		<!-- For 1 hour, increases by 2 the occurrence rate of damage that is caused by magic damage. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_a_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>MAGIC_CRITICAL_UP</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="mCritRate">2</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22154" levels="1" name="Happy New Year Focus">
+		<!-- Increases Critical attack rate by 30% for 1 hour. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_b_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>CRITICAL_PROB_UP</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="critRate">1.3</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22155" levels="1" name="Female Aniruddha's Blessed Shield">
+		<!-- Increases Shield defense rate by 15 for 1 hour. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_c_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>SHIELD_PROB_UP</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="rShld">15</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22156" levels="1" name="Hwa Gei Bu Gwi Decrease Weight">
+		<!-- Increases the weight penalty interval by 9000 for 1 hour. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_f_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>DECREASE_WEIGHT_PENALTY</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="weightPenalty">9000</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22157" levels="1" name="Kung Hei Fat Choy Might">
+		<!-- Increases P. Atk. by 15% for 1 hour. -->
+		<icon>BranchSys.icon.br_taiwan_newyear_food_d_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>PA_UP</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtk">1.15</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22158" levels="10" name="Red Rose Herb">
+		<!-- Increases HP/MP Regeneration by 20% for 5 minutes. When the herb effect reaches level 10, the rose spirit consumes a red rose herb effect and replenishes some Vitality. -->
+		<table name="#abnormalLevels">1 2 3 4 5 6 7 8 9 10</table>
+		<table name="#icons">BranchSys2.icon.Br_herb_rose_red_i00 BranchSys2.icon.Br_herb_rose_red_i01 BranchSys2.icon.Br_herb_rose_red_i02 BranchSys2.icon.Br_herb_rose_red_i03 BranchSys2.icon.Br_herb_rose_red_i04 BranchSys2.icon.Br_herb_rose_red_i05 BranchSys2.icon.Br_herb_rose_red_i06 BranchSys2.icon.Br_herb_rose_red_i07 BranchSys2.icon.Br_herb_rose_red_i08 BranchSys2.icon.Br_herb_rose_red_i09</table>
+		<icon>#icons</icon>
+		<operateType>A4</operateType>
+		<targetType>SELF</targetType>
+		<abnormalInstant>true</abnormalInstant>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>BR_EVENT_BUF1</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>100</effectPoint>
+		<hitTime>100</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="regHp">1.2</mul>
+				<mul stat="regMp">1.2</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22159" levels="1" name="Vesper's Mighty Power">
+		<!-- For 10 minutes, increase physical P. Atk. by 15%, magic M. Atk. by 20%, and Speed by 10. -->
+		<icon>BranchSys2.icon.br_royal_crown_of_vesper_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalInstant>true</abnormalInstant>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>BR_EVENT_BUF1</abnormalType>
+		<abnormalVisualEffect>BR_VESPER1</abnormalVisualEffect>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>100</effectPoint>
+		<hitTime>100</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtk">1.15</mul>
+				<mul stat="mAtk">1.15</mul>
+				<add stat="runSpd">10</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22160" levels="1" name="Vesper's Critical Attack Power">
+		<!-- For 10 minutes, increase physical Critical Attack Rate by 15, magic Critical Rate by 2, and Speed by 10. Recovers 5% of the standard short-range physical damage inflicted on the enemy as HP. -->
+		<icon>BranchSys2.icon.br_royal_circlet_of_vesper_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalInstant>true</abnormalInstant>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>BR_EVENT_BUF1</abnormalType>
+		<abnormalVisualEffect>BR_VESPER2</abnormalVisualEffect>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>100</effectPoint>
+		<hitTime>100</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="critRate">15</add>
+				<add stat="mCritRate">2</add>
+				<add stat="runSpd">10</add>
+				<add stat="absorbDam">5</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22161" levels="1" name="Invincible Vesper">
+		<!-- For 10 minutes, increases Atk. Spd. by 20%, Casting Spd. by 20%, and Speed by 20. -->
+		<icon>BranchSys2.icon.br_noblesse_oblige_of_vesper_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalInstant>true</abnormalInstant>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>BR_EVENT_BUF1</abnormalType>
+		<abnormalVisualEffect>BR_VESPER3</abnormalVisualEffect>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>100</effectPoint>
+		<hitTime>100</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtkSpd">1.2</mul>
+				<mul stat="mAtkSpd">1.2</mul>
+				<add stat="runSpd">20</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22162" levels="1" name="Herb of Mt. Fuji">
+		<!-- For 10 minutes, Vitality is recovered when acquiring Exp. -->
+		<icon>BranchSys2.icon.br_fuji_herb_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalInstant>true</abnormalInstant>
+		<abnormalLevel>2</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>VP_UP</abnormalType>
+		<abnormalVisualEffect>VP_UP</abnormalVisualEffect>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>100</effectPoint>
+		<hitTime>100</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<sub stat="vitalityConsumeRate">10</sub>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22163" levels="1" name="Hawk Herb">
+		<!-- For 10 minutes, increases physical Atk. Spd. by 15% and physical critical attack rate by 10%. -->
+		<icon>BranchSys2.icon.br_hawk_herb_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalInstant>true</abnormalInstant>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>BR_EVENT_BUF1</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>100</effectPoint>
+		<hitTime>100</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtkSpd">1.15</mul>
+				<mul stat="critRate">1.1</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22164" levels="1" name="Eggplant Herb">
+		<!-- For 10 minutes, increases magic Atk. Spd. by 10% and magic critical rate by 2. -->
+		<icon>BranchSys2.icon.br_eggplant_herb_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalInstant>true</abnormalInstant>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>BR_EVENT_BUF1</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>100</effectPoint>
+		<hitTime>100</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mAtkSpd">1.1</mul>
+				<add stat="mCritRate">2</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22165" levels="1" name="Energy Replenishing">
+		<!-- Replenishes a Soul Avatar's energy by 5000. -->
+		<icon>icon.skill0788</icon>
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20954</itemConsumeId> <!-- Small Placid -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="22166" levels="1" name="Energy Replenishing">
+		<!-- Replenishes a Soul Avatar's energy by 10000. -->
+		<icon>icon.skill0788</icon>
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20955</itemConsumeId> <!-- Medium Placid -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="22167" levels="1" name="April Fool's Day Vesper Weapon Gift">
+		<!-- Acquires one of the 14 types of Vesper weapons. -->
+		<icon>icon.skill0001</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20958</itemConsumeId> <!-- April Fools' Day Special Gift - For Event -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="13.32">
+						<item id="13457" count="1" /> <!-- Vesper Cutter -->
+					</item>
+					<item chance="6.66">
+						<item id="13458" count="1" /> <!-- Vesper Slasher -->
+					</item>
+					<item chance="6.66">
+						<item id="13459" count="1" /> <!-- Vesper Buster -->
+					</item>
+					<item chance="6.66">
+						<item id="13460" count="1" /> <!-- Vesper Shaper -->
+					</item>
+					<item chance="6.66">
+						<item id="13461" count="1" /> <!-- Vesper Fighter -->
+					</item>
+					<item chance="6.66">
+						<item id="13462" count="1" /> <!-- Vesper Stormer -->
+					</item>
+					<item chance="6.66">
+						<item id="13463" count="1" /> <!-- Vesper Avenger -->
+					</item>
+					<item chance="6.66">
+						<item id="13464" count="1" /> <!-- Vesper Retributer -->
+					</item>
+					<item chance="6.66">
+						<item id="13466" count="1" /> <!-- Vesper Singer -->
+					</item>
+					<item chance="6.66">
+						<item id="13467" count="1" /> <!-- Vesper Thrower -->
+					</item>
+					<item chance="6.66">
+						<item id="13468" count="1" /> <!-- Vesper Pincer -->
+					</item>
+					<item chance="6.66">
+						<item id="13469" count="1" /> <!-- Vesper Shooter -->
+					</item>
+					<item chance="6.66">
+						<item id="13470" count="1" /> <!-- Vesper Nagan -->
+					</item>
+					<item chance="6.66">
+						<item id="13465" count="1" /> <!-- Vesper Caster -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22168" levels="1" name="Thirst for Victory Quenching Drink">
+		<!-- Replenishes an Agathion's energy by 1000. -->
+		<icon>icon.skill0001</icon>
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20992</itemConsumeId> <!-- Thirst of Victory Quenching Drink -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="22169" levels="1" name="Soccer Ball of Cheering Release">
+		<icon>icon.skill0001</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20993</itemConsumeId> <!-- Soccer Ball of Cheers -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="45">
+						<item id="6575" count="2" /> <!-- Blessed Scroll: Enchant Weapon (D-Grade) -->
+					</item>
+					<item chance="30">
+						<item id="6573" count="1" /> <!-- Blessed Scroll: Enchant Weapon (C-Grade) -->
+					</item>
+					<item chance="15">
+						<item id="6571" count="1" /> <!-- Blessed Scroll: Enchant Weapon (B-Grade) -->
+					</item>
+					<item chance="9.4">
+						<item id="6569" count="1" /> <!-- Blessed Scroll: Enchant Weapon (A-Grade) -->
+					</item>
+					<item chance="0.6">
+						<item id="6577" count="1" /> <!-- Blessed Scroll: Enchant Weapon (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22170" levels="1" name="Hardin's Divine Protection">
+		<!-- Maximizes P. Def. for 10 seconds. -->
+		<icon>icon.skill0001</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>2</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>PD_UP_SPECIAL</abnormalType>
+		<abnormalVisualEffect>ULTIMATE_DEFENCE</abnormalVisualEffect>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>21030</itemConsumeId> <!-- Hardin's Divine Protection -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>900000</reuseDelay>
+	</skill>
+	<skill id="22171" levels="1" name="Hardin's Blessing">
+		<!-- Maximizes M. Def. for 10 seconds. -->
+		<icon>icon.skill0001</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>2</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>PD_UP_SPECIAL</abnormalType>
+		<abnormalVisualEffect>ULTIMATE_DEFENCE</abnormalVisualEffect>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>21031</itemConsumeId> <!-- Hardin's Blessing -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>900000</reuseDelay>
+	</skill>
+	<skill id="22172" levels="1" name="Silpeed's Wing">
+		<!-- Increases your Speed by 300 for 15 seconds. -->
+		<icon>icon.skill0001</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>SPEED_UP_SPECIAL</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>21032</itemConsumeId> <!-- Silpeed's Wing -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>900000</reuseDelay>
+	</skill>
+	<skill id="22173" levels="1" name="Silpeed's Blessing">
+		<!-- Increases the user's Speed and those of friendly nearby targets by 300 for 15 seconds. -->
+		<icon>icon.skill0001</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>SPEED_UP_SPECIAL</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>21033</itemConsumeId> <!-- Silpeed's Blessing -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>900000</reuseDelay>
+	</skill>
+	<skill id="22174" levels="1" name="Evain's Recovery Scroll">
+		<!-- Recovers the HP of the user and friendly nearby targets by 500. -->
+		<icon>icon.skill0001</icon>
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>800</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>21034</itemConsumeId> <!-- Evain's Recovery Scroll -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>1800000</reuseDelay>
+	</skill>
+	<skill id="22175" levels="1" name="Good/Bad of Life">
+		<!-- When HP falls below 30%, it is restored by 500. -->
+		<icon>icon.skill0001</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+		<conditions>
+			<player hp="30" />
+		</conditions>
+		<effects>
+			<effect name="CallSkill">
+				<skillId>23214</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22176" levels="1" name="Good/Bad of Mind">
+		<!-- When MP falls below 10%, it is restored by 500. -->
+		<icon>icon.skill0001</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+		<conditions>
+			<player mp="10" />
+		</conditions>
+		<effects>
+			<effect name="CallSkill">
+				<skillId>23215</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22177" levels="1" name="Warrior's Breath">
+		<icon>icon.skill0001</icon>
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>21037</itemConsumeId> <!-- Warrior's Breath -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="22178" levels="1" name="Potion of a Hero">
+		<icon>icon.skill0001</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>21038</itemConsumeId> <!-- Potion of a Hero -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>60000</reuseDelay>
+		<effects>
+			<effect name="Heal">
+				<power>500</power>
+			</effect>
+			<effect name="ManaHeal">
+				<power>200</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22179" levels="1" name="Fortuna of Chaos">
+		<icon>icon.skill0001</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>21041</itemConsumeId> <!-- Fortuna of Chaos -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="13.999">
+						<item id="8618" count="3" /> <!-- Ancient Book: Divine Inspiration (Modern Language Version) -->
+					</item>
+					<item chance="26">
+						<item id="8619" count="1" /> <!-- Ancient Book: Divine Inspiration (Original Language Version) -->
+					</item>
+					<item chance="17">
+						<item id="8620" count="3" /> <!-- Ancient Book: Divine Inspiration (Manuscript) -->
+					</item>
+					<item chance="0.011">
+						<item id="8621" count="1" /> <!-- Ancient Book: Divine Inspiration (Original Version) -->
+					</item>
+					<item chance="4">
+						<item id="14700" count="25" /> <!-- Greater Healing Potion -->
+					</item>
+					<item chance="4">
+						<item id="14701" count="12" /> <!-- Greater Quick Healing Potion -->
+					</item>
+					<item chance="5">
+						<item id="21038" count="6" /> <!-- Potion of a Hero -->
+					</item>
+					<item chance="5">
+						<item id="9627" count="1" /> <!-- Giant's Codex - Mastery -->
+					</item>
+					<item chance="19">
+						<item id="6622" count="3" /> <!-- Giant's Codex -->
+					</item>
+					<item chance="1.5">
+						<item id="21030" count="4" /> <!-- Hardin's Divine Protection -->
+					</item>
+					<item chance="1.5">
+						<item id="21031" count="4" /> <!-- Hardin's Blessing -->
+					</item>
+					<item chance="1">
+						<item id="21032" count="8" /> <!-- Silpeed's Wing -->
+					</item>
+					<item chance="1">
+						<item id="21033" count="8" /> <!-- Silpeed's Blessing -->
+					</item>
+					<item chance="1">
+						<item id="21037" count="5" /> <!-- Warrior's Breath -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22180" levels="1" name="Wondrous Cubic - 1 time use">
+		<operateType>A1</operateType> <!-- FIXME: value unconfirmed -->
+		<targetType>SELF</targetType>
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>21106</itemConsumeId> <!-- Wondrous Cubic - 1 time use -->
+		<staticReuse>true</staticReuse>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="35">
+						<item id="10633" count="1" /> <!-- Cube Fragment Armor - D -->
+					</item>
+					<item chance="25">
+						<item id="10642" count="1" /> <!-- Cube Fragment Weapon - D -->
+					</item>
+					<item chance="20">
+						<item id="10634" count="1" /> <!-- Cube Fragment Armor - C -->
+					</item>
+					<item chance="10">
+						<item id="10643" count="1" /> <!-- Cube Fragment Weapon - C -->
+					</item>
+					<item chance="4">
+						<item id="10635" count="1" /> <!-- Cube Fragment Armor - B -->
+					</item>
+					<item chance="3">
+						<item id="10644" count="1" /> <!-- Cube Fragment Weapon - B -->
+					</item>
+					<item chance="1.2">
+						<item id="10636" count="1" /> <!-- Cube Fragment Armor - A -->
+					</item>
+					<item chance="0.8">
+						<item id="10645" count="1" /> <!-- Cube Fragment Weapon - A -->
+					</item>
+					<item chance="0.6">
+						<item id="10637" count="1" /> <!-- Cube Fragment Armor - S -->
+					</item>
+					<item chance="0.4">
+						<item id="10646" count="1" /> <!-- Cube Fragment Weapon - S -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22181" levels="1" name="Refined Cubic - 1 time use">
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+	<skill id="22182" levels="1" name="Joyous Vitality Potion">
+		<!-- Birthday gift received once a year. Increases your Vitality whenever you gain experience. This buff is active for 12 hours and is not lost upon death. However, it will disappear if you change to a subclass. -->
+		<operateType>A1</operateType> <!-- FIXME: value unconfirmed -->
+		<targetType>SELF</targetType>
+		<canBeDispeled>false</canBeDispeled>
+		<reuseDelay>3600000</reuseDelay>
+		<stayAfterDeath>true</stayAfterDeath>
+		<stayOnSubclassChange>false</stayOnSubclassChange>
+		<effects>
+			<effect name="Buff">
+				<sub stat="vitalityConsumeRate">10</sub>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22183" levels="1" name="Dragon Master Lee Transformation Scroll">
+		<!-- Transformed into Dragon Master Lee. -->
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>21148</itemConsumeId> <!-- Transformation Scroll: Dragon Master Lee -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>20005</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22184" levels="1" name="Dragon Master Karin Transformation Scroll">
+		<!-- Transformed into Dragon Master Karin. -->
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>21149</itemConsumeId> <!-- Transformation Scroll: Dragon Master Karin -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>20006</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22185" levels="1" name="Shiny Lighting">
+		<!-- Lighting shines brightly above the character's head. -->
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+	<skill id="22186" levels="1" name="Echo Crystal - Theme of Celebration">
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+	<skill id="22187" levels="1" name="Honeymoon Ticket - Joy of Energy">
+		<!-- State in which the Vitality Stage is maintained. -->
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+	<skill id="22188" levels="1" name="Summon Big Wedding Cake">
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+	<skill id="22189" levels="1" name="Flower Shower">
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+	<skill id="22190" levels="1" name="Transformation Scroll - Blue Block Checker">
+		<!-- Transformed into a Treasure Hunter. Look for Event Treasure Chests on Fantasy Isle. -->
+		<icon>icon.skilltransform3</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>21171</itemConsumeId> <!-- Transformation Scroll: Treasure Hunter - Event -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>127</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22191" levels="1" name="Transformation Scroll - Onyx Beast Event">
+		<!-- Transformed into an Onyx Beast. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>21172</itemConsumeId> <!-- Transformation Scroll: Onyx Beast - Event -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>0</reuseDelay>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>1</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22192" levels="1" name="Transformation Scroll - Death Blader Event">
+		<!-- Transformed into a Death Blader. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>21173</itemConsumeId> <!-- Transformation Scroll: Death Blader - Event -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>0</reuseDelay>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>2</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22193" levels="1" name="Transformation Scroll - Grail Apostle Event">
+		<!-- Transformed into a Grail Apostle. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>21174</itemConsumeId> <!-- Transformation Scroll: Grail Apostle - Event -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>0</reuseDelay>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>201</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22194" levels="1" name="Transformation Scroll - Unicorn Event">
+		<!-- Transformed into a Unicorn. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>21175</itemConsumeId> <!-- Transformation Scroll: Unicorn - Event -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>0</reuseDelay>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>204</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22195" levels="1" name="Transformation Scroll - Lilim Knight Event">
+		<!-- Transformed into a Lilim Knight. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>21176</itemConsumeId> <!-- Transformation Scroll: Lilim Knight - Event -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>0</reuseDelay>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>207</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22196" levels="1" name="Transformation Scroll - Golem Guardian Event">
+		<!-- Transformed into a Golem Guardian. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>21177</itemConsumeId> <!-- Transformation Scroll: Golem Guardian - Event -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>0</reuseDelay>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>210</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22197" levels="1" name="Transformation Scroll - Inferno Drake Event">
+		<!-- Transformed into an Inferno Drake. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>21178</itemConsumeId> <!-- Transformation Scroll: Inferno Drake - Event -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>0</reuseDelay>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>213</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22198" levels="1" name="Transformation Scroll - Dragon Bomber Event">
+		<!-- Transformed into a Dragon Bomber. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>21179</itemConsumeId> <!-- Transformation Scroll: Dragon Bomber - Event -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>0</reuseDelay>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>216</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22199" levels="1" name="Transformation Scroll - Heretic Event">
+		<!-- Transformed into a Heretic. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>21180</itemConsumeId> <!-- Transformation Scroll: Heretic - Event -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>0</reuseDelay>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>3</id>
+			</effect>
+		</effects>
+	</skill>
+</list>

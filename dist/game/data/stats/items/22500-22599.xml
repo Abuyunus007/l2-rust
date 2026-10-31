@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/items.xsd">
+	<item id="22565" type="EtcItem" name="Dimensional Support Pack">
+		<!-- Description: Wrapped pack containing 2 Superior Minion Coupons, 3 Feathers of Blessing, 5 Kamaloka (Hall of the Abyss, Labyrinth of the Abyss, Near) entrance passes, and 3 Vitality Replenishing Beverages. Cannot be exchanged, dropped, or destroyed. -->
+		<set name="icon" val="icon.etc_pi_gift_box_i04" />
+		<set name="material" val="STEEL" />
+		<set name="material" val="FISH" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_destroyable" val="false" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="14074" min="2" max="2" chance="100" /> <!-- High-Grade Hunting Helper Exchange Coupon (Event) - 5 hours -->
+			<item id="10649" min="3" max="3" chance="100" /> <!-- Feather of Blessing -->
+			<item id="13010" min="5" max="5" chance="100" /> <!-- Extra Entrance Pass - Kamaloka (Hall of the Abyss) -->
+			<item id="13012" min="5" max="5" chance="100" /> <!-- Extra Entrance Pass - Kamaloka (Labyrinth of the Abyss) -->
+			<item id="13011" min="5" max="5" chance="100" /> <!-- Extra Entrance Pass - Near Kamaloka -->
+			<item id="14055" min="3" max="3" chance="100" /> <!-- Vitality Replenishing Beverage -->
+		</capsuled_items>
+	</item>
+	<item id="22566" type="EtcItem" name="Potion Support Pack">
+		<!-- Description: Wrapped pack containing 20 Greater Quick Healing Potions, 50 Greater Healing Potions, 5 Fresh Milks, and 5 Leaves of Appreciation. Cannot be exchanged, dropped, or destroyed. -->
+		<set name="icon" val="icon.etc_pi_gift_box_i04" />
+		<set name="default_action" val="PEEL" />
+		<set name="material" val="FISH" />
+		<set name="immediate_effect" val="true" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_destroyable" val="false" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="14701" min="20" max="20" chance="100" /> <!-- Greater Quick Healing Potion -->
+			<item id="1061" min="50" max="50" chance="100" /> <!-- Greater Healing Potion -->
+			<item id="21235" min="5" max="5" chance="100" /> <!-- Fresh Milk -->
+			<item id="17163" min="5" max="5" chance="100" /> <!-- Event - Energy of Sprout -->
+		</capsuled_items>
+	</item>
+	<item id="22567" type="EtcItem" name="Supplies Support Pack">
+		<!-- Description: Wrapped pack containing 200,000 Mysterious Soulshots of all grade. Cannot be exchanged, dropped, or destroyed. -->
+		<set name="icon" val="icon.etc_pi_gift_box_i04" />
+		<set name="material" val="STEEL" />
+		<set name="material" val="FISH" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_destroyable" val="false" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="21846" min="200000" max="200000" chance="100" /> <!-- Mysterious Soulshot (D-Grade) -->
+			<item id="21847" min="200000" max="200000" chance="100" /> <!-- Mysterious Soulshot (C-Grade) -->
+			<item id="21848" min="200000" max="200000" chance="100" /> <!-- Mysterious Soulshot (B-Grade) -->
+			<item id="21849" min="200000" max="200000" chance="100" /> <!-- Mysterious Soulshot (A-Grade) -->
+			<item id="21850" min="200000" max="200000" chance="100" /> <!-- Mysterious Soulshot (S-Grade) -->
+		</capsuled_items>
+	</item>
+</list>

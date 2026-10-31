@@ -1,0 +1,647 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list enabled="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/spawns.xsd">
+	<spawn name="21_16">
+		<npc id="4312" x="43319" y="-47412" z="-792" heading="7788" respawnDelay="60" /> <!-- Prophet -->
+		<npc id="31386" x="59612" y="-42775" z="-2996" heading="13152" respawnDelay="60" periodOfDay="day" /> <!-- Violet -->
+		<npc id="31387" x="58782" y="-42652" z="-3004" heading="0" respawnDelay="60" periodOfDay="day" /> <!-- Kurstin -->
+		<npc id="31388" x="59618" y="-41675" z="-3003" heading="-20280" respawnDelay="60" periodOfDay="day" /> <!-- Mina -->
+		<npc id="31389" x="60162" y="-42069" z="-3003" heading="-29168" respawnDelay="60" periodOfDay="day" /> <!-- Dorian -->
+		<npc id="22136" x="35390" y="-49898" z="-763" heading="59534" respawnDelay="60" /> <!-- Doorman Zombie -->
+		<npc id="22136" x="35417" y="-49638" z="-763" heading="61690" respawnDelay="60" /> <!-- Doorman Zombie -->
+		<npc id="22136" x="35694" y="-50042" z="-763" heading="28878" respawnDelay="60" /> <!-- Doorman Zombie -->
+		<npc id="27381" x="40278" y="-65322" z="-2392" heading="0" respawnDelay="60" /> <!-- Reckless Sprite of Air -->
+		<npc id="27381" x="40368" y="-65424" z="-2424" heading="0" respawnDelay="60" /> <!-- Reckless Sprite of Air -->
+		<npc id="27381" x="40368" y="-64914" z="-2408" heading="0" respawnDelay="60" /> <!-- Reckless Sprite of Air -->
+		<npc id="27381" x="40458" y="-64863" z="-2432" heading="0" respawnDelay="60" /> <!-- Reckless Sprite of Air -->
+		<npc id="27381" x="40818" y="-65373" z="-2448" heading="0" respawnDelay="60" /> <!-- Reckless Sprite of Air -->
+		<npc id="27381" x="40818" y="-64965" z="-2456" heading="0" respawnDelay="60" /> <!-- Reckless Sprite of Air -->
+		<npc id="27381" x="40998" y="-65016" z="-2424" heading="0" respawnDelay="60" /> <!-- Reckless Sprite of Air -->
+		<npc id="27381" x="40998" y="-64863" z="-2416" heading="0" respawnDelay="60" /> <!-- Reckless Sprite of Air -->
+		<npc id="27381" x="41088" y="-65067" z="-2424" heading="37640" respawnDelay="60" /> <!-- Reckless Sprite of Air -->
+		<npc id="27381" x="41178" y="-65016" z="-2416" heading="0" respawnDelay="60" /> <!-- Reckless Sprite of Air -->
+		<npc id="27381" x="41268" y="-65322" z="-2456" heading="0" respawnDelay="60" /> <!-- Reckless Sprite of Air -->
+		<npc id="27381" x="41538" y="-65373" z="-2456" heading="15355" respawnDelay="60" /> <!-- Reckless Sprite of Air -->
+		<npc id="27381" x="41628" y="-65322" z="-2464" heading="0" respawnDelay="60" /> <!-- Reckless Sprite of Air -->
+		<npc id="27381" x="41628" y="-65220" z="-2448" heading="0" respawnDelay="60" /> <!-- Reckless Sprite of Air -->
+		<npc id="27381" x="41808" y="-65424" z="-2456" heading="0" respawnDelay="60" /> <!-- Reckless Sprite of Air -->
+		<npc id="30767" x="42989" y="-47791" z="-798" heading="1103" respawnDelay="60" /> <!-- Auctioneer -->
+		<npc id="31031" x="43259" y="-50167" z="-792" heading="16384" respawnDelay="5" /> <!-- Broadcasting Tower -->
+		<npc id="31092" x="42924" y="-41424" z="-2188" heading="20000" respawnDelay="60" /> <!-- Black Marketeer of Mammon -->
+		<npc id="31266" x="43456" y="-49520" z="-800" heading="58198" respawnDelay="60" /> <!-- Kaiser -->
+		<npc id="31300" x="44692" y="-47312" z="-800" heading="0" respawnDelay="60" /> <!-- Drumond -->
+		<npc id="31301" x="44700" y="-47396" z="-800" heading="0" respawnDelay="60" /> <!-- Nils -->
+		<npc id="31302" x="44704" y="-47472" z="-800" heading="0" respawnDelay="60" /> <!-- Vladimir -->
+		<npc id="31303" x="44620" y="-47620" z="-800" heading="50000" respawnDelay="60" /> <!-- Alisha -->
+		<npc id="31304" x="45472" y="-47424" z="-796" heading="49000" respawnDelay="60" /> <!-- Astrid -->
+		<npc id="31305" x="45184" y="-47444" z="-796" heading="49000" respawnDelay="60" /> <!-- Candice -->
+		<npc id="31307" x="45120" y="-47452" z="-796" heading="49000" respawnDelay="60" /> <!-- Weber -->
+		<npc id="31308" x="44976" y="-47440" z="-800" heading="17000" respawnDelay="60" /> <!-- Achim -->
+		<npc id="31309" x="43456" y="-49520" z="-800" heading="0" respawnDelay="60" /> <!-- Woods -->
+		<npc id="31311" x="43556" y="-48592" z="-800" heading="0" respawnDelay="60" /> <!-- Hugin -->
+		<npc id="31312" x="43348" y="-48444" z="-800" heading="16500" respawnDelay="60" /> <!-- Durin -->
+		<npc id="31313" x="43308" y="-48444" z="-800" heading="16500" respawnDelay="60" /> <!-- Lunin -->
+		<npc id="31314" x="43560" y="-48912" z="-800" heading="1000" respawnDelay="60" /> <!-- Donal -->
+		<npc id="31315" x="43556" y="-48640" z="-800" heading="0" respawnDelay="60" /> <!-- Daisy -->
+		<npc id="31316" x="45072" y="-48784" z="-800" heading="49000" respawnDelay="60" /> <!-- Vincenz -->
+		<npc id="31317" x="45136" y="-48624" z="-800" heading="49000" respawnDelay="60" /> <!-- Lombert -->
+		<npc id="31319" x="45620" y="-48460" z="-800" heading="22000" respawnDelay="60" /> <!-- Hans -->
+		<npc id="31320" x="43824" y="-47664" z="-800" heading="50000" respawnDelay="60" /> <!-- Ilyana -->
+		<npc id="31321" x="38368" y="-46912" z="-1131" heading="33000" respawnDelay="60" /> <!-- Siegmund -->
+		<npc id="31322" x="38060" y="-46920" z="-1143" heading="49000" respawnDelay="60" /> <!-- Erian -->
+		<npc id="31323" x="37240" y="-46916" z="-1143" heading="49000" respawnDelay="60" /> <!-- Beryl -->
+		<npc id="31324" x="38368" y="-47096" z="-1143" heading="33000" respawnDelay="60" /> <!-- Andromeda -->
+		<npc id="31325" x="36832" y="-46916" z="-1143" heading="49000" respawnDelay="60" /> <!-- Themis -->
+		<npc id="31326" x="38368" y="-46728" z="-1143" heading="33000" respawnDelay="60" /> <!-- Lambac -->
+		<npc id="31327" x="37648" y="-46920" z="-1135" heading="49000" respawnDelay="60" /> <!-- Tazki -->
+		<npc id="31328" x="36476" y="-49032" z="-1104" heading="55000" respawnDelay="60" /> <!-- Innocentin -->
+		<npc id="31329" x="36528" y="-49024" z="-1104" heading="44000" respawnDelay="60" /> <!-- Eliyah -->
+		<npc id="31330" x="36448" y="-49072" z="-1104" heading="0" respawnDelay="60" /> <!-- Wagner -->
+		<npc id="31331" x="36256" y="-49536" z="-1104" heading="0" respawnDelay="60" /> <!-- Valdis -->
+		<npc id="31332" x="36336" y="-49904" z="-1104" heading="10000" respawnDelay="60" /> <!-- Amelia -->
+		<npc id="31333" x="36548" y="-50064" z="-1104" heading="47000" respawnDelay="60" /> <!-- Rumiel -->
+		<npc id="31334" x="38464" y="-49920" z="-1105" heading="57000" respawnDelay="60" /> <!-- Tifaren -->
+		<npc id="31335" x="38512" y="-49552" z="-1105" heading="33000" respawnDelay="60" /> <!-- Kayan -->
+		<npc id="31336" x="38432" y="-49184" z="-1105" heading="40000" respawnDelay="60" /> <!-- Rahorakti -->
+		<npc id="31337" x="38220" y="-49012" z="-1105" heading="48000" respawnDelay="60" /> <!-- Mekara -->
+		<npc id="31338" x="37008" y="-49200" z="-1127" heading="49000" respawnDelay="60" /> <!-- Anton -->
+		<npc id="31339" x="37728" y="-49216" z="-1127" heading="49000" respawnDelay="60" /> <!-- Hakran -->
+		<npc id="31340" x="42596" y="-47988" z="-800" heading="0" respawnDelay="60" /> <!-- Mathias -->
+		<npc id="31341" x="42596" y="-48484" z="-800" heading="0" respawnDelay="60" /> <!-- Richtor -->
+		<npc id="31342" x="40640" y="-52620" z="-880" heading="40000" respawnDelay="60" /> <!-- Dimitri -->
+		<npc id="31343" x="40848" y="-52880" z="-912" heading="36000" respawnDelay="60" /> <!-- Bellard -->
+		<npc id="31344" x="46384" y="-51408" z="-811" heading="57000" respawnDelay="60" /> <!-- Schmidt -->
+		<npc id="31345" x="46832" y="-50912" z="-811" heading="57000" respawnDelay="60" /> <!-- Ian -->
+		<npc id="31346" x="42544" y="-46688" z="-800" heading="16000" respawnDelay="60" /> <!-- Sirius -->
+		<npc id="31347" x="39776" y="-39872" z="-3607" heading="7500" respawnDelay="60" /> <!-- Burke -->
+		<npc id="31348" x="35480" y="-48224" z="899" heading="0" respawnDelay="60" /> <!-- Agripel -->
+		<npc id="31349" x="35408" y="-48368" z="899" heading="0" respawnDelay="60" /> <!-- Benedict -->
+		<npc id="31350" x="35416" y="-48076" z="899" heading="0" respawnDelay="60" /> <!-- Dominic -->
+		<npc id="31351" x="37762" y="-37946" z="-3668" heading="49000" respawnDelay="60" /> <!-- Volker -->
+		<npc id="31522" x="51878" y="-54796" z="-3167" heading="22912" respawnDelay="60" /> <!-- Mysterious Wizard -->
+		<npc id="31523" x="51475" y="-54596" z="-3155" heading="11040" respawnDelay="60" /> <!-- Tombstone -->
+		<npc id="31526" x="51995" y="-51265" z="-3104" heading="-2064" respawnDelay="60" /> <!-- Broken Bookshelf -->
+		<npc id="31527" x="34767" y="-54606" z="-2048" heading="0" respawnDelay="60" /> <!-- Well -->
+		<npc id="31529" x="34885" y="-54472" z="-2050" heading="26240" respawnDelay="60" /> <!-- Ghost of Adventurer -->
+		<npc id="31530" x="56393" y="-47191" z="-2993" heading="-10800" respawnDelay="60" /> <!-- Box -->
+		<npc id="31531" x="60162" y="-35900" z="-672" heading="19944" respawnDelay="60" /> <!-- Tombstone -->
+		<npc id="31532" x="47151" y="-36080" z="-1608" heading="0" respawnDelay="240" periodOfDay="night" /> <!-- Lidia's Maid -->
+		<npc id="31533" x="47059" y="-35982" z="-1635" heading="-22192" respawnDelay="60" /> <!-- Broken Bookshelf -->
+		<npc id="31534" x="49952" y="-46960" z="-3396" heading="-3704" respawnDelay="60" /> <!-- Broken Bookshelf -->
+		<npc id="31535" x="59753" y="-47648" z="-2728" heading="-27032" respawnDelay="60" /> <!-- Broken Bookshelf -->
+		<npc id="31578" x="44216" y="-48880" z="-800" heading="33000" respawnDelay="60" /> <!-- Hilgendorf -->
+		<npc id="31592" x="45184" y="-48624" z="-800" heading="49000" respawnDelay="60" /> <!-- Telson -->
+		<npc id="31593" x="45184" y="-48624" z="-800" heading="49000" respawnDelay="5" /> <!-- Dorothy -->
+		<npc id="31594" x="43556" y="-48864" z="-800" heading="1000" respawnDelay="60" /> <!-- Mond -->
+		<npc id="31656" x="47376" y="-56880" z="-2340" heading="58000" respawnDelay="60" /> <!-- Tablet of Vision -->
+		<npc id="31657" x="46016" y="-36368" z="-1659" heading="0" respawnDelay="60" /> <!-- Tablet of Vision -->
+		<npc id="31673" x="41568" y="-52624" z="-821" heading="25000" respawnDelay="60" /> <!-- Patrol -->
+		<npc id="31673" x="43584" y="-52240" z="-811" heading="57000" respawnDelay="60" /> <!-- Patrol -->
+		<npc id="31673" x="43584" y="-46528" z="-800" heading="25000" respawnDelay="60" /> <!-- Patrol -->
+		<npc id="31673" x="44736" y="-51904" z="-811" heading="58000" respawnDelay="60" /> <!-- Patrol -->
+		<npc id="31673" x="45268" y="-46820" z="-811" heading="13000" respawnDelay="60" /> <!-- Patrol -->
+		<npc id="31673" x="45456" y="-51424" z="-811" heading="49000" respawnDelay="60" /> <!-- Patrol -->
+		<npc id="31673" x="46272" y="-47632" z="-811" heading="5000" respawnDelay="60" /> <!-- Patrol -->
+		<npc id="31673" x="46672" y="-49888" z="-811" heading="8000" respawnDelay="60" /> <!-- Patrol -->
+		<npc id="31673" x="46752" y="-48496" z="-811" heading="0" respawnDelay="60" /> <!-- Patrol -->
+		<npc id="31674" x="36412" y="-48448" z="-1151" heading="0" respawnDelay="60" /> <!-- Patrol -->
+		<npc id="31674" x="36416" y="-48032" z="-1151" heading="0" respawnDelay="60" /> <!-- Patrol -->
+		<npc id="31674" x="37240" y="-47712" z="-1127" heading="49000" respawnDelay="60" /> <!-- Patrol -->
+		<npc id="31674" x="37248" y="-48752" z="-1127" heading="16000" respawnDelay="60" /> <!-- Patrol -->
+		<npc id="31674" x="37456" y="-48752" z="-1127" heading="16000" respawnDelay="60" /> <!-- Patrol -->
+		<npc id="31674" x="37468" y="-47712" z="-1127" heading="49000" respawnDelay="60" /> <!-- Patrol -->
+		<npc id="31674" x="39984" y="-39408" z="-3607" heading="33000" respawnDelay="60" /> <!-- Patrol -->
+		<npc id="31674" x="40832" y="-48560" z="-775" heading="0" respawnDelay="60" /> <!-- Patrol -->
+		<npc id="31674" x="40832" y="-47920" z="-775" heading="0" respawnDelay="60" /> <!-- Patrol -->
+		<npc id="31674" x="41104" y="-52152" z="-832" heading="57000" respawnDelay="60" /> <!-- Patrol -->
+		<npc id="31688" x="36048" y="-48208" z="-1095" heading="0" respawnDelay="60" /> <!-- Grand Olympiad Manager -->
+		<npc id="31690" x="36048" y="-48268" z="-1095" heading="0" respawnDelay="60" /> <!-- Monument of Heroes -->
+		<npc id="31691" x="36792" y="-46912" z="-1143" heading="0" respawnDelay="60" /> <!-- Training Dummy -->
+		<npc id="31691" x="37200" y="-46912" z="-1143" heading="0" respawnDelay="60" /> <!-- Training Dummy -->
+		<npc id="31691" x="37616" y="-46912" z="-1143" heading="0" respawnDelay="60" /> <!-- Training Dummy -->
+		<npc id="31691" x="38020" y="-46912" z="-1143" heading="0" respawnDelay="60" /> <!-- Training Dummy -->
+		<npc id="31694" x="45664" y="-50368" z="-800" heading="29000" respawnDelay="60" /> <!-- Priest of Dawn -->
+		<npc id="31695" x="44528" y="-48420" z="-800" heading="17000" respawnDelay="60" /> <!-- Priest of Dusk -->
+		<npc id="31696" x="37600" y="-37952" z="-3643" heading="49000" respawnDelay="60" /> <!-- Platis -->
+		<npc id="31698" x="38208" y="-48048" z="899" heading="0" respawnDelay="60" /> <!-- Arisha -->
+		<npc id="31699" x="38384" y="-48064" z="-1151" heading="49000" respawnDelay="60" /> <!-- Stanislava -->
+		<npc id="31742" x="32960" y="-48224" z="1780" heading="33000" respawnDelay="60" /> <!-- Virgil -->
+		<npc id="31743" x="32988" y="-48268" z="1780" heading="33000" respawnDelay="60" /> <!-- Kassandra -->
+		<npc id="31744" x="32984" y="-48180" z="1780" heading="33000" respawnDelay="60" /> <!-- Ogmar -->
+		<npc id="31832" x="42928" y="-41616" z="-2192" heading="37500" respawnDelay="60" /> <!-- Adventure Guildsman -->
+		<npc id="31833" x="42912" y="-47648" z="-800" heading="500" respawnDelay="60" /> <!-- Adventure Guildsman -->
+		<npc id="31834" x="40528" y="-52308" z="-836" heading="0" respawnDelay="60" /> <!-- Adventure Guildsman -->
+		<npc id="31835" x="45552" y="-49888" z="-800" heading="34000" respawnDelay="60" /> <!-- Adventure Guildsman -->
+		<npc id="31836" x="37552" y="-47440" z="-1127" heading="16500" respawnDelay="60" /> <!-- Adventure Guildsman -->
+		<npc id="32009" x="36006" y="-48748" z="891" heading="10970" respawnDelay="60" /> <!-- Devorin -->
+		<npc id="32010" x="36432" y="-51296" z="720" heading="1222" respawnDelay="60" /> <!-- Flauron -->
+		<npc id="32024" x="45730" y="-48373" z="-797" heading="16205" respawnDelay="60" /> <!-- Mulia -->
+		<npc id="32039" x="34842" y="-49756" z="-763" heading="63641" respawnDelay="60" /> <!-- Triol's Mirror -->
+		<npc id="32322" x="44113" y="-47596" z="-792" heading="55308" respawnDelay="60" /> <!-- Item Broker -->
+		<npc id="32326" x="44480" y="-49536" z="-792" heading="42012" respawnDelay="60" /> <!-- Yang -->
+		<npc id="32327" x="43556" y="-47608" z="-792" heading="36864" respawnDelay="60" /> <!-- Adventurers' Guide -->
+		<npc id="32478" x="43568" y="-48976" z="-792" heading="1000" respawnDelay="60" /> <!-- Dimensional Merchant -->
+		<npc id="32484" x="42665" y="-47924" z="-792" heading="54596" respawnDelay="60" /> <!-- Pathfinder Worker -->
+		<npc id="32596" x="37069" y="-49877" z="-1128" heading="16384" respawnDelay="60" /> <!-- Sophia -->
+		<npc id="32612" x="44267" y="-49213" z="-792" heading="33999" respawnDelay="60" /> <!-- Olf Adams -->
+		<npc id="32883" x="45524" y="-48446" z="-792" heading="8191" respawnDelay="60" /> <!-- Hedinger -->
+		<npc id="35512" x="38278" y="-48426" z="896" heading="1353" respawnDelay="60" /> <!-- Manor Manager -->
+		<npc id="35566" x="39442" y="-48314" z="898" heading="63334" respawnDelay="60" /> <!-- Ronald -->
+		<npc id="35567" x="39316" y="-48316" z="897" heading="29785" respawnDelay="60" /> <!-- Emil -->
+		<npc id="35568" x="37655" y="-50596" z="900" heading="46013" respawnDelay="60" /> <!-- Wayne -->
+		<npc id="35569" x="37660" y="-50377" z="897" heading="15876" respawnDelay="60" /> <!-- Daniel -->
+		<npc id="35570" x="38589" y="-50318" z="900" heading="48351" respawnDelay="60" /> <!-- Patty -->
+		<npc id="35571" x="38489" y="-50118" z="897" heading="22211" respawnDelay="60" /> <!-- Dale -->
+		<npc id="35572" x="39259" y="-49645" z="900" heading="57865" respawnDelay="60" /> <!-- Jimmy -->
+		<npc id="35573" x="39075" y="-49536" z="897" heading="26119" respawnDelay="60" /> <!-- Shawn -->
+		<npc id="35574" x="39333" y="-46964" z="900" heading="5178" respawnDelay="60" /> <!-- Michael -->
+		<npc id="35575" x="39152" y="-47057" z="897" heading="38334" respawnDelay="60" /> <!-- Ryan -->
+		<npc id="35576" x="38723" y="-46225" z="900" heading="10251" respawnDelay="60" /> <!-- Jack -->
+		<npc id="35577" x="38618" y="-46413" z="897" heading="41275" respawnDelay="60" /> <!-- Harry -->
+		<npc id="35578" x="37808" y="-45879" z="900" heading="19923" respawnDelay="60" /> <!-- Karuto -->
+		<npc id="35579" x="37811" y="-46092" z="897" heading="46596" respawnDelay="60" /> <!-- Egon -->
+		<npc id="36478" x="43456" y="-49579" z="-796" heading="3743" respawnDelay="60" /> <!-- Mickey -->
+		<npc id="36480" x="36058" y="-48333" z="-1096" heading="0" respawnDelay="60" /> <!-- Scipio -->
+	</spawn>
+	<spawn zone="rune09_2116_01">
+		<territory minZ="-2885" maxZ="-2335">
+			<node x="51088" y="-61979" />
+			<node x="51906" y="-61281" />
+			<node x="51096" y="-60374" />
+			<node x="49342" y="-60066" />
+			<node x="48950" y="-60699" />
+			<node x="49872" y="-61921" />
+		</territory>
+		<npc id="21549" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Corrupted Guard -->
+		<npc id="21553" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Trampled Man -->
+		<npc id="21558" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Bone Snatcher -->
+		<npc id="21559" respawnDelay="30" count="1" periodOfDay="day" /> <!-- Bone Maker -->
+		<npc id="21549" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Corrupted Guard -->
+		<npc id="21550" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Corrupted Guard -->
+		<npc id="21552" respawnDelay="30" count="1" periodOfDay="night" /> <!-- Resurrected Guard -->
+		<npc id="21555" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Slaughter Executioner -->
+		<npc id="21556" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Slaughter Executioner -->
+	</spawn>
+	<spawn zone="rune09_2116_02">
+		<territory minZ="-3394" maxZ="-2694">
+			<node x="53066" y="-60914" />
+			<node x="54969" y="-60537" />
+			<node x="53552" y="-58689" />
+			<node x="51986" y="-59406" />
+			<node x="51599" y="-60439" />
+		</territory>
+		<npc id="21549" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Corrupted Guard -->
+		<npc id="21554" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Trampled Man -->
+		<npc id="21557" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Bone Snatcher -->
+		<npc id="21558" respawnDelay="30" count="1" periodOfDay="day" /> <!-- Bone Snatcher -->
+		<npc id="21559" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Bone Maker -->
+		<npc id="21549" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Corrupted Guard -->
+		<npc id="21550" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Corrupted Guard -->
+		<npc id="21552" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Resurrected Guard -->
+		<npc id="21555" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Slaughter Executioner -->
+		<npc id="21556" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Slaughter Executioner -->
+	</spawn>
+	<spawn zone="rune09_2116_03">
+		<territory minZ="-3734" maxZ="-2834">
+			<node x="55947" y="-59306" />
+			<node x="55857" y="-57736" />
+			<node x="55422" y="-57554" />
+			<node x="53718" y="-58754" />
+			<node x="55017" y="-60462" />
+		</territory>
+		<npc id="21549" respawnDelay="30" count="1" periodOfDay="day" /> <!-- Corrupted Guard -->
+		<npc id="21554" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Trampled Man -->
+		<npc id="21557" respawnDelay="30" count="1" periodOfDay="day" /> <!-- Bone Snatcher -->
+		<npc id="21558" respawnDelay="30" count="1" periodOfDay="day" /> <!-- Bone Snatcher -->
+		<npc id="21559" respawnDelay="30" count="1" periodOfDay="day" /> <!-- Bone Maker -->
+		<npc id="21549" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Corrupted Guard -->
+		<npc id="21550" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Corrupted Guard -->
+		<npc id="21552" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Resurrected Guard -->
+		<npc id="21556" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Slaughter Executioner -->
+	</spawn>
+	<spawn zone="rune09_2116_04">
+		<territory minZ="-3364" maxZ="-2364">
+			<node x="50875" y="-59952" />
+			<node x="53186" y="-58121" />
+			<node x="52429" y="-57584" />
+			<node x="49356" y="-58742" />
+			<node x="49343" y="-59399" />
+		</territory>
+		<npc id="21549" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Corrupted Guard -->
+		<npc id="21553" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Trampled Man -->
+		<npc id="21558" respawnDelay="30" count="1" periodOfDay="day" /> <!-- Bone Snatcher -->
+		<npc id="21559" respawnDelay="30" count="1" periodOfDay="day" /> <!-- Bone Maker -->
+		<npc id="21549" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Corrupted Guard -->
+		<npc id="21550" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Corrupted Guard -->
+		<npc id="21552" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Resurrected Guard -->
+		<npc id="21556" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Slaughter Executioner -->
+	</spawn>
+	<spawn zone="rune09_2116_05">
+		<territory minZ="-2822" maxZ="-2022">
+			<node x="47991" y="-58773" />
+			<node x="49889" y="-57367" />
+			<node x="48562" y="-55344" />
+			<node x="47061" y="-56908" />
+			<node x="46714" y="-58004" />
+		</territory>
+		<npc id="21547" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Corrupted Knight -->
+		<npc id="21548" respawnDelay="30" count="5" periodOfDay="day" /> <!-- Resurrected Knight -->
+		<npc id="21550" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Corrupted Guard -->
+		<npc id="21554" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Trampled Man -->
+		<npc id="21547" respawnDelay="30" count="5" periodOfDay="night" /> <!-- Corrupted Knight -->
+		<npc id="21548" respawnDelay="30" count="5" periodOfDay="night" /> <!-- Resurrected Knight -->
+		<npc id="21549" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Corrupted Guard -->
+		<npc id="21555" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Slaughter Executioner -->
+	</spawn>
+	<spawn zone="rune09_2116_06">
+		<territory minZ="-3099" maxZ="-2299">
+			<node x="49958" y="-57323" />
+			<node x="51530" y="-57076" />
+			<node x="51827" y="-55793" />
+			<node x="49874" y="-54770" />
+			<node x="48623" y="-55290" />
+		</territory>
+		<npc id="21547" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Corrupted Knight -->
+		<npc id="21548" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Resurrected Knight -->
+		<npc id="21550" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Corrupted Guard -->
+		<npc id="21554" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Trampled Man -->
+		<npc id="21547" respawnDelay="30" count="5" periodOfDay="night" /> <!-- Corrupted Knight -->
+		<npc id="21548" respawnDelay="30" count="5" periodOfDay="night" /> <!-- Resurrected Knight -->
+		<npc id="21549" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Corrupted Guard -->
+		<npc id="21555" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Slaughter Executioner -->
+	</spawn>
+	<spawn zone="rune09_2116_07">
+		<territory minZ="-3622" maxZ="-2522">
+			<node x="55839" y="-56824" />
+			<node x="56094" y="-54794" />
+			<node x="55017" y="-53294" />
+			<node x="53072" y="-54320" />
+			<node x="53029" y="-56382" />
+			<node x="54195" y="-57695" />
+		</territory>
+		<npc id="18119" respawnDelay="60" count="20" periodOfDay="day" /> <!-- Corpse of Deadman -->
+		<npc id="21563" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Bone Collector -->
+		<npc id="21561" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Sacrificed Man -->
+		<npc id="21565" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Bone Animator -->
+		<npc id="21596" respawnDelay="90" count="3" periodOfDay="day" /> <!-- Requiem Lord -->
+		<npc id="21570" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Ghost of Betrayer -->
+		<npc id="18119" respawnDelay="60" count="12" periodOfDay="night" /> <!-- Corpse of Deadman -->
+		<npc id="21564" respawnDelay="30" count="5" periodOfDay="night" /> <!-- Skull Collector -->
+		<npc id="21566" respawnDelay="90" count="5" periodOfDay="night" /> <!-- Skull Animator -->
+		<npc id="21568" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Devil Bat -->
+		<npc id="21569" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Devil Bat -->
+		<npc id="21573" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Atrox -->
+	</spawn>
+	<spawn zone="rune09_2116_08">
+		<territory minZ="-3578" maxZ="-2778">
+			<node x="58000" y="-53340" />
+			<node x="58352" y="-51238" />
+			<node x="57194" y="-50956" />
+			<node x="55910" y="-51563" />
+			<node x="55215" y="-53245" />
+			<node x="56372" y="-54735" />
+		</territory>
+		<npc id="18119" respawnDelay="60" count="20" periodOfDay="day" /> <!-- Corpse of Deadman -->
+		<npc id="21561" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Sacrificed Man -->
+		<npc id="21596" respawnDelay="90" count="3" periodOfDay="day" /> <!-- Requiem Lord -->
+		<npc id="21567" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Bone Slayer -->
+		<npc id="21570" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Ghost of Betrayer -->
+		<npc id="18119" respawnDelay="60" count="12" periodOfDay="night" /> <!-- Corpse of Deadman -->
+		<npc id="21564" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Skull Collector -->
+		<npc id="21566" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Skull Animator -->
+		<npc id="21568" respawnDelay="90" count="3" periodOfDay="night" /> <!-- Devil Bat -->
+		<npc id="21569" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Devil Bat -->
+		<npc id="21573" respawnDelay="30" count="5" periodOfDay="night" /> <!-- Atrox -->
+	</spawn>
+	<spawn zone="rune09_2116_09">
+		<territory minZ="-3607" maxZ="-2807">
+			<node x="59147" y="-57639" />
+			<node x="59410" y="-54956" />
+			<node x="58373" y="-54061" />
+			<node x="56759" y="-55546" />
+			<node x="56378" y="-57632" />
+			<node x="57310" y="-58768" />
+		</territory>
+		<npc id="18119" respawnDelay="60" count="15" periodOfDay="day" /> <!-- Corpse of Deadman -->
+		<npc id="21558" respawnDelay="30" count="6" periodOfDay="day" /> <!-- Bone Snatcher -->
+		<npc id="21559" respawnDelay="30" count="6" periodOfDay="day" /> <!-- Bone Maker -->
+		<npc id="21561" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Sacrificed Man -->
+		<npc id="21563" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Bone Collector -->
+		<npc id="18119" respawnDelay="60" count="5" periodOfDay="night" /> <!-- Corpse of Deadman -->
+		<npc id="21551" respawnDelay="30" count="5" periodOfDay="night" /> <!-- Resurrected Guard -->
+		<npc id="21552" respawnDelay="30" count="5" periodOfDay="night" /> <!-- Resurrected Guard -->
+		<npc id="21560" respawnDelay="30" count="5" periodOfDay="night" /> <!-- Bone Shaper -->
+		<npc id="21562" respawnDelay="30" count="5" periodOfDay="night" /> <!-- Guillotine's Ghost -->
+		<npc id="21564" respawnDelay="30" count="5" periodOfDay="night" /> <!-- Skull Collector -->
+	</spawn>
+	<spawn zone="rune09_2116_10">
+		<territory minZ="-3515" maxZ="-2715">
+			<node x="59981" y="-54556" />
+			<node x="60939" y="-53182" />
+			<node x="60726" y="-52341" />
+			<node x="59098" y="-52110" />
+			<node x="58513" y="-53596" />
+		</territory>
+		<npc id="21561" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Sacrificed Man -->
+		<npc id="21567" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Bone Slayer -->
+		<npc id="21565" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Bone Animator -->
+		<npc id="21562" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Guillotine's Ghost -->
+		<npc id="21566" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Skull Animator -->
+		<npc id="21569" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Devil Bat -->
+	</spawn>
+	<spawn zone="rune09_2116_11">
+		<territory minZ="-3295" maxZ="-2595">
+			<node x="60753" y="-52237" />
+			<node x="61459" y="-51067" />
+			<node x="60988" y="-49341" />
+			<node x="59148" y="-50895" />
+			<node x="59142" y="-52067" />
+		</territory>
+		<npc id="21563" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Bone Collector -->
+		<npc id="21567" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Bone Slayer -->
+		<npc id="21565" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Bone Animator -->
+		<npc id="21562" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Guillotine's Ghost -->
+		<npc id="21566" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Skull Animator -->
+		<npc id="21569" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Devil Bat -->
+	</spawn>
+	<spawn zone="rune09_2116_12">
+		<territory minZ="-3195" maxZ="-2495">
+			<node x="51547" y="-54171" />
+			<node x="52883" y="-52822" />
+			<node x="50208" y="-51055" />
+			<node x="50231" y="-53713" />
+		</territory>
+		<npc id="18119" respawnDelay="60" count="6" periodOfDay="day" /> <!-- Corpse of Deadman -->
+		<npc id="21557" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Bone Snatcher -->
+		<npc id="21563" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Bone Collector -->
+		<npc id="21565" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Bone Animator -->
+		<npc id="21596" respawnDelay="90" count="2" periodOfDay="day" /> <!-- Requiem Lord -->
+		<npc id="18119" respawnDelay="60" count="8" periodOfDay="night" /> <!-- Corpse of Deadman -->
+		<npc id="21551" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Resurrected Guard -->
+		<npc id="21560" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Bone Shaper -->
+		<npc id="21564" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Skull Collector -->
+		<npc id="21568" respawnDelay="90" count="2" periodOfDay="night" /> <!-- Devil Bat -->
+	</spawn>
+	<spawn zone="rune09_2116_13">
+		<territory minZ="-3582" maxZ="-2482">
+			<node x="52993" y="-52764" />
+			<node x="54593" y="-51652" />
+			<node x="52548" y="-49621" />
+			<node x="50566" y="-49198" />
+			<node x="50248" y="-50992" />
+		</territory>
+		<npc id="18119" respawnDelay="60" count="9" periodOfDay="day" /> <!-- Corpse of Deadman -->
+		<npc id="21557" respawnDelay="30" count="5" periodOfDay="day" /> <!-- Bone Snatcher -->
+		<npc id="21563" respawnDelay="30" count="5" periodOfDay="day" /> <!-- Bone Collector -->
+		<npc id="21565" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Bone Animator -->
+		<npc id="21596" respawnDelay="90" count="3" periodOfDay="day" /> <!-- Requiem Lord -->
+		<npc id="18119" respawnDelay="60" count="12" periodOfDay="night" /> <!-- Corpse of Deadman -->
+		<npc id="21551" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Resurrected Guard -->
+		<npc id="21560" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Bone Shaper -->
+		<npc id="21564" respawnDelay="30" count="5" periodOfDay="night" /> <!-- Skull Collector -->
+		<npc id="21568" respawnDelay="90" count="4" periodOfDay="night" /> <!-- Devil Bat -->
+	</spawn>
+	<spawn zone="rune09_2116_14">
+		<territory minZ="-3762" maxZ="-2562">
+			<node x="58979" y="-50028" />
+			<node x="58254" y="-47746" />
+			<node x="55197" y="-46308" />
+			<node x="53374" y="-47521" />
+			<node x="53261" y="-49355" />
+			<node x="55040" y="-50952" />
+		</territory>
+		<npc id="18119" respawnDelay="60" count="18" periodOfDay="day" /> <!-- Corpse of Deadman -->
+		<npc id="21570" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Ghost of Betrayer -->
+		<npc id="21572" respawnDelay="30" count="8" periodOfDay="day" /> <!-- Bone Sweeper -->
+		<npc id="21574" respawnDelay="30" count="6" periodOfDay="day" /> <!-- Bone Grinder -->
+		<npc id="21575" respawnDelay="30" count="6" periodOfDay="day" /> <!-- Bone Grinder -->
+		<npc id="21580" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Bone Caster -->
+		<npc id="21599" respawnDelay="90" count="4" periodOfDay="day" /> <!-- Requiem Priest -->
+		<npc id="18119" respawnDelay="60" count="15" periodOfDay="night" /> <!-- Corpse of Deadman -->
+		<npc id="21571" respawnDelay="30" count="7" periodOfDay="night" /> <!-- Ghost of Rebellion Soldier -->
+		<npc id="21573" respawnDelay="30" count="7" periodOfDay="night" /> <!-- Atrox -->
+		<npc id="21576" respawnDelay="30" count="7" periodOfDay="night" /> <!-- Ghost of Guillotine -->
+		<npc id="21577" respawnDelay="30" count="7" periodOfDay="night" /> <!-- Ghost of Guillotine -->
+		<npc id="21579" respawnDelay="30" count="7" periodOfDay="night" /> <!-- Ghost of Rebellion Leader -->
+		<npc id="21599" respawnDelay="90" count="5" periodOfDay="night" /> <!-- Requiem Priest -->
+	</spawn>
+	<spawn zone="rune09_2116_15">
+		<territory minZ="-3247" maxZ="-2347">
+			<node x="61271" y="-48011" />
+			<node x="62135" y="-44855" />
+			<node x="61207" y="-44065" />
+			<node x="58383" y="-47642" />
+			<node x="59055" y="-49908" />
+		</territory>
+		<npc id="21570" respawnDelay="30" count="6" periodOfDay="day" /> <!-- Ghost of Betrayer -->
+		<npc id="21575" respawnDelay="30" count="6" periodOfDay="day" /> <!-- Bone Grinder -->
+		<npc id="21578" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Behemoth Zombie -->
+		<npc id="21580" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Bone Caster -->
+		<npc id="21581" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Bone Puppeteer -->
+		<npc id="21571" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Ghost of Rebellion Soldier -->
+		<npc id="21573" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Atrox -->
+		<npc id="21576" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Ghost of Guillotine -->
+		<npc id="21577" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Ghost of Guillotine -->
+		<npc id="21579" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Ghost of Rebellion Leader -->
+		<npc id="21582" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Vampire Soldier -->
+		<npc id="21599" respawnDelay="90" count="4" periodOfDay="night" /> <!-- Requiem Priest -->
+	</spawn>
+	<spawn zone="rune09_2116_16">
+		<territory minZ="-3465" maxZ="-2165">
+			<node x="58049" y="-47430" />
+			<node x="59409" y="-45332" />
+			<node x="55094" y="-42164" />
+			<node x="54333" y="-44387" />
+			<node x="55252" y="-46179" />
+		</territory>
+		<npc id="18119" respawnDelay="30" count="13" periodOfDay="day" /> <!-- Corpse of Deadman -->
+		<npc id="21580" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Bone Caster -->
+		<npc id="21581" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Bone Puppeteer -->
+		<npc id="21584" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Bone Scavenger -->
+		<npc id="21587" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Vampire Warrior -->
+		<npc id="21590" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Vampire Magister -->
+		<npc id="21593" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Vampire Warlord -->
+		<npc id="21599" respawnDelay="90" count="4" periodOfDay="day" /> <!-- Requiem Priest -->
+		<npc id="21579" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Ghost of Rebellion Leader -->
+		<npc id="21582" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Vampire Soldier -->
+		<npc id="21585" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Vampire Magician -->
+		<npc id="21586" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Vampire Adept -->
+		<npc id="21589" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Vampire Wizard -->
+		<npc id="21592" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Vampire Magister -->
+		<npc id="21595" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Vampire Warlord -->
+		<npc id="21599" respawnDelay="90" count="3" periodOfDay="night" /> <!-- Requiem Priest -->
+	</spawn>
+	<spawn zone="rune09_2116_17">
+		<territory minZ="-3785" maxZ="-2485">
+			<node x="52416" y="-49303" />
+			<node x="52699" y="-45840" />
+			<node x="48978" y="-45027" />
+			<node x="48979" y="-47767" />
+			<node x="50416" y="-48949" />
+		</territory>
+		<npc id="18119" respawnDelay="30" count="12" periodOfDay="day" /> <!-- Corpse of Deadman -->
+		<npc id="21567" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Bone Slayer -->
+		<npc id="21572" respawnDelay="30" count="5" periodOfDay="day" /> <!-- Bone Sweeper -->
+		<npc id="21574" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Bone Grinder -->
+		<npc id="18119" respawnDelay="30" count="10" periodOfDay="night" /> <!-- Corpse of Deadman -->
+		<npc id="21568" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Devil Bat -->
+		<npc id="21571" respawnDelay="30" count="7" periodOfDay="night" /> <!-- Ghost of Rebellion Soldier -->
+		<npc id="21573" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Atrox -->
+		<npc id="21577" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Ghost of Guillotine -->
+	</spawn>
+	<spawn zone="rune09_2116_18">
+		<territory minZ="-3454" maxZ="-2054">
+			<node x="53057" y="-45111" />
+			<node x="53121" y="-42263" />
+			<node x="50824" y="-41678" />
+			<node x="50259" y="-44275" />
+			<node x="51907" y="-45600" />
+		</territory>
+		<npc id="21575" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Bone Grinder -->
+		<npc id="21578" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Behemoth Zombie -->
+		<npc id="21580" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Bone Caster -->
+		<npc id="21583" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Bone Scavenger -->
+		<npc id="21571" respawnDelay="30" count="6" periodOfDay="night" /> <!-- Ghost of Rebellion Soldier -->
+		<npc id="21576" respawnDelay="30" count="6" periodOfDay="night" /> <!-- Ghost of Guillotine -->
+		<npc id="21582" respawnDelay="30" count="5" periodOfDay="night" /> <!-- Vampire Soldier -->
+	</spawn>
+	<spawn zone="rune09_2116_19">
+		<territory minZ="-2919" maxZ="-1519">
+			<node x="52766" y="-41986" />
+			<node x="51862" y="-38059" />
+			<node x="50873" y="-37668" />
+			<node x="48991" y="-38876" />
+			<node x="50845" y="-41514" />
+		</territory>
+		<npc id="21575" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Bone Grinder -->
+		<npc id="21578" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Behemoth Zombie -->
+		<npc id="21583" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Bone Scavenger -->
+		<npc id="21584" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Bone Scavenger -->
+		<npc id="21587" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Vampire Warrior -->
+		<npc id="21573" respawnDelay="30" count="5" periodOfDay="night" /> <!-- Atrox -->
+		<npc id="21576" respawnDelay="30" count="5" periodOfDay="night" /> <!-- Ghost of Guillotine -->
+		<npc id="21582" respawnDelay="30" count="6" periodOfDay="night" /> <!-- Vampire Soldier -->
+		<npc id="21587" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Vampire Warrior -->
+	</spawn>
+	<spawn zone="rune09_2116_20">
+		<territory minZ="-3365" maxZ="-1965">
+			<node x="50050" y="-44770" />
+			<node x="50552" y="-42189" />
+			<node x="48201" y="-42970" />
+			<node x="47781" y="-44506" />
+			<node x="48779" y="-45614" />
+		</territory>
+		<npc id="21570" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Ghost of Betrayer -->
+		<npc id="21572" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Bone Sweeper -->
+		<npc id="21574" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Bone Grinder -->
+		<npc id="21580" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Bone Caster -->
+		<npc id="21571" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Ghost of Rebellion Soldier -->
+		<npc id="21577" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Ghost of Guillotine -->
+		<npc id="21582" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Vampire Soldier -->
+	</spawn>
+	<spawn zone="rune09_2116_21">
+		<territory minZ="-2506" maxZ="-1506">
+			<node x="50214" y="-42130" />
+			<node x="48835" y="-39806" />
+			<node x="46697" y="-41050" />
+			<node x="46876" y="-42018" />
+			<node x="48051" y="-42834" />
+		</territory>
+		<npc id="21570" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Ghost of Betrayer -->
+		<npc id="21574" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Bone Grinder -->
+		<npc id="21581" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Bone Puppeteer -->
+		<npc id="21573" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Atrox -->
+		<npc id="21576" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Ghost of Guillotine -->
+		<npc id="21579" respawnDelay="30" count="4" periodOfDay="night" /> <!-- Ghost of Rebellion Leader -->
+	</spawn>
+	<spawn zone="rune09_2116_22">
+		<territory minZ="-2272" maxZ="-1372">
+			<node x="48841" y="-39600" />
+			<node x="47859" y="-38225" />
+			<node x="46734" y="-38134" />
+			<node x="45561" y="-39907" />
+			<node x="46630" y="-40855" />
+		</territory>
+		<npc id="21578" respawnDelay="30" count="4" periodOfDay="day" /> <!-- Behemoth Zombie -->
+		<npc id="21583" respawnDelay="30" count="1" periodOfDay="day" /> <!-- Bone Scavenger -->
+		<npc id="21584" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Bone Scavenger -->
+		<npc id="21587" respawnDelay="30" count="1" periodOfDay="day" /> <!-- Vampire Warrior -->
+		<npc id="21582" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Vampire Soldier -->
+		<npc id="21586" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Vampire Adept -->
+		<npc id="21591" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Vampire Magister -->
+		<npc id="21594" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Vampire Warlord -->
+	</spawn>
+	<spawn zone="rune09_2116_23">
+		<territory minZ="-2019" maxZ="-1219">
+			<node x="48083" y="-38016" />
+			<node x="47510" y="-35628" />
+			<node x="45908" y="-35733" />
+			<node x="45339" y="-36807" />
+			<node x="46689" y="-38068" />
+		</territory>
+		<npc id="21581" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Bone Puppeteer -->
+		<npc id="21583" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Bone Scavenger -->
+		<npc id="21587" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Vampire Warrior -->
+		<npc id="21593" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Vampire Warlord -->
+		<npc id="21599" respawnDelay="90" count="1" periodOfDay="day" /> <!-- Requiem Priest -->
+		<npc id="21585" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Vampire Magician -->
+		<npc id="21586" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Vampire Adept -->
+		<npc id="21588" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Vampire Wizard -->
+		<npc id="21589" respawnDelay="30" count="1" periodOfDay="night" /> <!-- Vampire Wizard -->
+		<npc id="21594" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Vampire Warlord -->
+	</spawn>
+	<spawn zone="rune09_2116_24">
+		<territory minZ="-2047" maxZ="-1047">
+			<node x="51808" y="-37216" />
+			<node x="51166" y="-35851" />
+			<node x="49675" y="-35182" />
+			<node x="47845" y="-35731" />
+			<node x="48247" y="-37978" />
+		</territory>
+		<npc id="21581" respawnDelay="30" count="3" periodOfDay="day" /> <!-- Bone Puppeteer -->
+		<npc id="21584" respawnDelay="30" count="1" periodOfDay="day" /> <!-- Bone Scavenger -->
+		<npc id="21587" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Vampire Warrior -->
+		<npc id="21590" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Vampire Magister -->
+		<npc id="21593" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Vampire Warlord -->
+		<npc id="21599" respawnDelay="90" count="2" periodOfDay="day" /> <!-- Requiem Priest -->
+		<npc id="21585" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Vampire Magician -->
+		<npc id="21586" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Vampire Adept -->
+		<npc id="21588" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Vampire Wizard -->
+		<npc id="21589" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Vampire Wizard -->
+		<npc id="21594" respawnDelay="30" count="3" periodOfDay="night" /> <!-- Vampire Warlord -->
+	</spawn>
+	<spawn zone="rune09_2116_25">
+		<territory minZ="-3105" maxZ="-1905">
+			<node x="55328" y="-41060" />
+			<node x="54890" y="-39477" />
+			<node x="53638" y="-38835" />
+			<node x="52743" y="-39441" />
+			<node x="53558" y="-41751" />
+		</territory>
+		<npc id="21583" respawnDelay="30" count="1" periodOfDay="day" /> <!-- Bone Scavenger -->
+		<npc id="21584" respawnDelay="30" count="1" periodOfDay="day" /> <!-- Bone Scavenger -->
+		<npc id="21587" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Vampire Warrior -->
+		<npc id="21590" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Vampire Magister -->
+		<npc id="21593" respawnDelay="30" count="2" periodOfDay="day" /> <!-- Vampire Warlord -->
+		<npc id="21585" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Vampire Magician -->
+		<npc id="21586" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Vampire Adept -->
+		<npc id="21588" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Vampire Wizard -->
+		<npc id="21591" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Vampire Magister -->
+		<npc id="21594" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Vampire Warlord -->
+	</spawn>
+	<spawn zone="rune09_2116_26">
+		<territory minZ="-3216" maxZ="-2616">
+			<node x="61742" y="-43011" />
+			<node x="61991" y="-41266" />
+			<node x="58288" y="-40739" />
+			<node x="55959" y="-41439" />
+			<node x="58733" y="-43587" />
+			<node x="60332" y="-43914" />
+		</territory>
+		<npc id="21585" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Vampire Magician -->
+		<npc id="21586" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Vampire Adept -->
+		<npc id="21588" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Vampire Wizard -->
+		<npc id="21589" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Vampire Wizard -->
+		<npc id="21592" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Vampire Magister -->
+		<npc id="21595" respawnDelay="30" count="2" periodOfDay="night" /> <!-- Vampire Warlord -->
+	</spawn>
+</list>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/teleporterData.xsd">
+	<npc id="32602"> <!-- Temporary Teleporter -->
+		<teleport type="OTHER">
+			<location x="-245833" y="220174" z="-12104" /> <!-- Central Square -->
+			<location x="-251624" y="213420" z="-12072" /> <!-- Fortress of Destuction -->
+			<location x="-249774" y="207316" z="-11952" /> <!-- Crimson Throne -->
+		</teleport>
+	</npc>
+</list>

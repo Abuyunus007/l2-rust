@@ -1,0 +1,2338 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/skills.xsd">
+	<skill id="2600" levels="1" name="Gran Kain's Echo Crystal - Theme of Solitude">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2601" levels="1" name="Gran Kain's Echo Crystal - Theme of the Feast">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2602" levels="1" name="Gran Kain's Echo Crystal - Theme of Celebration">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2603" levels="1" name="Gran Kain's Echo Crystal - Theme of Comedy">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2604" levels="1" name="Gran Kain's Firework">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13268</itemConsumeId> <!-- Gran Kain's Firework -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="2605" levels="1" name="Gran Kain's Large Firework">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13269</itemConsumeId> <!-- Gran Kain's Large Firework -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+	</skill>
+	<skill id="2606" levels="1" name="Gran Kain's Gift Box">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="0.8130">
+						<item id="13259" count="1" /> <!-- Gran Kain's Blessed Scroll of Resurrection -->
+					</item>
+					<item chance="1.626">
+						<item id="13258" count="1" /> <!-- Gran Kain's Blessed Scroll of Escape -->
+					</item>
+					<item chance="16.260">
+						<item id="13260" count="1" /> <!-- Gran Kain's Squeaking Shoes - 10-hour limited period -->
+					</item>
+					<item chance="4.645">
+						<item id="13261" count="10" /> <!-- Gran Kain's Echo Crystal - Theme of Journey -->
+					</item>
+					<item chance="4.645">
+						<item id="13262" count="10" /> <!-- Gran Kain's Echo Crystal - Theme of Battle -->
+					</item>
+					<item chance="4.645">
+						<item id="13263" count="10" /> <!-- Gran Kain's Echo Crystal - Theme of Love -->
+					</item>
+					<item chance="4.645">
+						<item id="13264" count="10" /> <!-- Gran Kain's Echo Crystal - Theme of Solitude -->
+					</item>
+					<item chance="4.645">
+						<item id="13265" count="10" /> <!-- Gran Kain's Echo Crystal - Theme of the Feast -->
+					</item>
+					<item chance="4.645">
+						<item id="13266" count="10" /> <!-- Gran Kain's Echo Crystal - Theme of Celebration -->
+					</item>
+					<item chance="4.645">
+						<item id="13267" count="10" /> <!-- Gran Kain's Echo Crystal - Theme of Comedy -->
+					</item>
+					<item chance="32.5260">
+						<item id="13268" count="10" /> <!-- Gran Kain's Firework -->
+					</item>
+					<item chance="16.260">
+						<item id="13269" count="10" /> <!-- Gran Kain's Large Firework -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2607" levels="1" name="Pailaka Door Key">
+		<operateType>A1</operateType>
+		<targetType>UNLOCKABLE</targetType>
+		<effectPoint>-1</effectPoint>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13150</itemConsumeId> <!-- Pailaka All-Purpose Key -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="22110100,22110101,22110102,22110103,22110104,22110105" />
+		</conditions>
+		<effects>
+			<effect name="OpenDoor">
+				<chance>100</chance>
+				<isItem>true</isItem>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2608" levels="3" name="Red Crystal of Fantasy">
+		<table name="#amount">50000 100000 200000</table>
+		<table name="#itemConsumeId">13386 13387 13388</table>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>200</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>#itemConsumeId</itemConsumeId>
+		<magicLevel>1</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<player level="76" />
+		</conditions>
+		<effects>
+			<effect name="GiveSp">
+				<sp>#amount</sp>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2609" levels="20" name="Escape - Talking Island Village">
+		<table name="#coordX">-84200 46915 9723 -45208 115158 -80831 -12728 15633 17860 83378 105760 111388 82916 85289 117052 146818 147922 43840 87326 -118092</table>
+		<table name="#coordY">244566 51441 15576 -112502 -178170 149808 122726 142962 170191 147999 113064 219331 53210 16225 76884 25807 -55316 -47779 -143370 46955</table>
+		<table name="#coordZ">-3728 -2976 -4568 -240 -880 -3040 -3112 -2696 -3496 -3400 -3176 -3544 -1488 -3672 -2688 -2008 -2728 -792 -1319 342</table>
+		<table name="#itemConsumeId">13395 13396 13397 13398 13399 13400 13401 13402 13403 13404 13405 13406 13407 13408 13409 13410 13411 13412 13413 13414</table>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>20000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>#itemConsumeId</itemConsumeId>
+		<magicLevel>1</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<player canEscape="true" />
+				<not>
+					<player insideZoneId="10501, 10502, 10503" />
+				</not>
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Teleport">
+				<x>#coordX</x>
+				<y>#coordY</y>
+				<z>#coordZ</z>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2610" levels="1" name="Register Bookmark (Event)">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13301</itemConsumeId> <!-- My Teleport Spellbook (Event) -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2611" levels="1" name="Large Firework">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<magicLevel>1</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+	</skill>
+	<skill id="2612" levels="1" name="Large Firework">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<magicLevel>1</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+	</skill>
+	<skill id="2613" levels="1" name="Large Firework">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<magicLevel>1</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+	</skill>
+	<skill id="2614" levels="1" name="Large Firework">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<magicLevel>1</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+	</skill>
+	<skill id="2615" levels="1" name="Destroyed Darkness Fragment Powder">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13853</itemConsumeId> <!-- Destroyed Darkness Fragment Powder -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<conditions msgId="113" addName="1">
+			<player npcIdRadius="32529,300,true" />
+		</conditions>
+		<effects>
+			<effect name="Restoration">
+				<itemId>13854</itemId>
+				<itemCount>1</itemCount>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2616" levels="1" name="Bond Sealant">
+		<!-- A block is adhered to the floor and cannot move. -->
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>INVINCIBILITY</abnormalType>
+		<hitTime>100</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+	</skill>
+	<skill id="2617" levels="1" name="Stun Planter">
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>PA_UP</abnormalType>
+		<hitTime>100</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+	</skill>
+	<skill id="2618" levels="1" name="Stun Land Mine">
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>PA_UP</abnormalType>
+		<hitTime>100</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+	</skill>
+	<skill id="2619" levels="1" name="Extra Entrance Pass - Kamaloka (Hall of the Abyss) (Event)">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13297</itemConsumeId> <!-- Extra Entrance Pass - Kamaloka (Hall of the Abyss) (Event) -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2620" levels="1" name="Extra Entrance Pass - Near Kamaloka (Event)">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13298</itemConsumeId> <!-- Extra Entrance Pass - Near Kamaloka (Event) -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2621" levels="1" name="Extra Entrance Pass - Kamaloka (Labyrinth of the Abyss) (Event)">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13299</itemConsumeId> <!-- Extra Entrance Pass - Kamaloka (Labyrinth of the Abyss) (Event) -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2622" levels="1" name="Summon Life-size Decoy">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>1</magicLevel>
+		<mpConsume>60</mpConsume>
+		<mpInitialConsume>15</mpInitialConsume>
+		<reuseDelay>1800000</reuseDelay>
+		<effects>
+			<effect name="SummonNpc">
+				<npcId>32544</npcId>
+				<npcCount>1</npcCount>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2623" levels="1" name="Alkaline Therapy">
+		<!-- User is covered in an ointment that reduces lethal de-buff effects within the Hall of Erosion. -->
+		<icon>icon.etc_potion_of_acumen2_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>MULTI_BUFF_A</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2624" levels="1" name="Life Aid Banding">
+		<!-- Confers increased Resistance to bleed damage, poison and altered conditions caused by the Death Worm within the Seed of Infinity. -->
+		<icon>icon.etc_piece_of_cloth_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>4</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>RESIST_BLEEDING</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2625" levels="1" name="Embalming">
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2626" levels="1" name="Lighting Incense">
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2627" levels="1" name="Elixir Miracle">
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2628" levels="1" name="Structure Scarab">
+		<!-- Allows user to retain buffs and de-buffs following death and resurrection. Blessing of Noblesse and Amulet of Luck disappear, however. Consumes 1 Structure Scarab. -->
+		<icon>icon.etc_beetle_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>RESURRECTION_SPECIAL</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13776</itemConsumeId> <!-- Structure Scarab -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>1800000</reuseDelay>
+		<effects>
+			<effect name="ResurrectionSpecial">
+				<power>50</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2629" levels="1" name="Ancient Treasure Sack">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2630" levels="1" name="Presentation - Collect Items">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>900</castRange>
+		<effectRange>1200</effectRange>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>6000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<and>
+				<player flyMounted="true" />
+				<target npcId="18684,18685,18686,18687,18688,18689,18690,18691,18692" />
+			</and>
+		</conditions>
+	</skill>
+	<skill id="2631" levels="1" name="Scroll of Transformation - Frog">
+		<!-- Transformed into a frog. -->
+		<icon>icon.skilltransform3</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>111</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2632" levels="1" name="Scroll of Transformation - Young Child">
+		<!-- Transformed into a young child. -->
+		<icon>icon.skilltransform3</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>112</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2633" levels="1" name="Elmore-Aden's Holy Water">
+		<operateType>A1</operateType>
+		<targetType>UNLOCKABLE</targetType>
+		<castRange>40</castRange>
+		<effectPoint>-100000</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="17240101,17240105,17240109" />
+		</conditions>
+		<effects>
+			<effect name="OpenDoor">
+				<chance>100</chance>
+				<isItem>true</isItem>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2634" levels="1" name="Court Magician's Blessing">
+		<operateType>A1</operateType>
+		<targetType>UNLOCKABLE</targetType>
+		<castRange>40</castRange>
+		<effectPoint>-100000</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="17240103,17240107" />
+		</conditions>
+		<effects>
+			<effect name="OpenDoor">
+				<chance>100</chance>
+				<isItem>true</isItem>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2635" levels="1" name="Blessing of Fire">
+		<!-- Blessing of fire. Fire attribute is bestowed on physical attacks. -->
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>HOLY_ATTACK</abnormalType>
+		<element>0</element> <!-- Fire -->
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>25</magicLevel>
+		<reuseDelay>10000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="firePower">20</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2636" levels="1" name="Blessing of Earth">
+		<!-- Blessing of earth. Earth attribute is bestowed on physical attacks. -->
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>HOLY_ATTACK</abnormalType>
+		<element>3</element> <!-- Earth -->
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>25</magicLevel>
+		<reuseDelay>10000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="earthPower">20</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2637" levels="1" name="Scroll: Enchant Weapon (Event)">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2638" levels="1" name="Five-year anniversary event box">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13426</itemConsumeId> <!-- Small Mineral Box -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="16.6">
+						<item id="9546" count="1" /> <!-- Fire Stone -->
+					</item>
+					<item chance="16.6">
+						<item id="9547" count="1" /> <!-- Water Stone -->
+					</item>
+					<item chance="16.6">
+						<item id="9548" count="1" /> <!-- Earth Stone -->
+					</item>
+					<item chance="16.6">
+						<item id="9549" count="1" /> <!-- Wind Stone -->
+					</item>
+					<item chance="16.6">
+						<item id="9550" count="1" /> <!-- Dark Stone -->
+					</item>
+					<item chance="17.0">
+						<item id="9551" count="1" /> <!-- Holy Stone -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2639" levels="1" name="Five-year anniversary event box">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13423</itemConsumeId> <!-- Medium Mineral Box -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="16.6">
+						<item id="9546" count="2" /> <!-- Fire Stone -->
+					</item>
+					<item chance="16.6">
+						<item id="9547" count="2" /> <!-- Water Stone -->
+					</item>
+					<item chance="16.6">
+						<item id="9548" count="2" /> <!-- Earth Stone -->
+					</item>
+					<item chance="16.6">
+						<item id="9549" count="2" /> <!-- Wind Stone -->
+					</item>
+					<item chance="16.6">
+						<item id="9550" count="2" /> <!-- Dark Stone -->
+					</item>
+					<item chance="17.0">
+						<item id="9551" count="2" /> <!-- Holy Stone -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2640" levels="1" name="Five-year anniversary event box">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13428</itemConsumeId> <!-- Small Libation Box -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="9.0">
+						<item id="10260" count="1" /> <!-- Alacrity Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10261" count="1" /> <!-- Accuracy Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10262" count="1" /> <!-- Critical Hit Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10263" count="1" /> <!-- Critical Rate Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10264" count="1" /> <!-- Casting Spd. Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10265" count="1" /> <!-- Evasion Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10266" count="1" /> <!-- M. Atk. Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10267" count="1" /> <!-- Power Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10268" count="1" /> <!-- Speed Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10269" count="1" /> <!-- Defense Juice -->
+					</item>
+					<item chance="10.0">
+						<item id="10270" count="1" /> <!-- MP Consumption Juice -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2641" levels="1" name="Five-Year Anniversary Event Box">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13427</itemConsumeId> <!-- Medium Libation Box -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="9.0">
+						<item id="10260" count="2" /> <!-- Alacrity Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10261" count="2" /> <!-- Accuracy Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10262" count="2" /> <!-- Critical Hit Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10263" count="2" /> <!-- Critical Rate Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10264" count="2" /> <!-- Casting Spd. Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10265" count="2" /> <!-- Evasion Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10266" count="2" /> <!-- M. Atk. Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10267" count="2" /> <!-- Power Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10268" count="2" /> <!-- Speed Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10269" count="2" /> <!-- Defense Juice -->
+					</item>
+					<item chance="10.0">
+						<item id="10270" count="2" /> <!-- MP Consumption Juice -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2642" levels="1" name="Five-Year Anniversary Event Box">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13424</itemConsumeId> <!-- Large Libation Box -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="9.0">
+						<item id="10260" count="3" /> <!-- Alacrity Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10261" count="3" /> <!-- Accuracy Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10262" count="3" /> <!-- Critical Hit Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10263" count="3" /> <!-- Critical Rate Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10264" count="3" /> <!-- Casting Spd. Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10265" count="3" /> <!-- Evasion Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10266" count="3" /> <!-- M. Atk. Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10267" count="3" /> <!-- Power Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10268" count="3" /> <!-- Speed Juice -->
+					</item>
+					<item chance="9.0">
+						<item id="10269" count="3" /> <!-- Defense Juice -->
+					</item>
+					<item chance="10.0">
+						<item id="10270" count="3" /> <!-- MP Consumption Juice -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2643" levels="1" name="Five-Year Anniversary Event Box">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13425</itemConsumeId> <!-- Small Parchment Box -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="7.14">
+						<item id="7122" count="1" /> <!-- Scroll of Escape: Gludin Village -->
+					</item>
+					<item chance="7.14">
+						<item id="7123" count="1" /> <!-- Scroll of Escape: Town of Gludio -->
+					</item>
+					<item chance="7.14">
+						<item id="7124" count="1" /> <!-- Scroll of Escape: Town of Dion -->
+					</item>
+					<item chance="7.14">
+						<item id="7125" count="1" /> <!-- Scroll of Escape: Floran Village -->
+					</item>
+					<item chance="7.14">
+						<item id="7126" count="1" /> <!-- Scroll of Escape: Town of Giran -->
+					</item>
+					<item chance="7.14">
+						<item id="7127" count="1" /> <!-- Scroll of Escape: Hardin's Academy -->
+					</item>
+					<item chance="7.14">
+						<item id="7128" count="1" /> <!-- Scroll of Escape: Heine -->
+					</item>
+					<item chance="7.14">
+						<item id="7129" count="1" /> <!-- Scroll of Escape: Town of Oren -->
+					</item>
+					<item chance="7.18">
+						<item id="7130" count="1" /> <!-- Scroll of Escape: Ivory Tower -->
+					</item>
+					<item chance="7.14">
+						<item id="7131" count="1" /> <!-- Scroll of Escape: Hunters Village -->
+					</item>
+					<item chance="7.14">
+						<item id="7132" count="1" /> <!-- Scroll of Escape: Town of Aden -->
+					</item>
+					<item chance="7.14">
+						<item id="7133" count="1" /> <!-- Scroll of Escape: Town of Goddard -->
+					</item>
+					<item chance="7.14">
+						<item id="7134" count="1" /> <!-- Scroll of Escape: Rune Township -->
+					</item>
+					<item chance="7.14">
+						<item id="7135" count="1" /> <!-- Scroll of Escape: Town of Schuttgart -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2644" levels="1" name="Five-Year Anniversary Event Box">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13422</itemConsumeId> <!-- Medium Parchment Box -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="7.14">
+						<item id="7122" count="2" /> <!-- Scroll of Escape: Gludin Village -->
+					</item>
+					<item chance="7.14">
+						<item id="7123" count="2" /> <!-- Scroll of Escape: Town of Gludio -->
+					</item>
+					<item chance="7.14">
+						<item id="7124" count="2" /> <!-- Scroll of Escape: Town of Dion -->
+					</item>
+					<item chance="7.14">
+						<item id="7125" count="2" /> <!-- Scroll of Escape: Floran Village -->
+					</item>
+					<item chance="7.14">
+						<item id="7126" count="2" /> <!-- Scroll of Escape: Town of Giran -->
+					</item>
+					<item chance="7.14">
+						<item id="7127" count="2" /> <!-- Scroll of Escape: Hardin's Academy -->
+					</item>
+					<item chance="7.14">
+						<item id="7128" count="2" /> <!-- Scroll of Escape: Heine -->
+					</item>
+					<item chance="7.14">
+						<item id="7129" count="2" /> <!-- Scroll of Escape: Town of Oren -->
+					</item>
+					<item chance="7.18">
+						<item id="7130" count="2" /> <!-- Scroll of Escape: Ivory Tower -->
+					</item>
+					<item chance="7.14">
+						<item id="7131" count="2" /> <!-- Scroll of Escape: Hunters Village -->
+					</item>
+					<item chance="7.14">
+						<item id="7132" count="2" /> <!-- Scroll of Escape: Town of Aden -->
+					</item>
+					<item chance="7.14">
+						<item id="7133" count="2" /> <!-- Scroll of Escape: Town of Goddard -->
+					</item>
+					<item chance="7.14">
+						<item id="7134" count="2" /> <!-- Scroll of Escape: Rune Township -->
+					</item>
+					<item chance="7.14">
+						<item id="7135" count="2" /> <!-- Scroll of Escape: Town of Schuttgart -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2645" levels="1" name="Multi-Colored Honey Rice Cake">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13420</itemConsumeId> <!-- Multi-colored Honey Rice Cake -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<effects>
+			<effect name="VitalityPointUp">
+				<value>20000</value>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2646" levels="1" name="Honey Wheat Cake">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13421</itemConsumeId> <!-- Honey Wheat Cake -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="VitalityPointUp">
+				<value>20000</value>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2647" levels="1" name="Energy Star Stone">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13277</itemConsumeId> <!-- Energy Star Stone -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="113" addName="1">
+			<player canRefuelAirship="25" />
+		</conditions>
+		<effects>
+			<effect name="RefuelAirship">
+				<value>25</value>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2648" levels="1" name="High Quality Energy Star Stone">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13278</itemConsumeId> <!-- Greater Quality Energy Star Stone -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="113" addName="1">
+			<player canRefuelAirship="100" />
+		</conditions>
+		<effects>
+			<effect name="RefuelAirship">
+				<value>100</value>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2649" levels="9" name="Escape - Gludin Village">
+		<table name="#coordX">-80831 15633 83378 111388 82916 146818 147922 43840 87326</table>
+		<table name="#coordY">149808 142962 147999 219331 53210 25807 -55316 -47779 -143370</table>
+		<table name="#coordZ">-3040 -2696 -3400 -3544 -1488 -2008 -2728 -792 -1319</table>
+		<table name="#itemConsumeId">13731 13732 13733 13736 13734 13735 13737 13738 13739</table>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>200</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>#itemConsumeId</itemConsumeId>
+		<magicLevel>1</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<player canEscape="true" />
+				<not>
+					<player insideZoneId="10501, 10502, 10503" />
+				</not>
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Teleport">
+				<x>#coordX</x>
+				<y>#coordY</y>
+				<z>#coordZ</z>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2650" levels="1" name="Summon Imperial Phoenix">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>1500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14200</itemConsumeId> <!-- Forgotten Scroll - Summon Imperial Phoenix -->
+		<magicLevel>81</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<not>
+					<player active_skill_id="912" />
+				</not>
+				<player class_id_restriction="90" />
+				<player level="83" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SetSkill">
+				<skillId>912</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2651" levels="1" name="Deflect Magic">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>1500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14207</itemConsumeId> <!-- Forgotten Scroll - Deflect Magic -->
+		<magicLevel>81</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<not>
+					<player active_skill_id="913" />
+				</not>
+				<player class_id_restriction="90, 91, 99, 100, 106, 107" />
+				<player level="81" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SetSkill">
+				<skillId>913</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2652" levels="1" name="Song of Purification">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>1500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14198</itemConsumeId> <!-- Forgotten Scroll - Song of Purification -->
+		<magicLevel>81</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<not>
+					<player active_skill_id="914" />
+				</not>
+				<player class_id_restriction="100" />
+				<player level="83" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SetSkill">
+				<skillId>914</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2653" levels="1" name="Dance of Berserker">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>1500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14199</itemConsumeId> <!-- Forgotten Scroll - Dance of Berserker -->
+		<magicLevel>81</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<not>
+					<player active_skill_id="915" />
+				</not>
+				<player class_id_restriction="107" />
+				<player level="83" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SetSkill">
+				<skillId>915</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2654" levels="1" name="Final Circlet">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>1500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14208</itemConsumeId> <!-- Forgotten Scroll - Final Secret -->
+		<magicLevel>81</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<not>
+					<player active_skill_id="917" />
+				</not>
+				<player class_id_restriction="88, 89, 113, 114, 117, 118, 131" />
+				<player level="81" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SetSkill">
+				<skillId>917</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2655" levels="1" name="Maximum Force Focus">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>1500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14201</itemConsumeId> <!-- Forgotten Scroll - Maximum Force Focus -->
+		<magicLevel>81</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<not>
+					<player active_skill_id="918" />
+				</not>
+				<player class_id_restriction="114" />
+				<player level="83" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SetSkill">
+				<skillId>918</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2656" levels="1" name="Maximum Sonic Focus">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>1500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14202</itemConsumeId> <!-- Forgotten Scroll - Maximum Sonic Focus -->
+		<magicLevel>81</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<not>
+					<player active_skill_id="919" />
+				</not>
+				<player class_id_restriction="88" />
+				<player level="83" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SetSkill">
+				<skillId>919</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2657" levels="1" name="Hide">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>1500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14209</itemConsumeId> <!-- Forgotten Scroll - Hide -->
+		<magicLevel>81</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<not>
+					<player active_skill_id="922" />
+				</not>
+				<player class_id_restriction="93, 101, 108" />
+				<player level="81" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SetSkill">
+				<skillId>922</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2658" levels="1" name="Dual Dagger Mastery">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>1500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14210</itemConsumeId> <!-- Forgotten Scroll - Dual Dagger Mastery -->
+		<magicLevel>81</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<not>
+					<player active_skill_id="923" />
+				</not>
+				<player class_id_restriction="93, 101, 108, 117" />
+				<player level="81" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SetSkill">
+				<skillId>923</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2659" levels="1" name="Seven Arrow">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>1500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14211</itemConsumeId> <!-- Forgotten Scroll - Seven Arrow -->
+		<magicLevel>81</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<not>
+					<player active_skill_id="924" />
+				</not>
+				<player class_id_restriction="92, 102, 109" />
+				<player level="81" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SetSkill">
+				<skillId>924</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2660" levels="1" name="Enlightenment">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>1500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14212</itemConsumeId> <!-- Forgotten Scroll - Enlightenment - Wizard -->
+		<magicLevel>81</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<not>
+					<player active_skill_id="1532" />
+				</not>
+				<player class_id_restriction="94, 95, 103, 110, 132, 133" />
+				<player level="81" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SetSkill">
+				<skillId>1532</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2661" levels="1" name="Enlightenment">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>1500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14213</itemConsumeId> <!-- Forgotten Scroll - Enlightenment - Healer -->
+		<magicLevel>81</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<not>
+					<player active_skill_id="1533" />
+				</not>
+				<player class_id_restriction="97, 98, 105, 112, 115, 116" />
+				<player level="81" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SetSkill">
+				<skillId>1533</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2662" levels="1" name="Chant of Movement">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>1500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14214</itemConsumeId> <!-- Forgotten Scroll - Chant of Movement -->
+		<magicLevel>72</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<not>
+					<player active_skill_id="1535" />
+				</not>
+				<player class_id_restriction="52, 116" />
+				<player level="72" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SetSkill">
+				<skillId>1535</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2663" levels="1" name="Combat of Pa'agrio">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>1500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14215</itemConsumeId> <!-- Forgotten Scroll - Combat of Pa'agrio -->
+		<magicLevel>70</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<not>
+					<player active_skill_id="1536" />
+				</not>
+				<player class_id_restriction="51, 115" />
+				<player level="70" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SetSkill">
+				<skillId>1536</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2664" levels="1" name="Critical of Pa'agrio">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>1500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14216</itemConsumeId> <!-- Forgotten Scroll - Critical of Pa'agrio -->
+		<magicLevel>74</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<not>
+					<player active_skill_id="1537" />
+				</not>
+				<player class_id_restriction="51, 115" />
+				<player level="74" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SetSkill">
+				<skillId>1537</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2665" levels="1" name="Condition of Pa'agrio">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>1500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14217</itemConsumeId> <!-- Forgotten Scroll - Condition of Pa'agrio -->
+		<magicLevel>72</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<not>
+					<player active_skill_id="1538" />
+				</not>
+				<player class_id_restriction="51, 115" />
+				<player level="72" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SetSkill">
+				<skillId>1538</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2666" levels="1" name="Dual Blow">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>1500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14218</itemConsumeId> <!-- Forgotten Scroll - Dual Blow -->
+		<magicLevel>81</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<not>
+					<player active_skill_id="928" />
+				</not>
+				<player class_id_restriction="93, 101, 108" />
+				<player level="81" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SetSkill">
+				<skillId>928</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2667" levels="1" name="Spirit of the Cat">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>1500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14204</itemConsumeId> <!-- Forgotten Scroll - Spirit of the Cat -->
+		<magicLevel>81</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<not>
+					<player active_skill_id="929" />
+				</not>
+				<player class_id_restriction="96" />
+				<player level="83" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SetSkill">
+				<skillId>929</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2668" levels="1" name="Spirit of the Phantom">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>1500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14206</itemConsumeId> <!-- Forgotten Scroll - Spirit of the Phantom -->
+		<magicLevel>81</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<not>
+					<player active_skill_id="930" />
+				</not>
+				<player class_id_restriction="111" />
+				<player level="83" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SetSkill">
+				<skillId>930</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2669" levels="1" name="Spirit of the Unicorn">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>1500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14205</itemConsumeId> <!-- Forgotten Scroll - Spirit of the Unicorn -->
+		<magicLevel>81</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<not>
+					<player active_skill_id="931" />
+				</not>
+				<player class_id_restriction="104" />
+				<player level="83" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="SetSkill">
+				<skillId>931</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2670" levels="1" name="Scroll of Transformation - Red">
+		<!-- Transforms caster into a member of the red team. -->
+		<icon>icon.skilltransform3</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>121</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2671" levels="1" name="Scroll of Transformation - Blue">
+		<!-- Transforms caster into a member of the blue team. -->
+		<icon>icon.skilltransform3</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>122</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2672" levels="1" name="Gludio Human Mercenary">
+		<!-- Transforms into a human mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13569</itemConsumeId> <!-- Transformation Scroll: Gludio Human Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="81" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>10</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2673" levels="1" name="Gludio Elf Mercenary">
+		<!-- Transforms into an Elf mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13570</itemConsumeId> <!-- Transformation Scroll: Gludio Elf Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="81" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>11</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2674" levels="1" name="Gludio Dark Elf Mercenary">
+		<!-- Transforms into a Dark Elf mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13571</itemConsumeId> <!-- Transformation Scroll: Gludio Dark Elf Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="81" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>12</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2675" levels="1" name="Gludio Orc Mercenary">
+		<!-- Transforms into an Orc mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13572</itemConsumeId> <!-- Transformation Scroll: Gludio Orc Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="81" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>13</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2676" levels="1" name="Gludio Dwarf Mercenary">
+		<!-- Transforms into a Dwarf mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13573</itemConsumeId> <!-- Transformation Scroll: Gludio Dwarf Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="81" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>14</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2677" levels="1" name="Gludio Kamael Mercenary">
+		<!-- Transforms into a Kamael mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13574</itemConsumeId> <!-- Transformation Scroll: Gludio Kamael Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="81" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>15</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2678" levels="1" name="Gludio Knight Mercenary">
+		<!-- Transforms into a Knight Mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13575</itemConsumeId> <!-- Transformation Scroll: Gludio Knight Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="81" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>16</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2679" levels="1" name="Gludio Archer Mercenary">
+		<!-- Transforms into an Archer Mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13576</itemConsumeId> <!-- Transformation Scroll: Gludio Archer Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="81" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>17</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2680" levels="1" name="Gludio Wizard Mercenary">
+		<!-- Transforms into a Wizard Mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13577</itemConsumeId> <!-- Transformation Scroll: Gludio Wizard Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="81" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>18</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2681" levels="1" name="Gludio Kamael Captain Mercenary">
+		<!-- Transforms into a Kamael guard captain. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13578</itemConsumeId> <!-- Transformation Scroll: Gludio Kamael Captain Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="81" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>19</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2682" levels="1" name="Gludio Knight Captain Mercenary">
+		<!-- Transforms into a Knight Captain Mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13579</itemConsumeId> <!-- Transformation Scroll: Gludio Knight Captain Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="81" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>20</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2683" levels="1" name="Gludio Commander Mercenary">
+		<!-- Transforms into a Commander Mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13580</itemConsumeId> <!-- Transformation Scroll: Gludio Commander Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="81" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>21</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2684" levels="1" name="Dion Human Mercenary">
+		<!-- Transforms into a human mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13581</itemConsumeId> <!-- Transformation Scroll: Dion Human Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="82" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>10</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2685" levels="1" name="Dion Elf Mercenary">
+		<!-- Transforms into an Elf mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13582</itemConsumeId> <!-- Transformation Scroll: Dion Elf Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="82" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>11</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2686" levels="1" name="Dion Dark Elf Mercenary">
+		<!-- Transforms into a Dark Elf mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13583</itemConsumeId> <!-- Transformation Scroll: Dion Dark Elf Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="82" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>12</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2687" levels="1" name="Dion Orc Mercenary">
+		<!-- Transforms into an Orc mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13584</itemConsumeId> <!-- Transformation Scroll: Dion Orc Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="82" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>13</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2688" levels="1" name="Dion Dwarf Mercenary">
+		<!-- Transforms into a Dwarf mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13585</itemConsumeId> <!-- Transformation Scroll: Dion Dwarf Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="82" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>14</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2689" levels="1" name="Dion Kamael Mercenary">
+		<!-- Transforms into a Kamael mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13586</itemConsumeId> <!-- Transformation Scroll: Dion Kamael Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="82" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>15</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2690" levels="1" name="Dion Knight Mercenary">
+		<!-- Transforms into a Knight Mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13587</itemConsumeId> <!-- Transformation Scroll: Dion Knight Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="82" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>16</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2691" levels="1" name="Dion Archer Mercenary">
+		<!-- Transforms into an Archer Mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13588</itemConsumeId> <!-- Transformation Scroll: Dion Archer Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="82" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>17</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2692" levels="1" name="Dion Wizard Mercenary">
+		<!-- Transforms into a Wizard Mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13589</itemConsumeId> <!-- Transformation Scroll: Dion Wizard Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="82" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>18</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2693" levels="1" name="Dion Kamael Captain Mercenary">
+		<!-- Transforms into a Kamael guard captain. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13590</itemConsumeId> <!-- Transformation Scroll: Dion Kamael Captain Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="82" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>19</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2694" levels="1" name="Dion Knight Captain Mercenary">
+		<!-- Transforms into a Knight Captain Mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13591</itemConsumeId> <!-- Transformation Scroll: Dion Knight Captain Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="82" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>20</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2695" levels="1" name="Dion Commander Mercenary">
+		<!-- Transforms into a Commander Mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13592</itemConsumeId> <!-- Transformation Scroll: Dion Commander Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="82" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>21</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2696" levels="1" name="Giran Human Mercenary">
+		<!-- Transforms into a human mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13593</itemConsumeId> <!-- Transformation Scroll: Giran Human Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="83" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>10</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2697" levels="1" name="Giran Elf Mercenary">
+		<!-- Transforms into an Elf mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13594</itemConsumeId> <!-- Transformation Scroll: Giran Elf Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="83" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>11</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2698" levels="1" name="Giran Dark Elf Mercenary">
+		<!-- Transforms into a Dark Elf mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13595</itemConsumeId> <!-- Transformation Scroll: Giran Dark Elf Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="83" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>12</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2699" levels="1" name="Giran Orc Mercenary">
+		<!-- Transforms into an Orc mercenary. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13596</itemConsumeId> <!-- Transformation Scroll: Giran Orc Mercenary -->
+		<magicLevel>-2</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<staticReuse>true</staticReuse>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<conditions msgId="2955">
+			<and>
+				<player siegeZone="147" />
+				<player siegeSide="83" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>13</id>
+			</effect>
+		</effects>
+	</skill>
+</list>

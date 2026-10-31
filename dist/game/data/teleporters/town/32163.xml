@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/teleporterData.xsd">
+	<npc id="32163"> <!-- Ragara -->
+		<teleport type="NORMAL">
+			<location name="The Town of Gludio" x="-12672" y="122776" z="-3116" feeCount="12000" castleId="1" />
+			<location name="Town of Aden" x="146331" y="25762" z="-2018" feeCount="26000" castleId="5" />
+			<location name="Talking Island Village" x="-84318" y="244579" z="-3730" feeCount="20000" />
+			<location name="Dark Elf Village" x="9745" y="15606" z="-4574" feeCount="13000" />
+			<location name="Elven Village" x="46934" y="51467" z="-2977" feeCount="16000" />
+			<location name="Dwarven Village" x="115113" y="-178212" z="-901" feeCount="32000" />
+			<location name="Orc Village" x="-44836" y="-112524" z="-235" feeCount="17000" />
+			<location name="Stronghold I" x="-122410" y="73205" z="-2872" feeCount="2600" />
+			<location name="Stronghold II" x="-95540" y="52150" z="-2024" feeCount="2200" />
+			<location name="Stronghold III" x="-85928" y="37095" z="-2048" feeCount="3200" />
+			<location name="Isle of Souls Harbor" x="-74016" y="51932" z="-3680" feeCount="4300" />
+		</teleport>
+		<teleport type="NOBLES_TOKEN">
+			<location name="Gludin Arena" x="-87328" y="142266" z="-3640" feeId="13722" feeCount="1" />
+			<location name="Giran Arena" x="73579" y="142709" z="-3768" feeId="13722" feeCount="1" />
+			<location name="Coliseum" x="146440" y="46723" z="-3400" feeId="13722" feeCount="1" />
+		</teleport>
+		<teleport type="NOBLES_ADENA">
+			<location name="Gludin Arena" x="-87328" y="142266" z="-3640" feeCount="1000" />
+			<location name="Giran Arena" x="73579" y="142709" z="-3768" feeCount="1000" />
+			<location name="Coliseum" x="146440" y="46723" z="-3400" feeCount="1000" />
+		</teleport>
+		<teleport type="OTHER">
+			<location name="Stronghold I" x="-122410" y="73205" z="-2872" />
+			<location name="Stronghold II" x="-95540" y="52150" z="-2024" />
+			<location name="Stronghold III" x="-85928" y="37095" z="-2048" />
+		</teleport>
+	</npc>
+</list>

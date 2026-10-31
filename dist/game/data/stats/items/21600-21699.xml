@@ -1,0 +1,1301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/items.xsd">
+	<item id="21600" type="EtcItem" name="Standard Package 300">
+		<!-- Dimensional item. Gift box containing 3 Vitality Replenishing Beverages, 3 feathers of blessing, and 3 high quality hunting helpers. Cannot be exchanged or dropped. Can be shared between characters within an account through the Dimensional Merchant. Can be stored in a private warehouse. -->
+		<set name="icon" val="icon.etc_pi_gift_box_i04" />
+		<set name="material" val="STEEL" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_stackable" val="true" />
+	</item>
+	<item id="21601" type="EtcItem" name="Rune of Experience Points 30% 5-Hour Pack">
+		<!-- Wrapped Pack Containing a Rune of Experience Points 30% (5 hours). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20335" min="1" max="1" chance="100" /> <!-- Rune of Experience Points 30% - 5-hour limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21602" type="EtcItem" name="Rune of Experience Points 50% 5-Hour Pack">
+		<!-- Wrapped Pack Containing a Rune of Experience Points 50% (5 hours). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20336" min="1" max="1" chance="100" /> <!-- Rune of Experience Points 50% - 5-hour limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21603" type="EtcItem" name="Rune of Experience Points 30% 10-Hour Pack">
+		<!-- Wrapped Pack Containing a Rune of Experience Points 30% (10 hours). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20337" min="1" max="1" chance="100" /> <!-- Rune of Experience Points 30% - 10-hour limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21604" type="EtcItem" name="Rune of Experience Points 50% 10-Hour Pack">
+		<!-- Wrapped Pack Containing a Rune of Experience Points 50% (10 hours). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20338" min="1" max="1" chance="100" /> <!-- Rune of Experience Points 50% - 10-hour limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21605" type="EtcItem" name="Rune of Experience Points 30% 7-Day Pack">
+		<!-- Wrapped Pack Containing a Rune of Experience Points 30% (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20339" min="1" max="1" chance="100" /> <!-- Rune of Experience Points 30% - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21606" type="EtcItem" name="Rune of Experience Points 50% 7-Day Pack">
+		<!-- Wrapped Pack Containing a Rune of Experience Points 50% (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20340" min="1" max="1" chance="100" /> <!-- Rune of Experience Points 50% - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21607" type="EtcItem" name="Rune of SP 30% 5-Hour Pack">
+		<!-- Wrapped Pack Containing a Rune of SP 30% (5 hours). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20341" min="1" max="1" chance="100" /> <!-- Rune of SP 30% - 5-hour limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21608" type="EtcItem" name="Rune of SP 50% 5-Hour Pack">
+		<!-- Wrapped Pack Containing a Rune of SP 50% (5 hours). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20342" min="1" max="1" chance="100" /> <!-- Rune of SP 50% - 5-hour limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21609" type="EtcItem" name="Rune of SP 30% 10-Hour Pack">
+		<!-- Wrapped Pack Containing a Rune of SP 30% (10 hours). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20343" min="1" max="1" chance="100" /> <!-- Rune of SP 30% - 10-hour limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21610" type="EtcItem" name="Rune of SP 50% 10-Hour Pack">
+		<!-- Wrapped Pack Containing a Rune of SP 50% (10 hours). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20344" min="1" max="1" chance="100" /> <!-- Rune of SP 50% - 10-hour limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21611" type="EtcItem" name="Rune of SP 30% 7-Day Pack">
+		<!-- Wrapped Pack Containing a Rune of SP 30% (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20345" min="1" max="1" chance="100" /> <!-- Rune of SP 30% - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21612" type="EtcItem" name="Rune of SP 50% 7-Day Pack">
+		<!-- Wrapped Pack Containing a Rune of SP 50% (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20346" min="1" max="1" chance="100" /> <!-- Rune of SP 50% - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21613" type="EtcItem" name="Rune of Crystal Level 3 5-Hour Pack">
+		<!-- Wrapped Pack Containing a Rune of Crystal Level 3 (5 hours). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20347" min="1" max="1" chance="100" /> <!-- Rune of Crystal Level 3 - 5-hour limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21614" type="EtcItem" name="Rune of Crystal Level 5 5-Hour Pack">
+		<!-- Wrapped Pack Containing a Rune of Crystal Level 5 (5 hours). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20348" min="1" max="1" chance="100" /> <!-- Rune of Crystal Level 5 - 5-hour limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21615" type="EtcItem" name="Rune of Crystal Level 3 10-Hour Pack">
+		<!-- Wrapped Pack Containing a Rune of Crystal Level 3 (10 hours). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20349" min="1" max="1" chance="100" /> <!-- Rune of Crystal Level 3 - 10-hour limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21616" type="EtcItem" name="Rune of Crystal Level 5 10-Hour Pack">
+		<!-- Wrapped Pack Containing a Rune of Crystal Level 5 (10 hours). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20350" min="1" max="1" chance="100" /> <!-- Rune of Crystal Level 5 - 10-hour limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21617" type="EtcItem" name="Rune of Crystal Level 3 7-Day Pack">
+		<!-- Wrapped Pack Containing a Rune of Crystal Level 3 (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20351" min="1" max="1" chance="100" /> <!-- Rune of Crystal Level 3 - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21618" type="EtcItem" name="Rune of Crystal Level 5 7-Day Pack">
+		<!-- Wrapped Pack Containing a Rune of Crystal Level 5 (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20352" min="1" max="1" chance="100" /> <!-- Rune of Crystal Level 5 - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21619" type="EtcItem" name="Rune of Feather 24-Hour Pack">
+		<!-- Wrapped Pack Containing a Rune of Feather (24 hours). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="22066" min="1" max="1" chance="100" /> <!-- Rune of Feather - 24-hour limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21620" type="EtcItem" name="Weapon-type Enhance Backup Stone (D-Grade Pack)">
+		<!-- Wrapped Pack containing a D-Grade Weapon Enhance Backup Stone. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="12362" min="1" max="1" chance="100" /> <!-- Weapon-Type Enhance Backup Stone (D-Grade) -->
+		</capsuled_items>
+	</item>
+	<item id="21621" type="EtcItem" name="Weapon-type Enhance Backup Stone (C-Grade Pack)">
+		<!-- Wrapped Pack Containing a C-Grade Weapon Enhance Backup Stone. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="12363" min="1" max="1" chance="100" /> <!-- Weapon-Type Enhance Backup Stone (C-Grade) -->
+		</capsuled_items>
+	</item>
+	<item id="21622" type="EtcItem" name="Weapon-type Enhance Backup Stone (B-Grade Pack)">
+		<!-- Wrapped Pack Containing a B-Grade Weapon Enhance Backup Stone. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="12364" min="1" max="1" chance="100" /> <!-- Weapon-Type Enhance Backup Stone (B-Grade) -->
+		</capsuled_items>
+	</item>
+	<item id="21623" type="EtcItem" name="Weapon-type Enhance Backup Stone (A-Grade Pack)">
+		<!-- Wrapped Pack Containing a A-Grade Weapon Enhance Backup Stone. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="12365" min="1" max="1" chance="100" /> <!-- Weapon-Type Enhance Backup Stone (A-Grade) -->
+		</capsuled_items>
+	</item>
+	<item id="21624" type="EtcItem" name="Weapon-type Enhance Backup Stone (S-Grade Pack)">
+		<!-- Wrapped Pack Containing a S-Grade Weapon Enhance Backup Stone. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="12366" min="1" max="1" chance="100" /> <!-- Weapon-Type Enhance Backup Stone (S-Grade) -->
+		</capsuled_items>
+	</item>
+	<item id="21625" type="EtcItem" name="Armor-type Enhance Backup Stone (D-Grade Pack)">
+		<!-- Wrapped Pack Containing a D-Grade Armor Enhance Backup Stone. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="12367" min="1" max="1" chance="100" /> <!-- Armor-Type Enhance Backup Stone (D-Grade) -->
+		</capsuled_items>
+	</item>
+	<item id="21626" type="EtcItem" name="Armor-type Enhance Backup Stone (C-Grade Pack)">
+		<!-- Wrapped Pack Containing a C-Grade Armor Enhance Backup Stone. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="12368" min="1" max="1" chance="100" /> <!-- Armor-Type Enhance Backup Stone (C-Grade) -->
+		</capsuled_items>
+	</item>
+	<item id="21627" type="EtcItem" name="Armor-type Enhance Backup Stone (B-Grade Pack)">
+		<!-- Wrapped Pack Containing a B-Grade Armor Enhance Backup Stone. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="12369" min="1" max="1" chance="100" /> <!-- Armor-Type Enhance Backup Stone (B-Grade) -->
+		</capsuled_items>
+	</item>
+	<item id="21628" type="EtcItem" name="Armor-type Enhance Backup Stone (A-Grade Pack)">
+		<!-- Wrapped Pack Containing a A-Grade Armor Enhance Backup Stone. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="12370" min="1" max="1" chance="100" /> <!-- Armor-Type Enhance Backup Stone (A-Grade) -->
+		</capsuled_items>
+	</item>
+	<item id="21629" type="EtcItem" name="Armor-type Enhance Backup Stone (S-Grade Pack)">
+		<!-- Wrapped Pack Containing a S-Grade Armor Enhance Backup Stone. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="12371" min="1" max="1" chance="100" /> <!-- Armor-Type Enhance Backup Stone (S-Grade) -->
+		</capsuled_items>
+	</item>
+	<item id="21630" type="EtcItem" name="Vitality Maintaining Potion Pack">
+		<!-- Wrapped Pack Containing a Vitality Maintainig Potion. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20391" min="1" max="1" chance="100" /> <!-- Vitality Maintaining Potion -->
+		</capsuled_items>
+	</item>
+	<item id="21631" type="EtcItem" name="Vitality Replenishing Potion Pack">
+		<!-- Wrapped Pack Containing a Potion of Energy Replenishing Pack. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20392" min="1" max="1" chance="100" /> <!-- Vitality Replenishing Potion -->
+		</capsuled_items>
+	</item>
+	<item id="21632" type="EtcItem" name="Sweet Fruit Cocktail Pack">
+		<!-- Wrapped Pack Containing Sweet Fruit Cocktail. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20393" min="1" max="1" chance="100" /> <!-- Sweet Fruit Cocktail -->
+		</capsuled_items>
+	</item>
+	<item id="21633" type="EtcItem" name="Fresh Fruit Cocktail Pack">
+		<!-- Wrapped Pack Containing Fresh Fruit Cocktail Pack. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20394" min="1" max="1" chance="100" /> <!-- Fresh Fruit Cocktail -->
+		</capsuled_items>
+	</item>
+	<item id="21634" type="EtcItem" name="Darkmane Pacer Mount Bracelet 7-Day Pack">
+		<!-- Wrapped Pack Containing a Darkmane Pacer Mount Bracelet (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20448" min="1" max="1" chance="100" /> <!-- Darkmane Pacer Mount Bracelet - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21635" type="EtcItem" name="Darkmane Pacer Mount Bracelet 30-Day Pack">
+		<!-- Wrapped Pack Containing a Darkmane Pacer Mount Bracelet (30 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20030" min="1" max="1" chance="100" /> <!-- Light Purple-Maned Horse Mount Bracelet - 30-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21636" type="EtcItem" name="Darkmane Pacer Mount Bracelet Pack">
+		<!-- Wrapped Pack Containing a Darkmane Pacer Mount Bracelet. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20029" min="1" max="1" chance="100" /> <!-- Light Purple-Maned Horse Mount Bracelet -->
+		</capsuled_items>
+	</item>
+	<item id="21637" type="EtcItem" name="Steam Beatle Mount Bracelet 7-Day Pack">
+		<!-- Wrapped Pack Containing a Steam Beatle Mount Bracelet (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20449" min="1" max="1" chance="100" /> <!-- Steam Beatle Mount Bracelet - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21638" type="EtcItem" name="Steam Beatle Mount Bracelet 30-Day Pack">
+		<!-- Wrapped Pack Containing a Steam Beatle Mount Bracelet (30 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20504" min="1" max="1" chance="100" /> <!-- Steam Beatle Mount Bracelet - 30-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21639" type="EtcItem" name="Steam Beatle Mount Bracelet Pack">
+		<!-- Wrapped pack containing a Steam Beatle Mount Bracelet. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20396" min="1" max="1" chance="100" /> <!-- Steam Beatle Mount Bracelet -->
+		</capsuled_items>
+	</item>
+	<item id="21640" type="EtcItem" name="Gold Maned Lion Mount Bracelet 30-Day Pack">
+		<!-- Wrapped Pack Containing a Gold Maned Lion Mount Bracelet (30 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20503" min="1" max="1" chance="100" /> <!-- Gold Maned Lion Mount Bracelet - 30-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21641" type="EtcItem" name="Gold Maned Lion Mount Bracelet Pack">
+		<!-- Wrapped Pack Containing a Gold Maned Lion Mount Bracelet. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20502" min="1" max="1" chance="100" /> <!-- Gold Maned Lion Mount Bracelet -->
+		</capsuled_items>
+	</item>
+	<item id="21642" type="EtcItem" name="Jet Bike 7-Day Pack">
+		<!-- Wrapped Pack Containing a Jet Bike (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20938" min="1" max="1" chance="100" /> <!-- Jet Bike Mount Bracelet - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21643" type="EtcItem" name="Jet Bike 30-Day Pack">
+		<!-- Wrapped Pack Containing a Jet Bike (30 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20939" min="1" max="1" chance="100" /> <!-- Jet Bike Mount Bracelet - 30-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21644" type="EtcItem" name="Jet Bike Pack">
+		<!-- Wrapped Pack Containing a Jet Bike. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="21088" min="1" max="1" chance="100" /> <!-- Jet Bike Mount Bracelet -->
+		</capsuled_items>
+	</item>
+	<item id="21645" type="EtcItem" name="Napoleon Hat 7-Day Pack - Mana Regeneration">
+		<!-- Wrapped Pack containing a Napoleon Hat (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20427" min="1" max="1" chance="100" /> <!-- Napoleon Hat - Mana Regeneration - 7-Day Limited Period -->
+		</capsuled_items>
+	</item>
+	<item id="21646" type="EtcItem" name="Napoleon Hat Pack">
+		<!-- Wrapped Pack containing a Napoleon Hat. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20322" min="1" max="1" chance="100" /> <!-- Napoleon Hat -->
+		</capsuled_items>
+	</item>
+	<item id="21647" type="EtcItem" name="Horn Hairband 7-Day Pack - Reflect Damage">
+		<!-- Wrapped Pack containing a Horn Hairband (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20428" min="1" max="1" chance="100" /> <!-- Horn Hairband - Reflect Damage - 7-Day Limited Period -->
+		</capsuled_items>
+	</item>
+	<item id="21648" type="EtcItem" name="Horn Hairband Pack">
+		<!-- Wrapped Pack containing a Horn Hairband. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20323" min="1" max="1" chance="100" /> <!-- Horn Hairband -->
+		</capsuled_items>
+	</item>
+	<item id="21649" type="EtcItem" name="Black Gem Mask 7-Day Pack - Energy">
+		<!-- Wrapped Pack containing a Black Gem Mask (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20429" min="1" max="1" chance="100" /> <!-- Black Gem Mask - Vitality - 7-Day Limited Period -->
+		</capsuled_items>
+	</item>
+	<item id="21650" type="EtcItem" name="Black Gem Mask Pack">
+		<!-- Wrapped Pack containing a Black Gem Mask. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20324" min="1" max="1" chance="100" /> <!-- Black Gem Mask -->
+		</capsuled_items>
+	</item>
+	<item id="21651" type="EtcItem" name="Plastic Hair 7-Day Pack - Blessed Scroll of Escape">
+		<!-- Wrapped Pack containing Plastic Hair (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20430" min="1" max="1" chance="100" /> <!-- Plastic Hair - Blessed Escape - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21652" type="EtcItem" name="Plastic Hair Pack">
+		<!-- Wrapped Pack containing Plastic Hair. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20325" min="1" max="1" chance="100" /> <!-- Plastic Hair -->
+		</capsuled_items>
+	</item>
+	<item id="21653" type="EtcItem" name="Daisy Hairpin 7-Day Pack - Resist Unholy">
+		<!-- Wrapped Pack Containing a Daisy Hairpin (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20431" min="1" max="1" chance="100" /> <!-- Daisy Hairpin - Resist Unholy - 7-Day Limited Period -->
+		</capsuled_items>
+	</item>
+	<item id="21654" type="EtcItem" name="Daisy Hairpin Pack">
+		<!-- Wrapped Pack Containing a Daisy Hairpin. Exclusive to females. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="22156" min="1" max="1" chance="100" /> <!-- Daisy Hairpin -->
+		</capsuled_items>
+	</item>
+	<item id="21655" type="EtcItem" name="Forget-me-not Hairpin 7-Day Pack - Wind Walk">
+		<!-- Wrapped Pack Containing a Forget-me-not Hairpin (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20432" min="1" max="1" chance="100" /> <!-- Forget-me-not Hairpin - Wind Walk - 7-Day Limited Period -->
+		</capsuled_items>
+	</item>
+	<item id="21656" type="EtcItem" name="Forget-me-not Hairpin Pack">
+		<!-- Wrapped Pack Containing a Forget-me-not Hairpin. Exclusive to females. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="22157" min="1" max="1" chance="100" /> <!-- Forget-me-not Hairpin -->
+		</capsuled_items>
+	</item>
+	<item id="21657" type="EtcItem" name="Outlaw's Eyepatch 7-Day Pack - Death Whisper">
+		<!-- Wrapped Pack Containing an Outlaw's Eyepatch (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20433" min="1" max="1" chance="100" /> <!-- Outlaw's Eyepatch - Death Whisper - 7-Day Limited Period -->
+		</capsuled_items>
+	</item>
+	<item id="21658" type="EtcItem" name="Outlaw's Eyepatch">
+		<!-- Wrapped Pack Containing an Outlaw's Eyepatch -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="22158" min="1" max="1" chance="100" /> <!-- Outlaw's Eyepatch -->
+		</capsuled_items>
+	</item>
+	<item id="21659" type="EtcItem" name="Pirate's Eyepatch 7-Day Pack - Agility">
+		<!-- Wrapped Pack Containing a Pirate's Eyepatch (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20434" min="1" max="1" chance="100" /> <!-- Pirate's eyepatch - Agility - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21660" type="EtcItem" name="Pirate's Eyepatch Pack">
+		<!-- Wrapped Pack Containing a Pirate's Eyepatch -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="22159" min="1" max="1" chance="100" /> <!-- Pirate's eyepatch -->
+		</capsuled_items>
+	</item>
+	<item id="21661" type="EtcItem" name="Monocle 7-Day Pack - Wild Magic">
+		<!-- Wrapped Pack Containing a Monocle (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20435" min="1" max="1" chance="100" /> <!-- Monocle - Wild Magic - 7-Day Limited Period -->
+		</capsuled_items>
+	</item>
+	<item id="21662" type="EtcItem" name="Monocle Pack">
+		<!-- Wrapped Pack Containing a Monocle -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="22160" min="1" max="1" chance="100" /> <!-- Monocle -->
+		</capsuled_items>
+	</item>
+	<item id="21663" type="EtcItem" name="Red Mask of Victory 7-Day Pack - Mana Regeneration">
+		<!-- Wrapped Pack Containing a Red Mask of Victory (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20436" min="1" max="1" chance="100" /> <!-- Red Mask of Victory - Mana Regeneration - 7-Day Limited Period -->
+		</capsuled_items>
+	</item>
+	<item id="21664" type="EtcItem" name="Red Mask of Victory">
+		<!-- Wrapped Pack Containing a Red Mask of Victory. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="22161" min="1" max="1" chance="100" /> <!-- Red Mask of Victory -->
+		</capsuled_items>
+	</item>
+	<item id="21665" type="EtcItem" name="Red Horn of Victory 7-Day Pack - Reflect Damage">
+		<!-- Wrapped Pack Containing a Red Horn of Victory (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20437" min="1" max="1" chance="100" /> <!-- Red Horn of Victory - Reflect Damage - 7-Day Limited Period -->
+		</capsuled_items>
+	</item>
+	<item id="21666" type="EtcItem" name="Red Horn of Victory Pack">
+		<!-- Wrapped Pack Containing a Red Horn of Victory. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="22162" min="1" max="1" chance="100" /> <!-- Red Horn of Victory -->
+		</capsuled_items>
+	</item>
+	<item id="21667" type="EtcItem" name="Party Mask 7-Day Pack - Greater Heal">
+		<!-- Wrapped Pack Containing a Party Mask (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20438" min="1" max="1" chance="100" /> <!-- Party Mask - Greater Heal - 7-Day Limited Period -->
+		</capsuled_items>
+	</item>
+	<item id="21668" type="EtcItem" name="Party Mask Pack">
+		<!-- Wrapped Pack Containing a Party Mask -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="22163" min="1" max="1" chance="100" /> <!-- Party Mask -->
+		</capsuled_items>
+	</item>
+	<item id="21669" type="EtcItem" name="Red Party Mask 7-Day Pack - Resist Unholy">
+		<!-- Wrapped Pack Containing a Red Party Mask (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20439" min="1" max="1" chance="100" /> <!-- Red Party Mask - Resist Unholy - 7-Day Limited Period -->
+		</capsuled_items>
+	</item>
+	<item id="21670" type="EtcItem" name="Red Party Mask Pack">
+		<!-- Wrapped Pack Containing a Red Party Mask -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="22164" min="1" max="1" chance="100" /> <!-- Red Party Mask -->
+		</capsuled_items>
+	</item>
+	<item id="21671" type="EtcItem" name="Cat Ears 7-Day Pack - Wind Walk">
+		<!-- Wrapped Pack Containing Cat Ears (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20440" min="1" max="1" chance="100" /> <!-- Cat Ears - Wind Walk - 7-Day Limited Period -->
+		</capsuled_items>
+	</item>
+	<item id="21672" type="EtcItem" name="Cat Ears Pack">
+		<!-- Wrapped Pack Containing Cat Ears -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="22165" min="1" max="1" chance="100" /> <!-- Cat Ears -->
+		</capsuled_items>
+	</item>
+	<item id="21673" type="EtcItem" name="Lady's Hair Pin 7-Day Pack - Death Whisper">
+		<!-- Wrapped Pack Containing a Lady's Hair Pin (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20441" min="1" max="1" chance="100" /> <!-- Lady's Hair Pin - Death Whisper - 7-Day Limited Period -->
+		</capsuled_items>
+	</item>
+	<item id="21674" type="EtcItem" name="Lady's Hair Pin Pack">
+		<!-- Wrapped Pack Containing a Lady's Hair Pin. Exclusive to females. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="22166" min="1" max="1" chance="100" /> <!-- Lady's Hair Pin -->
+		</capsuled_items>
+	</item>
+	<item id="21675" type="EtcItem" name="Raccoon Ears 7-Day Pack - Agility">
+		<!-- Wrapped Pack Containing Raccoon Ears (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20442" min="1" max="1" chance="100" /> <!-- Raccoon Ears - Agility - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="21676" type="EtcItem" name="Raccoon Ears Pack">
+		<!-- Wrapped Pack Containing Raccoon Ears -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="22167" min="1" max="1" chance="100" /> <!-- Raccoon Ears -->
+		</capsuled_items>
+	</item>
+	<item id="21677" type="EtcItem" name="Rabbit Ears 7-Day Pack - Wild Magic">
+		<!-- Wrapped Pack Containing Rabbit Ears (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20443" min="1" max="1" chance="100" /> <!-- Rabbit Ear - Wild Magic - 7-Day Limited Period -->
+		</capsuled_items>
+	</item>
+	<item id="21678" type="EtcItem" name="Rabbit Ears Pack">
+		<!-- Wrapped Pack Containing Rabbit Ears -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="22168" min="1" max="1" chance="100" /> <!-- Rabbit Ear -->
+		</capsuled_items>
+	</item>
+	<item id="21679" type="EtcItem" name="Little Angel's Wings 7-Day Pack - Mana Regeneration">
+		<!-- Wrapped Pack Containing Little Angel's Wings (7 day). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20444" min="1" max="1" chance="100" /> <!-- Little Angel Wings - Mana Regeneration - 7-Day Limited Period -->
+		</capsuled_items>
+	</item>
+	<item id="21680" type="EtcItem" name="Little Angel's Wings Pack">
+		<!-- Wrapped Pack Containing Little Angel's Wings -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="22169" min="1" max="1" chance="100" /> <!-- Little Angel Wings -->
+		</capsuled_items>
+	</item>
+	<item id="21681" type="EtcItem" name="Fairy's Tentacle 7-Day Pack - Reflect Damage">
+		<!-- Wrapped Pack Containing a Fairy's Tentacle (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20445" min="1" max="1" chance="100" /> <!-- Fairy's Tentacle - Reflect Damage - 7-Day Limited Period -->
+		</capsuled_items>
+	</item>
+	<item id="21682" type="EtcItem" name="Fairy's Tentacle Pack">
+		<!-- Wrapped Pack Containing Fairy's Tentacle -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="22170" min="1" max="1" chance="100" /> <!-- Fairy's Tentacle -->
+		</capsuled_items>
+	</item>
+	<item id="21683" type="EtcItem" name="Dandy's Chapeau 7-Day Pack - Greater Heal">
+		<!-- Wrapped Pack Containing a Dandy's Chapeau (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20446" min="1" max="1" chance="100" /> <!-- Dandy's Chapeau - Greater Heal - 7-Day Limited Period -->
+		</capsuled_items>
+	</item>
+	<item id="21684" type="EtcItem" name="Dandy's Chapeau Pack">
+		<!-- Wrapped Pack Containing Dandy's Chapeau. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="22171" min="1" max="1" chance="100" /> <!-- Dandy's Chapeau -->
+		</capsuled_items>
+	</item>
+	<item id="21685" type="EtcItem" name="Artisan's Goggles 7-Day Pack - Energy">
+		<!-- Wrapped Pack Containing Artisan's Goggles (7 days). -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20447" min="1" max="1" chance="100" /> <!-- Artisan's Goggles - Energy - 7-Day Limited Period -->
+		</capsuled_items>
+	</item>
+	<item id="21686" type="EtcItem" name="Artisan's Goggles Pack">
+		<!-- Wrapped pack containing Artisan's Goggles. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="22172" min="1" max="1" chance="100" /> <!-- Artisan's Goggles -->
+		</capsuled_items>
+	</item>
+</list>

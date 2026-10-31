@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list enabled="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/spawns.xsd">
+	<spawn name="22_21">
+		<npc id="4327" x="69403" y="118816" z="-3459" heading="58824" /> <!-- Worshipper -->
+		<npc id="4328" x="69403" y="118653" z="-3460" heading="41572" /> <!-- Altar Guard -->
+		<npc id="4328" x="69549" y="118880" z="-3460" heading="64074" /> <!-- Altar Guard -->
+		<npc id="20625" x="76008" y="110004" z="-2560" heading="50278" respawnDelay="36" /> <!-- Maluk Knight -->
+		<npc id="20625" x="76887" y="110529" z="-2368" heading="88" respawnDelay="36" /> <!-- Maluk Knight -->
+		<npc id="20626" x="75119" y="111033" z="-2400" heading="12505" respawnDelay="36" /> <!-- Maluk Berserker -->
+		<npc id="20626" x="75736" y="111152" z="-2488" heading="14104" respawnDelay="36" /> <!-- Maluk Berserker -->
+		<npc id="20627" x="75101" y="110724" z="-2416" heading="33892" respawnDelay="36" /> <!-- Maluk Lord -->
+		<npc id="20627" x="75156" y="111390" z="-2416" heading="20634" respawnDelay="36" /> <!-- Maluk Lord -->
+		<npc id="20628" x="75444" y="110961" z="-2472" heading="44491" respawnDelay="36" /> <!-- Limal Karinness -->
+		<npc id="20628" x="77472" y="109284" z="-2568" heading="32641" respawnDelay="36" /> <!-- Limal Karinness -->
+		<npc id="20629" x="74806" y="111232" z="-2320" heading="21559" respawnDelay="36" /> <!-- Karik -->
+		<npc id="20629" x="75767" y="109281" z="-2576" heading="47731" respawnDelay="36" /> <!-- Karik -->
+		<npc id="20761" x="74638" y="111152" z="-2288" heading="47995" respawnDelay="36" /> <!-- Pytan -->
+		<npc id="20761" x="77749" y="110222" z="-2248" heading="11778" respawnDelay="36" /> <!-- Pytan -->
+		<npc id="21084" x="78813" y="105602" z="-3128" heading="27103" respawnDelay="36" /> <!-- Bloody Lady -->
+		<npc id="21090" x="75614" y="111489" z="-2448" heading="22834" respawnDelay="22" /> <!-- Bloody Guardian -->
+		<npc id="21090" x="76182" y="109537" z="-2608" heading="5070" respawnDelay="22" /> <!-- Bloody Guardian -->
+		<npc id="21090" x="76587" y="109820" z="-2560" heading="51607" respawnDelay="22" /> <!-- Bloody Guardian -->
+		<npc id="21090" x="76651" y="108827" z="-2672" heading="8435" respawnDelay="22" /> <!-- Bloody Guardian -->
+		<npc id="21091" x="74638" y="111152" z="-2288" heading="23837" respawnDelay="36" /> <!-- Bloody Keeper -->
+		<npc id="21092" x="76468" y="110377" z="-2480" heading="8085" respawnDelay="36" /> <!-- Bloody Mystic -->
+		<npc id="22815" x="76971" y="117518" z="-3718" heading="4767" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="78894" y="117339" z="-3720" heading="40702" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="79411" y="116082" z="-3720" heading="44481" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="79989" y="114142" z="-3720" heading="63585" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="80148" y="116297" z="-3600" heading="25773" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="80284" y="115613" z="-3648" heading="15063" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="80848" y="109550" z="-3056" heading="43753" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="81010" y="110028" z="-3056" heading="51402" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="81123" y="109671" z="-3056" heading="27615" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="81153" y="109547" z="-3056" heading="42570" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="81432" y="114430" z="-3424" heading="28587" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="81482" y="109228" z="-3064" heading="55519" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="81569" y="114406" z="-3360" heading="47010" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="81725" y="114323" z="-3296" heading="59141" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="81879" y="109164" z="-3112" heading="61085" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="81961" y="109584" z="-3128" heading="52130" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="81978" y="114015" z="-3200" heading="59676" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="82182" y="109291" z="-3144" heading="49126" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="82256" y="117662" z="-3064" heading="26837" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="82368" y="109074" z="-3144" heading="38662" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="82798" y="109087" z="-3152" heading="30474" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="82880" y="109426" z="-3168" heading="17118" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="82881" y="109170" z="-3152" heading="40348" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="82980" y="108537" z="-3056" heading="55376" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="83103" y="109147" z="-3128" heading="16675" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="83120" y="112808" z="-3040" heading="44767" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="83120" y="113081" z="-3056" heading="9393" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="83342" y="113115" z="-3056" heading="24629" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="83419" y="109055" z="-3104" heading="31900" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="83477" y="119323" z="-2960" heading="64239" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="83589" y="109504" z="-3208" heading="16712" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="83619" y="108809" z="-3088" heading="41823" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="83630" y="117384" z="-2992" heading="3092" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="83670" y="112792" z="-3048" heading="27290" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="83733" y="108837" z="-3088" heading="37605" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="83740" y="112080" z="-3080" heading="45924" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="83864" y="112262" z="-3048" heading="14368" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="83864" y="112990" z="-3056" heading="21755" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="83884" y="119257" z="-2968" heading="33337" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="83922" y="117337" z="-2992" heading="58966" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="84123" y="118853" z="-3024" heading="19895" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="84354" y="117934" z="-2992" heading="9880" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="84513" y="112005" z="-3032" heading="48178" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="84602" y="117921" z="-3000" heading="16231" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="84608" y="112626" z="-3056" heading="9119" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="84692" y="118384" z="-3008" heading="20225" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="84738" y="111885" z="-3064" heading="31792" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="84859" y="117207" z="-3008" heading="61346" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="84859" y="117661" z="-3008" heading="9729" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="85166" y="111932" z="-3080" heading="65520" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="85212" y="112312" z="-3056" heading="48446" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="85476" y="111697" z="-3104" heading="48048" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="85604" y="119802" z="-2976" heading="10347" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="85743" y="119909" z="-2976" heading="29120" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="85793" y="111884" z="-3064" heading="58575" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="86196" y="120204" z="-2992" heading="35700" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="86250" y="111562" z="-3176" heading="19208" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="86637" y="112372" z="-3240" heading="12968" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="86766" y="111742" z="-3296" heading="23775" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="86766" y="111787" z="-3264" heading="33013" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="86895" y="111832" z="-3280" heading="55594" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="87026" y="112180" z="-3264" heading="15714" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="87335" y="112180" z="-3280" heading="47737" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="87768" y="112120" z="-3288" heading="35560" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="87868" y="119696" z="-3056" heading="55247" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="88056" y="112488" z="-3296" heading="31809" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="88262" y="112224" z="-3272" heading="29744" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="88365" y="112488" z="-3280" heading="1317" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="88369" y="112208" z="-3264" heading="16864" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22815" x="88468" y="112224" z="-3256" heading="11978" respawnDelay="60" /> <!-- Drakos -->
+		<npc id="22820" x="82028" y="113982" z="-3176" heading="25886" respawnDelay="240" /> <!-- Mesmer Drake -->
+		<npc id="22820" x="83429" y="118625" z="-2996" heading="13049" respawnDelay="240" /> <!-- Mesmer Drake -->
+		<npc id="22820" x="85452" y="108916" z="-3202" heading="31829" respawnDelay="240" /> <!-- Mesmer Drake -->
+		<npc id="22829" x="90842" y="112419" z="-2976" heading="27743" respawnDelay="60" /> <!-- Emerald Drake -->
+		<npc id="22829" x="90957" y="113455" z="-3000" heading="42583" respawnDelay="60" /> <!-- Emerald Drake -->
+		<npc id="22829" x="91620" y="114699" z="-3072" heading="29132" respawnDelay="60" /> <!-- Emerald Drake -->
+		<npc id="22829" x="91879" y="114756" z="-3072" heading="51861" respawnDelay="60" /> <!-- Emerald Drake -->
+		<npc id="22829" x="92417" y="113193" z="-3072" heading="58635" respawnDelay="60" /> <!-- Emerald Drake -->
+		<npc id="22829" x="92568" y="111424" z="-2992" heading="40200" respawnDelay="60" /> <!-- Emerald Drake -->
+		<npc id="22829" x="92729" y="118211" z="-3056" heading="54319" respawnDelay="60" /> <!-- Emerald Drake -->
+		<npc id="22829" x="92742" y="119584" z="-2976" heading="54888" respawnDelay="60" /> <!-- Emerald Drake -->
+		<npc id="22829" x="93092" y="113939" z="-3072" heading="55155" respawnDelay="60" /> <!-- Emerald Drake -->
+		<npc id="22829" x="94000" y="114106" z="-3104" heading="50469" respawnDelay="60" /> <!-- Emerald Drake -->
+		<npc id="22829" x="94525" y="113255" z="-3048" heading="3890" respawnDelay="60" /> <!-- Emerald Drake -->
+		<npc id="22829" x="95286" y="112420" z="-3056" heading="58614" respawnDelay="60" /> <!-- Emerald Drake -->
+		<npc id="22830" x="85273" y="107338" z="-3184" heading="0" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="86397" y="107800" z="-3160" heading="64157" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="86450" y="107602" z="-3160" heading="41830" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="86501" y="108106" z="-3160" heading="57031" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="86746" y="107097" z="-3128" heading="64236" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="86853" y="107757" z="-3144" heading="17964" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="86923" y="107500" z="-3136" heading="17078" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="87808" y="106723" z="-3168" heading="35868" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="87859" y="106229" z="-3176" heading="38941" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="87928" y="106525" z="-3168" heading="37288" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="87951" y="106705" z="-3168" heading="29364" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="87959" y="106429" z="-3184" heading="40109" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="87972" y="106154" z="-3176" heading="44676" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="87985" y="106726" z="-3168" heading="33528" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="88049" y="106868" z="-3160" heading="22582" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="88051" y="108187" z="-3056" heading="42744" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="88060" y="105959" z="-3144" heading="47282" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="88083" y="106028" z="-3160" heading="48203" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="88140" y="107924" z="-3056" heading="47512" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="88299" y="108088" z="-3056" heading="44795" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="88738" y="108415" z="-3032" heading="51676" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="88744" y="105470" z="-3088" heading="55115" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="89105" y="105827" z="-3176" heading="33432" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="89169" y="105635" z="-3168" heading="33432" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="89216" y="105586" z="-3192" heading="33148" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="89695" y="106289" z="-3208" heading="36005" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="89767" y="107724" z="-3040" heading="57528" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="89774" y="107933" z="-3024" heading="15858" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="89854" y="108023" z="-3024" heading="40626" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="89883" y="107917" z="-3024" heading="10728" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="89980" y="107030" z="-3160" heading="9643" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="90066" y="107822" z="-3040" heading="38876" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="90271" y="108210" z="-3048" heading="3768" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="90331" y="106494" z="-3184" heading="62947" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="90422" y="106692" z="-3160" heading="63190" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="90955" y="106671" z="-3064" heading="47006" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="90993" y="108232" z="-3040" heading="29202" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="91013" y="107964" z="-3056" heading="45048" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="91039" y="107845" z="-3056" heading="41464" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="91418" y="108358" z="-3040" heading="10980" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="91575" y="108034" z="-3040" heading="5940" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="91639" y="108061" z="-3040" heading="5634" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="91717" y="107877" z="-3056" heading="5249" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="92120" y="108698" z="-3080" heading="0" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="92272" y="107807" z="-3040" heading="47561" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="92332" y="107659" z="-3032" heading="59052" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="92663" y="107470" z="-2976" heading="56405" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="93747" y="107705" z="-3000" heading="8057" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="93750" y="107496" z="-3000" heading="31117" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="94311" y="107782" z="-3016" heading="5359" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="94437" y="110119" z="-3696" heading="29913" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="94890" y="107781" z="-3056" heading="0" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="94932" y="109944" z="-3704" heading="32895" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="95012" y="110416" z="-3688" heading="26800" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="95258" y="109790" z="-3656" heading="9643" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="95316" y="110597" z="-3672" heading="19319" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="95340" y="109765" z="-3656" heading="13494" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="95367" y="110544" z="-3656" heading="60184" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="95558" y="108048" z="-3096" heading="8510" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="95671" y="107670" z="-3088" heading="59818" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="95877" y="109865" z="-3600" heading="0" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="95890" y="110024" z="-3656" heading="521" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="96837" y="109593" z="-3696" heading="51410" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="96837" y="109637" z="-3696" heading="32816" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="96843" y="109651" z="-3696" heading="41714" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="96880" y="109688" z="-3696" heading="45092" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="97070" y="109697" z="-3704" heading="23728" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22830" x="97463" y="109673" z="-3680" heading="62490" respawnDelay="60" /> <!-- Gem Dragon -->
+		<npc id="22834" x="88660" y="105889" z="-3138" heading="20133" respawnDelay="240" /> <!-- Dust Dragon Tracker -->
+		<npc id="22834" x="93937" y="107688" z="-3026" heading="57122" respawnDelay="240" /> <!-- Dust Dragon Tracker -->
+		<npc id="22858" x="76441" y="117265" z="-3748" heading="52663" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="77388" y="116948" z="-3805" heading="62442" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="79307" y="114981" z="-3736" heading="29888" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="79610" y="115090" z="-3720" heading="60337" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="79850" y="116774" z="-3480" heading="32417" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="80257" y="115482" z="-3672" heading="58221" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="80684" y="113310" z="-3688" heading="43772" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="80802" y="112558" z="-3656" heading="6912" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="80802" y="112840" z="-3656" heading="19666" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="80861" y="112370" z="-3656" heading="36273" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="80861" y="113122" z="-3656" heading="57663" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="81214" y="111962" z="-3632" heading="44392" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="81215" y="112652" z="-3616" heading="29978" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="81274" y="111994" z="-3624" heading="45716" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="81286" y="111719" z="-3608" heading="20959" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="81398" y="111693" z="-3600" heading="24100" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="81760" y="112025" z="-3576" heading="19401" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="81897" y="110574" z="-3688" heading="56507" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="82052" y="110574" z="-3712" heading="53345" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="82180" y="117125" z="-3104" heading="57961" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="82207" y="111744" z="-3552" heading="46345" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="82362" y="110808" z="-3728" heading="3829" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="82362" y="111159" z="-3680" heading="60011" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="82889" y="118342" z="-3008" heading="38095" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="83465" y="117291" z="-3000" heading="34304" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="83598" y="118247" z="-2984" heading="47060" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="83858" y="117142" z="-2992" heading="56519" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="83912" y="110181" z="-3744" heading="33297" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="84067" y="110808" z="-3688" heading="12826" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="84377" y="110223" z="-3776" heading="45111" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="84574" y="118284" z="-3008" heading="46769" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="84574" y="118584" z="-3032" heading="53367" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="84707" y="117589" z="-3000" heading="1221" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="84859" y="117888" z="-3008" heading="20867" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="85066" y="111018" z="-3664" heading="31112" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="85518" y="118984" z="-3024" heading="58522" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="85538" y="109928" z="-3728" heading="28971" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="85752" y="120003" z="-2968" heading="49679" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="85900" y="119802" z="-2992" heading="14237" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="86069" y="110772" z="-3672" heading="24807" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="86305" y="110239" z="-3736" heading="25777" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="86317" y="110704" z="-3696" heading="38992" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="86468" y="110508" z="-3720" heading="4099" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="86604" y="111232" z="-3632" heading="34302" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="87965" y="118882" z="-3056" heading="27154" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="88039" y="110919" z="-3760" heading="15453" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="88956" y="111372" z="-3688" heading="61229" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="89311" y="111335" z="-3632" heading="61506" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="89576" y="111120" z="-3656" heading="55013" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="89749" y="111371" z="-3648" heading="5009" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="89845" y="111060" z="-3664" heading="54532" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="90004" y="111051" z="-3656" heading="57262" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="90196" y="111162" z="-3656" heading="11362" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22858" x="90224" y="111454" z="-3648" heading="13504" respawnDelay="60" /> <!-- Necromancer of the Valley -->
+		<npc id="22859" x="81317" y="109228" z="-3064" heading="15853" respawnDelay="240" /> <!-- Howl -->
+		<npc id="22859" x="87439" y="121072" z="-3061" heading="56291" respawnDelay="240" /> <!-- Howl -->
+		<npc id="22859" x="88535" y="112442" z="-3272" heading="41726" respawnDelay="240" /> <!-- Howl -->
+		<npc id="22860" x="89965" y="113399" z="-3000" heading="42926" respawnDelay="60" /> <!-- Hungry Parasitic Leech -->
+		<npc id="22860" x="89971" y="113245" z="-3000" heading="31629" respawnDelay="60" /> <!-- Hungry Parasitic Leech -->
+		<npc id="22860" x="90025" y="118697" z="-3008" heading="37942" respawnDelay="60" /> <!-- Hungry Parasitic Leech -->
+		<npc id="22860" x="90031" y="112713" z="-3016" heading="39085" respawnDelay="60" /> <!-- Hungry Parasitic Leech -->
+		<npc id="22860" x="90064" y="120306" z="-3056" heading="35976" respawnDelay="60" /> <!-- Hungry Parasitic Leech -->
+		<npc id="22860" x="90154" y="113318" z="-2992" heading="31964" respawnDelay="60" /> <!-- Hungry Parasitic Leech -->
+		<npc id="22860" x="90180" y="112870" z="-3008" heading="34929" respawnDelay="60" /> <!-- Hungry Parasitic Leech -->
+		<npc id="22860" x="90192" y="113347" z="-2992" heading="51788" respawnDelay="60" /> <!-- Hungry Parasitic Leech -->
+		<npc id="22860" x="90216" y="118488" z="-2976" heading="20581" respawnDelay="60" /> <!-- Hungry Parasitic Leech -->
+		<npc id="22860" x="90246" y="120202" z="-3048" heading="63564" respawnDelay="60" /> <!-- Hungry Parasitic Leech -->
+		<npc id="22860" x="90304" y="118640" z="-2992" heading="47998" respawnDelay="60" /> <!-- Hungry Parasitic Leech -->
+		<npc id="22860" x="90347" y="112936" z="-3000" heading="25906" respawnDelay="60" /> <!-- Hungry Parasitic Leech -->
+		<npc id="22860" x="90358" y="118618" z="-2992" heading="11576" respawnDelay="60" /> <!-- Hungry Parasitic Leech -->
+		<npc id="22860" x="90515" y="113155" z="-2992" heading="954" respawnDelay="60" /> <!-- Hungry Parasitic Leech -->
+		<npc id="22860" x="90710" y="118706" z="-3056" heading="428" respawnDelay="60" /> <!-- Hungry Parasitic Leech -->
+		<npc id="30557" x="70932" y="124558" z="-3560" heading="32768" respawnDelay="60" /> <!-- Torai -->
+		<npc id="30615" x="80100" y="119991" z="-2264" heading="19000" respawnDelay="60" /> <!-- Voltar -->
+		<npc id="30630" x="69976" y="109692" z="-3702" heading="0" respawnDelay="60" /> <!-- Orim -->
+		<npc id="30754" x="73211" y="118492" z="-3696" heading="40960" respawnDelay="60" /> <!-- Gilmore -->
+		<npc id="32723" x="90459" y="120761" z="-2992" heading="50504" respawnDelay="60" />
+		<npc id="32723" x="90734" y="106231" z="-3120" heading="24488" respawnDelay="60" />
+		<npc id="32723" x="91563" y="109541" z="-3744" heading="248" respawnDelay="60" />
+		<npc id="32723" x="93110" y="111366" z="-2976" heading="25280" respawnDelay="60" />
+		<npc id="32865" x="73306" y="118423" z="-3704" heading="54054" respawnDelay="60" /> <!-- Separated Soul -->
+		<npc id="32871" x="92225" y="113873" z="-3062" heading="0" respawnDelay="60" /> <!-- Dragon Vortex -->
+	</spawn>
+</list>

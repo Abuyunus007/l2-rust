@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/npcs.xsd">
+	<npc id="2501" level="80" type="Monster" name="Lucky Pig" title="The Spirit of Fortune">
+		<!-- TODO: Must be confirmed -->
+		<sex>MALE</sex>
+		<stats str="40" int="21" dex="30" wit="20" con="43" men="20">
+			<vitals hp="2676.65854" mp="1507.8" />
+			<attack physical="794.70901" magical="542.68324" attackSpeed="253" range="40" />
+			<defence physical="319.24623" magical="233.61053" />
+			<attribute>
+				<defence fire="20" water="20" wind="20" earth="20" holy="20" dark="20" />
+			</attribute>
+			<speed>
+				<walk ground="60" />
+				<run ground="160" />
+			</speed>
+		</stats>
+		<skillList>
+			<skill id="4416" level="3" /> <!-- Beasts -->
+			<skill id="23325" level="1" /> <!-- Enlarge - Luckpy -->
+			<skill id="23326" level="1" /> <!-- Reduce - Luckpy -->
+		</skillList>
+		<collision>
+			<radius normal="25" />
+			<height normal="18" />
+		</collision>
+	</npc>
+	<npc id="2502" level="1" type="Monster" name="Wingless Lucky Pig">
+		<!-- TODO: Must be confirmed -->
+		<sex>MALE</sex>
+		<stats str="40" int="21" dex="30" wit="20" con="43" men="20">
+			<vitals hp="2676.65854" mp="1507.8" />
+			<attack physical="794.70901" magical="542.68324" attackSpeed="253" range="40" />
+			<defence physical="319.24623" magical="233.61053" />
+			<attribute>
+				<defence fire="20" water="20" wind="20" earth="20" holy="20" dark="20" />
+			</attribute>
+			<speed>
+				<walk ground="60" />
+				<run ground="160" />
+			</speed>
+		</stats>
+		<collision>
+			<radius normal="25" />
+			<height normal="18" />
+		</collision>
+	</npc>
+	<npc id="2503" level="1" type="Monster" name="Wingless Lucky Pig">
+		<!-- TODO: Must be confirmed -->
+		<sex>MALE</sex>
+		<stats str="40" int="21" dex="30" wit="20" con="43" men="20">
+			<vitals hp="2676.65854" mp="1507.8" />
+			<attack physical="794.70901" magical="542.68324" attackSpeed="253" range="40" />
+			<defence physical="319.24623" magical="233.61053" />
+			<attribute>
+				<defence fire="20" water="20" wind="20" earth="20" holy="20" dark="20" />
+			</attribute>
+			<speed>
+				<walk ground="60" />
+				<run ground="160" />
+			</speed>
+		</stats>
+		<collision>
+			<radius normal="25" />
+			<height normal="18" />
+		</collision>
+	</npc>
+</list>

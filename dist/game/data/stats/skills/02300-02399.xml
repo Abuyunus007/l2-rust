@@ -1,0 +1,2330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/skills.xsd">
+	<skill id="2300" levels="1" name="Hair Style Change Potion">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>8673</itemConsumeId> <!-- Hair Style Change Potion - C (Event) -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="ChangeHairStyle">
+				<value>2</value>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2301" levels="1" name="Hair Style Change Potion">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>8674</itemConsumeId> <!-- Hair Style Change Potion - D (Event) -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="ChangeHairStyle">
+				<value>3</value>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2302" levels="1" name="Hair Style Change Potion">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>8675</itemConsumeId> <!-- Hair Style Change Potion - E (Event) -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="ChangeHairStyle">
+				<value>4</value>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2303" levels="1" name="Hair Style Change Potion">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>8676</itemConsumeId> <!-- Hair Style Change Potion - F (Event) -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="1518">
+			<player sex="1" />
+		</conditions>
+		<effects>
+			<effect name="ChangeHairStyle">
+				<value>5</value>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2304" levels="1" name="Hair Style Change Potion">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>8677</itemConsumeId> <!-- Hair Style Change Potion - G (Event) -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="1518">
+			<player sex="1" />
+		</conditions>
+		<effects>
+			<effect name="ChangeHairStyle">
+				<value>6</value>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2305" levels="1" name="Primeval Potion">
+		<!-- Improves Resistance to various poisons and anesthetics that originate on the Primeval Isle. -->
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>POTION_OF_GENESIS</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="DefenceTrait">
+				<SHOCK>15</SHOCK>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2306" levels="3" name="Red Primeval Crystal">
+		<table name="#amount">50000 100000 200000</table>
+		<table name="#itemConsumeId">8954 8955 8956</table>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>200</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>#itemConsumeId</itemConsumeId>
+		<magicLevel>1</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<player levelRange="76;85" />
+		</conditions>
+		<effects>
+			<effect name="GiveSp">
+				<sp>#amount</sp>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2307" levels="1" name="Remove Petrification Scroll">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+		<conditions msgId="1902">
+			<player levelRange="61;85" />
+		</conditions>
+		<effects>
+			<effect name="DispelBySlotProbability">
+				<dispel>TURN_STONE</dispel>
+				<rate>99</rate>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2308" levels="36" name="Event Item">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<value level="1">
+						<item chance="100">
+							<item id="8980" count="1" /> <!-- Shadow Item: Composite Bow -->
+							<item id="17" count="1000" /> <!-- Wooden Arrow -->
+						</item>
+					</value>
+					<value level="2">
+						<item chance="100">
+							<item id="8989" count="1" /> <!-- Shadow Item: Gastraphetes -->
+							<item id="1341" count="1000" /> <!-- Bone Arrow -->
+						</item>
+					</value>
+					<value level="3">
+						<item chance="100">
+							<item id="8997" count="1" /> <!-- Shadow Item: Akat Long Bow -->
+							<item id="1342" count="1000" /> <!-- Steel Arrow -->
+						</item>
+					</value>
+					<value level="4">
+						<item chance="100">
+							<item id="9008" count="1" /> <!-- Shadow Item: Dark Elven Long Bow -->
+							<item id="1343" count="1000" /> <!-- Silver Arrow -->
+						</item>
+					</value>
+					<value level="5">
+						<item chance="100">
+							<item id="9016" count="1" /> <!-- Shadow Item: Carnage Bow -->
+							<item id="1344" count="1000" /> <!-- Mithril Arrow -->
+						</item>
+					</value>
+					<value level="6">
+						<item chance="100">
+							<item id="9027" count="1" /> <!-- Shadow Item: Soul Bow -->
+							<item id="1344" count="1000" /> <!-- Mithril Arrow -->
+						</item>
+					</value>
+					<value level="7">
+						<item chance="100">
+							<item id="9030" count="1" /> <!-- Shadow Item: Bronze Breastplate -->
+							<item id="9031" count="1" /> <!-- Shadow Item: Bronze Gaiters -->
+							<item id="9038" count="1" /> <!-- Shadow Item: Boots -->
+							<item id="9039" count="1" /> <!-- Shadow Item: Bracer -->
+							<item id="9037" count="1" /> <!-- Shadow Item: Hard Leather Helmet -->
+							<item id="9036" count="1" /> <!-- Shadow Item: Bone Shield -->
+						</item>
+					</value>
+					<value level="8">
+						<item chance="100">
+							<item id="9040" count="1" /> <!-- Shadow Item: Mithril Breastplate -->
+							<item id="9041" count="1" /> <!-- Shadow Item: Mithril Gaiters -->
+							<item id="9042" count="1" /> <!-- Shadow Item: Gauntlet -->
+							<item id="9043" count="1" /> <!-- Shadow Item: Iron Boots -->
+							<item id="9044" count="1" /> <!-- Shadow Item: Hoplon -->
+							<item id="9053" count="1" /> <!-- Shadow Item: Helmet -->
+						</item>
+					</value>
+					<value level="9">
+						<item chance="100">
+							<item id="9054" count="1" /> <!-- Shadow Item: Composite Armor -->
+							<item id="9055" count="1" /> <!-- Shadow Item: Composite Boots -->
+							<item id="9056" count="1" /> <!-- Shadow Item: Composite Shield -->
+							<item id="9057" count="1" /> <!-- Shadow Item: Composite Helmet -->
+							<item id="9128" count="1" /> <!-- Shadow Item: Mithril Gauntlet -->
+						</item>
+					</value>
+					<value level="10">
+						<item chance="100">
+							<item id="9067" count="1" /> <!-- Shadow Item: Zubei's Breastplate -->
+							<item id="9068" count="1" /> <!-- Shadow Item: Zubei's Gaiters -->
+							<item id="9069" count="1" /> <!-- Shadow Item: Zubei's Helmet -->
+							<item id="9070" count="1" /> <!-- Shadow Item: Zubei's Shield -->
+							<item id="9071" count="1" /> <!-- Shadow Item: Zubei's Gauntlet -->
+							<item id="9072" count="1" /> <!-- Shadow Item: Zubei's Boots -->
+						</item>
+					</value>
+					<value level="11">
+						<item chance="100">
+							<item id="9081" count="1" /> <!-- Shadow Item: Dark Crystal Breastplate -->
+							<item id="9082" count="1" /> <!-- Shadow Item: Dark Crystal Gaiters -->
+							<item id="9083" count="1" /> <!-- Shadow Item: Dark Crystal Helmet -->
+							<item id="9084" count="1" /> <!-- Shadow Item: Dark Crystal Shield -->
+							<item id="9085" count="1" /> <!-- Shadow Item: Dark Crystal Gloves -->
+							<item id="9086" count="1" /> <!-- Shadow Item: Dark Crystal Boots -->
+						</item>
+					</value>
+					<value level="12">
+						<item chance="100">
+							<item id="9094" count="1" /> <!-- Shadow Item: Majestic Plate Armor -->
+							<item id="9095" count="1" /> <!-- Shadow Item: Majestic Circlet -->
+							<item id="9096" count="1" /> <!-- Shadow Item: Majestic Gauntlet -->
+							<item id="9097" count="1" /> <!-- Shadow Item: Majestic Boots -->
+							<item id="9129" count="1" /> <!-- Shadow Item: Shield of Nightmare -->
+						</item>
+					</value>
+					<value level="13">
+						<item chance="100">
+							<item id="9032" count="1" /> <!-- Shadow Item: Hard Leather Shirt -->
+							<item id="9033" count="1" /> <!-- Shadow Item: Hard Leather Gaiters -->
+							<item id="9037" count="1" /> <!-- Shadow Item: Hard Leather Helmet -->
+							<item id="9038" count="1" /> <!-- Shadow Item: Boots -->
+							<item id="9039" count="1" /> <!-- Shadow Item: Bracer -->
+						</item>
+					</value>
+					<value level="14">
+						<item chance="100">
+							<item id="9045" count="1" /> <!-- Shadow Item: Reinforced Leather Shirt -->
+							<item id="9046" count="1" /> <!-- Shadow Item: Reinforced Leather Gaiters -->
+							<item id="9047" count="1" /> <!-- Shadow Item: Reinforced Leather Gloves -->
+							<item id="9048" count="1" /> <!-- Shadow Item: Reinforced Leather Boots -->
+							<item id="9053" count="1" /> <!-- Shadow Item: Helmet -->
+						</item>
+					</value>
+					<value level="15">
+						<item chance="100">
+							<item id="9058" count="1" /> <!-- Shadow Item: Theca Leather Armor -->
+							<item id="9059" count="1" /> <!-- Shadow Item: Theca Leather Gaiters -->
+							<item id="9060" count="1" /> <!-- Shadow Item: Theca Leather Boots -->
+							<item id="9061" count="1" /> <!-- Shadow Item: Theca Leather Gloves -->
+							<item id="9066" count="1" /> <!-- Shadow Item: Shining Circlet -->
+						</item>
+					</value>
+					<value level="16">
+						<item chance="100">
+							<item id="9073" count="1" /> <!-- Shadow Item: Zubei's Leather Shirt -->
+							<item id="9074" count="1" /> <!-- Shadow Item: Zubei's Leather Gaiters -->
+							<item id="9075" count="1" /> <!-- Shadow Item: Zubei's Gauntlet -->
+							<item id="9076" count="1" /> <!-- Shadow Item: Zubei's Boots -->
+							<item id="9069" count="1" /> <!-- Shadow Item: Zubei's Helmet -->
+						</item>
+					</value>
+					<value level="17">
+						<item chance="100">
+							<item id="9087" count="1" /> <!-- Shadow Item: Dark Crystal Leather Armor -->
+							<item id="9088" count="1" /> <!-- Shadow Item: Dark Crystal Leggings -->
+							<item id="9089" count="1" /> <!-- Shadow Item: Dark Crystal Gloves -->
+							<item id="9090" count="1" /> <!-- Shadow Item: Dark Crystal Boots -->
+							<item id="9083" count="1" /> <!-- Shadow Item: Dark Crystal Helmet -->
+						</item>
+					</value>
+					<value level="18">
+						<item chance="100">
+							<item id="9098" count="1" /> <!-- Shadow Item: Majestic Leather Armor -->
+							<item id="9099" count="1" /> <!-- Shadow Item: Majestic Gauntlet -->
+							<item id="9100" count="1" /> <!-- Shadow Item: Majestic Boots -->
+							<item id="9095" count="1" /> <!-- Shadow Item: Majestic Circlet -->
+						</item>
+					</value>
+					<value level="19">
+						<item chance="100">
+							<item id="9034" count="1" /> <!-- Shadow Item: Tunic of Magic -->
+							<item id="9035" count="1" /> <!-- Shadow Item: Stockings of Magic -->
+							<item id="9037" count="1" /> <!-- Shadow Item: Hard Leather Helmet -->
+							<item id="9038" count="1" /> <!-- Shadow Item: Boots -->
+							<item id="9036" count="1" /> <!-- Shadow Item: Bone Shield -->
+							<item id="9039" count="1" /> <!-- Shadow Item: Bracer -->
+						</item>
+					</value>
+					<value level="20">
+						<item chance="100">
+							<item id="9049" count="1" /> <!-- Shadow Item: Tunic of Knowledge -->
+							<item id="9050" count="1" /> <!-- Shadow Item: Stockings of Knowledge -->
+							<item id="9051" count="1" /> <!-- Shadow Item: Gloves of Knowledge -->
+							<item id="9052" count="1" /> <!-- Shadow Item: Boots of Knowledge -->
+							<item id="9053" count="1" /> <!-- Shadow Item: Helmet -->
+							<item id="9044" count="1" /> <!-- Shadow Item: Hoplon -->
+						</item>
+					</value>
+					<value level="21">
+						<item chance="100">
+							<item id="9062" count="1" /> <!-- Shadow Item: Demon's Tunic -->
+							<item id="9063" count="1" /> <!-- Shadow Item: Demon's Stockings -->
+							<item id="9064" count="1" /> <!-- Shadow Item: Demon's Boots -->
+							<item id="9065" count="1" /> <!-- Shadow Item: Demon's Gloves -->
+							<item id="9066" count="1" /> <!-- Shadow Item: Shining Circlet -->
+							<item id="9056" count="1" /> <!-- Shadow Item: Composite Shield -->
+						</item>
+					</value>
+					<value level="22">
+						<item chance="100">
+							<item id="9077" count="1" /> <!-- Shadow Item: Tunic of Zubei -->
+							<item id="9078" count="1" /> <!-- Shadow Item: Stockings of Zubei -->
+							<item id="9079" count="1" /> <!-- Shadow Item: Zubei's Gauntlet -->
+							<item id="9080" count="1" /> <!-- Shadow Item: Zubei's Boots -->
+							<item id="9069" count="1" /> <!-- Shadow Item: Zubei's Helmet -->
+							<item id="9070" count="1" /> <!-- Shadow Item: Zubei's Shield -->
+						</item>
+					</value>
+					<value level="23">
+						<item chance="100">
+							<item id="9091" count="1" /> <!-- Shadow Item: Dark Crystal Robe -->
+							<item id="9092" count="1" /> <!-- Shadow Item: Dark Crystal Gloves -->
+							<item id="9093" count="1" /> <!-- Shadow Item: Dark Crystal Boots -->
+							<item id="9084" count="1" /> <!-- Shadow Item: Dark Crystal Shield -->
+							<item id="9083" count="1" /> <!-- Shadow Item: Dark Crystal Helmet -->
+						</item>
+					</value>
+					<value level="24">
+						<item chance="100">
+							<item id="9101" count="1" /> <!-- Shadow Item: Majestic Robe -->
+							<item id="9102" count="1" /> <!-- Shadow Item: Majestic Gauntlet -->
+							<item id="9103" count="1" /> <!-- Shadow Item: Majestic Boots -->
+							<item id="9095" count="1" /> <!-- Shadow Item: Majestic Circlet -->
+							<item id="9129" count="1" /> <!-- Shadow Item: Shield of Nightmare -->
+						</item>
+					</value>
+					<value level="25">
+						<item chance="100">
+							<item id="1835" count="1000" /> <!-- Soulshot: No Grade -->
+							<item id="8622" count="10" /> <!-- Elixir of Life (No Grade) -->
+						</item>
+					</value>
+					<value level="26">
+						<item chance="100">
+							<item id="1463" count="1000" /> <!-- Soulshot (D-Grade) -->
+							<item id="8623" count="10" /> <!-- Elixir of Life (D-Grade) -->
+						</item>
+					</value>
+					<value level="27">
+						<item chance="100">
+							<item id="1464" count="1000" /> <!-- Soulshot (C-Grade) -->
+							<item id="8624" count="10" /> <!-- Elixir of Life (C-Grade) -->
+						</item>
+					</value>
+					<value level="28">
+						<item chance="100">
+							<item id="1465" count="500" /> <!-- Soulshot (B-Grade) -->
+							<item id="8625" count="7" /> <!-- Elixir of Life (B-Grade) -->
+						</item>
+					</value>
+					<value level="29">
+						<item chance="100">
+							<item id="1466" count="300" /> <!-- Soulshot (A-Grade) -->
+							<item id="8626" count="7" /> <!-- Elixir of Life (A-Grade) -->
+						</item>
+					</value>
+					<value level="30">
+						<item chance="100">
+							<item id="1466" count="300" /> <!-- Soulshot (A-Grade) -->
+							<item id="8627" count="5" /> <!-- Elixir of Life (S-Grade) -->
+						</item>
+					</value>
+					<value level="31">
+						<item chance="100">
+							<item id="2509" count="1000" /> <!-- Spiritshot: No Grade -->
+							<item id="8622" count="10" /> <!-- Elixir of Life (No Grade) -->
+						</item>
+					</value>
+					<value level="32">
+						<item chance="100">
+							<item id="2510" count="1000" /> <!-- Spiritshot (D-Grade) -->
+							<item id="8623" count="10" /> <!-- Elixir of Life (D-Grade) -->
+						</item>
+					</value>
+					<value level="33">
+						<item chance="100">
+							<item id="2511" count="1000" /> <!-- Spiritshot (C-Grade) -->
+							<item id="8624" count="10" /> <!-- Elixir of Life (C-Grade) -->
+						</item>
+					</value>
+					<value level="34">
+						<item chance="100">
+							<item id="2512" count="500" /> <!-- Spiritshot (B-Grade) -->
+							<item id="8625" count="7" /> <!-- Elixir of Life (B-Grade) -->
+						</item>
+					</value>
+					<value level="35">
+						<item chance="100">
+							<item id="2513" count="300" /> <!-- Spiritshot (A-Grade) -->
+							<item id="8626" count="7" /> <!-- Elixir of Life (A-Grade) -->
+						</item>
+					</value>
+					<value level="36">
+						<item chance="100">
+							<item id="2513" count="300" /> <!-- Spiritshot (A-Grade) -->
+							<item id="8627" count="5" /> <!-- Elixir of Life (S-Grade) -->
+						</item>
+					</value>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2309" levels="1" name="Pig Chest">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="100">
+						<item id="2513" count="300" /> <!-- Spiritshot (A-Grade) -->
+						<item id="8627" count="5" /> <!-- Elixir of Life (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2310" levels="1" name="Scroll of Guidance - Event Use">
+		<!-- Increases Accuracy. Effect 3. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>4</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>HIT_UP</abnormalType>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9146</itemConsumeId> <!-- Scroll of Guidance (Event) -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="accCombat">4</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2311" levels="1" name="Scroll of Death Whisper - Event Use">
+		<!-- Increases critical attack power. Effect 3. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>4</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>CRITICAL_DMG_UP</abnormalType>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9147</itemConsumeId> <!-- Scroll of Death Whisper (Event) -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="critDmg">1.35</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2312" levels="1" name="Scroll of Focus - Event Use">
+		<!-- Increases critical attack rate. Effect 3. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>4</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>CRITICAL_PROB_UP</abnormalType>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9148</itemConsumeId> <!-- Scroll of Focus (Event) -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="critRate">1.3</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2313" levels="1" name="Scroll of Acumen - Event Use">
+		<!-- Increases Casting Spd. Effect 3. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>4</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>CASTING_TIME_DOWN</abnormalType>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9149</itemConsumeId> <!-- Scroll of Acumen (Event) -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mAtkSpd">1.3</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2314" levels="1" name="Scroll of Haste - Event Use">
+		<!-- Increases Atk. Spd. Effect 2. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>ATTACK_TIME_DOWN</abnormalType>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9150</itemConsumeId> <!-- Scroll of Haste (Event) -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtkSpd">1.33</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2315" levels="1" name="Scroll of Agility - Event Use">
+		<!-- Increases Evasion. Effect 3. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>4</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>AVOID_UP</abnormalType>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9151</itemConsumeId> <!-- Scroll of Agility (Event) -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="rEvas">4</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2316" levels="1" name="Scroll of Empower - Event Use">
+		<!-- Increases M. Atk. Effect 3. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>4</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>MA_UP</abnormalType>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9152</itemConsumeId> <!-- Scroll of Empower (Event) -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mAtk">1.75</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2317" levels="1" name="Scroll of Might - Event Use">
+		<!-- Increases P. Atk. Effect 3. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>4</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>PA_UP</abnormalType>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9153</itemConsumeId> <!-- Scroll of Might (Event) -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtk">1.15</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2318" levels="1" name="Scroll of Wind Walk - Event Use">
+		<!-- Increases Speed. Effect 2. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>SPEED_UP</abnormalType>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9154</itemConsumeId> <!-- Scroll of Wind Walk (Event) -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="runSpd">33</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2319" levels="1" name="Scroll of Shield - Event Use">
+		<!-- Increases P. Def. Effect 3. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>4</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>PD_UP</abnormalType>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9155</itemConsumeId> <!-- Scroll of Shield (Event) -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pDef">1.15</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2320" levels="1" name="Blessed Scroll of Escape - Event Use">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>200</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9156</itemConsumeId> <!-- Blessed Scroll of Escape - Event -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<player canEscape="true" />
+				<not>
+					<player insideZoneId="10501, 10502, 10503, 10504, 10505, 10506, 10507, 10508" />
+				</not>
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Escape">
+				<escapeType>TOWN</escapeType>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2321" levels="1" name="Blessed Scroll of Resurrection - Event Use">
+		<operateType>A1</operateType>
+		<targetType>PC_BODY</targetType>
+		<castRange>400</castRange>
+		<effectPoint>1</effectPoint>
+		<effectRange>600</effectRange>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9157</itemConsumeId> <!-- Blessed Scroll of Resurrection - Event -->
+		<magicLevel>1</magicLevel>
+		<conditions>
+			<player canResurrect="true" />
+		</conditions>
+		<effects>
+			<effect name="Resurrection">
+				<power>100</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2322" levels="1" name="Chest Key - For Events Only">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9205</itemConsumeId> <!-- Alchemist's Chest Key -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+		<conditions msgId="109">
+			<target npcId="13036" />
+		</conditions>
+		<effects>
+			<effect name="OpenChest" />
+		</effects>
+	</skill>
+	<skill id="2323" levels="1" name="Red Sage's Stone">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9171</itemConsumeId> <!-- Red Philosopher's Stone -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="2.5">
+						<item id="9177" count="1" /> <!-- Shadow Item - Teddy Bear Hat - Resurrection -->
+					</item>
+					<item chance="2.5">
+						<item id="9184" count="1" /> <!-- Shadow Item - Teddy Bear Hat - Escape -->
+					</item>
+					<item chance="2.5">
+						<item id="9191" count="1" /> <!-- Shadow Item - Teddy Bear Hat - Big Head -->
+					</item>
+					<item chance="2.5">
+						<item id="9198" count="1" /> <!-- Shadow Item - Teddy Bear Hat - Firework -->
+					</item>
+					<item chance="6.6">
+						<item id="9153" count="3" /> <!-- Scroll of Might (Event) -->
+					</item>
+					<item chance="6.6">
+						<item id="9146" count="3" /> <!-- Scroll of Guidance (Event) -->
+					</item>
+					<item chance="6.8">
+						<item id="9150" count="3" /> <!-- Scroll of Haste (Event) -->
+					</item>
+					<item chance="7.0">
+						<item id="9156" count="1" /> <!-- Blessed Scroll of Escape - Event -->
+					</item>
+					<item chance="2.0">
+						<item id="9157" count="1" /> <!-- Blessed Scroll of Resurrection - Event -->
+					</item>
+					<item chance="45.997">
+						<item id="9206" count="10" /> <!-- Greater Healing Potion (Event) -->
+					</item>
+					<item chance="15.0">
+						<item id="9207" count="5" /> <!-- Quick Healing Potion (Event) -->
+					</item>
+					<item chance="0.0015">
+						<item id="8678" count="1" /> <!-- Sirra's Blade -->
+					</item>
+					<item chance="0.0015">
+						<item id="8682" count="1" /> <!-- Naga Storm -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2324" levels="1" name="Blue Sage's Stone">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9172</itemConsumeId> <!-- Blue Philosopher's Stone -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="2.5">
+						<item id="9178" count="1" /> <!-- Shadow Item - Piggy Hat - Resurrection -->
+					</item>
+					<item chance="2.5">
+						<item id="9185" count="1" /> <!-- Shadow Item - Piggy Hat - Escape -->
+					</item>
+					<item chance="2.5">
+						<item id="9192" count="1" /> <!-- Shadow Item - Piggy Hat - Big Head -->
+					</item>
+					<item chance="2.5">
+						<item id="9199" count="1" /> <!-- Shadow Item - Piggy Hat - Firework -->
+					</item>
+					<item chance="6.6">
+						<item id="9147" count="3" /> <!-- Scroll of Death Whisper (Event) -->
+					</item>
+					<item chance="6.6">
+						<item id="9151" count="3" /> <!-- Scroll of Agility (Event) -->
+					</item>
+					<item chance="6.8">
+						<item id="9149" count="3" /> <!-- Scroll of Acumen (Event) -->
+					</item>
+					<item chance="7.0">
+						<item id="9156" count="1" /> <!-- Blessed Scroll of Escape - Event -->
+					</item>
+					<item chance="2.0">
+						<item id="9157" count="1" /> <!-- Blessed Scroll of Resurrection - Event -->
+					</item>
+					<item chance="45.997">
+						<item id="9206" count="10" /> <!-- Greater Healing Potion (Event) -->
+					</item>
+					<item chance="15.0">
+						<item id="9207" count="5" /> <!-- Quick Healing Potion (Event) -->
+					</item>
+					<item chance="0.0015">
+						<item id="8685" count="1" /> <!-- Sobekk's Hurricane -->
+					</item>
+					<item chance="0.0015">
+						<item id="8679" count="1" /> <!-- Sword of Ipos -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2325" levels="1" name="Orange Sage's Stone">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9173</itemConsumeId> <!-- Orange Philosopher's Stone -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="2.5">
+						<item id="9180" count="1" /> <!-- Shadow Item - Wizard Hat - Resurrection -->
+					</item>
+					<item chance="2.5">
+						<item id="9187" count="1" /> <!-- Shadow Item - Wizard Hat - Escape -->
+					</item>
+					<item chance="2.5">
+						<item id="9194" count="1" /> <!-- Shadow Item - Wizard Hat - Big Head -->
+					</item>
+					<item chance="2.5">
+						<item id="9201" count="1" /> <!-- Shadow Item - Wizard Hat - Firework -->
+					</item>
+					<item chance="6.6">
+						<item id="9149" count="3" /> <!-- Scroll of Acumen (Event) -->
+					</item>
+					<item chance="6.6">
+						<item id="9155" count="3" /> <!-- Scroll of Shield (Event) -->
+					</item>
+					<item chance="6.8">
+						<item id="9150" count="3" /> <!-- Scroll of Haste (Event) -->
+					</item>
+					<item chance="7.0">
+						<item id="9156" count="1" /> <!-- Blessed Scroll of Escape - Event -->
+					</item>
+					<item chance="2.0">
+						<item id="9157" count="1" /> <!-- Blessed Scroll of Resurrection - Event -->
+					</item>
+					<item chance="45.997">
+						<item id="9206" count="10" /> <!-- Greater Healing Potion (Event) -->
+					</item>
+					<item chance="15.0">
+						<item id="9207" count="5" /> <!-- Quick Healing Potion (Event) -->
+					</item>
+					<item chance="0.0015">
+						<item id="8688" count="1" /> <!-- Daimon Crystal -->
+					</item>
+					<item chance="0.0015">
+						<item id="8680" count="1" /> <!-- Barakiel's Axe -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2326" levels="1" name="Black Sage's Stone">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9174</itemConsumeId> <!-- Black Philosopher's Stone -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="2.5">
+						<item id="9182" count="1" /> <!-- Shadow Item - Romantic Chapeau - Resurrection -->
+					</item>
+					<item chance="2.5">
+						<item id="9189" count="1" /> <!-- Shadow Item - Romantic Chapeau - Escape -->
+					</item>
+					<item chance="2.5">
+						<item id="9196" count="1" /> <!-- Shadow Item - Romantic Chapeau - Big Head -->
+					</item>
+					<item chance="2.5">
+						<item id="9203" count="1" /> <!-- Shadow Item - Romantic Chapeau - Firework -->
+					</item>
+					<item chance="6.6">
+						<item id="9148" count="3" /> <!-- Scroll of Focus (Event) -->
+					</item>
+					<item chance="6.6">
+						<item id="9146" count="3" /> <!-- Scroll of Guidance (Event) -->
+					</item>
+					<item chance="6.8">
+						<item id="9154" count="3" /> <!-- Scroll of Wind Walk (Event) -->
+					</item>
+					<item chance="7.0">
+						<item id="9156" count="1" /> <!-- Blessed Scroll of Escape - Event -->
+					</item>
+					<item chance="2.0">
+						<item id="9157" count="1" /> <!-- Blessed Scroll of Resurrection - Event -->
+					</item>
+					<item chance="45.997">
+						<item id="9206" count="10" /> <!-- Greater Healing Potion (Event) -->
+					</item>
+					<item chance="15.0">
+						<item id="9207" count="5" /> <!-- Quick Healing Potion (Event) -->
+					</item>
+					<item chance="0.0015">
+						<item id="8681" count="1" /> <!-- Behemoth's Tuning Fork -->
+					</item>
+					<item chance="0.0015">
+						<item id="8687" count="1" /> <!-- Cabrio's Hand -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2327" levels="1" name="White Sage's Stone">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9175</itemConsumeId> <!-- White Philosopher's Stone -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="2.5">
+						<item id="9183" count="1" /> <!-- Shadow Item - Iron Circlet - Resurrection -->
+					</item>
+					<item chance="2.5">
+						<item id="9190" count="1" /> <!-- Shadow Item - Iron Circlet - Escape -->
+					</item>
+					<item chance="2.5">
+						<item id="9197" count="1" /> <!-- Shadow Item - Iron Circlet - Big Head -->
+					</item>
+					<item chance="2.5">
+						<item id="9204" count="1" /> <!-- Shadow Item - Iron Circlet - Firework -->
+					</item>
+					<item chance="6.6">
+						<item id="9152" count="3" /> <!-- Scroll of Empower (Event) -->
+					</item>
+					<item chance="6.6">
+						<item id="9155" count="3" /> <!-- Scroll of Shield (Event) -->
+					</item>
+					<item chance="6.8">
+						<item id="9147" count="3" /> <!-- Scroll of Death Whisper (Event) -->
+					</item>
+					<item chance="7.0">
+						<item id="9156" count="1" /> <!-- Blessed Scroll of Escape - Event -->
+					</item>
+					<item chance="2.0">
+						<item id="9157" count="1" /> <!-- Blessed Scroll of Resurrection - Event -->
+					</item>
+					<item chance="45.997">
+						<item id="9206" count="10" /> <!-- Greater Healing Potion (Event) -->
+					</item>
+					<item chance="15.0">
+						<item id="9207" count="5" /> <!-- Quick Healing Potion (Event) -->
+					</item>
+					<item chance="0.0015">
+						<item id="8685" count="1" /> <!-- Sobekk's Hurricane -->
+					</item>
+					<item chance="0.0015">
+						<item id="8683" count="1" /> <!-- Tiphon's Spear -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2328" levels="1" name="Green Sage's Stone">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9176</itemConsumeId> <!-- Green Philosopher's Stone -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="2.5">
+						<item id="9179" count="1" /> <!-- Shadow Item - Jester Hat - Resurrection -->
+					</item>
+					<item chance="2.5">
+						<item id="9186" count="1" /> <!-- Shadow Item - Jester Hat - Escape -->
+					</item>
+					<item chance="2.5">
+						<item id="9193" count="1" /> <!-- Shadow Item - Jester Hat - Big Head -->
+					</item>
+					<item chance="2.5">
+						<item id="9200" count="1" /> <!-- Shadow Item - Jester Hat - Firework -->
+					</item>
+					<item chance="6.6">
+						<item id="9148" count="3" /> <!-- Scroll of Focus (Event) -->
+					</item>
+					<item chance="6.6">
+						<item id="9152" count="3" /> <!-- Scroll of Empower (Event) -->
+					</item>
+					<item chance="6.8">
+						<item id="9154" count="3" /> <!-- Scroll of Wind Walk (Event) -->
+					</item>
+					<item chance="7.0">
+						<item id="9156" count="1" /> <!-- Blessed Scroll of Escape - Event -->
+					</item>
+					<item chance="2.0">
+						<item id="9157" count="1" /> <!-- Blessed Scroll of Resurrection - Event -->
+					</item>
+					<item chance="45.997">
+						<item id="9206" count="10" /> <!-- Greater Healing Potion (Event) -->
+					</item>
+					<item chance="15.0">
+						<item id="9207" count="5" /> <!-- Quick Healing Potion (Event) -->
+					</item>
+					<item chance="0.0015">
+						<item id="8686" count="1" /> <!-- Themis' Tongue -->
+					</item>
+					<item chance="0.0015">
+						<item id="8684" count="1" /> <!-- Shyeed's Bow -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2329" levels="4" name="Fire Energy">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2330" levels="4" name="Water Energy">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2331" levels="4" name="Wind Energy">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2332" levels="4" name="Earth Energy">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2333" levels="4" name="Holy Energy">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2334" levels="4" name="Dark Energy">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2335" levels="1" name="Fire Resist Potion">
+		<!-- Resistance to the element of fire is increased. -->
+		<icon>icon.etc_fire_potion_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>ATTRIBUTE_POTION</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>76</magicLevel>
+		<reuseDelay>6000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="fireRes">30</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2336" levels="1" name="Water Resist Potion">
+		<!-- Resistance to the element of water is increased. -->
+		<icon>icon.etc_water_potion_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>ATTRIBUTE_POTION</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>76</magicLevel>
+		<reuseDelay>6000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="waterRes">30</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2337" levels="1" name="Wind Resist Potion">
+		<!-- Resistance to the element of wind is increased. -->
+		<icon>icon.etc_wind_potion_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>ATTRIBUTE_POTION</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>76</magicLevel>
+		<reuseDelay>6000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="windRes">30</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2338" levels="1" name="Earth Resist Potion">
+		<!-- Resistance to the element of earth is increased. -->
+		<icon>icon.etc_earth_potion_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>ATTRIBUTE_POTION</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>76</magicLevel>
+		<reuseDelay>6000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="earthRes">30</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2339" levels="1" name="Holy Resist Potion">
+		<!-- Increases the Resistance to holy element. -->
+		<icon>icon.etc_holy_potion_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>ATTRIBUTE_POTION</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>76</magicLevel>
+		<reuseDelay>6000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="holyRes">30</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2340" levels="1" name="Dark Resist Potion">
+		<!-- Increases the Resistance to dark element. -->
+		<icon>icon.etc_unholy_potion_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>ATTRIBUTE_POTION</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>76</magicLevel>
+		<reuseDelay>6000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="darkRes">30</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2341" levels="1" name="Caravan's Secret Medicine">
+		<!-- Immune to desert heat. -->
+		<icon>icon.etc_lesser_potion_red_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>2</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>HOT_GROUND</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff" />
+		</effects>
+	</skill>
+	<skill id="2342" levels="1" name="Ballista Bomb">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>150</castRange>
+		<effectPoint>-1</effectPoint>
+		<hitTime>5000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9688</itemConsumeId> <!-- Ballista Bomb -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="113" addName="1">
+			<target npcId="35685,35723,35754,35792,35823,35854,35892,35923,35961,35999,36030,36068,36106,36137,36168,36206,36244,36282,36313,36351,36389" />
+		</conditions>
+	</skill>
+	<skill id="2343" levels="1" name="Gate Key of Kamael">
+		<afterEffectId>1</afterEffectId> <!-- Hack to keep doors opened -->
+		<operateType>A1</operateType>
+		<targetType>UNLOCKABLE</targetType>
+		<castRange>200</castRange>
+		<effectPoint>-1</effectPoint>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9703</itemConsumeId> <!-- Gate Key: Kamael -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>8000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="16200002" />
+		</conditions>
+		<effects>
+			<effect name="OpenDoor">
+				<chance>100</chance>
+				<isItem>true</isItem>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2344" levels="1" name="Gate Key of Records">
+		<afterEffectId>1</afterEffectId> <!-- Hack to keep doors opened -->
+		<operateType>A1</operateType>
+		<targetType>UNLOCKABLE</targetType>
+		<castRange>200</castRange>
+		<effectPoint>-1</effectPoint>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9704</itemConsumeId> <!-- Gate Key: Archives -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>8000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="16200005" />
+		</conditions>
+		<effects>
+			<effect name="OpenDoor">
+				<chance>100</chance>
+				<isItem>true</isItem>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2345" levels="1" name="Gate Key of Observation">
+		<afterEffectId>1</afterEffectId> <!-- Hack to keep doors opened -->
+		<operateType>A1</operateType>
+		<targetType>UNLOCKABLE</targetType>
+		<castRange>200</castRange>
+		<effectPoint>-1</effectPoint>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9705</itemConsumeId> <!-- Gate Key: Observation -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>8000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="16200009" />
+		</conditions>
+		<effects>
+			<effect name="OpenDoor">
+				<chance>100</chance>
+				<isItem>true</isItem>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2346" levels="1" name="Gate Key of Specula">
+		<afterEffectId>1</afterEffectId> <!-- Hack to keep doors opened -->
+		<operateType>A1</operateType>
+		<targetType>UNLOCKABLE</targetType>
+		<castRange>200</castRange>
+		<effectPoint>-1</effectPoint>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9706</itemConsumeId> <!-- Gate Key: Spicula -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>8000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="16200003" />
+		</conditions>
+		<effects>
+			<effect name="OpenDoor">
+				<chance>100</chance>
+				<isItem>true</isItem>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2347" levels="1" name="Enuma Elish Key">
+		<afterEffectId>1</afterEffectId> <!-- Hack to keep doors opened -->
+		<operateType>A1</operateType>
+		<targetType>UNLOCKABLE</targetType>
+		<castRange>200</castRange>
+		<effectPoint>-1</effectPoint>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9707</itemConsumeId> <!-- Gate Key: Harkilgamed -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>8000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="16200007" />
+		</conditions>
+		<effects>
+			<effect name="OpenDoor">
+				<chance>100</chance>
+				<isItem>true</isItem>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2348" levels="1" name="Prahnah Key">
+		<afterEffectId>1</afterEffectId> <!-- Hack to keep doors opened -->
+		<operateType>A1</operateType>
+		<targetType>UNLOCKABLE</targetType>
+		<castRange>200</castRange>
+		<effectPoint>-1</effectPoint>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9708</itemConsumeId> <!-- Gate Key: Rodenpicula -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>8000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="16200008" />
+		</conditions>
+		<effects>
+			<effect name="OpenDoor">
+				<chance>100</chance>
+				<isItem>true</isItem>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2349" levels="1" name="Gate Key of Arvitaire">
+		<afterEffectId>1</afterEffectId> <!-- Hack to keep doors opened -->
+		<operateType>A1</operateType>
+		<targetType>UNLOCKABLE</targetType>
+		<castRange>200</castRange>
+		<effectPoint>-1</effectPoint>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9709</itemConsumeId> <!-- Gate Key: Arviterre -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>8000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="16200010" />
+		</conditions>
+		<effects>
+			<effect name="OpenDoor">
+				<chance>100</chance>
+				<isItem>true</isItem>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2350" levels="1" name="Leopold Key">
+		<afterEffectId>1</afterEffectId> <!-- Hack to keep doors opened -->
+		<operateType>A1</operateType>
+		<targetType>UNLOCKABLE</targetType>
+		<castRange>200</castRange>
+		<effectPoint>-1</effectPoint>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9710</itemConsumeId> <!-- Gate Key: Katenar -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>8000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="16200006" />
+		</conditions>
+		<effects>
+			<effect name="OpenDoor">
+				<chance>100</chance>
+				<isItem>true</isItem>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2351" levels="1" name="Gate Key of Prediction">
+		<afterEffectId>1</afterEffectId> <!-- Hack to keep doors opened -->
+		<operateType>A1</operateType>
+		<targetType>UNLOCKABLE</targetType>
+		<castRange>200</castRange>
+		<effectPoint>-1</effectPoint>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9711</itemConsumeId> <!-- Gate Key: Prediction -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>8000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="16200011" />
+		</conditions>
+		<effects>
+			<effect name="OpenDoor">
+				<chance>100</chance>
+				<isItem>true</isItem>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2352" levels="1" name="Gate Key of Nornil">
+		<afterEffectId>1</afterEffectId> <!-- Hack to keep doors opened -->
+		<operateType>A1</operateType>
+		<targetType>UNLOCKABLE</targetType>
+		<castRange>200</castRange>
+		<effectPoint>-1</effectPoint>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9712</itemConsumeId> <!-- Gate Key: Massive Cavern -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>8000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="16200012" />
+		</conditions>
+		<effects>
+			<effect name="OpenDoor">
+				<chance>100</chance>
+				<isItem>true</isItem>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2353" levels="1" name="Nornil's Power">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<affectRange>600</affectRange>
+		<hitTime>200</hitTime>
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9713</itemConsumeId> <!-- Nornil's Power -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<player instanceId="11" />
+				<player insideZoneId="2353" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="DetectHiddenObjects" />
+		</effects>
+	</skill>
+	<skill id="2354" levels="1" name="Gate Key of Darkness">
+		<operateType>A1</operateType>
+		<targetType>UNLOCKABLE</targetType>
+		<castRange>40</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9685</itemConsumeId> <!-- Gate Key: Darkness -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>8000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="20260001" />
+		</conditions>
+		<effects>
+			<effect name="OpenDoor">
+				<chance>100</chance>
+				<isItem>true</isItem>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2355" levels="1" name="Gate Key of Destruction">
+		<operateType>A1</operateType>
+		<targetType>UNLOCKABLE</targetType>
+		<castRange>40</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9686</itemConsumeId> <!-- Gate Key: Destruction -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>8000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="20260006" />
+		</conditions>
+		<effects>
+			<effect name="OpenDoor">
+				<chance>100</chance>
+				<isItem>true</isItem>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2356" levels="1" name="Gate Key of Blood">
+		<operateType>A1</operateType>
+		<targetType>UNLOCKABLE</targetType>
+		<castRange>40</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9687</itemConsumeId> <!-- Gate Key: Blood -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>8000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="20260002" />
+		</conditions>
+		<effects>
+			<effect name="OpenDoor">
+				<chance>100</chance>
+				<isItem>true</isItem>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2357" levels="1" name="Fiery Demon Blood">
+		<!-- Fiery Demon Blood -->
+		<icon>icon.etc_lesser_potion_red_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>EVIL_BLOOD</abnormalType>
+		<effectPoint>100</effectPoint>
+		<hitTime>100</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff" />
+		</effects>
+	</skill>
+	<skill id="2358" levels="1" name="Holy Water">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+	</skill>
+	<skill id="2359" levels="1" name="Magic Bottle">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+	</skill>
+	<skill id="2360" levels="1" name="Water Dragon Claw">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>150</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>500</hitTime>
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9700</itemConsumeId> <!-- Water Dragon Claw -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<and>
+				<player flyMounted="false" />
+				<target npcId="29099" />
+			</and>
+		</conditions>
+	</skill>
+	<skill id="2361" levels="1" name="Evolving Wolf's Food">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<feed>1100</feed>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2362" levels="1" name="Prison Gate Key">
+		<operateType>A1</operateType>
+		<targetType>UNLOCKABLE</targetType>
+		<castRange>40</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>10015</itemConsumeId> <!-- Prison Gate Key -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>8000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="24220009,24220011,24220012,24220014,24220015,24220016,24220017,24220019" />
+		</conditions>
+		<effects>
+			<effect name="OpenDoor">
+				<chance>100</chance>
+				<isItem>true</isItem>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2363" levels="1" name="Underground Warehouse Key">
+		<operateType>A1</operateType>
+		<targetType>UNLOCKABLE</targetType>
+		<castRange>40</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>10016</itemConsumeId> <!-- Underground Warehouse Key -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>8000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="24220040" />
+		</conditions>
+		<effects>
+			<effect name="OpenDoor">
+				<chance>100</chance>
+				<isItem>true</isItem>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2364" levels="1" name="Blessed Scroll of Fortress Return">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>200</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>10130</itemConsumeId> <!-- Blessed Scroll of Escape: Fortress -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<player canEscape="true" />
+				<player fort="-1" />
+				<not>
+					<player insideZoneId="10501, 10502, 10503, 10504, 10505, 10506, 10507, 10508" />
+				</not>
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Escape">
+				<escapeType>FORTRESS</escapeType>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2365" levels="1" name="Scroll of Fortress Return">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>20000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>10129</itemConsumeId> <!-- Scroll of Escape: Fortress -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<player canEscape="true" />
+				<not>
+					<player insideZoneId="10501, 10502, 10503, 10504, 10505, 10506, 10507, 10508" />
+				</not>
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Escape">
+				<escapeType>FORTRESS</escapeType>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2366" levels="1" name="Blue Coral Key">
+		<operateType>A1</operateType>
+		<targetType>UNLOCKABLE</targetType>
+		<castRange>40</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9698</itemConsumeId> <!-- Blue Coral Key -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>8000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="24220020" />
+		</conditions>
+		<effects>
+			<effect name="OpenDoor">
+				<chance>100</chance>
+				<isItem>true</isItem>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2367" levels="1" name="Red Coral Key">
+		<operateType>A1</operateType>
+		<targetType>UNLOCKABLE</targetType>
+		<castRange>40</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9699</itemConsumeId> <!-- Red Coral Key -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>8000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="24220022" />
+		</conditions>
+		<effects>
+			<effect name="OpenDoor">
+				<chance>100</chance>
+				<isItem>true</isItem>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2368" levels="1" name="Spirit of the Lake">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>600</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>8000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9689</itemConsumeId> <!-- Spirit of the Lake -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>1500</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="18482" />
+		</conditions>
+		<effects>
+			<effect name="HealPercent">
+				<power>30</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2369" levels="1" name="Water Dragon Scale">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>150</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>500</hitTime>
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9691</itemConsumeId> <!-- Water Dragon Scale -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<and>
+				<player flyMounted="false" />
+				<target npcId="25534" />
+			</and>
+		</conditions>
+	</skill>
+	<skill id="2370" levels="1" name="Scroll of Transformation - Pig">
+		<!-- Transform into a cute pig. -->
+		<icon>icon.skilltransform3</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>9897</itemConsumeId> <!-- Scroll of Transformation - Pig -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>104</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2371" levels="1" name="Transform Sealbook - Onyx Beast">
+		<!-- Transform into an Onyx Beast. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>10131</itemConsumeId> <!-- Transformation Scroll: Onyx Beast -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>1</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2372" levels="1" name="Transform Sealbook - Death Blader">
+		<!-- Transform into a Death Blader. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>10132</itemConsumeId> <!-- Transformation Scroll: Death Blader -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>2</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2373" levels="1" name="Transform Sealbook - Grail Apostle">
+		<!-- Transform into an Grail Apostle. -->
+		<icon>icon.skilltransform2</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>10133</itemConsumeId> <!-- Transformation Scroll: Grail Apostle -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>202</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2374" levels="1" name="Transform Sealbook - Unicorn">
+		<!-- Transform into a Unicorn. -->
+		<icon>icon.skilltransform2</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>10134</itemConsumeId> <!-- Transformation Scroll: Unicorn -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>205</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2375" levels="1" name="Transform Sealbook - Lilim Knight">
+		<!-- Transform into a Lilim Knight. -->
+		<icon>icon.skilltransform2</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>10135</itemConsumeId> <!-- Transformation Scroll: Lilim Knight -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>208</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2376" levels="1" name="Transform Sealbook - Golem Guardian">
+		<!-- Transform into a Golem Guardian. -->
+		<icon>icon.skilltransform2</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>10136</itemConsumeId> <!-- Transformation Scroll: Golem Guardian -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>211</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2377" levels="1" name="Transform Sealbook - Inferno Drake">
+		<!-- Transform into an Inferno Drake. -->
+		<icon>icon.skilltransform2</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>10137</itemConsumeId> <!-- Transformation Scroll: Inferno Drake -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>214</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2378" levels="1" name="Transform Sealbook - Dragon Bomber">
+		<!-- Transform into a Dragon Bomber. -->
+		<icon>icon.skilltransform2</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>10138</itemConsumeId> <!-- Transformation Scroll: Dragon Bomber -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>217</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2379" levels="1" name="Wind">
+		<!-- Condition increases speed. Effect 2. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>2</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>SPEED_UP</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="runSpd">33</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2380" levels="1" name="Shield">
+		<!-- Increases P. Def. Effect 3. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>PD_UP</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pDef">1.15</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2381" levels="1" name="Magic Barrier">
+		<!-- Condition increases magic resistance. Effect 2. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>2</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>MD_UP</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mDef">1.23</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2382" levels="1" name="Bless Shield">
+		<!-- Condition increases shield defense power. Effect 6. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>6</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>SHIELD_PROB_UP</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="rShld">1.35</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2383" levels="1" name="Haste">
+		<!-- Increases Attack Speed. Effect 1. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>ATTACK_TIME_DOWN</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtkSpd">1.15</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2384" levels="1" name="Acumen">
+		<!-- Condition increases Cast Speed. Effect 1. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>CASTING_TIME_DOWN</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mAtkSpd">1.15</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2385" levels="1" name="Empower">
+		<!-- Condition increases M. Atk. Effect 1. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>MA_UP</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mAtk">1.55</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2386" levels="1" name="Divine Power">
+		<!-- Increases Recovery Magic. Effect 1. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>HEAL_POWER_UP</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="healEffect">100</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2387" levels="1" name="Might">
+		<!-- Increases P. Atk. Effect 3. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>PA_UP</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtk">1.15</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2388" levels="1" name="Focus">
+		<!-- Increases the success rate of critical attacks. Effect 1. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>CRITICAL_PROB_UP</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="critRate">1.15</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2389" levels="1" name="Guidance">
+		<!-- Increases Accuracy. Effect 1. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>HIT_UP</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="accCombat">2</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2390" levels="1" name="Berserker Spirit">
+		<!-- Decreases P. Def./magic resistance/evasion and increases P. Atk/M Atk/attack speed/cast speed/speed. Effect 2. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>2</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>BERSERKER</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mAtk">1.16</mul>
+				<mul stat="pAtk">1.08</mul>
+				<mul stat="mDef">0.84</mul>
+				<mul stat="pDef">0.92</mul>
+				<mul stat="mAtkSpd">1.08</mul>
+				<mul stat="pAtkSpd">1.08</mul>
+				<add stat="runSpd">8</add>
+				<sub stat="rEvas">4</sub>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2391" levels="1" name="Clarity">
+		<!-- Decreases MP consumption. Effect 1. -->
+		<icon>icon.etc_scroll_white_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>CHEAP_MAGIC</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="magicalMpConsumeRate">0.96</mul>
+				<mul stat="physicalMpConsumeRate">0.9</mul>
+				<mul stat="danceMpConsumeRate">0.9</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2392" levels="1" name="Blessed Scroll of Battlefield Escape">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>200</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="113" addName="1">
+			<and>
+				<player canEscape="true" />
+				<not>
+					<player insideZoneId="10501, 10502, 10503, 10504, 10505, 10506, 10507, 10508" />
+				</not>
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Escape">
+				<escapeType>TOWN</escapeType>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2393" levels="1" name="Blessed Scroll of Battlefield Resurrection">
+		<operateType>A1</operateType>
+		<targetType>PC_BODY</targetType>
+		<castRange>400</castRange>
+		<effectPoint>1</effectPoint>
+		<effectRange>600</effectRange>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>10150</itemConsumeId> <!-- Battleground Blessed Scroll of Resurrection -->
+		<magicLevel>1</magicLevel>
+		<conditions>
+			<player canResurrect="true" />
+		</conditions>
+		<effects>
+			<effect name="Resurrection">
+				<power>100</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2394" levels="1" name="Scroll of Battlefield Transformation">
+		<!-- Transform into a Pixy. -->
+		<icon>icon.etc_trans_4f_s_b_01</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>10151</itemConsumeId> <!-- Battleground Transform Spell -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>304</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2395" levels="1" name="Lesser Battlefield Healing Potion">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+		<reuseDelay>600000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<and>
+				<player SiegeZone="126" />
+				<player level="52" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Heal">
+				<power>1900</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2396" levels="1" name="Mental Potion">
+		<!-- Increases Resistance to Hold, Sleep, and Mental attacks. Effect 1. -->
+		<icon>icon.etc_lesser_potion_yellow_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>HIT_UP</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="DefenceTrait">
+				<HOLD>20</HOLD>
+				<SLEEP>20</SLEEP>
+				<DERANGEMENT>20</DERANGEMENT>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2397" levels="1" name="Medusa Potion">
+		<!-- Petrifies others so you don't receive physical/magical damage. Effect 1. -->
+		<icon>icon.etc_lesser_potion_yellow_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>6</abnormalTime>
+		<abnormalType>TURN_STONE</abnormalType>
+		<abnormalVisualEffect>FLESH_STONE</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Petrification" />
+		</effects>
+	</skill>
+	<skill id="2398" levels="1" name="Instant Haste Potion">
+		<!-- Greatly increases speed. Effect 2. -->
+		<icon>icon.etc_lesser_potion_yellow_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>2</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>SPEED_UP_SPECIAL</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="runSpd">66</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2399" levels="1" name="Capture Rope">
+		<!-- Instantly puts the enemy into hold. Targets will not receive any additional hold attack while the effect lasts. -->
+		<icon>icon.etc_braided_hemp_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>7</abnormalTime>
+		<abnormalType>ROOT_PHYSICALLY</abnormalType>
+		<abnormalVisualEffect>ROOT</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>MEN</basicProperty>
+		<castRange>600</castRange>
+		<effectPoint>-1046</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>2000</hitTime>
+		<isDebuff>true</isDebuff>
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>10159</itemConsumeId> <!-- Capture Rope -->
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>75</magicLevel>
+		<reuseDelay>15000</reuseDelay>
+		<trait>HOLD</trait>
+		<effects>
+			<effect name="Root" />
+			<effect name="DefenceTrait">
+				<HOLD>100</HOLD>
+			</effect>
+		</effects>
+	</skill>
+</list>

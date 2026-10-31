@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/cubics.xsd">
+	<!--
+		High Five Smart Cubic - Eva's Templar.
+		Smart cubic using per-skill target routing to attack, debuff and cure the owner when required.
+		Attribute guide.
+		duration: active lifetime in seconds.
+		delay: action interval in seconds.
+		maxCount: maximum successful actions before the cubic stops or is consumed.
+		useUp: when greater than 0, the cubic is removed after reaching maxCount.
+		power: base magical power used by offensive cubic calculations.
+		selectionMode: skill selection rule used when multiple skills are available.
+		targetType: base target routing used by the cubic runtime.
+		BY_SKILL: each skill entry defines its own target route.
+		target="TARGET": cast against the selected enemy target.
+		target="HEAL": use cubic heal target selection.
+		target="MASTER": cast on the cubic owner.
+		priority="true": evaluate this skill before normal random skill selection.
+		targetDebuff="true": use only when the owner has removable debuffs.
+		Smart cubics share slot 10 and rely on BY_SKILL routing for mixed behavior.
+	-->
+	<cubic id="10" level="1" slot="10" duration="900" delay="10" maxCount="50" useUp="0" power="2106.0" selectionMode="RANDOM" targetType="BY_SKILL">
+		<skills>
+			<skill id="4165" level="9" target="TARGET" /> <!-- Icy Air -->
+			<skill id="4053" level="8" target="TARGET" /> <!-- Cubic Weakness -->
+			<skill id="5579" level="1" target="MASTER" targetDebuff="true" priority="true" /> <!-- Cubic Cure -->
+		</skills>
+	</cubic>
+</list>

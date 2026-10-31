@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list enabled="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/spawns.xsd">
+	<spawn name="16_25">
+		<npc id="27004" x="-99679" y="235855" z="-3384" heading="0" respawnDelay="180" /> <!-- Spirit Of Mirrors -->
+		<npc id="27005" x="-121206" y="235888" z="-3672" heading="62660" respawnDelay="180" /> <!-- Spirit Of Mirrors -->
+		<npc id="27102" x="-118589" y="233309" z="-2912" heading="0" respawnDelay="180" /> <!-- Pako the Cat -->
+		<npc id="30311" x="-100332" y="238019" z="-3568" heading="36864" respawnDelay="60" /> <!-- Sir Collin Windawood -->
+		<npc id="30408" x="-106485" y="233377" z="-3624" heading="12288" respawnDelay="60" /> <!-- Lionel -->
+		<npc id="30427" x="-113490" y="235526" z="-3640" heading="57800" respawnDelay="60" /> <!-- Siff -->
+		<npc id="30429" x="-115744" y="235924" z="-4032" heading="16384" respawnDelay="60" /> <!-- Tiramisa -->
+		<npc id="30635" x="-118618" y="233239" z="-2912" heading="32768" respawnDelay="60" /> <!-- Almors -->
+		<npc id="30667" x="-112206" y="244303" z="-3448" heading="16384" respawnDelay="60" /> <!-- Ramus -->
+		<npc id="30733" x="-100536" y="237822" z="-3568" heading="24576" respawnDelay="60" /> <!-- Guard -->
+		<npc id="30733" x="-99843" y="237523" z="-3568" heading="0" respawnDelay="60" /> <!-- Guard -->
+		<npc id="31032" x="-119798" y="231677" z="-2840" heading="25251" respawnDelay="60" /> <!-- Guard -->
+		<npc id="31032" x="-118213" y="231826" z="-2928" heading="38349" respawnDelay="60" /> <!-- Guard -->
+		<npc id="31032" x="-115758" y="245607" z="-3256" heading="1854" respawnDelay="60" /> <!-- Guard -->
+		<npc id="31032" x="-114762" y="250902" z="-3272" heading="25521" respawnDelay="60" /> <!-- Guard -->
+		<npc id="31032" x="-104971" y="246465" z="-3520" heading="56230" respawnDelay="60" /> <!-- Guard -->
+		<npc id="31032" x="-104951" y="246489" z="-3496" heading="2616" respawnDelay="60" /> <!-- Guard -->
+		<npc id="31032" x="-102089" y="242425" z="-3576" heading="58749" respawnDelay="60" /> <!-- Guard -->
+		<npc id="31032" x="-99511" y="230949" z="-3624" heading="7555" respawnDelay="60" /> <!-- Guard -->
+	</spawn>
+</list>

@@ -1,0 +1,1799 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/skills.xsd">
+	<skill id="23000" levels="1" name="Majo Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1501" />
+		</conditions>
+	</skill>
+	<skill id="23001" levels="1" name="Gold Crown Majo Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1502" />
+		</conditions>
+	</skill>
+	<skill id="23002" levels="1" name="Black Crown Majo Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1503" />
+		</conditions>
+	</skill>
+	<skill id="23003" levels="1" name="Plaipitak Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1504" />
+		</conditions>
+	</skill>
+	<skill id="23004" levels="1" name="Majo Agathion Special Skill - Mysterious Power">
+		<!-- A mysterious power that no one knows. Use with caution! -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>0</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>BIG_HEAD</abnormalType>
+		<abnormalVisualEffect>BIG_HEAD</abnormalVisualEffect>
+		<activateRate>0</activateRate>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<trait>ETC</trait>
+		<conditions msgId="2292">
+			<player agathionId="1501" />
+		</conditions>
+	</skill>
+	<skill id="23005" levels="1" name="Gold Majo Agathion Special Skill - Power of Blessed Resurrection">
+		<!-- Blessed Resurrection is available. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A1</operateType>
+		<targetType>PC_BODY</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<castRange>400</castRange>
+		<effectPoint>1</effectPoint>
+		<effectRange>600</effectRange>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>43200000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1502" />
+		</conditions>
+		<conditions>
+			<player canResurrect="true" />
+		</conditions>
+		<effects>
+			<effect name="Resurrection">
+				<power>100</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23006" levels="1" name="Black Majo Agathion Special Skill - Power of Blessed Return">
+		<!-- Blessed Escape is available. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>200</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>43200000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1503" />
+		</conditions>
+		<conditions msgId="113" addName="1">
+			<and>
+				<player canEscape="true" />
+				<not>
+					<player insideZoneId="10501, 10502, 10503, 10504, 10505, 10506, 10507, 10508" />
+				</not>
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Escape">
+				<escapeType>TOWN</escapeType>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23007" levels="1" name="Plaipitak Agathion Special Skill - Mysterious Power">
+		<!-- A mysterious power that no one knows. Use with caution! -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>0</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>BIG_HEAD</abnormalType>
+		<abnormalVisualEffect>BIG_HEAD</abnormalVisualEffect>
+		<activateRate>0</activateRate>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<trait>ETC</trait>
+		<conditions msgId="2292">
+			<player agathionId="1504" />
+		</conditions>
+	</skill>
+	<skill id="23008" levels="1" name="Plaipitak Agathion Special Skill - Power of Blessed Return">
+		<!-- Blessed Escape is available. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>200</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>43200000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1504" />
+		</conditions>
+		<conditions msgId="113" addName="1">
+			<and>
+				<player canEscape="true" />
+				<not>
+					<player insideZoneId="10501, 10502, 10503, 10504, 10505, 10506, 10507, 10508" />
+				</not>
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Escape">
+				<escapeType>TOWN</escapeType>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23009" levels="1" name="Plaipitak Agathion Special Skill - Power of Blessed Resurrection">
+		<!-- Blessed Resurrection is available. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A1</operateType>
+		<targetType>PC_BODY</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<castRange>400</castRange>
+		<effectPoint>1</effectPoint>
+		<effectRange>600</effectRange>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>43200000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1504" />
+		</conditions>
+		<conditions>
+			<player canResurrect="true" />
+		</conditions>
+		<effects>
+			<effect name="Resurrection">
+				<power>100</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23010" levels="1" name="Baby Panda Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1505" />
+		</conditions>
+	</skill>
+	<skill id="23011" levels="1" name="Bamboo Panda Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1506" />
+		</conditions>
+	</skill>
+	<skill id="23012" levels="1" name="Sexy Panda Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1507" />
+		</conditions>
+	</skill>
+	<skill id="23013" levels="1" name="Baby Panda Agathion Special Skill - Mysterious Power">
+		<!-- A mysterious power that no one knows. Use with caution! -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>0</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>BIG_HEAD</abnormalType>
+		<abnormalVisualEffect>BIG_HEAD</abnormalVisualEffect>
+		<activateRate>0</activateRate>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<trait>ETC</trait>
+		<conditions msgId="2292">
+			<player agathionId="1505" />
+		</conditions>
+	</skill>
+	<skill id="23014" levels="1" name="Bamboo Panda Agathion Special Skill - Power of Blessed Resurrection">
+		<!-- Blessed Resurrection is available. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A1</operateType>
+		<targetType>PC_BODY</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<castRange>400</castRange>
+		<effectPoint>1</effectPoint>
+		<effectRange>600</effectRange>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>43200000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1506" />
+		</conditions>
+		<conditions>
+			<player canResurrect="true" />
+		</conditions>
+		<effects>
+			<effect name="Resurrection">
+				<power>100</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23015" levels="1" name="Sexy Panda Agathion Special Skill - Power of Blessed Return">
+		<!-- Blessed Escape is available. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>200</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>43200000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1507" />
+		</conditions>
+		<conditions msgId="113" addName="1">
+			<and>
+				<player canEscape="true" />
+				<not>
+					<player insideZoneId="10501, 10502, 10503, 10504, 10505, 10506, 10507, 10508" />
+				</not>
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Escape">
+				<escapeType>TOWN</escapeType>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23016" levels="1" name="Rudolph Agathion Special Skill - Ability of Energy">
+		<!-- Power of recovering Vitality can be used when acquiring Experience Points. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>VP_UP</abnormalType>
+		<activateRate>0</activateRate>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>1000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>43200000</reuseDelay>
+		<trait>ETC</trait>
+		<conditions msgId="2292">
+			<player agathionId="16033" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<sub stat="vitalityConsumeRate">10</sub>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23017" levels="1" name="Christmas Festival">
+		<!-- Maximum HP/MP/CP, Physical/Defense Power, Speed and Physical/Magic Attack Power are increased, and MP consumption for skills is decreased. Effectiveness 1. -->
+		<icon>BranchSys.icon.br_xmas_reward_buff_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>BR_EVENT_BUF1</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="maxHp">1.4</mul>
+				<mul stat="maxMp">1.4</mul>
+				<mul stat="maxCp">1.4</mul>
+				<mul stat="pAtk">1.1</mul>
+				<mul stat="pDef">1.2</mul>
+				<mul stat="mDef">1.2</mul>
+				<mul stat="mAtk">1.15</mul>
+				<add stat="runSpd">20</add>
+				<mul stat="magicalMpConsumeRate">0.95</mul>
+				<mul stat="physicalMpConsumeRate">0.95</mul>
+				<mul stat="danceMpConsumeRate">0.95</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23018" levels="1" name="Stupid Turkey's Mistake">
+		<!-- Maximum HP/MP/CP, Physical/Defense Power, Speed and Physical/Magic Attack Power are increased, and MP consumption for skills is decreased. Effectiveness 2. -->
+		<icon>BranchSys.icon.br_turkey_buff_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>2</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>BR_EVENT_BUF1</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<coolTime>500</coolTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="maxHp">1.4</mul>
+				<mul stat="maxMp">1.4</mul>
+				<mul stat="maxCp">1.4</mul>
+				<mul stat="pAtk">1.2</mul>
+				<mul stat="pDef">1.2</mul>
+				<mul stat="mDef">1.2</mul>
+				<mul stat="mAtk">1.3</mul>
+				<add stat="runSpd">20</add>
+				<mul stat="magicalMpConsumeRate">0.9</mul>
+				<mul stat="physicalMpConsumeRate">0.9</mul>
+				<mul stat="danceMpConsumeRate">0.9</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23019" levels="3" name="Scissors">
+		<!-- Level 1: Challenging with "scissors." Cannot move. -->
+		<!-- Level 2: Challenging with "rock." Cannot move. -->
+		<!-- Level 3: Challenging with "paper." Cannot move. -->
+		<table name="#icons">BranchSys.icon.br_xmas_gawi_i00 BranchSys.icon.br_xmas_bawi_i00 BranchSys.icon.br_xmas_bo_i00</table>
+		<table name="#magicLevel">1 2 3</table>
+		<icon>#icons</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>BR_EVENT_BUF2</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<canBeDispeled>false</canBeDispeled>
+		<castRange>500</castRange>
+		<effectRange>550</effectRange>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<stayAfterDeath>true</stayAfterDeath>
+		<effects>
+			<effect name="ImmobileBuff" />
+		</effects>
+	</skill>
+	<skill id="23020" levels="1" name="Start attacking the Turkey">
+		<!-- Presentation of the Turkey's Attack -->
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>500</affectRange>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<coolTime>500</coolTime>
+		<hitTime>8000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="23021" levels="3" name="Turkey's Attack Scissors">
+		<!-- Presentation of the Turkey's Attack -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="23022" levels="10" name="First win">
+		<!-- Level 1: First win at the rock-scissors-paper match. -->
+		<!-- Level 2: Second consecutive win at the rock-scissors-paper match. -->
+		<!-- Level 3: Third consecutive win at the rock-scissors-paper match. -->
+		<!-- Level 4: Fourth consecutive win at the rock-scissors-paper match. -->
+		<!-- Level 5: Fifth consecutive win at the rock-scissors-paper match. -->
+		<!-- Level 6: Sixth consecutive win at the rock-scissors-paper match. -->
+		<!-- Level 7: Seventh consecutive win at the rock-scissors-paper match. -->
+		<!-- Level 8: Eighth consecutive win at the rock-scissors-paper match. -->
+		<!-- Level 9: Ninth consecutive win at the rock-scissors-paper match. -->
+		<!-- Level 10: Tenth consecutive win at the rock-scissors-paper match. -->
+		<table name="#abnormalLevels">1 2 3 4 5 6 7 8 9 10</table>
+		<table name="#icons">BranchSys.icon.br_xmas_pcwin1_i00 BranchSys.icon.br_xmas_pcwin2_i00 BranchSys.icon.br_xmas_pcwin3_i00 BranchSys.icon.br_xmas_pcwin4_i00 BranchSys.icon.br_xmas_pcwin5_i00 BranchSys.icon.br_xmas_pcwin6_i00 BranchSys.icon.br_xmas_pcwin7_i00 BranchSys.icon.br_xmas_pcwin8_i00 BranchSys.icon.br_xmas_pcwin9_i00 BranchSys.icon.br_xmas_pcwin10_i00</table>
+		<icon>#icons</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>120</abnormalTime>
+		<abnormalType>BR_EVENT_BUF3</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<canBeDispeled>false</canBeDispeled>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<stayAfterDeath>true</stayAfterDeath>
+		<effects>
+			<effect name="Buff" />
+		</effects>
+	</skill>
+	<skill id="23023" levels="1" name="Reset Consecutive Wins">
+		<!-- Reset Consecutive Wins -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="23024" levels="1" name="Agathion of Love Special Skill - Energy Recovery Ability">
+		<!-- Recovers Vitality when acquiring Exp. for 20 minutes. Reuse delay is 12 hours. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>VP_UP</abnormalType>
+		<activateRate>0</activateRate>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>1000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>43200000</reuseDelay>
+		<trait>ETC</trait>
+		<conditions msgId="2292">
+			<player agathionId="16049" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<sub stat="vitalityConsumeRate">10</sub>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23025" levels="1" name="White Cupid Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1508" />
+		</conditions>
+	</skill>
+	<skill id="23026" levels="1" name="Dark Cupid Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1509" />
+		</conditions>
+	</skill>
+	<skill id="23027" levels="1" name="White Maneki Neko Agathion Cute Trick I">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1510" />
+		</conditions>
+	</skill>
+	<skill id="23028" levels="1" name="Black Maneki Neko Agathion Cute Trick I">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1511" />
+		</conditions>
+	</skill>
+	<skill id="23029" levels="1" name="Brown Maneki Neko Agathion Cute Trick I">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1512" />
+		</conditions>
+	</skill>
+	<skill id="23030" levels="1" name="White Maneki Neko Agathion Special Skill - Blessed Resurrection Ability">
+		<!-- Can use the ability of Blessed Resurrection. Reuse delay is 12 hours. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A1</operateType>
+		<targetType>PC_BODY</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<castRange>400</castRange>
+		<effectPoint>1</effectPoint>
+		<effectRange>600</effectRange>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>43200000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1510" />
+		</conditions>
+		<conditions>
+			<player canResurrect="true" />
+		</conditions>
+		<effects>
+			<effect name="Resurrection">
+				<power>100</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23031" levels="1" name="Black Maneki Neko Agathion Special Skill - Ability of Blessed Return">
+		<!-- Can use the ability of Blessed Return. Reuse delay is 12 hours. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>200</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>43200000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1511" />
+		</conditions>
+		<conditions msgId="113" addName="1">
+			<and>
+				<player canEscape="true" />
+				<not>
+					<player insideZoneId="10501, 10502, 10503, 10504, 10505, 10506, 10507, 10508" />
+				</not>
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Escape">
+				<escapeType>TOWN</escapeType>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23032" levels="1" name="Brown Maneki Neko Agathion Special Skill - Ability of Energy Recovery">
+		<!-- Recovers Vitality when acquiring Exp. for 5 minutes. Reuse delay is 1 hours. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>VP_UP</abnormalType>
+		<activateRate>0</activateRate>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>1000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<trait>ETC</trait>
+		<conditions msgId="2292">
+			<player agathionId="1512" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<sub stat="vitalityConsumeRate">10</sub>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23033" levels="1" name="One-Eyed Bat Drove Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1513" />
+		</conditions>
+	</skill>
+	<skill id="23034" levels="1" name="One-eyed Bat Drove Agathion Special Skill - Ability of Resist Unholy">
+		<!-- Increases Resistance to Dark by 30 for 5 minutes. Reuse delay is 1 hour. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>ARMOR_UNHOLY</abnormalType>
+		<activateRate>0</activateRate>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<trait>ETC</trait>
+		<conditions msgId="2292">
+			<player agathionId="1513" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<add stat="darkRes">30</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23035" levels="1" name="One-eyed Bat Drove Agathion Special Skill - Ability of Energy Recovery">
+		<!-- Recovers Vitality when acquiring Exp. for 5 minutes. Reuse delay is 1 hours. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>VP_UP</abnormalType>
+		<activateRate>0</activateRate>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>1000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<trait>ETC</trait>
+		<conditions msgId="2292">
+			<player agathionId="1513" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<sub stat="vitalityConsumeRate">10</sub>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23036" levels="1" name="Pegasus Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1514" />
+		</conditions>
+	</skill>
+	<skill id="23037" levels="1" name="Pegasus Agathion Special Skill - Ability of Wind Walk">
+		<!-- Increases Speed by 33 for 5 minutes. Reuse delay is 4 hours. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>SPEED_UP</abnormalType>
+		<activateRate>0</activateRate>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<trait>ETC</trait>
+		<conditions msgId="2292">
+			<player agathionId="1514" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<add stat="runSpd">33</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23038" levels="1" name="Pegasus Agathion Special Skill - Blessed Return Ability">
+		<!-- Can use the ability of Blessed Resurrection. Reuse delay is 12 hours. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>200</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>43200000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1514" />
+		</conditions>
+		<conditions msgId="113" addName="1">
+			<and>
+				<player canEscape="true" />
+				<not>
+					<player insideZoneId="10501, 10502, 10503, 10504, 10505, 10506, 10507, 10508" />
+				</not>
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Escape">
+				<escapeType>TOWN</escapeType>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23039" levels="1" name="Yellow-Robed Tojigong Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1515" />
+		</conditions>
+	</skill>
+	<skill id="23040" levels="1" name="Blue-Robed Tojigong Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1516" />
+		</conditions>
+	</skill>
+	<skill id="23041" levels="1" name="Green-Robed Tojigong Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1517" />
+		</conditions>
+	</skill>
+	<skill id="23042" levels="1" name="Yellow-robed Tojigong Agathion Special Skill - Ability of Greater Heal">
+		<!-- Recovers HP by 444 and increases HP Recovery by 30 for 15 seconds. Reuse delay is 4 hours. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>LIFE_FORCE_OTHERS</abnormalType>
+		<activateRate>0</activateRate>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>14400000</reuseDelay>
+		<trait>ETC</trait>
+		<conditions msgId="2292">
+			<player agathionId="1515" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<mul stat="regHp">1.3</mul>
+			</effect>
+			<effect name="Heal">
+				<power>444</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23043" levels="1" name="Blue-robed Tojigong Agathion Special Skill - Ability of Reflect Damage">
+		<!-- For 5 minutes, returns 20% of the damage back to the enemy. Excludes damage caused by skills and long-range attacks. Reuse delay is 1 hour. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>DMG_SHIELD</abnormalType>
+		<activateRate>0</activateRate>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<trait>ETC</trait>
+		<conditions msgId="2292">
+			<player agathionId="1516" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<add stat="reflectDam">20</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23044" levels="1" name="Green-robed Tojigong Agathion Special Skill - Ability of Mana Regeneration">
+		<!-- Increases MP Regeneration by 3% for 5 minutes. Reuse delay is 1 hours. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>MP_REGEN_UP</abnormalType>
+		<activateRate>0</activateRate>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<trait>ETC</trait>
+		<conditions msgId="2292">
+			<player agathionId="1517" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<mul stat="regMp">1.03</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23045" levels="1" name="Bugbear Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1518" />
+		</conditions>
+	</skill>
+	<skill id="23046" levels="1" name="White Maneki Neko Agathion Cute Trick II">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1510" />
+		</conditions>
+	</skill>
+	<skill id="23047" levels="1" name="Black Maneki Neko Agathion Cute Trick II">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1511" />
+		</conditions>
+	</skill>
+	<skill id="23048" levels="1" name="Brown Maneki Neko Agathion Cute Trick II">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1512" />
+		</conditions>
+	</skill>
+	<skill id="23049" levels="1" name="Red Sumo Wrestler Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1519" />
+		</conditions>
+	</skill>
+	<skill id="23050" levels="1" name="Blue Sumo Wrestler Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1520" />
+		</conditions>
+	</skill>
+	<skill id="23051" levels="1" name="Great Sumo Match Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1521" />
+		</conditions>
+	</skill>
+	<skill id="23052" levels="1" name="Button-Eyed Bear Doll Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1522" />
+		</conditions>
+	</skill>
+	<skill id="23053" levels="1" name="God of Fortune Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1523" />
+		</conditions>
+	</skill>
+	<skill id="23054" levels="1" name="Dryad Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1524" />
+		</conditions>
+	</skill>
+	<skill id="23055" levels="1" name="Wonboso Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1525" />
+		</conditions>
+	</skill>
+	<skill id="23056" levels="1" name="Daewoonso Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1526" />
+		</conditions>
+	</skill>
+	<skill id="23057" levels="1" name="Red Sumo Wrestler Agathion Special Skill - Death Whisper Ability">
+		<!-- Increases Critical attack power by 35% for 5 minutes. Reuse delay is 1 hours. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>CRITICAL_DMG_UP</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1519" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<mul stat="critDmg">1.35</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23058" levels="1" name="Blue Sumo Wrestler Agathion Special Skill - Wild Magic Ability">
+		<!-- For 5 minutes, increases by 2 the occurrence rate of damage that is caused by magic damage. Reuse delay is 1 hour. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>MAGIC_CRITICAL_UP</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1520" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<add stat="mCritRate">2</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23059" levels="1" name="Great Sumo Match Agathion Special Skill - Mysterious Power">
+		<!-- A mysterious power that no one knows. Use with caution! Reuse delay is 1 hours. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>0</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>BIG_HEAD</abnormalType>
+		<abnormalVisualEffect>BIG_HEAD</abnormalVisualEffect>
+		<activateRate>0</activateRate>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<trait>ETC</trait>
+		<conditions msgId="2292">
+			<player agathionId="1521" />
+		</conditions>
+	</skill>
+	<skill id="23060" levels="1" name="Great Sumo Match Agathion Special Skill - Ability of Firework">
+		<!-- Sets off firecrackers. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1521" />
+		</conditions>
+	</skill>
+	<skill id="23061" levels="1" name="Button-Eyed Bear Doll Agathion Special Skill - Ability of Blessed Return">
+		<!-- Can use the ability of Blessed Return. Reuse delay is 12 hours. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>200</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>43200000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1522" />
+		</conditions>
+		<conditions msgId="113" addName="1">
+			<and>
+				<player canEscape="true" />
+				<not>
+					<player insideZoneId="10501, 10502, 10503, 10504, 10505, 10506, 10507, 10508" />
+				</not>
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Escape">
+				<escapeType>TOWN</escapeType>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23062" levels="1" name="Button-Eyed Bear Doll Agathion Special Skill - Ability of Blessed Resurrection">
+		<!-- Can use the ability of Blessed Resurrection. Reuse delay is 12 hours. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A1</operateType>
+		<targetType>PC_BODY</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<castRange>400</castRange>
+		<effectPoint>1</effectPoint>
+		<effectRange>600</effectRange>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>43200000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1522" />
+		</conditions>
+		<conditions>
+			<player canResurrect="true" />
+		</conditions>
+		<effects>
+			<effect name="Resurrection">
+				<power>100</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23063" levels="1" name="Button-Eyed Bear Doll Agathion Special Skill - Ability of Energy Recovery">
+		<!-- Recovers Vitality when acquiring Exp. for 5 minutes. Reuse delay is 1 hours. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>VP_UP</abnormalType>
+		<activateRate>0</activateRate>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>1000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<trait>ETC</trait>
+		<conditions msgId="2292">
+			<player agathionId="1522" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<sub stat="vitalityConsumeRate">10</sub>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23064" levels="1" name="God of Fortune Agathion Special Skill - Energy Recovery Ability">
+		<!-- Recovers Vitality when acquiring Exp. for 5 minutes. Reuse delay is 1 hours. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>VP_UP</abnormalType>
+		<activateRate>0</activateRate>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>1000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<trait>ETC</trait>
+		<conditions msgId="2292">
+			<player agathionId="1523" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<sub stat="vitalityConsumeRate">10</sub>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23065" levels="1" name="Wonboso Agathion Special Skill - Wind Walk Ability">
+		<!-- Increases Speed by 20 for 5 minutes. Reuse delay is 1 hours. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>BIG_HEAD</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1525" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<add stat="runSpd">20</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23066" levels="1" name="Daewoonso Agathion Special Skill - New Year's Gift Ability">
+		<!-- Can receive a New Year's Gift. Reuse delay is 1 hours. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<conditions msgId="2292">
+			<player agathionId="1526" />
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="99">
+						<item id="57" count="2009" /> <!-- Adena -->
+					</item>
+					<item chance="0.99">
+						<item id="57" count="20090" /> <!-- Adena -->
+					</item>
+					<item chance="0.099">
+						<item id="57" count="200900" /> <!-- Adena -->
+					</item>
+					<item chance="0.0099">
+						<item id="57" count="2009000" /> <!-- Adena -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23067" levels="1" name="Live Event Souvenir Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1527" />
+		</conditions>
+	</skill>
+	<skill id="23068" levels="1" name="Pomona Agathion Special Skill - Mental Shield Ability">
+		<!-- Increases Resistance to hold/sleep/abnormal mental attacks by 50 for 10 minutes. Reuse delay is 1 hour. -->
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>RESIST_DERANGEMENT</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>6000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<reuseDelay>3600000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1527" />
+		</conditions>
+		<effects>
+			<effect name="DefenceTrait">
+				<HOLD>50</HOLD>
+				<SLEEP>50</SLEEP>
+				<DERANGEMENT>50</DERANGEMENT>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23069" levels="1" name="Threatening Roar">
+		<!-- Spirit's power: Decreases Speed and Atk. Spd. by 80% for 10 seconds. -->
+		<icon>icon.skill1289</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>SPEED_DOWN</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<castRange>600</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>600</effectRange>
+		<hitTime>7000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Debuff">
+				<mul stat="pAtkSpd">0.2</mul>
+				<mul stat="runSpd">0.2</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23070" levels="1" name="Red Flame">
+		<!-- Spirit's power: Cannot damage the spirit for 10 seconds. Exclusive use for the Reckless Spirit of Fire. -->
+		<icon>icon.skill0211</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>2</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>BR_EVENT_BUF1</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-100</effectPoint>
+		<isDebuff>true</isDebuff>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+	</skill>
+	<skill id="23071" levels="1" name="Blue Flame">
+		<!-- Spirit's power: Cannot damage the spirit for 8 seconds. Exclusive use for the Spirit of Fire. -->
+		<icon>icon.skill0213</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>8</abnormalTime>
+		<abnormalType>BR_EVENT_BUF1</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-100</effectPoint>
+		<isDebuff>true</isDebuff>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+	</skill>
+	<skill id="23072" levels="1" name="Eva's Authority">
+		<!-- For 70 seconds, attacks the spirit using Eva's Authority. -->
+		<icon>BranchSys.icon.br_power_of_eva_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>70</abnormalTime>
+		<abnormalType>BR_EVENT_BUF2</abnormalType>
+		<abnormalVisualEffect>BR_POWER_OF_EVA</abnormalVisualEffect>
+		<affectRange>600</affectRange>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Buff" />
+		</effects>
+	</skill>
+	<skill id="23073" levels="1" name="Switch State">
+		<!-- The spirit's mode is switched. Change to counterattack mode or lethal move mode. -->
+		<icon>icon.skill1528</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>2</abnormalTime>
+		<abnormalType>BR_EVENT_BUF3</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+	</skill>
+	<skill id="23074" levels="1" name="Icy Air Explosion">
+		<!-- For 4 seconds, damage inflicted on the spirit doubles. -->
+		<icon>icon.skill0279</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>2</abnormalLevel>
+		<abnormalTime>4</abnormalTime>
+		<abnormalType>BR_EVENT_BUF3</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+	</skill>
+	<skill id="23075" levels="1" name="Flame Shock">
+		<!-- Spirit's power: Loses the target. -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="23076" levels="1" name="Weaver Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1528" />
+		</conditions>
+	</skill>
+	<skill id="23077" levels="1" name="Weaver Agathion Special Skill - Power of the Golden Calf">
+		<!-- For 20 minutes, receives help from the Golden Calf. Increases party members' Max HP by 60%, Max MP by 60%, Max CP by 60%, physical P. Def. by 30%, magic M. Def. by 30%, Speed by 30, and P. Atk. by 20%. Decreases MP consumption during skill use by 10%. Reuse delay 5 minutes. Consumes 1 Girl's Soul Ore during skill use. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>PARTY</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>BR_EVENT_BUF5</abnormalType>
+		<activateRate>0</activateRate>
+		<affectRange>1000</affectRange>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>486</effectPoint>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20597</itemConsumeId> <!-- Girl's Soul Ore -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>300000</reuseDelay>
+		<trait>ETC</trait>
+		<conditions msgId="2292">
+			<player agathionId="1528" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<mul stat="maxHp">1.6</mul>
+				<mul stat="maxMp">1.6</mul>
+				<mul stat="maxCp">1.6</mul>
+				<mul stat="pDef">1.3</mul>
+				<mul stat="mDef">1.3</mul>
+				<add stat="runSpd">30</add>
+				<mul stat="pAtk">1.2</mul>
+				<mul stat="physicalMpConsumeRate">0.9</mul>
+				<mul stat="magicalMpConsumeRate">0.9</mul>
+				<mul stat="danceMpConsumeRate">0.9</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23078" levels="1" name="Weaver Agathion Special Skill - Flute Sound">
+		<!-- For 20 minutes, through the magic of the mysterious flute sound, increases party members' Max HP by 40%, Max MP by 40%, Max CP by 40%, physical P. Def. by 30%, magic M. Def. by 30%, Speed by 20, and M. Atk. by 45%. Decreases MP consumption during skill use by 10%. Reuse delay 5 minutes. Consumes 1 Girl's Soul Ore during skill use. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>PARTY</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>BR_EVENT_BUF5</abnormalType>
+		<activateRate>0</activateRate>
+		<affectRange>1000</affectRange>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>486</effectPoint>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>20597</itemConsumeId> <!-- Girl's Soul Ore -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>300000</reuseDelay>
+		<trait>ETC</trait>
+		<conditions msgId="2292">
+			<player agathionId="1528" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<mul stat="maxHp">1.4</mul>
+				<mul stat="maxMp">1.4</mul>
+				<mul stat="maxCp">1.4</mul>
+				<mul stat="pDef">1.3</mul>
+				<mul stat="mDef">1.3</mul>
+				<add stat="runSpd">20</add>
+				<mul stat="mAtk">1.45</mul>
+				<mul stat="physicalMpConsumeRate">0.9</mul>
+				<mul stat="magicalMpConsumeRate">0.85</mul>
+				<mul stat="danceMpConsumeRate">0.9</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23079" levels="1" name="Chon-chon Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1529" />
+		</conditions>
+	</skill>
+	<skill id="23080" levels="1" name="Chon-chon Agathion Special Skill - Great Warrior Soul Power">
+		<!-- For 5 minutes, receives the soul's help to raise Atk. Spd. by 20%, P. Atk. by 10%, and P. Def. by 20%. Increases critical attack power by 20% and critical attack rate by 20%. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>MULTI_BUFF</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1529" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtkSpd">1.2</mul>
+				<mul stat="pDef">1.2</mul>
+				<mul stat="pAtk">1.1</mul>
+				<mul stat="critRate">1.2</mul>
+				<mul stat="critDmg">1.2</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23081" levels="1" name="Tang-tang Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1530" />
+		</conditions>
+	</skill>
+	<skill id="23082" levels="1" name="Tang-tang Agathion Special Skill - Great Wizard Soul Power">
+		<!-- For 5 minutes, receives the soul's help to raise Casting Spd. by 20%, M. Atk. by 20%, and M. Def. by 20%. Raises the power of Prominent Damage through magic damage by 20% and the chance of prominent damage occurring through magic damage by 2. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>MULTI_BUFF</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1530" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<add stat="mCritRate">2</add>
+				<mul stat="mCritPower">1.2</mul>
+				<mul stat="mAtk">1.2</mul>
+				<mul stat="mDef">1.2</mul>
+				<mul stat="mAtkSpd">1.2</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23083" levels="1" name="Dancing Child Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1531" />
+		</conditions>
+	</skill>
+	<skill id="23084" levels="1" name="Dancing Kid Agathion Special Skill - Great Adventurer Soul Power">
+		<!-- For 5 minutes, receives the soul's help to raise Max HP by 20%, Max MP by 20%, and Speed by 20%. Increases HP recovery bonus by 20% and MP recovery bonus by 20%. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>MULTI_BUFF</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1531" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<mul stat="maxHp">1.2</mul>
+				<mul stat="maxMp">1.2</mul>
+				<mul stat="regMp">1.2</mul>
+				<mul stat="runSpd">1.2</mul>
+				<mul stat="regHp">1.2</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23085" levels="1" name="Son-o-gong Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1532" />
+		</conditions>
+	</skill>
+	<skill id="23086" levels="1" name="Monkey King Agathion Special Skill - Great Wizard Soul Power">
+		<!-- For 5 minutes, receives the soul's help to raise Casting Spd. by 20%, M. Atk. by 20%, and M. Def. by 20%. Raises the power of Prominent Damage through magic damage by 20% and the chance of prominent damage occurring through magic damage by 2. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>MULTI_BUFF</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1532" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<add stat="mCritRate">2</add>
+				<mul stat="mCritPower">1.2</mul>
+				<mul stat="mAtk">1.2</mul>
+				<mul stat="mDef">1.2</mul>
+				<mul stat="mAtkSpd">1.2</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23087" levels="1" name="Wutangka Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1533" />
+		</conditions>
+	</skill>
+	<skill id="23088" levels="1" name="Utanka Agathion Special Skill - Great Warrior Soul Power">
+		<!-- For 5 minutes, receives the soul's help to raise Atk. Spd. by 20%, P. Atk. by 10%, and P. Def. by 20%. Increases critical attack power by 20% and critical attack rate by 20%. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>MULTI_BUFF</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1533" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtkSpd">1.2</mul>
+				<mul stat="pDef">1.2</mul>
+				<mul stat="pAtk">1.1</mul>
+				<mul stat="critRate">1.2</mul>
+				<mul stat="critDmg">1.2</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23089" levels="1" name="Bonus B Agathion Cute Trick">
+		<!-- You can see the summoned spirit's cute tricks. -->
+		<icon>icon.skill_agathion_cute</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<conditions msgId="2292">
+			<player agathionId="1534" />
+		</conditions>
+	</skill>
+	<skill id="23090" levels="1" name="Bonus B Agathion Special Skill - Great Adventurer Soul Power">
+		<!-- For 5 minutes, receives the soul's help to raise Max HP by 20%, Max MP by 20%, and Speed by 20%. Increases HP recovery bonus by 20% and MP recovery bonus by 20%. -->
+		<icon>icon.skill_agathion_special</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>26</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>MULTI_BUFF</abnormalType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>3600000</reuseDelay>
+		<conditions msgId="2292">
+			<player agathionId="1534" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<mul stat="maxHp">1.2</mul>
+				<mul stat="maxMp">1.2</mul>
+				<mul stat="regMp">1.2</mul>
+				<mul stat="runSpd">1.2</mul>
+				<mul stat="regHp">1.2</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23091" levels="1" name="Three Siblings' Trickery">
+		<!-- By the three sibling's trickery, Max HP/MP/CP are increased by 40% for 10 seconds. -->
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>BIG_HEAD</abnormalType>
+		<abnormalVisualEffect>BIG_HEAD</abnormalVisualEffect>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<castRange>600</castRange>
+		<effectRange>600</effectRange>
+		<hitTime>500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<trait>ETC</trait>
+		<effects>
+			<effect name="MaxCp">
+				<power>40</power>
+				<type>PER</type>
+			</effect>
+			<effect name="MaxHp">
+				<power>40</power>
+				<type>PER</type>
+			</effect>
+			<effect name="MpConsumePerLevel">
+				<power>40</power>
+				<type>PER</type>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="23092" levels="1" name="Jack O'Lantern Card">
+		<!-- Halloween Ghost Skill Presentation -->
+		<icon>BranchSys.icon.br_jack_ghost_i00</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<coolTime>500</coolTime>
+		<hitTime>2000</hitTime>
+		<isMagic>2</isMagic>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="23093" levels="1" name="Rotten Jack O'Lantern Card">
+		<!-- Halloween Ghost Skill Presentation -->
+		<icon>BranchSys.icon.br_rotten_jack_ghost_i00</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<coolTime>500</coolTime>
+		<hitTime>2000</hitTime>
+		<isMagic>2</isMagic>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="23094" levels="1" name="Jack O'Lantern Card - Confirm Skill">
+		<!-- Halloween Ghost Skill Presentation -->
+		<icon>BranchSys.icon.br_jack_ghost_i00</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<castRange>500</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>500</effectRange>
+		<isMagic>2</isMagic>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="23095" levels="1" name="Rotten Jack O'Lantern Card - Confirm Skill">
+		<!-- Halloween Ghost Skill Presentation -->
+		<icon>BranchSys.icon.br_rotten_jack_ghost_i00</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<castRange>500</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>500</effectRange>
+		<isMagic>2</isMagic>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="23096" levels="1" name="Halloween Defeat">
+		<!-- Halloween Defeat Effect -->
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<castRange>500</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>500</effectRange>
+		<isMagic>2</isMagic>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="23097" levels="1" name="First win">
+		<!-- 1-time win at the Jack's Game. -->
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<castRange>500</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>550</effectRange>
+		<isMagic>2</isMagic>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="23098" levels="1" name="2nd Consecutive Win">
+		<!-- 2-time win at the Jack's Game. -->
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<castRange>500</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>550</effectRange>
+		<isMagic>2</isMagic>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="23099" levels="1" name="3rd Consecutive Win">
+		<!-- 3-time win at the Jack's Game. -->
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<castRange>500</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>550</effectRange>
+		<isMagic>2</isMagic>
+		<magicLevel>1</magicLevel>
+	</skill>
+</list>

@@ -33,3 +33,8 @@ crates/l2-supervisor/supervisor.ini
 
 # Local run folders with real configs/credentials (never commit)
 /run/
+
+# Written when a server runs straight from dist/ (keep dist/ clean: run from a copy in run/)
+/dist/game/config/hexid.txt
+/dist/**/log/
+/dist/game/data/geodata/*.l2j

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/cubics.xsd">
+	<!--
+		High Five Spark Cubic.
+		Offensive control cubic that applies Stun to valid enemy targets.
+		Attribute guide.
+		duration: active lifetime in seconds.
+		delay: action interval in seconds.
+		maxCount: maximum successful actions before the cubic stops or is consumed.
+		useUp: when greater than 0, the cubic is removed after reaching maxCount.
+		power: base magical power used by offensive cubic calculations.
+		selectionMode: skill selection rule used when multiple skills are available.
+		targetType: base target routing used by the cubic runtime.
+		Levels 8-12 are enchant template levels for High Five cubic skills.
+	-->
+	<cubic id="8" level="1" slot="8" duration="900" delay="30" maxCount="10" useUp="1" power="282.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4166" level="1" /> <!-- Stun -->
+		</skills>
+	</cubic>
+	<cubic id="8" level="2" slot="8" duration="900" delay="30" maxCount="10" useUp="1" power="377.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4166" level="2" /> <!-- Stun -->
+		</skills>
+	</cubic>
+	<cubic id="8" level="3" slot="8" duration="900" delay="30" maxCount="10" useUp="1" power="497.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4166" level="3" /> <!-- Stun -->
+		</skills>
+	</cubic>
+	<cubic id="8" level="4" slot="8" duration="900" delay="30" maxCount="10" useUp="1" power="644.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4166" level="4" /> <!-- Stun -->
+		</skills>
+	</cubic>
+	<cubic id="8" level="5" slot="8" duration="900" delay="30" maxCount="10" useUp="1" power="820.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4166" level="5" /> <!-- Stun -->
+		</skills>
+	</cubic>
+	<cubic id="8" level="6" slot="8" duration="900" delay="30" maxCount="10" useUp="1" power="1026.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4166" level="6" /> <!-- Stun -->
+		</skills>
+	</cubic>
+	<cubic id="8" level="7" slot="8" duration="900" delay="30" maxCount="10" useUp="1" power="1264.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4166" level="7" /> <!-- Stun -->
+		</skills>
+	</cubic>
+	<cubic id="8" level="8" slot="8" duration="900" delay="30" maxCount="10" useUp="1" power="1530.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4166" level="8" /> <!-- Stun -->
+		</skills>
+	</cubic>
+	<cubic id="8" level="9" slot="8" duration="900" delay="30" maxCount="10" useUp="1" power="1822.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4166" level="9" /> <!-- Stun -->
+		</skills>
+	</cubic>
+	<cubic id="8" level="10" slot="8" duration="900" delay="30" maxCount="10" useUp="1" power="2275.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4166" level="10" /> <!-- Stun -->
+		</skills>
+	</cubic>
+	<cubic id="8" level="11" slot="8" duration="900" delay="30" maxCount="10" useUp="1" power="2275.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4166" level="11" /> <!-- Stun -->
+		</skills>
+	</cubic>
+	<cubic id="8" level="12" slot="8" duration="900" delay="30" maxCount="10" useUp="1" power="2275.0" selectionMode="RANDOM" targetType="TARGET">
+		<skills>
+			<skill id="4166" level="12" /> <!-- Stun -->
+		</skills>
+	</cubic>
+</list>

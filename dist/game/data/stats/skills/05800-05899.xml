@@ -1,0 +1,1782 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/skills.xsd">
+	<skill id="5800" levels="1" name="Self-Destruction">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-676</effectPoint>
+		<magicLevel>85</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+	</skill>
+	<skill id="5801" levels="1" name="Drake Breath">
+		<operateType>A1</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<affectLimit>5-12</affectLimit>
+		<effectPoint>-676</effectPoint>
+		<fanRange>0,0,600,45</fanRange>
+		<hitTime>3300</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>4000</reuseDelay>
+	</skill>
+	<skill id="5802" levels="1" name="Stun">
+		<!-- Temporarily renders target unable to act. -->
+		<icon>icon.skill0100</icon>
+		<operateType>A2</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>9</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<affectLimit>5-12</affectLimit>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>-975</effectPoint>
+		<fanRange>0,0,400,60</fanRange>
+		<hitTime>1500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+		<trait>SHOCK</trait>
+	</skill>
+	<skill id="5803" levels="3" name="Green Chili">
+		<table name="#effectPoints">-659 -669 -676</table>
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>#effectPoints</effectPoint>
+		<hitTime>3000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+	</skill>
+	<skill id="5804" levels="3" name="Fireball">
+		<table name="#effectPoints">-635 -659 -676</table>
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>#effectPoints</effectPoint>
+		<hitTime>1000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>70</magicLevel>
+		<reuseDelay>4000</reuseDelay>
+	</skill>
+	<skill id="5805" levels="1" name="Air Assault">
+		<operateType>DA1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-1332</effectPoint>
+		<hitTime>200</hitTime>
+		<magicLevel>77</magicLevel>
+		<nextActionAttack>true</nextActionAttack>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="5806" levels="1" name="High Wave Beam">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-659</effectPoint>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>75</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="5807" levels="1" name="Self-destruction">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-676</effectPoint>
+		<magicLevel>75</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+	</skill>
+	<skill id="5808" levels="1" name="Burst Flame">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-676</effectPoint>
+		<hitTime>3000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>74</magicLevel>
+		<reuseDelay>4000</reuseDelay>
+	</skill>
+	<skill id="5809" levels="1" name="Dark Blood">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-659</effectPoint>
+		<hitTime>1700</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>76</magicLevel>
+		<reuseDelay>4000</reuseDelay>
+	</skill>
+	<skill id="5810" levels="1" name="Decrease Spd.">
+		<!-- Temporarily decreases Spd. Effect 3. -->
+		<icon>icon.skill1160</icon>
+		<operateType>A2</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>SPEED_DOWN</abnormalType>
+		<activateRate>80</activateRate>
+		<affectLimit>5-12</affectLimit>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>-684</effectPoint>
+		<fanRange>0,0,600,30</fanRange>
+		<hitTime>2000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>75</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+	</skill>
+	<skill id="5811" levels="1" name="Sonic Bomb">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-635</effectPoint>
+		<hitTime>1700</hitTime>
+		<magicLevel>78</magicLevel>
+		<reuseDelay>4000</reuseDelay>
+	</skill>
+	<skill id="5812" levels="1" name="Fire Breath">
+		<operateType>A1</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<affectLimit>5-12</affectLimit>
+		<effectPoint>-676</effectPoint>
+		<fanRange>0,0,600,60</fanRange>
+		<hitTime>2400</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>78</magicLevel>
+		<reuseDelay>4000</reuseDelay>
+	</skill>
+	<skill id="5813" levels="1" name="Sand Ball">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-676</effectPoint>
+		<hitTime>1500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>74</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="5814" levels="3" name="Self-Destruction">
+		<table name="#effectPoints">-635 -659 -676</table>
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>#effectPoints</effectPoint>
+		<magicLevel>70</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+	</skill>
+	<skill id="5815" levels="1" name="Presentation - Mercenary Troops Shout">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>2300</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="5816" levels="1" name="Presentation - Female Priest Transformation">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>7700</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="5817" levels="1" name="Presentation - Dragon Shout">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="5818" levels="1" name="Presentation - Repentance">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>2430</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="5819" levels="1" name="Presentation - Victory">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>5930</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="5820" levels="1" name="Presentation - Removal">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>7000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="5821" levels="1" name="Presentation - Female Priest Exit">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>5330</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="5822" levels="1" name="Drake Bait">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>600</castRange>
+		<effectPoint>-1000</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>3000</hitTime>
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13879</itemConsumeId> <!-- Bait for Drakes -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>600000</reuseDelay>
+		<conditions msgId="109">
+			<target npcId="18781" />
+		</conditions>
+	</skill>
+	<skill id="5823" levels="1" name="Presentation - District1 Boss Defeat">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>2500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="5824" levels="1" name="Presentation - District1 Boss Arise">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>2500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="5825" levels="1" name="Presentation - Algraia Exit">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>5330</hitTime>
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="5826" levels="3" name="Fire Breath">
+		<table name="#effectPoints">-684 -687 -689</table>
+		<table name="#magicLevel">83 84 85</table>
+		<table name="#mpConsume">59 60 60</table>
+		<table name="#power">60 61 61</table>
+		<operateType>A1</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<affectLimit>5-15</affectLimit>
+		<affectRange>600</affectRange>
+		<castRange>600</castRange>
+		<effectPoint>#effectPoints</effectPoint>
+		<effectRange>1100</effectRange>
+		<element>0</element> <!-- Fire -->
+		<elementPower>20</elementPower>
+		<fanRange>0,0,600,120</fanRange>
+		<hitTime>2500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>15</mpInitialConsume>
+		<power>#power</power>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5827" levels="6" name="Fireball">
+		<table name="#magicLevel">75 77 79 81 83 85</table>
+		<table name="#mpConsume">55 56 58 58 59 60</table>
+		<table name="#mpInitialConsume">14 14 15 15 15 15</table>
+		<table name="#power">55 56 58 59 60 61</table>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<affectLimit>10-10</affectLimit>
+		<affectRange>150</affectRange>
+		<castRange>600</castRange>
+		<effectPoint>-681</effectPoint>
+		<effectRange>1100</effectRange>
+		<element>0</element> <!-- Fire -->
+		<elementPower>20</elementPower>
+		<hitTime>1500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5828" levels="6" name="Unholy Flare">
+		<table name="#effectPoints">-659 -666 -673 -681 -684 -689</table>
+		<table name="#magicLevel">75 77 79 81 83 85</table>
+		<table name="#mpConsume">55 56 58 58 59 60</table>
+		<table name="#mpInitialConsume">14 14 15 15 15 15</table>
+		<table name="#power">55 56 58 59 60 61</table>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>150</castRange>
+		<effectPoint>#effectPoints</effectPoint>
+		<effectRange>650</effectRange>
+		<element>5</element> <!-- Dark -->
+		<elementPower>20</elementPower>
+		<hitTime>1000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5829" levels="6" name="Fire Flare">
+		<table name="#effectPoints">-659 -666 -673 -681 -684 -689</table>
+		<table name="#magicLevel">75 77 79 81 83 85</table>
+		<table name="#mpConsume">55 56 58 58 59 60</table>
+		<table name="#mpInitialConsume">14 14 15 15 15 15</table>
+		<table name="#power">55 56 58 59 60 61</table>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>150</castRange>
+		<effectPoint>#effectPoints</effectPoint>
+		<effectRange>650</effectRange>
+		<element>0</element> <!-- Fire -->
+		<elementPower>20</elementPower>
+		<hitTime>1000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<mpInitialConsume>#mpInitialConsume</mpInitialConsume>
+		<power>#power</power>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5830" levels="1" name="Polearm Thrust">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>150</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>200</effectRange>
+		<hitTime>1800</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>165</mpConsume>
+		<power>4640</power>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5831" levels="1" name="Polearm Swing">
+		<!-- HP is decreased momentarily from bleeding. Effect 9. -->
+		<icon>icon.skill0096</icon>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>150</affectRange>
+		<effectPoint>-689</effectPoint>
+		<hitTime>1800</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>165</mpConsume>
+		<power>4640</power>
+		<reuseDelay>2000</reuseDelay>
+		<trait>BLEED</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="DamOverTime" ticks="5">
+				<power>70</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5832" levels="1" name="Hate Aura">
+		<!-- Your mark is fixed. -->
+		<icon>icon.skill0018</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3</abnormalTime>
+		<abnormalType>TARGET_LOCK</abnormalType>
+		<activateRate>40</activateRate>
+		<affectLimit>10-10</affectLimit>
+		<affectRange>600</affectRange>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>-6542</effectPoint>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>75</mpConsume>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="TargetMe" />
+		</effects>
+	</skill>
+	<skill id="5833" levels="1" name="Shield">
+		<!-- Increases defense power temporarily. Effect 3. -->
+		<icon>icon.skill1040</icon>
+		<operateType>A2</operateType>
+		<targetType>CLAN</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>PD_UP</abnormalType>
+		<affectLimit>10-10</affectLimit>
+		<affectRange>600</affectRange>
+		<effectPoint>100</effectPoint>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<mpConsume>36</mpConsume>
+		<mpInitialConsume>9</mpInitialConsume>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pDef">1.15</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5834" levels="1" name="Magic Barrier">
+		<!-- Temporarily increases magic resistance. Effect 3. -->
+		<icon>icon.skill1036</icon>
+		<operateType>A2</operateType>
+		<targetType>CLAN</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>MD_UP</abnormalType>
+		<affectLimit>10-10</affectLimit>
+		<affectRange>600</affectRange>
+		<effectPoint>100</effectPoint>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<mpConsume>36</mpConsume>
+		<mpInitialConsume>9</mpInitialConsume>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mDef">1.33</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5835" levels="1" name="Major Heal">
+		<operateType>A1</operateType>
+		<targetType>CLAN_MEMBER</targetType>
+		<castRange>600</castRange>
+		<effectPoint>867</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<mpConsume>104</mpConsume>
+		<mpInitialConsume>26</mpInitialConsume>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="HealPercent">
+				<power>10</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5836" levels="1" name="Greater Heal">
+		<!-- Recovers party member's HP and increases HP recovery bonus in an instant. Power 1. Effect 5. -->
+		<icon>icon.skill1219</icon>
+		<operateType>A2</operateType>
+		<targetType>CLAN</targetType>
+		<abnormalLevel>5</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>LIFE_FORCE_OTHERS</abnormalType>
+		<activateRate>0</activateRate>
+		<affectLimit>10-10</affectLimit>
+		<affectRange>600</affectRange>
+		<effectPoint>694</effectPoint>
+		<hitTime>6000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<mpConsume>207</mpConsume>
+		<mpInitialConsume>52</mpInitialConsume>
+		<reuseDelay>8000</reuseDelay>
+		<effects>
+			<effect name="HealOverTime" ticks="1">
+				<power>270</power>
+			</effect>
+			<effect name="HealPercent">
+				<power>20</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5837" levels="1" name="Double Throwing Javelin">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>900</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1500</effectRange>
+		<hitTime>1800</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>165</mpConsume>
+		<power>4640</power>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5838" levels="1" name="Throwing Javelin">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>900</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1500</effectRange>
+		<hitTime>1800</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>165</mpConsume>
+		<power>4640</power>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5839" levels="1" name="Breath">
+		<operateType>A1</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<affectLimit>5-15</affectLimit>
+		<affectRange>1200</affectRange>
+		<castRange>900</castRange>
+		<effectPoint>-689</effectPoint>
+		<effectRange>1100</effectRange>
+		<fanRange>0,0,1200,30</fanRange>
+		<hitTime>2600</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>60</mpConsume>
+		<mpInitialConsume>15</mpInitialConsume>
+		<power>183</power>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5840" levels="1" name="Fire Breath">
+		<operateType>A1</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<affectLimit>5-15</affectLimit>
+		<affectRange>1200</affectRange>
+		<castRange>900</castRange>
+		<effectPoint>-689</effectPoint>
+		<effectRange>1100</effectRange>
+		<element>0</element> <!-- fire -->
+		<elementPower>20</elementPower>
+		<fanRange>0,0,1200,90</fanRange>
+		<hitTime>2600</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>60</mpConsume>
+		<mpInitialConsume>15</mpInitialConsume>
+		<power>244</power>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5841" levels="1" name="Multi Defense">
+		<!-- P. Def. and magic resistance are increased. -->
+		<operateType>A2</operateType>
+		<targetType>CLAN</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>INSTINCT</abnormalType>
+		<affectLimit>10-10</affectLimit>
+		<affectRange>1000</affectRange>
+		<effectPoint>694</effectPoint>
+		<hitTime>2120</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>60</mpConsume>
+		<mpInitialConsume>15</mpInitialConsume>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pDef">1.15</mul>
+				<mul stat="mDef">1.33</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5842" levels="1" name="Spinning Slasher">
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectLimit>6-12</affectLimit>
+		<affectRange>400</affectRange>
+		<coolTime>733</coolTime>
+		<effectPoint>-100</effectPoint>
+		<hitTime>2120</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>149</mpConsume>
+		<power>17400</power>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5843" levels="1" name="Terror">
+		<!-- Temporarily inflicted with Fear and moves regardless of volition. -->
+		<icon>icon.skill1092</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>TURN_FLEE</abnormalType>
+		<abnormalVisualEffect>TURN_FLEE</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<affectLimit>10-10</affectLimit>
+		<affectRange>1000</affectRange>
+		<basicProperty>MEN</basicProperty>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<hitTime>26720</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<mpConsume>42</mpConsume>
+		<reuseDelay>6000</reuseDelay>
+		<trait>DERANGEMENT</trait>
+		<effects>
+			<effect name="Fear" />
+		</effects>
+	</skill>
+	<skill id="5844" levels="1" name="Thunder Storm">
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>300</affectRange>
+		<coolTime>2000</coolTime>
+		<effectPoint>-100</effectPoint>
+		<element>2</element> <!-- Wind -->
+		<elementPower>20</elementPower>
+		<hitTime>8000</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>239</mpConsume>
+		<mpInitialConsume>60</mpInitialConsume>
+		<power>834</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="5845" levels="12" name="NPC Trigger Bleed">
+		<table name="#magicLevel">10 20 30 40 50 60 70 75 80 85 90 95</table>
+		<table name="#skillLevel">1 2 3 4 5 6 7 8 9 10 11 12</table>
+		<operateType>P</operateType>
+		<magicLevel>#magicLevel</magicLevel>
+		<effects>
+			<effect name="TriggerSkillByDamageDealt">
+				<attackerType>Creature</attackerType>
+				<minAttackerLevel>1</minAttackerLevel>
+				<maxAttackerLevel>100</maxAttackerLevel>
+				<isCritical>false</isCritical>
+				<minDamage>1</minDamage>
+				<chance>20</chance>
+				<skillId>5846</skillId>
+				<skillLevel>#skillLevel</skillLevel> <!-- Bleed -->
+				<targetType>ONE</targetType>
+				<allowWeapons>ALL</allowWeapons>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5846" levels="12" name="Bleed">
+		<!-- Level 1: HP is decreased momentarily from bleeding. Effect 2. -->
+		<!-- Level 2: HP is decreased momentarily from bleeding. Effect 3. -->
+		<!-- Level 3: HP is decreased momentarily from bleeding. Effect 4. -->
+		<!-- Level 4: HP is decreased momentarily from bleeding. Effect 5. -->
+		<!-- Level 5: HP is decreased momentarily from bleeding. Effect 6. -->
+		<!-- Level 6: HP is decreased momentarily from bleeding. Effect 7. -->
+		<!-- Level 7: HP is decreased momentarily from bleeding. Effect 8. -->
+		<!-- Level 8: HP is decreased momentarily from bleeding. Effect 8. -->
+		<!-- Level 9: HP is decreased momentarily from bleeding. Effect 9. -->
+		<!-- Level 10: HP is decreased momentarily from bleeding. Effect 9. -->
+		<!-- Level 11: HP is decreased momentarily from bleeding. Effect 10. -->
+		<!-- Level 12: HP is decreased momentarily from bleeding. Effect 10. -->
+		<table name="#abnormalLevels">2 3 4 5 6 7 8 8 9 9 10 10</table>
+		<table name="#dot">18 25 34 44 54 62 67 67 70 70 71 71</table>
+		<table name="#magicLevel">10 20 30 40 50 60 70 75 80 85 90 95</table>
+		<icon>icon.skill0096</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>BLEEDING</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>100</activateRate>
+		<basicProperty>CON</basicProperty>
+		<coolTime>800</coolTime>
+		<effectPoint>-100</effectPoint>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<trait>BLEED</trait>
+		<effects>
+			<effect name="DamOverTime" ticks="5">
+				<power>#dot</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5847" levels="1" name="Flip Nearby Blocks">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<affectLimit>10-10</affectLimit>
+		<effectPoint>100</effectPoint>
+		<hitTime>1000</hitTime>
+		<magicLevel>80</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+	</skill>
+	<skill id="5848" levels="1" name="Block Trigger Slow">
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+		<magicLevel>80</magicLevel>
+	</skill>
+	<skill id="5849" levels="1" name="Decrease Speed">
+		<!-- Speed is decreased. -->
+		<icon>icon.skill1160</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>SPEED_DOWN</abnormalType>
+		<activateRate>80</activateRate>
+		<basicProperty>MEN</basicProperty>
+		<castRange>600</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>80</magicLevel>
+		<effects>
+			<effect name="Debuff">
+				<mul stat="runSpd">0.5</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5850" levels="1" name="Block Trigger Stun">
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+		<magicLevel>80</magicLevel>
+	</skill>
+	<skill id="5851" levels="1" name="Shock">
+		<!-- A state of instant paralysis caused by the shock -->
+		<icon>icon.skill0100</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>9</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>600</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1100</effectRange>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>80</magicLevel>
+		<trait>SHOCK</trait>
+		<effects>
+			<effect name="Stun" />
+			<effect name="TargetCancel">
+				<chance>80</chance>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5852" levels="1" name="Flip Block">
+		<!-- Flips blocks. -->
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<effectRange>400</effectRange>
+		<hitTime>1000</hitTime>
+		<magicLevel>80</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="FlipBlock" />
+		</effects>
+	</skill>
+	<skill id="5853" levels="1" name="Flip Block">
+		<!-- Flips blocks. -->
+		<icon>icon.skill_transform_s_attack</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<effectRange>400</effectRange>
+		<hitTime>1000</hitTime>
+		<magicLevel>80</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="FlipBlock" />
+		</effects>
+	</skill>
+	<skill id="5854" levels="1" name="Decrease Speed">
+		<!-- Speed is decreased. -->
+		<icon>icon.skill1160</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>SPEED_DOWN</abnormalType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<magicLevel>80</magicLevel>
+	</skill>
+	<skill id="5855" levels="1" name="Shock">
+		<!-- A state of instant paralysis caused by the shock -->
+		<icon>icon.skill0100</icon>
+		<operateType>A2</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<effectPoint>-100</effectPoint>
+		<fanRange>0,0,300,90</fanRange>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<magicLevel>80</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+		<trait>SHOCK</trait>
+	</skill>
+	<skill id="5856" levels="1" name="Transform Tow">
+		<!-- Transforms into a Tow. -->
+		<icon>icon.skilltransform3</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>117</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5857" levels="1" name="Transform Lure Tow">
+		<!-- Transforms into a Lure Tow. -->
+		<icon>icon.skilltransform3</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>118</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5858" levels="1" name="Transform Heavy Tow">
+		<!-- Transforms into a Heavy Tow. -->
+		<icon>icon.skilltransform3</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>119</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5859" levels="1" name="Transform Wing Tow">
+		<!-- Transforms into a Wim Tow. -->
+		<icon>icon.skilltransform3</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>120</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5860" levels="1" name="Wrath of Valakas">
+		<!-- Magic skills are blocked, temporarily decreasing speed. Destruction of the Body is activated, inflicting major damage on the stamina of nearby party members after 10 seconds. -->
+		<icon>icon.skill5860</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>SILENCE</abnormalType>
+		<abnormalVisualEffect>SILENCE</abnormalVisualEffect>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>-1</magicLevel>
+		<trait>DERANGEMENT</trait>
+	</skill>
+	<skill id="5861" levels="1" name="Authority of Valakas">
+		<!-- Magic skills are blocked, temporarily decreasing speed. Destruction of the Mind is activated, inflicting major damage on the minds of nearby party members after 10 seconds. -->
+		<icon>icon.skill5861</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>SILENCE</abnormalType>
+		<abnormalVisualEffect>SILENCE</abnormalVisualEffect>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>-1</magicLevel>
+		<trait>DERANGEMENT</trait>
+	</skill>
+	<skill id="5862" levels="1" name="Destruction of the Body">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<affectLimit>10-10</affectLimit>
+		<effectPoint>-1000</effectPoint>
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="5863" levels="1" name="Destruction of the Soul">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<affectLimit>10-10</affectLimit>
+		<effectPoint>-1000</effectPoint>
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="5864" levels="1" name="Decrease Valakas Defense">
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>PD_DOWN</abnormalType>
+		<effectPoint>100</effectPoint>
+		<hitTime>1000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>80</magicLevel>
+		<reuseDelay>4000</reuseDelay>
+	</skill>
+	<skill id="5865" levels="1" name="Wide-bodied Valakas">
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>BERSERKER</abnormalType>
+		<effectPoint>100</effectPoint>
+		<hitTime>1000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>80</magicLevel>
+		<reuseDelay>4000</reuseDelay>
+	</skill>
+	<skill id="5866" levels="10" name="Soul Worm">
+		<!-- Level 1: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 8. -->
+		<!-- Level 2: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 8. -->
+		<!-- Level 3: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 8. -->
+		<!-- Level 4: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 5: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 6: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 7: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 8: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 10. -->
+		<!-- Level 9: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 10. -->
+		<!-- Level 10: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 10. -->
+		<table name="#abnormalLevels">8 8 8 9 9 9 9 10 10 10</table>
+		<table name="#magicLevel">76 77 78 79 80 81 82 83 84 85</table>
+		<icon>icon.skill4035</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>POISON</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<activateRate>70</activateRate>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<trait>POISON</trait>
+	</skill>
+	<skill id="5867" levels="10" name="Soul Worm">
+		<!-- Level 1: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 8. -->
+		<!-- Level 2: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 8. -->
+		<!-- Level 3: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 8. -->
+		<!-- Level 4: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 5: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 6: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 7: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 8: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 10. -->
+		<!-- Level 9: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 10. -->
+		<!-- Level 10: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 10. -->
+		<table name="#abnormalLevels">8 8 8 9 9 9 9 10 10 10</table>
+		<table name="#magicLevel">76 77 78 79 80 81 82 83 84 85</table>
+		<icon>icon.skill4035</icon>
+		<operateType>A2</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>POISON</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<activateRate>70</activateRate>
+		<affectLimit>5-15</affectLimit>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<fanRange>0,0,150,90</fanRange>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+		<trait>POISON</trait>
+	</skill>
+	<skill id="5868" levels="10" name="Soul Worm">
+		<!-- Level 1: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 8. -->
+		<!-- Level 2: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 8. -->
+		<!-- Level 3: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 8. -->
+		<!-- Level 4: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 5: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 6: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 7: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 8: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 10. -->
+		<!-- Level 9: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 10. -->
+		<!-- Level 10: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 10. -->
+		<table name="#abnormalLevels">8 8 8 9 9 9 9 10 10 10</table>
+		<table name="#magicLevel">76 77 78 79 80 81 82 83 84 85</table>
+		<icon>icon.skill4035</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>POISON</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<activateRate>70</activateRate>
+		<affectLimit>10-10</affectLimit>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<trait>POISON</trait>
+	</skill>
+	<skill id="5869" levels="10" name="Soul Worm">
+		<!-- Level 1: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 8. -->
+		<!-- Level 2: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 8. -->
+		<!-- Level 3: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 8. -->
+		<!-- Level 4: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 5: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 6: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 7: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 8: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 10. -->
+		<!-- Level 9: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 10. -->
+		<!-- Level 10: Mental blow is received. Current MP, Max MP, and MP recovery bonus are decreased. Inflicted with poison and HP is temporarily decreased. Effect 10. -->
+		<table name="#abnormalLevels">8 8 8 9 9 9 9 10 10 10</table>
+		<table name="#magicLevel">76 77 78 79 80 81 82 83 84 85</table>
+		<icon>icon.skill4035</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>POISON</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<activateRate>70</activateRate>
+		<affectLimit>10-10</affectLimit>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<trait>POISON</trait>
+	</skill>
+	<skill id="5870" levels="10" name="Flash Worm">
+		<!-- Level 1: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 8. -->
+		<!-- Level 2: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 8. -->
+		<!-- Level 3: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 8. -->
+		<!-- Level 4: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 5: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 6: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 7: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 8: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 10. -->
+		<!-- Level 9: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 10. -->
+		<!-- Level 10: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 10. -->
+		<table name="#abnormalLevels">8 8 8 9 9 9 9 10 10 10</table>
+		<table name="#magicLevel">76 77 78 79 80 81 82 83 84 85</table>
+		<icon>icon.skill0096</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>BLEEDING</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<trait>BLEED</trait>
+	</skill>
+	<skill id="5871" levels="10" name="Flash Worm">
+		<!-- Level 1: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 8. -->
+		<!-- Level 2: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 8. -->
+		<!-- Level 3: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 8. -->
+		<!-- Level 4: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 5: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 6: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 7: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 8: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 10. -->
+		<!-- Level 9: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 10. -->
+		<!-- Level 10: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 10. -->
+		<table name="#abnormalLevels">8 8 8 9 9 9 9 10 10 10</table>
+		<table name="#magicLevel">76 77 78 79 80 81 82 83 84 85</table>
+		<icon>icon.skill0096</icon>
+		<operateType>A2</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>BLEEDING</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<affectLimit>5-15</affectLimit>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<fanRange>0,0,150,90</fanRange>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<trait>BLEED</trait>
+	</skill>
+	<skill id="5872" levels="10" name="Flash Worm">
+		<!-- Level 1: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 8. -->
+		<!-- Level 2: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 8. -->
+		<!-- Level 3: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 8. -->
+		<!-- Level 4: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 5: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 6: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 7: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 9. -->
+		<!-- Level 8: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 10. -->
+		<!-- Level 9: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 10. -->
+		<!-- Level 10: Physical blow is received. P. Def., Max HP, and HP regeneration bonus are decreased. Inflicted with bleed and HP is temporarily decreased. Effect 10. -->
+		<table name="#abnormalLevels">8 8 8 9 9 9 9 10 10 10</table>
+		<table name="#magicLevel">76 77 78 79 80 81 82 83 84 85</table>
+		<icon>icon.skill0096</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>BLEEDING</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<affectLimit>10-10</affectLimit>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<trait>BLEED</trait>
+	</skill>
+	<skill id="5873" levels="5" name="Death Worm">
+		<!-- Life force is being sapped out by the Leech of Darkness. -->
+		<table name="#abnormalLevels">1 2 3 4 5</table>
+		<icon>icon.skill5873</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>DEATHWORM</abnormalType>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="5874" levels="5" name="Death Worm">
+		<!-- Life force is being sapped out by the Leech of Darkness. -->
+		<table name="#abnormalLevels">1 2 3 4 5</table>
+		<icon>icon.skill5873</icon>
+		<operateType>A2</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>DEATHWORM</abnormalType>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<fanRange>0,0,150,90</fanRange>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="5875" levels="5" name="Death Worm">
+		<!-- Life force is being sapped out by the Leech of Darkness. -->
+		<table name="#abnormalLevels">1 2 3 4 5</table>
+		<table name="#affectLimits">0-0 10-10 10-10 10-10 10-10</table>
+		<icon>icon.skill5873</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>DEATHWORM</abnormalType>
+		<activateRate>80</activateRate>
+		<affectLimit>#affectLimits</affectLimit>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="5876" levels="1" name="Begrudged Haunting">
+		<!-- The grudge of those who didn't die. Can die by lethal malice after 5 minutes. -->
+		<icon>icon.skill5876</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>DEATH_CLACK</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="5877" levels="4" name="Chant of Worm Waking">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>1000</hitTime>
+		<magicLevel>78</magicLevel>
+	</skill>
+	<skill id="5878" levels="1" name="Cruel Puncture">
+		<!-- Life force is lost and Casting Spd. is decreased. -->
+		<icon>icon.skill1386</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>CASTING_TIME_UP</abnormalType>
+		<activateRate>80</activateRate>
+		<basicProperty>MEN</basicProperty>
+		<castRange>40</castRange>
+		<effectPoint>-655</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>83</mpConsume>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="HpByLevel">
+				<power>73</power>
+			</effect>
+			<effect name="Debuff">
+				<mul stat="mAtkSpd">0.8</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5879" levels="1" name="Cruel Expunge">
+		<!-- HP is decreased momentarily from bleeding. Effect 9. -->
+		<icon>icon.skill0096</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>9</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>BLEEDING</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>83</magicLevel>
+		<mpConsume>165</mpConsume>
+		<reuseDelay>1000</reuseDelay>
+		<trait>BLEED</trait>
+		<effects>
+			<effect name="DamOverTime" ticks="5">
+				<power>145</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5880" levels="2" name="Vicious Mutilation">
+		<!-- Speed is decreased. -->
+		<icon>icon.skill1160</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>SPEED_DOWN</abnormalType>
+		<activateRate>80</activateRate>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="5881" levels="2" name="Vicious Mutilation">
+		<!-- P. Def., Evasion, and Speed are decreased. -->
+		<icon>icon.skill1160</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>SPEED_DOWN</abnormalType>
+		<activateRate>80</activateRate>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="5882" levels="2" name="Weakened Pommel">
+		<!-- A state of instant paralysis caused by the shock -->
+		<table name="#magicLevel">79 83</table>
+		<table name="#mpConsume">79 82</table>
+		<icon>icon.skill0100</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<affectRange>150</affectRange>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<power>873</power>
+		<reuseDelay>1000</reuseDelay>
+		<trait>SHOCK</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Stun" />
+		</effects>
+	</skill>
+	<skill id="5883" levels="1" name="Meggling Injury">
+		<!-- HP is decreased momentarily from bleeding. Effect 9. -->
+		<icon>icon.skill0096</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>9</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>BLEEDING</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>165</mpConsume>
+		<reuseDelay>1000</reuseDelay>
+		<trait>BLEED</trait>
+		<effects>
+			<effect name="DamOverTime" ticks="5">
+				<power>145</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5884" levels="2" name="Weakened Sweep">
+		<!-- Equipment are removed. Unable to use weapons while the effect lasts. -->
+		<table name="#power">2319 18664</table>
+		<icon>icon.skill0485</icon>
+		<operateType>A2</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3</abnormalTime>
+		<abnormalType>DISARM</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>70</activateRate>
+		<affectLimit>5-15</affectLimit>
+		<affectRange>300</affectRange>
+		<basicProperty>STR</basicProperty>
+		<castRange>40</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>200</effectRange>
+		<fanRange>0,0,300,90</fanRange>
+		<hitTime>1500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>165</mpConsume>
+		<power>#power</power>
+		<reuseDelay>1000</reuseDelay>
+		<soulMaxConsumeCount>1</soulMaxConsumeCount>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Disarm" />
+		</effects>
+	</skill>
+	<skill id="5885" levels="2" name="Weakened Sweep">
+		<!-- A state of instant paralysis caused by the shock -->
+		<table name="#icons">icon.skill0100 icon.skill0000</table>
+		<table name="#power">2319 18664</table>
+		<icon>#icons</icon>
+		<operateType>A2</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<affectLimit>5-15</affectLimit>
+		<affectRange>300</affectRange>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>400</effectRange>
+		<fanRange>0,0,300,90</fanRange>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>165</mpConsume>
+		<power>#power</power>
+		<reuseDelay>1000</reuseDelay>
+		<trait>SHOCK</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Stun" />
+		</effects>
+	</skill>
+	<skill id="5886" levels="1" name="Ground Shaker">
+		<!-- Evasion and Speed are decreased. -->
+		<icon>icon.skill1160</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>SPEED_DOWN</abnormalType>
+		<activateRate>80</activateRate>
+		<affectLimit>10-10</affectLimit>
+		<basicProperty>MEN</basicProperty>
+		<castRange>600</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>165</mpConsume>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="Debuff">
+				<sub stat="rEvas">10</sub>
+				<mul stat="runSpd">0.8</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5887" levels="1" name="Howl from Beyond">
+		<!-- P. Atk., M. Atk., Atk. Spd., Accuracy, Critical Rate, and Critical Impact are greatly decreased. -->
+		<icon>icon.skill1337</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>MULTI_DEBUFF_C</abnormalType>
+		<activateRate>80</activateRate>
+		<affectLimit>10-10</affectLimit>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="5888" levels="2" name="Earth Shaker">
+		<!-- Temporarily cannot move due to shock and has lost the target. -->
+		<table name="#magicLevel">83 85</table>
+		<table name="#mpConsume">82 83</table>
+		<icon>icon.skill0100</icon>
+		<operateType>A2</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<affectLimit>5-15</affectLimit>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>400</effectRange>
+		<fanRange>0,0,300,90</fanRange>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>#magicLevel</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<reuseDelay>1000</reuseDelay>
+		<trait>SHOCK</trait>
+		<effects>
+			<effect name="TargetCancel">
+				<chance>80</chance>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5889" levels="3" name="Tainted Shackle">
+		<!-- Cannot act because the target is locked. -->
+		<icon>icon.skill0100</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3</abnormalTime>
+		<abnormalType>TARGET_LOCK</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>76</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="5890" levels="3" name="Tainted Mass Shackle">
+		<!-- Cannot move because the target is locked. -->
+		<icon>icon.skill0402</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3</abnormalTime>
+		<abnormalType>TARGET_LOCK</abnormalType>
+		<abnormalVisualEffect>ROOT</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<affectLimit>10-10</affectLimit>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>83</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="5891" levels="1" name="Threatening Bellow">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>1000</hitTime>
+		<magicLevel>83</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="5892" levels="2" name="Cunning Coercion">
+		<!-- Makes the enemy show his back, removes its desire for attack, and cancels its target state. Temporarily inflicts mental shock on the enemy. -->
+		<table name="#hitTime">1000 11470</table>
+		<icon>icon.skill0358</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>40</activateRate>
+		<basicProperty>MEN</basicProperty>
+		<castRange>40</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>#hitTime</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>80</magicLevel>
+		<mpConsume>70</mpConsume>
+		<reuseDelay>1000</reuseDelay>
+		<trait>DERANGEMENT</trait>
+		<effects>
+			<effect name="Bluff">
+				<chance>80</chance>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5893" levels="1" name="Ritual of Cannibalism">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>100</effectPoint>
+		<hitTime>1000</hitTime>
+		<magicLevel>84</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="5894" levels="1" name="Mark of Despair">
+		<!-- Significantly decreases P. Def., M. Def., evasion and HP. HP Recovery is limited, but P. Atk., M. Atk., Atk. Spd., Accuracy, Critical Damage and critical attack rate are increased. -->
+		<icon>icon.skill1337</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>MULTI_DEBUFF_A</abnormalType>
+		<activateRate>80</activateRate>
+		<basicProperty>MEN</basicProperty>
+		<castRange>300</castRange>
+		<effectPoint>100</effectPoint>
+		<effectRange>500</effectRange>
+		<hitTime>2000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>81</magicLevel>
+		<mpConsume>145</mpConsume>
+		<trait>DERANGEMENT</trait>
+		<effects>
+			<effect name="Debuff">
+				<mul stat="pDef">0.8</mul>
+				<mul stat="mDef">0.8</mul>
+				<sub stat="rEvas">10</sub>
+				<mul stat="maxHp">0.8</mul>
+				<mul stat="regHp">0.5</mul>
+				<mul stat="pAtk">1.2</mul>
+				<mul stat="mAtk">1.2</mul>
+				<mul stat="pAtkSpd">1.1</mul>
+				<add stat="accCombat">10</add>
+				<mul stat="critDmg">1.2</mul>
+				<mul stat="critRate">1.2</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5895" levels="1" name="Mark of Cowardice">
+		<!-- Significantly decreases HP, P. Def., M. Def. and evasion. The use of attack actions and skills and HP Recovery are limited, but movement speed is slightly increased. -->
+		<icon>icon.skill1337</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>MULTI_DEBUFF_B</abnormalType>
+		<activateRate>80</activateRate>
+		<basicProperty>MEN</basicProperty>
+		<castRange>300</castRange>
+		<effectPoint>100</effectPoint>
+		<effectRange>500</effectRange>
+		<hitTime>2000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>150</mpConsume>
+		<trait>DERANGEMENT</trait>
+		<effects>
+			<effect name="Debuff">
+				<mul stat="pDef">0.8</mul>
+				<mul stat="mDef">0.8</mul>
+				<sub stat="rEvas">10</sub>
+				<mul stat="maxHp">0.8</mul>
+				<mul stat="regHp">0.1</mul>
+				<mul stat="runSpd">1.25</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5896" levels="2" name="Soulless">
+		<table name="#hitTime">2000 22940</table>
+		<operateType>A3</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>MA_UP</abnormalType>
+		<effectPoint>100</effectPoint>
+		<hitTime>#hitTime</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+	</skill>
+	<skill id="5897" levels="1" name="Spike of Anchor">
+		<!-- P. Def., M. Def., Evasion, and Speed are decreased. -->
+		<icon>icon.skill1164</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>SPEED_DOWN</abnormalType>
+		<activateRate>80</activateRate>
+		<basicProperty>MEN</basicProperty>
+		<castRange>600</castRange>
+		<effectPoint>100</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>2000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>81</magicLevel>
+		<mpConsume>70</mpConsume>
+		<effects>
+			<effect name="Debuff">
+				<sub stat="rEvas">5</sub>
+				<mul stat="runSpd">0.9</mul>
+				<mul stat="pDef">0.9</mul>
+				<mul stat="mDef">0.9</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5898" levels="2" name="Blast of Anchor">
+		<!-- P. Def., M. Def., Evasion, and Speed are decreased. -->
+		<table name="#hitTime">2000 22940</table>
+		<table name="#mpConsume">140 150</table>
+		<icon>icon.skill1164</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>SPEED_DOWN</abnormalType>
+		<activateRate>80</activateRate>
+		<affectLimit>10-10</affectLimit>
+		<basicProperty>MEN</basicProperty>
+		<castRange>600</castRange>
+		<effectPoint>100</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>#hitTime</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>#mpConsume</mpConsume>
+		<effects>
+			<effect name="Debuff">
+				<sub stat="rEvas">10</sub>
+				<mul stat="runSpd">0.8</mul>
+				<mul stat="pDef">0.8</mul>
+				<mul stat="mDef">0.8</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="5899" levels="2" name="Burst of Pain">
+		<table name="#hitTime">2000 22940</table>
+		<operateType>A1</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<affectLimit>5-15</affectLimit>
+		<castRange>40</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>400</effectRange>
+		<fanRange>0,0,150,90</fanRange>
+		<hitTime>#hitTime</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+		<mpConsume>224</mpConsume>
+		<power>3000</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+</list>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list enabled="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/spawns.xsd">
+	<spawn name="21_23">
+		<npc id="30878" x="47984" y="186832" z="-3445" heading="42000" respawnDelay="60" /> <!-- Angelina -->
+		<npc id="30879" x="48564" y="186548" z="-3445" heading="42000" respawnDelay="60" /> <!-- Felton -->
+		<npc id="30958" x="44721" y="190698" z="-3626" heading="28672" respawnDelay="60" /> <!-- Galion -->
+		<npc id="31115" x="45808" y="170304" z="-4979" heading="32500" respawnDelay="60" /> <!-- Gatekeeper Ziggurat -->
+		<npc id="31121" x="46576" y="170304" z="-4977" heading="0" respawnDelay="60" /> <!-- Gatekeeper Ziggurat -->
+		<npc id="31497" x="46327" y="170013" z="-4979" heading="16000" respawnDelay="60" /> <!-- Dimensional Gate Keeper -->
+		<npc id="31573" x="48816" y="186240" z="-3484" heading="40000" respawnDelay="60" /> <!-- Monakan -->
+		<npc id="32243" x="36180" y="192030" z="-3744" heading="43260" respawnDelay="60" /> <!-- Cargo Box -->
+		<npc id="32712" x="48158" y="186843" z="-3480" heading="45055" respawnDelay="60" /> <!-- Somulitan -->
+	</spawn>
+</list>

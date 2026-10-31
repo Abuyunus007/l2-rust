@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list enabled="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/spawns.xsd">
+	<spawn name="19_18">
+		<npc id="20015" x="-17472" y="32449" z="-3712" heading="45301" respawnDelay="16" /> <!-- Marsh Zombie -->
+		<npc id="20015" x="-17132" y="31836" z="-3680" heading="40739" respawnDelay="16" /> <!-- Marsh Zombie -->
+		<npc id="20015" x="-16830" y="31715" z="-3672" heading="8645" respawnDelay="16" /> <!-- Marsh Zombie -->
+		<npc id="20433" x="-18183" y="32476" z="-3664" heading="65235" respawnDelay="16" /> <!-- Festering Bat -->
+		<npc id="20433" x="-17982" y="32422" z="-3688" heading="27298" respawnDelay="16" /> <!-- Festering Bat -->
+		<npc id="20433" x="-17201" y="32459" z="-3712" heading="22319" respawnDelay="16" /> <!-- Festering Bat -->
+		<npc id="20433" x="-16732" y="32250" z="-3712" heading="43927" respawnDelay="16" /> <!-- Festering Bat -->
+		<npc id="20433" x="-16244" y="31883" z="-3712" heading="50642" respawnDelay="16" /> <!-- Festering Bat -->
+		<npc id="20433" x="-14465" y="32076" z="-3448" heading="53054" respawnDelay="16" /> <!-- Festering Bat -->
+		<npc id="31034" x="-26294" y="25095" z="-3712" heading="11802" respawnDelay="60" /> <!-- Sentry -->
+		<npc id="31034" x="-19937" y="30046" z="-2480" heading="54116" respawnDelay="60" /> <!-- Sentry -->
+		<npc id="31034" x="-19123" y="21454" z="-3704" heading="16861" respawnDelay="60" /> <!-- Sentry -->
+		<npc id="31034" x="-15235" y="10207" z="-3680" heading="40693" respawnDelay="60" /> <!-- Sentry -->
+		<npc id="31034" x="-11606" y="27214" z="-3016" heading="22727" respawnDelay="60" /> <!-- Sentry -->
+		<npc id="31118" x="-19888" y="13504" z="-4899" heading="32500" respawnDelay="60" /> <!-- Gatekeeper Ziggurat -->
+		<npc id="31124" x="-19072" y="13504" z="-4897" heading="0" respawnDelay="60" /> <!-- Gatekeeper Ziggurat -->
+		<npc id="31506" x="-19309" y="13210" z="-4927" heading="16000" respawnDelay="60" /> <!-- Dimensional Gate Keeper -->
+		<npc id="31845" x="-18245" y="10122" z="-3320" heading="50725" respawnDelay="60" /> <!-- Bloody Pixy -->
+		<npc id="31845" x="-14748" y="29766" z="-3576" heading="16977" respawnDelay="60" /> <!-- Bloody Pixy -->
+		<npc id="31850" x="-8547" y="18117" z="-3384" heading="51896" respawnDelay="60" /> <!-- Blight Treant -->
+		<npc id="31850" x="-6151" y="26309" z="-3344" heading="14324" respawnDelay="60" /> <!-- Blight Treant -->
+	</spawn>
+</list>

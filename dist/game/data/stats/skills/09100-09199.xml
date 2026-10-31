@@ -1,0 +1,1857 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/skills.xsd">
+	<skill id="9100" levels="1" name="Vesper Weapon Box">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17069</itemConsumeId> <!-- Vesper Weapon Box - Event -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="7.1429">
+						<item id="13457" count="1" /> <!-- Vesper Cutter -->
+					</item>
+					<item chance="7.1429">
+						<item id="13458" count="1" /> <!-- Vesper Slasher -->
+					</item>
+					<item chance="7.1429">
+						<item id="13459" count="1" /> <!-- Vesper Buster -->
+					</item>
+					<item chance="7.1429">
+						<item id="13460" count="1" /> <!-- Vesper Shaper -->
+					</item>
+					<item chance="7.1429">
+						<item id="13461" count="1" /> <!-- Vesper Fighter -->
+					</item>
+					<item chance="7.1429">
+						<item id="13462" count="1" /> <!-- Vesper Stormer -->
+					</item>
+					<item chance="7.1429">
+						<item id="13463" count="1" /> <!-- Vesper Avenger -->
+					</item>
+					<item chance="7.1429">
+						<item id="13464" count="1" /> <!-- Vesper Retributer -->
+					</item>
+					<item chance="7.1429">
+						<item id="13465" count="1" /> <!-- Vesper Caster -->
+					</item>
+					<item chance="7.1429">
+						<item id="13466" count="1" /> <!-- Vesper Singer -->
+					</item>
+					<item chance="7.1429">
+						<item id="13467" count="1" /> <!-- Vesper Thrower -->
+					</item>
+					<item chance="7.1429">
+						<item id="13468" count="1" /> <!-- Vesper Pincer -->
+					</item>
+					<item chance="7.1429">
+						<item id="13469" count="1" /> <!-- Vesper Shooter -->
+					</item>
+					<item chance="7.1423">
+						<item id="13470" count="1" /> <!-- Vesper Nagan -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9101" levels="1" name="Icarus Weapon Box">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17070</itemConsumeId> <!-- Icarus Weapon Box - Event -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="8.3333">
+						<item id="10215" count="1" /> <!-- Icarus Sawsword -->
+					</item>
+					<item chance="8.3333">
+						<item id="10216" count="1" /> <!-- Icarus Disperser -->
+					</item>
+					<item chance="8.3333">
+						<item id="10217" count="1" /> <!-- Icarus Spirit -->
+					</item>
+					<item chance="8.3333">
+						<item id="10218" count="1" /> <!-- Icarus Heavy Arms -->
+					</item>
+					<item chance="8.3333">
+						<item id="10219" count="1" /> <!-- Icarus Trident -->
+					</item>
+					<item chance="8.3333">
+						<item id="10220" count="1" /> <!-- Icarus Hammer -->
+					</item>
+					<item chance="8.3333">
+						<item id="10221" count="1" /> <!-- Icarus Hand -->
+					</item>
+					<item chance="8.3333">
+						<item id="10222" count="1" /> <!-- Icarus Hall -->
+					</item>
+					<item chance="8.3333">
+						<item id="10223" count="1" /> <!-- Icarus Spitter -->
+					</item>
+					<item chance="8.3333">
+						<item id="10224" count="1" /> <!-- Icarus Stinger -->
+					</item>
+					<item chance="8.3333">
+						<item id="10225" count="1" /> <!-- Icarus Wingblade -->
+					</item>
+					<item chance="8.3337">
+						<item id="10226" count="1" /> <!-- Icarus Shooter -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9102" levels="1" name="Dynasty Weapon Box">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17071</itemConsumeId> <!-- Dynasty Weapon Box - Event -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="7.1429">
+						<item id="9380" count="1" /> <!-- Dynasty Ancient Sword -->
+					</item>
+					<item chance="7.1429">
+						<item id="9446" count="1" /> <!-- Dynasty Knife -->
+					</item>
+					<item chance="7.1429">
+						<item id="10004" count="1" /> <!-- Dynasty Dual Sword -->
+					</item>
+					<item chance="7.1429">
+						<item id="9449" count="1" /> <!-- Dynasty Mace -->
+					</item>
+					<item chance="7.1429">
+						<item id="9450" count="1" /> <!-- Dynasty Bagh-Nakh -->
+					</item>
+					<item chance="7.1429">
+						<item id="9445" count="1" /> <!-- Dynasty Bow -->
+					</item>
+					<item chance="7.1429">
+						<item id="9443" count="1" /> <!-- Dynasty Blade -->
+					</item>
+					<item chance="7.1429">
+						<item id="9442" count="1" /> <!-- Dynasty Sword -->
+					</item>
+					<item chance="7.1429">
+						<item id="10252" count="1" /> <!-- Dynasty Staff -->
+					</item>
+					<item chance="7.1429">
+						<item id="9448" count="1" /> <!-- Dynasty Cudgel -->
+					</item>
+					<item chance="7.1429">
+						<item id="10253" count="1" /> <!-- Dynasty Crusher -->
+					</item>
+					<item chance="7.1429">
+						<item id="9384" count="1" /> <!-- Dynasty Crossbow -->
+					</item>
+					<item chance="7.1429">
+						<item id="9444" count="1" /> <!-- Dynasty Phantom -->
+					</item>
+					<item chance="7.1423">
+						<item id="9447" count="1" /> <!-- Dynasty Halberd -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9103" levels="1" name="Box of Vesper Armor">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17072</itemConsumeId> <!-- Vesper Armor Box - Event -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="5.8824">
+						<item id="13143" count="1" /> <!-- Sealed Vesper Helmet -->
+					</item>
+					<item chance="5.8824">
+						<item id="14105" count="1" /> <!-- Sealed Vesper Breastplate -->
+					</item>
+					<item chance="5.8824">
+						<item id="14108" count="1" /> <!-- Sealed Vesper Gaiters -->
+					</item>
+					<item chance="5.8824">
+						<item id="14109" count="1" /> <!-- Sealed Vesper Gauntlet -->
+					</item>
+					<item chance="5.8824">
+						<item id="14110" count="1" /> <!-- Sealed Vesper Boots -->
+					</item>
+					<item chance="5.8824">
+						<item id="14111" count="1" /> <!-- Sealed Vesper Shield -->
+					</item>
+					<item chance="5.8824">
+						<item id="13144" count="1" /> <!-- Sealed Vesper Leather Helmet -->
+					</item>
+					<item chance="5.8824">
+						<item id="14106" count="1" /> <!-- Sealed Vesper Leather Breastplate -->
+					</item>
+					<item chance="5.8824">
+						<item id="14112" count="1" /> <!-- Sealed Vesper Leather Leggings -->
+					</item>
+					<item chance="5.8824">
+						<item id="14113" count="1" /> <!-- Sealed Vesper Leather Gloves -->
+					</item>
+					<item chance="5.8824">
+						<item id="14114" count="1" /> <!-- Sealed Vesper Leather Boots -->
+					</item>
+					<item chance="5.8824">
+						<item id="13145" count="1" /> <!-- Sealed Vesper Circlet -->
+					</item>
+					<item chance="5.8824">
+						<item id="14107" count="1" /> <!-- Sealed Vesper Tunic -->
+					</item>
+					<item chance="5.8824">
+						<item id="14115" count="1" /> <!-- Sealed Vesper Stockings -->
+					</item>
+					<item chance="5.8824">
+						<item id="14116" count="1" /> <!-- Sealed Vesper Gloves -->
+					</item>
+					<item chance="5.8824">
+						<item id="14117" count="1" /> <!-- Sealed Vesper Shoes -->
+					</item>
+					<item chance="5.8816">
+						<item id="13887" count="1" /> <!-- Sealed Vesper Sigil -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9104" levels="1" name="Box of Moirai Armor">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17073</itemConsumeId> <!-- Moirai Armor Box - Event -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="5.8824">
+						<item id="15694" count="1" /> <!-- Sealed Moirai Helmet -->
+					</item>
+					<item chance="5.8824">
+						<item id="15695" count="1" /> <!-- Sealed Moirai Leather Helmet -->
+					</item>
+					<item chance="5.8824">
+						<item id="15696" count="1" /> <!-- Sealed Moirai Circlet -->
+					</item>
+					<item chance="5.8824">
+						<item id="15697" count="1" /> <!-- Sealed Moirai Breastplate -->
+					</item>
+					<item chance="5.8824">
+						<item id="15698" count="1" /> <!-- Sealed Moirai Leather Breastplate -->
+					</item>
+					<item chance="5.8824">
+						<item id="15699" count="1" /> <!-- Sealed Moirai Tunic -->
+					</item>
+					<item chance="5.8824">
+						<item id="15700" count="1" /> <!-- Sealed Moirai Gaiter -->
+					</item>
+					<item chance="5.8824">
+						<item id="15701" count="1" /> <!-- Sealed Moirai Leather Legging -->
+					</item>
+					<item chance="5.8824">
+						<item id="15702" count="1" /> <!-- Sealed Moirai Stockings -->
+					</item>
+					<item chance="5.8824">
+						<item id="15703" count="1" /> <!-- Sealed Moirai Gauntlet -->
+					</item>
+					<item chance="5.8824">
+						<item id="15704" count="1" /> <!-- Sealed Moirai Leather Gloves -->
+					</item>
+					<item chance="5.8824">
+						<item id="15705" count="1" /> <!-- Sealed Moirai Gloves -->
+					</item>
+					<item chance="5.8824">
+						<item id="15706" count="1" /> <!-- Sealed Moirai Boots -->
+					</item>
+					<item chance="5.8824">
+						<item id="15707" count="1" /> <!-- Sealed Moirai Leather Boots -->
+					</item>
+					<item chance="5.8824">
+						<item id="15708" count="1" /> <!-- Sealed Moirai Shoes -->
+					</item>
+					<item chance="5.8824">
+						<item id="15709" count="1" /> <!-- Sealed Moirai Sigil -->
+					</item>
+					<item chance="5.8816">
+						<item id="15710" count="1" /> <!-- Sealed Moirai Shield -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9105" levels="1" name="Box of Dynasty Armor">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17074</itemConsumeId> <!-- Dynasty Armor Box - Event -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="5.8824">
+						<item id="9514" count="1" /> <!-- Sealed Dynasty Breast Plate -->
+					</item>
+					<item chance="5.8824">
+						<item id="9515" count="1" /> <!-- Sealed Dynasty Gaiter -->
+					</item>
+					<item chance="5.8824">
+						<item id="9516" count="1" /> <!-- Sealed Dynasty Helmet -->
+					</item>
+					<item chance="5.8824">
+						<item id="9517" count="1" /> <!-- Sealed Dynasty Gauntlets -->
+					</item>
+					<item chance="5.8824">
+						<item id="9518" count="1" /> <!-- Sealed Dynasty Boots -->
+					</item>
+					<item chance="5.8824">
+						<item id="9529" count="1" /> <!-- Sealed Dynasty Shield -->
+					</item>
+					<item chance="5.8824">
+						<item id="9519" count="1" /> <!-- Sealed Dynasty Leather Armor -->
+					</item>
+					<item chance="5.8824">
+						<item id="9520" count="1" /> <!-- Sealed Dynasty Leather Leggings -->
+					</item>
+					<item chance="5.8824">
+						<item id="9521" count="1" /> <!-- Sealed Dynasty Leather Helmet -->
+					</item>
+					<item chance="5.8824">
+						<item id="9522" count="1" /> <!-- Sealed Dynasty Leather Gloves -->
+					</item>
+					<item chance="5.8824">
+						<item id="9523" count="1" /> <!-- Sealed Dynasty Leather Boots -->
+					</item>
+					<item chance="5.8824">
+						<item id="9524" count="1" /> <!-- Sealed Dynasty Tunic -->
+					</item>
+					<item chance="5.8824">
+						<item id="9525" count="1" /> <!-- Sealed Dynasty Stockings -->
+					</item>
+					<item chance="5.8824">
+						<item id="9526" count="1" /> <!-- Sealed Dynasty Circlet -->
+					</item>
+					<item chance="5.8824">
+						<item id="9527" count="1" /> <!-- Sealed Dynasty Gloves -->
+					</item>
+					<item chance="5.8824">
+						<item id="9528" count="1" /> <!-- Sealed Dynasty Shoes -->
+					</item>
+					<item chance="5.8816">
+						<item id="13886" count="1" /> <!-- Sealed Dynasty Sigil -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9106" levels="1" name="Soul Crystal Box - Level 14">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17075</itemConsumeId> <!-- Soul Crystal - Stage 14 Box - Event -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="33.3333">
+						<item id="9570" count="1" /> <!-- Red Soul Crystal - Stage 14 -->
+					</item>
+					<item chance="33.3333">
+						<item id="9571" count="1" /> <!-- Blue Soul Crystal - Stage 14 -->
+					</item>
+					<item chance="33.3334">
+						<item id="9572" count="1" /> <!-- Green Soul Crystal - Stage 14 -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9107" levels="1" name="Soul Crystal Box - Level 15">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17076</itemConsumeId> <!-- Soul Crystal - Stage 15 Box - Event -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="33.3333">
+						<item id="10480" count="1" /> <!-- Red Soul Crystal - Stage 15 -->
+					</item>
+					<item chance="33.3333">
+						<item id="10481" count="1" /> <!-- Blue Soul Crystal - Stage 15 -->
+					</item>
+					<item chance="33.3334">
+						<item id="10482" count="1" /> <!-- Green Soul Crystal - Stage 15 -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9108" levels="1" name="Soul Crystal Box - Level 16">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17077</itemConsumeId> <!-- Soul Crystal - Stage 16 Box - Event -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="33.3333">
+						<item id="13071" count="1" /> <!-- Red Soul Crystal - Stage 16 -->
+					</item>
+					<item chance="33.3333">
+						<item id="13072" count="1" /> <!-- Blue Soul Crystal - Stage 16 -->
+					</item>
+					<item chance="33.3334">
+						<item id="13073" count="1" /> <!-- Green Soul Crystal - Stage 16 -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9109" levels="1" name="Box of Facelift Potions">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17078</itemConsumeId> <!-- Potion Box of Mask Type -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="16.6667">
+						<item id="8664" count="1" /> <!-- Facelifting Potion - A (Event) -->
+					</item>
+					<item chance="16.6667">
+						<item id="8665" count="1" /> <!-- Facelifting Potion - B (Event) -->
+					</item>
+					<item chance="16.6667">
+						<item id="8666" count="1" /> <!-- Facelifting Potion - C (Event) -->
+					</item>
+					<item chance="49.9999">
+						<item id="14739" count="1" /> <!-- Event - Fresh Milk -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9110" levels="1" name="Box of Haircolor Change Potions">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17079</itemConsumeId> <!-- Potion Box of Hair Color -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="16.6667">
+						<item id="8667" count="1" /> <!-- Dye Potion - A (Event) -->
+					</item>
+					<item chance="16.6667">
+						<item id="8668" count="1" /> <!-- Dye Potion - B (Event) -->
+					</item>
+					<item chance="16.6667">
+						<item id="8669" count="1" /> <!-- Dye Potion - C (Event) -->
+					</item>
+					<item chance="16.6667">
+						<item id="8670" count="1" /> <!-- Dye Potion - D (Event) -->
+					</item>
+					<item chance="33.3332">
+						<item id="14739" count="1" /> <!-- Event - Fresh Milk -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9111" levels="1" name="Box of Hairstyle Change Potions">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17080</itemConsumeId> <!-- Potion Box of Hair Style -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="10">
+						<item id="8671" count="1" /> <!-- Hair Style Change Potion - A (Event) -->
+					</item>
+					<item chance="10">
+						<item id="8672" count="1" /> <!-- Hair Style Change Potion - B (Event) -->
+					</item>
+					<item chance="10">
+						<item id="8673" count="1" /> <!-- Hair Style Change Potion - C (Event) -->
+					</item>
+					<item chance="10">
+						<item id="8674" count="1" /> <!-- Hair Style Change Potion - D (Event) -->
+					</item>
+					<item chance="10">
+						<item id="8675" count="1" /> <!-- Hair Style Change Potion - E (Event) -->
+					</item>
+					<item chance="10">
+						<item id="8676" count="1" /> <!-- Hair Style Change Potion - F (Event) -->
+					</item>
+					<item chance="10">
+						<item id="8677" count="1" /> <!-- Hair Style Change Potion - G (Event) -->
+					</item>
+					<item chance="30">
+						<item id="14739" count="1" /> <!-- Event - Fresh Milk -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9112" levels="1" name="Box of Gold Apiga">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17081</itemConsumeId> <!-- Golden Apigas Box -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="14.2857">
+						<item id="9546" count="1" /> <!-- Fire Stone -->
+					</item>
+					<item chance="14.2857">
+						<item id="9547" count="1" /> <!-- Water Stone -->
+					</item>
+					<item chance="14.2857">
+						<item id="9548" count="1" /> <!-- Earth Stone -->
+					</item>
+					<item chance="14.2857">
+						<item id="9549" count="1" /> <!-- Wind Stone -->
+					</item>
+					<item chance="14.2857">
+						<item id="9550" count="1" /> <!-- Dark Stone -->
+					</item>
+					<item chance="14.2857">
+						<item id="9551" count="1" /> <!-- Holy Stone -->
+					</item>
+					<item chance="14.2858">
+						<item id="2134" count="2" /> <!-- Gemstone S -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9113" levels="1" name="Vitality Potion">
+		<!-- Maintains the current Vitality for 10 minutes. -->
+		<icon>icon.etc_lesser_potion_blue_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>2</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>VP_KEEP</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<effectPoint>100</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17093</itemConsumeId> <!-- Vitality Maintaining Potion (10 mintues) (Event) -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>1800000</reuseDelay>
+	</skill>
+	<skill id="9114" levels="1" name="Nevit's Voice">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17094</itemConsumeId> <!-- Nevit's Voice -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="GiveRecommendation">
+				<amount>10</amount>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9115" levels="1" name="Nevit's Hourglass - 1 hour">
+		<!-- Increases Nevit's blessing by 1 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17095</itemConsumeId> <!-- Nevit's Hourglass - 1 hour - 1~19 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9116" levels="1" name="Nevit's Hourglass - 1.5 hour">
+		<!-- Increases Nevit's blessing by 1.5 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>5400</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17096</itemConsumeId> <!-- Nevit's Hourglass - 1.5 hour - 1~19 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9117" levels="1" name="Nevit's Hourglass - 2 hour">
+		<!-- Increases Nevit's blessing by 2 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>7200</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17097</itemConsumeId> <!-- Nevit's Hourglass - 2 hour - 1~19 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9118" levels="1" name="Nevit's Hourglass - 2.5 hour">
+		<!-- Increases Nevit's blessing by 2.5 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>9000</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17098</itemConsumeId> <!-- Nevit's Hourglass - 2.5 hour - 1~19 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9119" levels="1" name="Nevit's Hourglass - 3 hour">
+		<!-- Increases Nevit's blessing by 3 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10800</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17099</itemConsumeId> <!-- Nevit's Hourglass - 3 hour - 1~19 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9120" levels="1" name="Nevit's Hourglass - 1 hour">
+		<!-- Increases Nevit's blessing by 1 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17100</itemConsumeId> <!-- Nevit's Hourglass - 1 hour - 20~39 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9121" levels="1" name="Nevit's Hourglass - 1.5 hour">
+		<!-- Increases Nevit's blessing by 1.5 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>5400</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17101</itemConsumeId> <!-- Nevit's Hourglass - 1.5 hour - 20~39 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9122" levels="1" name="Nevit's Hourglass - 2 hour">
+		<!-- Increases Nevit's blessing by 2 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>7200</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17102</itemConsumeId> <!-- Nevit's Hourglass - 2 hour - 20~39 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9123" levels="1" name="Nevit's Hourglass - 2.5 hour">
+		<!-- Increases Nevit's blessing by 2.5 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>9000</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17103</itemConsumeId> <!-- Nevit's Hourglass - 2.5 hour - 20~39 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9124" levels="1" name="Nevit's Hourglass - 3 hour">
+		<!-- Increases Nevit's blessing by 3 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10800</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17104</itemConsumeId> <!-- Nevit's Hourglass - 3 hour - 20~39 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9125" levels="1" name="Nevit's Hourglass - 1 hour">
+		<!-- Increases Nevit's blessing by 1 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17105</itemConsumeId> <!-- Nevit's Hourglass - 1 hour - 40~51 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9126" levels="1" name="Nevit's Hourglass - 1.5 hour">
+		<!-- Increases Nevit's blessing by 1.5 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>5400</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17106</itemConsumeId> <!-- Nevit's Hourglass - 1.5 hour - 40~51 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9127" levels="1" name="Nevit's Hourglass - 2 hour">
+		<!-- Increases Nevit's blessing by 2 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>7200</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17107</itemConsumeId> <!-- Nevit's Hourglass - 2 hour - 40~51 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9128" levels="1" name="Nevit's Hourglass - 2.5 hour">
+		<!-- Increases Nevit's blessing by 2.5 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>9000</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17108</itemConsumeId> <!-- Nevit's Hourglass - 2.5 hour - 40~51 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9129" levels="1" name="Nevit's Hourglass - 3 hour">
+		<!-- Increases Nevit's blessing by 3 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10800</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17109</itemConsumeId> <!-- Nevit's Hourglass - 3 hour - 40~51 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9130" levels="1" name="Nevit's Hourglass - 1 hour">
+		<!-- Increases Nevit's blessing by 1 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17110</itemConsumeId> <!-- Nevit's Hourglass - 1 hour - 52~60 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9131" levels="1" name="Nevit's Hourglass - 1.5 hour">
+		<!-- Increases Nevit's blessing by 1.5 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>5400</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17111</itemConsumeId> <!-- Nevit's Hourglass - 1.5 hour - 52~60 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9132" levels="1" name="Nevit's Hourglass - 2 hour">
+		<!-- Increases Nevit's blessing by 2 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>7200</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17112</itemConsumeId> <!-- Nevit's Hourglass - 2 hour - 52~60 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9133" levels="1" name="Nevit's Hourglass - 2.5 hour">
+		<!-- Increases Nevit's blessing by 2.5 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>9000</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17113</itemConsumeId> <!-- Nevit's Hourglass - 2.5 hour - 52~60 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9134" levels="1" name="Nevit's Hourglass - 3 hour">
+		<!-- Increases Nevit's blessing by 3 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10800</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17114</itemConsumeId> <!-- Nevit's Hourglass - 3 hour - 52~60 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9135" levels="1" name="Nevit's Hourglass - 1 hour">
+		<!-- Increases Nevit's blessing by 1 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17115</itemConsumeId> <!-- Nevit's Hourglass - 1 hour - 61~75 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9136" levels="1" name="Nevit's Hourglass - 1.5 hour">
+		<!-- Increases Nevit's blessing by 1.5 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>5400</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17116</itemConsumeId> <!-- Nevit's Hourglass - 1.5 hour - 61~75 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9137" levels="1" name="Nevit's Hourglass - 2 hour">
+		<!-- Increases Nevit's blessing by 2 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>7200</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17117</itemConsumeId> <!-- Nevit's Hourglass - 2 hour - 61~75 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9138" levels="1" name="Nevit's Hourglass - 2.5 hour">
+		<!-- Increases Nevit's blessing by 2.5 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>9000</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17118</itemConsumeId> <!-- Nevit's Hourglass - 2.5 hour - 61~75 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9139" levels="1" name="Nevit's Hourglass - 3 hour">
+		<!-- Increases Nevit's blessing by 3 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10800</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17119</itemConsumeId> <!-- Nevit's Hourglass - 3 hour - 61~75 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9140" levels="1" name="Nevit's Hourglass - 1 hour">
+		<!-- Increases Nevit's blessing by 1 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17120</itemConsumeId> <!-- Nevit's Hourglass - 1 hour - 76~79 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9141" levels="1" name="Nevit's Hourglass - 1.5 hour">
+		<!-- Increases Nevit's blessing by 1.5 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>5400</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17121</itemConsumeId> <!-- Nevit's Hourglass - 1.5 hour - 76~79 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9142" levels="1" name="Nevit's Hourglass - 2 hour">
+		<!-- Increases Nevit's blessing by 2 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>7200</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17122</itemConsumeId> <!-- Nevit's Hourglass - 2 hour - 76~79 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9143" levels="1" name="Nevit's Hourglass - 2.5 hour">
+		<!-- Increases Nevit's blessing by 2.5 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>9000</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17123</itemConsumeId> <!-- Nevit's Hourglass - 2.5 hour - 76~79 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9144" levels="1" name="Nevit's Hourglass - 3 hour">
+		<!-- Increases Nevit's blessing by 3 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10800</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17124</itemConsumeId> <!-- Nevit's Hourglass - 3 hour - 76~79 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9145" levels="1" name="Nevit's Hourglass - 1 hour">
+		<!-- Increases Nevit's blessing by 1 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17125</itemConsumeId> <!-- Nevit's Hourglass - 1 hour - 80~85 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9146" levels="1" name="Nevit's Hourglass - 1.5 hour">
+		<!-- Increases Nevit's blessing by 1.5 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>5400</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17126</itemConsumeId> <!-- Nevit's Hourglass - 1.5 hour - 80~85 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9147" levels="1" name="Nevit's Hourglass - 2 hour">
+		<!-- Increases Nevit's blessing by 2 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>7200</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17127</itemConsumeId> <!-- Nevit's Hourglass - 2 hour - 80~85 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9148" levels="1" name="Nevit's Hourglass - 2.5 hour">
+		<!-- Increases Nevit's blessing by 2.5 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>9000</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17128</itemConsumeId> <!-- Nevit's Hourglass - 2.5 hour - 80~85 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9149" levels="1" name="Nevit's Hourglass - 3 hour">
+		<!-- Increases Nevit's blessing by 3 hour. -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10800</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17129</itemConsumeId> <!-- Nevit's Hourglass - 3 hour - 80~85 -->
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9150" levels="1" name="Freesia Bouquet - Event">
+		<!-- Bouquet of freesia flowers, which stand for "Innocence. -->
+		<icon>icon.etc_flower_bouquet_i02</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>500</castRange>
+		<effectPoint>500</effectPoint>
+		<hitTime>1000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17130</itemConsumeId> <!-- Freesia Bouquet (Event) -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="9151" levels="1" name="Baby's Breath Bouquet - Event">
+		<!-- Bouquet of baby's breath flowers, which stand for "Sorrow. -->
+		<icon>icon.etc_flower_bouquet_i03</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>500</castRange>
+		<effectPoint>500</effectPoint>
+		<hitTime>1000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17131</itemConsumeId> <!-- Baby Breath Bouquet (Event) -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="9152" levels="1" name="Pink Lady - Event">
+		<!-- This cocktail drink was first made in London, England in 1912, as a tribute to the leading heroine in the play "Pink Lady," which was a great hit at the time. -->
+		<icon>icon.etc_fruit_cocktail_i02</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>500</castRange>
+		<effectPoint>500</effectPoint>
+		<hitTime>1000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17132</itemConsumeId> <!-- Pink Lady (Event) -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="9153" levels="1" name="June Bug - Event">
+		<!-- This fragrant and refreshing cocktail is named after the insects of June that fly in search of nectar-filled flowers. -->
+		<icon>icon.etc_fruit_cocktail_i03</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>500</castRange>
+		<effectPoint>500</effectPoint>
+		<hitTime>1000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17133</itemConsumeId> <!-- June Bug (Event) -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="9154" levels="1" name="Soft Cheese Cake - Event">
+		<!-- Highest-quality cheese cake that is fluffy, soft, and not too sweet. -->
+		<icon>icon.etc_herb_of_cheesecake</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>500</castRange>
+		<effectPoint>500</effectPoint>
+		<hitTime>1000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17134</itemConsumeId> <!-- Soft Cheesecake (Event) -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="9155" levels="1" name="Freshly-Baked Baguette - Event">
+		<!-- This freshly-baked baguette is soft and delicious, unlike the regular hard baguette. -->
+		<icon>icon.etc_herb_of_baguette</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>500</castRange>
+		<effectPoint>500</effectPoint>
+		<hitTime>1000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17135</itemConsumeId> <!-- Freshly-Baked Baguette (Event) -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="9156" levels="1" name="Sweet Cream-filled Bread - Event">
+		<!-- Cream bread filled with soft custard made with egg yolks rather than butter cream or whipped cream. -->
+		<icon>icon.etc_herb_of_cream</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>500</castRange>
+		<effectPoint>500</effectPoint>
+		<hitTime>1000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17136</itemConsumeId> <!-- Sweet Cream Bun (Event) -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="9157" levels="1" name="White Day Candy - Event">
+		<!-- Cute candy that someone would be very happy to receive as a gift. -->
+		<icon>icon.etc_whiteday_candy_i00</icon>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>500</castRange>
+		<effectPoint>500</effectPoint>
+		<hitTime>1000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17137</itemConsumeId> <!-- White Day Candy (Event) -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+	</skill>
+	<skill id="9158" levels="1" name="Freya's Gift">
+		<!-- Gift box containing Freya's heart. Cannot be traded or dropped. -->
+		<icon>icon.etc_pi_gift_box_i04</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17138</itemConsumeId> <!-- Freya's Gift -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="0.0001">
+						<item id="16026" count="1" /> <!-- Blessed Necklace of Freya -->
+					</item>
+					<item chance="0.1417">
+						<item id="9627" count="1" /> <!-- Giant's Codex - Mastery -->
+					</item>
+					<item chance="1.4172">
+						<item id="17139" count="1" /> <!-- Transformation Scroll: Anakim -->
+					</item>
+					<item chance="1.4172">
+						<item id="17140" count="1" /> <!-- Transformation Scroll: Zaken -->
+					</item>
+					<item chance="2.8345">
+						<item id="14052" count="1" /> <!-- Noble Enhancement Stone -->
+					</item>
+					<item chance="18.424">
+						<item id="6622" count="1" /> <!-- Giant's Codex -->
+					</item>
+					<item chance="21.2585">
+						<item id="2134" count="2" /> <!-- Gemstone S -->
+					</item>
+					<item chance="54.5068">
+						<item id="14701" count="1" /> <!-- Greater Quick Healing Potion -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9159" levels="1" name="Transformation Scroll - Anakim">
+		<!-- Transform into Anakim. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17139</itemConsumeId> <!-- Transformation Scroll: Anakim -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>7200000</reuseDelay>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>306</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9160" levels="1" name="Transformation Scroll - Zaken">
+		<!-- Transform into Zaken. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>2500</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17140</itemConsumeId> <!-- Transformation Scroll: Zaken -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>7200000</reuseDelay>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>305</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9161" levels="1" name="Vesper's Mighty Power">
+		<!-- Increase Physical Attack by 15%, Magical Attack by 20%, and Speed by 10 for 10 minutes. -->
+		<icon>icon.weapon_vesper_slasher_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalInstant>true</abnormalInstant>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>WP_CHANGE_EVENT</abnormalType>
+		<abnormalVisualEffect>CHANGE_VES_S</abnormalVisualEffect>
+		<effectPoint>100</effectPoint>
+		<hitTime>100</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtk">1.15</mul>
+				<mul stat="mAtk">1.2</mul>
+				<add stat="runSpd">10</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9162" levels="1" name="Vesper's Critical Attack Power">
+		<!-- Increase Physical Critical Attack Rate by 15, Magic Critical Attack Rate by 2, and Speed by 10 for 10 minutes. Recovers 5% of the standard short-range physical damage inflicted on the enemy as HP. -->
+		<icon>icon.weapon_vesper_caster_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalInstant>true</abnormalInstant>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>WP_CHANGE_EVENT</abnormalType>
+		<abnormalVisualEffect>CHANGE_VES_C</abnormalVisualEffect>
+		<effectPoint>100</effectPoint>
+		<hitTime>100</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="critRate">15</add>
+				<add stat="mCritRate">2</add>
+				<add stat="runSpd">10</add>
+				<add stat="absorbDam">5</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9163" levels="1" name="Invincible Vesper">
+		<!-- Increase Max. Attack Speed by 20%, Magic Speed by 20%, and Speed by 20 for 10 minutes. -->
+		<icon>icon.weapon_dual_sword_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalInstant>true</abnormalInstant>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>WP_CHANGE_EVENT</abnormalType>
+		<abnormalVisualEffect>CHANGE_VES_D</abnormalVisualEffect>
+		<effectPoint>100</effectPoint>
+		<hitTime>100</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtkSpd">1.2</mul>
+				<mul stat="mAtkSpd">1.2</mul>
+				<add stat="runSpd">20</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9164" levels="1" name="Special Gift of April Fool's Day - Event">
+		<!-- The special box of good luck given to the luckiest guy on April Fool's Day. What will be inside? -->
+		<icon>icon.etc_pi_gift_box_i04</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17161</itemConsumeId> <!-- Special Gift of April Fool's Day (Event) -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="5.882">
+						<item id="13143" count="1" /> <!-- Sealed Vesper Helmet -->
+					</item>
+					<item chance="5.882">
+						<item id="14105" count="1" /> <!-- Sealed Vesper Breastplate -->
+					</item>
+					<item chance="5.882">
+						<item id="14108" count="1" /> <!-- Sealed Vesper Gaiters -->
+					</item>
+					<item chance="5.882">
+						<item id="14109" count="1" /> <!-- Sealed Vesper Gauntlet -->
+					</item>
+					<item chance="5.882">
+						<item id="14110" count="1" /> <!-- Sealed Vesper Boots -->
+					</item>
+					<item chance="5.882">
+						<item id="14111" count="1" /> <!-- Sealed Vesper Shield -->
+					</item>
+					<item chance="5.882">
+						<item id="13144" count="1" /> <!-- Sealed Vesper Leather Helmet -->
+					</item>
+					<item chance="5.882">
+						<item id="14106" count="1" /> <!-- Sealed Vesper Leather Breastplate -->
+					</item>
+					<item chance="5.882">
+						<item id="14112" count="1" /> <!-- Sealed Vesper Leather Leggings -->
+					</item>
+					<item chance="5.882">
+						<item id="14113" count="1" /> <!-- Sealed Vesper Leather Gloves -->
+					</item>
+					<item chance="5.882">
+						<item id="14114" count="1" /> <!-- Sealed Vesper Leather Boots -->
+					</item>
+					<item chance="5.882">
+						<item id="13145" count="1" /> <!-- Sealed Vesper Circlet -->
+					</item>
+					<item chance="5.882">
+						<item id="14107" count="1" /> <!-- Sealed Vesper Tunic -->
+					</item>
+					<item chance="5.882">
+						<item id="14115" count="1" /> <!-- Sealed Vesper Stockings -->
+					</item>
+					<item chance="5.882">
+						<item id="14116" count="1" /> <!-- Sealed Vesper Gloves -->
+					</item>
+					<item chance="5.882">
+						<item id="14117" count="1" /> <!-- Sealed Vesper Shoes -->
+					</item>
+					<item chance="5.88799999999999">
+						<item id="13887" count="1" /> <!-- Sealed Vesper Sigil -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9165" levels="1" name="Energy of Sprout">
+		<!-- For 1 hour, receives help from the Energy of Sprout to increase Max MP by 20%, MP recovery bonus by 20%, HP recovery bonus by 20%, the chance of prominent damage occurring through magic damage by 2, the power of critical attacks by 20%, P. Atk. by 10%, P. Def. by 20%, Atk. Spd. by 20%, M. Atk. by 20%, M. Def. by 20%, Casting Spd. by 20%, and Resistance to de-buffs by 10%. Decreases Speed by 20% and MP consumption needed for skill use by 5%. -->
+		<icon>icon.etc_leaf_green_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>4</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>MULTI_BUFF</abnormalType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17163</itemConsumeId> <!-- Event - Energy of Sprout -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="9166" levels="1" name="Vitality Replenishing Herb Tea">
+		<!-- Recovers Vitality upon acquiring Exp. points for 30 minutes. -->
+		<icon>icon.etc_hot_spring_nectar_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>VP_UP</abnormalType>
+		<abnormalVisualEffect>VP_UP</abnormalVisualEffect>
+		<effectPoint>100</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14744</itemConsumeId> <!-- Event - Vitality Replenishing Herb Tea 30 minutes -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>10000</reuseDelay>
+	</skill>
+	<skill id="9167" levels="1" name="Nevit's Hourglass - 1 hour(s)">
+		<!-- Increases Nevit's blessing by 1 hour. -->
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+	<skill id="9168" levels="1" name="Nevit's Hourglass - 1.5 hour(s)">
+		<!-- Increases Nevit's blessing by 1.5 hour(s). -->
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+	<skill id="9169" levels="1" name="Nevit's Hourglass - 2 hour(s)">
+		<!-- Increases Nevit's blessing by 2 hour(s). -->
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+	<skill id="9170" levels="1" name="Nevit's Hourglass - 2.5 hour(s)">
+		<!-- Increases Nevit's blessing by 2.5 hour(s). -->
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+	<skill id="9171" levels="1" name="Nevit's Hourglass - 3 hour(s)">
+		<!-- Increases Nevit's blessing by 3 hour(s). -->
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+	<skill id="9172" levels="1" name="Nevit's Hourglass - 4 hour(s)">
+		<!-- Increases Nevit's blessing by 4 hour(s). -->
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+	<skill id="9173" levels="1" name="Nevit's Voice">
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+	<skill id="9174" levels="1" name="500,000 SP scroll">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17184</itemConsumeId> <!-- 500,000 SP scroll -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="GiveSp">
+				<sp>500000</sp>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9175" levels="1" name="1,000,000 SP scroll">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17185</itemConsumeId> <!-- 1,000,000 SP scroll -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="GiveSp">
+				<sp>1000000</sp>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9176" levels="1" name="Provided gift of cheers">
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+	<skill id="9177" levels="1" name="Olympiad Reward Box">
+		<icon>icon.etc_pi_gift_box_i04</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17169</itemConsumeId> <!-- Olympiad Treasure Chest -->
+		<reuseDelay>2000</reuseDelay>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="85.8">
+						<item id="13722" count="350" /> <!-- Olympiad Token -->
+					</item>
+					<item chance="7.4">
+						<item id="13722" count="250" /> <!-- Olympiad Token -->
+						<item id="13750" count="1" /> <!-- Warrior's Temporary Healing Potion -->
+					</item>
+					<item chance="0.6">
+						<item id="13722" count="200" /> <!-- Olympiad Token -->
+						<item id="13751" count="1" /> <!-- Warrior's T-shirt -->
+					</item>
+					<item chance="0.6">
+						<item id="13722" count="200" /> <!-- Olympiad Token -->
+						<item id="13752" count="1" /> <!-- Olympiad Warrior's Ring -->
+					</item>
+					<item chance="0.4">
+						<item id="13722" count="200" /> <!-- Olympiad Token -->
+						<item id="13754" count="1" /> <!-- Olympiad Warrior's Earring -->
+					</item>
+					<item chance="0.3">
+						<item id="13722" count="200" /> <!-- Olympiad Token -->
+						<item id="13753" count="1" /> <!-- Olympiad Warrior's Necklace -->
+					</item>
+					<item chance="3.9">
+						<item id="13722" count="250" /> <!-- Olympiad Token -->
+						<item id="6622" count="1" /> <!-- Giant's Codex -->
+					</item>
+					<item chance="1">
+						<item id="13722" count="1" /> <!-- Olympiad Token -->
+						<item id="8621" count="1" /> <!-- Ancient Book: Divine Inspiration (Original Version) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9178" levels="1" name="Theodric's Box">
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+	<skill id="9179" levels="1" name="Antharas's Blood Crystal">
+		<operateType>A1</operateType>
+		<targetType>PC_BODY</targetType>
+		<affectLimit>50-50</affectLimit>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>578</effectPoint>
+		<effectRange>2000</effectRange>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17268</itemConsumeId> <!-- Antharas Blood Crystal -->
+		<reuseDelay>3600000</reuseDelay>
+		<conditions>
+			<player canResurrect="true" />
+		</conditions>
+		<effects>
+			<effect name="Resurrection">
+				<power>100</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9180" levels="2" name="10,000,000 SP scroll">
+		<table name="#amount">5000000 10000000</table>
+		<table name="#itemConsumeId">17276 17277</table>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>#itemConsumeId</itemConsumeId>
+		<magicLevel>1</magicLevel>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="GiveSp">
+				<sp>#amount</sp>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="9181" levels="1" name="Nevit's Hourglass - 4 hour(s)">
+		<!-- Increases Nevit's blessing by 4 hour(s). -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>14400</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17284</itemConsumeId> <!-- Nevit's Hourglass - 4 hour - Event -->
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9182" levels="1" name="Nevit's Hourglass - 4 hour(s)">
+		<!-- Increases Nevit's blessing by 4 hour(s). -->
+		<icon>icon.etc_dragons_blood_i03</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>14400</abnormalTime>
+		<abnormalType>VOTE</abnormalType>
+		<abnormalVisualEffect>VP_KEEP</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>17283</itemConsumeId> <!-- Nevit's Hourglass - 4 hour -->
+		<effects>
+			<effect name="NevitsHourglass" />
+		</effects>
+	</skill>
+	<skill id="9183" levels="1" name="Freya's Refreshing Breeze - 4 hour(s)">
+		<!-- For 4 hours, recovers Vitality when Exp. is acquired through hunting. -->
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+	<skill id="9184" levels="1" name="Freya's Refreshing Breeze - 4 hour(s)">
+		<!-- For 4 hours, recovers Vitality when Exp. is acquired through hunting. -->
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+</list>

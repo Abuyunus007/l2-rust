@@ -57,13 +57,13 @@ the two can be compared with the same characters and a player can move between t
 |---|---|
 | Rust | stable, 1.85 or newer (edition 2024); `rustup` installs the right toolchain from `rust-toolchain.toml` |
 | MariaDB or MySQL | a database with the **L2JMobius H5 schema** (created with the L2JMobius DB installer) |
-| L2JMobius CT 2.6 High Five | the Java server's `game/data` folder is used as the datapack, and its `config/` as the configuration template |
-| Geodata | L2J geodata (`.l2j` files) for movement and line of sight |
+| Geodata | L2J geodata (`.l2j` files) for movement and line of sight (a separate download, too big for the repo) |
 | Client | a Lineage 2 High Five client |
 | OS | Windows 10/11 or Linux (x86_64) |
 
-The Rust servers do not ship the datapack, geodata or a database. They read the ones of an
-L2JMobius install.
+The datapack, the default configuration and the database schema are in this repository, in
+[`dist/`](dist/): a snapshot of the L2JMobius CT 2.6 High Five release (MIT licensed). No
+L2JMobius install is needed. Only the geodata and the client come from elsewhere.
 
 ## Installation
 
@@ -80,26 +80,37 @@ The programs are in `target/release/`: `login-server`, `game-server`, `l2-superv
 
 ### 2. Database
 
-Create the database with the L2JMobius DB installer (or import its SQL files from
-`db_installer/sql/`). The Rust servers use exactly the same tables and columns.
+Create an empty database (e.g. `l2jmobiush5`) and import the SQL files from
+`dist/db_installer/sql/` (the login and game folders). The Rust servers use exactly the same
+tables and columns as L2JMobius, so an existing L2JMobius database works too.
 
 **Back up the database before the first start.** The Rust servers write to the same tables as
 the Java ones.
 
 ### 3. Set up the run folders
 
-Create a `run/` folder in the repository (it is git-ignored, and holds your real configs and
-secrets):
+Copy `dist/login` and `dist/game/config` into a `run/` folder in the repository. `run/` is
+git-ignored and holds your real configs and secrets. The datapack itself stays in `dist/game/data`:
+
+```bash
+mkdir -p run/game
+cp -r dist/login run/login
+cp -r dist/game/config run/game/config
+```
 
 ```
 run/
 ├── supervisor.ini
 ├── login/
-│   ├── config/        <- copy of the Java login/config/ (Database.ini, Server.ini, ...)
-│   └── data/          <- servername.xml (and banned_ip.cfg) from the Java login/data/
+│   ├── config/        <- Database.ini, Server.ini, Admin.ini, ...
+│   ├── data/          <- servername.xml
+│   └── banned_ip.cfg
 └── game/
-    └── config/        <- copy of the Java game/config/ (including Custom/), without hexid.txt
+    └── config/        <- Database.ini, Server.ini, Admin.ini, SideBySide.ini, ... (Custom/ too)
 ```
+
+Put the geodata files (`*.l2j`) into `dist/game/data/geodata/` (git-ignored), or point
+`GeoOverride.ini` at another folder.
 
 **Login server** (`run/login/config/`):
 - `Database.ini`: your database URL, user and password (same keys as Java).
@@ -110,8 +121,9 @@ run/
 **Game server** (`run/game/config/`):
 - `Database.ini`: the same database as the login server.
 - `Server.ini`:
-  - `DatapackRoot = <path to the Java server's game folder>` (absolute path, forward slashes).
-    The Rust server reads `data/` from there.
+  - `DatapackRoot = <repo>/dist/game` (absolute path, forward slashes). The Rust server reads
+    `data/` from there. When it runs next to a Java game server, you can also point it at the
+    Java server's `game` folder, so both use the very same datapack.
   - `GameserverPort` (7777 by default; use another port when the Java game server also runs).
   - `RequestServerID`.
 - `Admin.ini` (Rust only): `Enabled = True`, `Bind = 127.0.0.1:7902`, `Token = <random string>`.
@@ -235,6 +247,8 @@ crates/
   l2-geotool         geodata tool (bin)
   l2-testkit         test helpers, Java vectors, captures
   codegen            code generators (writes src/generated/)
+dist/                the server folders: datapack, default configs, SQL schema (L2JMobius snapshot)
+tools/               helper scripts (sync-dist.py, merge scripts, analysis)
 docs/
   PLAN.md            milestones
   DECISIONS.md       binding design decisions (D-01 ...)
@@ -273,6 +287,8 @@ cargo run -p codegen -- <target>     # regenerate generated code (needs the Java
 - Byte-level code (crypto, packets, geodata, formulas) is checked against vectors from the Java
   code in `java-vectors/out/`.
 - Files in `src/generated/` are produced by `codegen`. Never edit them by hand.
+- `dist/` is changed only by `python tools/sync-dist.py <L2JMobius release dist folder>`, which
+  refreshes it from a newer L2JMobius release and keeps the Rust-only files.
 - Code style: Rust 2024, `thiserror` in libraries, `tracing` for logs, no `unwrap()` on network,
   file or database data. Ported types carry a `// Java: path/To/Class.java` comment.
 

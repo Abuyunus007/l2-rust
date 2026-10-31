@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/teleporterData.xsd">
+	<npc id="32534"> <!-- Jaedin -->
+		<teleport type="OTHER">
+			<location x="-183292" y="206063" z="-12888" /> <!-- Guide of Immortality -> Seed of Infinity -->
+		</teleport>
+	</npc>
+</list>

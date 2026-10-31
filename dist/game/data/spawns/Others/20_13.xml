@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list enabled="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/spawns.xsd">
+	<spawn name="20_13">
+		<npc id="30590" x="12432" y="-141808" z="-1877" heading="16384" respawnDelay="60" /> <!-- Rosheek -->
+		<npc id="31036" x="12155" y="-134292" z="-1184" heading="58775" respawnDelay="60" /> <!-- Centurion -->
+	</spawn>
+</list>

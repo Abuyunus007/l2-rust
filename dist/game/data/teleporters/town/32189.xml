@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/teleporterData.xsd">
+	<npc id="32189"> <!-- Largo -->
+		<teleport type="NORMAL">
+			<location name="The Town of Gludio" x="-12672" y="122776" z="-3116" feeCount="9300" castleId="1" />
+			<location name="Town of Aden" x="146331" y="25762" z="-2018" feeCount="22000" castleId="5" />
+			<location name="Kamael Village" x="-117251" y="46771" z="360" feeCount="4300" />
+		</teleport>
+	</npc>
+</list>

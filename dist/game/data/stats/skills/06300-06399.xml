@@ -1,0 +1,1728 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/skills.xsd">
+	<skill id="6300" levels="1" name="Self-Destruction">
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>350</affectRange>
+		<effectPoint>-574</effectPoint>
+		<element>1</element> <!-- Water -->
+		<elementPower>20</elementPower>
+		<hitTime>5000</hitTime>
+		<isSuicideAttack>true</isSuicideAttack>
+		<magicLevel>85</magicLevel>
+		<mpConsume>123</mpConsume>
+		<power>3194</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="CallSkill">
+				<skillId>6662</skillId>
+				<skillLevel>1</skillLevel>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6301" levels="2" name="Cold Mana's Fragment">
+		<!-- Level 1: Recovers MP by 60 per second. -->
+		<!-- Level 2: Recovers MP by 30 per second. -->
+		<table name="#abnormalLevels">1 2</table>
+		<table name="#mdot">60 30</table>
+		<icon>icon.skill6301</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>FORCE_MEDITATION</abnormalType>
+		<affectRange>350</affectRange>
+		<effectPoint>1</effectPoint>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<mpConsume>66</mpConsume>
+		<mpInitialConsume>17</mpInitialConsume>
+		<effects>
+			<effect name="ManaHealOverTime" ticks="5">
+				<power>#mdot</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6302" levels="1" name="Cold Air">
+		<!-- Increase P. Def. and M. Def by 15%. -->
+		<icon>icon.skill6302</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>PD_UP</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<isTriggeredSkill>true</isTriggeredSkill>
+		<magicLevel>84</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pDef">1.15</mul>
+				<mul stat="mDef">1.15</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6303" levels="1" name="Trial of the Coup">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-574</effectPoint>
+		<effectRange>400</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>1500</hitTime>
+		<magicLevel>83</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>4563</power>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6304" levels="1" name="Shock">
+		<!-- Momentarily causes shock and stuns the enemy for 2 seconds. -->
+		<icon>icon.skill0100</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>2</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>400</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>2000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>83</magicLevel>
+		<mpConsume>121</mpConsume>
+		<reuseDelay>4000</reuseDelay>
+		<trait>SHOCK</trait>
+		<effects>
+			<effect name="Stun" />
+		</effects>
+	</skill>
+	<skill id="6305" levels="1" name="Sacred Gnosis">
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>200</affectRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-574</effectPoint>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>1500</hitTime>
+		<magicLevel>83</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>4563</power>
+		<reuseDelay>4000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6306" levels="1" name="Solina Strike">
+		<!-- Causes profuse bleeding for 10 seconds, causing 139 HP damage per second. -->
+		<icon>icon.skill0096</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>BLEEDING</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>100</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-574</effectPoint>
+		<effectRange>400</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>1500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>83</magicLevel>
+		<mpConsume>121</mpConsume>
+		<nextActionAttack>true</nextActionAttack>
+		<reuseDelay>4000</reuseDelay>
+		<trait>BLEED</trait>
+		<effects>
+			<effect name="DamOverTime" ticks="5">
+				<power>139</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6307" levels="1" name="Opus of the Hand">
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>180</affectRange>
+		<castRange>600</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>900</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>83</magicLevel>
+		<mpConsume>30</mpConsume>
+		<mpInitialConsume>8</mpInitialConsume>
+		<power>120</power>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6308" levels="1" name="Opus of the Wave">
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>270</affectRange>
+		<castRange>900</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1100</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>83</magicLevel>
+		<mpConsume>30</mpConsume>
+		<mpInitialConsume>8</mpInitialConsume>
+		<power>120</power>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6309" levels="1" name="Pain of the Ascetic">
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>180</affectRange>
+		<castRange>600</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>900</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>83</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<power>120</power>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6310" levels="1" name="Loss of Quest">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>600</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>900</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>1000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>83</magicLevel>
+		<mpConsume>59</mpConsume>
+		<mpInitialConsume>15</mpInitialConsume>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="TargetCancel">
+				<chance>80</chance>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6311" levels="1" name="Solina Thrust">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-574</effectPoint>
+		<effectRange>400</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>3000</hitTime>
+		<magicLevel>83</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>4563</power>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6312" levels="1" name="Launch Sacred Sword Energy">
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>180</affectRange>
+		<castRange>900</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1100</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>2000</hitTime>
+		<magicLevel>83</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>4563</power>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6313" levels="1" name="Solina Bless">
+		<operateType>A2</operateType>
+		<targetType>CLAN</targetType> <!-- FIXME: Aura Friendly ? -->
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>PD_UP_SPECIAL</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<affectRange>200</affectRange>
+		<basicProperty>CON</basicProperty>
+		<coolTime>500</coolTime>
+		<effectPoint>1</effectPoint>
+		<hitTime>5000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>83</magicLevel>
+		<mpConsume>59</mpConsume>
+		<mpInitialConsume>15</mpInitialConsume>
+		<reuseDelay>5000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="physicalSkillPower">2</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6314" levels="1" name="Sacred Judgement">
+		<operateType>A1</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<affectRange>100</affectRange>
+		<castRange>900</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1100</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<fanRange>0,0,100,0</fanRange>
+		<hitTime>3000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<power>125</power>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6315" levels="1" name="Sacred Strike">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-574</effectPoint>
+		<effectRange>400</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>3000</hitTime>
+		<magicLevel>84</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>4563</power>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6316" levels="1" name="Accomplish of Authority">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<castRange>900</castRange>
+		<effectPoint>100</effectPoint>
+		<effectRange>1100</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>3000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+		<reuseDelay>5000</reuseDelay>
+		<effects>
+			<effect name="HealPercent">
+				<power>15</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6317" levels="1" name="Sacred Tacit">
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>180</affectRange>
+		<castRange>600</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>900</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<power>128</power>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6318" levels="1" name="Divine Shield Protection">
+		<!-- Increases P. Def. by 10% for 3 seconds. -->
+		<icon>icon.skill1040</icon>
+		<operateType>A2</operateType>
+		<targetType>CLAN</targetType> <!-- FIXME: Aura Friendly ? -->
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>3</abnormalTime>
+		<abnormalType>PD_UP</abnormalType>
+		<affectRange>200</affectRange>
+		<effectPoint>1</effectPoint>
+		<hitTime>3000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<reuseDelay>10000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pDef">1.1</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6319" levels="1" name="Sacred Magic Protection">
+		<!-- Increases M. Def. by 10% for 3 seconds. -->
+		<icon>icon.skill6319</icon>
+		<operateType>A2</operateType>
+		<targetType>CLAN</targetType> <!-- FIXME: Aura Friendly ? -->
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>3</abnormalTime>
+		<abnormalType>MD_UP</abnormalType>
+		<affectRange>200</affectRange>
+		<effectPoint>1</effectPoint>
+		<hitTime>3000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<reuseDelay>10000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mDef">1.1</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6320" levels="1" name="Summon Sacred Magic Force">
+		<!-- Decreases enemy's P.Def. by 23% for 15 seconds. -->
+		<icon>icon.skill6320</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>PD_DOWN</abnormalType>
+		<activateRate>80</activateRate>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<hitTime>2000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>84</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="Debuff">
+				<mul stat="pDef">0.77</mul>
+				<mul stat="mDef">0.77</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6321" levels="1" name="Divine Flash">
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>150</affectRange>
+		<castRange>600</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>900</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>3000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<power>121</power>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6322" levels="1" name="Divine Impact">
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>150</affectRange>
+		<castRange>600</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>900</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>5000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<power>121</power>
+		<reuseDelay>5000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6323" levels="1" name="Divine Bolt">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>600</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>900</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+		<power>85</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6324" levels="1" name="Divine Strike">
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>270</affectRange>
+		<castRange>600</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>900</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>3000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+		<power>121</power>
+		<reuseDelay>5000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6325" levels="1" name="Divine Nova">
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>270</affectRange>
+		<castRange>600</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>900</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>5000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+		<power>85</power>
+		<reuseDelay>5000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6326" levels="1" name="Martyr's Happiness">
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>200</affectRange>
+		<castRange>40</castRange>
+		<effectPoint>-574</effectPoint>
+		<effectRange>400</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<magicLevel>85</magicLevel>
+		<mpConsume>123</mpConsume>
+		<power>20531</power>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6327" levels="1" name="Sacred Worship">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-574</effectPoint>
+		<effectRange>400</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>3000</hitTime>
+		<magicLevel>83</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>11407</power>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6328" levels="1" name="Fighter Judgement">
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>270</affectRange>
+		<castRange>900</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1100</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>3000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<power>205</power>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6329" levels="1" name="Fighter Strike">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-574</effectPoint>
+		<effectRange>400</effectRange>
+		<element>4</element> <!-- Holy -->
+		<elementPower>20</elementPower>
+		<hitTime>1500</hitTime>
+		<magicLevel>84</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>4563</power>
+		<reuseDelay>3000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6330" levels="1" name="Salmon Porridge Attack">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>1000</hitTime>
+		<magicLevel>83</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="HealPercent">
+				<power>5</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6331" levels="1" name="Camp Fire Tired">
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>SPEED_DOWN</abnormalType>
+		<basicProperty>MEN</basicProperty>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>84</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="Debuff">
+				<mul stat="pAtkSpd">0.7</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6332" levels="1" name="Camp Fire Full">
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>SPEED_DOWN</abnormalType>
+		<basicProperty>MEN</basicProperty>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>84</magicLevel>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="Debuff">
+				<mul stat="runSpd">0.7</mul>
+				<mul stat="pAtkSpd">0.7</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6333" levels="1" name="Electric Bolt 1">
+		<!-- Causes bleeding for 3 seconds, draining 200 HP per second. -->
+		<icon>icon.skill0096</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>3</abnormalTime>
+		<abnormalType>BLEEDING</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>1</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-574</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>1500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>83</magicLevel>
+		<mpConsume>121</mpConsume>
+		<nextActionAttack>true</nextActionAttack>
+		<power>4563</power>
+		<reuseDelay>1000</reuseDelay>
+		<trait>BLEED</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="DamOverTime" ticks="5">
+				<power>200</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6334" levels="1" name="Shock">
+		<!-- Momentarily causes shock and stuns the enemy for 4 seconds. -->
+		<icon>icon.skill0100</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>4</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>40</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>1500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>83</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>4563</power>
+		<reuseDelay>1000</reuseDelay>
+		<trait>SHOCK</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Stun" />
+		</effects>
+	</skill>
+	<skill id="6335" levels="1" name="Electric Rain 1">
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<castRange>900</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+		<power>120</power>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6336" levels="1" name="Electric Rain 2">
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<castRange>900</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+		<power>121</power>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6337" levels="1" name="Red Slash 1">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-574</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>2000</hitTime>
+		<magicLevel>83</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>4563</power>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6338" levels="1" name="Red Slash 2">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-574</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>2000</hitTime>
+		<magicLevel>83</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>4563</power>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6339" levels="1" name="Sacred Hammer Attack">
+		<!-- Causes bleeding for 3 seconds, draining 200 HP per second. -->
+		<icon>icon.skill0096</icon>
+		<operateType>A2</operateType>
+		<targetType>AREA</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>3</abnormalTime>
+		<abnormalType>BLEEDING</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>1</activateRate>
+		<affectRange>300</affectRange>
+		<basicProperty>CON</basicProperty>
+		<castRange>600</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>900</effectRange>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>84</magicLevel>
+		<mpConsume>121</mpConsume>
+		<nextActionAttack>true</nextActionAttack>
+		<power>4563</power>
+		<reuseDelay>1000</reuseDelay>
+		<trait>BLEED</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="DamOverTime" ticks="5">
+				<power>200</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6340" levels="1" name="Shock">
+		<!-- Momentarily causes shock and stuns the enemy for 4 seconds. -->
+		<icon>icon.skill0100</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>4</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>0</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>1500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>83</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>4563</power>
+		<reuseDelay>1000</reuseDelay>
+		<trait>SHOCK</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Stun" />
+		</effects>
+	</skill>
+	<skill id="6341" levels="1" name="Stronghold Water Cannon">
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>200</affectRange>
+		<castRange>600</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>900</effectRange>
+		<hitTime>500</hitTime>
+		<magicLevel>83</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>4563</power>
+		<reuseDelay>500</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6342" levels="1" name="Trap Over Steam">
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>400</affectRange>
+		<effectPoint>-574</effectPoint>
+		<hitTime>2000</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>123</mpConsume>
+		<power>4563</power>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6343" levels="2" name="Maguen Plasma - Power">
+		<!-- Level 1: The Wild Maguen blesses you with a buff that increases your M. Atk. and P. Atk. for 10 minutes. -->
+		<!-- Level 2: You are once again blessed by the Wild Maguen, who further increases your M. Atk. and P. Atk. -->
+		<table name="#icons">icon.skill6343_1 icon.skill6343_2</table>
+		<table name="#mAtk">1.08 1.15</table>
+		<table name="#pAtk">1.02 1.03</table>
+		<icon>#icons</icon>
+		<operateType>A2</operateType>
+		<targetType>TARGET_PARTY</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>SIGNAL_B</abnormalType>
+		<affectRange>1000</affectRange>
+		<castRange>400</castRange>
+		<effectPoint>1</effectPoint>
+		<effectRange>900</effectRange>
+		<hitTime>1500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mAtk">#mAtk</mul>
+				<mul stat="pAtk">#pAtk</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6365" levels="2" name="Maguen Plasma - Speed">
+		<!-- Level 1: The Wild Maguen blesses you with a buff that increases your Speed, Atk. Spd. and  Casting Speed for 10 minutes. -->
+		<!-- Level 2: You are once again blessed by the Wild Maguen, who further increases your Speed, Atk. Spd. and Casting Speed. -->
+		<table name="#icons">icon.skill6365_1 icon.skill6365_2</table>
+		<table name="#pmAtkSpd">1.04 1.08</table>
+		<table name="#runSpd">5 10</table>
+		<icon>#icons</icon>
+		<operateType>A2</operateType>
+		<targetType>TARGET_PARTY</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>SIGNAL_B</abnormalType>
+		<affectRange>1000</affectRange>
+		<castRange>400</castRange>
+		<effectPoint>1</effectPoint>
+		<effectRange>900</effectRange>
+		<hitTime>1500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mAtkSpd">#pmAtkSpd</mul>
+				<mul stat="pAtkSpd">#pmAtkSpd</mul>
+				<add stat="runSpd">#runSpd</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6366" levels="2" name="Maguen Plasma - Critical">
+		<!-- Level 1: The Wild Maguen blesses you with a buff that increases your Critical Rate and Critical Damage for 10 minutes. -->
+		<!-- Level 2: You are once again blessed by the Wild Maguen, who further increases your Critical Rate and Critical Damage. -->
+		<table name="#cAtk">1.05 1.1</table>
+		<table name="#icons">icon.skill6366_1 icon.skill6366_2</table>
+		<table name="#mCritPower">1.02 1.04</table>
+		<table name="#critRate">1.04 1.08</table>
+		<icon>#icons</icon>
+		<operateType>A2</operateType>
+		<targetType>TARGET_PARTY</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>SIGNAL_B</abnormalType>
+		<affectRange>1000</affectRange>
+		<castRange>400</castRange>
+		<effectPoint>1</effectPoint>
+		<effectRange>900</effectRange>
+		<hitTime>1500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="critRate">#critRate</mul>
+				<mul stat="mCritPower">#mCritPower</mul>
+				<mul stat="critDmg">#cAtk</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6367" levels="3" name="Maguen Plasma - Bistakon">
+		<!-- Level 1: Level 1: The energy of Bistakon surrounds you. -->
+		<!-- Level 2: Level 2: The energy of Bistakon surrounds you. -->
+		<!-- Level 3: Level 3: The energy of Bistakon surrounds you. -->
+		<table name="#abnormalLevels">1 2 3</table>
+		<table name="#icons">icon.skill6367_1 icon.skill6367_2 icon.skill6367_3</table>
+		<icon>#icons</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>10800</abnormalTime>
+		<abnormalType>SOA_BUFF1</abnormalType>
+		<castRange>400</castRange>
+		<effectPoint>1</effectPoint>
+		<effectRange>900</effectRange>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff" /> <!-- TODO: Remove when support for buffs without effects is finished. -->
+		</effects>
+	</skill>
+	<skill id="6368" levels="3" name="Maguen Plasma - Cokrakon">
+		<!-- Level 1: Level 1: The energy of Cokrakon surrounds you. -->
+		<!-- Level 2: Level 2: The energy of Cokrakon surrounds you. -->
+		<!-- Level 3: Level 3: The energy of Cokrakon surrounds you. -->
+		<table name="#abnormalLevels">1 2 3</table>
+		<table name="#icons">icon.skill6368_1 icon.skill6368_2 icon.skill6368_3</table>
+		<icon>#icons</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>10800</abnormalTime>
+		<abnormalType>SOA_BUFF2</abnormalType>
+		<castRange>400</castRange>
+		<effectPoint>1</effectPoint>
+		<effectRange>900</effectRange>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff" /> <!-- TODO: Remove when support for buffs without effects is finished. -->
+		</effects>
+	</skill>
+	<skill id="6369" levels="3" name="Maguen Plasma - Reptilikon">
+		<!-- Level 1: Level 1: The energy of Reptilikon surrounds you. -->
+		<!-- Level 2: Level 2: The energy of Reptilikon surrounds you. -->
+		<!-- Level 3: Level 3: The energy of Reptilikon surrounds you. -->
+		<table name="#abnormalLevels">1 2 3</table>
+		<table name="#icons">icon.skill6369_1 icon.skill6369_2 icon.skill6369_3</table>
+		<icon>#icons</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>10800</abnormalTime>
+		<abnormalType>SOA_BUFF3</abnormalType>
+		<castRange>400</castRange>
+		<effectPoint>1</effectPoint>
+		<effectRange>900</effectRange>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff" /> <!-- TODO: Remove when support for buffs without effects is finished. -->
+		</effects>
+	</skill>
+	<skill id="6370" levels="1" name="Thunderbolt">
+		<!-- Receive 8 times the normal damage. -->
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>DAMAGE_AMPLIFY</abnormalType>
+		<basicProperty>CON</basicProperty>
+		<castRange>150</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>300</effectRange>
+		<hitTime>1500</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Debuff">
+				<mul stat="mDef">0.1</mul>
+			</effect>
+			<effect name="Debuff">
+				<mul stat="pDef">0.1</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6371" levels="1" name="Invincibility">
+		<!-- Invincible against standard targets, skills and buffs/debuffs. -->
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>PD_UP_SPECIAL</abnormalType>
+		<abnormalVisualEffect>INVINCIBILITY</abnormalVisualEffect>
+		<effectPoint>100</effectPoint>
+		<magicLevel>85</magicLevel>
+		<reuseDelay>6000</reuseDelay>
+		<effects>
+			<effect name="Invincible" />
+			<effect name="Buff">
+				<set stat="debuffImmunity">1</set>
+				<sub stat="cancelVuln">100</sub>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6372" levels="10" name="Power Up">
+		<!-- Level 1: 2% of Atk. Spd. And 100% of Physical Skill Damage are increased. -->
+		<!-- Level 2: 4% of Atk. Spd. And 110% of Physical Skill Damage are increased. -->
+		<!-- Level 3: 6% of Atk. Spd. And 120% of Physical Skill Damage are increased. -->
+		<!-- Level 4: 8% of Atk. Spd. And 130% of Physical Skill Damage are increased. -->
+		<!-- Level 5: 10% of Atk. Spd. And 140% of Physical Skill Damage are increased. -->
+		<!-- Level 6: 12% of Atk. Spd. And 150% of Physical Skill Damage are increased. -->
+		<!-- Level 7: 14% of Atk. Spd. And 160% of Physical Skill Damage are increased. -->
+		<!-- Level 8: 16% of Atk. Spd. And 170% of Physical Skill Damage are increased. -->
+		<!-- Level 9: 18% of Atk. Spd. And 180% of Physical Skill Damage are increased. -->
+		<!-- Level 10: 20% of Atk. Spd. And 190% of Physical Skill Damage are increased. -->
+		<table name="#abnormalLvl">1 2 3 4 5 6 7 8 9 10</table>
+		<table name="#pAtkSpd">1.02 1.04 1.06 1.08 1.1 1.12 1.14 1.16 1.18 1.2</table>
+		<table name="#physicalSkillPower">2 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9</table>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>#abnormalLvl</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>SIGNAL_A</abnormalType>
+		<effectPoint>1</effectPoint>
+		<hitTime>1500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtkSpd">#pAtkSpd</mul>
+			</effect>
+			<effect name="Buff">
+				<mul stat="physicalSkillPower">#physicalSkillPower</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6373" levels="1" name="Thunderbolt">
+		<!-- Receive 8 times the normal damage. -->
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>DAMAGE_AMPLIFY</abnormalType>
+		<basicProperty>CON</basicProperty>
+		<castRange>150</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>300</effectRange>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Debuff">
+				<mul stat="mDef">0.1</mul>
+			</effect>
+			<effect name="Debuff">
+				<mul stat="pDef">0.1</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6374" levels="1" name="Notification - Thunderbolts">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>1</effectPoint>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+	</skill>
+	<skill id="6375" levels="1" name="Notification - Thunderbolts">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>1</effectPoint>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+	</skill>
+	<skill id="6376" levels="9" name="Sonic Strike">
+		<!-- Level 1: For 5 minutes, 10% of max HP, 10% of max MP and 20 HP per second decrease from Dopagen's Sonic Strike. -->
+		<!-- Level 2: For 5 minutes, 20% of max HP, 20% of max MP and 40 HP per second decrease from Dopagen's Sonic Strike. -->
+		<!-- Level 3: For 5 minutes, 30% of max HP, 30% of max MP and 60 HP per second decrease from Dopagen's Sonic Strike. -->
+		<!-- Level 4: For 5 minutes, 40% of max HP, 40% of max MP and 80 HP per second decrease from Dopagen's Sonic Strike. -->
+		<!-- Level 5: For 5 minutes, 50% of max HP, 50% of max MP and 100 HP per second decrease from Dopagen's Sonic Strike. -->
+		<!-- Level 6: For 5 minutes, 60% of max HP, 60% of max MP and 120 HP per second decrease from Dopagen's Sonic Strike. -->
+		<!-- Level 7: For 5 minutes, 70% of max HP, 70% of max MP and 140 HP per second decrease from Dopagen's Sonic Strike. -->
+		<!-- Level 8: For 5 minutes, 80% of max HP, 80% of max MP and 160 HP per second decrease from Dopagen's Sonic Strike. -->
+		<!-- Level 9: For 5 minutes, 90% of max HP, 90% of max MP and 180 HP per second decrease from Dopagen's Sonic Strike. -->
+		<table name="#abnormalLevels">1 2 3 4 5 6 7 8 9</table>
+		<icon>icon.skill1417</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>MAX_HP_DOWN</abnormalType>
+		<effectPoint>-100</effectPoint>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>-1</magicLevel>
+	</skill>
+	<skill id="6377" levels="10" name="Assault Boost">
+		<!-- Level 1: Atk. Spd. Increases by 5%. -->
+		<!-- Level 2: Atk. Spd. Increases by 10%. -->
+		<!-- Level 3: Atk. Spd. Increases by 15%. -->
+		<!-- Level 4: Atk. Spd. Increases by 20%. -->
+		<!-- Level 5: Atk. Spd. Increases by 25%. -->
+		<!-- Level 6: Atk. Spd. Increases by 30%. -->
+		<!-- Level 7: Atk. Spd. Increases by 35%. -->
+		<!-- Level 8: Atk. Spd. Increases by 40%. -->
+		<!-- Level 9: Atk. Spd. Increases by 45%. -->
+		<!-- Level 10: Atk. Spd. Increases by 50%. -->
+		<table name="#abnormalLevels">1 2 3 4 5 6 7 8 9 10</table>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>ATTACK_TIME_DOWN</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+	</skill>
+	<skill id="6378" levels="1" name="Earth Shift">
+		<!-- The ground below your feet shakes, making concentration difficult. -->
+		<icon>icon.skill0347</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>VIBRATION</abnormalType>
+		<activateRate>50</activateRate>
+		<effectPoint>-1000</effectPoint>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6379" levels="1" name="Blood Spurt">
+		<!-- Profuse bleeding causes you to loss 93 HP per second for 15 seconds. -->
+		<icon>icon.skill0096</icon>
+		<operateType>A2</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>BLEEDING</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>100</activateRate>
+		<basicProperty>CON</basicProperty>
+		<coolTime>500</coolTime>
+		<effectPoint>-574</effectPoint>
+		<fanRange>0,0,150,120</fanRange>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<nextActionAttack>true</nextActionAttack>
+		<reuseDelay>1000</reuseDelay>
+		<trait>BLEED</trait>
+	</skill>
+	<skill id="6380" levels="1" name="Bistakon Roar">
+		<!-- Blocks all the enemy's physical/magic skills for 20 seconds. -->
+		<icon>icon.skill1336</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>SILENCE_ALL</abnormalType>
+		<abnormalVisualEffect>SILENCE</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<affectRange>300</affectRange>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>-666</effectPoint>
+		<fanRange>0,0,200,0</fanRange>
+		<hitTime>1500</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>70</mpConsume>
+		<reuseDelay>1000</reuseDelay>
+		<trait>DERANGEMENT</trait>
+		<effects>
+			<effect name="Mute" />
+			<effect name="PhysicalMute" />
+		</effects>
+	</skill>
+	<skill id="6381" levels="2" name="Bistakon Soul Beam">
+		<!-- Blocks all the enemy's physical/magic skills for 20 seconds. -->
+		<table name="#abnormalLevels">1 2</table>
+		<icon>icon.skill1336</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>SILENCE_ALL</abnormalType>
+		<abnormalVisualEffect>SILENCE</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>MEN</basicProperty>
+		<castRange>700</castRange>
+		<effectPoint>-666</effectPoint>
+		<effectRange>1200</effectRange>
+		<hitTime>2000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>70</mpConsume>
+		<reuseDelay>1000</reuseDelay>
+		<trait>DERANGEMENT</trait>
+		<effects>
+			<effect name="Mute" />
+			<effect name="PhysicalMute" />
+		</effects>
+	</skill>
+	<skill id="6382" levels="1" name="Bistakon Rolling Claw">
+		<!-- Profuse bleeding causes you to loss 93 HP per second for 15 seconds. -->
+		<icon>icon.skill0096</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>BLEEDING</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>100</activateRate>
+		<affectRange>300</affectRange>
+		<basicProperty>CON</basicProperty>
+		<coolTime>500</coolTime>
+		<effectPoint>-574</effectPoint>
+		<fanRange>0,0,200,0</fanRange>
+		<hitTime>1500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>121</mpConsume>
+		<nextActionAttack>true</nextActionAttack>
+		<reuseDelay>1000</reuseDelay>
+		<trait>BLEED</trait>
+		<effects>
+			<effect name="DamOverTime" ticks="5">
+				<power>93</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6383" levels="1" name="Bistakon Deadly Roar">
+		<!-- Blocks all the enemy's physical/magic skills for 20 seconds. -->
+		<icon>icon.skill1336</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>SILENCE_ALL</abnormalType>
+		<abnormalVisualEffect>SILENCE</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>MEN</basicProperty>
+		<castRange>500</castRange>
+		<effectPoint>-666</effectPoint>
+		<effectRange>1000</effectRange>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>70</mpConsume>
+		<reuseDelay>1000</reuseDelay>
+		<trait>DERANGEMENT</trait>
+		<effects>
+			<effect name="Mute" />
+			<effect name="PhysicalMute" />
+		</effects>
+	</skill>
+	<skill id="6384" levels="2" name="Bistakon Deadly Blow">
+		<table name="#power">9125 13688</table>
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>60</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-574</effectPoint>
+		<effectRange>500</effectRange>
+		<hitTime>1500</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>#power</power>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6385" levels="1" name="Bistakon Critical Claw">
+		<!-- Profuse bleeding causes you to loss 93 HP per second for 15 seconds. -->
+		<icon>icon.skill0096</icon>
+		<operateType>A2</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>BLEEDING</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>100</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>150</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-574</effectPoint>
+		<effectRange>650</effectRange>
+		<fanRange>0,0,150,100</fanRange>
+		<hitTime>1500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>121</mpConsume>
+		<nextActionAttack>true</nextActionAttack>
+		<reuseDelay>1000</reuseDelay>
+		<trait>BLEED</trait>
+		<effects>
+			<effect name="DamOverTime" ticks="5">
+				<power>95</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6386" levels="1" name="Bistakon Earth Rise">
+		<!-- Momentarily causes shock and stuns the enemy for 3 seconds. -->
+		<icon>icon.skill0100</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>60</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>500</effectRange>
+		<hitTime>2500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>83</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>9125</power>
+		<reuseDelay>1000</reuseDelay>
+		<trait>SHOCK</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Stun" />
+		</effects>
+	</skill>
+	<skill id="6387" levels="1" name="Bistakon Earthquake">
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>150</affectRange>
+		<baseCritRate>15</baseCritRate>
+		<coolTime>500</coolTime>
+		<effectPoint>-1000</effectPoint>
+		<element>3</element> <!-- Earth -->
+		<elementPower>20</elementPower>
+		<hitTime>2000</hitTime>
+		<ignoreShld>true</ignoreShld>
+		<magicLevel>85</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>13688</power>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6388" levels="1" name="Bistakon Jump Blow">
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>150</affectRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-1000</effectPoint>
+		<hitTime>2500</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>13688</power>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6389" levels="1" name="Cokrakon Sonic Cage">
+		<!-- Speed is decreased by 50%. -->
+		<icon>icon.skill0102</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>SPEED_DOWN</abnormalType>
+		<castRange>700</castRange>
+		<effectPoint>1</effectPoint>
+		<effectRange>1200</effectRange>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<effects>
+			<effect name="Debuff">
+				<mul stat="runSpd">0.5</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6390" levels="1" name="Cokrakon Sonic Explosion">
+		<!-- Casting Speed is decreased by 50%. -->
+		<icon>icon.skill1386</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>CASTING_TIME_UP</abnormalType>
+		<affectRange>300</affectRange>
+		<effectPoint>-1000</effectPoint>
+		<fanRange>0,0,200,0</fanRange>
+		<hitTime>2000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Debuff">
+				<mul stat="mAtkSpd">0.5</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6391" levels="1" name="Cokrakon Sonic Slash">
+		<!-- Momentarily causes shock and stuns the enemy for 5 seconds. -->
+		<icon>icon.skill0100</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>5</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>60</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>500</effectRange>
+		<hitTime>2500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>4563</power>
+		<reuseDelay>1000</reuseDelay>
+		<trait>SHOCK</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Stun" />
+		</effects>
+	</skill>
+	<skill id="6392" levels="1" name="Cokrakon Sonic Shot">
+		<!-- Attack Speed is decreased by 50%. -->
+		<icon>icon.skill1104</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>5</abnormalTime>
+		<abnormalType>ATTACK_TIME_UP</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<affectRange>150</affectRange>
+		<basicProperty>MEN</basicProperty>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<hitTime>2000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="Debuff">
+				<mul stat="pAtkSpd">0.5</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6393" levels="1" name="Cokrakon Sonic Beam">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>900</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1200</effectRange>
+		<hitTime>1000</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>13688</power>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6394" levels="1" name="Cokrakon Sonic Bomb">
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>300</affectRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<hitTime>1500</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>13688</power>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6395" levels="1" name="Cokrakon Dreadful Clow">
+		<!-- Profuse bleeding causes you to loss 93 HP per second for 15 seconds. -->
+		<icon>icon.skill0096</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>BLEEDING</abnormalType>
+		<abnormalVisualEffect>DOT_BLEEDING</abnormalVisualEffect>
+		<activateRate>100</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-574</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>1500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>121</mpConsume>
+		<nextActionAttack>true</nextActionAttack>
+		<reuseDelay>1000</reuseDelay>
+		<trait>BLEED</trait>
+		<effects>
+			<effect name="DamOverTime" ticks="5">
+				<power>93</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6396" levels="1" name="Cokrakon Panic">
+		<!-- Frightens the enemy and causes him to flee for 6 seconds. -->
+		<icon>icon.skill1169</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>6</abnormalTime>
+		<abnormalType>TURN_FLEE</abnormalType>
+		<abnormalVisualEffect>TURN_FLEE</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>MEN</basicProperty>
+		<castRange>600</castRange>
+		<effectPoint>-574</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>2000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<reuseDelay>1000</reuseDelay>
+		<trait>DERANGEMENT</trait>
+		<effects>
+			<effect name="Fear" />
+		</effects>
+	</skill>
+	<skill id="6397" levels="1" name="Cokrakon Staggering Blow">
+		<!-- Momentarily causes shock and stuns the enemy for 3 seconds. -->
+		<icon>icon.skill0100</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>40</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>2000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>83</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>9125</power>
+		<reuseDelay>1000</reuseDelay>
+		<trait>SHOCK</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Stun" />
+		</effects>
+	</skill>
+	<skill id="6398" levels="1" name="Cokrakon Sonic Shout">
+		<!-- Frightens the enemy and causes him to flee for 3 seconds. -->
+		<icon>icon.skill1169</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3</abnormalTime>
+		<abnormalType>TURN_FLEE</abnormalType>
+		<abnormalVisualEffect>TURN_FLEE</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<affectRange>300</affectRange>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<fanRange>0,0,200,0</fanRange>
+		<hitTime>2000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<reuseDelay>1000</reuseDelay>
+		<trait>DERANGEMENT</trait>
+		<effects>
+			<effect name="Fear" />
+		</effects>
+	</skill>
+	<skill id="6399" levels="1" name="Cokrakon Dreadful Piercing">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>60</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>1500</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>13688</power>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+</list>

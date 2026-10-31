@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list enabled="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/spawns.xsd">
+	<spawn name="18_10">
+		<npc id="31120" x="-52832" y="-250272" z="-7905" heading="16500" respawnDelay="60" /> <!-- Gatekeeper Ziggurat -->
+		<npc id="31495" x="-53067" y="-250565" z="-7907" heading="16000" respawnDelay="60" /> <!-- Dimensional Gate Keeper -->
+	</spawn>
+</list>

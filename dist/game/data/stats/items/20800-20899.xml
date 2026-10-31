@@ -1,0 +1,1999 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/items.xsd">
+	<item id="20800" type="EtcItem" name="Red Opera Agathion 7-Day Pack - Spear of Flames">
+		<!-- Wrapped pack containing a Red Opera Agathion (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20778" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Red Opera - Spear of Flames - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="20801" type="EtcItem" name="Opera Agathion Pack">
+		<!-- Wrapped pack containing an Opera Agathion. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20779" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Opera -->
+		</capsuled_items>
+	</item>
+	<item id="20802" type="EtcItem" name="Opera Agathion 30-Day Pack - Sword of Life">
+		<!-- Wrapped pack containing an Opera Agathion. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20780" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Opera - Sword of Life - 30-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="20803" type="EtcItem" name="Miss Chipao Agathion 7-Day Pack - Decrease Weight">
+		<!-- Wrapped pack containing Miss Chipao Agathion (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20781" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Miss Chipao - Miss Chipao's Blessing - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="20804" type="EtcItem" name="Nepal Snow Agathion Pack">
+		<!-- Wrapped pack containing a Nepal Snow Agathion. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20782" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Nepal Snow -->
+		</capsuled_items>
+	</item>
+	<item id="20805" type="EtcItem" name="Round Ball Snow Agathion Pack">
+		<!-- Wrapped pack containing a Round Ball Snow Agathion. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20783" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Round Ball Snow -->
+		</capsuled_items>
+	</item>
+	<item id="20806" type="EtcItem" name="Ladder Snow Agathion Pack">
+		<!-- Wrapped pack containing a Ladder Snow Agathion. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20784" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Ladder Snow -->
+		</capsuled_items>
+	</item>
+	<item id="20807" type="EtcItem" name="Nepal Snow Agathion 7-Day Pack - Snow's Haste">
+		<!-- Wrapped pack containing a Nepal Snow Agathion (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20785" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Nepal Snow - Snow's Haste - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="20808" type="EtcItem" name="Round Ball Snow Agathion 7-Day Pack - Snow's Acumen">
+		<!-- Wrapped pack containing a Round Ball Snow Agathion (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20786" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Round Ball Snow - Snow's Acumen - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="20809" type="EtcItem" name="Ladder Snow Agathion 7-Day Pack - Snow's Wind Walk">
+		<!-- Wrapped pack containing a Ladder Snow Agathion (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20787" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Ladder Snow - Snow's Wind Walk - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="20810" type="EtcItem" name="Flame Box Pack">
+		<!-- Wrapped pack containing a Flame Box. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20788" min="1" max="1" chance="100" /> <!-- Flame Box -->
+		</capsuled_items>
+	</item>
+	<item id="20811" type="EtcItem" name="Rocket Gun Hat Pack - Continuous Fireworks">
+		<!-- Wrapped pack containing a Rocket Gun Hat. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20789" min="1" max="1" chance="100" /> <!-- Rocket Gun Hat - Fireworks -->
+		</capsuled_items>
+	</item>
+	<item id="20812" type="EtcItem" name="Yellow Paper Hat 7-Day Pack - Bless the Body">
+		<!-- Wrapped pack containing a Yellow Paper Hat (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20790" min="1" max="1" chance="100" /> <!-- Yellow Paper Hat - Blessed Body - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="20813" type="EtcItem" name="Pink Paper Mask Set 7-Day Pack - Bless the Soul">
+		<!-- Wrapped pack containing a Pink Paper Mask Set (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20791" min="1" max="1" chance="100" /> <!-- Pink Paper Mask Set - Blessed Soul - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="20814" type="EtcItem" name="Flavorful Cheese Hat Pack">
+		<!-- Wrapped pack containing a Flavorful Cheese Hat. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20792" min="1" max="1" chance="100" /> <!-- Flavorful Cheese Hat -->
+		</capsuled_items>
+	</item>
+	<item id="20815" type="EtcItem" name="Sweet Cheese Hat Pack">
+		<!-- Wrapped pack containing a Sweet Cheese Hat. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20793" min="1" max="1" chance="100" /> <!-- Sweet Cheese Hat -->
+		</capsuled_items>
+	</item>
+	<item id="20816" type="EtcItem" name="Flavorful Cheese Hat 7-Day Pack - Scent of Flavorful Cheese">
+		<!-- Wrapped pack containing a Flavorful Cheese Hat (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20794" min="1" max="1" chance="100" /> <!-- Flavorful Cheese Hat - Scent of Flavorful Cheese - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="20817" type="EtcItem" name="Sweet Cheese Hat 7-Day Pack - Scent of Sweet Cheese">
+		<!-- Wrapped pack containing a Sweet Cheese Hat (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20795" min="1" max="1" chance="100" /> <!-- Sweet Cheese Hat - Scent of Sweet Cheese - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="20818" type="Armor" name="Soul Avatar Seal Bracelet - Iken">
+		<!-- Bracelet that summons the image of Iken as an Soul Avatar through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_b_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21157" level="1" /> <!-- Release Seal on Agathion - Iken -->
+			<skill id="23141" level="1" /> <!-- Iken Agathion Cute Trick -->
+			<skill id="21172" level="1" /> <!-- Enhanced Authority - CON+1 STR+1 -->
+			<skill id="21176" level="1" /> <!-- Divine Protection - Divinity -->
+			<skill id="21182" level="1" /> <!-- Blessing of Resistance - Hold -->
+			<skill id="21188" level="1" /> <!-- Recovery Ability - HP -->
+			<skill id="21190" level="1" /> <!-- Soul's Shield -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20819" type="Armor" name="Agathion Seal Bracelet - Iken - Prominent Outsider Adventurer's Ability - 7-day limited period">
+		<!-- Bracelet that summons the image of Iken as an Agathion through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_b_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="time" val="10080" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21157" level="1" /> <!-- Release Seal on Agathion - Iken -->
+			<skill id="23141" level="1" /> <!-- Iken Agathion Cute Trick -->
+			<skill id="23153" level="1" /> <!-- Prominent Outsider Adventurer's Ability -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20820" type="Armor" name="Soul Avatar Seal Bracelet - Lana">
+		<!-- Bracelet that summons the image of Lana as an Soul Avatar through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_a_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21158" level="1" /> <!-- Release Seal on Agathion - Lana -->
+			<skill id="23142" level="1" /> <!-- Lana Agathion Cute Trick -->
+			<skill id="21173" level="1" /> <!-- Enhanced Authority - WIT+1 INT+1 -->
+			<skill id="21176" level="1" /> <!-- Divine Protection - Divinity -->
+			<skill id="21182" level="1" /> <!-- Blessing of Resistance - Hold -->
+			<skill id="21189" level="1" /> <!-- Recovery Ability - MP -->
+			<skill id="21190" level="1" /> <!-- Soul's Shield -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20821" type="Armor" name="Agathion Seal Bracelet - Lana - Prominent Outsider Adventurer's Ability - 7-day limited period">
+		<!-- Bracelet that summons the image of Lana as an Agathion through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_a_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="time" val="10080" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21158" level="1" /> <!-- Release Seal on Agathion - Lana -->
+			<skill id="23142" level="1" /> <!-- Lana Agathion Cute Trick -->
+			<skill id="23153" level="1" /> <!-- Prominent Outsider Adventurer's Ability -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20822" type="Armor" name="Soul Avatar Seal Bracelet - Gnosian">
+		<!-- Bracelet that summons the image of Gnosian as an Soul Avatar through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_f_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21159" level="1" /> <!-- Release Seal on Agathion - Gnocian -->
+			<skill id="23143" level="1" /> <!-- Gnocian Agathion Cute Trick -->
+			<skill id="21175" level="1" /> <!-- Enhanced Authority - CON+1 DEX+1 -->
+			<skill id="21177" level="1" /> <!-- Divine Protection - Water -->
+			<skill id="21183" level="1" /> <!-- Blessing of Resistance - Paralysis -->
+			<skill id="21188" level="1" /> <!-- Recovery Ability - HP -->
+			<skill id="21190" level="1" /> <!-- Soul's Shield -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20823" type="Armor" name="Agathion Seal Bracelet - Gnocian - Prominent Outsider Adventurer's Ability - 7-day limited period">
+		<!-- Bracelet that summons the image of Gnocian as an Agathion through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_f_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="time" val="10080" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21159" level="1" /> <!-- Release Seal on Agathion - Gnocian -->
+			<skill id="23143" level="1" /> <!-- Gnocian Agathion Cute Trick -->
+			<skill id="23153" level="1" /> <!-- Prominent Outsider Adventurer's Ability -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20824" type="Armor" name="Soul Avatar Seal Bracelet - Orodriel">
+		<!-- Bracelet that summons the image of Orodriel as an Soul Avatar through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_e_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21160" level="1" /> <!-- Release Seal on Agathion - Orodriel -->
+			<skill id="23144" level="1" /> <!-- Orodriel Agathion Cute Trick -->
+			<skill id="21174" level="1" /> <!-- Enhanced Authority - WIT+1 MEN+1 -->
+			<skill id="21177" level="1" /> <!-- Divine Protection - Water -->
+			<skill id="21183" level="1" /> <!-- Blessing of Resistance - Paralysis -->
+			<skill id="21189" level="1" /> <!-- Recovery Ability - MP -->
+			<skill id="21190" level="1" /> <!-- Soul's Shield -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20825" type="Armor" name="Agathion Seal Bracelet - Orodriel - Prominent Outsider Adventurer's Ability - 7-day limited period">
+		<!-- Bracelet that summons the image of Orodriel as an Agathion through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_e_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="time" val="10080" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21160" level="1" /> <!-- Release Seal on Agathion - Orodriel -->
+			<skill id="23144" level="1" /> <!-- Orodriel Agathion Cute Trick -->
+			<skill id="23153" level="1" /> <!-- Prominent Outsider Adventurer's Ability -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20826" type="Armor" name="Soul Avatar Seal Bracelet - Lakinos">
+		<!-- Bracelet that summons the image of Lakinos as an Soul Avatar through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_d_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21161" level="1" /> <!-- Release Seal on Agathion - Lakinos -->
+			<skill id="23145" level="1" /> <!-- Lakinos Agathion Cute Trick -->
+			<skill id="21172" level="1" /> <!-- Enhanced Authority - CON+1 STR+1 -->
+			<skill id="21181" level="1" /> <!-- Divine Protection - Darkness -->
+			<skill id="21184" level="1" /> <!-- Blessing of Resistance - Sleep -->
+			<skill id="21188" level="1" /> <!-- Recovery Ability - HP -->
+			<skill id="21190" level="1" /> <!-- Soul's Shield -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20827" type="Armor" name="Agathion Seal Bracelet - Lakinos - Prominent Outsider Adventurer's Ability - 7-day limited period">
+		<!-- Bracelet that summons the image of Lakinos as an Agathion through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_d_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="time" val="10080" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21161" level="1" /> <!-- Release Seal on Agathion - Lakinos -->
+			<skill id="23145" level="1" /> <!-- Lakinos Agathion Cute Trick -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20828" type="Armor" name="Soul Avatar Seal Bracelet - Mortia">
+		<!-- Bracelet that summons the image of Mortia as an Soul Avatar through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_c_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21162" level="1" /> <!-- Release Seal on Agathion - Mortia -->
+			<skill id="23146" level="1" /> <!-- Mortia Agathion Cute Trick -->
+			<skill id="21173" level="1" /> <!-- Enhanced Authority - WIT+1 INT+1 -->
+			<skill id="21181" level="1" /> <!-- Divine Protection - Darkness -->
+			<skill id="21184" level="1" /> <!-- Blessing of Resistance - Sleep -->
+			<skill id="21189" level="1" /> <!-- Recovery Ability - MP -->
+			<skill id="21190" level="1" /> <!-- Soul's Shield -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20829" type="Armor" name="Agathion Seal Bracelet - Mortia - Prominent Outsider Adventurer's Ability - 7-day limited period">
+		<!-- Bracelet that summons the image of Mortia as an Agathion through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_c_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="time" val="10080" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21162" level="1" /> <!-- Release Seal on Agathion - Mortia -->
+			<skill id="23146" level="1" /> <!-- Mortia Agathion Cute Trick -->
+			<skill id="23153" level="1" /> <!-- Prominent Outsider Adventurer's Ability -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20830" type="Armor" name="Soul Avatar Seal Bracelet - Heintz">
+		<!-- Bracelet that summons the image of Heintz as an Soul Avatar through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_h_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21163" level="1" /> <!-- Release Seal on Agathion - Heintz -->
+			<skill id="23147" level="1" /> <!-- Heintz Agathion Cute Trick -->
+			<skill id="21175" level="1" /> <!-- Enhanced Authority - CON+1 DEX+1 -->
+			<skill id="21180" level="1" /> <!-- Divine Protection - Earth -->
+			<skill id="21185" level="1" /> <!-- Blessing of Resistance - Decrease Speed -->
+			<skill id="21188" level="1" /> <!-- Recovery Ability - HP -->
+			<skill id="21190" level="1" /> <!-- Soul's Shield -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20831" type="Armor" name="Agathion Seal Bracelet - Hayance - Prominent Outsider Adventurer's Ability - 7-day limited period">
+		<!-- Bracelet that summons the image of Hayance as an Agathion through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_h_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="time" val="10080" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21163" level="1" /> <!-- Release Seal on Agathion - Heintz -->
+			<skill id="23147" level="1" /> <!-- Heintz Agathion Cute Trick -->
+			<skill id="23153" level="1" /> <!-- Prominent Outsider Adventurer's Ability -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20832" type="Armor" name="Soul Avatar Seal Bracelet - Meruril">
+		<!-- Bracelet that summons the image of Meruril as an Soul Avatar through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_g_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21164" level="1" /> <!-- Release Seal on Agathion - Meruril -->
+			<skill id="23148" level="1" /> <!-- Meruril Agathion Cute Trick -->
+			<skill id="21174" level="1" /> <!-- Enhanced Authority - WIT+1 MEN+1 -->
+			<skill id="21180" level="1" /> <!-- Divine Protection - Earth -->
+			<skill id="21185" level="1" /> <!-- Blessing of Resistance - Decrease Speed -->
+			<skill id="21189" level="1" /> <!-- Recovery Ability - MP -->
+			<skill id="21190" level="1" /> <!-- Soul's Shield -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20833" type="Armor" name="Agathion Seal Bracelet - Meruril - Prominent Outsider Adventurer's Ability - 7-day limited period">
+		<!-- Bracelet that summons the image of Meruril as an Agathion through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_g_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="time" val="10080" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21164" level="1" /> <!-- Release Seal on Agathion - Meruril -->
+			<skill id="23148" level="1" /> <!-- Meruril Agathion Cute Trick -->
+			<skill id="23153" level="1" /> <!-- Prominent Outsider Adventurer's Ability -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20834" type="Armor" name="Soul Avatar Seal Bracelet - Taman Zu Rapatui">
+		<!-- Bracelet that summons the image of Taman Zu Rapatui as an Soul Avatar through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_i_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21165" level="1" /> <!-- Release Seal on Agathion - Taman Zu Rapatui -->
+			<skill id="23149" level="1" /> <!-- Taman Zu Rapatui Agathion Cute Trick -->
+			<skill id="21172" level="1" /> <!-- Enhanced Authority - CON+1 STR+1 -->
+			<skill id="21178" level="1" /> <!-- Divine Protection - Fire -->
+			<skill id="21186" level="1" /> <!-- Blessing of Resistance - Bleed -->
+			<skill id="21188" level="1" /> <!-- Recovery Ability - HP -->
+			<skill id="21190" level="1" /> <!-- Soul's Shield -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20835" type="Armor" name="Agathion Seal Bracelet - Taman ze Lapatui - Prominent Outsider Adventurer's Ability - 7-day limited period">
+		<!-- Bracelet that summons the image of Taman ze Lapatui as an Agathion through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_i_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="time" val="10080" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21165" level="1" /> <!-- Release Seal on Agathion - Taman Zu Rapatui -->
+			<skill id="23149" level="1" /> <!-- Taman Zu Rapatui Agathion Cute Trick -->
+			<skill id="23153" level="1" /> <!-- Prominent Outsider Adventurer's Ability -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20836" type="Armor" name="Soul Avatar Seal Bracelet - Kaurin">
+		<!-- Bracelet that summons the image of Kaurin as an Soul Avatar through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_j_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21166" level="1" /> <!-- Release Seal on Agathion - Kaurin -->
+			<skill id="23150" level="1" /> <!-- Kaurin Agathion Cute Trick -->
+			<skill id="21173" level="1" /> <!-- Enhanced Authority - WIT+1 INT+1 -->
+			<skill id="21178" level="1" /> <!-- Divine Protection - Fire -->
+			<skill id="21186" level="1" /> <!-- Blessing of Resistance - Bleed -->
+			<skill id="21189" level="1" /> <!-- Recovery Ability - MP -->
+			<skill id="21190" level="1" /> <!-- Soul's Shield -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20837" type="Armor" name="Agathion Seal Bracelet - Kaurin - Prominent Outsider Adventurer's Ability - 7-day limited period">
+		<!-- Bracelet that summons the image of Kaurin as an Agathion through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_j_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="time" val="10080" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21166" level="1" /> <!-- Release Seal on Agathion - Kaurin -->
+			<skill id="23150" level="1" /> <!-- Kaurin Agathion Cute Trick -->
+			<skill id="23153" level="1" /> <!-- Prominent Outsider Adventurer's Ability -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20838" type="Armor" name="Soul Avatar Seal Bracelet - Ahertbein">
+		<!-- Bracelet that summons the image of Ahertbein as an Soul Avatar through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_l_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21167" level="1" /> <!-- Release Seal on Agathion - Ahertbein -->
+			<skill id="23151" level="1" /> <!-- Ahertbein Agathion Cute Trick -->
+			<skill id="21175" level="1" /> <!-- Enhanced Authority - CON+1 DEX+1 -->
+			<skill id="21179" level="1" /> <!-- Divine Protection - Wind -->
+			<skill id="21187" level="1" /> <!-- Blessing of Resistance - Stun -->
+			<skill id="21188" level="1" /> <!-- Recovery Ability - HP -->
+			<skill id="21190" level="1" /> <!-- Soul's Shield -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20839" type="Armor" name="Agathion Seal Bracelet - Ahertbein - Prominent Outsider Adventurer's Ability - 7-day limited period">
+		<!-- Bracelet that summons the image of Ahertbein as an Agathion through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_l_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="time" val="10080" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21167" level="1" /> <!-- Release Seal on Agathion - Ahertbein -->
+			<skill id="23151" level="1" /> <!-- Ahertbein Agathion Cute Trick -->
+			<skill id="23153" level="1" /> <!-- Prominent Outsider Adventurer's Ability -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20840" type="Armor" name="Soul Avatar Seal Bracelet - Naonin">
+		<!-- Bracelet that summons the image of Naonin as an Soul Avatar through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_k_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21168" level="1" /> <!-- Release Seal on Agathion - Naonin -->
+			<skill id="23152" level="1" /> <!-- Naonin Agathion Cute Trick -->
+			<skill id="21174" level="1" /> <!-- Enhanced Authority - WIT+1 MEN+1 -->
+			<skill id="21179" level="1" /> <!-- Divine Protection - Wind -->
+			<skill id="21187" level="1" /> <!-- Blessing of Resistance - Stun -->
+			<skill id="21189" level="1" /> <!-- Recovery Ability - MP -->
+			<skill id="21190" level="1" /> <!-- Soul's Shield -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20841" type="Armor" name="Agathion Seal Bracelet - Naonin - Prominent Outsider Adventurer's Ability - 7-day limited period">
+		<!-- Bracelet that summons the image of Naonin as an Agathion through the red Dimensional Door. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_aga_local2009_k_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="lbracelet" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="SILVER" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="time" val="10080" />
+		<skills>
+			<skill id="3267" level="1" /> <!-- Dismiss Agathion -->
+			<skill id="21168" level="1" /> <!-- Release Seal on Agathion - Naonin -->
+			<skill id="23152" level="1" /> <!-- Naonin Agathion Cute Trick -->
+			<skill id="23153" level="1" /> <!-- Prominent Outsider Adventurer's Ability -->
+			<skill id="3267" level="1" type="ON_UNEQUIP" /> <!-- Dismiss Agathion -->
+		</skills>
+	</item>
+	<item id="20842" type="EtcItem" name="Soul Avatar Iken Pack">
+		<!-- Wrapped pack containing a soul avatar Iken. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_gold_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20818" min="1" max="1" chance="100" /> <!-- Soul Avatar Seal Bracelet - Iken -->
+			<item id="20884" min="1" max="1" chance="100" /> <!-- Iken Character Card -->
+		</capsuled_items>
+	</item>
+	<item id="20843" type="EtcItem" name="Iken Agathion 7-Day Pack - Prominent Outsider Adventurer's Ability">
+		<!-- Wrapped pack containing an Iken Agathion (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_silver_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20819" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Iken - Prominent Outsider Adventurer's Ability - 7-day limited period -->
+			<item id="20896" min="1" max="1" chance="100" /> <!-- Red Dimensional Stone -->
+		</capsuled_items>
+	</item>
+	<item id="20844" type="EtcItem" name="Soul Avatar Lana Pack">
+		<!-- Wrapped pack containing a soul avatar Lana. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_gold_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20820" min="1" max="1" chance="100" /> <!-- Soul Avatar Seal Bracelet - Lana -->
+			<item id="20885" min="1" max="1" chance="100" /> <!-- Lana Character Card -->
+		</capsuled_items>
+	</item>
+	<item id="20845" type="EtcItem" name="Lana Agathion 7-Day Pack - Prominent Outsider Adventurer's Ability">
+		<!-- Wrapped pack containing a Lana Agathion (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_silver_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20821" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Lana - Prominent Outsider Adventurer's Ability - 7-day limited period -->
+			<item id="20896" min="1" max="1" chance="100" /> <!-- Red Dimensional Stone -->
+		</capsuled_items>
+	</item>
+	<item id="20846" type="EtcItem" name="Soul Avatar Gnocian Pack">
+		<!-- Wrapped pack containing a soul avatar Gnocian. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_gold_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20822" min="1" max="1" chance="100" /> <!-- Soul Avatar Seal Bracelet - Gnosian -->
+			<item id="20886" min="1" max="1" chance="100" /> <!-- Gnocian Character Card -->
+		</capsuled_items>
+	</item>
+	<item id="20847" type="EtcItem" name="Gnocian Agathion 7-Day Pack - Prominent Outsider Adventurer's Ability">
+		<!-- Wrapped pack containing a Gnocian Agathion (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_silver_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20823" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Gnocian - Prominent Outsider Adventurer's Ability - 7-day limited period -->
+			<item id="20896" min="1" max="1" chance="100" /> <!-- Red Dimensional Stone -->
+		</capsuled_items>
+	</item>
+	<item id="20848" type="EtcItem" name="Soul Avatar Orodriel Pack">
+		<!-- Wrapped pack containing a soul avatar Orodriel. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_gold_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20824" min="1" max="1" chance="100" /> <!-- Soul Avatar Seal Bracelet - Orodriel -->
+			<item id="20887" min="1" max="1" chance="100" /> <!-- Orodriel Character Card -->
+		</capsuled_items>
+	</item>
+	<item id="20849" type="EtcItem" name="Orodriel Agathion 7-Day Pack - Prominent Outsider Adventurer's Ability">
+		<!-- Wrapped pack containing an Orodriel Agathion (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_silver_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20825" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Orodriel - Prominent Outsider Adventurer's Ability - 7-day limited period -->
+			<item id="20896" min="1" max="1" chance="100" /> <!-- Red Dimensional Stone -->
+		</capsuled_items>
+	</item>
+	<item id="20850" type="EtcItem" name="Soul Avatar Lakinos Pack">
+		<!-- Wrapped pack containing a soul avatar Lakinos. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_gold_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20826" min="1" max="1" chance="100" /> <!-- Soul Avatar Seal Bracelet - Lakinos -->
+			<item id="20888" min="1" max="1" chance="100" /> <!-- Lakinos Character Card -->
+		</capsuled_items>
+	</item>
+	<item id="20851" type="EtcItem" name="Lakinos Agathion 7-Day Pack - Prominent Outsider Adventurer's Ability">
+		<!-- Wrapped pack containing a Lakinos Agathion (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_silver_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20827" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Lakinos - Prominent Outsider Adventurer's Ability - 7-day limited period -->
+			<item id="20896" min="1" max="1" chance="100" /> <!-- Red Dimensional Stone -->
+		</capsuled_items>
+	</item>
+	<item id="20852" type="EtcItem" name="Soul Avatar Mortia Pack">
+		<!-- Wrapped pack containing a soul avatar Mortia. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_gold_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20828" min="1" max="1" chance="100" /> <!-- Soul Avatar Seal Bracelet - Mortia -->
+			<item id="20889" min="1" max="1" chance="100" /> <!-- Mortia Character Card -->
+		</capsuled_items>
+	</item>
+	<item id="20853" type="EtcItem" name="Mortia Agathion 7-Day Pack - Prominent Outsider Adventurer's Ability">
+		<!-- Wrapped pack containing a Mortia Agathion (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_silver_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20829" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Mortia - Prominent Outsider Adventurer's Ability - 7-day limited period -->
+			<item id="20896" min="1" max="1" chance="100" /> <!-- Red Dimensional Stone -->
+		</capsuled_items>
+	</item>
+	<item id="20854" type="EtcItem" name="Soul Avatar Heintz Pack">
+		<!-- Wrapped pack containing a soul avatar Heintz. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_gold_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20830" min="1" max="1" chance="100" /> <!-- Soul Avatar Seal Bracelet - Heintz -->
+			<item id="20890" min="1" max="1" chance="100" /> <!-- Hayance Character Card -->
+		</capsuled_items>
+	</item>
+	<item id="20855" type="EtcItem" name="Hayance Agathion 7-Day Pack - Prominent Outsider Adventurer's Ability">
+		<!-- Wrapped pack containing a Hayance Agathion (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_silver_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20831" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Hayance - Prominent Outsider Adventurer's Ability - 7-day limited period -->
+			<item id="20896" min="1" max="1" chance="100" /> <!-- Red Dimensional Stone -->
+		</capsuled_items>
+	</item>
+	<item id="20856" type="EtcItem" name="Soul Avatar Meruril Pack">
+		<!-- Wrapped pack containing a soul avatar Meruril. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_gold_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20832" min="1" max="1" chance="100" /> <!-- Soul Avatar Seal Bracelet - Meruril -->
+			<item id="20891" min="1" max="1" chance="100" /> <!-- Meruril Character Card -->
+		</capsuled_items>
+	</item>
+	<item id="20857" type="EtcItem" name="Meruril Agathion 7-Day Pack - Prominent Outsider Adventurer's Ability">
+		<!-- Wrapped pack containing a Meruril Agathion (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_silver_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20833" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Meruril - Prominent Outsider Adventurer's Ability - 7-day limited period -->
+			<item id="20896" min="1" max="1" chance="100" /> <!-- Red Dimensional Stone -->
+		</capsuled_items>
+	</item>
+	<item id="20858" type="EtcItem" name="Soul Avatar Taman Zu Rapatui Pack">
+		<!-- Wrapped pack containing a Soul Avatar Taman Zu Rapatui. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_gold_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20834" min="1" max="1" chance="100" /> <!-- Soul Avatar Seal Bracelet - Taman Zu Rapatui -->
+			<item id="20892" min="1" max="1" chance="100" /> <!-- Taman ze Lapatui Character Card -->
+		</capsuled_items>
+	</item>
+	<item id="20859" type="EtcItem" name="Taman ze Lapatui Agathion 7-Day Pack - Prominent Outsider Adventurer's Ability">
+		<!-- Wrapped pack containing a Taman ze Lapatui Agathion (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_silver_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20835" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Taman ze Lapatui - Prominent Outsider Adventurer's Ability - 7-day limited period -->
+			<item id="20896" min="1" max="1" chance="100" /> <!-- Red Dimensional Stone -->
+		</capsuled_items>
+	</item>
+	<item id="20860" type="EtcItem" name="Soul Avatar Kaurin Pack">
+		<!-- Wrapped pack containing a soul avatar Kaurin. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_gold_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20836" min="1" max="1" chance="100" /> <!-- Soul Avatar Seal Bracelet - Kaurin -->
+			<item id="20893" min="1" max="1" chance="100" /> <!-- Kaurin Character Card -->
+		</capsuled_items>
+	</item>
+	<item id="20861" type="EtcItem" name="Kaurin Agathion 7-Day Pack - Prominent Outsider Adventurer's Ability">
+		<!-- Wrapped pack containing a Kaurin Agathion (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_silver_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20837" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Kaurin - Prominent Outsider Adventurer's Ability - 7-day limited period -->
+			<item id="20896" min="1" max="1" chance="100" /> <!-- Red Dimensional Stone -->
+		</capsuled_items>
+	</item>
+	<item id="20862" type="EtcItem" name="Soul Avatar Ahertbein Pack">
+		<!-- Wrapped pack containing a soul avatar Ahertbein. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_gold_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20838" min="1" max="1" chance="100" /> <!-- Soul Avatar Seal Bracelet - Ahertbein -->
+			<item id="20894" min="1" max="1" chance="100" /> <!-- Ahertbein Character Card -->
+		</capsuled_items>
+	</item>
+	<item id="20863" type="EtcItem" name="Ahertbein Agathion 7-Day Pack - Prominent Outsider Adventurer's Ability">
+		<!-- Wrapped pack containing an Ahertbein Agathion (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_silver_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20839" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Ahertbein - Prominent Outsider Adventurer's Ability - 7-day limited period -->
+			<item id="20896" min="1" max="1" chance="100" /> <!-- Red Dimensional Stone -->
+		</capsuled_items>
+	</item>
+	<item id="20864" type="EtcItem" name="Soul Avatar Naonin Pack">
+		<!-- Wrapped pack containing a soul avatar Naonin. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_gold_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20840" min="1" max="1" chance="100" /> <!-- Soul Avatar Seal Bracelet - Naonin -->
+			<item id="20895" min="1" max="1" chance="100" /> <!-- Naonin Character Card -->
+		</capsuled_items>
+	</item>
+	<item id="20865" type="EtcItem" name="Naonin Agathion 7-Day Pack - Prominent Outsider Adventurer's Ability">
+		<!-- Wrapped pack containing a Naonin Agathion (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_silver_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20841" min="1" max="1" chance="100" /> <!-- Agathion Seal Bracelet - Naonin - Prominent Outsider Adventurer's Ability - 7-day limited period -->
+			<item id="20896" min="1" max="1" chance="100" /> <!-- Red Dimensional Stone -->
+		</capsuled_items>
+	</item>
+	<item id="20866" type="EtcItem" name="Soul Avatar Set">
+		<!-- Large wrapped set pack containing 12 soul avatar packs. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_bright_gold_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20844" min="1" max="1" chance="100" /> <!-- Soul Avatar Lana Pack -->
+			<item id="20842" min="1" max="1" chance="100" /> <!-- Soul Avatar Iken Pack -->
+			<item id="20852" min="1" max="1" chance="100" /> <!-- Soul Avatar Mortia Pack -->
+			<item id="20850" min="1" max="1" chance="100" /> <!-- Soul Avatar Lakinos Pack -->
+			<item id="20848" min="1" max="1" chance="100" /> <!-- Soul Avatar Orodriel Pack -->
+			<item id="20846" min="1" max="1" chance="100" /> <!-- Soul Avatar Gnocian Pack -->
+			<item id="20856" min="1" max="1" chance="100" /> <!-- Soul Avatar Meruril Pack -->
+			<item id="20854" min="1" max="1" chance="100" /> <!-- Soul Avatar Heintz Pack -->
+			<item id="20858" min="1" max="1" chance="100" /> <!-- Soul Avatar Taman Zu Rapatui Pack -->
+			<item id="20860" min="1" max="1" chance="100" /> <!-- Soul Avatar Kaurin Pack -->
+			<item id="20864" min="1" max="1" chance="100" /> <!-- Soul Avatar Naonin Pack -->
+			<item id="20862" min="1" max="1" chance="100" /> <!-- Soul Avatar Ahertbein Pack -->
+		</capsuled_items>
+	</item>
+	<item id="20867" type="Weapon" name="Kadomas Transformation Stick - 7-day limited period">
+		<!-- Kadomas Transformation Stick. Can be used for 7 days. Cannot be exchanged or dropped. -->
+		<set name="icon" val="BranchSys.icon.br_kadomatsu_wp_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="weapon_type" val="POLE" />
+		<set name="bodypart" val="lrhand" />
+		<set name="damage_range" val="0;0;40;120" />
+		<set name="material" val="STEEL" />
+		<set name="weight" val="150" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="time" val="10080" />
+		<stats>
+			<stat type="pAtk">1</stat>
+			<stat type="mAtk">1</stat>
+			<stat type="critRate">8</stat>
+			<stat type="pAtkSpd">379</stat>
+			<stat type="randomDamage">10</stat>
+			<stat type="pAtkRange">40</stat>
+		</stats>
+		<skills>
+			<skill id="21169" level="1" /> <!-- Kadomas Transformation -->
+			<skill id="619" level="1" type="ON_UNEQUIP" /> <!-- Transform Dispel -->
+		</skills>
+	</item>
+	<item id="20868" type="EtcItem" name="Kotatz">
+		<!-- Summons Kotatz, who increases HP Regeneration by 40% and MP Regeneration by 20%. The recovery bonus effect occurs only only when summoned away at a certain distance from the town. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_kotatsu_i00" />
+		<set name="default_action" val="SKILL_REDUCE" />
+		<set name="etcitem_type" val="POTION" />
+		<set name="material" val="PAPER" />
+		<set name="reuse_delay" val="1" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ItemSkills" />
+		<skills>
+			<skill id="22127" level="1" /> <!-- Summon Warm Kotatz -->
+		</skills>
+	</item>
+	<item id="20869" type="EtcItem" name="New Year's Money">
+		<!-- Contains a Kadomas Transformation Stick and 3 Kotatz. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_otoshidama_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20867" min="1" max="1" chance="100" /> <!-- Kadomas Transformation Stick - 7-day limited period -->
+			<item id="20868" min="3" max="3" chance="100" /> <!-- Kotatz -->
+		</capsuled_items>
+	</item>
+	<item id="20870" type="EtcItem" name="Red Firework">
+		<!-- Ignites a Red Firework. For 10 minutes, increases water attribute defense by 30 and STR by 1. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. Reuse delay is 4 hours. -->
+		<set name="icon" val="BranchSys.icon.br_firecracker_red_i00" />
+		<set name="default_action" val="SKILL_REDUCE" />
+		<set name="material" val="WOOD" />
+		<set name="weight" val="100" />
+		<set name="reuse_delay" val="14400000" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ItemSkills" />
+		<skills>
+			<skill id="22131" level="1" /> <!-- Red Firework Flames -->
+		</skills>
+	</item>
+	<item id="20871" type="EtcItem" name="Gold Firework">
+		<!-- Ignites a Gold Firework. For 10 minutes, increases Resistance to Holy by 30 and CON by 1. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. Reuse delay is 4 hours. -->
+		<set name="icon" val="BranchSys.icon.br_firecracker_gold_i00" />
+		<set name="default_action" val="SKILL_REDUCE" />
+		<set name="material" val="WOOD" />
+		<set name="weight" val="100" />
+		<set name="reuse_delay" val="14400000" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ItemSkills" />
+		<skills>
+			<skill id="22132" level="1" /> <!-- Gold Firework Flames -->
+		</skills>
+	</item>
+	<item id="20872" type="EtcItem" name="Blue Firework">
+		<!-- Ignites a Blue Firework. For 10 minutes, increases fire attribute defense by 30 and DEX by 1. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. Reuse delay is 4 hours. -->
+		<set name="icon" val="BranchSys.icon.br_firecracker_blue_i00" />
+		<set name="default_action" val="SKILL_REDUCE" />
+		<set name="material" val="WOOD" />
+		<set name="weight" val="100" />
+		<set name="reuse_delay" val="14400000" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ItemSkills" />
+		<skills>
+			<skill id="22133" level="1" /> <!-- Blue Firework Flames -->
+		</skills>
+	</item>
+	<item id="20873" type="EtcItem" name="Pink Firework">
+		<!-- Ignites a Pink Firework. For 10 minutes, increases earth attribute defense by 30 and MEN by 1. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. Reuse delay is 4 hours. -->
+		<set name="icon" val="BranchSys.icon.br_firecracker_pink_i00" />
+		<set name="default_action" val="SKILL_REDUCE" />
+		<set name="material" val="WOOD" />
+		<set name="weight" val="100" />
+		<set name="reuse_delay" val="14400000" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ItemSkills" />
+		<skills>
+			<skill id="22134" level="1" /> <!-- Pink Firework Flames -->
+		</skills>
+	</item>
+	<item id="20874" type="EtcItem" name="White Firework">
+		<!-- Ignites a White Firework. For 10 minutes, increases wind attribute defense by 30 and WIT by 1. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. Reuse delay is 4 hours. -->
+		<set name="icon" val="BranchSys.icon.br_firecracker_white_i00" />
+		<set name="default_action" val="SKILL_REDUCE" />
+		<set name="material" val="WOOD" />
+		<set name="weight" val="100" />
+		<set name="reuse_delay" val="14400000" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ItemSkills" />
+		<skills>
+			<skill id="22135" level="1" /> <!-- White Firework Flames -->
+		</skills>
+	</item>
+	<item id="20875" type="EtcItem" name="Silver Firework">
+		<!-- Ignites a Silver Firework. For 10 minutes, increases Resistance to Dark by 30 and INT by 1. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. Reuse delay is 4 hours. -->
+		<set name="icon" val="BranchSys.icon.br_firecracker_silver_i00" />
+		<set name="default_action" val="SKILL_REDUCE" />
+		<set name="material" val="WOOD" />
+		<set name="weight" val="100" />
+		<set name="reuse_delay" val="14400000" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ItemSkills" />
+		<skills>
+			<skill id="22136" level="1" /> <!-- Silver Firework Flames -->
+		</skills>
+	</item>
+	<item id="20876" type="EtcItem" name="Love for All Seasons - Empower, Wild Magic">
+		<!-- For 1 hour, increases M. Atk. by 75% and the chance of magic damage by 2. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_taiwan_newyear_food_a_i00" />
+		<set name="default_action" val="SKILL_REDUCE" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="LIQUID" />
+		<set name="weight" val="5" />
+		<set name="reuse_delay" val="3000" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ItemSkills" />
+		<skills>
+			<skill id="22145" level="1" /> <!-- Love for All Seasons Empower -->
+			<skill id="22153" level="1" /> <!-- Love for All Seasons Wild Magic -->
+		</skills>
+	</item>
+	<item id="20877" type="EtcItem" name="Happy New Year - Death Whisper, Focus, Guidance">
+		<!-- For 1 hour, increases Critical attack power by 35%, Critical attack rate by 30, and accuracy by 4. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_taiwan_newyear_food_b_i00" />
+		<set name="default_action" val="SKILL_REDUCE" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="LIQUID" />
+		<set name="weight" val="5" />
+		<set name="reuse_delay" val="3000" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ItemSkills" />
+		<skills>
+			<skill id="22143" level="1" /> <!-- Happy New Year Death Whisper -->
+			<skill id="22144" level="1" /> <!-- Happy New Year Guidance -->
+			<skill id="22154" level="1" /> <!-- Happy New Year Focus -->
+		</skills>
+	</item>
+	<item id="20878" type="EtcItem" name="Female Aniruddha - Shield, Magic Barrier, Blessed Shield">
+		<!-- For 1 hour, increases P. Def. by 15, M. Def. by 30%, and Shield defense rate by 15. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_taiwan_newyear_food_c_i00" />
+		<set name="default_action" val="SKILL_REDUCE" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="LIQUID" />
+		<set name="weight" val="5" />
+		<set name="reuse_delay" val="3000" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ItemSkills" />
+		<skills>
+			<skill id="22155" level="1" /> <!-- Female Aniruddha's Blessed Shield -->
+			<skill id="22142" level="1" /> <!-- Female Aniruddha's Shield -->
+			<skill id="22150" level="1" /> <!-- Female Aniruddha's Magic Barrier -->
+		</skills>
+	</item>
+	<item id="20879" type="EtcItem" name="Kung Hei Fat Choy - Might, Berserker Spirit, Vampiric Rage">
+		<!-- Decreases P. Def. by 8%, M. Def. by 16%, and evasion by 4, and increases P. Atk. by 15%, M. Atk. by 16%, Atk. Spd. by 8%, Casting Spd. by 8%, and moving speed by 8 for 1 hour. Recovers as HP 9% of the standard short-range physical damage inflicted on the enemy. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_taiwan_newyear_food_d_i00" />
+		<set name="default_action" val="SKILL_REDUCE" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="LIQUID" />
+		<set name="weight" val="5" />
+		<set name="reuse_delay" val="3000" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ItemSkills" />
+		<skills>
+			<skill id="22149" level="1" /> <!-- Kung Hei Fat Choy Berserker Spirit -->
+			<skill id="22157" level="1" /> <!-- Kung Hei Fat Choy Might -->
+			<skill id="22147" level="1" /> <!-- Kung Hei Fat Choy Vampiric Rage -->
+		</skills>
+	</item>
+	<item id="20880" type="EtcItem" name="Chinese Feast - Clarity, Acumen, Blessed Soul">
+		<!-- For 1 hour, decreases physical skill MP consumption by 20%, magic skill's MP consumption by 10%, and song/dance skill's MP consumption by 20%. Increases Casting Spd. by 30% and Max MP by 35%. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_taiwan_newyear_food_e_i00" />
+		<set name="default_action" val="SKILL_REDUCE" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="LIQUID" />
+		<set name="weight" val="5" />
+		<set name="reuse_delay" val="3000" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ItemSkills" />
+		<skills>
+			<skill id="22146" level="1" /> <!-- Chinese Feast Greater Acumen -->
+			<skill id="22151" level="1" /> <!-- Chinese Feast Blessed Soul -->
+			<skill id="22152" level="1" /> <!-- Chinese Feast Clarity -->
+		</skills>
+	</item>
+	<item id="20881" type="EtcItem" name="Hwa Gei Bu Gwi - Decrease Weight, Haste">
+		<!-- Increases Atk. Spd. by 33% and the weight penalty interval by 9000 for 1 hour. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_taiwan_newyear_food_f_i00" />
+		<set name="default_action" val="SKILL_REDUCE" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="LIQUID" />
+		<set name="weight" val="5" />
+		<set name="reuse_delay" val="3000" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ItemSkills" />
+		<skills>
+			<skill id="22140" level="1" /> <!-- Hwa Gei Bu Gwi Haste -->
+			<skill id="22156" level="1" /> <!-- Hwa Gei Bu Gwi Decrease Weight -->
+		</skills>
+	</item>
+	<item id="20882" type="EtcItem" name="Fire Stamp - Wind Walk, Agility Blessed Body">
+		<!-- For 1 hour, increases Speed by 33, evasion rate by 4, and Max HP by 35%. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_taiwan_newyear_food_g_i00" />
+		<set name="default_action" val="SKILL_REDUCE" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="LIQUID" />
+		<set name="weight" val="5" />
+		<set name="reuse_delay" val="3000" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ItemSkills" />
+		<skills>
+			<skill id="22148" level="1" /> <!-- Branding Blessed Body -->
+			<skill id="22141" level="1" /> <!-- Branding Agility -->
+			<skill id="22139" level="1" /> <!-- Branding Wind Walk -->
+		</skills>
+	</item>
+	<item id="20883" type="EtcItem" name="Letter of Thanks">
+		<!-- Thank you letter. -->
+		<set name="icon" val="BranchSys.icon.br_thanksletter_i00" />
+		<set name="default_action" val="SHOW_HTML" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+	</item>
+	<item id="20884" type="EtcItem" name="Iken Character Card">
+		<!-- Card containing Iken's profile and story. -->
+		<set name="icon" val="icon.etc_royal_membership_i00" />
+		<set name="default_action" val="SHOW_HTML" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+	</item>
+	<item id="20885" type="EtcItem" name="Lana Character Card">
+		<!-- Card containing Lana's profile and story. -->
+		<set name="icon" val="icon.etc_royal_membership_i00" />
+		<set name="default_action" val="SHOW_HTML" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+	</item>
+	<item id="20886" type="EtcItem" name="Gnocian Character Card">
+		<!-- Card containing Gnocian's profile and story. -->
+		<set name="icon" val="icon.etc_royal_membership_i00" />
+		<set name="default_action" val="SHOW_HTML" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+	</item>
+	<item id="20887" type="EtcItem" name="Orodriel Character Card">
+		<!-- Card containing Orodriel's profile and story. -->
+		<set name="icon" val="icon.etc_royal_membership_i00" />
+		<set name="default_action" val="SHOW_HTML" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+	</item>
+	<item id="20888" type="EtcItem" name="Lakinos Character Card">
+		<!-- Card containing Lakinos's profile and story. -->
+		<set name="icon" val="icon.etc_royal_membership_i00" />
+		<set name="default_action" val="SHOW_HTML" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+	</item>
+	<item id="20889" type="EtcItem" name="Mortia Character Card">
+		<!-- Card containing Mortia's profile and story. -->
+		<set name="icon" val="icon.etc_royal_membership_i00" />
+		<set name="default_action" val="SHOW_HTML" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+	</item>
+	<item id="20890" type="EtcItem" name="Hayance Character Card">
+		<!-- Card containing Hayance's profile and story. -->
+		<set name="icon" val="icon.etc_royal_membership_i00" />
+		<set name="default_action" val="SHOW_HTML" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+	</item>
+	<item id="20891" type="EtcItem" name="Meruril Character Card">
+		<!-- Card containing Meruril's profile and story. -->
+		<set name="icon" val="icon.etc_royal_membership_i00" />
+		<set name="default_action" val="SHOW_HTML" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+	</item>
+	<item id="20892" type="EtcItem" name="Taman ze Lapatui Character Card">
+		<!-- Card containing Taman ze Lapatui's profile and story. -->
+		<set name="icon" val="icon.etc_royal_membership_i00" />
+		<set name="default_action" val="SHOW_HTML" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+	</item>
+	<item id="20893" type="EtcItem" name="Kaurin Character Card">
+		<!-- Card containing Kaurin's profile and story. -->
+		<set name="icon" val="icon.etc_royal_membership_i00" />
+		<set name="default_action" val="SHOW_HTML" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+	</item>
+	<item id="20894" type="EtcItem" name="Ahertbein Character Card">
+		<!-- Card containing Ahertbein's profile and story. -->
+		<set name="icon" val="icon.etc_royal_membership_i00" />
+		<set name="default_action" val="SHOW_HTML" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+	</item>
+	<item id="20895" type="EtcItem" name="Naonin Character Card">
+		<!-- Card containing Naonin's profile and story. -->
+		<set name="icon" val="icon.etc_royal_membership_i00" />
+		<set name="default_action" val="SHOW_HTML" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+	</item>
+	<item id="20896" type="EtcItem" name="Red Dimensional Stone">
+		<!-- Stone that distorts space and time. When used after clearing the Pailaka quest, you can enter 1 more time. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. Reuse delay is 5 hours. -->
+		<set name="icon" val="BranchSys.icon.br_stone_of_time_i00" />
+		<set name="default_action" val="SKILL_REDUCE" />
+		<set name="material" val="GOLD" />
+		<set name="shared_reuse_group" val="102" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ItemSkills" />
+		<skills>
+			<skill id="22129" level="1" /> <!-- Red Dimensional Stone -->
+		</skills>
+	</item>
+	<item id="20897" type="Armor" name="Purple Paper Mask - Blessed Soul - 7-day limited period">
+		<!-- Brilliant mask made of purple paper. Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. Special skill reuse delay is 1 hour. -->
+		<set name="icon" val="BranchSys.icon.br_party_mask_purple_i00" />
+		<set name="default_action" val="EQUIP" />
+		<set name="bodypart" val="hairall" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="WOOD" />
+		<set name="weight" val="10" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_premium" val="true" />
+		<set name="is_oly_restricted" val="true" />
+		<set name="time" val="10080" />
+		<skills>
+			<skill id="21170" level="4" /> <!-- Blessed Soul -->
+		</skills>
+	</item>
+	<item id="20898" type="EtcItem" name="Purple Paper Mask 7-Day Pack - Blessed Soul">
+		<!-- Wrapped pack containing a Purple Paper Mask (7 day). Cannot be exchanged, dropped, or sold. Can be stored in a private warehouse. -->
+		<set name="icon" val="BranchSys.icon.br_four_leaf_clover_box_i00" />
+		<set name="default_action" val="PEEL" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="PAPER" />
+		<set name="weight" val="100" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ExtractableItems" />
+		<capsuled_items>
+			<item id="20897" min="1" max="1" chance="100" /> <!-- Purple Paper Mask - Blessed Soul - 7-day limited period -->
+		</capsuled_items>
+	</item>
+	<item id="20899" type="EtcItem" name="Mango Dessert">
+		<!-- Fresh, sweet mango and flavorful sweet rice. Fully replenishes vitality upon use. Re-use time is 60 minutes. -->
+		<set name="icon" val="BranchSys.icon.br_thai_desert_i00" />
+		<set name="default_action" val="SKILL_REDUCE" />
+		<set name="etcitem_type" val="POTION" />
+		<set name="immediate_effect" val="true" />
+		<set name="material" val="LIQUID" />
+		<set name="weight" val="5" />
+		<set name="reuse_delay" val="3000" />
+		<set name="is_tradable" val="false" />
+		<set name="is_dropable" val="false" />
+		<set name="is_sellable" val="false" />
+		<set name="is_depositable" val="false" />
+		<set name="is_stackable" val="true" />
+		<set name="is_premium" val="true" />
+		<set name="is_freightable" val="true" />
+		<set name="handler" val="ItemSkills" />
+		<skills>
+			<skill id="22138" level="1" /> <!-- Mango Dessert -->
+		</skills>
+	</item>
+</list>

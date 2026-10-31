@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list enabled="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/spawns.xsd">
+	<spawn name="24_11">
+		<npc id="31035" x="134175" y="-197443" z="-3648" heading="1527" respawnDelay="60" /> <!-- Defender -->
+		<npc id="31035" x="135942" y="-199379" z="-3560" heading="36738" respawnDelay="60" /> <!-- Defender -->
+		<npc id="31035" x="138565" y="-212712" z="-3536" heading="58647" respawnDelay="60" /> <!-- Defender -->
+		<npc id="31035" x="142921" y="-209292" z="-3632" heading="28184" respawnDelay="60" /> <!-- Defender -->
+		<npc id="31035" x="150281" y="-217843" z="-3424" heading="65028" respawnDelay="60" /> <!-- Defender -->
+		<npc id="31035" x="160293" y="-218195" z="-3544" heading="60956" respawnDelay="60" /> <!-- Defender -->
+		<npc id="30556" x="154173" y="-220088" z="-3428" heading="5473" respawnDelay="60" /> <!-- Toma - Master -->
+	</spawn>
+</list>

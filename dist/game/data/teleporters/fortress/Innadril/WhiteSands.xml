@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../../xsd/teleporterData.xsd">
+	<npc id="35896"> <!-- Foreman -->
+		<teleport name="tel1" type="OTHER">
+			<location name="Fortress West Gate" x="116336" y="203775" z="-3336" />
+			<location name="Fortress East Gate" x="120487" y="206093" z="-3336" />
+			<location name="Heine Town Square" x="111455" y="219400" z="-3546" />
+			<location name="Front of the Innadril Castle Gate" x="117608" y="241660" z="-1408" />
+		</teleport>
+		<teleport name="tel2" type="OTHER">
+			<location name="Fortress West Gate" x="116336" y="203775" z="-3336" />
+			<location name="Fortress East Gate" x="120487" y="206093" z="-3336" />
+			<location name="Heine Town Square" x="111455" y="219400" z="-3546" />
+			<location name="Front of the Innadril Castle Gate" x="117608" y="241660" z="-1408" />
+			<location name="Field of Silence Center" x="80987" y="182423" z="-3504" feeCount="500" />
+			<location name="Field of Whispers Center" x="86147" y="218268" z="-3592" feeCount="500" />
+			<location name="The Center of Alligator Island" x="113708" y="178387" z="-3232" feeCount="500" />
+			<location name="Inside the Garden of Eva" x="82693" y="242220" z="-6712" feeCount="500" />
+		</teleport>
+	</npc>
+</list>

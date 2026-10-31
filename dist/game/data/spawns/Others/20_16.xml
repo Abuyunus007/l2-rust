@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list enabled="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/spawns.xsd">
+	<spawn name="20_16">
+		<npc id="4327" x="28006" y="-49397" z="-1319" heading="15229" /> <!-- Worshipper -->
+		<npc id="4328" x="27875" y="-49312" z="-1317" heading="52676" /> <!-- Altar Guard -->
+		<npc id="4328" x="28150" y="-49302" z="-1320" heading="6133" /> <!-- Altar Guard -->
+	</spawn>
+</list>

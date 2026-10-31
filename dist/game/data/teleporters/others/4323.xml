@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/teleporterData.xsd">
+	<npc id="4323"> <!-- Photo Snow -->
+		<teleport type="OTHER">
+			<location x="-61342" y="-57686" z="-1388" /> <!-- Photo Snow - Clock Tower -->
+		</teleport>
+	</npc>
+</list>

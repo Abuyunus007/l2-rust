@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list enabled="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/spawns.xsd">
+	<spawn name="16_24">
+		<npc id="30405" x="-115080" y="222168" z="-2928" heading="42000" respawnDelay="60" /> <!-- Marius -->
+		<npc id="30407" x="-104240" y="222064" z="-3440" heading="16384" respawnDelay="60" /> <!-- Mesella -->
+		<npc id="30497" x="-114685" y="222291" z="-2928" heading="44000" respawnDelay="60" /> <!-- Edmond -->
+		<npc id="31032" x="-114731" y="221050" z="-2944" heading="51830" respawnDelay="60" /> <!-- Guard -->
+		<npc id="31032" x="-113552" y="220493" z="-2912" heading="22404" respawnDelay="60" /> <!-- Guard -->
+		<npc id="31032" x="-108073" y="223050" z="-3320" heading="65252" respawnDelay="60" /> <!-- Guard -->
+		<npc id="31032" x="-107079" y="222548" z="-3504" heading="60658" respawnDelay="60" /> <!-- Guard -->
+		<npc id="31032" x="-104900" y="218224" z="-2960" heading="62614" respawnDelay="60" /> <!-- Guard -->
+		<npc id="31032" x="-103715" y="219240" z="-2872" heading="19724" respawnDelay="60" /> <!-- Guard -->
+	</spawn>
+</list>

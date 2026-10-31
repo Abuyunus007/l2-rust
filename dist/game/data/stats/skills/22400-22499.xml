@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/skills.xsd">
+	<skill id="22400" levels="1" name="Transformation Scroll - Zaken">
+		<!-- Transformed into Zaken. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>22325</itemConsumeId> <!-- Transformation Scroll: Zaken -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>305</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22401" levels="1" name="Transformation Scroll - Ranku">
+		<!-- Transformed into Ranku. -->
+		<icon>icon.skilltransform1</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1800</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>22324</itemConsumeId> <!-- Transformation Scroll: Ranku -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>309</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22402" levels="1" name="Juju Agathion's Gift">
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+	<skill id="22403" levels="1" name="Extra Entrance Pass - Kamaloka (Hall of the Abyss)">
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+	<skill id="22404" levels="1" name="Pathfinder's Reward">
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+	<skill id="22405" levels="1" name="S84 Top-Grade Weapon Box">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="6.25">
+						<item id="15544" count="1" /> <!-- Eternal Core Sword -->
+					</item>
+					<item chance="6.25">
+						<item id="15545" count="1" /> <!-- Mamba Edge -->
+					</item>
+					<item chance="6.25">
+						<item id="15546" count="1" /> <!-- Eversor Mace -->
+					</item>
+					<item chance="6.25">
+						<item id="15547" count="1" /> <!-- Contristo Hammer -->
+					</item>
+					<item chance="6.25">
+						<item id="15548" count="1" /> <!-- Lava Saw -->
+					</item>
+					<item chance="6.25">
+						<item id="15549" count="1" /> <!-- Jade Claw -->
+					</item>
+					<item chance="6.25">
+						<item id="15550" count="1" /> <!-- Demitelum -->
+					</item>
+					<item chance="6.25">
+						<item id="15551" count="1" /> <!-- Sacredium -->
+					</item>
+					<item chance="6.25">
+						<item id="15552" count="1" /> <!-- Cyclic Cane -->
+					</item>
+					<item chance="6.25">
+						<item id="15553" count="1" /> <!-- Archangel Sword -->
+					</item>
+					<item chance="6.25">
+						<item id="15554" count="1" /> <!-- Recurve Thorne Bow -->
+					</item>
+					<item chance="6.25">
+						<item id="15555" count="1" /> <!-- Heavenstare Rapier -->
+					</item>
+					<item chance="6.25">
+						<item id="15556" count="1" /> <!-- Pyseal Blade -->
+					</item>
+					<item chance="6.25">
+						<item id="15557" count="1" /> <!-- Thorne Crossbow -->
+					</item>
+					<item chance="6.25">
+						<item id="16156" count="1" /> <!-- Mamba Edge Dual Daggers -->
+					</item>
+					<item chance="6.25">
+						<item id="16158" count="1" /> <!-- Eternal Core Dual Sword -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22406" levels="1" name="Ellegia Armor Box">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="5.8824">
+						<item id="15572" count="1" /> <!-- Elegia Helmet -->
+					</item>
+					<item chance="5.8824">
+						<item id="15573" count="1" /> <!-- Elegia Leather Helmet -->
+					</item>
+					<item chance="5.8824">
+						<item id="15574" count="1" /> <!-- Elegia Circlet -->
+					</item>
+					<item chance="5.8824">
+						<item id="15575" count="1" /> <!-- Elegia Breastplate -->
+					</item>
+					<item chance="5.8824">
+						<item id="15576" count="1" /> <!-- Elegia Leather Breastplate -->
+					</item>
+					<item chance="5.8824">
+						<item id="15577" count="1" /> <!-- Elegia Tunic -->
+					</item>
+					<item chance="5.8824">
+						<item id="15578" count="1" /> <!-- Elegia Gaiter -->
+					</item>
+					<item chance="5.8824">
+						<item id="15579" count="1" /> <!-- Elegia Leather Legging -->
+					</item>
+					<item chance="5.8824">
+						<item id="15580" count="1" /> <!-- Elegia Stockings -->
+					</item>
+					<item chance="5.8824">
+						<item id="15581" count="1" /> <!-- Elegia Gauntlet -->
+					</item>
+					<item chance="5.8824">
+						<item id="15582" count="1" /> <!-- Elegia Leather Gloves -->
+					</item>
+					<item chance="5.8824">
+						<item id="15583" count="1" /> <!-- Elegia Gloves -->
+					</item>
+					<item chance="5.8824">
+						<item id="15584" count="1" /> <!-- Elegia Boots -->
+					</item>
+					<item chance="5.8824">
+						<item id="15585" count="1" /> <!-- Elegia Leather Boots -->
+					</item>
+					<item chance="5.8824">
+						<item id="15586" count="1" /> <!-- Elegia Shoes -->
+					</item>
+					<item chance="5.8824">
+						<item id="15587" count="1" /> <!-- Elegia Shield -->
+					</item>
+					<item chance="5.8816">
+						<item id="15588" count="1" /> <!-- Elegia Sigil -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="22407" levels="1" name="PC Cafe Energy">
+		<!-- For 60 minutes, recovers Vitality when Exp. is acquired through hunting. -->
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+	<skill id="22408" levels="1" name="Enchantment Tool Box">
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+	<skill id="22409" levels="1" name="Rune of Fate">
+		<!-- Increases acquired XP and SP by 200%. -->
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+	</skill>
+</list>

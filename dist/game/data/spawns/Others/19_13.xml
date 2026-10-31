@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list enabled="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/spawns.xsd">
+	<spawn name="19_13">
+		<npc id="31036" x="-12047" y="-139035" z="-2048" heading="0" respawnDelay="60" /> <!-- Centurion -->
+		<npc id="31036" x="-6634" y="-132558" z="-2984" heading="0" respawnDelay="60" /> <!-- Centurion -->
+	</spawn>
+</list>

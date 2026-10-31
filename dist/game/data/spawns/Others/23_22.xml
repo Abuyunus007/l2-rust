@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list enabled="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/spawns.xsd">
+	<spawn name="23_22">
+		<npc id="30640" x="106345" y="135523" z="-3408" heading="0" respawnDelay="60" /> <!-- Brynthea -->
+		<npc id="31100" x="117872" y="132800" z="-4829" heading="32500" respawnDelay="60" /> <!-- Gatekeeper Ziggurat -->
+		<npc id="31108" x="118640" y="132800" z="-4832" heading="16500" respawnDelay="60" /> <!-- Gatekeeper Ziggurat -->
+		<npc id="31503" x="118387" y="132477" z="-4824" heading="16000" respawnDelay="60" /> <!-- Dimensional Gate Keeper -->
+	</spawn>
+</list>

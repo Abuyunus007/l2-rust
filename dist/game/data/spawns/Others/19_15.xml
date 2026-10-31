@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list enabled="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/spawns.xsd">
+	<spawn name="19_15">
+		<npc id="27199" x="-16732" y="-79832" z="-3616" heading="0" respawnDelay="180" /> <!-- Crimson Werewolf -->
+		<npc id="30669" x="-9563" y="-89959" z="-2320" heading="0" respawnDelay="60" /> <!-- Kakan -->
+		<npc id="31036" x="-22184" y="-94711" z="-3496" heading="0" respawnDelay="60" /> <!-- Centurion -->
+		<npc id="31036" x="-14792" y="-80536" z="-3400" heading="16719" respawnDelay="60" /> <!-- Centurion -->
+		<npc id="31036" x="-4780" y="-88368" z="-2736" heading="0" respawnDelay="60" /> <!-- Centurion -->
+	</spawn>
+</list>

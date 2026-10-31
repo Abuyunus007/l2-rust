@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list enabled="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/spawns.xsd">
+	<spawn name="22_24">
+		<npc id="31102" x="82688" y="209216" z="-5437" heading="32500" respawnDelay="60" /> <!-- Gatekeeper Ziggurat -->
+		<npc id="31110" x="83440" y="209216" z="-5440" heading="16500" respawnDelay="60" /> <!-- Gatekeeper Ziggurat -->
+		<npc id="31505" x="83187" y="208917" z="-5465" heading="16000" respawnDelay="60" /> <!-- Dimensional Gate Keeper -->
+		<npc id="32643" x="81181" y="226516" z="-3584" heading="0" respawnDelay="60" /> <!-- Athenia -->
+		<npc id="32644" x="81404" y="226771" z="-3600" heading="50960" respawnDelay="60" /> <!-- Piazza -->
+		<npc id="32647" x="81232" y="226688" z="-3584" heading="57000" respawnDelay="60" /> <!-- Atra -->
+	</spawn>
+</list>

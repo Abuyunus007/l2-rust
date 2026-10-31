@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<instance id="45" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/instance.xsd">
+	<activityTime val="90" />
+	<allowSummon val="false" />
+	<emptyDestroyTime val="3000" />
+	<exitPoint x="143420" y="-59058" z="-3472" />
+	<spawnlist>
+		<group name="general">
+			<npc id="32502" x="125536" y="-40928" z="-3780" heading="8192" /> <!-- Ketra Orc Supporter -->
+			<npc id="32509" x="113820" y="-47588" z="-2668" heading="0" /> <!-- Ketra Orc Intelligence Officer -->
+			<npc id="32509" x="107552" y="-53152" z="-2448" heading="0" /> <!-- Ketra Orc Intelligence Officer -->
+			<npc id="32509" x="110144" y="-41260" z="-2260" heading="36864" /> <!-- Ketra Orc Intelligence Officer -->
+			<npc id="18660" x="105785" y="-41785" z="-1810" heading="32768" /> <!-- Latana -->
+			<npc id="18603" x="105785" y="-41785" z="-1810" heading="32768" /> <!-- Camera -->
+			<npc id="18635" x="122077" y="-46098" z="-2914" heading="5028" /> <!-- Varka Silenos Recruit -->
+			<npc id="18635" x="122019" y="-45634" z="-2908" heading="64841" /> <!-- Varka Silenos Recruit -->
+			<npc id="18635" x="117184" y="-51722" z="-2575" heading="55468" /> <!-- Varka Silenos Recruit -->
+			<npc id="18635" x="116876" y="-51937" z="-2572" heading="59301" /> <!-- Varka Silenos Recruit -->
+			<npc id="18636" x="122023" y="-45769" z="-2910" heading="63593" /> <!-- Varka Silenos Footman -->
+			<npc id="18636" x="122050" y="-45999" z="-2910" heading="1701" /> <!-- Varka Silenos Footman -->
+			<npc id="18636" x="117097" y="-51774" z="-2577" heading="51453" /> <!-- Varka Silenos Footman -->
+			<npc id="18636" x="116926" y="-51876" z="-2580" heading="56322" /> <!-- Varka Silenos Footman -->
+			<npc id="18642" x="117013" y="-51840" z="-2578" heading="55135" /> <!-- Varka Silenos Warrior -->
+			<npc id="18642" x="122038" y="-45904" z="-2914" heading="771" /> <!-- Varka Silenos Warrior -->
+			<npc id="18646" x="116054" y="-46439" z="-2637" heading="63477" /> <!-- Varka Silenos Officer -->
+			<npc id="18646" x="116057" y="-46521" z="-2644" heading="65025" /> <!-- Varka Silenos Officer -->
+			<npc id="18646" x="116503" y="-55918" z="-2449" heading="589" /> <!-- Varka Silenos Officer -->
+			<npc id="18646" x="116490" y="-56022" z="-2445" heading="61772" /> <!-- Varka Silenos Officer -->
+			<npc id="18646" x="116075" y="-50463" z="-2642" heading="53954" /> <!-- Varka Silenos Officer -->
+			<npc id="18646" x="116020" y="-50497" z="-2643" heading="55751" /> <!-- Varka Silenos Officer -->
+			<npc id="18649" x="111616" y="-43922" z="-2635" heading="60699" /> <!-- Varka Silenos Great Magus -->
+			<npc id="18649" x="110110" y="-39799" z="-1850" heading="46038" /> <!-- Varka Silenos Great Magus -->
+			<npc id="18649" x="109955" y="-39811" z="-1855" heading="48647" /> <!-- Varka Silenos Great Magus -->
+			<npc id="18649" x="111606" y="-43746" z="-2633" heading="62267" /> <!-- Varka Silenos Great Magus -->
+			<npc id="18649" x="111614" y="-44071" z="-2642" heading="63794" /> <!-- Varka Silenos Great Magus -->
+			<npc id="18650" x="109874" y="-39833" z="-1837" heading="48408" /> <!-- Varka Silenos General -->
+			<npc id="18650" x="111602" y="-43846" z="-2638" heading="63427" /> <!-- Varka Silenos General -->
+			<npc id="18650" x="110205" y="-39800" z="-1840" heading="46882" /> <!-- Varka Silenos General -->
+			<npc id="18650" x="111618" y="-44003" z="-2637" heading="59709" /> <!-- Varka Silenos General -->
+			<npc id="18650" x="111619" y="-44129" z="-2650" heading="2365" /> <!-- Varka Silenos General -->
+			<npc id="18653" x="116213" y="-50301" z="-2622" heading="50611" /> <!-- Varka's Elite Guard -->
+			<npc id="18653" x="116432" y="-55729" z="-2441" heading="65250" /> <!-- Varka's Elite Guard -->
+			<npc id="18653" x="115780" y="-50465" z="-2620" heading="52135" /> <!-- Varka's Elite Guard -->
+			<npc id="18653" x="116433" y="-56194" z="-2432" heading="927" /> <!-- Varka's Elite Guard -->
+			<npc id="18653" x="115997" y="-46271" z="-2637" heading="63732" /> <!-- Varka's Elite Guard -->
+			<npc id="18653" x="116063" y="-46680" z="-2658" heading="4323" /> <!-- Varka's Elite Guard -->
+			<npc id="18654" x="116155" y="-50420" z="-2635" heading="53262" /> <!-- Varka's Commander -->
+			<npc id="18654" x="115952" y="-50528" z="-2646" heading="52507" /> <!-- Varka's Commander -->
+			<npc id="18654" x="116481" y="-56108" z="-2437" heading="62531" /> <!-- Varka's Commander -->
+			<npc id="18654" x="116499" y="-55822" z="-2449" heading="63477" /> <!-- Varka's Commander -->
+			<npc id="18654" x="116056" y="-46341" z="-2630" heading="63791" /> <!-- Varka's Commander -->
+			<npc id="18654" x="116084" y="-46587" z="-2651" heading="1141" /> <!-- Varka's Commander -->
+			<npc id="18655" x="108892" y="-41031" z="-2204" heading="64381" /> <!-- Varka's Head Guard -->
+			<npc id="18655" x="108877" y="-41436" z="-2144" heading="64321" /> <!-- Varka's Head Guard -->
+			<npc id="18655" x="109326" y="-45781" z="-2235" heading="5945" /> <!-- Varka's Head Guard -->
+			<npc id="18655" x="109584" y="-46100" z="-2263" heading="9356" /> <!-- Varka's Head Guard -->
+			<npc id="18655" x="108862" y="-41323" z="-2174" heading="62422" /> <!-- Varka's Head Guard -->
+			<npc id="18655" x="108886" y="-41185" z="-2196" heading="64884" /> <!-- Varka's Head Guard -->
+			<npc id="18655" x="109458" y="-45980" z="-2263" heading="6915" /> <!-- Varka's Head Guard -->
+			<npc id="18657" x="109393" y="-45893" z="-2253" heading="5549" /> <!-- Prophet's Guard -->
+			<npc id="18657" x="109516" y="-46032" z="-2268" heading="4362" /> <!-- Prophet's Guard -->
+			<npc id="18657" x="109272" y="-45665" z="-2210" heading="4731" /> <!-- Prophet's Guard -->
+			<npc id="18657" x="108888" y="-41114" z="-2195" heading="64256" /> <!-- Prophet's Guard -->
+			<npc id="18657" x="108878" y="-41260" z="-2188" heading="64876" /> <!-- Prophet's Guard -->
+			<npc id="18657" x="108869" y="-41376" z="-2163" heading="2280" /> <!-- Prophet's Guard -->
+			<npc id="18637" x="123782" y="-42604" z="-3307" heading="0" /> <!-- Grazing Antelope -->
+			<npc id="18637" x="120402" y="-43463" z="-2964" heading="0" /> <!-- Grazing Antelope -->
+			<npc id="18637" x="120427" y="-43644" z="-2969" heading="0" /> <!-- Grazing Antelope -->
+			<npc id="18637" x="121722" y="-42506" z="-3156" heading="0" /> <!-- Grazing Antelope -->
+			<npc id="18637" x="121693" y="-43454" z="-3134" heading="0" /> <!-- Grazing Antelope -->
+			<npc id="18637" x="123598" y="-49856" z="-2133" heading="0" /> <!-- Grazing Antelope -->
+			<npc id="18637" x="124680" y="-50048" z="-2377" heading="0" /> <!-- Grazing Antelope -->
+			<npc id="18637" x="125470" y="-51913" z="-2524" heading="0" /> <!-- Grazing Antelope -->
+			<npc id="18637" x="125395" y="-50035" z="-2291" heading="0" /> <!-- Grazing Antelope -->
+			<npc id="18643" x="121315" y="-55119" z="-2321" heading="0" /> <!-- Grazing Antelope -->
+			<npc id="18643" x="119375" y="-54564" z="-2276" heading="0" /> <!-- Grazing Antelope -->
+			<npc id="18643" x="118930" y="-54242" z="-2237" heading="0" /> <!-- Grazing Antelope -->
+			<npc id="18647" x="110654" y="-53803" z="-2870" heading="0" /> <!-- Grazing Flava -->
+			<npc id="18647" x="112090" y="-55942" z="-2790" heading="0" /> <!-- Grazing Flava -->
+			<npc id="18647" x="112704" y="-53694" z="-2889" heading="0" /> <!-- Grazing Flava -->
+			<npc id="18647" x="111280" y="-55314" z="-2779" heading="0" /> <!-- Grazing Flava -->
+			<npc id="18647" x="112102" y="-53742" z="-2730" heading="0" /> <!-- Grazing Flava -->
+			<npc id="18647" x="107798" y="-53698" z="-2562" heading="0" /> <!-- Grazing Flava -->
+			<npc id="18647" x="108601" y="-51983" z="-2080" heading="0" /> <!-- Grazing Flava -->
+			<npc id="18647" x="107948" y="-52044" z="-2635" heading="0" /> <!-- Grazing Flava -->
+			<npc id="18647" x="108377" y="-52227" z="-2586" heading="0" /> <!-- Grazing Flava -->
+			<npc id="18647" x="108602" y="-55034" z="-2150" heading="0" /> <!-- Grazing Flava -->
+			<npc id="18651" x="114769" y="-39194" z="-2385" heading="0" /> <!-- Grazing Elder Antelope -->
+			<npc id="18651" x="115411" y="-39397" z="-2134" heading="0" /> <!-- Grazing Elder Antelope -->
+			<npc id="18651" x="114844" y="-40053" z="-2502" heading="0" /> <!-- Grazing Elder Antelope -->
+			<npc id="18651" x="114655" y="-39025" z="-2474" heading="0" /> <!-- Grazing Elder Antelope -->
+			<npc id="18651" x="115067" y="-39559" z="-2255" heading="0" /> <!-- Grazing Elder Antelope -->
+			<npc id="18651" x="108588" y="-36039" z="-1107" heading="0" /> <!-- Grazing Elder Antelope -->
+			<npc id="18651" x="109101" y="-37148" z="-981" heading="0" /> <!-- Grazing Elder Antelope -->
+			<npc id="18651" x="109111" y="-36812" z="-1104" heading="0" /> <!-- Grazing Elder Antelope -->
+			<npc id="18651" x="108971" y="-36469" z="-751" heading="0" /> <!-- Grazing Elder Antelope -->
+			<npc id="18651" x="109286" y="-36105" z="-1214" heading="0" /> <!-- Grazing Elder Antelope -->
+		</group>
+	</spawnlist>
+</instance>

@@ -1,0 +1,1438 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/skills.xsd">
+	<skill id="6400" levels="1" name="Cokrakon Dwindling Velocity">
+		<!-- Casting Spd. is decreased by 20%. -->
+		<icon>icon.skill1386</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>CASTING_TIME_UP</abnormalType>
+		<castRange>900</castRange>
+		<effectPoint>-1000</effectPoint>
+		<effectRange>1400</effectRange>
+		<hitTime>2000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>85</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<reuseDelay>2000</reuseDelay>
+		<effects>
+			<effect name="Debuff">
+				<mul stat="mAtkSpd">0.8</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6401" levels="1" name="Cokrakon Wheeling Clow">
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>150</affectRange>
+		<castRange>900</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1200</effectRange>
+		<hitTime>2000</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>13688</power>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6402" levels="5" name="Torumba Poison Strike">
+		<!-- Level 1: You are afflicted with acute poisoning. You will lose 100 HP every second for 60 seconds. -->
+		<!-- Level 2: You are afflicted with acute poisoning. You will lose 220 HP every second for 60 seconds. -->
+		<!-- Level 3: You are afflicted with acute poisoning. You will lose 440 HP every second for 60 seconds. -->
+		<!-- Level 4: You are afflicted with acute poisoning. You will lose 880 HP every second for 60 seconds. -->
+		<!-- Level 5: You are afflicted with acute poisoning. You will lose 1600 HP every second for 60 seconds. -->
+		<table name="#abnormalLevels">11 12 13 14 15</table>
+		<table name="#dot">100 220 440 880 1600</table>
+		<icon>icon.skill0129</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>POISON</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<basicProperty>CON</basicProperty>
+		<castRange>2000</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>2200</effectRange>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>-1</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<trait>POISON</trait>
+		<effects>
+			<effect name="DamOverTime" ticks="5">
+				<power>#dot</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6403" levels="1" name="Torumba Numbing Poison">
+		<!-- Decreases Moving Spd. by 20% and causes you to lose 58 HP per second for 10 seconds. -->
+		<icon>icon.skill1160</icon>
+		<operateType>A2</operateType>
+		<targetType>AREA</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>SPEED_DOWN</abnormalType>
+		<activateRate>80</activateRate>
+		<affectRange>300</affectRange>
+		<basicProperty>MEN</basicProperty>
+		<castRange>60</castRange>
+		<effectPoint>-1</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>1500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>13688</power>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="DamOverTime" ticks="5">
+				<power>58</power>
+				<mul stat="runSpd">0.8</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6404" levels="1" name="Torumba Poison Swing">
+		<!-- Moving Spd. is decreased by 70% for 30 seconds. -->
+		<icon>icon.skill1160</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>SPEED_DOWN</abnormalType>
+		<activateRate>80</activateRate>
+		<affectRange>200</affectRange>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<hitTime>1500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>13688</power>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Debuff">
+				<mul stat="runSpd">0.3</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6405" levels="1" name="Torumba Roar">
+		<!-- Moving Spd. increases and skill usage time decreases. -->
+		<icon>icon.skill1336</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>CASTING_TIME_DOWN</abnormalType>
+		<abnormalVisualEffect>SILENCE</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>1000</effectPoint>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>56</mpConsume>
+		<mpInitialConsume>14</mpInitialConsume>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="Debuff">
+				<add stat="runSpd">20</add>
+				<mul stat="pAtkSpd">1.2</mul>
+				<mul stat="mAtkSpd">1.2</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6406" levels="1" name="Torumba's Plague">
+		<!-- All actions are sealed by Torumba's special ability. -->
+		<icon>icon.skill4111</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>99</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>SILENCE_ALL</abnormalType>
+		<abnormalVisualEffect>FLESH_STONE</abnormalVisualEffect>
+		<castRange>1500</castRange>
+		<effectRange>2000</effectRange>
+		<isDebuff>true</isDebuff>
+		<magicLevel>-1</magicLevel>
+		<effects>
+			<effect name="Petrification" />
+		</effects>
+	</skill>
+	<skill id="6407" levels="1" name="Torumba's Constraint">
+		<!-- Prohibits resurrection. -->
+		<icon>icon.skill5919</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>BLOCK_RESURRECTION</abnormalType>
+		<castRange>300</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>600</effectRange>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>-2</magicLevel>
+		<mpConsume>60</mpConsume>
+		<mpInitialConsume>15</mpInitialConsume>
+		<stayAfterDeath>true</stayAfterDeath>
+		<effects>
+			<effect name="BlockResurrection" />
+		</effects>
+	</skill>
+	<skill id="6408" levels="1" name="Soul Weakness">
+		<!-- Your body and soul have been pushed to their limits. You are temporarily unable to transform into Treykan. -->
+		<icon>icon.skill5919</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>BLOCK_TRANSFORM</abnormalType>
+		<castRange>500</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>600</effectRange>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>-2</magicLevel>
+		<mpConsume>60</mpConsume>
+		<mpInitialConsume>15</mpInitialConsume>
+	</skill>
+	<skill id="6409" levels="1" name="Reptilikon Earthquake">
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>200</affectRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-1000</effectPoint>
+		<hitTime>1500</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>13688</power>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6410" levels="1" name="Reptilikon Rush">
+		<!-- Momentarily causes shock and stuns the enemy for 5 seconds. -->
+		<icon>icon.skill0100</icon>
+		<operateType>A2</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>5</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<affectRange>100</affectRange>
+		<basicProperty>CON</basicProperty>
+		<castRange>60</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>400</effectRange>
+		<fanRange>0,0,100,60</fanRange>
+		<hitTime>2000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>9125</power>
+		<reuseDelay>1000</reuseDelay>
+		<trait>SHOCK</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Stun" />
+		</effects>
+	</skill>
+	<skill id="6411" levels="1" name="Reptilikon Summon">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<coolTime>500</coolTime>
+		<hitTime>3000</hitTime>
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6412" levels="1" name="Reptilikon Critical Blow">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>900</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1200</effectRange>
+		<hitTime>2000</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>13688</power>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6413" levels="1" name="Reptilikon Missile">
+		<operateType>A1</operateType>
+		<targetType>AREA</targetType>
+		<affectRange>200</affectRange>
+		<castRange>900</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1200</effectRange>
+		<hitTime>2000</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>13688</power>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6414" levels="1" name="Reptilikon Charge">
+		<!-- Momentarily causes shock and stuns the enemy for 3 seconds. -->
+		<icon>icon.skill0100</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>3</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>60</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>1500</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>9125</power>
+		<reuseDelay>1000</reuseDelay>
+		<trait>SHOCK</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Stun" />
+		</effects>
+	</skill>
+	<skill id="6415" levels="1" name="Reptilikon Scratch">
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>300</affectRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<hitTime>2000</hitTime>
+		<magicLevel>85</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>13688</power>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6416" levels="1" name="Reptilikon Poison Breath">
+		<!-- Decreases 4 MP per second for 20 seconds. -->
+		<icon>icon.skill1102</icon>
+		<operateType>A2</operateType>
+		<targetType>FRONT_AREA</targetType>
+		<abnormalLevel>8</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>DOT_MP</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<activateRate>100</activateRate>
+		<affectRange>200</affectRange>
+		<basicProperty>MEN</basicProperty>
+		<castRange>600</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>900</effectRange>
+		<fanRange>0,0,200,90</fanRange>
+		<hitTime>2000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="ManaDamOverTime" ticks="5">
+				<power>4</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6417" levels="1" name="Reptilikon Poison Shot">
+		<!-- Decreases 4 MP per second for 20 seconds. -->
+		<icon>icon.skill1102</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>8</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>DOT_MP</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<activateRate>100</activateRate>
+		<affectRange>200</affectRange>
+		<basicProperty>MEN</basicProperty>
+		<castRange>900</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1200</effectRange>
+		<hitTime>2000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="ManaDamOverTime" ticks="5">
+				<power>4</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6418" levels="1" name="Reptilikon Fury Poison Bomb">
+		<!-- Decreases 69 HP and 4 MP per second for 20 seconds. -->
+		<icon>icon.skill1102</icon>
+		<operateType>A2</operateType>
+		<targetType>AURA</targetType>
+		<abnormalLevel>8</abnormalLevel>
+		<abnormalTime>20</abnormalTime>
+		<abnormalType>DOT_MP</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<activateRate>100</activateRate>
+		<affectRange>200</affectRange>
+		<basicProperty>MEN</basicProperty>
+		<castRange>900</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1200</effectRange>
+		<hitTime>2000</hitTime>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>85</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<reuseDelay>1000</reuseDelay>
+		<effects>
+			<effect name="DamOverTime" ticks="5">
+				<power>69</power>
+			</effect>
+			<effect name="ManaDamOverTime" ticks="5">
+				<power>4</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6419" levels="1" name="Light of Scout">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>1000</hitTime>
+		<magicLevel>82</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>6844</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6420" levels="1" name="Lizard Strike">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>1000</hitTime>
+		<magicLevel>83</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>6844</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6421" levels="1" name="Rage of Soldier">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>40</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>400</effectRange>
+		<hitTime>1000</hitTime>
+		<magicLevel>84</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>6844</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6422" levels="1" name="Resistance Explosion">
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectRange>200</affectRange>
+		<effectPoint>-100</effectPoint>
+		<hitTime>1000</hitTime>
+		<magicLevel>84</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>6844</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6423" levels="1" name="Shock">
+		<!-- Momentarily causes shock and stuns the enemy for 9 seconds. -->
+		<icon>icon.skill0100</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>9</abnormalTime>
+		<abnormalType>STUN</abnormalType>
+		<abnormalVisualEffect>STUN</abnormalVisualEffect>
+		<activateRate>100</activateRate>
+		<basicProperty>CON</basicProperty>
+		<castRange>900</castRange>
+		<coolTime>1000</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1400</effectRange>
+		<hitTime>1000</hitTime>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>84</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>2738</power>
+		<trait>SHOCK</trait>
+		<effects>
+			<effect name="PhysicalDamage" />
+			<effect name="Stun" />
+		</effects>
+	</skill>
+	<skill id="6424" levels="1" name="Double Shot">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>900</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1400</effectRange>
+		<hitTime>1000</hitTime>
+		<magicLevel>84</magicLevel>
+		<mpConsume>121</mpConsume>
+		<power>6844</power>
+		<effects>
+			<effect name="PhysicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6425" levels="1" name="Demotivation Hex">
+		<!-- P. Def. decreases by 90% for 10 seconds. -->
+		<icon>icon.skill0122</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>3</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>PD_DOWN</abnormalType>
+		<basicProperty>MEN</basicProperty>
+		<effectPoint>100</effectPoint>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>84</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pDef">0.1</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6426" levels="1" name="Priest's Ire">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<affectRange>200</affectRange>
+		<castRange>800</castRange>
+		<coolTime>500</coolTime>
+		<effectPoint>-100</effectPoint>
+		<effectRange>1200</effectRange>
+		<element>3</element> <!-- Earth -->
+		<elementPower>20</elementPower>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+		<power>120</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="6427" levels="1" name="Medicinal Mushroom 1">
+		<icon>icon.skill0100</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<affectRange>300</affectRange>
+		<coolTime>1000</coolTime>
+		<hitTime>1000</hitTime>
+		<magicLevel>84</magicLevel>
+	</skill>
+	<skill id="6428" levels="1" name="Hold">
+		<!-- Maintain hold and HP recovers by 90% for 5 seconds. -->
+		<icon>icon.skill1201</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>5</abnormalTime>
+		<abnormalType>ROOT_MAGICALLY</abnormalType>
+		<abnormalVisualEffect>ROOT</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>MEN</basicProperty>
+		<castRange>2000</castRange>
+		<effectPoint>-100</effectPoint>
+		<effectRange>2000</effectRange>
+		<isDebuff>true</isDebuff>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<lvlBonusRate>2</lvlBonusRate>
+		<magicLevel>84</magicLevel>
+		<mpConsume>88</mpConsume>
+		<mpInitialConsume>22</mpInitialConsume>
+		<trait>HOLD</trait>
+		<effects>
+			<effect name="Root" />
+			<effect name="DefenceTrait">
+				<HOLD>100</HOLD>
+			</effect>
+			<effect name="HealPercent">
+				<power>90</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6429" levels="1" name="Cozy Mucus">
+		<!-- Bow/Crossbow attack power increase by 15% and HP recovers. -->
+		<icon>icon.skill6429</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>600</abnormalTime>
+		<abnormalType>SIGNAL_A</abnormalType>
+		<castRange>2000</castRange>
+		<effectPoint>1</effectPoint>
+		<hitTime>500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtk">
+					<value>1.15</value>
+					<using kind="BOW,CROSSBOW" />
+				</mul>
+				<mul stat="regHp">5</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6430" levels="1" name="Roar Hip Heal">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>2000</castRange>
+		<effectPoint>1</effectPoint>
+		<hitTime>500</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+		<effects>
+			<effect name="HealPercent">
+				<power>30</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6431" levels="1" name="Feral Might">
+		<!-- P. Atk. increases by 19 % for 5 minutes. -->
+		<icon>icon.skill1068</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>5</abnormalLevel>
+		<abnormalTime>315</abnormalTime>
+		<abnormalType>PA_UP</abnormalType>
+		<castRange>400</castRange>
+		<effectPoint>379</effectPoint>
+		<effectRange>900</effectRange>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+		<reuseDelay>90000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtk">1.19</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6432" levels="1" name="Feral Focus">
+		<!-- Critical attack rate increases by 35 % for 5 minutes. -->
+		<icon>icon.skill1077</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>5</abnormalLevel>
+		<abnormalTime>315</abnormalTime>
+		<abnormalType>CRITICAL_PROB_UP</abnormalType>
+		<castRange>400</castRange>
+		<effectPoint>495</effectPoint>
+		<effectRange>900</effectRange>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+		<reuseDelay>90000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="critRate">1.35</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6433" levels="1" name="Feral Guidance">
+		<!-- Accuracy increases by 7 for 5 minutes. -->
+		<icon>icon.skill1240</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>5</abnormalLevel>
+		<abnormalTime>315</abnormalTime>
+		<abnormalType>HIT_UP</abnormalType>
+		<castRange>400</castRange>
+		<effectPoint>532</effectPoint>
+		<effectRange>900</effectRange>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+		<reuseDelay>90000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="accCombat">7</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6434" levels="1" name="Feral Haste">
+		<!-- Atk. Spd. increases by 38 % for 5 minutes. -->
+		<icon>icon.skill1086</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>4</abnormalLevel>
+		<abnormalTime>315</abnormalTime>
+		<abnormalType>ATTACK_TIME_DOWN</abnormalType>
+		<castRange>400</castRange>
+		<effectPoint>495</effectPoint>
+		<effectRange>900</effectRange>
+		<hitTime>2000</hitTime>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>84</magicLevel>
+		<reuseDelay>90000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtkSpd">1.38</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6435" levels="3" name="Curse of the Plains">
+		<!-- Level 1: Max HP decreases by 0.5%, Bow/Crossbow Critical Rate increases by 20% and Critical Damage increases by 20% per second. -->
+		<!-- Level 2: Max HP decreases by 1%, Bow/Crossbow Critical Rate increases by 50% and Critical Damage increases by 30% per second. -->
+		<!-- Level 3: Max HP decreases by 2%, Bow/Crossbow Critical Rate increases by 75% and Critical Damage increases by 40% per second. -->
+		<table name="#abnormalLevels">7 8 9</table>
+		<table name="#cAtk">1.2 1.3 1.4</table>
+		<table name="#dot">0.005 0.01 0.02</table>
+		<table name="#critRate">1.2 1.5 1.75</table>
+		<icon>icon.skill6435</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>#abnormalLevels</abnormalLevel>
+		<abnormalTime>5</abnormalTime>
+		<abnormalType>MULTI_DEBUFF</abnormalType>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>84</magicLevel>
+		<effects>
+			<effect name="DamOverTimePercent" ticks="5">
+				<power>#dot</power>
+				<mul stat="critRate">
+					<value>#critRate</value>
+					<using kind="BOW,CROSSBOW" />
+				</mul>
+				<mul stat="critDmg">
+					<value>#cAtk</value>
+					<using kind="BOW,CROSSBOW" />
+				</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6436" levels="1" name="Curse of the Dark Abyss">
+		<!-- Max HP decreases by 5%, Bow/Crossbow Critical Rate increases by 90% and Critical Damage increases by 50% per second. -->
+		<icon>icon.skill6435</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>10</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>MULTI_DEBUFF</abnormalType>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>84</magicLevel>
+		<effects>
+			<effect name="DamOverTimePercent" ticks="5">
+				<power>0.05</power>
+				<mul stat="critRate">
+					<value>1.9</value>
+					<using kind="BOW,CROSSBOW" />
+				</mul>
+				<mul stat="critDmg">
+					<value>1.5</value>
+					<using kind="BOW,CROSSBOW" />
+				</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6437" levels="7" name="Area of Freezing Core">
+		<!-- Level 1: Decreases 30 HP by cold. -->
+		<!-- Level 2: Decreases 60 HP by cold. -->
+		<!-- Level 3: Decreases 90 HP by cold. -->
+		<!-- Level 4: Decreases 150 HP by cold. -->
+		<!-- Level 5: Decreases 250 HP by cold. -->
+		<!-- Level 6: Decreases 350 HP by cold. -->
+		<!-- Level 7: Decreases 500 HP by cold. -->
+		<table name="#dot">30 60 90 150 250 350 500</table>
+		<icon>icon.skill1183</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>10</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>POISON</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<element>1</element> <!-- Water -->
+		<elementPower>20</elementPower>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>84</magicLevel>
+		<trait>POISON</trait>
+		<effects>
+			<effect name="DamOverTime" ticks="5">
+				<power>#dot</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6438" levels="1" name="Penalty Area">
+		<!-- Decreases 1000 HP. -->
+		<icon>icon.skill4036</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>10</abnormalLevel>
+		<abnormalTime>15</abnormalTime>
+		<abnormalType>POISON</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>-100</effectPoint>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>84</magicLevel>
+		<trait>POISON</trait>
+	</skill>
+	<skill id="6439" levels="1" name="Energy of Wisdom">
+		<icon>icon.skill6439</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>SIGNAL_E</abnormalType>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>1</effectPoint>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>84</magicLevel>
+		<trait>POISON</trait>
+		<effects>
+			<effect name="DefenceTrait">
+				<BLUNT>95</BLUNT>
+				<DAGGER>95</DAGGER>
+				<SWORD>50</SWORD>
+				<DUALFIST>95</DUALFIST>
+				<DUAL>50</DUAL>
+				<RAPIER>95</RAPIER>
+				<ANCIENTSWORD>95</ANCIENTSWORD>
+				<DUALDAGGER>95</DUALDAGGER>
+				<BOW>99</BOW>
+				<CROSSBOW>99</CROSSBOW>
+				<POLE>95</POLE>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6440" levels="1" name="Energy of Strong">
+		<icon>icon.skill6440</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>SIGNAL_E</abnormalType>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>1</effectPoint>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>84</magicLevel>
+		<trait>POISON</trait>
+		<effects>
+			<effect name="DefenceTrait">
+				<BOW>99</BOW>
+				<CROSSBOW>99</CROSSBOW>
+				<BLUNT>-5</BLUNT>
+				<DAGGER>-5</DAGGER>
+				<SWORD>-5</SWORD>
+				<DUALFIST>-5</DUALFIST>
+				<DUAL>-5</DUAL>
+				<RAPIER>-5</RAPIER>
+				<ANCIENTSWORD>-5</ANCIENTSWORD>
+				<DUALDAGGER>-5</DUALDAGGER>
+				<POLE>-5</POLE>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6441" levels="1" name="Energy of Agile">
+		<icon>icon.skill6441</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>SIGNAL_E</abnormalType>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>1</effectPoint>
+		<isDebuff>true</isDebuff>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>84</magicLevel>
+		<trait>POISON</trait>
+		<effects>
+			<effect name="DefenceTrait">
+				<BLUNT>95</BLUNT>
+				<DAGGER>95</DAGGER>
+				<SWORD>50</SWORD>
+				<DUALFIST>95</DUALFIST>
+				<DUAL>50</DUAL>
+				<RAPIER>95</RAPIER>
+				<ANCIENTSWORD>95</ANCIENTSWORD>
+				<DUALDAGGER>95</DUALDAGGER>
+				<BOW>-100</BOW>
+				<CROSSBOW>-100</CROSSBOW>
+				<POLE>95</POLE>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6442" levels="1" name="Efficacy of Wisdom">
+		<!-- A special location buff that allows the user to inflict magic damage on monsters in the Seed of Annihilation. -->
+		<icon>icon.skill6439</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>SIGNAL_E</abnormalType>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>1</effectPoint>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>-1</magicLevel>
+		<trait>POISON</trait>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pveMagicalDmg">2.0</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6443" levels="1" name="Efficacy of Strength">
+		<!-- A special location buff that allows the user to inflict melee attack damage on monsters in the Seed of Annihilation. -->
+		<icon>icon.skill6440</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>SIGNAL_E</abnormalType>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>1</effectPoint>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>-1</magicLevel>
+		<trait>POISON</trait>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pvePhysDmg">2.0</mul>
+				<mul stat="pvePhysSkillsDmg">2.0</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6444" levels="1" name="Efficacy of Agility">
+		<!-- A special location buff that allows the user to inflict ranged attack damage on monsters in the Seed of Annihilation. -->
+		<icon>icon.skill6441</icon>
+		<operateType>A2</operateType>
+		<targetType>ONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>SIGNAL_E</abnormalType>
+		<activateRate>80</activateRate>
+		<basicProperty>CON</basicProperty>
+		<effectPoint>1</effectPoint>
+		<lvlBonusRate>1</lvlBonusRate>
+		<magicLevel>-1</magicLevel>
+		<trait>POISON</trait>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pveBowDmg">2.0</mul>
+				<mul stat="pveBowSkillsDmg">2.0</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="6445" levels="1" name="Presentation - Freya's Message 1">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>10000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6446" levels="1" name="Presentation - Freya's Message 2">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<effectPoint>100</effectPoint>
+		<hitTime>8000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6447" levels="1" name="Presentation - Freya's Message 3">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<effectPoint>100</effectPoint>
+		<hitTime>5000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6448" levels="1" name="Presentation - Freya's Message 4">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<effectPoint>100</effectPoint>
+		<hitTime>1000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6449" levels="1" name="Presentation - Freya's Message 5">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<effectPoint>100</effectPoint>
+		<hitTime>7000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6450" levels="1" name="Presentation - Freya Nova">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<effectPoint>100</effectPoint>
+		<hitTime>5000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6451" levels="1" name="Presentation - Freya Move">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<effectPoint>100</effectPoint>
+		<hitTime>12000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6452" levels="1" name="Presentation - Freya Space Change">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<effectPoint>100</effectPoint>
+		<hitTime>5000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6453" levels="1" name="Presentation - Freya Death">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<effectPoint>100</effectPoint>
+		<hitTime>15000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6454" levels="1" name="Presentation - Freya Frustration">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<effectPoint>100</effectPoint>
+		<hitTime>6000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6455" levels="1" name="Presentation - Freya Destroy">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<effectPoint>100</effectPoint>
+		<hitTime>6000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6456" levels="1" name="Presentation - Freya Eternal Blizzard">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<effectPoint>100</effectPoint>
+		<hitTime>1000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6457" levels="1" name="Presentation - Absorption of Sirr">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<effectPoint>100</effectPoint>
+		<hitTime>8000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6458" levels="1" name="Presentation - Transform of Sirr">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<effectPoint>100</effectPoint>
+		<hitTime>6000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6459" levels="1" name="Presentation - Kegor Super Buff">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<effectPoint>100</effectPoint>
+		<hitTime>10000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6460" levels="1" name="Presentation - Jinia Super Buff">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<effectPoint>100</effectPoint>
+		<hitTime>10000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6461" levels="1" name="Presentation - Kegor's Message 1">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<effectPoint>100</effectPoint>
+		<hitTime>6000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6462" levels="1" name="Presentation - Kegor's Message 1">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<effectPoint>100</effectPoint>
+		<hitTime>6000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6463" levels="1" name="Presentation - Transfer Achievement">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<castRange>600</castRange>
+		<effectPoint>100</effectPoint>
+		<effectRange>1100</effectRange>
+		<hitTime>1000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+	</skill>
+	<skill id="6464" levels="1" name="Three Siblings' Trickery">
+		<!-- By the three sibling's trickery, Max HP/MP/CP are increased by 40% for 10 seconds. -->
+		<icon>icon.ev_rotten_jack_ghost_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>BIG_HEAD</abnormalType>
+		<abnormalVisualEffect>BIG_HEAD</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<trait>ETC</trait>
+	</skill>
+	<skill id="6465" levels="1" name="Jack O'Lantern Card">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<coolTime>500</coolTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6466" levels="1" name="Rotten Jack O'Lantern Card">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<coolTime>500</coolTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6467" levels="1" name="Jack O'Lantern Card - Confirm Skill">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6468" levels="1" name="Rotten Jack O'Lantern Card - Confirm Skill">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6469" levels="1" name="Halloween Defeat">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6470" levels="1" name="1 win">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6471" levels="1" name="2 win">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6472" levels="1" name="3 win">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6473" levels="1" name="4 win">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6474" levels="1" name="5 win">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6475" levels="1" name="6 win">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6476" levels="1" name="7 win">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6477" levels="1" name="8 win">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6478" levels="1" name="9 win">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6479" levels="1" name="10 win">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6480" levels="1" name="11 win">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6481" levels="1" name="12 win">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6482" levels="1" name="13 win">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6483" levels="1" name="14 win">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6484" levels="1" name="15 win">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6485" levels="1" name="16 win">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6486" levels="1" name="17 win">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6487" levels="1" name="18 win">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6488" levels="1" name="19 win">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6489" levels="1" name="20 win">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6490" levels="1" name="Jack's game - Gauge">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6491" levels="1" name="Jack's game - Target">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<effectPoint>-1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="6492" levels="28" name="NPC holy attack">
+		<table name="#effectPoints">-138 -204 -285 -379 -477 -566 -597 -624 -646 -655 -662 -669 -676 -679 -681 -684 -687 -689 -692 -694 -696 -698 -700 -702 -704 -706 -707 -709</table>
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<coolTime>500</coolTime>
+		<effectPoint>#effectPoints</effectPoint>
+		<magicLevel>10</magicLevel>
+	</skill>
+	<skill id="6493" levels="28" name="Jack's game - Target">
+		<table name="#effectPoints">-138 -204 -285 -379 -477 -566 -597 -624 -646 -655 -662 -669 -676 -679 -681 -684 -687 -689 -692 -694 -696 -698 -700 -702 -704 -706 -707 -709</table>
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<coolTime>500</coolTime>
+		<effectPoint>#effectPoints</effectPoint>
+		<magicLevel>10</magicLevel>
+	</skill>
+	<skill id="6494" levels="28" name="NPC holy attack">
+		<table name="#effectPoints">-138 -204 -285 -379 -477 -566 -597 -624 -646 -655 -662 -669 -676 -679 -681 -684 -687 -689 -692 -694 -696 -698 -700 -702 -704 -706 -707 -709</table>
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<coolTime>500</coolTime>
+		<effectPoint>#effectPoints</effectPoint>
+		<magicLevel>10</magicLevel>
+	</skill>
+	<skill id="6495" levels="28" name="NPC holy attack">
+		<table name="#effectPoints">-138 -204 -285 -379 -477 -566 -597 -624 -646 -655 -662 -669 -676 -679 -681 -684 -687 -689 -692 -694 -696 -698 -700 -702 -704 -706 -707 -709</table>
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<coolTime>500</coolTime>
+		<effectPoint>#effectPoints</effectPoint>
+		<magicLevel>10</magicLevel>
+	</skill>
+	<skill id="6496" levels="28" name="NPC holy attack">
+		<table name="#effectPoints">-138 -204 -285 -379 -477 -566 -597 -624 -646 -655 -662 -669 -676 -679 -681 -684 -687 -689 -692 -694 -696 -698 -700 -702 -704 -706 -707 -709</table>
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<coolTime>500</coolTime>
+		<effectPoint>#effectPoints</effectPoint>
+		<magicLevel>10</magicLevel>
+	</skill>
+	<skill id="6497" levels="28" name="NPC holy attack">
+		<table name="#effectPoints">-138 -204 -285 -379 -477 -566 -597 -624 -646 -655 -662 -669 -676 -679 -681 -684 -687 -689 -692 -694 -696 -698 -700 -702 -704 -706 -707 -709</table>
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<coolTime>500</coolTime>
+		<effectPoint>#effectPoints</effectPoint>
+		<magicLevel>10</magicLevel>
+	</skill>
+	<skill id="6498" levels="28" name="NPC holy shot">
+		<table name="#effectPoints">-138 -204 -285 -379 -477 -566 -597 -624 -646 -655 -662 -669 -676 -679 -681 -684 -687 -689 -692 -694 -696 -698 -700 -702 -704 -706 -707 -709</table>
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<coolTime>500</coolTime>
+		<effectPoint>#effectPoints</effectPoint>
+		<magicLevel>10</magicLevel>
+	</skill>
+	<skill id="6499" levels="28" name="NPC holy shot">
+		<table name="#effectPoints">-138 -204 -285 -379 -477 -566 -597 -624 -646 -655 -662 -669 -676 -679 -681 -684 -687 -689 -692 -694 -696 -698 -700 -702 -704 -706 -707 -709</table>
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<coolTime>500</coolTime>
+		<effectPoint>#effectPoints</effectPoint>
+		<magicLevel>10</magicLevel>
+	</skill>
+</list>

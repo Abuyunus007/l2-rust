@@ -1,0 +1,2419 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/skills.xsd">
+	<skill id="2900" levels="1" name="Ancient Herb - Slayer">
+		<!-- Possessed by those spirits who existed during the beginning of the world, this herb allows you to strike down your enemies with the strength of a bull. -->
+		<icon>icon.freed_soul_core_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalInstant>true</abnormalInstant>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>SIGNAL_C</abnormalType>
+		<effectPoint>100</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<player level="78" />
+		</conditions>
+		<effects>
+			<effect name="Buff" />
+		</effects>
+	</skill>
+	<skill id="2901" levels="1" name="Ancient Herb - Immortal">
+		<!-- Possessed by those spirits who existed during the beginning of the world, this herb makes you temporarily impervious to your enemy's attacks. -->
+		<icon>icon.freed_soul_core_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalInstant>true</abnormalInstant>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>PD_UP_SPECIAL</abnormalType>
+		<effectPoint>100</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<player level="78" />
+		</conditions>
+		<effects>
+			<effect name="Invincible" />
+		</effects>
+	</skill>
+	<skill id="2902" levels="1" name="Ancient Herb - Terminator">
+		<!-- Possessed by those spirits who existed during the beginning of the world, this herb allows you to cast as fast as the wind. -->
+		<icon>icon.freed_soul_core_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalInstant>true</abnormalInstant>
+		<abnormalLevel>4</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>CASTING_TIME_DOWN</abnormalType>
+		<effectPoint>100</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<player level="78" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mAtkSpd">1.7</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2903" levels="1" name="Ancient Herb - Guide">
+		<!-- Possessed by those spirits who existed during the beginning of the world, this herb allows you to move faster than any beast on the plains. -->
+		<icon>icon.freed_soul_core_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalInstant>true</abnormalInstant>
+		<abnormalLevel>4</abnormalLevel>
+		<abnormalTime>60</abnormalTime>
+		<abnormalType>SPEED_UP_SPECIAL</abnormalType>
+		<effectPoint>100</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<player level="78" />
+		</conditions>
+		<effects>
+			<effect name="Buff">
+				<add stat="runSpd">250</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2904" levels="1" name="Guardian Spirit's Divine Protection">
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>30</abnormalTime>
+		<abnormalType>PUBLIC_SLOT</abnormalType>
+		<effectPoint>100</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+	</skill>
+	<skill id="2905" levels="1" name="Growth Accelerator">
+		<operateType>A1</operateType>
+		<targetType>ONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14832</itemConsumeId> <!-- Growth Accelerator -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<target npcId="18793,18794,18795,18796,18797,18798" />
+		</conditions>
+	</skill>
+	<skill id="2906" levels="1" name="Incubation Accelerator">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>100</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+	</skill>
+	<skill id="2907" levels="5" name="Battlefield Use Secret Medicine of Life">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+		<reuseDelay>600000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<player levelRange="61;75" />
+		</conditions>
+		<effects>
+			<effect name="Heal">
+				<power>1900</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2908" levels="5" name="Battlefield Use Secret Medicine of Mind">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+		<reuseDelay>600000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<player levelRange="61;75" />
+		</conditions>
+		<effects>
+			<effect name="ManaHeal">
+				<power>360</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2909" levels="5" name="Battlefield Use Secret Medicine of Will">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+		<reuseDelay>600000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<player levelRange="61;75" />
+		</conditions>
+		<effects>
+			<effect name="CpHeal">
+				<power>360</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2910" levels="1" name="Skull Key of Pain">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14820</itemConsumeId> <!-- Skull Key of Suffering -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2911" levels="1" name="Skull Key of Erosion">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14821</itemConsumeId> <!-- Skull Key of Erosion -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2912" levels="1" name="Skull Key of the Heart">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14822</itemConsumeId> <!-- Skull Key of the Heart -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2913" levels="1" name="Soul Extraction">
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<effectPoint>-100</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>60000</reuseDelay>
+	</skill>
+	<skill id="2914" levels="3" name="Equipment Set 90 Day Pack">
+		<table name="#npcId">32702 32703 13284</table>
+		<table name="#itemConsumeId">15210 15211 16853</table>
+		<icon>icon.etc_summon_aga_agit_i00</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>#itemConsumeId</itemConsumeId>
+		<magicLevel>1</magicLevel>
+		<reuseDelay>10000</reuseDelay>
+		<effects>
+			<effect name="SummonNpc">
+				<npcId>#npcId</npcId>
+				<npcCount>1</npcCount>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2915" levels="1" name="Clear Five-Colored Crystal">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>20000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14835</itemConsumeId> <!-- Multi-colored Jewel -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>10000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<and>
+				<player canEscape="true" />
+				<not>
+					<player insideZoneId="10501, 10502, 10503" />
+				</not>
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Teleport">
+				<x>89417</x>
+				<y>-44506</y>
+				<z>-2136</z>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2916" levels="1" name="Feed for Enriched Enhanced Pets">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<feed>11000</feed>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2917" levels="1" name="Big Staccato Silk Cocoon">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14834</itemConsumeId> <!-- Large Stakato Cocoon -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="2.77">
+						<item id="9575" count="1" /> <!-- High-Grade Life Stone - Level 80 -->
+					</item>
+					<item chance="2.31">
+						<item id="10485" count="1" /> <!-- High-Grade Life Stone - Level 82 -->
+					</item>
+					<item chance="3.2">
+						<item id="10577" count="1" /> <!-- Forgotten Scroll - Excessive Loyalty -->
+					</item>
+					<item chance="3.2">
+						<item id="14209" count="1" /> <!-- Forgotten Scroll - Hide -->
+					</item>
+					<item chance="3.2">
+						<item id="14208" count="1" /> <!-- Forgotten Scroll - Final Secret -->
+					</item>
+					<item chance="3.2">
+						<item id="14212" count="1" /> <!-- Forgotten Scroll - Enlightenment - Wizard -->
+					</item>
+					<item chance="6.4">
+						<item id="960" count="1" /> <!-- Scroll: Enchant Armor (S-Grade) -->
+					</item>
+					<item chance="3.2">
+						<item id="9625" count="1" /> <!-- Giant's Codex - Oblivion -->
+					</item>
+					<item chance="2.13">
+						<item id="9626" count="1" /> <!-- Giant's Codex - Discipline -->
+					</item>
+					<item chance="0.64">
+						<item id="959" count="1" /> <!-- Scroll: Enchant Weapon (S-Grade) -->
+					</item>
+					<item chance="1.54">
+						<item id="10373" count="1" /> <!-- Recipe - Icarus Sawsword (60%) -->
+					</item>
+					<item chance="1.54">
+						<item id="10374" count="1" /> <!-- Recipe - Icarus Disperser (60%) -->
+					</item>
+					<item chance="1.54">
+						<item id="10375" count="1" /> <!-- Recipe - Icarus Spirit (60%) -->
+					</item>
+					<item chance="1.54">
+						<item id="10376" count="1" /> <!-- Recipe - Icarus Heavy Arms (60%) -->
+					</item>
+					<item chance="1.54">
+						<item id="10377" count="1" /> <!-- Recipe - Icarus Trident (60%) -->
+					</item>
+					<item chance="1.54">
+						<item id="10378" count="1" /> <!-- Recipe - Icarus Hammer (60%) -->
+					</item>
+					<item chance="1.54">
+						<item id="10379" count="1" /> <!-- Recipe - Icarus Hand (60%) -->
+					</item>
+					<item chance="1.54">
+						<item id="10380" count="1" /> <!-- Recipe - Icarus Hall (60%) -->
+					</item>
+					<item chance="1.54">
+						<item id="10381" count="1" /> <!-- Recipe - Icarus Spitter (60%) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2918" levels="1" name="Small Staccato Silk Cocoon">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14833</itemConsumeId> <!-- Small Stakato Cocoon -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="2.36">
+						<item id="9575" count="1" /> <!-- High-Grade Life Stone - Level 80 -->
+					</item>
+					<item chance="1.96">
+						<item id="10485" count="1" /> <!-- High-Grade Life Stone - Level 82 -->
+					</item>
+					<item chance="2.72">
+						<item id="10577" count="1" /> <!-- Forgotten Scroll - Excessive Loyalty -->
+					</item>
+					<item chance="2.72">
+						<item id="14209" count="1" /> <!-- Forgotten Scroll - Hide -->
+					</item>
+					<item chance="2.72">
+						<item id="14208" count="1" /> <!-- Forgotten Scroll - Final Secret -->
+					</item>
+					<item chance="2.72">
+						<item id="14212" count="1" /> <!-- Forgotten Scroll - Enlightenment - Wizard -->
+					</item>
+					<item chance="5.44">
+						<item id="960" count="1" /> <!-- Scroll: Enchant Armor (S-Grade) -->
+					</item>
+					<item chance="2.72">
+						<item id="9625" count="1" /> <!-- Giant's Codex - Oblivion -->
+					</item>
+					<item chance="1.81">
+						<item id="9626" count="1" /> <!-- Giant's Codex - Discipline -->
+					</item>
+					<item chance="0.54">
+						<item id="959" count="1" /> <!-- Scroll: Enchant Weapon (S-Grade) -->
+					</item>
+					<item chance="1.31">
+						<item id="10373" count="1" /> <!-- Recipe - Icarus Sawsword (60%) -->
+					</item>
+					<item chance="1.31">
+						<item id="10374" count="1" /> <!-- Recipe - Icarus Disperser (60%) -->
+					</item>
+					<item chance="1.31">
+						<item id="10375" count="1" /> <!-- Recipe - Icarus Spirit (60%) -->
+					</item>
+					<item chance="1.31">
+						<item id="10376" count="1" /> <!-- Recipe - Icarus Heavy Arms (60%) -->
+					</item>
+					<item chance="1.31">
+						<item id="10377" count="1" /> <!-- Recipe - Icarus Trident (60%) -->
+					</item>
+					<item chance="1.31">
+						<item id="10378" count="1" /> <!-- Recipe - Icarus Hammer (60%) -->
+					</item>
+					<item chance="1.31">
+						<item id="10379" count="1" /> <!-- Recipe - Icarus Hand (60%) -->
+					</item>
+					<item chance="1.31">
+						<item id="10380" count="1" /> <!-- Recipe - Icarus Hall (60%) -->
+					</item>
+					<item chance="1.31">
+						<item id="10381" count="1" /> <!-- Recipe - Icarus Spitter (60%) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2919" levels="1" name="Ancient Parchment">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14841</itemConsumeId> <!-- Ancient Parchment -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="40.0">
+						<item id="5942" count="1" /> <!-- Giant's Love Letter -->
+					</item>
+					<item chance="40.0">
+						<item id="5943" count="1" /> <!-- Giants' Doodle -->
+					</item>
+					<item chance="4.0">
+						<item id="14836" count="1" /> <!-- Knowledge of the Giants Anthology, Chapter 1 -->
+					</item>
+					<item chance="4.0">
+						<item id="14837" count="1" /> <!-- Knowledge of the Giants Anthology, Chapter 2 -->
+					</item>
+					<item chance="4.0">
+						<item id="14838" count="1" /> <!-- Knowledge of the Giants Anthology, Chapter 3 -->
+					</item>
+					<item chance="4.0">
+						<item id="14839" count="1" /> <!-- Knowledge of the Giants Anthology, Chapter 4 -->
+					</item>
+					<item chance="4.0">
+						<item id="14840" count="1" /> <!-- Knowledge of the Giants Anthology, Chapter 5 -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2920" levels="1" name="Titan's Ancient Book">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14847</itemConsumeId> <!-- Titan Ancient Book -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="40.0">
+						<item id="5942" count="1" /> <!-- Giant's Love Letter -->
+					</item>
+					<item chance="40.0">
+						<item id="5943" count="1" /> <!-- Giants' Doodle -->
+					</item>
+					<item chance="4.0">
+						<item id="14842" count="1" /> <!-- Wisdom of the Giants Text, Chapter 1 -->
+					</item>
+					<item chance="4.0">
+						<item id="14843" count="1" /> <!-- Wisdom of the Giants Text, Chapter 2 -->
+					</item>
+					<item chance="4.0">
+						<item id="14844" count="1" /> <!-- Wisdom of the Giants Text, Chapter 3 -->
+					</item>
+					<item chance="4.0">
+						<item id="14845" count="1" /> <!-- Wisdom of the Giants Text, Chapter 4 -->
+					</item>
+					<item chance="4.0">
+						<item id="14846" count="1" /> <!-- Wisdom of the Giants Text, Chapter 5 -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2921" levels="1" name="Gludio Supply Box - magic pin">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13695</itemConsumeId> <!-- Gludio Supply Box - Magic Pin - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13898" count="1" /> <!-- Sealed Magic Pin (C-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13899" count="1" /> <!-- Sealed Magic Pin (B-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2922" levels="1" name="Dion supply box - magic pin">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13696</itemConsumeId> <!-- Dion Supply Box - Magic Pin - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13898" count="1" /> <!-- Sealed Magic Pin (C-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13899" count="1" /> <!-- Sealed Magic Pin (B-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2923" levels="1" name="Giran supply box - magic pin">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13697</itemConsumeId> <!-- Giran Supply Box - Magic Pin - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13898" count="1" /> <!-- Sealed Magic Pin (C-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13899" count="1" /> <!-- Sealed Magic Pin (B-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2924" levels="1" name="Oren supply box - magic pin">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13698</itemConsumeId> <!-- Oren Supply Box - Magic Pin - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13898" count="1" /> <!-- Sealed Magic Pin (C-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13899" count="1" /> <!-- Sealed Magic Pin (B-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2925" levels="1" name="Aden supply box - magic pin">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13699</itemConsumeId> <!-- Aden Supply Box - Magic Pin - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13898" count="1" /> <!-- Sealed Magic Pin (C-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13899" count="1" /> <!-- Sealed Magic Pin (B-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2926" levels="1" name="Innadril supply box - magic pin">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13700</itemConsumeId> <!-- Innadril Supply Box - Magic Pin - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13898" count="1" /> <!-- Sealed Magic Pin (C-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13899" count="1" /> <!-- Sealed Magic Pin (B-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2927" levels="1" name="Goddard supply box - magic pin">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13701</itemConsumeId> <!-- Goddard Supply Box: Magic Pin - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13898" count="1" /> <!-- Sealed Magic Pin (C-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13899" count="1" /> <!-- Sealed Magic Pin (B-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2928" levels="1" name="Rune supply box - magic pin">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13702</itemConsumeId> <!-- Rune Supply Box - Magic Pin - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13898" count="1" /> <!-- Sealed Magic Pin (C-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13899" count="1" /> <!-- Sealed Magic Pin (B-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2929" levels="1" name="Schuttgart supply box - magic pin">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13703</itemConsumeId> <!-- Schuttgart Supply Box - Magic Pin - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13898" count="1" /> <!-- Sealed Magic Pin (C-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13899" count="1" /> <!-- Sealed Magic Pin (B-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2930" levels="1" name="Gludio supply box - magic pouch">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13704</itemConsumeId> <!-- Gludio Supply Box - Magic Pouch - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13918" count="1" /> <!-- Sealed Magic Pouch (C-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13919" count="1" /> <!-- Sealed Magic Pouch (B-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2931" levels="1" name="Dion supply box - magic pouch">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13705</itemConsumeId> <!-- Dion Supply Box - Magic Pouch - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13918" count="1" /> <!-- Sealed Magic Pouch (C-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13919" count="1" /> <!-- Sealed Magic Pouch (B-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2932" levels="1" name="Giran supply box - magic pouch">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13706</itemConsumeId> <!-- Giran Supply Box - Magic Pouch - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13918" count="1" /> <!-- Sealed Magic Pouch (C-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13919" count="1" /> <!-- Sealed Magic Pouch (B-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2933" levels="1" name="Oren supply box - magic pouch">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13707</itemConsumeId> <!-- Oren Supply Box - Magic Pouch - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13918" count="1" /> <!-- Sealed Magic Pouch (C-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13919" count="1" /> <!-- Sealed Magic Pouch (B-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2934" levels="1" name="Aden supply box - magic pouch">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13708</itemConsumeId> <!-- Aden Supply Box - Magic Pouch - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13918" count="1" /> <!-- Sealed Magic Pouch (C-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13919" count="1" /> <!-- Sealed Magic Pouch (B-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2935" levels="1" name="Innadril supply box - magic pouch">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13709</itemConsumeId> <!-- Innadril Supply Box - Magic Pouch - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13918" count="1" /> <!-- Sealed Magic Pouch (C-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13919" count="1" /> <!-- Sealed Magic Pouch (B-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2936" levels="1" name="Goddard supply box - magic pouch">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13710</itemConsumeId> <!-- Goddard Supply Box: Magic Pouch - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13918" count="1" /> <!-- Sealed Magic Pouch (C-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13919" count="1" /> <!-- Sealed Magic Pouch (B-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2937" levels="1" name="Rune supply box - magic pouch">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13711</itemConsumeId> <!-- Rune Supply Box - Magic Pouch - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13918" count="1" /> <!-- Sealed Magic Pouch (C-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13919" count="1" /> <!-- Sealed Magic Pouch (B-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2938" levels="1" name="Schuttgart supply box - magic pouch">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13712</itemConsumeId> <!-- Schuttgart Supply Box - Magic Pouch - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13918" count="1" /> <!-- Sealed Magic Pouch (C-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13919" count="1" /> <!-- Sealed Magic Pouch (B-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2939" levels="1" name="Gludio supply box - belt">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13713</itemConsumeId> <!-- Gludio Supply Box - Belt - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13894" count="1" /> <!-- Cloth Belt -->
+					</item>
+					<item chance="15.0">
+						<item id="13895" count="1" /> <!-- Leather Belt -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2940" levels="1" name="Dion supply box - belt">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13714</itemConsumeId> <!-- Dion Supply Box - Belt - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13894" count="1" /> <!-- Cloth Belt -->
+					</item>
+					<item chance="15.0">
+						<item id="13895" count="1" /> <!-- Leather Belt -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2941" levels="1" name="Giran supply box - belt">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13715</itemConsumeId> <!-- Giran Supply Box - Belt - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13894" count="1" /> <!-- Cloth Belt -->
+					</item>
+					<item chance="15.0">
+						<item id="13895" count="1" /> <!-- Leather Belt -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2942" levels="1" name="Oren supply box - belt">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13716</itemConsumeId> <!-- Oren Supply Box - Belt - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13894" count="1" /> <!-- Cloth Belt -->
+					</item>
+					<item chance="15.0">
+						<item id="13895" count="1" /> <!-- Leather Belt -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2943" levels="1" name="Aden supply box - belt">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13717</itemConsumeId> <!-- Aden Supply Box - Belt - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13894" count="1" /> <!-- Cloth Belt -->
+					</item>
+					<item chance="15.0">
+						<item id="13895" count="1" /> <!-- Leather Belt -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2944" levels="1" name="Innadril supply box - belt">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13718</itemConsumeId> <!-- Innadril Supply Box - Belt - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13894" count="1" /> <!-- Cloth Belt -->
+					</item>
+					<item chance="15.0">
+						<item id="13895" count="1" /> <!-- Leather Belt -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2945" levels="1" name="Goddard supply box - belt">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13719</itemConsumeId> <!-- Goddard Supply Box: Belt - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13894" count="1" /> <!-- Cloth Belt -->
+					</item>
+					<item chance="15.0">
+						<item id="13895" count="1" /> <!-- Leather Belt -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2946" levels="1" name="Rune supply box - belt">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13720</itemConsumeId> <!-- Rune Supply Box - Belt - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13894" count="1" /> <!-- Cloth Belt -->
+					</item>
+					<item chance="15.0">
+						<item id="13895" count="1" /> <!-- Leather Belt -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2947" levels="1" name="Schuttgart supply box - belt">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>13721</itemConsumeId> <!-- Schuttgart Supply Box - Belt - Grade B, C -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13894" count="1" /> <!-- Cloth Belt -->
+					</item>
+					<item chance="15.0">
+						<item id="13895" count="1" /> <!-- Leather Belt -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2948" levels="1" name="Gludio Supply Box - magic pin">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14531</itemConsumeId> <!-- Gludio Supply Box - Magic Pin - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13900" count="1" /> <!-- Sealed Magic Pin (A-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13901" count="1" /> <!-- Sealed Magic Pin (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2949" levels="1" name="Dion supply box - magic pin">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14532</itemConsumeId> <!-- Dion Supply Box - Magic Pin - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13900" count="1" /> <!-- Sealed Magic Pin (A-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13901" count="1" /> <!-- Sealed Magic Pin (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2950" levels="1" name="Giran supply box - magic pin">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14533</itemConsumeId> <!-- Giran Supply Box - Magic Pin - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13900" count="1" /> <!-- Sealed Magic Pin (A-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13901" count="1" /> <!-- Sealed Magic Pin (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2951" levels="1" name="Oren supply box - magic pin">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14534</itemConsumeId> <!-- Oren Supply Box - Magic Pin - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13900" count="1" /> <!-- Sealed Magic Pin (A-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13901" count="1" /> <!-- Sealed Magic Pin (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2952" levels="1" name="Aden supply box - magic pin">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14535</itemConsumeId> <!-- Aden Supply Box - Magic Pin - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13900" count="1" /> <!-- Sealed Magic Pin (A-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13901" count="1" /> <!-- Sealed Magic Pin (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2953" levels="1" name="Innadril supply box - magic pin">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14536</itemConsumeId> <!-- Innadril Supply Box - Magic Pin - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13900" count="1" /> <!-- Sealed Magic Pin (A-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13901" count="1" /> <!-- Sealed Magic Pin (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2954" levels="1" name="Goddard supply box - magic pin">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14537</itemConsumeId> <!-- Goddard Supply Box: Magic Pin - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13900" count="1" /> <!-- Sealed Magic Pin (A-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13901" count="1" /> <!-- Sealed Magic Pin (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2955" levels="1" name="Rune supply box - magic pin">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14538</itemConsumeId> <!-- Rune Supply Box - Magic Pin - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13900" count="1" /> <!-- Sealed Magic Pin (A-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13901" count="1" /> <!-- Sealed Magic Pin (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2956" levels="1" name="Schuttgart supply box - magic pin">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14539</itemConsumeId> <!-- Schuttgart Supply Box - Magic Pin - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13900" count="1" /> <!-- Sealed Magic Pin (A-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13901" count="1" /> <!-- Sealed Magic Pin (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2957" levels="1" name="Gludio supply box - magic pouch">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14540</itemConsumeId> <!-- Gludio Supply Box - Magic Pouch - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13920" count="1" /> <!-- Sealed Magic Pouch (A-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13921" count="1" /> <!-- Sealed Magic Pouch (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2958" levels="1" name="Dion supply box - magic pouch">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14541</itemConsumeId> <!-- Dion Supply Box - Magic Pouch - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13920" count="1" /> <!-- Sealed Magic Pouch (A-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13921" count="1" /> <!-- Sealed Magic Pouch (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2959" levels="1" name="Giran supply box - magic pouch">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14542</itemConsumeId> <!-- Giran Supply Box - Magic Pouch - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13920" count="1" /> <!-- Sealed Magic Pouch (A-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13921" count="1" /> <!-- Sealed Magic Pouch (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2960" levels="1" name="Oren supply box - magic pouch">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14543</itemConsumeId> <!-- Oren Supply Box - Magic Pouch - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13920" count="1" /> <!-- Sealed Magic Pouch (A-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13921" count="1" /> <!-- Sealed Magic Pouch (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2961" levels="1" name="Aden supply box - magic pouch">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14544</itemConsumeId> <!-- Aden Supply Box - Magic Pouch - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13920" count="1" /> <!-- Sealed Magic Pouch (A-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13921" count="1" /> <!-- Sealed Magic Pouch (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2962" levels="1" name="Innadril supply box - magic pouch">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14545</itemConsumeId> <!-- Innadril Supply Box - Magic Pouch - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13920" count="1" /> <!-- Sealed Magic Pouch (A-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13921" count="1" /> <!-- Sealed Magic Pouch (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2963" levels="1" name="Goddard supply box - magic pouch">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14546</itemConsumeId> <!-- Goddard Supply Box: Magic Pouch - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13920" count="1" /> <!-- Sealed Magic Pouch (A-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13921" count="1" /> <!-- Sealed Magic Pouch (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2964" levels="1" name="Rune supply box - magic pouch">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14547</itemConsumeId> <!-- Rune Supply Box - Magic Pouch - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13920" count="1" /> <!-- Sealed Magic Pouch (A-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13921" count="1" /> <!-- Sealed Magic Pouch (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2965" levels="1" name="Schuttgart supply box - magic pouch">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14548</itemConsumeId> <!-- Schuttgart Supply Box - Magic Pouch - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13920" count="1" /> <!-- Sealed Magic Pouch (A-Grade) -->
+					</item>
+					<item chance="15.0">
+						<item id="13921" count="1" /> <!-- Sealed Magic Pouch (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2966" levels="1" name="Gludio supply box - belt">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14549</itemConsumeId> <!-- Gludio Supply Box - Belt - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13896" count="1" /> <!-- Iron Belt -->
+					</item>
+					<item chance="15.0">
+						<item id="13897" count="1" /> <!-- Mithril Belt -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2967" levels="1" name="Dion supply box - belt">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14550</itemConsumeId> <!-- Dion Supply Box - Belt - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13896" count="1" /> <!-- Iron Belt -->
+					</item>
+					<item chance="15.0">
+						<item id="13897" count="1" /> <!-- Mithril Belt -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2968" levels="1" name="Giran supply box - belt">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14551</itemConsumeId> <!-- Giran Supply Box - Belt - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13896" count="1" /> <!-- Iron Belt -->
+					</item>
+					<item chance="15.0">
+						<item id="13897" count="1" /> <!-- Mithril Belt -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2969" levels="1" name="Oren supply box - belt">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14552</itemConsumeId> <!-- Oren Supply Box - Belt - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13896" count="1" /> <!-- Iron Belt -->
+					</item>
+					<item chance="15.0">
+						<item id="13897" count="1" /> <!-- Mithril Belt -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2970" levels="1" name="Aden supply box - belt">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14553</itemConsumeId> <!-- Aden Supply Box - Belt - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13896" count="1" /> <!-- Iron Belt -->
+					</item>
+					<item chance="15.0">
+						<item id="13897" count="1" /> <!-- Mithril Belt -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2971" levels="1" name="Innadril supply box - belt">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14554</itemConsumeId> <!-- Innadril Supply Box - Belt - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13896" count="1" /> <!-- Iron Belt -->
+					</item>
+					<item chance="15.0">
+						<item id="13897" count="1" /> <!-- Mithril Belt -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2972" levels="1" name="Goddard supply box - belt">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14555</itemConsumeId> <!-- Goddard Supply Box: Belt - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13896" count="1" /> <!-- Iron Belt -->
+					</item>
+					<item chance="15.0">
+						<item id="13897" count="1" /> <!-- Mithril Belt -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2973" levels="1" name="Rune supply box - belt">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14556</itemConsumeId> <!-- Rune Supply Box - Belt - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13896" count="1" /> <!-- Iron Belt -->
+					</item>
+					<item chance="15.0">
+						<item id="13897" count="1" /> <!-- Mithril Belt -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2974" levels="1" name="Schuttgart supply box - belt">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14557</itemConsumeId> <!-- Schuttgart Supply Box - Belt - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="30.0">
+						<item id="13896" count="1" /> <!-- Iron Belt -->
+					</item>
+					<item chance="15.0">
+						<item id="13897" count="1" /> <!-- Mithril Belt -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2975" levels="1" name="Gludio supply box - magic rune clip">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14884</itemConsumeId> <!-- Gludio Supply Box - Magic Rune Clip - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="21.0">
+						<item id="14902" count="1" /> <!-- Sealed Magic Rune Clip (A-Grade) -->
+					</item>
+					<item chance="10.5">
+						<item id="14903" count="1" /> <!-- Sealed Magic Rune Clip (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2976" levels="1" name="Dion supply box - magic rune clip">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14885</itemConsumeId> <!-- Dion Supply Box - Magic Rune Clip - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="21.0">
+						<item id="14902" count="1" /> <!-- Sealed Magic Rune Clip (A-Grade) -->
+					</item>
+					<item chance="10.5">
+						<item id="14903" count="1" /> <!-- Sealed Magic Rune Clip (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2977" levels="1" name="Giran supply box - magic rune clip">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14886</itemConsumeId> <!-- Giran Supply Box - Magic Rune Clip - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="21.0">
+						<item id="14902" count="1" /> <!-- Sealed Magic Rune Clip (A-Grade) -->
+					</item>
+					<item chance="10.5">
+						<item id="14903" count="1" /> <!-- Sealed Magic Rune Clip (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2978" levels="1" name="Oren supply box - magic rune clip">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14887</itemConsumeId> <!-- Oren Supply Box - Magic Rune Clip - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="21.0">
+						<item id="14902" count="1" /> <!-- Sealed Magic Rune Clip (A-Grade) -->
+					</item>
+					<item chance="10.5">
+						<item id="14903" count="1" /> <!-- Sealed Magic Rune Clip (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2979" levels="1" name="Aden supply box - magic rune clip">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14888</itemConsumeId> <!-- Aden Supply Box - Magic Rune Clip - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="21.0">
+						<item id="14902" count="1" /> <!-- Sealed Magic Rune Clip (A-Grade) -->
+					</item>
+					<item chance="10.5">
+						<item id="14903" count="1" /> <!-- Sealed Magic Rune Clip (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2980" levels="1" name="Innadril supply box - magic rune clip">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14889</itemConsumeId> <!-- Innadril Supply Box - Magic Rune Clip - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="21.0">
+						<item id="14902" count="1" /> <!-- Sealed Magic Rune Clip (A-Grade) -->
+					</item>
+					<item chance="10.5">
+						<item id="14903" count="1" /> <!-- Sealed Magic Rune Clip (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2981" levels="1" name="Goddard supply box - magic rune clip">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14890</itemConsumeId> <!-- Goddard Supply Box: Magic Rune Clip - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="21.0">
+						<item id="14902" count="1" /> <!-- Sealed Magic Rune Clip (A-Grade) -->
+					</item>
+					<item chance="10.5">
+						<item id="14903" count="1" /> <!-- Sealed Magic Rune Clip (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2982" levels="1" name="Rune supply box - magic rune clip">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14891</itemConsumeId> <!-- Rune Supply Box - Magic Rune Clip - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="21.0">
+						<item id="14902" count="1" /> <!-- Sealed Magic Rune Clip (A-Grade) -->
+					</item>
+					<item chance="10.5">
+						<item id="14903" count="1" /> <!-- Sealed Magic Rune Clip (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2983" levels="1" name="Schuttgart supply box - magic rune clip">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14892</itemConsumeId> <!-- Schuttgart Supply Box - Magic Rune Clip - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="21.0">
+						<item id="14902" count="1" /> <!-- Sealed Magic Rune Clip (A-Grade) -->
+					</item>
+					<item chance="10.5">
+						<item id="14903" count="1" /> <!-- Sealed Magic Rune Clip (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2984" levels="1" name="Gludio supply box - magic ornament">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14893</itemConsumeId> <!-- Gludio Supply Box - Magic Ornament - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="21.0">
+						<item id="14904" count="1" /> <!-- Sealed Magic Ornament (A-Grade) -->
+					</item>
+					<item chance="10.5">
+						<item id="14905" count="1" /> <!-- Sealed Magic Ornament (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2985" levels="1" name="Dion supply box - magic ornament">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14894</itemConsumeId> <!-- Dion Supply Box - Magic Ornament - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="21.0">
+						<item id="14904" count="1" /> <!-- Sealed Magic Ornament (A-Grade) -->
+					</item>
+					<item chance="10.5">
+						<item id="14905" count="1" /> <!-- Sealed Magic Ornament (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2986" levels="1" name="Giran supply box - magic ornament">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14895</itemConsumeId> <!-- Giran Supply Box - Magic Ornament - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="21.0">
+						<item id="14904" count="1" /> <!-- Sealed Magic Ornament (A-Grade) -->
+					</item>
+					<item chance="10.5">
+						<item id="14905" count="1" /> <!-- Sealed Magic Ornament (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2987" levels="1" name="Oren supply box - magic ornament">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14896</itemConsumeId> <!-- Oren Supply Box - Magic Ornament - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="21.0">
+						<item id="14904" count="1" /> <!-- Sealed Magic Ornament (A-Grade) -->
+					</item>
+					<item chance="10.5">
+						<item id="14905" count="1" /> <!-- Sealed Magic Ornament (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2988" levels="1" name="Aden supply box - magic ornament">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14897</itemConsumeId> <!-- Aden Supply Box - Magic Ornament - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="21.0">
+						<item id="14904" count="1" /> <!-- Sealed Magic Ornament (A-Grade) -->
+					</item>
+					<item chance="10.5">
+						<item id="14905" count="1" /> <!-- Sealed Magic Ornament (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2989" levels="1" name="Innadril supply box - magic ornament">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14898</itemConsumeId> <!-- Innadril Supply Box - Magic Ornament - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="21.0">
+						<item id="14904" count="1" /> <!-- Sealed Magic Ornament (A-Grade) -->
+					</item>
+					<item chance="10.5">
+						<item id="14905" count="1" /> <!-- Sealed Magic Ornament (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2990" levels="1" name="Goddard supply box - magic ornament">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14899</itemConsumeId> <!-- Goddard Supply Box: Magic Ornament - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="21.0">
+						<item id="14904" count="1" /> <!-- Sealed Magic Ornament (A-Grade) -->
+					</item>
+					<item chance="10.5">
+						<item id="14905" count="1" /> <!-- Sealed Magic Ornament (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2991" levels="1" name="Rune supply box - magic ornament">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14900</itemConsumeId> <!-- Rune Supply Box - Magic Ornament - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="21.0">
+						<item id="14904" count="1" /> <!-- Sealed Magic Ornament (A-Grade) -->
+					</item>
+					<item chance="10.5">
+						<item id="14905" count="1" /> <!-- Sealed Magic Ornament (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2992" levels="1" name="Schuttgart supply box - magic ornament">
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<itemConsumeCount>1</itemConsumeCount>
+		<itemConsumeId>14901</itemConsumeId> <!-- Schuttgart Supply Box - Magic Ornament - Grade S, A -->
+		<magicLevel>1</magicLevel>
+		<conditions msgId="129">
+			<and>
+				<player invSize="10" />
+				<player weight="80" />
+			</and>
+		</conditions>
+		<effects>
+			<effect name="RestorationRandom">
+				<items>
+					<item chance="21.0">
+						<item id="14904" count="1" /> <!-- Sealed Magic Ornament (A-Grade) -->
+					</item>
+					<item chance="10.5">
+						<item id="14905" count="1" /> <!-- Sealed Magic Ornament (S-Grade) -->
+					</item>
+				</items>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2993" levels="1" name="Ancient herb - Deceiver">
+		<!-- You incur the wrath of the spirits who existed in the chaos of the beginning of the world by taking the ancient herb without permission. -->
+		<icon>icon.freed_soul_core_i00</icon>
+		<operateType>A2</operateType>
+		<targetType>NONE</targetType>
+		<abnormalLevel>9</abnormalLevel>
+		<abnormalTime>3600</abnormalTime>
+		<abnormalType>POISON</abnormalType>
+		<abnormalVisualEffect>DOT_POISON</abnormalVisualEffect>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<reuseDelay>2000</reuseDelay>
+	</skill>
+	<skill id="2994" levels="1" name="Disguised Half - Aqua Elf">
+		<!-- Disguised as a half aqua elf in alluring dress. -->
+		<icon>icon.skilltransform3</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>-1</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>-1</magicLevel>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>125</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="2995" levels="1" name="PC room private weapon strengthening order sheet - D grade">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2996" levels="1" name="PC room private weapon strengthening order sheet - C grade">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2997" levels="1" name="PC room private weapon strengthening order sheet - B grade">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2998" levels="1" name="PC room private weapon strengthening order sheet - A grade">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="2999" levels="1" name="PC room private weapon strengthening order sheet - S grade">
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+</list>

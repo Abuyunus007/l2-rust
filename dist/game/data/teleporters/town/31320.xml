@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/teleporterData.xsd">
+	<npc id="31320"> <!-- Ilyana -->
+		<teleport type="NORMAL">
+			<location name="Town of Goddard" x="148024" y="-55281" z="-2728" feeCount="10000" castleId="7" />
+			<location name="The Town of Gludio" x="-12787" y="122779" z="-3114" feeCount="53000" castleId="1" />
+			<location name="The Town of Giran" x="83551" y="147945" z="-3400" feeCount="59000" castleId="3" />
+			<location name="The Town of Dion" x="15472" y="142880" z="-2688" feeCount="57000" castleId="2" />
+			<location name="Heine" x="111455" y="219400" z="-3544" feeCount="82000" castleId="6" />
+			<location name="Town of Schuttgart" x="87126" y="-143520" z="-1288" feeCount="10000" castleId="9" />
+			<location name="Town of Aden" x="146783" y="25808" z="-2008" feeCount="37000" castleId="5" />
+			<location name="Town of Oren" x="82971" y="53207" z="-1488" feeCount="10000" castleId="4" />
+			<location name="Wild Beast Pastures" x="53516" y="-82831" z="-2700" feeCount="7200" />
+			<location name="Valley of Saints" x="65307" y="-71445" z="-3688" feeCount="3800" />
+			<location name="Forest of the Dead" x="52107" y="-54328" z="-3152" feeCount="1200" />
+			<location name="Swamp of Screams" x="69340" y="-50203" z="-3288" feeCount="3000" />
+			<location name="Monastery of Silence" x="106414" y="-87799" z="-2920" feeCount="14000" />
+			<location name="Stakato Nest" x="89513" y="-44800" z="-2136" feeCount="9100" />
+			<location name="Primeval Isle Wharf" x="11235" y="-24026" z="-3640" feeCount="6400" />
+		</teleport>
+		<teleport type="NOBLES_TOKEN">
+			<location name="Gludin Arena" x="-87328" y="142266" z="-3640" feeId="13722" feeCount="1" />
+			<location name="Giran Arena" x="73579" y="142709" z="-3768" feeId="13722" feeCount="1" />
+			<location name="The Center of the Forest of the Dead" x="54425" y="-41692" z="-3072" feeId="13722" feeCount="1" />
+			<location name="The Center of the Valley of Saints" x="84092" y="-80084" z="-3504" feeId="13722" feeCount="1" />
+			<location name="Cursed Village" x="62084" y="-40935" z="-2802" feeId="13722" feeCount="1" />
+			<location name="Shyeed's Cavern" x="76911" y="-55295" z="-5824" feeId="13722" feeCount="1" />
+			<location name="Monastery of Silence" x="106414" y="-87799" z="-2949" feeId="13722" feeCount="1" />
+			<location name="Coliseum" x="146440" y="46723" z="-3400" feeId="13722" feeCount="1" />
+		</teleport>
+		<teleport type="NOBLES_ADENA">
+			<location name="Gludin Arena" x="-87328" y="142266" z="-3640" feeCount="1000" />
+			<location name="Giran Arena" x="73579" y="142709" z="-3768" feeCount="1000" />
+			<location name="The Center of the Forest of the Dead" x="54425" y="-41692" z="-3072" feeCount="1000" />
+			<location name="The Center of the Valley of Saints" x="84092" y="-80084" z="-3504" feeCount="1000" />
+			<location name="Cursed Village" x="62084" y="-40935" z="-2802" feeCount="1000" />
+			<location name="Shyeed's Cavern" x="76911" y="-55295" z="-5824" feeCount="1000" />
+			<location name="Monastery of Silence" x="106414" y="-87799" z="-2949" feeCount="1000" />
+			<location name="Coliseum" x="146440" y="46723" z="-3400" feeCount="1000" />
+		</teleport>
+	</npc>
+</list>

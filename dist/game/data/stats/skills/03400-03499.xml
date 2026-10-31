@@ -1,0 +1,1389 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/skills.xsd">
+	<skill id="3400" levels="1" name="Traits Strengthen Earring">
+		<!-- Increases the power of mental attacks. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>80</magicLevel>
+		<effects>
+			<effect name="AttackTrait">
+				<DERANGEMENT>6</DERANGEMENT>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3401" levels="1" name="Dynasty Resistance Necklace">
+		<!-- Increases Resistance to mental attacks. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>80</magicLevel>
+		<effects>
+			<effect name="DefenceTrait">
+				<DERANGEMENT>9</DERANGEMENT>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3402" levels="1" name="Dynasty Resistance Ring">
+		<!-- Increases Resistance to mental attacks. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>80</magicLevel>
+		<effects>
+			<effect name="DefenceTrait">
+				<DERANGEMENT>4</DERANGEMENT>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3403" levels="1" name="Dynasty Resistance Earring">
+		<!-- Increases Resistance to mental attacks. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>80</magicLevel>
+		<effects>
+			<effect name="DefenceTrait">
+				<DERANGEMENT>6</DERANGEMENT>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3404" levels="1" name="Mysterious Effect">
+		<!-- Enlarges the user's head. -->
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>0</abnormalLevel>
+		<abnormalTime>1200</abnormalTime>
+		<abnormalType>BIG_HEAD</abnormalType>
+		<abnormalVisualEffect>BIG_HEAD</abnormalVisualEffect>
+		<activateRate>0</activateRate>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>1800000</reuseDelay>
+		<trait>ETC</trait>
+		<conditions msgId="113" addName="1">
+			<not>
+				<player transformationId="103" />
+			</not>
+		</conditions>
+	</skill>
+	<skill id="3405" levels="1" name="Large Firecracker Effect">
+		<!-- Shoots out large firecrackers. -->
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+		<reuseDelay>1200000</reuseDelay>
+	</skill>
+	<skill id="3406" levels="1" name="Weight Decrease Ring">
+		<!-- Decreases weight penalty. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="weightPenalty">9000</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3407" levels="1" name="Stealth Ring">
+		<!-- Decreases the sound of your own steps to avoid receiving the first strike. -->
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>0</abnormalLevel>
+		<abnormalTime>120</abnormalTime>
+		<abnormalType>STEALTH</abnormalType>
+		<abnormalVisualEffect>STEALTH</abnormalVisualEffect>
+		<activateRate>0</activateRate>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>600000</reuseDelay>
+		<effects>
+			<effect name="SilentMove">
+				<mul stat="runSpd">0.6</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3408" levels="1" name="Blessed Ring of Escape">
+		<!-- Allows the use of Blessed Escape every 1 minute. -->
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<hitTime>200</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>60000</reuseDelay>
+		<conditions msgId="113" addName="1">
+			<and>
+				<player canEscape="true" />
+				<not>
+					<player insideZoneId="10501, 10502, 10503, 10504, 10505, 10506, 10507, 10508" />
+				</not>
+			</and>
+		</conditions>
+		<effects>
+			<effect name="Escape">
+				<escapeType>TOWN</escapeType>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3409" levels="1" name="Blessed Ring of Resurrection">
+		<!-- Allows the use of Blessed Resurrection every 5 minutes. -->
+		<operateType>A1</operateType>
+		<targetType>PC_BODY</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<castRange>400</castRange>
+		<effectPoint>1</effectPoint>
+		<effectRange>600</effectRange>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>1</magicLevel>
+		<reuseDelay>300000</reuseDelay>
+		<conditions>
+			<player canResurrect="true" />
+		</conditions>
+		<effects>
+			<effect name="Resurrection">
+				<power>100</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3410" levels="1" name="Blue Talisman of Reflection">
+		<!-- Reflects a portion of physical melee damage received back onto the enemy when equipped with Talisman. -->
+		<icon>icon.etc_talisman_i01</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>120</abnormalTime>
+		<abnormalType>TALISMAN</abnormalType>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>55</magicLevel>
+		<mpConsume>40</mpConsume>
+		<mpInitialConsume>10</mpInitialConsume>
+		<reuseDelay>360000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="reflectDam">10</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3411" levels="1" name="Special Ability: Focus">
+		<!-- Increases Max HP by 10%, and critical rate. Inflicts additional damage during PvP. -->
+		<icon>icon.skill1077</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>80</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="critRate">109.2</add>
+				<mul stat="maxHp">1.1</mul>
+				<mul stat="pvpPhysDmg">1.05</mul>
+				<mul stat="pvpPhysSkillsDmg">1.05</mul>
+				<mul stat="pvpMagicalDmg">1.05</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3412" levels="1" name="Dynasty Breastplate">
+		<!-- Increases P. Def., Max HP, and Resistance to Dark. -->
+		<icon>icon.armor_t91_u_i00</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pDef">1.046</mul> <!-- P. Def +4.6% -->
+				<add stat="maxHp">418</add> <!-- MaxHP +418 -->
+				<add stat="darkRes">6</add> <!-- Darkness Resistance +6 -->
+			</effect>
+			<effect name="EnableCloak" />
+		</effects>
+	</skill>
+	<skill id="3413" levels="1" name="Dynasty Leather Armor">
+		<!-- Increases P. Atk./Evasion Rate/Max HP/Resistance to Dark. -->
+		<icon>icon.armor_t92_u_i00</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="rEvas">1.72</add> <!-- Evacion +1.72 -->
+				<add stat="accCombat">1.72</add> <!-- Accuracy +1.72 -->
+				<add stat="maxHp">418</add> <!-- MaxHP +418 -->
+				<add stat="darkRes">6</add> <!-- Darkness Resistance +6 -->
+			</effect>
+			<effect name="EnableCloak" />
+		</effects>
+	</skill>
+	<skill id="3414" levels="1" name="Dynasty Leather Armor - Force Master">
+		<!-- Increases P. Atk./Max HP/Resistance to Dark, and decreases MP consumption. -->
+		<icon>icon.armor_t92_ud_i00</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtk">1.054</mul> <!-- P. Atk. +5.4% -->
+				<add stat="maxHp">492</add> <!-- Max HP +492 Effect -->
+				<add stat="darkRes">8</add> <!-- Dark resistance +8 -->
+				<mul stat="physicalMpConsumeRate">0.95</mul> <!-- MP consumption of the active skill is decreased -5% -->
+			</effect>
+			<effect name="EnableCloak" />
+		</effects>
+	</skill>
+	<skill id="3415" levels="1" name="Dynasty Leather Armor - Weapon Master">
+		<!-- Increases P. Atk/Max HP/Critical Rate/Critical Damage/Resistance to Dark. -->
+		<icon>icon.armor_t92_ub_i00</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtk">1.054</mul> <!-- P. Atk +5.4% -->
+				<add stat="maxHp">492</add> <!-- MaxHP +492 -->
+				<add stat="critRate">24.6</add> <!-- Critical Damage Chance +24.6 -->
+				<add stat="critDmgAdd">234</add> <!-- Critical Damage +234 -->
+				<add stat="darkRes">8</add> <!-- Dark Resistance +8 -->
+			</effect>
+			<effect name="EnableCloak" />
+		</effects>
+	</skill>
+	<skill id="3416" levels="1" name="Dynasty Tunic">
+		<!-- Increases Casting Spd./ Max MP/Resistance to Dark. -->
+		<icon>icon.armor_t93_u_i00</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="mAtkSpd">1.12</mul> <!-- Casting Spd. +12% -->
+				<add stat="maxMp">257</add> <!-- Max MP +257 -->
+				<add stat="darkRes">6</add> <!-- Darkness Resistance +6 -->
+			</effect>
+			<effect name="EnableCloak" />
+		</effects>
+	</skill>
+	<skill id="3417" levels="1" name="Equipped with Shield">
+		<!-- Shield Defense Rate is increased. -->
+		<icon>icon.shield_dynasty_shield_i00</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="rShld">1.05</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3418" levels="1" name="Active Skill: Transform Pig">
+		<!-- Transform into a cute pig for 5 minutes. -->
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>300</abnormalTime>
+		<abnormalType>TRANSFORM</abnormalType>
+		<effectPoint>1</effectPoint>
+		<magicLevel>1</magicLevel>
+		<reuseDelay>600000</reuseDelay>
+		<conditions>
+			<player canTransform="true" />
+		</conditions>
+		<effects>
+			<effect name="Transformation">
+				<id>104</id>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3419" levels="1" name="Magic Immunity">
+		<!-- Increases M. Def. when equipped with a shirt -->
+		<icon>icon.etc_stripe_shirts_s_i05</icon>
+		<operateType>P</operateType>
+		<targetType>NONE</targetType>
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="3420" levels="1" name="Dynasty Leather Armor - Summoner">
+		<!-- Increases P. Atk., P. Def, Max HP, Atk. Speed and Resistance to Dark. -->
+		<icon>icon.armor_t92_u_i00</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtkSpd">1.054</mul> <!-- increase Atk. Spd. +5.4% -->
+				<mul stat="pAtk">1.0266</mul> <!-- Increase P. Atk. +2.66% -->
+				<mul stat="pDef">1.0266</mul> <!-- Increase P. Def. +2.66% -->
+				<add stat="maxHp">492</add> <!-- MaxHP +492 -->
+				<add stat="darkRes">8</add> <!-- Dark Resistance +8 -->
+			</effect>
+			<effect name="EnableCloak" />
+		</effects>
+	</skill>
+	<skill id="3421" levels="1" name="Wolf Mount">
+		<!-- Climb onto your Wolf's back. -->
+		<icon>icon.skill0083</icon>
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="3422" levels="1" name="Wolf Dismount">
+		<!-- Climb off of your Wolf's back. -->
+		<icon>icon.skill0083</icon>
+		<operateType>A1</operateType>
+		<targetType>NONE</targetType>
+		<blockedInOlympiad>true</blockedInOlympiad>
+		<isMagic>1</isMagic> <!-- Magic Skill -->
+		<magicLevel>1</magicLevel>
+	</skill>
+	<skill id="3423" levels="1" name="Little Angel Agathion - Summon (or Release)">
+		<!-- Removes the seal of Agathion. -->
+		<icon>icon.etc_summon_aga_agit_i00</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<effects>
+			<effect name="SummonAgathion">
+				<npcId>16031</npcId>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3424" levels="1" name="Little Devil Agathion - Summon (or Release)">
+		<!-- Removes the seal of Agathion. -->
+		<icon>icon.etc_summon_aga_agit_i00</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<effects>
+			<effect name="SummonAgathion">
+				<npcId>16032</npcId>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3425" levels="1" name="Rudolph Agathion - Summon (or Release)">
+		<!-- Removes the seal of Agathion. -->
+		<icon>icon.etc_summon_aga_agit_i00</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>85</magicLevel>
+		<effects>
+			<effect name="SummonAgathion">
+				<npcId>16033</npcId>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3426" levels="1" name="Maximum Ability">
+		<!-- A critical attack will have a chance to increase P. Atk., M. Atk., and healing power, and decrease MP consumption during skill use, for you and your party members. -->
+		<operateType>P</operateType>
+		<magicLevel>1</magicLevel>
+		<effects>
+			<effect name="TriggerSkillByDamageDealt">
+				<attackerType>Creature</attackerType>
+				<minAttackerLevel>1</minAttackerLevel>
+				<maxAttackerLevel>100</maxAttackerLevel>
+				<isCritical>true</isCritical>
+				<minDamage>1</minDamage>
+				<chance>5</chance>
+				<skillId>5547</skillId>
+				<skillLevel>1</skillLevel> <!-- Maximum Ability -->
+				<targetType>PARTY</targetType>
+				<allowWeapons>ALL</allowWeapons>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3427" levels="1" name="Special Ability: Infinity Rapier">
+		<!-- Decreases the enemy's P. Def. on a critical attack. Increases Max HP, Max MP, Max CP. Inflicts additional damage during PvP. Reflects some of the damage received back to the enemy (does not include damage from skill or ranged attacks). In addition, when a critical hit occurs during a regular attack, there is a chance that the capacity of a party member's skills will be maximized. -->
+		<icon>icon.weapon_infinity_rapier_i00</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>80</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="maxHp">1.25</mul>
+				<mul stat="maxMp">1.3</mul>
+				<mul stat="maxCp">1.5</mul>
+				<mul stat="pvpPhysDmg">1.07</mul>
+				<mul stat="pvpMagicalDmg">1.07</mul>
+				<mul stat="pvpPhysSkillsDmg">1.07</mul>
+				<add stat="reflectDam">9</add>
+			</effect>
+			<effect name="TriggerSkillByDamageDealt">
+				<attackerType>Creature</attackerType>
+				<minAttackerLevel>1</minAttackerLevel>
+				<maxAttackerLevel>100</maxAttackerLevel>
+				<isCritical>true</isCritical>
+				<minDamage>1</minDamage>
+				<chance>5</chance>
+				<skillId>5547</skillId>
+				<skillLevel>1</skillLevel> <!-- Maximum Ability -->
+				<targetType>PARTY</targetType>
+				<allowWeapons>ALL</allowWeapons>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3428" levels="1" name="Blue Talisman - Explosion">
+		<!-- Increases the attacking power/speed momentarily with the power of Talisman. -->
+		<icon>icon.etc_talisman_i01</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>TALISMAN</abnormalType>
+		<effectPoint>669</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>75</magicLevel>
+		<mpConsume>40</mpConsume>
+		<mpInitialConsume>10</mpInitialConsume>
+		<reuseDelay>600000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<mul stat="pAtk">1.2</mul>
+				<mul stat="pAtkSpd">1.1</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3429" levels="1" name="Red Talisman - Life Force">
+		<!-- Regenerate HP and MP completely with the power of Talisman. -->
+		<icon>icon.etc_talisman_i00</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<hitTime>3000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>75</magicLevel>
+		<reuseDelay>1800000</reuseDelay>
+		<effects>
+			<effect name="HealPercent">
+				<power>100</power>
+			</effect>
+			<effect name="ManaHealPercent">
+				<power>100</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3430" levels="1" name="White Talisman - Darkness">
+		<!-- Greatly increases Resistance to Dark with the power of Talisman. -->
+		<icon>icon.etc_talisman_i06</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>TALISMAN</abnormalType>
+		<effectPoint>669</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>75</magicLevel>
+		<mpConsume>40</mpConsume>
+		<mpInitialConsume>10</mpInitialConsume>
+		<reuseDelay>600000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="darkRes">50</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3431" levels="1" name="White Talisman - Storm">
+		<!-- Greatly increases Resistance to wind with the power of Talisman. -->
+		<icon>icon.etc_talisman_i06</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>TALISMAN</abnormalType>
+		<effectPoint>669</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>75</magicLevel>
+		<mpConsume>40</mpConsume>
+		<mpInitialConsume>10</mpInitialConsume>
+		<reuseDelay>600000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="windRes">50</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3432" levels="1" name="White Talisman - Water">
+		<!-- Greatly increases Resistance to water with the power of Talisman. -->
+		<icon>icon.etc_talisman_i06</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>TALISMAN</abnormalType>
+		<effectPoint>669</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>75</magicLevel>
+		<mpConsume>40</mpConsume>
+		<mpInitialConsume>10</mpInitialConsume>
+		<reuseDelay>600000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="waterRes">50</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3433" levels="1" name="White Talisman - Fire">
+		<!-- Greatly increases Resistance to fire with the power of Talisman. -->
+		<icon>icon.etc_talisman_i06</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>TALISMAN</abnormalType>
+		<effectPoint>669</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>75</magicLevel>
+		<mpConsume>40</mpConsume>
+		<mpInitialConsume>10</mpInitialConsume>
+		<reuseDelay>600000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="fireRes">50</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3434" levels="1" name="White Talisman - Earth">
+		<!-- Greatly increases Resistance to earth with the power of Talisman. -->
+		<icon>icon.etc_talisman_i06</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>TALISMAN</abnormalType>
+		<effectPoint>669</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>75</magicLevel>
+		<mpConsume>40</mpConsume>
+		<mpInitialConsume>10</mpInitialConsume>
+		<reuseDelay>600000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="earthRes">50</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3435" levels="1" name="White Talisman - Light">
+		<!-- Greatly increases Resistance to Holy with the power of Talisman. -->
+		<icon>icon.etc_talisman_i06</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>TALISMAN</abnormalType>
+		<effectPoint>669</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>75</magicLevel>
+		<mpConsume>40</mpConsume>
+		<mpInitialConsume>10</mpInitialConsume>
+		<reuseDelay>600000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="holyRes">50</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3436" levels="1" name="Blue Talisman - Self destruction">
+		<!-- Greatly damage the environment exploding the power of Talisman. -->
+		<icon>icon.etc_talisman_i01</icon>
+		<operateType>A1</operateType>
+		<targetType>AURA</targetType>
+		<affectLimit>6-12</affectLimit>
+		<affectRange>200</affectRange>
+		<effectPoint>-669</effectPoint>
+		<hitTime>3000</hitTime>
+		<hpConsume>800</hpConsume>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>75</magicLevel>
+		<power>200</power>
+		<effects>
+			<effect name="MagicalDamage" />
+		</effects>
+	</skill>
+	<skill id="3437" levels="1" name="Blue Talisman - Magic Explosive Power">
+		<!-- Increases M. Atk. and magic critical rate with the power of Talisman. -->
+		<icon>icon.etc_talisman_i01</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>TALISMAN</abnormalType>
+		<effectPoint>669</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>75</magicLevel>
+		<mpConsume>40</mpConsume>
+		<mpInitialConsume>10</mpInitialConsume>
+		<reuseDelay>600000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="mCritRate">4</add>
+				<mul stat="mAtk">1.55</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3438" levels="1" name="Blue Talisman - Great Healing">
+		<!-- Increases the power of HP regeneration magic with the power of Talisman. -->
+		<icon>icon.etc_talisman_i01</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>10</abnormalTime>
+		<abnormalType>TALISMAN</abnormalType>
+		<effectPoint>669</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>75</magicLevel>
+		<mpConsume>40</mpConsume>
+		<mpInitialConsume>10</mpInitialConsume>
+		<reuseDelay>600000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="healEffect">1000</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3439" levels="1" name="Silk Shirt">
+		<!-- Increases Max HP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>49</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">118</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3440" levels="1" name="Silk Shirt">
+		<!-- Increases Max MP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>49</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxMp">51</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3441" levels="1" name="Silk Shirt">
+		<!-- Increases Max CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>49</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxCp">354</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3442" levels="1" name="Silk Shirt">
+		<!-- Increases Max HP/MP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>49</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">59</add>
+				<add stat="maxMp">26</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3443" levels="1" name="Silk Shirt">
+		<!-- Increases Max HP/CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>49</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">59</add>
+				<add stat="maxCp">117</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3444" levels="1" name="Silk Shirt">
+		<!-- Increases Max MP/CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>49</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxMp">26</add>
+				<add stat="maxCp">117</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3445" levels="1" name="Thin Leather Shirt">
+		<!-- Increases Max HP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>58</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">147</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3446" levels="1" name="Thin Leather Shirt">
+		<!-- Increases Max MP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>58</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxMp">72</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3447" levels="1" name="Thin Leather Shirt">
+		<!-- Increases Max CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>58</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxCp">441</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3448" levels="1" name="Thin Leather Shirt">
+		<!-- Increases Max HP/MP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>58</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">74</add>
+				<add stat="maxMp">36</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3449" levels="1" name="Thin Leather Shirt">
+		<!-- Increases Max HP/CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>58</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">74</add>
+				<add stat="maxCp">222</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3450" levels="1" name="Thin Leather Shirt">
+		<!-- Increases Max MP/CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>58</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxMp">36</add>
+				<add stat="maxCp">222</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3451" levels="1" name="Scale Shirt">
+		<!-- Increases Max HP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>64</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">172</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3452" levels="1" name="Scale Shirt">
+		<!-- Increases Max MP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>64</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxMp">85</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3453" levels="1" name="Scale Shirt">
+		<!-- Increases Max CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>64</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxCp">516</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3454" levels="1" name="Scale Shirt">
+		<!-- Increases Max HP/MP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>64</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">86</add>
+				<add stat="maxMp">43</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3455" levels="1" name="Scale Shirt">
+		<!-- Increases Max HP/CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>64</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">86</add>
+				<add stat="maxCp">258</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3456" levels="1" name="Scale Shirt">
+		<!-- Increases Max MP/CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>64</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxMp">43</add>
+				<add stat="maxCp">258</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3457" levels="1" name="Mithril Shirt">
+		<!-- Increases Max HP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>75</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">224</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3458" levels="1" name="Mithril Shirt">
+		<!-- Increases Max MP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>75</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxMp">111</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3459" levels="1" name="Mithril Shirt">
+		<!-- Increases Max CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>75</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxCp">672</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3460" levels="1" name="Mithril Shirt">
+		<!-- Increases Max HP/MP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>75</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">112</add>
+				<add stat="maxMp">56</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3461" levels="1" name="Mithril Shirt">
+		<!-- Increases Max HP/CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>75</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">112</add>
+				<add stat="maxCp">336</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3462" levels="1" name="Mithril Shirt">
+		<!-- Increases Max MP/CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>75</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxMp">56</add>
+				<add stat="maxCp">336</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3463" levels="1" name="Striped Silk Shirt">
+		<!-- Increases Max HP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>55</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">135</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3464" levels="1" name="Striped Silk Shirt">
+		<!-- Increases Max MP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>55</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxMp">66</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3465" levels="1" name="Striped Silk Shirt">
+		<!-- Increases Max CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>55</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxCp">405</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3466" levels="1" name="Striped Silk Shirt">
+		<!-- Increases Max HP/MP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>55</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">68</add>
+				<add stat="maxMp">33</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3467" levels="1" name="Striped Silk Shirt">
+		<!-- Increases Max HP/CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>55</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">68</add>
+				<add stat="maxCp">203</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3468" levels="1" name="Striped Silk Shirt">
+		<!-- Increases Max MP/CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>55</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxMp">33</add>
+				<add stat="maxCp">203</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3469" levels="1" name="Thin Stripe Leather Shirt">
+		<!-- Increases Max HP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>61</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">160</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3470" levels="1" name="Thin Stripe Leather Shirt">
+		<!-- Increases Max MP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>61</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxMp">78</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3471" levels="1" name="Thin Stripe Leather Shirt">
+		<!-- Increases Max CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>61</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxCp">480</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3472" levels="1" name="Thin Stripe Leather Shirt">
+		<!-- Increases Max HP/MP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>61</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">80</add>
+				<add stat="maxMp">39</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3473" levels="1" name="Thin Stripe Leather Shirt">
+		<!-- Increases Max HP/CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>61</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">80</add>
+				<add stat="maxCp">240</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3474" levels="1" name="Thin Stripe Leather Shirt">
+		<!-- Increases Max MP/CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>61</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxMp">39</add>
+				<add stat="maxCp">240</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3475" levels="1" name="Striped Scale Shirt">
+		<!-- Increases Max HP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>67</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">186</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3476" levels="1" name="Striped Scale Shirt">
+		<!-- Increases Max MP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>67</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxMp">92</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3477" levels="1" name="Striped Scale Shirt">
+		<!-- Increases Max CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>67</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxCp">564</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3478" levels="1" name="Striped Scale Shirt">
+		<!-- Increases Max HP/MP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>67</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">93</add>
+				<add stat="maxMp">46</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3479" levels="1" name="Striped Scale Shirt">
+		<!-- Increases Max HP/CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>67</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">93</add>
+				<add stat="maxCp">282</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3480" levels="1" name="Striped Scale Shirt">
+		<!-- Increases Max MP/CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>67</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxMp">46</add>
+				<add stat="maxCp">282</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3481" levels="1" name="Striped Mithril Shirt">
+		<!-- Increases Max HP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>80</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">246</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3482" levels="1" name="Striped Mithril Shirt">
+		<!-- Increases Max MP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>80</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxMp">122</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3483" levels="1" name="Striped Mithril Shirt">
+		<!-- Increases Max CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>80</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxCp">744</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3484" levels="1" name="Striped Mithril Shirt">
+		<!-- Increases Max HP/MP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>80</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">123</add>
+				<add stat="maxMp">61</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3485" levels="1" name="Striped Mithril Shirt">
+		<!-- Increases Max HP/CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>80</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxHp">123</add>
+				<add stat="maxCp">372</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3486" levels="1" name="Striped Mithril Shirt">
+		<!-- Increases Max MP/CP. -->
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>80</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="maxMp">61</add>
+				<add stat="maxCp">372</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3487" levels="1" name="Blue Talisman of Power">
+		<!-- Increases P. Atk with the power of Talisman. -->
+		<icon>icon.etc_talisman_i01</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>120</abnormalTime>
+		<abnormalType>TALISMAN</abnormalType>
+		<effectPoint>532</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>55</magicLevel>
+		<mpConsume>40</mpConsume>
+		<mpInitialConsume>10</mpInitialConsume>
+		<reuseDelay>360000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="pAtk">9.4</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3488" levels="1" name="Blue Talisman of Protection">
+		<!-- Increases Shield Defense with the power of Talisman. -->
+		<icon>icon.etc_talisman_i01</icon>
+		<operateType>A2</operateType>
+		<targetType>SELF</targetType>
+		<abnormalLevel>1</abnormalLevel>
+		<abnormalTime>120</abnormalTime>
+		<abnormalType>TALISMAN</abnormalType>
+		<effectPoint>532</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>55</magicLevel>
+		<mpConsume>40</mpConsume>
+		<mpInitialConsume>10</mpInitialConsume>
+		<reuseDelay>360000</reuseDelay>
+		<effects>
+			<effect name="Buff">
+				<add stat="sDef">63</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3489" levels="1" name="Yellow Talisman of Arcane Power">
+		<!-- Increases M. Atk. when equipped with Talisman. -->
+		<icon>icon.etc_talisman_i02</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>55</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="mAtk">11.7</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3490" levels="1" name="Yellow Talisman of Defense">
+		<!-- Increases P. Def when equipped with Talisman. -->
+		<icon>icon.etc_talisman_i02</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>55</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="pDef">18.3</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3491" levels="1" name="Yellow Talisman of Evasion">
+		<!-- Increases Evasion when equipped with Talisman. -->
+		<icon>icon.etc_talisman_i02</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>55</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="rEvas">1.1</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3492" levels="1" name="Yellow Talisman of Speed">
+		<!-- Increases Speed when equipped with Talisman. -->
+		<icon>icon.etc_talisman_i02</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>55</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="runSpd">3</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3493" levels="1" name="Yellow Talisman of Regeneration">
+		<!-- Increases HP Recovery Bonus when a talisman is equipped. -->
+		<icon>icon.etc_talisman_i02</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>55</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="regHp">1.01</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3494" levels="1" name="Yellow Talisman of CP Regeneration">
+		<!-- Increases CP recovery bonus when a talisman is equipped. -->
+		<icon>icon.etc_talisman_i02</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>55</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="regCp">1.01</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3495" levels="1" name="Yellow Talisman of Healing">
+		<!-- Increases power of HP regeneration magic when equipped with Talisman. -->
+		<icon>icon.etc_talisman_i02</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>55</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<add stat="healEffect">8</add>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3496" levels="1" name="Red Talisman of Recovery">
+		<!-- Recover HP/CP with the power of Talisman. -->
+		<icon>icon.etc_talisman_i00</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<effectPoint>532</effectPoint>
+		<hitTime>4000</hitTime>
+		<isMagic>2</isMagic> <!-- Static Skill -->
+		<magicLevel>55</magicLevel>
+		<mpConsume>40</mpConsume>
+		<mpInitialConsume>10</mpInitialConsume>
+		<reuseDelay>300000</reuseDelay>
+		<effects>
+			<effect name="Heal">
+				<power>100</power>
+			</effect>
+			<effect name="CpHeal">
+				<power>100</power>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3497" levels="1" name="Yellow Talisman of MP Regeneration">
+		<!-- Increases MP Recovery Bonus when a talisman is equipped. -->
+		<icon>icon.etc_talisman_i02</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>55</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="regMp">1.01</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3498" levels="1" name="Special Ability: Light">
+		<!-- Increases Weight Gauge. -->
+		<icon>icon.skill0150</icon>
+		<operateType>P</operateType>
+		<targetType>SELF</targetType>
+		<magicLevel>46</magicLevel>
+		<effects>
+			<effect name="Buff">
+				<mul stat="weightLimit">1.2</mul>
+			</effect>
+		</effects>
+	</skill>
+	<skill id="3499" levels="1" name="Transform Dispel">
+		<!-- Cancels transformation. -->
+		<icon>icon.skilltransform2</icon>
+		<operateType>A1</operateType>
+		<targetType>SELF</targetType>
+		<effectPoint>10</effectPoint>
+		<hitTime>2500</hitTime>
+		<magicLevel>56</magicLevel>
+		<effects>
+			<effect name="DispelBySlot">
+				<dispel>TRANSFORM,9</dispel>
+			</effect>
+		</effects>
+	</skill>
+</list>

@@ -1,0 +1,235 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list enabled="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/spawns.xsd">
+	<spawn name="23_20">
+		<npc id="20600" x="104228" y="81860" z="-3284" heading="0" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="104281" y="80375" z="-2483" heading="29974" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="104694" y="80575" z="-2586" heading="0" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="104933" y="83818" z="-3284" heading="0" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="105132" y="80931" z="-2538" heading="20924" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="105135" y="82750" z="-3284" heading="0" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="105521" y="79430" z="-2246" heading="57567" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="105803" y="82941" z="-2811" heading="597" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="105989" y="86007" z="-2896" heading="18166" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="106023" y="87851" z="-3141" heading="42459" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="106466" y="86857" z="-3127" heading="17236" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="106740" y="89129" z="-2804" heading="3177" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="106822" y="88025" z="-3142" heading="10830" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="107345" y="86524" z="-3142" heading="56297" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="107495" y="82835" z="-2543" heading="61152" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="107822" y="83467" z="-2473" heading="64361" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="108517" y="81595" z="-2810" heading="57189" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="110612" y="89187" z="-2590" heading="56897" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="122662" y="79584" z="-2193" heading="45796" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="123340" y="79482" z="-2229" heading="22218" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="123867" y="75033" z="-2825" heading="25278" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="124079" y="76696" z="-2433" heading="16654" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="124336" y="81564" z="-2912" heading="0" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="124437" y="82454" z="-2912" heading="0" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="125018" y="81905" z="-2533" heading="8318" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="125181" y="83018" z="-2387" heading="50643" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="125942" y="79668" z="-2948" heading="0" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="126020" y="80566" z="-2252" heading="16448" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="126250" y="83997" z="-2211" heading="6021" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="126276" y="82684" z="-2095" heading="46070" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="126545" y="73495" z="-2809" heading="47600" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="126741" y="80978" z="-1905" heading="42275" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="126792" y="80087" z="-2002" heading="54956" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="126990" y="84473" z="-1843" heading="28533" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="127376" y="81821" z="-1752" heading="51234" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="127483" y="73878" z="-2494" heading="8499" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20600" x="128927" y="76262" z="-1701" heading="56854" respawnDelay="25" /> <!-- Karul Bugbear -->
+		<npc id="20601" x="103998" y="81783" z="-2517" heading="0" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="104021" y="81297" z="-2565" heading="22745" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="104101" y="82437" z="-2532" heading="25801" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="104842" y="82900" z="-2650" heading="58912" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="105330" y="80300" z="-2517" heading="57592" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="105459" y="83251" z="-2760" heading="36785" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="106117" y="85416" z="-2893" heading="27260" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="106500" y="88188" z="-3142" heading="22924" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="107191" y="85832" z="-3067" heading="45144" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="107392" y="87755" z="-3142" heading="63076" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="108631" y="80776" z="-2810" heading="51196" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="108654" y="80226" z="-2811" heading="48253" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="109061" y="90806" z="-2604" heading="25355" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="109883" y="91447" z="-2490" heading="17754" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="122564" y="80510" z="-2397" heading="61196" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="123857" y="82039" z="-2883" heading="47836" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="124423" y="82961" z="-2603" heading="24035" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="124730" y="85167" z="-2468" heading="6712" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="125001" y="83835" z="-2387" heading="52255" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="125728" y="79893" z="-2301" heading="0" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="125849" y="78391" z="-2308" heading="36909" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="126036" y="79046" z="-2213" heading="39226" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="126637" y="74840" z="-2540" heading="16353" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="126646" y="78082" z="-2077" heading="57419" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="127370" y="83481" z="-1994" heading="3191" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="127831" y="76936" z="-1908" heading="1207" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="127863" y="82524" z="-1882" heading="22518" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20601" x="128416" y="83984" z="-1390" heading="3959" respawnDelay="25" /> <!-- Tamlin Orc -->
+		<npc id="20602" x="104776" y="79973" z="-2449" heading="61581" respawnDelay="25" /> <!-- Tamlin Orc Archer -->
+		<npc id="20602" x="104811" y="81802" z="-2691" heading="52121" respawnDelay="25" /> <!-- Tamlin Orc Archer -->
+		<npc id="20602" x="104984" y="83337" z="-2694" heading="20502" respawnDelay="25" /> <!-- Tamlin Orc Archer -->
+		<npc id="20602" x="105788" y="82103" z="-2988" heading="1774" respawnDelay="25" /> <!-- Tamlin Orc Archer -->
+		<npc id="20602" x="106702" y="83710" z="-2481" heading="25397" respawnDelay="25" /> <!-- Tamlin Orc Archer -->
+		<npc id="20602" x="106729" y="85771" z="-2998" heading="51004" respawnDelay="25" /> <!-- Tamlin Orc Archer -->
+		<npc id="20602" x="106789" y="87880" z="-3142" heading="44675" respawnDelay="25" /> <!-- Tamlin Orc Archer -->
+		<npc id="20602" x="107023" y="87025" z="-3142" heading="6759" respawnDelay="25" /> <!-- Tamlin Orc Archer -->
+		<npc id="20602" x="107999" y="91529" z="-2417" heading="58763" respawnDelay="25" /> <!-- Tamlin Orc Archer -->
+		<npc id="20602" x="108298" y="80008" z="-2813" heading="38955" respawnDelay="25" /> <!-- Tamlin Orc Archer -->
+		<npc id="20602" x="122979" y="80317" z="-2403" heading="62110" respawnDelay="25" /> <!-- Tamlin Orc Archer -->
+		<npc id="20602" x="123897" y="75960" z="-2556" heading="50089" respawnDelay="25" /> <!-- Tamlin Orc Archer -->
+		<npc id="20602" x="125023" y="86427" z="-2467" heading="18092" respawnDelay="25" /> <!-- Tamlin Orc Archer -->
+		<npc id="20602" x="125102" y="80619" z="-2447" heading="49123" respawnDelay="25" /> <!-- Tamlin Orc Archer -->
+		<npc id="20602" x="125536" y="78972" z="-2348" heading="62224" respawnDelay="25" /> <!-- Tamlin Orc Archer -->
+		<npc id="20602" x="125744" y="81920" z="-2912" heading="0" respawnDelay="25" /> <!-- Tamlin Orc Archer -->
+		<npc id="20602" x="126188" y="78881" z="-2182" heading="0" respawnDelay="25" /> <!-- Tamlin Orc Archer -->
+		<npc id="20602" x="126661" y="76956" z="-1982" heading="4909" respawnDelay="25" /> <!-- Tamlin Orc Archer -->
+		<npc id="20602" x="128475" y="82711" z="-1828" heading="16966" respawnDelay="25" /> <!-- Tamlin Orc Archer -->
+		<npc id="20602" x="128605" y="81645" z="-1571" heading="64286" respawnDelay="25" /> <!-- Tamlin Orc Archer -->
+		<npc id="20603" x="108006" y="89951" z="-2520" heading="35983" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20603" x="108275" y="90758" z="-2555" heading="20766" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20603" x="112098" y="90524" z="-2593" heading="14534" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20603" x="112132" y="88723" z="-2747" heading="29500" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20603" x="113553" y="91629" z="-2460" heading="32428" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20603" x="113809" y="88108" z="-3051" heading="42361" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20603" x="114051" y="90054" z="-2634" heading="3853" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20603" x="116849" y="88902" z="-3813" heading="55077" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20603" x="117821" y="88321" z="-3813" heading="44041" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20603" x="118372" y="85784" z="-2885" heading="62688" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20603" x="118686" y="86675" z="-2876" heading="0" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20603" x="119371" y="90352" z="-3573" heading="14556" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20603" x="119851" y="91563" z="-3316" heading="53169" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20603" x="120960" y="85497" z="-2816" heading="54156" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20603" x="121018" y="87735" z="-2939" heading="63410" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20603" x="121618" y="84464" z="-2733" heading="55253" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20603" x="122810" y="92316" z="-2476" heading="0" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20603" x="122911" y="91782" z="-2476" heading="0" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20603" x="123012" y="90892" z="-2476" heading="0" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20603" x="123315" y="92138" z="-2476" heading="0" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20603" x="126548" y="88012" z="-2532" heading="0" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20603" x="126850" y="88190" z="-2532" heading="0" respawnDelay="25" /> <!-- Kronbe Spider -->
+		<npc id="20604" x="109156" y="90028" z="-2615" heading="34862" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="110240" y="87242" z="-3236" heading="0" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="110341" y="87064" z="-3236" heading="0" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="110620" y="87788" z="-2904" heading="33786" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="111330" y="86769" z="-2846" heading="46778" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="111383" y="87441" z="-2905" heading="34838" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="112403" y="87522" z="-2904" heading="63042" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="113009" y="89179" z="-2842" heading="10204" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="117414" y="90414" z="-3764" heading="15580" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="117653" y="89157" z="-3813" heading="55563" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="119200" y="88359" z="-3799" heading="47125" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="119494" y="92991" z="-2829" heading="1180" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="119570" y="86379" z="-2893" heading="7389" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="120500" y="86287" z="-2868" heading="54535" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="121041" y="91687" z="-3586" heading="31035" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="121785" y="83721" z="-2697" heading="52841" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="122275" y="89227" z="-3098" heading="30050" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="122357" y="81109" z="-2583" heading="54966" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="123012" y="91248" z="-2476" heading="0" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="123416" y="91960" z="-2476" heading="0" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="123517" y="92138" z="-2476" heading="0" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="123716" y="90714" z="-2476" heading="0" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="123717" y="91070" z="-2476" heading="0" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="126346" y="88368" z="-2532" heading="0" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20604" x="126749" y="88012" z="-2532" heading="0" respawnDelay="25" /> <!-- Lakin -->
+		<npc id="20605" x="106977" y="92672" z="-2128" heading="21759" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="108232" y="89242" z="-2497" heading="19252" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="109314" y="91405" z="-2549" heading="11051" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="109939" y="92974" z="-2240" heading="12996" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="110555" y="90121" z="-2510" heading="63484" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="111271" y="92004" z="-2587" heading="3083" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="111972" y="86994" z="-2847" heading="27320" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="117148" y="92281" z="-2730" heading="37453" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="118380" y="89385" z="-3813" heading="34969" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="118768" y="91315" z="-3516" heading="13185" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="118965" y="86339" z="-2899" heading="36684" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="119969" y="86872" z="-2889" heading="27479" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="120353" y="89426" z="-3366" heading="1962" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="120380" y="86000" z="-2825" heading="0" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="121150" y="93654" z="-2515" heading="8054" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="121313" y="86354" z="-2863" heading="17505" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="121637" y="85123" z="-2814" heading="4960" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="122811" y="91248" z="-2476" heading="0" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="123290" y="89234" z="-3097" heading="64531" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="123315" y="91426" z="-2476" heading="0" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="123516" y="91070" z="-2476" heading="0" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="126144" y="88724" z="-2532" heading="0" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="126346" y="88724" z="-2532" heading="0" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20605" x="127052" y="88902" z="-2532" heading="0" respawnDelay="25" /> <!-- Weird Drake -->
+		<npc id="20631" x="130550" y="66013" z="-3723" heading="32673" respawnDelay="23" /> <!-- Taik Orc Archer -->
+		<npc id="27185" x="113356" y="93848" z="-2072" heading="28672" respawnDelay="60" /> <!-- Fairy Tree of Wind -->
+		<npc id="27186" x="117733" y="94108" z="-2068" heading="57344" respawnDelay="60" /> <!-- Fairy Tree of Star -->
+		<npc id="27187" x="127714" y="90495" z="-2095" heading="0" respawnDelay="60" /> <!-- Fairy Tree of Twilight -->
+		<npc id="27188" x="106671" y="93905" z="-2070" heading="49152" respawnDelay="60" /> <!-- Fairy Tree of Abyss -->
+		<npc id="30230" x="115116" y="75923" z="-2580" heading="59000" respawnDelay="60" /> <!-- Edroc -->
+		<npc id="30231" x="116109" y="75022" z="-2583" heading="57344" respawnDelay="60" /> <!-- Garette -->
+		<npc id="30232" x="115271" y="76705" z="-2650" heading="0" respawnDelay="60" /> <!-- Sorint -->
+		<npc id="30233" x="117129" y="76917" z="-2689" heading="34000" respawnDelay="60" /> <!-- Esmeralda -->
+		<npc id="30301" x="116646" y="74820" z="-2581" heading="28672" respawnDelay="60" /> <!-- Hally -->
+		<npc id="30610" x="117866" y="76483" z="-2692" heading="35768" respawnDelay="60" /> <!-- Cronos -->
+		<npc id="30655" x="115791" y="75867" z="-2714" heading="3000" respawnDelay="60" /> <!-- Isael Silvershadow -->
+		<npc id="30684" x="115310" y="75447" z="-2581" heading="12288" respawnDelay="60" /> <!-- Viktor -->
+		<npc id="30685" x="115647" y="77114" z="-2649" heading="40960" respawnDelay="60" /> <!-- Baxt -->
+		<npc id="30686" x="115435" y="76541" z="-2649" heading="12000" respawnDelay="60" /> <!-- Silva -->
+		<npc id="30687" x="117649" y="75415" z="-2646" heading="32768" respawnDelay="60" /> <!-- Vergara -->
+		<npc id="30688" x="117613" y="75310" z="-2648" heading="24576" respawnDelay="60" /> <!-- Duning -->
+		<npc id="30689" x="119673" y="77618" z="-2243" heading="39864" respawnDelay="60" /> <!-- Siria -->
+		<npc id="30690" x="119472" y="77835" z="-2243" heading="49152" respawnDelay="60" /> <!-- Luther -->
+		<npc id="30691" x="119249" y="77663" z="-2243" heading="0" respawnDelay="60" /> <!-- Aren Athebaldt -->
+		<npc id="30692" x="119892" y="77284" z="-2243" heading="28672" respawnDelay="60" /> <!-- Stedmiel -->
+		<npc id="30693" x="119727" y="77137" z="-2243" heading="16384" respawnDelay="60" /> <!-- Queenien -->
+		<npc id="30694" x="119043" y="78586" z="-2158" heading="39000" respawnDelay="60" /> <!-- Scraide -->
+		<npc id="30695" x="119156" y="78356" z="-2158" heading="28672" respawnDelay="60" /> <!-- Moses -->
+		<npc id="30696" x="118890" y="78104" z="-2158" heading="16384" respawnDelay="60" /> <!-- Page -->
+		<npc id="30697" x="118887" y="78752" z="-2158" heading="49152" respawnDelay="60" /> <!-- Videlrien -->
+		<npc id="30698" x="118571" y="78513" z="-2158" heading="0" respawnDelay="60" /> <!-- Evelyn -->
+		<npc id="30699" x="120249" y="76031" z="-2259" heading="31768" respawnDelay="60" /> <!-- Medown -->
+		<npc id="30700" x="120251" y="76247" z="-2260" heading="40960" respawnDelay="60" /> <!-- Prestan -->
+		<npc id="30701" x="120180" y="75807" z="-2260" heading="18384" respawnDelay="60" /> <!-- Errickin -->
+		<npc id="30702" x="117598" y="77264" z="-2585" heading="53248" respawnDelay="60" /> <!-- Bernard -->
+		<npc id="30703" x="117717" y="77273" z="-2585" heading="45056" respawnDelay="60" /> <!-- Colin -->
+		<npc id="30704" x="120100" y="74739" z="-2372" heading="31000" respawnDelay="60" /> <!-- Garvarentz -->
+		<npc id="30705" x="120079" y="74847" z="-2374" heading="31000" respawnDelay="60" /> <!-- Chakiris -->
+		<npc id="30706" x="120039" y="74650" z="-2374" heading="31000" respawnDelay="60" /> <!-- Lazenby -->
+		<npc id="30707" x="116468" y="77871" z="-2684" heading="40000" respawnDelay="60" /> <!-- Raigen -->
+		<npc id="30708" x="118210" y="76078" z="-2690" heading="32768" respawnDelay="60" /> <!-- Nasign -->
+		<npc id="30709" x="114564" y="78107" z="-2595" heading="28672" respawnDelay="60" /> <!-- Norton -->
+		<npc id="30710" x="114512" y="77966" z="-2593" heading="28672" respawnDelay="60" /> <!-- Weston -->
+		<npc id="30711" x="115032" y="74395" z="-2589" heading="45056" respawnDelay="60" /> <!-- Byron -->
+		<npc id="30712" x="115207" y="74239" z="-2593" heading="40000" respawnDelay="60" /> <!-- Makhis -->
+		<npc id="30713" x="118437" y="74051" z="-2381" heading="50000" respawnDelay="60" /> <!-- Gardner -->
+		<npc id="30714" x="118306" y="74040" z="-2371" heading="50000" respawnDelay="60" /> <!-- Paros -->
+		<npc id="30744" x="117980" y="76704" z="-2597" heading="32768" respawnDelay="60" /> <!-- Grey -->
+		<npc id="30745" x="115952" y="76000" z="-2721" heading="0" respawnDelay="60" /> <!-- Tor -->
+		<npc id="30746" x="116085" y="74728" z="-2582" heading="10000" respawnDelay="60" /> <!-- Cybellin -->
+		<npc id="30764" x="117380" y="75616" z="-2664" heading="26000" respawnDelay="60" /> <!-- Balthazar -->
+		<npc id="30831" x="117432" y="76044" z="-2716" heading="15000" respawnDelay="60" /> <!-- Nelson -->
+		<npc id="30990" x="117148" y="76865" z="-2688" heading="34000" respawnDelay="5" /> <!-- Lottery Ticket Seller -->
+		<npc id="31031" x="116036" y="76319" z="-2703" heading="16384" respawnDelay="5" /> <!-- Broadcasting Tower -->
+		<npc id="31051" x="116320" y="74688" z="-2582" heading="16300" respawnDelay="60" /> <!-- Keach -->
+		<npc id="31092" x="120493" y="76520" z="-2136" heading="35500" respawnDelay="60" /> <!-- Black Marketeer of Mammon -->
+		<npc id="31119" x="113552" y="84544" z="-6544" heading="32500" respawnDelay="60" /> <!-- Gatekeeper Ziggurat -->
+		<npc id="31168" x="115136" y="74767" z="-2608" heading="62000" respawnDelay="60" /> <!-- Priest of Dawn -->
+		<npc id="31169" x="116642" y="77560" z="-2688" heading="45000" respawnDelay="60" /> <!-- Dusk Priestess -->
+		<npc id="31207" x="117432" y="76044" z="-2716" heading="60372" respawnDelay="5" /> <!-- Sardinia -->
+		<npc id="31576" x="116048" y="74716" z="-2582" heading="7000" respawnDelay="60" /> <!-- Berix -->
+		<npc id="31603" x="117536" y="77264" z="-2592" heading="56000" respawnDelay="60" /> <!-- Black Cat -->
+		<npc id="31604" x="115664" y="77136" z="-2650" heading="50000" respawnDelay="60" /> <!-- Grimst -->
+		<npc id="31659" x="124304" y="82128" z="-2795" heading="5000" respawnDelay="60" /> <!-- Tablet of Vision -->
+		<npc id="31667" x="120108" y="74780" z="-2372" heading="31000" respawnDelay="60" /> <!-- Raik -->
+		<npc id="31669" x="117572" y="75592" z="-2648" heading="40000" respawnDelay="60" /> <!-- Onyx -->
+		<npc id="31670" x="118740" y="78248" z="-2160" heading="7000" respawnDelay="60" /> <!-- Burns -->
+		<npc id="31688" x="116144" y="77856" z="-2688" heading="49000" respawnDelay="60" /> <!-- Grand Olympiad Manager -->
+		<npc id="31690" x="116096" y="77856" z="-2688" heading="49000" respawnDelay="60" /> <!-- Monument of Heroes -->
+		<npc id="31823" x="115056" y="74560" z="-2608" heading="9000" respawnDelay="60" /> <!-- Adventure Guildsman -->
+		<npc id="31824" x="115552" y="76416" z="-2672" heading="58000" respawnDelay="60" /> <!-- Adventure Guildsman -->
+		<npc id="31825" x="114592" y="77904" z="-2604" heading="60000" respawnDelay="60" /> <!-- Adventure Guildsman -->
+		<npc id="31826" x="118096" y="74272" z="-2404" heading="0" respawnDelay="60" /> <!-- Adventure Guildsman -->
+		<npc id="32327" x="116935" y="77258" z="-2688" heading="40960" respawnDelay="60" /> <!-- Adventurers' Guide -->
+		<npc id="32478" x="115656" y="76620" z="-2664" heading="60000" respawnDelay="60" /> <!-- Dimensional Merchant -->
+		<npc id="32864" x="117168" y="76834" z="-2688" heading="35672" respawnDelay="60" /> <!-- Separated Soul -->
+		<npc id="32887" x="117410" y="75082" z="-2648" heading="15377" respawnDelay="60" /> <!-- Metar -->
+		<npc id="35277" x="116780" y="75504" z="-2727" heading="20000" respawnDelay="60" /> <!-- Manor Manager -->
+	</spawn>
+</list>
