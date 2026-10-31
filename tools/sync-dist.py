@@ -35,6 +35,7 @@ TREES = [
     ("login/config", "login/config"),
     ("login/data", "login/data"),
     ("db_installer/sql", "db_installer/sql"),
+    ("db_installer/config", "db_installer/config"),
 ]
 FILES = [("login/banned_ip.cfg", "login/banned_ip.cfg")]
 
@@ -48,6 +49,30 @@ RUST_ONLY = {
     "# Shared secret of the admin endpoint (the supervisor's Server.login.AdminToken).\n"
     "# Set it in your own copy of this folder; never commit a real token.\n"
     "Token =\n",
+    # Start scripts of the Rust database installer (T-DBI-01); the release's own are Java ones.
+    "db_installer/DatabaseInstaller.cmd": "@echo off\r\n"
+    "rem Starts the database installer (GUI, or console with --console).\r\n"
+    'cd /d "%~dp0"\r\n'
+    'if exist "l2-db-installer.exe" (\r\n'
+    '  "l2-db-installer.exe" --sql "%~dp0sql" %*\r\n'
+    "  goto :eof\r\n"
+    ")\r\n"
+    'if exist "..\\..\\target\\release\\l2-db-installer.exe" (\r\n'
+    '  "..\\..\\target\\release\\l2-db-installer.exe" --sql "%~dp0sql" %*\r\n'
+    "  goto :eof\r\n"
+    ")\r\n"
+    "echo l2-db-installer.exe not found. Build it: cargo build --release -p l2-db-installer\r\n"
+    "pause\r\n",
+    "db_installer/DatabaseInstaller.sh": "#!/bin/sh\n"
+    "# Starts the database installer (GUI, or console with --console).\n"
+    'cd "$(dirname "$0")" || exit 1\n'
+    "for exe in ./l2-db-installer ../../target/release/l2-db-installer; do\n"
+    '    if [ -x "$exe" ]; then\n'
+    '        exec "$exe" --sql "$(pwd)/sql" "$@"\n'
+    "    fi\n"
+    "done\n"
+    'echo "l2-db-installer not found. Build it: cargo build --release -p l2-db-installer" >&2\n'
+    "exit 1\n",
 }
 RUST_ONLY_COPIES = {
     "game/config/SideBySide.ini": REPO / "crates/game-server/config-examples/SideBySide.ini",

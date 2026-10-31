@@ -1,0 +1,26 @@
+[package]
+name = "l2-db-installer"
+description = "Database installer (GUI and console): installs the login and game schema from dist/db_installer/sql"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+
+[dependencies]
+l2-config.workspace = true # Interface.ini (EnableGUI, DarkTheme)
+sqlx.workspace = true
+tokio.workspace = true
+clap.workspace = true
+eframe.workspace = true
+egui.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true
