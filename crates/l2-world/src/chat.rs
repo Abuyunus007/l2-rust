@@ -208,7 +208,7 @@ impl World {
                 .get(from..)
                 .and_then(|s| {
                     s.windows(3)
-                        .position(|w| w == [b'I'.into(), b'D'.into(), b'='.into()])
+                        .position(|w| w == [u16::from(b'I'), u16::from(b'D'), u16::from(b'=')])
                 })
                 .map(|p| p + from)
         };
