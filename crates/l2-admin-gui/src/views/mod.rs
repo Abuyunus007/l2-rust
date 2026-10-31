@@ -48,7 +48,7 @@ pub enum ViewId {
 }
 
 impl ViewId {
-    pub const ALL: [ViewId; 8] = [
+    pub const ALL: [ViewId; 9] = [
         ViewId::Connection,
         ViewId::Servers,
         ViewId::Players,
