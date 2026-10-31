@@ -477,7 +477,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | Card | Title | Model | Review | Depends | Status |
 |---|---|---|---|---|---|
 | [T-DIST-01](T/T-DIST-01.md) | Tests and the DB schema use the repo's dist/ | sonnet | spot | — | running |
-| [T-DBI-01](T/T-DBI-01.md) | Database installer (GUI and console) | sonnet | full | — | running |
+| [T-DBI-01](T/T-DBI-01.md) | Database installer (GUI and console) | sonnet | full | — | merged |
 
 ## Milestone test results
 
