@@ -9,6 +9,7 @@ repository.workspace = true
 
 [dependencies]
 l2-admin-api = { path = "../l2-admin-api" }
+l2-config.workspace = true # the config editor lists keys, defaults and writes values in place (G-05)
 l2-data.workspace = true # the data browser reads the datapack (NPC and item templates)
 l2-geo.workspace = true # the geodata viewer reads regions and uses the coordinate conversion (M3-GUI-03)
 l2-supervisor = { path = "../l2-supervisor" } # launcher: run folder, supervisor.ini, detached start (G-01)
