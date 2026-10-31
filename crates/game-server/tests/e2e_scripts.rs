@@ -39,11 +39,11 @@ use l2_net::{Decode, PacketReader};
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{NpcHtmlMessage, NpcInfo, SystemMessage, SystemMessageParam};
 use l2_testkit::fake_game_client::{names_of, packet_name};
-use l2_world::script::QuestInput;
 use l2_world::SubclassWrite;
+use l2_world::script::QuestInput;
 use l2_world::{
-    BossLoad, ClientInput, IdFactory, ItemData, LeaveReason, LsEvent, ObjectId, Outbox, PacketSink,
-    PersistCommand, PlayerData, PlayerProfile, SessionId, StaticData, World, WorldCommand, WorldRng,
+    ClientInput, IdFactory, ItemData, LeaveReason, LsEvent, ObjectId, Outbox, PacketSink, PersistCommand,
+    PlayerData, PlayerProfile, SessionId, StaticData, World, WorldCommand, WorldRng,
 };
 
 use scripts_db::{Rows, Seed};
@@ -69,8 +69,10 @@ const TALKING_ISLAND: (i32, i32, i32) = (-71_338, 258_271, -3_104);
 
 /// The `dist/game` folder of the Java checkout, `None` (and a printed note) without it.
 fn game_dir() -> Option<PathBuf> {
-    let dir = std::env::var("L2JMOBIUS_GAME_DIR")
-        .map_or_else(|_| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"), PathBuf::from);
+    let dir = std::env::var("L2JMOBIUS_GAME_DIR").map_or_else(
+        |_| PathBuf::from(r"C:\l2-rust\l2jmobius\dist\game"),
+        PathBuf::from,
+    );
     if dir.join("data").join("stats").is_dir() && dir.join("config").join("AccessLevels.xml").is_file() {
         Some(dir)
     } else {
@@ -118,9 +120,13 @@ fn write_game_config(config_dir: &Path, game_dir: &Path, cycle_writes: bool, ext
         ),
         (
             "Player.ini",
-            "DisconnectAfterDeath = False\nEnableVitality = False\nAltSubClassWithoutQuests = True\n".to_owned(),
+            "DisconnectAfterDeath = False\nEnableVitality = False\nAltSubClassWithoutQuests = True\n"
+                .to_owned(),
         ),
-        ("General.ini", "MaxNpcAnimation = 0\nMinimumChatLevel = 0\n".to_owned()),
+        (
+            "General.ini",
+            "MaxNpcAnimation = 0\nMinimumChatLevel = 0\n".to_owned(),
+        ),
     ];
     for (file, lines) in extra {
         match files.iter_mut().find(|(name, _)| name == file) {
@@ -159,10 +165,6 @@ fn all<P: Decode>(batch: &[Vec<u8>], name: &str) -> Vec<P> {
 
 fn names(batch: &[Vec<u8>]) -> Vec<String> {
     names_of(batch)
-}
-
-fn count(batch: &[Vec<u8>], name: &str) -> usize {
-    batch.iter().filter(|b| packet_name(b) == name).count()
 }
 
 fn message_ids(batch: &[Vec<u8>]) -> Vec<SystemMessageId> {
@@ -362,11 +364,6 @@ impl Hero {
         self
     }
 
-    fn at(mut self, position: (i32, i32, i32)) -> Self {
-        self.position = position;
-        self
-    }
-
     fn with_items(mut self, items: &[(i32, i64)]) -> Self {
         self.items.extend_from_slice(items);
         self
@@ -398,7 +395,6 @@ struct Bare {
     /// How many of the persistence commands the model has looked at.
     answered: usize,
     players: Vec<PlayerData>,
-    datapack: Arc<Datapack>,
     /// Keeps the folder of the config (nothing reads it after the start).
     _root: tempfile::TempDir,
 }
@@ -509,7 +505,6 @@ impl Bare {
             rows,
             answered: 0,
             players,
-            datapack,
             _root: root,
         })
     }
@@ -579,13 +574,6 @@ impl Bare {
         // The queued script events of the login (`ON_PLAYER_LOGIN`, the tutorial) run in the ticks.
         self.ticks(4);
         self.log.take(id)
-    }
-
-    /// Player `index` logs out; the world stores the character.
-    fn leave(&mut self, index: usize) {
-        self.input_of(index, ClientInput::Logout);
-        self.ticks(2);
-        self.log.take(Self::id_of(index));
     }
 
     /// The reads the persistence task would answer: they come from the model of the rows.
@@ -707,7 +695,10 @@ fn links(html: &str) -> Vec<String> {
         rest = &rest[at + 8..];
         let Some(end) = rest.find('"') else { break };
         let action = &rest[..end];
-        if let Some(command) = action.strip_prefix("bypass -h ").or_else(|| action.strip_prefix("bypass ")) {
+        if let Some(command) = action
+            .strip_prefix("bypass -h ")
+            .or_else(|| action.strip_prefix("bypass "))
+        {
             found.push(command.to_owned());
         }
         rest = &rest[end..];
@@ -724,8 +715,13 @@ impl Bare {
             index,
             act::admin(&format!("spawnat {npc_id} {} {} {}", p.x + dx, p.y, p.z)),
         );
-        npc_object(&batch, npc_id)
-            .unwrap_or_else(|| panic!("NPC {npc_id} did not appear: {:?} {:?}", names(&batch), texts(&batch)))
+        npc_object(&batch, npc_id).unwrap_or_else(|| {
+            panic!(
+                "NPC {npc_id} did not appear: {:?} {:?}",
+                names(&batch),
+                texts(&batch)
+            )
+        })
     }
 
     /// Talks to an NPC: the first click targets it, the second opens the dialog.
@@ -737,7 +733,9 @@ impl Bare {
 
     /// Clicks the link of the last page of `batch` whose command contains `part`.
     fn follow(&mut self, index: usize, batch: &[Vec<u8>], part: &str) -> Vec<Vec<u8>> {
-        let page = pages(batch).pop().unwrap_or_else(|| panic!("no page in {:?}", names(batch)));
+        let page = pages(batch)
+            .pop()
+            .unwrap_or_else(|| panic!("no page in {:?}", names(batch)));
         let command = links(&page)
             .into_iter()
             .find(|c| c.contains(part))
@@ -776,7 +774,7 @@ fn slay(w: &mut Bare, index: usize, mob: i32) -> Vec<Vec<u8>> {
     got
 }
 
-/// 1. A new character: the tutorial starts (CP-Sa).
+/// Scenario 1: A new character: the tutorial starts (CP-Sa).
 #[test]
 fn a_new_character_gets_the_tutorial() {
     let opts = Opts::new(false, vec![Hero::new("Newbie")]);
@@ -789,7 +787,11 @@ fn a_new_character_gets_the_tutorial() {
     assert_eq!(w.rows.quest_var(me, TUTORIAL, "<state>"), Some("Started"));
     assert_eq!(w.rows.quest_var(me, TUTORIAL, "memoStateEx1"), Some("-2"));
     assert!(w.rows.quest_var(me, TUTORIAL, "memoState").is_some());
-    assert!(names(&entered).contains(&"TUTORIAL_ENABLE_CLIENT_EVENT".to_owned()), "{:?}", names(&entered));
+    assert!(
+        names(&entered).contains(&"TUTORIAL_ENABLE_CLIENT_EVENT".to_owned()),
+        "{:?}",
+        names(&entered)
+    );
 
     // 5 s later the first page of the tutorial window and the guide book.
     w.run_ms(5_000);
@@ -799,7 +801,9 @@ fn a_new_character_gets_the_tutorial() {
         .map(|p| p.html)
         .collect();
     assert!(
-        shown.len() == 1 && shown[0].contains("Cedric's Training Hall") && shown[0].contains("tutorial_close_2"),
+        shown.len() == 1
+            && shown[0].contains("Cedric's Training Hall")
+            && shown[0].contains("tutorial_close_2"),
         "{shown:?}"
     );
     assert_eq!(w.items_of(0, 5588), 1, "the Tutorial Guide");
@@ -822,7 +826,7 @@ fn a_new_character_gets_the_tutorial() {
     assert_eq!(w.rows.quest_var(me, TUTORIAL, "memoStateEx1"), Some("-5"));
 }
 
-/// 1. A first village quest: talk, kill, reward, and aborting it (CP-Sa).
+/// Scenario 1: A first village quest: talk, kill, reward, and aborting it (CP-Sa).
 #[test]
 fn a_first_village_quest_from_talk_to_reward_and_abort() {
     let opts = Opts::new(false, vec![Hero::new("Fighter").gm().level(8)]);
@@ -836,10 +840,18 @@ fn a_first_village_quest_from_talk_to_reward_and_abort() {
     // Gilbert's page has the quest link; the quest window offers the quest at level 8.
     let talked = w.talk(0, gilbert);
     let quest = w.follow(0, &talked, "Script");
-    assert!(pages(&quest).iter().any(|p| p.contains("Say you will participate in the hunt")));
+    assert!(
+        pages(&quest)
+            .iter()
+            .any(|p| p.contains("Say you will participate in the hunt"))
+    );
     // Say yes: Gilbert hands over the Lord's mark and the quest starts (cond 1).
     let started = w.follow(0, &quest, "30039-03.htm");
-    assert!(pages(&started).iter().any(|p| p.contains("Go and slay orcs and werewolves")));
+    assert!(
+        pages(&started)
+            .iter()
+            .any(|p| p.contains("Go and slay orcs and werewolves"))
+    );
     assert_eq!(w.items_of(0, LORDS_MARK), 1);
     assert_eq!(w.rows.quest_var(me, GUARD_IS_BUSY, "<state>"), Some("Started"));
     assert_eq!(w.rows.quest_var(me, GUARD_IS_BUSY, "cond"), Some("1"));
@@ -877,17 +889,21 @@ fn a_first_village_quest_from_talk_to_reward_and_abort() {
     assert!(listed.last().unwrap().quests.iter().all(|q| q.quest_id != 257));
 }
 
-const VILLAGE_MASTER: &str = "ElfHumanFighterChange1";
 const PABRIS: i32 = 30066;
 const MEDALLION_OF_WARRIOR: i32 = 1145;
 const SHADOW_COUPON_D: i32 = 8869;
 
-/// 2. The first class change at a village master (CP-Sb).
+/// Scenario 2: The first class change at a village master (CP-Sb).
 #[test]
 fn the_first_class_change_at_a_village_master() {
     let opts = Opts::new(
         false,
-        vec![Hero::new("Fighter").gm().level(20).with_items(&[(MEDALLION_OF_WARRIOR, 1)])],
+        vec![
+            Hero::new("Fighter")
+                .gm()
+                .level(20)
+                .with_items(&[(MEDALLION_OF_WARRIOR, 1)]),
+        ],
     );
     let Some(mut w) = Bare::start(&opts) else {
         return;
@@ -896,13 +912,28 @@ fn the_first_class_change_at_a_village_master() {
     let pabris = w.spawn_npc(0, PABRIS, 30);
     let talked = w.talk(0, pabris);
     let list = w.follow(0, &talked, "Script ElfHumanFighterChange1");
-    assert!(pages(&list).last().unwrap().contains("Warrior"), "{:?}", pages(&list));
+    assert!(
+        pages(&list).last().unwrap().contains("Warrior"),
+        "{:?}",
+        pages(&list)
+    );
     let info = w.follow(0, &list, "30066-02.htm");
     // The page of the Warrior has the link that asks for the change.
     let changed = w.follow(0, &info, "ElfHumanFighterChange1 1");
-    assert!(pages(&changed).last().unwrap().contains("Congratulations! You are now a Warrior"));
-    assert!(names(&changed).contains(&"MAGIC_SKILL_USE".to_owned()), "the class change effect");
-    assert!(has_message(&changed, SystemMessageId::CongratulationsYouVeCompletedAClassTransfer));
+    assert!(
+        pages(&changed)
+            .last()
+            .unwrap()
+            .contains("Congratulations! You are now a Warrior")
+    );
+    assert!(
+        names(&changed).contains(&"MAGIC_SKILL_USE".to_owned()),
+        "the class change effect"
+    );
+    assert!(has_message(
+        &changed,
+        SystemMessageId::CongratulationsYouVeCompletedAClassTransfer
+    ));
     let data = w.player_data(0);
     assert_eq!((data.class_id, data.base_class), (WARRIOR, WARRIOR));
     assert_eq!(w.items_of(0, MEDALLION_OF_WARRIOR), 0, "the proof is taken");
@@ -921,7 +952,7 @@ fn sub_class_menu(w: &mut Bare, master: i32) -> Vec<Vec<u8>> {
     w.follow(0, &talked, "Subclass 0")
 }
 
-/// 2. A subclass added, switched to, replaced and the base class back (CP-Sb): the skills and the
+/// Scenario 2: A subclass added, switched to, replaced and the base class back (CP-Sb): the skills and the
 /// dye follow the class.
 #[test]
 fn a_subclass_is_added_switched_and_cancelled() {
@@ -943,8 +974,15 @@ fn a_subclass_is_added_switched_and_cancelled() {
     w.enter_player(0);
 
     // A dye on the Gladiator (a real client request): slot 1.
-    let equipped = w.do_of(0, ClientInput::Henna(l2_world::HennaInput::Equip { symbol_id: DYE }));
-    assert!(has_message(&equipped, SystemMessageId::TheSymbolHasBeenAdded), "{:?}", message_ids(&equipped));
+    let equipped = w.do_of(
+        0,
+        ClientInput::Henna(l2_world::HennaInput::Equip { symbol_id: DYE }),
+    );
+    assert!(
+        has_message(&equipped, SystemMessageId::TheSymbolHasBeenAdded),
+        "{:?}",
+        message_ids(&equipped)
+    );
     assert_eq!(w.player_data(0).profile.hennas, [DYE, 0, 0]);
     assert_eq!(w.items_of(0, DYE_ITEM), 0);
 
@@ -956,8 +994,19 @@ fn a_subclass_is_added_switched_and_cancelled() {
     let offered = links(&pages(&add).pop().unwrap());
     assert!(offered.iter().any(|c| c.ends_with("Subclass 4 3")), "{offered:?}");
     let added = w.follow(0, &add, "Subclass 4 3");
-    assert!(has_message(&added, SystemMessageId::TheNewSubclassHasBeenAdded), "{:?}", message_ids(&added));
-    assert!(pages(&added).last().unwrap().contains("You've added a new subclass"), "{:?}", pages(&added));
+    assert!(
+        has_message(&added, SystemMessageId::TheNewSubclassHasBeenAdded),
+        "{:?}",
+        message_ids(&added)
+    );
+    assert!(
+        pages(&added)
+            .last()
+            .unwrap()
+            .contains("You've added a new subclass"),
+        "{:?}",
+        pages(&added)
+    );
     let writes: Vec<SubclassWrite> = w
         .commands()
         .into_iter()
@@ -966,25 +1015,52 @@ fn a_subclass_is_added_switched_and_cancelled() {
             _ => None,
         })
         .collect();
-    let [SubclassWrite::Add { holder, skills: sub_skills, .. }] = writes.as_slice() else {
+    let [
+        SubclassWrite::Add {
+            holder,
+            skills: sub_skills,
+            ..
+        },
+    ] = writes.as_slice()
+    else {
         panic!("{writes:?}");
     };
     assert_eq!((holder.class_id, holder.class_index, holder.level), (3, 1, 40));
-    assert!(!sub_skills.is_empty(), "the skills of the new class up to level 40");
+    assert!(
+        !sub_skills.is_empty(),
+        "the skills of the new class up to level 40"
+    );
     // The new class is active: its level, no dye, its skills (the base class' ones are stored).
     let data = w.player_data(0);
-    assert_eq!((data.class_id, data.base_class, data.profile.class_index, data.level), (3, GLADIATOR, 1, 40));
+    assert_eq!(
+        (
+            data.class_id,
+            data.base_class,
+            data.profile.class_index,
+            data.level
+        ),
+        (3, GLADIATOR, 1, 40)
+    );
     assert_eq!(data.profile.hennas, [0, 0, 0]);
     assert_eq!(data.skills, *sub_skills);
-    assert!(w.rows.has_skill(me, 0, POWER_STRIKE), "the base class' skills were stored");
+    assert!(
+        w.rows.has_skill(me, 0, POWER_STRIKE),
+        "the base class' skills were stored"
+    );
 
     // Back to the base class: the level, the skills and the dye come back.
     let menu = sub_class_menu(&mut w, master);
     let menu = w.follow(0, &menu, "Subclass 2");
     let back = w.follow(0, &menu, "Subclass 5 0");
-    assert!(has_message(&back, SystemMessageId::YouHaveSuccessfullySwitchedToYourSubclass));
+    assert!(has_message(
+        &back,
+        SystemMessageId::YouHaveSuccessfullySwitchedToYourSubclass
+    ));
     let data = w.player_data(0);
-    assert_eq!((data.class_id, data.profile.class_index, data.level), (GLADIATOR, 0, 76));
+    assert_eq!(
+        (data.class_id, data.profile.class_index, data.level),
+        (GLADIATOR, 0, 76)
+    );
     assert_eq!(data.profile.hennas, [DYE, 0, 0]);
     assert!(data.skills.iter().any(|s| s.skill_id == POWER_STRIKE));
     assert!(names(&back).contains(&"SKILL_LIST".to_owned()));
@@ -1009,7 +1085,11 @@ fn a_subclass_is_added_switched_and_cancelled() {
         .unwrap_or_else(|| panic!("{page}"));
     let new_class: i32 = replace.rsplit(' ').next().unwrap().parse().unwrap();
     let replaced = w.do_of(0, act::bypass(&replace));
-    assert!(has_message(&replaced, SystemMessageId::TheNewSubclassHasBeenAdded), "{:?}", message_ids(&replaced));
+    assert!(
+        has_message(&replaced, SystemMessageId::TheNewSubclassHasBeenAdded),
+        "{:?}",
+        message_ids(&replaced)
+    );
     let writes: Vec<SubclassWrite> = w
         .commands()
         .into_iter()
@@ -1028,7 +1108,10 @@ fn a_subclass_is_added_switched_and_cancelled() {
         SubclassWrite::Add { holder, .. } if holder.class_id == new_class && holder.class_index == 1
     ));
     let data = w.player_data(0);
-    assert_eq!((data.class_id, data.profile.class_index, data.level), (new_class, 1, 40));
+    assert_eq!(
+        (data.class_id, data.profile.class_index, data.level),
+        (new_class, 1, 40)
+    );
 }
 
 const BATHIS: i32 = 30332;
@@ -1036,16 +1119,13 @@ const BATHIS: i32 = 30332;
 const KAMALOKA_TEMPLATE: i32 = 57;
 const KAMALOKA_BOSS: i32 = 18554;
 
-/// 3. A Kamaloka entered by a party of two, the boss killed inside, the way out and the re-enter
+/// Scenario 3: A Kamaloka entered by a party of two, the boss killed inside, the way out and the re-enter
 /// time (CP-Sc).
 #[test]
 fn a_kamaloka_is_entered_its_boss_killed_and_the_reenter_time_holds() {
     let opts = Opts::new(
         false,
-        vec![
-            Hero::new("Leader").gm().level(25),
-            Hero::new("Friend").level(25),
-        ],
+        vec![Hero::new("Leader").gm().level(25), Hero::new("Friend").level(25)],
     );
     let Some(mut w) = Bare::start(&opts) else {
         return;
@@ -1069,16 +1149,29 @@ fn a_kamaloka_is_entered_its_boss_killed_and_the_reenter_time_holds() {
     let captain = w.spawn_npc(0, BATHIS, 30);
     let talked = w.talk(0, captain);
     let talked = w.follow(0, &talked, "Script");
-    assert!(pages(&talked).last().unwrap().contains("Do you wish to enter Kamaloka"));
+    assert!(
+        pages(&talked)
+            .last()
+            .unwrap()
+            .contains("Do you wish to enter Kamaloka")
+    );
     let entered = w.follow(0, &talked, "Script Kamaloka 0");
     let instance = w.world.instance_id_of(leader);
     assert!(instance != 0, "the leader is in an instance");
-    assert_eq!(w.world.instance_id_of(friend), instance, "the party goes in together");
+    assert_eq!(
+        w.world.instance_id_of(friend),
+        instance,
+        "the party goes in together"
+    );
     assert_eq!(
         w.world.instance(instance).map(|i| i.template_id),
         Some(KAMALOKA_TEMPLATE)
     );
-    assert!(names(&entered).contains(&"TELEPORT_TO_LOCATION".to_owned()), "{:?}", names(&entered));
+    assert!(
+        names(&entered).contains(&"TELEPORT_TO_LOCATION".to_owned()),
+        "{:?}",
+        names(&entered)
+    );
     let friend_got = w.quiet_of(1);
     assert!(names(&friend_got).contains(&"TELEPORT_TO_LOCATION".to_owned()));
     w.input_of(0, act::appearing());
@@ -1091,7 +1184,10 @@ fn a_kamaloka_is_entered_its_boss_killed_and_the_reenter_time_holds() {
         .world
         .npc_ids()
         .into_iter()
-        .find(|n| w.world.npc(*n).map(|npc| npc.npc_id) == Some(KAMALOKA_BOSS) && w.world.instance_id_of(*n) == instance)
+        .find(|n| {
+            w.world.npc(*n).map(|npc| npc.npc_id) == Some(KAMALOKA_BOSS)
+                && w.world.instance_id_of(*n) == instance
+        })
         .expect("the boss of the hall");
     w.world.do_die(boss, Some(leader));
     w.run_ms(3_000);
@@ -1107,7 +1203,12 @@ fn a_kamaloka_is_entered_its_boss_killed_and_the_reenter_time_holds() {
     // The re-enter time of both players is the next 06:30 (a `character_instance_time` row each).
     let now = now_ms();
     for who in [leader, friend] {
-        let time = w.rows.instance_times.get(&(who.0, KAMALOKA_TEMPLATE)).copied().unwrap();
+        let time = w
+            .rows
+            .instance_times
+            .get(&(who.0, KAMALOKA_TEMPLATE))
+            .copied()
+            .unwrap();
         assert!(time > now && time <= now + 86_400_000, "{time} vs {now}");
     }
 
@@ -1121,7 +1222,11 @@ fn a_kamaloka_is_entered_its_boss_killed_and_the_reenter_time_holds() {
     let talked = w.talk(0, captain);
     let talked = w.follow(0, &talked, "Script");
     let again = w.follow(0, &talked, "Script Kamaloka 0");
-    assert!(has_message(&again, SystemMessageId::C1MayNotReEnterYet), "{:?}", message_ids(&again));
+    assert!(
+        has_message(&again, SystemMessageId::C1MayNotReEnterYet),
+        "{:?}",
+        message_ids(&again)
+    );
     assert_eq!(w.world.instance_id_of(leader), 0);
 }
 
@@ -1151,7 +1256,7 @@ const TYPHOON_PLACES: [(i32, i32, i32); 10] = [
     (-4883, 253171, -3322),
 ];
 
-/// 4. A raid boss and its AI: Typhoon (Hellbound) is sent to one of its places by `RandomSpawn`,
+/// Scenario 4: A raid boss and its AI: Typhoon (Hellbound) is sent to one of its places by `RandomSpawn`,
 /// casts its Gust on a timer once it is there and again when a player comes into its aggro range.
 #[test]
 fn a_raid_boss_ai_starts_the_fight() {
@@ -1161,7 +1266,11 @@ fn a_raid_boss_ai_starts_the_fight() {
     };
     w.enter_player(0);
     let created = w.do_of(0, act::admin(&format!("spawn {TYPHOON}")));
-    assert!(texts(&created).iter().any(|t| t.starts_with("Created Typhoon")), "{:?}", texts(&created));
+    assert!(
+        texts(&created).iter().any(|t| t.starts_with("Created Typhoon")),
+        "{:?}",
+        texts(&created)
+    );
     let boss = npcs_of(&w, TYPHOON);
     assert_eq!(boss.len(), 1);
     let boss = boss[0];
@@ -1169,7 +1278,9 @@ fn a_raid_boss_ai_starts_the_fight() {
     // `RandomSpawn.onSpawn`: 100 ms later the boss is at one of its places, away from the GM.
     let (x, y, z) = w.world.position_of(boss).unwrap();
     assert!(
-        TYPHOON_PLACES.iter().any(|(px, py, _)| (px - x).abs() <= 200 && (py - y).abs() <= 200),
+        TYPHOON_PLACES
+            .iter()
+            .any(|(px, py, _)| (px - x).abs() <= 200 && (py - y).abs() <= 200),
         "{:?}",
         (x, y, z)
     );
@@ -1185,7 +1296,12 @@ fn a_raid_boss_ai_starts_the_fight() {
         .into_iter()
         .filter(|c| c.creature_id == boss.0)
         .collect();
-    assert!(casts.len() >= 2, "{} casts of the boss in {:?}", casts.len(), names(&fight));
+    assert!(
+        casts.len() >= 2,
+        "{} casts of the boss in {:?}",
+        casts.len(),
+        names(&fight)
+    );
     assert!(casts.iter().all(|c| c.skill_id == GUST));
 }
 
@@ -1197,7 +1313,12 @@ const DEAD: i32 = 1;
 /// A world whose `grandboss_data` has Queen Ant with this `status` and `respawn_time`.
 fn queen_world(status: i32, respawn_time: i64, cycle_writes: bool) -> Option<Bare> {
     let mut opts = Opts::new(cycle_writes, vec![Hero::new("Watcher").gm().level(40)]);
-    opts.seed.grand_bosses = vec![scripts_db::grand_boss_row(QUEEN_ANT, status, respawn_time, QUEEN_NEST)];
+    opts.seed.grand_bosses = vec![scripts_db::grand_boss_row(
+        QUEEN_ANT,
+        status,
+        respawn_time,
+        QUEEN_NEST,
+    )];
     let mut w = Bare::start(&opts)?;
     w.enter_player(0);
     w.run_ms(5_000);
@@ -1214,7 +1335,7 @@ fn boss_writes(w: &Bare) -> Vec<l2_world::BossWrite> {
         .collect()
 }
 
-/// 4. D-54: a grand boss whose row (Sieghardt's) says dead stays unspawned on Kain, whatever the
+/// Scenario 4: D-54: a grand boss whose row (Sieghardt's) says dead stays unspawned on Kain, whatever the
 /// respawn time says, and Kain writes nothing to the row.
 #[test]
 fn a_grand_boss_whose_row_says_dead_stays_unspawned() {
@@ -1235,7 +1356,7 @@ fn a_grand_boss_whose_row_says_dead_stays_unspawned() {
     assert!(boss_writes(&w).is_empty(), "{:?}", boss_writes(&w));
 }
 
-/// 4. The same boss with an alive row runs on Kain, and with the switch on (the Rust server alone
+/// Scenario 4: The same boss with an alive row runs on Kain, and with the switch on (the Rust server alone
 /// on the database) a dead row whose respawn time has passed brings her back.
 #[test]
 fn a_grand_boss_whose_row_says_alive_is_spawned() {
@@ -1250,7 +1371,11 @@ fn a_grand_boss_whose_row_says_alive_is_spawned() {
     let Some(w) = queen_world(DEAD, now_ms() - 60_000, true) else {
         return;
     };
-    assert_eq!(npcs_of(&w, QUEEN_ANT).len(), 1, "Kain owns the row with the switch on");
+    assert_eq!(
+        npcs_of(&w, QUEEN_ANT).len(),
+        1,
+        "Kain owns the row with the switch on"
+    );
 }
 
 const DROPH: i32 = 32711;
@@ -1269,7 +1394,7 @@ fn global_writes(w: &Bare) -> Vec<l2_world::script::GlobalVariablesWrite> {
         .collect()
 }
 
-/// 5. Side by side (CP-Sd): Sieghardt wrote the rows of quest 307 in progress for "Leader" (and a
+/// Scenario 5: side by side (CP-Sd): Sieghardt wrote the rows of quest 307 in progress for "Leader" (and a
 /// `global_variables` row of its own). Kain continues the quest after the login, the boss dies in
 /// the party, and the `global_variables` row of the quest is written only with the switch on.
 fn side_by_side(cycle_writes: bool) {
@@ -1308,7 +1433,8 @@ fn side_by_side(cycle_writes: bool) {
     // The login: the journal lists quest 307 at its condition 1, as Sieghardt left it.
     let list = all::<l2_protocol_game::server::QuestList>(&entered, "QUEST_LIST");
     assert!(
-        list.iter().any(|l| l.quests.iter().any(|q| q.quest_id == 307 && q.status == 1)),
+        list.iter()
+            .any(|l| l.quests.iter().any(|q| q.quest_id == 307 && q.status == 1)),
         "{list:?}"
     );
 
@@ -1316,7 +1442,11 @@ fn side_by_side(cycle_writes: bool) {
     let droph = w.spawn_npc(0, DROPH, 30);
     let talked = w.talk(0, droph);
     let talked = w.follow(0, &talked, "Script");
-    assert!(pages(&talked).last().unwrap().contains("Summon Hekaton Prime"), "{:?}", pages(&talked));
+    assert!(
+        pages(&talked).last().unwrap().contains("Summon Hekaton Prime"),
+        "{:?}",
+        pages(&talked)
+    );
     let summoned = w.follow(0, &talked, "spawn");
     assert!(pages(&summoned).last().is_some());
     let hekaton = npcs_of(&w, HEKATON_PRIME);
@@ -1347,9 +1477,14 @@ fn side_by_side(cycle_writes: bool) {
     // with the switch on; Kain knows the respawn time either way.
     let respawn = w.world.global_variables().get_long(RESPAWN_VARIABLE, 0);
     assert!(respawn > now_ms(), "{respawn}");
-    w.world.handle(WorldCommand::Shutdown { done: Box::new(|| {}) });
+    w.world.handle(WorldCommand::Shutdown {
+        done: Box::new(|| {}),
+    });
     w.answer_reads();
-    assert_eq!(w.rows.globals.get("SieghardtOwned").map(String::as_str), Some("42"));
+    assert_eq!(
+        w.rows.globals.get("SieghardtOwned").map(String::as_str),
+        Some("42")
+    );
     if cycle_writes {
         let row: i64 = w.rows.globals.get(RESPAWN_VARIABLE).unwrap().parse().unwrap();
         assert!(row > now_ms());
@@ -1368,7 +1503,6 @@ fn side_by_side(cycle_writes: bool) {
         &w.commands(),
         &w.rows,
     );
-
 }
 
 #[test]

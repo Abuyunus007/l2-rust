@@ -11,12 +11,12 @@ use l2_db::connect_with;
 use l2_testkit::test_db::TestDb;
 use sqlx::mysql::MySqlConnectOptions;
 
+use l2_world::boss::GrandBossStoreRow;
+use l2_world::script::GlobalVariablesWrite;
 use l2_world::{
     BossReadKind, BossRereadRows, BossWrite, ClassIndexLoad, GrandBossData, PersistCommand, QuestLoad,
     QuestWrite, SkillData, SubclassWrite, World, WorldCommand,
 };
-use l2_world::boss::GrandBossStoreRow;
-use l2_world::script::GlobalVariablesWrite;
 
 /// The state row of a quest in `character_quests` (`var = '<state>'`, Java `Quest.STATE_VAR`).
 pub const STATE_VAR: &str = "<state>";
@@ -62,10 +62,14 @@ impl Seed {
         let mut load = QuestLoad::default();
         for row in self.quests.iter().filter(|r| r.hero == hero) {
             if row.var == STATE_VAR {
-                load.states.push((row.name.to_owned(), Some(row.value.to_owned())));
+                load.states
+                    .push((row.name.to_owned(), Some(row.value.to_owned())));
             } else {
-                load.variables
-                    .push((row.name.to_owned(), row.var.to_owned(), Some(row.value.to_owned())));
+                load.variables.push((
+                    row.name.to_owned(),
+                    row.var.to_owned(),
+                    Some(row.value.to_owned()),
+                ));
             }
         }
         load
@@ -181,7 +185,11 @@ impl Rows {
                 self.skills.insert(key, data.skills.clone());
                 self.hennas.insert(key, data.profile.hennas);
             }
-            PersistCommand::Subclass(SubclassWrite::Add { char_id, holder, skills }) => {
+            PersistCommand::Subclass(SubclassWrite::Add {
+                char_id,
+                holder,
+                skills,
+            }) => {
                 self.skills.insert((*char_id, holder.class_index), skills.clone());
                 self.hennas.insert((*char_id, holder.class_index), [0; 3]);
             }
