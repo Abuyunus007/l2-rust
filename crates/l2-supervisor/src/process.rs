@@ -393,6 +393,10 @@ impl Actor {
         if let Some(dir) = &self.cfg.working_dir {
             command.current_dir(dir);
         }
+        // The server uses it when its Admin.ini has no token (D-56).
+        if self.cfg.admin_endpoint.is_some() && !self.cfg.admin_token.is_empty() {
+            command.env(crate::secret::ADMIN_TOKEN_ENV, &self.cfg.admin_token);
+        }
         #[cfg(unix)]
         command.process_group(0);
         #[cfg(windows)]

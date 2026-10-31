@@ -42,3 +42,6 @@ crates/l2-supervisor/supervisor.ini
 # Local build output and geodata copies (never commit)
 /release/
 /geodata/
+
+# Generated admin key of a local supervisor (D-56)
+supervisor.token

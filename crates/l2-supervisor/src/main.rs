@@ -3,11 +3,11 @@
 //! Runs until Ctrl+C (or SIGTERM on Unix) or an admin `StopSupervisor`, then stops the servers
 //! it started. `supervisor.pid` next to the ini file names the running process.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use anyhow::Context;
 use l2_supervisor::config::SupervisorConfig;
-use l2_supervisor::{Running, pidfile};
+use l2_supervisor::{Running, pidfile, secret};
 use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
@@ -19,12 +19,21 @@ async fn main() -> anyhow::Result<()> {
     let path = std::env::args_os()
         .nth(1)
         .map_or_else(|| PathBuf::from("supervisor.ini"), PathBuf::from);
-    let config = SupervisorConfig::load(&path).with_context(|| format!("loading {}", path.display()))?;
+    let mut config = SupervisorConfig::load(&path).with_context(|| format!("loading {}", path.display()))?;
+    // D-56: no token to type. An empty `Token` means the one in `supervisor.token` (the GUI reads
+    // the same file); an empty `AdminToken` means a fresh one per start, handed to that server.
     if config.token.is_empty() {
-        tracing::warn!(
-            "Token is empty in {}: every admin connection will be refused",
-            path.display()
-        );
+        let dir = path
+            .parent()
+            .filter(|p| !p.as_os_str().is_empty())
+            .unwrap_or(Path::new("."));
+        config.token = secret::load_or_create(dir)
+            .with_context(|| format!("creating {}", secret::token_path(dir).display()))?;
+    }
+    for server in &mut config.servers {
+        if server.admin_endpoint.is_some() && server.admin_token.is_empty() {
+            server.admin_token = secret::random_token();
+        }
     }
 
     // Refuse to run twice on one supervisor.ini; the GUI relies on this file (G-01).

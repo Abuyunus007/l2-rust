@@ -10,6 +10,7 @@ pub mod launcher;
 pub mod logs;
 pub mod pidfile;
 pub mod process;
+pub mod secret;
 
 use std::collections::HashMap;
 use std::net::SocketAddr;

@@ -334,17 +334,20 @@ mod tests {
     }
 
     #[test]
-    fn an_empty_token_is_reported_with_the_run_folder() {
+    fn an_empty_token_uses_the_generated_token_file() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
         let dir = tempfile::tempdir().unwrap();
         std::fs::write(
             dir.path().join("supervisor.ini"),
-            "Listen = 127.0.0.1:0\nToken =\n",
+            format!("Listen = 127.0.0.1:{port}\nToken =\n"),
         )
         .unwrap();
         let resolved = resolve(&input(dir.path()));
         assert_eq!(resolved.run_folder.as_deref(), Some(dir.path()));
-        assert_eq!(resolved.state, LaunchState::Problem(Problem::TokenEmpty));
-        assert_eq!(resolved.target, None);
+        assert_eq!(resolved.state, LaunchState::Running);
+        let file = std::fs::read_to_string(dir.path().join("supervisor.token")).unwrap();
+        assert_eq!(resolved.target.unwrap().token, file);
     }
 
     #[test]

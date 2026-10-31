@@ -12,12 +12,12 @@ Layout of the package:
     db_installer/    sql/ and config/ for the database installer
     Start-AdminGUI.cmd, Install-Database.cmd, README.txt
 
-The package gets fresh random admin tokens (Admin.ini of both servers, supervisor.ini). It is a
-local build artifact: never commit it, never share it with the tokens in it.
+No file of the package holds a token: the supervisor makes bin/supervisor.token on its first start
+(the admin GUI reads it) and hands each server its admin token at start (D-56). The package is a
+local build artifact: never commit it.
 """
 
 import argparse
-import secrets
 import shutil
 import sys
 from pathlib import Path
@@ -48,11 +48,13 @@ def set_keys(path: Path, values: dict[str, str]) -> None:
     path.write_bytes("".join(out).encode("utf-8"))
 
 
-def supervisor_ini(token: str, login_token: str, game_token: str) -> str:
+def supervisor_ini() -> str:
     return f"""# Supervisor settings of this package. The admin GUI reads Listen and Token from here.
 # Relative paths are relative to this file's folder (bin/).
+# Token and AdminToken stay empty: the supervisor makes its own (supervisor.token) and hands the
+# servers theirs, so nothing has to be typed (D-56).
 Listen = 127.0.0.1:7900
-Token = {token}
+Token =
 LogBufferLines = 10000
 StopTimeoutSecs = 30
 RestartDelaySecs = 10
@@ -62,7 +64,7 @@ Server.login.Command = ./login-server{EXE}
 Server.login.Args =
 Server.login.WorkingDir = ../login
 Server.login.AdminEndpoint = 127.0.0.1:7901
-Server.login.AdminToken = {login_token}
+Server.login.AdminToken =
 Server.login.Autostart = False
 Server.login.RestartOnExitCode = 2
 
@@ -70,7 +72,7 @@ Server.game.Command = ./game-server{EXE}
 Server.game.Args = --root .
 Server.game.WorkingDir = ../game
 Server.game.AdminEndpoint = 127.0.0.1:7902
-Server.game.AdminToken = {game_token}
+Server.game.AdminToken =
 Server.game.Autostart = False
 Server.game.RestartOnExitCode = 2
 """
@@ -106,8 +108,9 @@ L2J login or game server with the same ports at the same time.
 Closing the admin GUI keeps the servers running. Open it again to reconnect; "Stop all" stops
 them cleanly. Logs: login\\log, game\\log, bin\\log.
 
-The admin tokens in bin\\supervisor.ini and the two Admin.ini files were made for this package:
-keep them private.
+There is no password or token to set up for the admin GUI: the supervisor creates its own key
+(bin\\supervisor.token) on the first start, the GUI reads it, and the servers get theirs from the
+supervisor. Keep bin\\supervisor.token private.
 """
 
 START_GUI = "@echo off\r\ncd /d \"%~dp0bin\"\r\nstart \"\" \"l2-admin-gui.exe\"\r\n"
@@ -149,10 +152,7 @@ def main() -> int:
     for f in geo:
         shutil.copy2(f, out / "game" / "data" / "geodata" / f.name)
 
-    token, login_token, game_token = (secrets.token_urlsafe(24) for _ in range(3))
-    set_keys(out / "login" / "config" / "Admin.ini", {"Enabled": "True", "Token": login_token})
-    set_keys(out / "game" / "config" / "Admin.ini", {"Enabled": "True", "Token": game_token})
-    (out / "bin" / "supervisor.ini").write_text(supervisor_ini(token, login_token, game_token), encoding="utf-8", newline="\n")
+    (out / "bin" / "supervisor.ini").write_text(supervisor_ini(), encoding="utf-8", newline="\n")
     (out / "README.txt").write_text(README.replace("\n", "\r\n"), encoding="utf-8", newline="")
     (out / "Start-AdminGUI.cmd").write_text(START_GUI, encoding="utf-8", newline="")
     (out / "Install-Database.cmd").write_text(INSTALL_DB, encoding="utf-8", newline="")

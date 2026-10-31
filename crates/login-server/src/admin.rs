@@ -41,8 +41,26 @@ impl std::fmt::Debug for AdminSettings {
 }
 
 impl AdminSettings {
-    /// Reads `Admin.ini` from `config_dir`. Missing file → disabled (no warning).
+    /// Reads `Admin.ini` from `config_dir`, then the supervisor's token. Missing file → disabled (no warning).
     pub fn load(config_dir: &Path) -> Self {
+        Self::load_file(config_dir).with_supervisor_token(std::env::var(l2_admin_api::ADMIN_TOKEN_ENV).ok())
+    }
+
+    /// D-56: a supervisor hands its admin token to the servers it starts, so `Admin.ini` needs
+    /// none. A token written in `Admin.ini` still wins (a hand-made setup).
+    #[must_use]
+    pub fn with_supervisor_token(mut self, token: Option<String>) -> Self {
+        let token = token.map(|t| t.trim().to_owned()).filter(|t| !t.is_empty());
+        if let Some(token) = token
+            && self.token.is_empty()
+        {
+            self.enabled = true;
+            self.token = token;
+        }
+        self
+    }
+
+    fn load_file(config_dir: &Path) -> Self {
         let path = config_dir.join(ADMIN_CONFIG_FILE);
         let disabled = Self {
             enabled: false,
@@ -212,6 +230,27 @@ pub fn login_status(state: &LoginState) -> LoginStatus {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_supervisor_token_turns_the_endpoint_on_unless_admin_ini_has_one() {
+        let dir = tempfile::tempdir().unwrap();
+        let from_env = AdminSettings::load_file(dir.path()).with_supervisor_token(Some(" abc ".into()));
+        assert!(from_env.enabled);
+        assert_eq!(from_env.token, "abc");
+
+        let blank = AdminSettings::load_file(dir.path()).with_supervisor_token(Some("  ".into()));
+        assert!(!blank.enabled);
+
+        std::fs::write(
+            dir.path().join(ADMIN_CONFIG_FILE),
+            "Enabled = True
+Token = own
+",
+        )
+        .unwrap();
+        let own = AdminSettings::load_file(dir.path()).with_supervisor_token(Some("abc".into()));
+        assert_eq!(own.token, "own");
+    }
 
     #[test]
     fn missing_file_means_disabled() {

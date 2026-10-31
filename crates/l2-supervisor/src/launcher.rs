@@ -102,8 +102,8 @@ fn connect_addr(listen: SocketAddr) -> SocketAddr {
     }
 }
 
-/// Reads `Listen`, `Token` and the server order. A missing file, an unreadable file and an empty
-/// token are the three ways this fails.
+/// Reads `Listen`, `Token` and the server order. A missing or unreadable file is the way this
+/// fails; an empty token means the generated one in `supervisor.token`.
 pub fn read_connection(ini_path: &Path) -> Result<ConnectionInfo, Problem> {
     let config = match SupervisorConfig::load(ini_path) {
         Ok(config) => config,
@@ -112,12 +112,20 @@ pub fn read_connection(ini_path: &Path) -> Result<ConnectionInfo, Problem> {
         }
         Err(e) => return Err(Problem::IniInvalid(e.to_string())),
     };
-    if config.token.is_empty() {
-        return Err(Problem::TokenEmpty);
-    }
+    // D-56: an empty Token is the shared one in `supervisor.token` (made here when the GUI comes
+    // first, before it starts the supervisor).
+    let token = if config.token.is_empty() {
+        let dir = ini_path
+            .parent()
+            .filter(|p| !p.as_os_str().is_empty())
+            .unwrap_or(Path::new("."));
+        crate::secret::load_or_create(dir).map_err(|e| Problem::IniInvalid(format!("token file: {e}")))?
+    } else {
+        config.token
+    };
     Ok(ConnectionInfo {
         listen: config.listen,
-        token: config.token,
+        token,
         servers: config.servers.into_iter().map(|s| s.name).collect(),
     })
 }
@@ -438,13 +446,23 @@ mod tests {
     }
 
     #[test]
-    fn missing_empty_token_and_broken_files_are_told_apart() {
+    fn missing_and_broken_files_are_told_apart_and_an_empty_token_is_generated() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join(INI_NAME);
         assert_eq!(read_connection(&path), Err(Problem::IniMissing(path.clone())));
 
         write_ini(dir.path(), "Listen = 127.0.0.1:7900\nToken =\n");
-        assert_eq!(read_connection(&path), Err(Problem::TokenEmpty));
+        let token = read_connection(&path).unwrap().token;
+        assert_eq!(token.len(), 64);
+        assert_eq!(
+            read_connection(&path).unwrap().token,
+            token,
+            "the same file every time"
+        );
+        assert_eq!(
+            std::fs::read_to_string(crate::secret::token_path(dir.path())).unwrap(),
+            token
+        );
 
         write_ini(dir.path(), "Listen = nonsense\nToken = abc\n");
         assert!(matches!(read_connection(&path), Err(Problem::IniInvalid(_))));
