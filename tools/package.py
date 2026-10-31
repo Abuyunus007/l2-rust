@@ -12,9 +12,9 @@ Layout of the package:
     db_installer/    sql/ and config/ for the database installer
     Start-AdminGUI.cmd, Install-Database.cmd, README.txt
 
-No file of the package holds a token: the supervisor makes bin/supervisor.token on its first start
-(the admin GUI reads it) and hands each server its admin token at start (D-56). The package is a
-local build artifact: never commit it.
+No file of the package holds a token: on this machine the admin GUI needs none, and the supervisor
+hands each server its admin token at start (D-56). The package is a local build artifact: never
+commit it.
 """
 
 import argparse
@@ -51,8 +51,8 @@ def set_keys(path: Path, values: dict[str, str]) -> None:
 def supervisor_ini() -> str:
     return f"""# Supervisor settings of this package. The admin GUI reads Listen and Token from here.
 # Relative paths are relative to this file's folder (bin/).
-# Token and AdminToken stay empty: the supervisor makes its own (supervisor.token) and hands the
-# servers theirs, so nothing has to be typed (D-56).
+# Token and AdminToken stay empty: on this machine the GUI needs no token, and the supervisor hands
+# the servers theirs, so nothing has to be typed (D-56).
 Listen = 127.0.0.1:7900
 Token =
 LogBufferLines = 10000
@@ -108,9 +108,8 @@ L2J login or game server with the same ports at the same time.
 Closing the admin GUI keeps the servers running. Open it again to reconnect; "Stop all" stops
 them cleanly. Logs: login\\log, game\\log, bin\\log.
 
-There is no password or token to set up for the admin GUI: the supervisor creates its own key
-(bin\\supervisor.token) on the first start, the GUI reads it, and the servers get theirs from the
-supervisor. Keep bin\\supervisor.token private.
+There is no password or token to set up for the admin GUI on this PC. If the GUI says another
+supervisor is running (an older package), press "Stop it and start this one" in the Connection view.
 """
 
 START_GUI = "@echo off\r\ncd /d \"%~dp0bin\"\r\nstart \"\" \"l2-admin-gui.exe\"\r\n"

@@ -45,8 +45,13 @@ pub enum Problem {
     TokenEmpty,
     /// Something listens on the port, but it does not speak the admin protocol.
     PortUsedByOther(SocketAddr),
+    /// A supervisor listens on the port, but not the one of this run folder (an older package,
+    /// a copy started elsewhere). The GUI offers to replace it.
+    OtherSupervisor(SocketAddr),
     ExeMissing(PathBuf),
     SpawnFailed(String),
+    /// Replacing the other supervisor failed (the reason in words).
+    TakeOverFailed(String),
 }
 
 impl fmt::Display for Problem {
@@ -56,8 +61,14 @@ impl fmt::Display for Problem {
             Problem::IniInvalid(why) => write!(f, "supervisor.ini cannot be used: {why}"),
             Problem::TokenEmpty => write!(f, "Token is empty in supervisor.ini"),
             Problem::PortUsedByOther(addr) => write!(f, "port {} is used by another program", addr.port()),
+            Problem::OtherSupervisor(addr) => write!(
+                f,
+                "port {} is used by another supervisor (not the one of this folder)",
+                addr.port()
+            ),
             Problem::ExeMissing(path) => write!(f, "{} is missing", path.display()),
             Problem::SpawnFailed(why) => write!(f, "could not start the supervisor: {why}"),
+            Problem::TakeOverFailed(why) => write!(f, "could not replace the other supervisor: {why}"),
         }
     }
 }
@@ -89,7 +100,7 @@ impl ConnectionInfo {
     }
 }
 
-fn connect_addr(listen: SocketAddr) -> SocketAddr {
+pub fn connect_addr(listen: SocketAddr) -> SocketAddr {
     if listen.ip().is_unspecified() {
         let ip = if listen.is_ipv4() {
             IpAddr::V4(Ipv4Addr::LOCALHOST)
@@ -103,7 +114,7 @@ fn connect_addr(listen: SocketAddr) -> SocketAddr {
 }
 
 /// Reads `Listen`, `Token` and the server order. A missing or unreadable file is the way this
-/// fails; an empty token means the generated one in `supervisor.token`.
+/// fails; an empty token is fine on a local `Listen` (no token needed there, D-56).
 pub fn read_connection(ini_path: &Path) -> Result<ConnectionInfo, Problem> {
     let config = match SupervisorConfig::load(ini_path) {
         Ok(config) => config,
@@ -112,20 +123,12 @@ pub fn read_connection(ini_path: &Path) -> Result<ConnectionInfo, Problem> {
         }
         Err(e) => return Err(Problem::IniInvalid(e.to_string())),
     };
-    // D-56: an empty Token is the shared one in `supervisor.token` (made here when the GUI comes
-    // first, before it starts the supervisor).
-    let token = if config.token.is_empty() {
-        let dir = ini_path
-            .parent()
-            .filter(|p| !p.as_os_str().is_empty())
-            .unwrap_or(Path::new("."));
-        crate::secret::load_or_create(dir).map_err(|e| Problem::IniInvalid(format!("token file: {e}")))?
-    } else {
-        config.token
-    };
+    if config.token.is_empty() && !config.listen.ip().is_loopback() {
+        return Err(Problem::TokenEmpty);
+    }
     Ok(ConnectionInfo {
         listen: config.listen,
-        token,
+        token: config.token,
         servers: config.servers.into_iter().map(|s| s.name).collect(),
     })
 }
@@ -192,7 +195,16 @@ pub fn decide(ini: &Result<ConnectionInfo, Problem>, exe_path: &Path, probe: &Pr
         return Decision::Report(problem.clone());
     }
     if probe.port_open {
-        return Decision::Connect;
+        // Our own supervisor writes `supervisor.pid` once it listens; a listener without it is
+        // someone else's supervisor (or another program), never ours to control.
+        return if probe.pid_alive {
+            Decision::Connect
+        } else {
+            Decision::Report(Problem::OtherSupervisor(
+                ini.as_ref()
+                    .map_or_else(|_| SocketAddr::from(([127, 0, 0, 1], 0)), |info| info.listen),
+            ))
+        };
     }
     if probe.pid_alive {
         return Decision::AlreadyStarting;
@@ -213,6 +225,9 @@ pub fn classify_connect_error(error: &str, listen: SocketAddr, supervisor_alive:
         || (lower.contains("timed out") && !lower.contains("handshake"));
     if refused || supervisor_alive {
         return None;
+    }
+    if lower.contains("rejected") || lower.contains("invalid token") {
+        return Some(Problem::OtherSupervisor(listen));
     }
     if lower.contains("websocket")
         || lower.contains("protocol")
@@ -446,23 +461,20 @@ mod tests {
     }
 
     #[test]
-    fn missing_and_broken_files_are_told_apart_and_an_empty_token_is_generated() {
+    fn missing_and_broken_files_are_told_apart_and_an_empty_local_token_is_fine() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join(INI_NAME);
         assert_eq!(read_connection(&path), Err(Problem::IniMissing(path.clone())));
 
         write_ini(dir.path(), "Listen = 127.0.0.1:7900\nToken =\n");
-        let token = read_connection(&path).unwrap().token;
-        assert_eq!(token.len(), 64);
         assert_eq!(
             read_connection(&path).unwrap().token,
-            token,
-            "the same file every time"
+            "",
+            "a local Listen needs no token"
         );
-        assert_eq!(
-            std::fs::read_to_string(crate::secret::token_path(dir.path())).unwrap(),
-            token
-        );
+
+        write_ini(dir.path(), "Listen = 0.0.0.0:7900\nToken =\n");
+        assert_eq!(read_connection(&path), Err(Problem::TokenEmpty));
 
         write_ini(dir.path(), "Listen = nonsense\nToken = abc\n");
         assert!(matches!(read_connection(&path), Err(Problem::IniInvalid(_))));
@@ -490,14 +502,19 @@ mod tests {
     }
 
     #[test]
-    fn an_open_port_means_connect_even_without_exe_or_pid() {
+    fn an_open_port_is_ours_only_with_a_live_pid_file() {
         assert_eq!(
-            decide_with(Ok(info()), probe(true, false, false)),
+            decide_with(Ok(info()), probe(true, true, false)),
             Decision::Connect
         );
         assert_eq!(
             decide_with(Ok(info()), probe(true, true, true)),
             Decision::Connect
+        );
+        // Someone else's supervisor (an older package): reported, never controlled.
+        assert_eq!(
+            decide_with(Ok(info()), probe(true, false, true)),
+            Decision::Report(Problem::OtherSupervisor(info().listen))
         );
     }
 
@@ -615,8 +632,15 @@ mod tests {
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let port = listener.local_addr().unwrap().port();
         let dir = tempfile::tempdir().unwrap();
-        write_ini(dir.path(), &format!("Listen = 127.0.0.1:{port}\nToken = abc\n"));
-        // The exe does not exist: if the launcher tried to start it, this would be a problem.
+        let ini = write_ini(dir.path(), &format!("Listen = 127.0.0.1:{port}\nToken = abc\n"));
+        // Without our pid file the listener is someone else's supervisor.
+        let launch = ensure_running(dir.path(), &dir.path().join("no-such-exe"));
+        assert!(matches!(
+            launch.status,
+            LaunchStatus::Problem(Problem::OtherSupervisor(_))
+        ));
+        // With it (this test process stands in for the supervisor): connect, start nothing.
+        let _pid = pidfile::PidFileGuard::create(&pidfile::path_for(&ini)).unwrap();
         let launch = ensure_running(dir.path(), &dir.path().join("no-such-exe"));
         assert_eq!(launch.status, LaunchStatus::Running);
     }

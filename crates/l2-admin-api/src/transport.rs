@@ -117,7 +117,9 @@ async fn serve_connection<H: AdminHandler>(
         Message::Hello { version, .. } if version != PROTOCOL_VERSION => Some(format!(
             "protocol version {version} not supported, expected {PROTOCOL_VERSION}"
         )),
-        Message::Hello { token: given, .. } if !token.matches(&given) => Some("invalid token".to_string()),
+        Message::Hello { token: given, .. } if !token.allows(&given, peer.ip()) => {
+            Some("invalid token".to_string())
+        }
         Message::Hello { .. } => None,
         other => Some(format!("expected hello, got {}", kind_of(&other))),
     };

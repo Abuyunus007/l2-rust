@@ -3,7 +3,7 @@
 //! Runs until Ctrl+C (or SIGTERM on Unix) or an admin `StopSupervisor`, then stops the servers
 //! it started. `supervisor.pid` next to the ini file names the running process.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use anyhow::Context;
 use l2_supervisor::config::SupervisorConfig;
@@ -20,15 +20,13 @@ async fn main() -> anyhow::Result<()> {
         .nth(1)
         .map_or_else(|| PathBuf::from("supervisor.ini"), PathBuf::from);
     let mut config = SupervisorConfig::load(&path).with_context(|| format!("loading {}", path.display()))?;
-    // D-56: no token to type. An empty `Token` means the one in `supervisor.token` (the GUI reads
-    // the same file); an empty `AdminToken` means a fresh one per start, handed to that server.
-    if config.token.is_empty() {
-        let dir = path
-            .parent()
-            .filter(|p| !p.as_os_str().is_empty())
-            .unwrap_or(Path::new("."));
-        config.token = secret::load_or_create(dir)
-            .with_context(|| format!("creating {}", secret::token_path(dir).display()))?;
+    // D-56: no token to type. An empty `Token` on a local `Listen` lets this machine in without
+    // one; an empty `AdminToken` means a fresh one per start, handed to that server.
+    if config.token.is_empty() && !config.listen.ip().is_loopback() {
+        tracing::warn!(
+            "Token is empty in {} and Listen is not a local address: every admin connection will be refused",
+            path.display()
+        );
     }
     for server in &mut config.servers {
         if server.admin_endpoint.is_some() && server.admin_token.is_empty() {

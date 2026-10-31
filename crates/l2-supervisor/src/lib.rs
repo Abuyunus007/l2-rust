@@ -11,6 +11,7 @@ pub mod logs;
 pub mod pidfile;
 pub mod process;
 pub mod secret;
+pub mod takeover;
 
 use std::collections::HashMap;
 use std::net::SocketAddr;
@@ -65,7 +66,12 @@ impl Running {
         tasks.push(tokio::spawn(serve(
             listener,
             "supervisor".into(),
-            Token::new(config.token.clone()),
+            // D-56: on this machine only, an empty Token means no token at all.
+            if config.token.is_empty() && config.listen.ip().is_loopback() {
+                Token::local_only()
+            } else {
+                Token::new(config.token.clone())
+            },
             handler,
         )));
         Ok(Self {

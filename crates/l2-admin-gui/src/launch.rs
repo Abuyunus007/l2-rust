@@ -52,6 +52,8 @@ pub enum UiRequest {
     StopSupervisor,
     /// Remember this folder as the run folder, then connect.
     UseRunFolder(String),
+    /// Stop the other folder's supervisor on this address, then start ours (D-56).
+    TakeOver(std::net::SocketAddr),
 }
 
 /// What views see and can ask for. Lives in [`crate::app::AppCtx`].
@@ -100,6 +102,10 @@ impl LaunchHandle {
 
     pub fn use_run_folder(&self, folder: String) {
         let _ = self.requests.send(UiRequest::UseRunFolder(folder));
+    }
+
+    pub fn take_over(&self, listen: std::net::SocketAddr) {
+        let _ = self.requests.send(UiRequest::TakeOver(listen));
     }
 }
 
@@ -333,8 +339,31 @@ mod tests {
         assert!(needs_setup(&resolved.state));
     }
 
+    /// Stands in for our running supervisor: the pid file of `dir` names this test process.
+    fn our_pid_file(dir: &Path) -> l2_supervisor::pidfile::PidFileGuard {
+        let ini = dir.join("supervisor.ini");
+        l2_supervisor::pidfile::PidFileGuard::create(&l2_supervisor::pidfile::path_for(&ini)).unwrap()
+    }
+
     #[test]
-    fn an_empty_token_uses_the_generated_token_file() {
+    fn an_empty_local_token_needs_no_token() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(
+            dir.path().join("supervisor.ini"),
+            format!("Listen = 127.0.0.1:{port}\nToken =\n"),
+        )
+        .unwrap();
+        let _pid = our_pid_file(dir.path());
+        let resolved = resolve(&input(dir.path()));
+        assert_eq!(resolved.run_folder.as_deref(), Some(dir.path()));
+        assert_eq!(resolved.state, LaunchState::Running);
+        assert_eq!(resolved.target.unwrap().token, "");
+    }
+
+    #[test]
+    fn a_supervisor_of_another_folder_on_our_port_is_reported() {
         let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
         let port = listener.local_addr().unwrap().port();
         let dir = tempfile::tempdir().unwrap();
@@ -344,10 +373,10 @@ mod tests {
         )
         .unwrap();
         let resolved = resolve(&input(dir.path()));
-        assert_eq!(resolved.run_folder.as_deref(), Some(dir.path()));
-        assert_eq!(resolved.state, LaunchState::Running);
-        let file = std::fs::read_to_string(dir.path().join("supervisor.token")).unwrap();
-        assert_eq!(resolved.target.unwrap().token, file);
+        assert!(matches!(
+            resolved.state,
+            LaunchState::Problem(Problem::OtherSupervisor(_))
+        ));
     }
 
     #[test]
@@ -377,6 +406,7 @@ mod tests {
             format!("Listen = 127.0.0.1:{port}\nToken = from-file\n"),
         )
         .unwrap();
+        let _pid = our_pid_file(dir.path());
 
         let resolved = resolve(&input(dir.path()));
         assert_eq!(resolved.state, LaunchState::Running, "the port is open: no start");

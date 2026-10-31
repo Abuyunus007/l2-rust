@@ -98,6 +98,33 @@ impl AdminApp {
         }
     }
 
+    /// Stops the other folder's supervisor, then resolves (and starts ours) as usual, all on a
+    /// short-lived thread: the other one may take a while to stop its servers.
+    fn start_take_over(&mut self, listen: std::net::SocketAddr) {
+        self.bridge.disconnect();
+        self.launch.state = LaunchState::Resolving;
+        let input = ResolveInput::from_settings(&self.settings);
+        let (tx, ctx) = (self.resolved_tx.clone(), self.egui_ctx.clone());
+        let spawned = std::thread::Builder::new()
+            .name("take-over".into())
+            .spawn(move || {
+                let resolved = match l2_supervisor::takeover::take_over(listen) {
+                    Ok(_) => launch::resolve(&input),
+                    Err(why) => launch::Resolved {
+                        run_folder: None,
+                        target: None,
+                        listen: None,
+                        state: LaunchState::Problem(l2_supervisor::launcher::Problem::TakeOverFailed(why)),
+                    },
+                };
+                let _ = tx.send(resolved);
+                ctx.request_repaint();
+            });
+        if let Err(e) = spawned {
+            tracing::warn!("cannot start the take-over thread: {e}");
+        }
+    }
+
     fn handle_ui_requests(&mut self) {
         while let Ok(request) = self.ui_requests.try_recv() {
             match request {
@@ -106,6 +133,7 @@ impl AdminApp {
                     self.settings.run_folder = folder;
                     self.start_resolve();
                 }
+                UiRequest::TakeOver(listen) => self.start_take_over(listen),
                 UiRequest::StopSupervisor => {
                     self.stop_request = Some(self.bridge.request(Request::StopSupervisor));
                 }

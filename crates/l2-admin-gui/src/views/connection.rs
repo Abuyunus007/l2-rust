@@ -9,6 +9,7 @@ use crate::app::{AppCtx, describe_state};
 use crate::launch::{self, LaunchState};
 use crate::settings::Theme;
 use crate::views::View;
+use l2_supervisor::launcher::Problem;
 
 #[derive(Default)]
 pub struct ConnectionView {
@@ -16,6 +17,8 @@ pub struct ConnectionView {
     /// The text of the "Choose run folder" field; `None` = not edited yet (shows the current one).
     run_folder_input: Option<String>,
     confirm_stop: bool,
+    /// The other supervisor the user is asked to replace.
+    confirm_take_over: Option<std::net::SocketAddr>,
 }
 
 impl View for ConnectionView {
@@ -110,8 +113,25 @@ impl View for ConnectionView {
         if let Some(notice) = &cx.launch.notice {
             ui.colored_label(ui.visuals().error_fg_color, notice);
         }
+        if let LaunchState::Problem(Problem::OtherSupervisor(listen)) = cx.launch.state {
+            ui.add_space(8.0);
+            ui.colored_label(
+                ui.visuals().warn_fg_color,
+                "Another supervisor (an older package or a copy from another folder) is running on this port.",
+            );
+            if ui
+                .button("Stop it and start this one")
+                .on_hover_text(
+                    "Stops the other supervisor and its servers, then starts the one of this folder",
+                )
+                .clicked()
+            {
+                self.confirm_take_over = Some(listen);
+            }
+        }
 
         self.confirm_stop_dialog(ui, cx);
+        self.confirm_take_over_dialog(ui, cx);
     }
 }
 
@@ -143,6 +163,44 @@ impl ConnectionView {
         // Follow the folder the launcher found, unless the user is typing another.
         if !current.is_empty() && self.run_folder_input.as_deref() == Some("") {
             self.run_folder_input = Some(current);
+        }
+    }
+
+    fn confirm_take_over_dialog(&mut self, ui: &mut egui::Ui, cx: &AppCtx<'_>) {
+        let Some(listen) = self.confirm_take_over else {
+            return;
+        };
+        let mut open = true;
+        let mut answer = None;
+        egui::Window::new("Replace the other supervisor?")
+            .open(&mut open)
+            .collapsible(false)
+            .resizable(false)
+            .anchor(Align2::CENTER_CENTER, [0.0, 0.0])
+            .show(ui.ctx(), |ui| {
+                ui.label(format!(
+                    "The supervisor on port {} is stopped together with its servers.",
+                    listen.port()
+                ));
+                ui.label("Players on those servers are disconnected. Then this folder's supervisor starts.");
+                ui.add_space(8.0);
+                ui.horizontal(|ui| {
+                    if ui.button("Replace it").clicked() {
+                        answer = Some(true);
+                    }
+                    if ui.button("Cancel").clicked() {
+                        answer = Some(false);
+                    }
+                });
+            });
+        match answer {
+            Some(true) => {
+                self.confirm_take_over = None;
+                cx.launch.take_over(listen);
+            }
+            Some(false) => self.confirm_take_over = None,
+            None if !open => self.confirm_take_over = None,
+            None => {}
         }
     }
 
