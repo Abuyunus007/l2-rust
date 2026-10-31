@@ -472,6 +472,13 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [S-E2E-01](S/S-E2E-01.md) | End to end | sonnet | full | Q, VM-01, BOSS-01, INST-01 | merged |
 | S-RUN-01 | Runbook and milestone checks (docs/runbooks/scripts-test.md) | opus | review | E2E-01 | merged |
 
+## Tools: no L2JMobius needed (2026-10-31)
+
+| Card | Title | Model | Review | Depends | Status |
+|---|---|---|---|---|---|
+| [T-DIST-01](T/T-DIST-01.md) | Tests and the DB schema use the repo's dist/ | sonnet | spot | — | running |
+| [T-DBI-01](T/T-DBI-01.md) | Database installer (GUI and console) | sonnet | full | — | running |
+
 ## Milestone test results
 
 ### M1 (2026-10-18)
