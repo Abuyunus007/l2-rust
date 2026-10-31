@@ -488,7 +488,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [G-02](G/G-02.md) | Setup wizard and built-in database installer | sonnet | full | G-01 | ready |
 | [G-03](G/G-03.md) | Game admin: players, punishments, announcements, console, shutdown | sonnet | full | — | running |
 | [G-04](G/G-04.md) | Accounts: search, create, password, access level, ban | sonnet | full | — | merged |
-| [G-05](G/G-05.md) | Config editor | sonnet | spot | — | running |
+| [G-05](G/G-05.md) | Config editor | sonnet | spot | — | merged |
 
 ## Milestone test results
 
