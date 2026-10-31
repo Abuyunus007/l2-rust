@@ -8,8 +8,8 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
 
 use l2_admin_api::{AdminClient, AdminHandler, Event, Request, Response, Session};
-use tokio::sync::broadcast;
 use tokio::sync::broadcast::error::RecvError;
+use tokio::sync::{Notify, broadcast};
 use tokio::task::JoinHandle;
 
 use crate::config::ServerConfig;
@@ -106,11 +106,17 @@ pub struct SupervisorHandler {
     sessions: Arc<Mutex<HashMap<u64, Session>>>,
     /// The running log forwarder of each session (one `SubscribeLogs` at a time).
     log_streams: Mutex<HashMap<u64, JoinHandle<()>>>,
+    /// Raised once a `StopSupervisor` has stopped all servers: the binary then exits.
+    stop_requested: Arc<Notify>,
 }
 
 impl SupervisorHandler {
     /// Creates the handler and the task that pushes state/status events to all clients.
-    pub fn new(supervisor: Arc<Supervisor>, links: HashMap<String, AdminLink>) -> Arc<Self> {
+    pub fn new(
+        supervisor: Arc<Supervisor>,
+        links: HashMap<String, AdminLink>,
+        stop_requested: Arc<Notify>,
+    ) -> Arc<Self> {
         let sessions: Arc<Mutex<HashMap<u64, Session>>> = Arc::default();
         tokio::spawn(broadcast_events(
             supervisor.subscribe_events(),
@@ -122,6 +128,7 @@ impl SupervisorHandler {
             links,
             sessions,
             log_streams: Mutex::default(),
+            stop_requested,
         })
     }
 
@@ -240,6 +247,16 @@ impl AdminHandler for SupervisorHandler {
                 if let Some(task) = self.streams().remove(&session.id()) {
                     task.abort();
                 }
+                Response::Ok
+            }
+            Request::StopSupervisor => {
+                // Answer first: the servers can take up to StopTimeoutSecs each to stop.
+                let (supervisor, stop_requested) =
+                    (Arc::clone(&self.supervisor), Arc::clone(&self.stop_requested));
+                tokio::spawn(async move {
+                    supervisor.stop_all_reverse().await;
+                    stop_requested.notify_one();
+                });
                 Response::Ok
             }
             // The GUI stops servers with StopServer; `shutdown` is for server endpoints.

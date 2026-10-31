@@ -3,7 +3,7 @@
 //!
 //! Java: `loginserver/ui/Gui.java` (the game server columns of the login server's window).
 
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::time::{Duration, Instant};
 
 use egui::{Align2, Color32};
@@ -73,6 +73,27 @@ fn enabled_actions(state: ServerState, connected: bool) -> Enabled {
     }
 }
 
+/// The servers a "Start all" / "Stop all" touches, in the order it works through them:
+/// Start goes in the `Servers` order of `supervisor.ini` (the order the supervisor lists them),
+/// Stop goes in reverse, so the game server is down before the login server it registered with.
+/// Servers for which the single button would be disabled are skipped.
+fn plan_batch(action: Action, servers: &[ServerStatus]) -> Vec<String> {
+    let wanted = |s: &&ServerStatus| {
+        let enabled = enabled_actions(s.state, true);
+        match action {
+            Action::Start => enabled.start,
+            Action::Stop => enabled.stop,
+            Action::Restart => false,
+        }
+    };
+    let names =
+        |iter: &mut dyn Iterator<Item = &ServerStatus>| iter.filter(wanted).map(|s| s.name.clone()).collect();
+    match action {
+        Action::Stop => names(&mut servers.iter().rev()),
+        _ => names(&mut servers.iter()),
+    }
+}
+
 fn state_label(state: ServerState) -> &'static str {
     match state {
         ServerState::Stopped => "Stopped",
@@ -129,6 +150,12 @@ pub struct ServersView {
     actions: HashMap<u64, String>,
     /// Stop or Restart waiting for the user's confirmation.
     confirm: Option<(Action, String)>,
+    /// "Stop all" waiting for the user's confirmation.
+    confirm_stop_all: bool,
+    /// Start all / Stop all: one request at a time, the next after the answer, so the order holds.
+    batch: VecDeque<(Action, String)>,
+    /// The request of the batch in flight.
+    batch_inflight: Option<u64>,
     error: Option<String>,
 }
 
@@ -149,6 +176,9 @@ impl ServersView {
                 self.servers.clear();
                 self.actions.clear();
                 self.confirm = None;
+                self.confirm_stop_all = false;
+                self.batch.clear();
+                self.batch_inflight = None;
                 self.error = None;
             }
             BridgeEvent::Event(Event::ServerStateChanged { status }) => {
@@ -184,12 +214,20 @@ impl ServersView {
                         Err(error) => self.login_failed(error.clone(), now),
                     }
                 } else if let Some(what) = self.actions.remove(id) {
-                    match result {
-                        Ok(Response::Error { message }) => {
-                            self.error = Some(format!("{what} failed: {message}"));
+                    let failure = match result {
+                        Ok(Response::Error { message }) => Some(message.clone()),
+                        Ok(_) => None,
+                        Err(error) => Some(error.clone()),
+                    };
+                    if self.batch_inflight == Some(*id) {
+                        self.batch_inflight = None;
+                        // A failed step ends the batch: later servers may depend on this one.
+                        if failure.is_some() {
+                            self.batch.clear();
                         }
-                        Ok(_) => {}
-                        Err(error) => self.error = Some(format!("{what} failed: {error}")),
+                    }
+                    if let Some(failure) = failure {
+                        self.error = Some(format!("{what} failed: {failure}"));
                     }
                 }
             }
@@ -224,6 +262,91 @@ impl ServersView {
         self.error = None;
         let id = cx.bridge.request(action.request(&name));
         self.actions.insert(id, format!("{} {name}", action.verb()));
+    }
+
+    /// Queues "Start all" / "Stop all" (see [`plan_batch`]).
+    fn begin_batch(&mut self, action: Action) {
+        self.error = None;
+        self.batch = plan_batch(action, &self.servers)
+            .into_iter()
+            .map(|name| (action, name))
+            .collect();
+    }
+
+    /// Sends the next step of the batch once the previous one was answered.
+    fn pump_batch(&mut self, cx: &AppCtx<'_>) {
+        if self.batch_inflight.is_some() {
+            return;
+        }
+        if let Some((action, name)) = self.batch.pop_front() {
+            let id = cx.bridge.request(action.request(&name));
+            self.actions.insert(id, format!("{} {name}", action.verb()));
+            self.batch_inflight = Some(id);
+        }
+    }
+
+    fn all_buttons(&mut self, ui: &mut egui::Ui, connected: bool) {
+        let idle = self.batch.is_empty() && self.batch_inflight.is_none();
+        let can_start = connected && idle && !plan_batch(Action::Start, &self.servers).is_empty();
+        let can_stop = connected && idle && !plan_batch(Action::Stop, &self.servers).is_empty();
+        ui.horizontal(|ui| {
+            if ui
+                .add_enabled(can_start, egui::Button::new("Start all"))
+                .on_hover_text("Starts the stopped servers in the order of supervisor.ini")
+                .on_disabled_hover_text("Nothing to start, or not connected")
+                .clicked()
+            {
+                self.begin_batch(Action::Start);
+            }
+            if ui
+                .add_enabled(can_stop, egui::Button::new("Stop all"))
+                .on_hover_text("Stops the running servers in reverse order")
+                .on_disabled_hover_text("Nothing to stop, or not connected")
+                .clicked()
+            {
+                self.confirm_stop_all = true;
+            }
+            if !idle {
+                ui.label("Working...");
+            }
+        });
+    }
+
+    fn confirm_stop_all_dialog(&mut self, ui: &mut egui::Ui, connected: bool) {
+        if !self.confirm_stop_all {
+            return;
+        }
+        let mut open = true;
+        let mut answer: Option<bool> = None;
+        egui::Window::new("Stop all servers?")
+            .open(&mut open)
+            .collapsible(false)
+            .resizable(false)
+            .anchor(Align2::CENTER_CENTER, [0.0, 0.0])
+            .show(ui.ctx(), |ui| {
+                ui.label("Players will be disconnected. The servers are stopped one after the other, last one first.");
+                if cfg!(windows) {
+                    ui.label("On Windows a process without admin endpoint is killed: players may not be saved.");
+                }
+                ui.add_space(8.0);
+                ui.horizontal(|ui| {
+                    if ui.add_enabled(connected, egui::Button::new("Stop all")).clicked() {
+                        answer = Some(true);
+                    }
+                    if ui.button("Cancel").clicked() {
+                        answer = Some(false);
+                    }
+                });
+            });
+        match answer {
+            Some(true) => {
+                self.confirm_stop_all = false;
+                self.begin_batch(Action::Stop);
+            }
+            Some(false) => self.confirm_stop_all = false,
+            None if !open => self.confirm_stop_all = false,
+            None => {}
+        }
     }
 
     fn servers_table(&mut self, ui: &mut egui::Ui, cx: &AppCtx<'_>, connected: bool) {
@@ -406,12 +529,16 @@ impl View for ServersView {
         }
         ui.add_space(8.0);
 
+        self.pump_batch(cx);
+        self.all_buttons(ui, connected);
+        ui.add_space(8.0);
         self.servers_table(ui, cx, connected);
         if self.server(LOGIN_SERVER).is_some() {
             ui.add_space(16.0);
             self.login_panel(ui);
         }
         self.confirm_dialog(ui, cx, connected);
+        self.confirm_stop_all_dialog(ui, connected);
     }
 
     fn on_event(&mut self, event: &BridgeEvent) {
@@ -456,6 +583,80 @@ mod tests {
                 want(false, false, false),
                 "{state:?}"
             );
+        }
+    }
+
+    #[test]
+    fn start_all_goes_forward_and_stop_all_goes_backward() {
+        use ServerState::{Crashed, Running, Stopped, Stopping};
+        let servers = vec![
+            status("login", Stopped),
+            status("game", Crashed),
+            status("extra", Running),
+            status("busy", Stopping),
+        ];
+        // Only servers whose single Start button is enabled, in list order.
+        assert_eq!(plan_batch(Action::Start, &servers), ["login", "game"]);
+        // Only servers that can be stopped, last one first.
+        assert_eq!(plan_batch(Action::Stop, &servers), ["extra"]);
+
+        let all_running = vec![status("login", Running), status("game", Running)];
+        assert_eq!(plan_batch(Action::Stop, &all_running), ["game", "login"]);
+        assert!(plan_batch(Action::Start, &all_running).is_empty());
+        assert!(plan_batch(Action::Restart, &all_running).is_empty());
+    }
+
+    #[test]
+    fn a_batch_continues_after_each_answer_and_stops_at_the_first_failure() {
+        let now = Instant::now();
+        let mut view = ServersView::default();
+        view.begin_batch_for_test(Action::Stop, &["game", "login"]);
+
+        // Pretend the first step was sent as request 5.
+        let (action, name) = view.batch.pop_front().unwrap();
+        view.actions.insert(5, format!("{} {name}", action.verb()));
+        view.batch_inflight = Some(5);
+        view.apply(
+            &BridgeEvent::Response {
+                id: 5,
+                result: Ok(Response::Ok),
+            },
+            now,
+        );
+        assert_eq!(view.batch_inflight, None);
+        assert_eq!(view.batch.len(), 1, "the next step is still queued");
+        assert_eq!(view.error, None);
+
+        // The second step fails: nothing else is queued, the error is shown.
+        view.batch.push_back((Action::Stop, "third".into()));
+        view.actions.insert(6, "Stop login".into());
+        view.batch_inflight = Some(6);
+        view.apply(
+            &BridgeEvent::Response {
+                id: 6,
+                result: Ok(Response::Error {
+                    message: "boom".into(),
+                }),
+            },
+            now,
+        );
+        assert!(view.batch.is_empty());
+        assert_eq!(view.error.as_deref(), Some("Stop login failed: boom"));
+    }
+
+    #[test]
+    fn losing_the_connection_drops_the_batch() {
+        let mut view = ServersView::default();
+        view.begin_batch_for_test(Action::Start, &["login"]);
+        view.batch_inflight = Some(1);
+        view.confirm_stop_all = true;
+        view.apply(&BridgeEvent::Disconnected, Instant::now());
+        assert!(view.batch.is_empty() && view.batch_inflight.is_none() && !view.confirm_stop_all);
+    }
+
+    impl ServersView {
+        fn begin_batch_for_test(&mut self, action: Action, names: &[&str]) {
+            self.batch = names.iter().map(|n| (action, (*n).to_string())).collect();
         }
     }
 

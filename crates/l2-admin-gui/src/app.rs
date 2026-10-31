@@ -1,12 +1,16 @@
 //! The eframe app: window layout (status bar, navigation, central view) and the glue between
 //! the bridge, the settings and the views.
 
+use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
 use egui::Color32;
-use l2_admin_api::Request;
+use l2_admin_api::{Request, Response};
 
-use crate::bridge::{Bridge, BridgeEvent, ConnState, Target};
+use crate::bridge::{Bridge, BridgeEvent, ConnState};
+use crate::launch::{
+    self, LaunchHandle, LaunchState, ResolveInput, Resolved, UiRequest, WaitingVerdict, judge_waiting,
+};
 use crate::settings::{Settings, Theme};
 use crate::views::{ViewId, Views};
 
@@ -15,12 +19,14 @@ pub struct AppCtx<'a> {
     pub settings: &'a mut Settings,
     pub conn: &'a ConnState,
     pub bridge: &'a Bridge,
+    /// The supervisor process: state, run folder, and the requests to start/stop it (G-01).
+    pub launch: &'a LaunchHandle,
 }
 
 impl AppCtx<'_> {
-    /// Connects to the address in the settings (reconnects if already connected).
+    /// Finds the run folder, starts the supervisor if nobody listens, and (re)connects.
     pub fn connect(&self) {
-        self.bridge.connect(target_of(self.settings));
+        self.launch.connect();
     }
 
     pub fn disconnect(&self) {
@@ -35,30 +41,94 @@ pub struct AdminApp {
     views: Views,
     selected: ViewId,
     applied_theme: Option<Theme>,
+    egui_ctx: egui::Context,
+    launch: LaunchHandle,
+    ui_requests: mpsc::Receiver<UiRequest>,
+    resolved_tx: mpsc::Sender<Resolved>,
+    resolved_rx: mpsc::Receiver<Resolved>,
+    /// The `StopSupervisor` request in flight.
+    stop_request: Option<u64>,
+    /// Set once per connection loss so a supervisor that cannot start is not relaunched forever.
+    relaunched: bool,
 }
 
 impl AdminApp {
     pub fn new(cc: &eframe::CreationContext<'_>) -> std::io::Result<Self> {
         let settings = Settings::load(cc.storage);
         let bridge = Bridge::spawn(Some(cc.egui_ctx.clone()))?;
-        if settings.should_auto_connect() {
-            bridge.connect(target_of(&settings));
-        }
-        Ok(Self {
+        let (launch, ui_requests) = LaunchHandle::new();
+        let (resolved_tx, resolved_rx) = mpsc::channel();
+        let mut app = Self {
             settings,
             bridge,
             conn: ConnState::default(),
             views: Views::default(),
             selected: ViewId::Connection,
             applied_theme: None,
-        })
+            egui_ctx: cc.egui_ctx.clone(),
+            launch,
+            ui_requests,
+            resolved_tx,
+            resolved_rx,
+            stop_request: None,
+            relaunched: false,
+        };
+        if app.settings.should_auto_connect() {
+            app.start_resolve();
+        }
+        Ok(app)
     }
-}
 
-fn target_of(settings: &Settings) -> Target {
-    Target {
-        url: settings.ws_url(),
-        token: settings.token.clone(),
+    /// Looks for the run folder and starts the supervisor on a short-lived thread (the port probe
+    /// and the spawn would stall the UI); the answer comes back through `resolved_rx`.
+    fn start_resolve(&mut self) {
+        self.launch.state = LaunchState::Resolving;
+        let input = ResolveInput::from_settings(&self.settings);
+        let (tx, ctx) = (self.resolved_tx.clone(), self.egui_ctx.clone());
+        let spawned = std::thread::Builder::new()
+            .name("launcher".into())
+            .spawn(move || {
+                let _ = tx.send(launch::resolve(&input));
+                ctx.request_repaint();
+            });
+        if let Err(e) = spawned {
+            tracing::warn!("cannot start the launcher thread: {e}");
+            self.launch.state =
+                LaunchState::Problem(l2_supervisor::launcher::Problem::SpawnFailed(e.to_string()));
+        }
+    }
+
+    fn handle_ui_requests(&mut self) {
+        while let Ok(request) = self.ui_requests.try_recv() {
+            match request {
+                UiRequest::Connect => self.start_resolve(),
+                UiRequest::UseRunFolder(folder) => {
+                    self.settings.run_folder = folder;
+                    self.start_resolve();
+                }
+                UiRequest::StopSupervisor => {
+                    self.stop_request = Some(self.bridge.request(Request::StopSupervisor));
+                }
+            }
+        }
+        while let Ok(resolved) = self.resolved_rx.try_recv() {
+            self.apply_resolved(resolved);
+        }
+    }
+
+    fn apply_resolved(&mut self, resolved: Resolved) {
+        if let Some(folder) = &resolved.run_folder {
+            // Remembered for the next start (card: "remembers the folder it chose").
+            self.settings.run_folder = folder.to_string_lossy().into_owned();
+        }
+        self.launch.run_folder = resolved.run_folder;
+        self.launch.url = resolved.target.as_ref().map(|t| t.url.clone());
+        self.launch.listen = resolved.listen;
+        self.launch.state = resolved.state;
+        match resolved.target {
+            Some(target) => self.bridge.connect(target),
+            None => self.bridge.disconnect(),
+        }
     }
 }
 
@@ -66,6 +136,7 @@ impl AdminApp {
     fn pump_events(&mut self) {
         while let Some(event) = self.bridge.try_recv() {
             self.conn.apply(&event, Instant::now());
+            self.track_supervisor(&event);
             if matches!(event, BridgeEvent::Connected { .. }) {
                 // The supervisor only starts pushing events to a client after its first
                 // request (ADM-02), so ask for the server list right away. The answer reaches
@@ -76,15 +147,71 @@ impl AdminApp {
         }
     }
 
+    /// Keeps [`LaunchState`] in step with the connection.
+    fn track_supervisor(&mut self, event: &BridgeEvent) {
+        match event {
+            BridgeEvent::Connected { .. } => {
+                self.launch.state = LaunchState::Running;
+                self.relaunched = false;
+            }
+            BridgeEvent::Waiting { failures, error, .. } => {
+                if self.launch.state == LaunchState::Stopped {
+                    // We stopped it on purpose: the dropped connection is expected, don't retry.
+                    self.bridge.disconnect();
+                    return;
+                }
+                let pid_alive = || {
+                    self.launch.run_folder.as_ref().is_some_and(|dir| {
+                        let ini = dir.join(l2_supervisor::launcher::INI_NAME);
+                        l2_supervisor::pidfile::read(&l2_supervisor::pidfile::path_for(&ini))
+                            .is_some_and(|info| info.is_alive())
+                    })
+                };
+                match judge_waiting(
+                    &self.launch.state,
+                    *failures,
+                    error,
+                    self.launch.listen,
+                    pid_alive,
+                ) {
+                    WaitingVerdict::Keep => {}
+                    WaitingVerdict::Become(state) => self.launch.state = state,
+                    WaitingVerdict::Relaunch if !self.relaunched => {
+                        self.relaunched = true;
+                        self.start_resolve();
+                    }
+                    WaitingVerdict::Relaunch => {}
+                }
+            }
+            BridgeEvent::Response { id, result } if self.stop_request == Some(*id) => {
+                self.stop_request = None;
+                match result {
+                    Ok(Response::Ok) => self.launch.state = LaunchState::Stopped,
+                    Ok(Response::Error { message }) => {
+                        self.launch.notice = Some(format!("Stop failed: {message}"));
+                    }
+                    Ok(_) => {}
+                    Err(error) => self.launch.notice = Some(format!("Stop failed: {error}")),
+                }
+            }
+            _ => {}
+        }
+    }
+
     fn status_bar(&self, ui: &mut egui::Ui) {
         // Address on the right; the state text gets the rest and is cut off (full text on hover)
         // so a long OS error message cannot push the address out of the window.
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            ui.label(self.settings.ws_url());
+            ui.label(self.launch.url.clone().unwrap_or_else(|| self.settings.ws_url()));
             ui.with_layout(egui::Layout::left_to_right(egui::Align::Center), |ui| {
                 let (dot, color) = state_indicator(&self.conn);
                 ui.colored_label(color, dot);
-                let text = describe_state(&self.conn, Instant::now());
+                let supervisor = launch::status_text(&self.launch.state, self.conn.is_connected());
+                let text = if self.conn.is_connected() {
+                    supervisor
+                } else {
+                    format!("{supervisor} | {}", describe_state(&self.conn, Instant::now()))
+                };
                 ui.add(egui::Label::new(&text).truncate()).on_hover_text(&text);
             });
         });
@@ -106,6 +233,7 @@ impl AdminApp {
 
 impl eframe::App for AdminApp {
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+        self.handle_ui_requests();
         self.pump_events();
         if self.applied_theme != Some(self.settings.theme) {
             ctx.set_theme(self.settings.theme.preference());
@@ -128,6 +256,7 @@ impl eframe::App for AdminApp {
                 settings: &mut self.settings,
                 conn: &self.conn,
                 bridge: &self.bridge,
+                launch: &self.launch,
             };
             match self.views.get_mut(self.selected) {
                 Some(view) => view.ui(ui, &mut cx),

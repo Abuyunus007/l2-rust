@@ -199,6 +199,16 @@ impl Supervisor {
         }
     }
 
+    /// Stops the servers one after the other in reverse configuration order (the game server
+    /// before the login server it registered with). Used by the `StopSupervisor` request.
+    pub async fn stop_all_reverse(&self) {
+        for server in self.servers.iter().rev() {
+            if let Err(e) = server.stop().await {
+                tracing::warn!("stopping {} failed: {e}", server.name());
+            }
+        }
+    }
+
     /// Stops every server (in parallel). Used when the supervisor exits.
     pub async fn shutdown(&self) {
         let stops = self.servers.iter().map(|s| {

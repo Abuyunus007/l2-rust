@@ -6,7 +6,9 @@
 
 pub mod api;
 pub mod config;
+pub mod launcher;
 pub mod logs;
+pub mod pidfile;
 pub mod process;
 
 use std::collections::HashMap;
@@ -15,6 +17,7 @@ use std::sync::Arc;
 
 use l2_admin_api::{Token, serve};
 use tokio::net::TcpListener;
+use tokio::sync::Notify;
 use tokio::task::JoinHandle;
 
 use crate::api::{SupervisorHandler, spawn_admin_link};
@@ -28,6 +31,7 @@ pub struct Running {
     pub config: SupervisorConfig,
     pub supervisor: Arc<Supervisor>,
     local_addr: SocketAddr,
+    stop_requested: Arc<Notify>,
     tasks: Vec<JoinHandle<()>>,
 }
 
@@ -55,7 +59,8 @@ impl Running {
                 tasks.push(task);
             }
         }
-        let handler = SupervisorHandler::new(Arc::clone(&supervisor), links);
+        let stop_requested = Arc::new(Notify::new());
+        let handler = SupervisorHandler::new(Arc::clone(&supervisor), links, Arc::clone(&stop_requested));
         tasks.push(tokio::spawn(serve(
             listener,
             "supervisor".into(),
@@ -66,6 +71,7 @@ impl Running {
             config,
             supervisor,
             local_addr,
+            stop_requested,
             tasks,
         })
     }
@@ -73,6 +79,11 @@ impl Running {
     /// The address the admin API listens on (useful with port 0).
     pub fn local_addr(&self) -> SocketAddr {
         self.local_addr
+    }
+
+    /// Completes once a client sent `StopSupervisor` and all servers are stopped.
+    pub async fn stop_requested(&self) {
+        self.stop_requested.notified().await;
     }
 
     pub async fn autostart(&self) {

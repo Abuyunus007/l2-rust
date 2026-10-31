@@ -78,6 +78,9 @@ pub enum Request {
     Shutdown {
         restart: bool,
     },
+    /// Supervisor: stop all servers cleanly (reverse `Servers` order), then exit. Answered `Ok`
+    /// at once; the connection closes when the supervisor is gone (G-01).
+    StopSupervisor,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

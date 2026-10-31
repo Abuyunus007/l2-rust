@@ -2401,6 +2401,7 @@ dependencies = [
  "l2-data",
  "l2-geo",
  "l2-proxy",
+ "l2-supervisor",
  "serde",
  "serde_json",
  "tempfile",

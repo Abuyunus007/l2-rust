@@ -4,6 +4,8 @@
 //! back to its default (`#[serde(default)]`) instead of losing the other settings.
 //!
 //! The token is stored **as-is, in plain text** (card M1-GUI-01); the connection view says so.
+//! Since G-01 the address and the token are only *overrides*: the GUI reads both from
+//! `run/supervisor.ini` (D-56) unless the user typed something else.
 
 use std::fmt;
 
@@ -86,12 +88,15 @@ impl Default for PacketSettings {
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
-    /// Supervisor address as typed by the user; see [`Settings::ws_url`].
+    /// Supervisor address as typed by the user; see [`Settings::ws_url`]. The default value
+    /// (or an empty field) means "use `Listen` from `supervisor.ini`".
     pub url: String,
-    /// Shared secret for the admin API (plain text, see the module docs).
+    /// Optional override of `Token` in `supervisor.ini` (plain text, see the module docs).
     pub token: String,
+    /// The folder with `supervisor.ini` the GUI chose last time (G-01). Empty = search again.
+    pub run_folder: String,
     pub theme: Theme,
-    /// Connect when the app starts (only if a token is set).
+    /// Connect (and start the supervisor if needed) when the app starts.
     pub auto_connect: bool,
     /// Packet inspector and in-process proxy (D-35).
     pub packets: PacketSettings,
@@ -108,6 +113,7 @@ impl Default for Settings {
         Self {
             url: DEFAULT_URL.to_string(),
             token: String::new(),
+            run_folder: String::new(),
             theme: Theme::default(),
             auto_connect: true,
             packets: PacketSettings::default(),
@@ -124,6 +130,7 @@ impl fmt::Debug for Settings {
         f.debug_struct("Settings")
             .field("url", &self.url)
             .field("token", &"<redacted>")
+            .field("run_folder", &self.run_folder)
             .field("theme", &self.theme)
             .field("auto_connect", &self.auto_connect)
             .field("packets", &self.packets)
@@ -167,14 +174,27 @@ impl Settings {
         }
     }
 
-    /// True when connecting could work at all (the listener rejects an empty token).
-    pub fn can_connect(&self) -> bool {
-        !self.url.trim().is_empty() && !self.token.is_empty()
+    /// The typed address when it differs from the default (a remote supervisor, a changed
+    /// `Listen`); `None` = take `Listen` from `supervisor.ini`.
+    pub fn url_override(&self) -> Option<String> {
+        let typed = self.url.trim();
+        (!typed.is_empty() && self.ws_url() != DEFAULT_URL).then(|| self.ws_url())
+    }
+
+    /// The typed token, if any (it replaces `Token` from `supervisor.ini`).
+    pub fn token_override(&self) -> Option<&str> {
+        (!self.token.is_empty()).then_some(self.token.as_str())
+    }
+
+    /// The remembered run folder, if set.
+    pub fn remembered_run_folder(&self) -> Option<std::path::PathBuf> {
+        let typed = self.run_folder.trim();
+        (!typed.is_empty()).then(|| std::path::PathBuf::from(typed))
     }
 
     /// Whether to start connecting right after launch.
     pub fn should_auto_connect(&self) -> bool {
-        self.auto_connect && self.can_connect()
+        self.auto_connect
     }
 }
 
@@ -208,7 +228,11 @@ mod tests {
         assert_eq!(settings, Settings::default());
         assert_eq!(Settings::load(None), Settings::default());
         assert_eq!(settings.url, DEFAULT_URL);
-        assert!(!settings.can_connect(), "no token yet");
+        assert!(
+            settings.url_override().is_none(),
+            "the default address is not an override"
+        );
+        assert!(settings.token_override().is_none());
     }
 
     #[test]
@@ -216,6 +240,7 @@ mod tests {
         let settings = Settings {
             url: "ws://10.0.0.5:7900".into(),
             token: "s3cret".into(),
+            run_folder: "some/run".into(),
             theme: Theme::Dark,
             auto_connect: false,
             packets: PacketSettings {
@@ -279,13 +304,39 @@ mod tests {
     }
 
     #[test]
-    fn auto_connect_needs_a_token_and_the_flag() {
+    fn auto_connect_needs_only_the_flag() {
         let mut settings = Settings::default();
-        assert!(!settings.should_auto_connect());
-        settings.token = "t".into();
-        assert!(settings.should_auto_connect());
+        assert!(
+            settings.should_auto_connect(),
+            "the token comes from supervisor.ini"
+        );
         settings.auto_connect = false;
         assert!(!settings.should_auto_connect());
+    }
+
+    #[test]
+    fn address_and_token_are_overrides_only_when_typed() {
+        let mut settings = Settings::default();
+        assert_eq!(settings.url_override(), None);
+        settings.url = "  ".into();
+        assert_eq!(settings.url_override(), None);
+        settings.url = "127.0.0.1:7900".into(); // the default, typed without the scheme
+        assert_eq!(settings.url_override(), None);
+        settings.url = "10.0.0.5:7900".into();
+        assert_eq!(settings.url_override(), Some("ws://10.0.0.5:7900".to_string()));
+        settings.token = "t".into();
+        assert_eq!(settings.token_override(), Some("t"));
+    }
+
+    #[test]
+    fn run_folder_is_remembered_when_set() {
+        let mut settings = Settings::default();
+        assert_eq!(settings.remembered_run_folder(), None);
+        settings.run_folder = " some/run ".into();
+        assert_eq!(
+            settings.remembered_run_folder(),
+            Some(std::path::PathBuf::from("some/run"))
+        );
     }
 
     #[test]

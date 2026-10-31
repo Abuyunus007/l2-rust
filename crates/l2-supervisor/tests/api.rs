@@ -379,3 +379,36 @@ async fn login_status_is_relayed() {
     }
     running.shutdown().await;
 }
+
+#[tokio::test]
+async fn stop_supervisor_stops_all_servers_then_signals_the_binary() {
+    let running = Running::start(config(vec![
+        child_server("first", &["sleep"]),
+        child_server("second", &["sleep"]),
+    ]))
+    .await
+    .unwrap();
+    let (client, _events) = connect(&running).await;
+    for name in ["first", "second"] {
+        client
+            .request(Request::StartServer { name: name.into() })
+            .await
+            .unwrap();
+    }
+    for name in ["first", "second"] {
+        wait_state(running.supervisor.get(name).unwrap(), ServerState::Running).await;
+    }
+
+    // Answered at once; the stop happens in the background.
+    assert_eq!(
+        client.request(Request::StopSupervisor).await.unwrap(),
+        Response::Ok
+    );
+    tokio::time::timeout(WAIT, running.stop_requested())
+        .await
+        .expect("the supervisor never signalled its exit");
+    for status in running.supervisor.list() {
+        assert_eq!(status.state, ServerState::Stopped, "{}", status.name);
+    }
+    running.shutdown().await;
+}
