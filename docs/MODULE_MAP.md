@@ -6,7 +6,7 @@ Crates live in `crates/<name>/`. Binaries are marked **(bin)**. Milestone = when
 ## Layers (dependencies point down only, no cycles)
 
 ```
- bins:      login-server   game-server   l2-supervisor   l2-proxy   l2-admin-gui   l2-geotool   codegen
+ bins:      login-server   game-server   l2-supervisor   l2-proxy   l2-admin-gui   l2-geotool   l2-db-installer   codegen
               │               │              │              │            │             │
  logic:       │          l2-scripts → l2-world             │            │             │
               │               │          │                  │            │             │
@@ -36,6 +36,7 @@ Rules:
 | `l2-supervisor` (bin) | 1 | starts/stops/restarts servers (exit code 2 = restart), collects logs, serves the admin API to the GUI | Java `*.sh/*.vbs` start scripts, `LoginServerTask.sh` |
 | `l2-proxy` (lib+bin) | 1 | decrypting MITM proxy, JSONL captures (D-34); used by the GUI | new (Java `PacketLogger` is a small reference) |
 | `l2-admin-gui` (bin) | 1 | egui app (D-31..D-33) | new (`loginserver/ui`, `gameserver/ui` as feature references) |
+| `l2-db-installer` (bin+lib) | 1 | database installer: egui window and `--console` mode, statement splitter as in Java, creates/resets the database and runs `dist/db_installer/sql/{login,game}` | `tools/DatabaseInstaller` |
 | `l2-geotool` (bin) | 1 | geodata stats/diff/render, region override checks | `tools/analysis/*.py` (prototype) |
 | `l2-geo` | 1 / 3 | M1: `.l2j` file parsing + region model (needed by `l2-geotool`). M3: per-region override (D-26), height/NSWE queries, LOS, move checks, pathfinding | `gameserver/geoengine/**` |
 | `l2-protocol-game` | 2 | game client/server packet structs, opcode tables (generated), SystemMessageId/NpcStringId (generated) | `gameserver/network/{clientpackets,serverpackets,enums,holders}/**`, `ClientPackets`, `ExClientPackets`, `ServerPackets`, `SystemMessageId`, `NpcStringId` |

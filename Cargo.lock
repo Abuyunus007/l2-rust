@@ -2462,6 +2462,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "l2-db-installer"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "eframe",
+ "egui",
+ "l2-config",
+ "sqlx",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "l2-geo"
 version = "0.1.0"
 dependencies = [

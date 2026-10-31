@@ -80,9 +80,23 @@ The programs are in `target/release/`: `login-server`, `game-server`, `l2-superv
 
 ### 2. Database
 
-Create an empty database (e.g. `l2jmobiush5`) and import the SQL files from
-`dist/db_installer/sql/` (the login and game folders). The Rust servers use exactly the same
-tables and columns as L2JMobius, so an existing L2JMobius database works too.
+Install the schema with the database installer (no Java needed). It creates the database when it
+is missing, asks what to do when it exists (reset, keep or cancel), and runs the SQL files of
+`dist/db_installer/sql/login` and `game`:
+
+```bash
+cargo build --release -p l2-db-installer
+dist/db_installer/DatabaseInstaller.sh          # or DatabaseInstaller.cmd on Windows
+```
+
+It opens a window (host, port, user, password, database name, "Install Login", "Install Game");
+`--console` (or a machine without a display) asks the same questions on the terminal, and
+`--sql <dir>` selects another script folder. Nothing touches the database before you press Install.
+The password is never logged or saved. The scripts `DROP` and recreate their tables, so even
+"keep" replaces the L2JMobius tables it names: use an empty database for a new install.
+
+The Rust servers use exactly the same tables and columns as L2JMobius, so an existing L2JMobius
+database works too (then you do not need the installer).
 
 **Back up the database before the first start.** The Rust servers write to the same tables as
 the Java ones.
