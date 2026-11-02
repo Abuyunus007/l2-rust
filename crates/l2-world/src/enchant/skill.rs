@@ -18,7 +18,6 @@
 // both info packets for the new level, and the shortcuts of the skill show the new level.
 //
 // # What is left out
-// - `player.isSellingBuffs()` (the SellBuffs custom feature is not ported).
 // - The Java GS "enchant.skills" log file: the lines go to `tracing` with the target
 //   `enchant.skills` (`LogSkillEnchants`).
 
@@ -463,7 +462,9 @@ impl World {
         if !self.enchant_skill_allowed(id) {
             return;
         }
-        // `isSellingBuffs()`: not modelled.
+        if self.is_selling_buffs(id) {
+            return;
+        }
         let Some(skill) = self.enchant_skill_ref(skill_id, skill_level) else {
             return;
         };

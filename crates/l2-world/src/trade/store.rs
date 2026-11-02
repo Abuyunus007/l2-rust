@@ -26,8 +26,8 @@
 // - Offline trade (`OfflineTradeEnable`, `OfflineTraderTable`, `setPrivateStoreType`'s
 //   `OFFLINE_DISCONNECT_FINISHED` branch, the realtime `onTransaction` record) is
 //   `offline.rs` (M6-FU-14).
-// - The cursed weapon check, `isSellingBuffs`
-//   (`SellBuffsManager`) and a mount. (The olympiad checks are in: M8-OLY-01.)
+// - The cursed weapon check and a mount. (The olympiad checks are in: M8-OLY-01; the buff shop
+//   is `custom/sell_buffs.rs`, M9-C03.)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::client::{BuyListEntry, SellListEntry, StoreBuyRequestEntry, StoreSellRequestEntry};

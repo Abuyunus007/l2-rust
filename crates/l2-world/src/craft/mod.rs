@@ -37,7 +37,7 @@
 // with `StoreRecipeShopList` (`PlayerProfile::recipe_shop_to_store`).
 //
 // # Left out on purpose (each has a comment where it belongs)
-// - `isSellingBuffs` (`SellBuffsManager`). (The Olympiad exists since M8-OLY-01.)
+// - (The Olympiad exists since M8-OLY-01; `isSellingBuffs` is `custom/sell_buffs.rs`, M9-C03.)
 // - Offline craft (`OfflineCraftEnable`).
 // - `ItemProcessType` logging (`LogItems`).
 
