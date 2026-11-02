@@ -1,5 +1,6 @@
 //! `data/scripts/custom`: the custom scripts (events, validators, ...).
 
+pub mod banking_auto_convert;
 pub mod delevel_manager;
 pub mod echo_crystals;
 pub mod events;
@@ -21,6 +22,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(raidboss_info::RaidbossInfo);
     r.add(shadow_weapons::ShadowWeapons);
     r.add(transmog::Transmog);
+    r.add(banking_auto_convert::BankingAutoConvert);
     events::register(r);
     faction_system::register(r);
     fake_players::register(r);

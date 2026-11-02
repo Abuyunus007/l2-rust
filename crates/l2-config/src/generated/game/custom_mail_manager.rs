@@ -8,7 +8,7 @@ use crate::IniFile;
 pub struct CustomMailManagerConfig {
     /// Key: `CustomMailManagerEnabled`, default false.
     pub custom_mail_manager_enabled: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.custom_misc.custom_mail_manager_delay` (Java type `int`); the unit type keeps this field from being used by mistake.
     /// Java (line 42): `CUSTOM_MAIL_MANAGER_DELAY = custom.getInt("DatabaseQueryDelay", 30) * 1000;`
     /// Key: `DatabaseQueryDelay`, Java default `30` (before the Java post-processing).
     pub custom_mail_manager_delay: (),

@@ -408,6 +408,8 @@ impl World {
     /// already. `killer` is whoever dealt the last hit (a summon's owner counts as the killer in
     /// Java's `asPlayer()` places; summons do not exist yet).
     pub(crate) fn do_die_chain(&mut self, id: ObjectId, killer: Option<ObjectId>) -> bool {
+        // `CaptchaConfig.ENABLE_CAPTCHA`: `CaptchaManager.updateCounter(killer, this)` (M9-C06).
+        self.captcha_update_counter(killer, id);
         if self.is_summon(id) {
             // `Summon.doDie` / `Servitor.doDie` around `Playable.doDie`.
             self.summon_do_die_before(id);

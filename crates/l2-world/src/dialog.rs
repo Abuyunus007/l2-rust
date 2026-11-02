@@ -338,12 +338,13 @@ impl World {
 
     /// Java `HtmCache.getHtm(player, path)`. A GM is told the path when `GMDebugHtmlPaths` is on.
     pub fn get_htm(&self, player: ObjectId, path: &str) -> Option<String> {
-        // `Player.getHtmlPrefix()` is empty unless multi-language is on (not ported).
+        // `Player.getHtmlPrefix()`: empty unless multi-language is on (M9-C06).
+        let prefix = self.html_prefix(player);
         let content = self
             .talk
             .html
             .as_ref()?
-            .get_localized("", path)
+            .get_localized(&prefix, path)
             .map(str::to_owned);
         if self.settings.talk.gm_debug_html_paths && self.is_gm(player) {
             let shown = path.get(5..).unwrap_or(path);

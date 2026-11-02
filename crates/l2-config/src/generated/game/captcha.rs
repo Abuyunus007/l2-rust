@@ -14,7 +14,7 @@ pub struct CaptchaConfig {
     pub kill_counter_randomization: i32,
     /// Key: `KillCounterReset`, default false.
     pub kill_counter_reset: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.custom_misc.kill_counter_reset_time` (Java type `int`); the unit type keeps this field from being used by mistake.
     /// Java (line 53): `KILL_COUNTER_RESET_TIME = config.getInt("KillCounterResetTime", 20) * 60000;`
     /// Key: `KillCounterResetTime`, Java default `20` (before the Java post-processing).
     pub kill_counter_reset_time: (),

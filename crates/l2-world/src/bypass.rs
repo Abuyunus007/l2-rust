@@ -24,7 +24,7 @@ use std::collections::HashMap;
 
 use l2_protocol_game::server::ActionFailed;
 use l2_util::ObjectId;
-use tracing::{debug, info, warn};
+use tracing::{info, warn};
 
 use crate::command::LeaveReason;
 use crate::dialog::INTERACTION_DISTANCE;
@@ -300,7 +300,8 @@ impl World {
         } else if command.starts_with("manor_menu_select") {
             self.manor_menu_select(id, command);
         } else if command.starts_with("report") {
-            debug!("{id}: bypass {command}: the captcha is not ported yet");
+            // `CaptchaManager.analyseBypass(command, player)` (M9-C06).
+            self.captcha_analyse_bypass(id, command);
         } else if let Some(handler) = self.talk.bypass_handlers.get(command) {
             let target = if origin > 0 {
                 self.find_object(ObjectId(origin))

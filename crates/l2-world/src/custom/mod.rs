@@ -9,28 +9,50 @@
 //! - `WarehouseSorting.ini`: `warehouse/` (`WarehouseSettings::sorting_private` / `sorting_clan`).
 //! - `RandomSpawns.ini`: `npc.rs` (`NpcSettings::random_monster_spawns`) and `script/spawn.rs`.
 //! - `NpcStatMultipliers.ini`: applied while the NPC templates load (`l2_data::npc`).
+//!
+//! M9-C06: the screen welcome message, `.online`, `.changepassword`, the multilingual support,
+//! the custom mail manager, the dual-box check, the captcha, the chat moderation commands, the
+//! L2Walker protection, the Hellbound command switch and the banking commands (`misc.rs` has the
+//! switches and the hooks of these).
 
 pub mod auto_play;
 mod auto_play_ui;
 pub mod auto_potion;
+pub mod banking;
 pub mod boss_announcements;
+pub mod captcha;
+pub mod captcha_image;
 pub mod champion;
+pub mod chat_admin;
 pub mod community_board;
+pub mod custom_mail;
+pub mod dualbox;
 pub mod events;
 pub mod faction;
 pub mod fake_players;
+pub mod misc;
+pub mod multilingual;
 pub mod offline_play;
 pub mod offline_trade;
+pub mod online_info;
+pub mod password_change;
 pub mod premium;
 pub mod pvp_rewards;
 pub mod rebirth;
 pub mod scheme_buffer;
+pub mod screen_welcome;
 pub mod script_features;
 pub mod sell_buffs;
 pub mod transmog;
+pub mod walker_bot;
 
 pub use boss_announcements::BossAnnouncementSettings;
 pub use champion::ChampionSettings;
+pub use custom_mail::CustomMailEntry;
+pub use misc::{
+    BankingSettings, CaptchaSettings, CustomMiscSettings, CustomMiscState, CustomMiscTimer, DualboxSettings,
+    MultilangSettings, ScreenWelcomeSettings,
+};
 
 pub use auto_play::AutoPlayRules;
 pub use auto_potion::AutoPotionSettings;

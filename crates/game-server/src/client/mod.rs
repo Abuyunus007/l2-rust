@@ -249,6 +249,19 @@ pub async fn start_listener(server: &mut Server) -> Result<(), StartupError> {
         });
     }
 
+    // `ChangePasswordResponse` of the login server: the message goes to the character (M9-C06).
+    if let Some(mut replies) = link.take_password_replies() {
+        let world = state.world.clone();
+        server.spawn(async move {
+            while let Some(reply) = replies.recv().await {
+                world.send(l2_world::WorldCommand::PasswordChangeResponse {
+                    character: reply.character,
+                    text: reply.message,
+                });
+            }
+        });
+    }
+
     let next_id = AtomicU64::new(1);
     let factory =
         move |peer: SocketAddr| Some(ctx.session(SessionId(next_id.fetch_add(1, Ordering::Relaxed)), peer));

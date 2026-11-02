@@ -298,6 +298,9 @@ impl World {
         if !self.offline_mode_allowed(id) {
             return false;
         }
+        // `OfflineTraderTable.enteredOfflineMode`: unless `DualboxCountOfflineTraders`, the trader
+        // is not counted against the IP limits any more (M9-C06).
+        self.dualbox_on_offline_mode(id);
         // `client.close(ServerClose.STATIC_PACKET)`, `client.setDetached(true)`: the connection
         // goes, the player stays.
         let account = self.players.get(&id).map(|p| p.data.account.clone());

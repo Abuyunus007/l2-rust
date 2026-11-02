@@ -310,6 +310,11 @@ fn hellbound_tells_the_level_and_the_trust() {
     assert!(s.say(1, ".hellbound").is_empty());
 
     let mut s = setup(&["HellboundEngine"]);
+    // `HellboundLoader` registers the command only with `HellboundStatus = True` (M9-C06).
+    assert!(s.say(1, ".hellbound").is_empty());
+    let mut settings = WorldSettings::default();
+    settings.custom_misc.hellbound_status = true;
+    s.world.set_settings(settings);
     assert_eq!(s.say(1, ".hellbound"), ["Hellbound is currently locked."]);
     s.world.set_global_variables(vec![
         ("HBLevel".to_owned(), Some("3".to_owned())),

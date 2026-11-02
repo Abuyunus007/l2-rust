@@ -48,6 +48,7 @@ pub use game::{
 pub use game::{ColiseumBestTeamRow, UndergroundColiseumRepository};
 pub use game::{CoupleRow, WeddingRepository, married_text};
 pub use game::{CrestRepository, CrestRow};
+pub use game::{CustomMailRepository, CustomMailRow};
 pub use game::{
     DimensionalRiftRepository, DimensionalRiftRow, FestivalRow, SevenSignsRepository, SevenSignsRow,
     SevenSignsStatusRow,

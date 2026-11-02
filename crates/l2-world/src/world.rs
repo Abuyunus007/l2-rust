@@ -196,6 +196,8 @@ pub struct World {
     pub(crate) event_drops: crate::rewards::event_drop::EventDropWorld,
     /// The couples and the wedding flags of the players (M8-MISC-01, `wedding.rs`).
     pub(crate) wedding: crate::wedding::WeddingWorld,
+    /// What the misc custom features keep (M9-C06, `custom/misc.rs`).
+    pub(crate) custom_misc: crate::custom::CustomMiscState,
     /// Handy's Block Checker, Kratei's Cube and the Underground Coliseum (M8-GAMES-01,
     /// `minigame/`).
     pub(crate) minigames: crate::minigame::MinigameWorld,
@@ -303,6 +305,7 @@ impl World {
             walking: crate::walking::WalkingWorld::default(),
             event_drops: crate::rewards::event_drop::EventDropWorld::default(),
             wedding: crate::wedding::WeddingWorld::default(),
+            custom_misc: crate::custom::CustomMiscState::default(),
             minigames: crate::minigame::MinigameWorld::default(),
             vehicle: crate::vehicle::VehicleWorld::default(),
             seven_signs: crate::sevensigns::SevenSignsWorld::default(),
@@ -497,6 +500,20 @@ impl World {
             }
             WorldCommand::TransmogLoaded { player, result } => self.on_transmog_loaded(player, result),
             WorldCommand::BirthdayGiftsLoaded { result } => self.on_birthday_gifts_loaded(result),
+            // Java: CustomMailManager, ChangePasswordResponse, CharacterSelect (M9-C06)
+            WorldCommand::CustomMailLoaded { result } => self.on_custom_mail_loaded(result),
+            WorldCommand::PasswordChangeResponse { character, text } => {
+                self.on_change_password_response(&character, &text);
+            }
+            WorldCommand::DualboxCheck {
+                ip,
+                access_level,
+                done,
+            } => {
+                let page = self.dualbox_check_select(ip, access_level);
+                done(page);
+            }
+            WorldCommand::DualboxRelease { ip } => self.dualbox_release_select(ip),
             WorldCommand::OfflinePetRowsLoaded {
                 owner,
                 control_object_id,
@@ -1100,6 +1117,8 @@ impl World {
             TimerKind::Walking(timer) => self.on_walking_timer(timer),
             // Java: Wedding.EscapeFinalizer
             TimerKind::Wedding(timer) => self.on_wedding_timer(timer),
+            // Java: CustomMailManager, CaptchaManager (M9-C06)
+            TimerKind::CustomMisc(timer) => self.on_custom_misc_timer(timer),
             // Java: Unstuck.EscapeFinalizer (S-HAND-02)
             TimerKind::ScriptHandler(timer) => self.on_script_handler_timer(timer),
             // Java: the ThreadPool tasks of the minigames (M8-GAMES-01)

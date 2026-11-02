@@ -10,7 +10,7 @@ pub struct ScreenWelcomeMessageConfig {
     pub welcome_message_enabled: bool,
     /// Key: `ScreenWelcomeMessageText`, default `Welcome to our server!`.
     pub welcome_message_text: String,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.custom_misc.welcome_message_time` (Java type `int`); the unit type keeps this field from being used by mistake.
     /// Java (line 44): `WELCOME_MESSAGE_TIME = config.getInt("ScreenWelcomeMessageTime", 10) * 1000;`
     /// Key: `ScreenWelcomeMessageTime`, Java default `10` (before the Java post-processing).
     pub welcome_message_time: (),

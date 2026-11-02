@@ -6,7 +6,7 @@ use crate::IniFile;
 /// Settings of `config/Custom/MultilingualSupport.ini` (Java: `MultilingualSupportConfig`).
 #[derive(Debug, Clone, PartialEq)]
 pub struct MultilingualSupportConfig {
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `String`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.custom_misc.multilang_default` (Java type `String`); the unit type keeps this field from being used by mistake.
     /// Java (line 50): `MULTILANG_DEFAULT = config.getString("MultiLangDefault", "en").toLowerCase();`
     /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `MultiLangDefault`, Java default `"en"` (before the Java post-processing).
@@ -15,7 +15,7 @@ pub struct MultilingualSupportConfig {
     /// Key: `MultiLangEnable`, default false.
     /// TODO(M2-CFG-01): Java also uses this field after reading it (line 53): `if (MULTILANG_ENABLE) { GeneralConfig.CHECK_HTML_ENCODING = false; }`
     pub multilang_enable: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `List<String>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.custom_misc.multilang_allowed` (Java type `List<String>`); the unit type keeps this field from being used by mistake.
     /// Java (line 58): `final String[] allowed = config.getString("MultiLangAllowed", MULTILANG_DEFAULT).split(";");`
     /// ... and 3 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `MultiLangAllowed`, Java default `MULTILANG_DEFAULT` (before the Java post-processing).

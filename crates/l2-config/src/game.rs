@@ -140,6 +140,13 @@ impl GameConfig {
             },
             config_dir,
         );
+        manual.custom_misc = crate::game_manual_custom_misc::CustomMiscManual::from_inis(
+            &IniFile::load(config_dir.join(ScreenWelcomeMessageConfig::FILE))?,
+            &IniFile::load(config_dir.join(MultilingualSupportConfig::FILE))?,
+            &IniFile::load(config_dir.join(CustomMailManagerConfig::FILE))?,
+            &IniFile::load(config_dir.join(DualboxCheckConfig::FILE))?,
+            &IniFile::load(config_dir.join(CaptchaConfig::FILE))?,
+        );
         Ok(Self {
             manual,
             server: ServerConfig::from_ini(&server_ini),

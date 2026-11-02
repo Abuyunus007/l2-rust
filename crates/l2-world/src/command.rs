@@ -467,6 +467,28 @@ pub enum WorldCommand {
     BirthdayGiftsLoaded {
         result: Result<Vec<(i32, String, i32)>, ()>,
     },
+    /// The answer to `PersistCommand::CustomMailRequest`: the rows of `custom_mail`, or `Err` when
+    /// the read failed (M9-C06).
+    CustomMailLoaded {
+        result: Result<Vec<crate::custom::CustomMailEntry>, ()>,
+    },
+    /// The login server's `ChangePasswordResponse`: a message for the character (M9-C06).
+    PasswordChangeResponse {
+        character: String,
+        text: String,
+    },
+    /// `CharacterSelect`: the `DualboxCheckMaxPlayersPerIP` limit. `done` hears the page to show
+    /// instead of selecting the character (`None`: the client may select, M9-C06).
+    DualboxCheck {
+        ip: Option<IpAddr>,
+        access_level: i32,
+        done: Box<dyn FnOnce(Option<String>) + Send>,
+    },
+    /// A client that selected a character left before the world took the character over: its
+    /// connection is not counted any more (M9-C06).
+    DualboxRelease {
+        ip: Option<IpAddr>,
+    },
     /// The answer to `PersistCommand::OfflinePetRowsRequest`: the pet items and inventory rows of
     /// an owner who is offline, or `Err` when the read failed (M6-FU-09).
     OfflinePetRowsLoaded {
@@ -648,6 +670,16 @@ impl fmt::Debug for WorldCommand {
                 player.0,
                 if result.is_ok() { "ok" } else { "failed" }
             ),
+            Self::CustomMailLoaded { result } => write!(
+                f,
+                "CustomMailLoaded({})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
+            Self::PasswordChangeResponse { character, .. } => {
+                write!(f, "PasswordChangeResponse({character})")
+            }
+            Self::DualboxCheck { ip, .. } => write!(f, "DualboxCheck({ip:?})"),
+            Self::DualboxRelease { ip } => write!(f, "DualboxRelease({ip:?})"),
             Self::BirthdayGiftsLoaded { result } => write!(
                 f,
                 "BirthdayGiftsLoaded({})",
