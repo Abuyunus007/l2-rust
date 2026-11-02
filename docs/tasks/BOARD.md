@@ -501,7 +501,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [M9-C04](M9/M9-C04.md) | Customs: faction system and fake players | sonnet | spot | — | merged |
 | [M9-C05](M9/M9-C05.md) | Customs: PvP features | sonnet | spot | — | merged |
 | [M9-C06](M9/M9-C06.md) | Customs: player start, chat, accounts, misc | sonnet | spot | — | merged |
-| [M9-C07](M9/M9-C07.md) | Custom scripts and custom events | sonnet | spot | — | ready |
+| [M9-C07](M9/M9-C07.md) | Custom scripts and custom events | sonnet | spot | — | merged |
 | [M9-H01](M9/M9-H01.md) | Automatic database backups | sonnet | full | — | merged |
 | [M9-H02](M9/M9-H02.md) | Load test tool (2000 players) | sonnet | spot | — | merged |
 | [M9-L01](M9/M9-L01.md) | M9 leftovers | sonnet | spot | C01..C06 | running |
