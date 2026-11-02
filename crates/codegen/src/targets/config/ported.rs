@@ -528,6 +528,37 @@ pub const HAND_PORTED: &[(&str, &str, &str)] = &[
         "FACTION_EVIL_BASE_LOCATION",
         "manual.faction_system.faction_evil_base_location",
     ),
+    // ---- misc custom configs (M9-C06 `CustomMiscManual`) ----
+    (
+        "ScreenWelcomeMessageConfig",
+        "WELCOME_MESSAGE_TIME",
+        "manual.custom_misc.welcome_message_time",
+    ),
+    (
+        "MultilingualSupportConfig",
+        "MULTILANG_DEFAULT",
+        "manual.custom_misc.multilang_default",
+    ),
+    (
+        "MultilingualSupportConfig",
+        "MULTILANG_ALLOWED",
+        "manual.custom_misc.multilang_allowed",
+    ),
+    (
+        "CustomMailManagerConfig",
+        "CUSTOM_MAIL_MANAGER_DELAY",
+        "manual.custom_misc.custom_mail_manager_delay",
+    ),
+    (
+        "DualboxCheckConfig",
+        "DUALBOX_CHECK_WHITELIST",
+        "manual.custom_misc.dualbox_check_whitelist",
+    ),
+    (
+        "CaptchaConfig",
+        "KILL_COUNTER_RESET_TIME",
+        "manual.custom_misc.kill_counter_reset_time",
+    ),
 ];
 
 /// Where the value of the placeholder `class.field` lives, when it was ported by hand.

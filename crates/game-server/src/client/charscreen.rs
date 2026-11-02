@@ -738,6 +738,14 @@ impl ClientSession {
             ctl.send_and_close(ServerClose.to_bytes());
             return;
         }
+        // Java: `DualboxCheckMaxPlayersPerIP` (M9-C06): over the limit the client gets a page and
+        // does not select the character.
+        if let Some(page) = self.dualbox_refusal(info.access_level).await {
+            if let Some(message) = l2_protocol_game::server::NpcHtmlMessage::new(0, &page) {
+                ctl.send(message.to_bytes());
+            }
+            return;
+        }
         let ctx = Arc::clone(&self.ctx);
         let screen = &ctx.charscreen;
         let Some(account) = self.account.clone() else {
@@ -752,6 +760,9 @@ impl ClientSession {
             Ok(player) => player,
             Err(e) => {
                 super::enter::log_load_failure(info.entry.object_id, &e);
+                // The IP limit counted this client; nothing was selected.
+                ctx.world
+                    .send(l2_world::WorldCommand::DualboxRelease { ip: Some(self.ip) });
                 return;
             }
         };
@@ -830,6 +841,25 @@ impl ClientSession {
         debug!("Character {} selected by {}.", entry.object_id, self.ip);
     }
 
+    /// `AntiFeedManager.tryAddClient(GAME_ID, client, max)` of `CharacterSelect`: the page to show
+    /// when the address has too many connections, or `None` (the connection is then counted until
+    /// the player leaves the world or the client goes).
+    async fn dualbox_refusal(&mut self, access_level: i32) -> Option<String> {
+        let ip = Some(self.ip);
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        let sent = self.ctx.world.send(l2_world::WorldCommand::DualboxCheck {
+            ip,
+            access_level,
+            done: Box::new(move |page| {
+                let _ = tx.send(page);
+            }),
+        });
+        if !sent {
+            return None;
+        }
+        rx.await.ok().flatten()
+    }
+
     /// Java `CharacterSelect`: `World.getPlayer(objectId)` is the character's offline trader, if
     /// there is one; `Disconnection.of(player).storeAndDelete()`. The world answers whether it
     /// was one, and the final store is awaited (a bounded wait, like the restart's).
@@ -880,6 +910,11 @@ impl ClientSession {
         let Some(char_id) = self.selected.take() else {
             return;
         };
+        // `Disconnection` -> `AntiFeedManager.onDisconnect(client)` for a client that never
+        // entered the world (M9-C06).
+        self.ctx
+            .world
+            .send(l2_world::WorldCommand::DualboxRelease { ip: Some(self.ip) });
         if let Err(e) = self
             .ctx
             .charscreen

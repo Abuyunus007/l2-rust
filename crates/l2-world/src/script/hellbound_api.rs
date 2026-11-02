@@ -73,7 +73,11 @@ impl World {
     /// shows the engine's cached `_maxTrust`, set at the level change: `MAX_TRUST[level]`, 0 for
     /// level 0).
     pub(crate) fn hellbound_voiced_handler(&mut self, player: ObjectId, command: &str) -> Option<bool> {
-        if command != "hellbound" || !self.has_script("HellboundEngine") {
+        // `HellboundLoader` registers the command only with `HellboundStatus` (M9-C06).
+        if command != "hellbound"
+            || !self.settings.custom_misc.hellbound_status
+            || !self.has_script("HellboundEngine")
+        {
             return None;
         }
         let level = self.scripts.globals.get_int("HBLevel", 0);

@@ -8,7 +8,7 @@ non-generated fields are `()` placeholders. The doc comment of a placeholder sta
 `TODO(M2-CFG-01)` (not ported yet) or `Hand-ported` (ported by hand: the doc comment and
 this report say where the value is).
 
-60 classes, 1024 generated fields, 185 placeholder fields: 107 ported by hand, 78 still to hand-port.
+60 classes, 1024 generated fields, 185 placeholder fields: 113 ported by hand, 72 still to hand-port.
 
 | Java class | .ini file | generated | placeholders | ported by hand | orphan statements |
 |---|---|---:|---:|---:|---:|
@@ -34,21 +34,21 @@ this report say where the value is).
 | `BankingConfig` | `Custom/Banking.ini` | 5 | 0 | 0 | 0 |
 | `BossAnnouncementsConfig` | `Custom/BossAnnouncements.ini` | 6 | 2 | 0 | 0 |
 | `CancelReturnConfig` | `Custom/CancelReturn.ini` | 4 | 1 | 0 | 0 |
-| `CaptchaConfig` | `Custom/Captcha.ini` | 9 | 1 | 0 | 0 |
+| `CaptchaConfig` | `Custom/Captcha.ini` | 9 | 1 | 1 | 0 |
 | `ChampionMonstersConfig` | `Custom/ChampionMonsters.ini` | 20 | 1 | 0 | 0 |
 | `ChatModerationConfig` | `Custom/ChatModeration.ini` | 1 | 0 | 0 | 0 |
 | `ClassBalanceConfig` | `Custom/ClassBalance.ini` | 0 | 37 | 0 | 0 |
 | `CommunityBoardConfig` | `Custom/CommunityBoard.ini` | 18 | 2 | 0 | 0 |
-| `CustomMailManagerConfig` | `Custom/CustomMailManager.ini` | 1 | 1 | 0 | 0 |
+| `CustomMailManagerConfig` | `Custom/CustomMailManager.ini` | 1 | 1 | 1 | 0 |
 | `DelevelManagerConfig` | `Custom/DelevelManager.ini` | 5 | 0 | 0 | 0 |
-| `DualboxCheckConfig` | `Custom/DualboxCheck.ini` | 6 | 1 | 0 | 0 |
+| `DualboxCheckConfig` | `Custom/DualboxCheck.ini` | 6 | 1 | 1 | 0 |
 | `FactionSystemConfig` | `Custom/FactionSystem.ini` | 9 | 6 | 4 | 0 |
 | `FakePlayersConfig` | `Custom/FakePlayers.ini` | 11 | 0 | 0 | 0 |
 | `FindPvpConfig` | `Custom/FindPvP.ini` | 1 | 0 | 0 | 0 |
 | `FreeMountsConfig` | `Custom/FreeMounts.ini` | 2 | 0 | 0 | 0 |
 | `HellboundStatusConfig` | `Custom/HellboundStatus.ini` | 1 | 0 | 0 | 0 |
 | `MerchantZeroSellPriceConfig` | `Custom/MerchantZeroSellPrice.ini` | 1 | 0 | 0 | 0 |
-| `MultilingualSupportConfig` | `Custom/MultilingualSupport.ini` | 2 | 2 | 0 | 0 |
+| `MultilingualSupportConfig` | `Custom/MultilingualSupport.ini` | 2 | 2 | 2 | 0 |
 | `NoblessMasterConfig` | `Custom/NoblessMaster.ini` | 6 | 0 | 0 | 0 |
 | `NpcStatMultipliersConfig` | `Custom/NpcStatMultipliers.ini` | 33 | 0 | 0 | 0 |
 | `OfflinePlayConfig` | `Custom/OfflinePlay.ini` | 7 | 2 | 0 | 0 |
@@ -63,7 +63,7 @@ this report say where the value is).
 | `RandomSpawnsConfig` | `Custom/RandomSpawns.ini` | 2 | 2 | 0 | 0 |
 | `RebirthConfig` | `Custom/Rebirth.ini` | 23 | 6 | 0 | 0 |
 | `SchemeBufferConfig` | `Custom/SchemeBuffer.ini` | 3 | 0 | 0 | 0 |
-| `ScreenWelcomeMessageConfig` | `Custom/ScreenWelcomeMessage.ini` | 2 | 1 | 0 | 0 |
+| `ScreenWelcomeMessageConfig` | `Custom/ScreenWelcomeMessage.ini` | 2 | 1 | 1 | 0 |
 | `SellBuffsConfig` | `Custom/SellBuffs.ini` | 6 | 0 | 0 | 0 |
 | `ServerTimeConfig` | `Custom/ServerTime.ini` | 1 | 0 | 0 | 0 |
 | `StartingLocationConfig` | `Custom/StartingLocation.ini` | 4 | 0 | 0 | 0 |
@@ -699,7 +699,7 @@ Java: `gameserver/config/custom/CaptchaConfig.java`, file `Custom/Captcha.ini`.
 
 ### Fields to hand-port
 
-- `KILL_COUNTER_RESET_TIME` (`int`, line 39)
+- `KILL_COUNTER_RESET_TIME` (`int`, line 39) **ported by hand: `GameConfig::manual.custom_misc.kill_counter_reset_time`**
   - keys: `KillCounterResetTime` (default `20`)
   - line 53: `KILL_COUNTER_RESET_TIME = config.getInt("KillCounterResetTime", 20) * 60000;`
 
@@ -1045,7 +1045,7 @@ Java: `gameserver/config/custom/CustomMailManagerConfig.java`, file `Custom/Cust
 
 ### Fields to hand-port
 
-- `CUSTOM_MAIL_MANAGER_DELAY` (`int`, line 36)
+- `CUSTOM_MAIL_MANAGER_DELAY` (`int`, line 36) **ported by hand: `GameConfig::manual.custom_misc.custom_mail_manager_delay`**
   - keys: `DatabaseQueryDelay` (default `30`)
   - line 42: `CUSTOM_MAIL_MANAGER_DELAY = custom.getInt("DatabaseQueryDelay", 30) * 1000;`
 
@@ -1055,7 +1055,7 @@ Java: `gameserver/config/custom/DualboxCheckConfig.java`, file `Custom/DualboxCh
 
 ### Fields to hand-port
 
-- `DUALBOX_CHECK_WHITELIST` (`Map<Integer, Integer>`, line 50)
+- `DUALBOX_CHECK_WHITELIST` (`Map<Integer, Integer>`, line 50) **ported by hand: `GameConfig::manual.custom_misc.dualbox_check_whitelist`**
   - keys: `DualboxCheckWhitelist` (default `"127.0.0.1,0"`)
   - line 62: `final String[] dualboxCheckWhiteList = config.getString("DualboxCheckWhitelist", "127.0.0.1,0").split(";");`
   - line 63: `DUALBOX_CHECK_WHITELIST = new HashMap<>(dualboxCheckWhiteList.length);`
@@ -1100,12 +1100,12 @@ Java: `gameserver/config/custom/MultilingualSupportConfig.java`, file `Custom/Mu
 
 ### Fields to hand-port
 
-- `MULTILANG_DEFAULT` (`String`, line 42)
+- `MULTILANG_DEFAULT` (`String`, line 42) **ported by hand: `GameConfig::manual.custom_misc.multilang_default`**
   - keys: `MultiLangDefault` (default `"en"`), `MultiLangAllowed` (default `MULTILANG_DEFAULT`)
   - line 50: `MULTILANG_DEFAULT = config.getString("MultiLangDefault", "en").toLowerCase();`
   - line 58: `final String[] allowed = config.getString("MultiLangAllowed", MULTILANG_DEFAULT).split(";");`
   - line 65: `if (!MULTILANG_ALLOWED.contains(MULTILANG_DEFAULT)) { LOGGER.warning("MultiLang[MultilingualSupportConfig.load()]: default language: " + MULTILANG_DEFAULT + " is not in allowed list!"); }`
-- `MULTILANG_ALLOWED` (`List<String>`, line 44)
+- `MULTILANG_ALLOWED` (`List<String>`, line 44) **ported by hand: `GameConfig::manual.custom_misc.multilang_allowed`**
   - keys: `MultiLangAllowed` (default `MULTILANG_DEFAULT`)
   - initializer: `new ArrayList<>()`
   - line 58: `final String[] allowed = config.getString("MultiLangAllowed", MULTILANG_DEFAULT).split(";");`
@@ -1265,7 +1265,7 @@ Java: `gameserver/config/custom/ScreenWelcomeMessageConfig.java`, file `Custom/S
 
 ### Fields to hand-port
 
-- `WELCOME_MESSAGE_TIME` (`int`, line 37)
+- `WELCOME_MESSAGE_TIME` (`int`, line 37) **ported by hand: `GameConfig::manual.custom_misc.welcome_message_time`**
   - keys: `ScreenWelcomeMessageTime` (default `10`)
   - line 44: `WELCOME_MESSAGE_TIME = config.getInt("ScreenWelcomeMessageTime", 10) * 1000;`
 

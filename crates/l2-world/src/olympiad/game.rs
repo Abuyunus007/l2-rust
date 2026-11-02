@@ -1040,6 +1040,9 @@ impl World {
         // "heal again after adding clan skills"
         self.olympiad_heal_full(player);
         self.start_hp_mp_regeneration(player);
+        // `DUALBOX_CHECK_MAX_OLYMPIAD_PARTICIPANTS_PER_IP`: the match is over for this player
+        // (M9-C06).
+        self.olympiad_dualbox_remove(player);
     }
 
     /// `clearPlayers()`: the fillers give their ids back.

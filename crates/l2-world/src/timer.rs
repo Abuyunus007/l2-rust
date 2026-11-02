@@ -208,6 +208,8 @@ pub enum TimerKind {
     Board(crate::community_board::BoardTimer),
     /// The quest timers, the delayed kill notifications and the script despawns, see `script/`.
     Script(crate::script::timers::ScriptTimer),
+    /// The custom mail poll and the captcha timers, see `custom/misc.rs`.
+    CustomMisc(crate::custom::CustomMiscTimer),
 }
 
 #[derive(Debug, Default)]

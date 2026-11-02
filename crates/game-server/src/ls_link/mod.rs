@@ -42,9 +42,9 @@ use l2_net::{
     FrameHandler, PacketReader, spawn_connection,
 };
 use l2_protocol_login::link::{
-    AuthResponse, BlowFishKey, ChangeAccessLevel, GameServerAuth, InitLS, LsPacket, PROTOCOL_REV,
-    PlayerAuthRequest, PlayerAuthResponse, PlayerInGame, PlayerLogout, ReplyCharacters, RequestTempBan,
-    ServerStatus, decode_from_ls,
+    AuthResponse, BlowFishKey, ChangeAccessLevel, ChangePassword, GameServerAuth, InitLS, LsPacket,
+    PROTOCOL_REV, PlayerAuthRequest, PlayerAuthResponse, PlayerInGame, PlayerLogout, ReplyCharacters,
+    RequestTempBan, ServerStatus, decode_from_ls,
 };
 use rand::Rng;
 use tokio::net::TcpStream;
@@ -86,6 +86,14 @@ pub struct SessionKey {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KickRequest {
     pub account: String,
+}
+
+/// The login server's answer to a password change: a message for the character.
+// Java: gameserver/network/loginserverpackets/receive/ChangePasswordResponse.java
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PasswordReply {
+    pub character: String,
+    pub message: String,
 }
 
 /// Where the number of characters of an account comes from (`RequestCharacters`).
@@ -335,6 +343,12 @@ enum Command {
         ip: String,
         minutes: i64,
     },
+    ChangePassword {
+        account: String,
+        character: String,
+        old_pass: String,
+        new_pass: String,
+    },
     ReplyCharacters {
         account: String,
         chars: u8,
@@ -357,6 +371,7 @@ pub struct LsLink {
     commands: mpsc::UnboundedSender<Command>,
     status: watch::Receiver<LinkStatus>,
     kicks: Arc<KickChannel>,
+    password_replies: Arc<Mutex<Option<mpsc::UnboundedReceiver<PasswordReply>>>>,
 }
 
 struct KickChannel {
@@ -375,6 +390,7 @@ impl LsLink {
     ) -> (Self, impl Future<Output = ()> + Send + 'static) {
         let (commands_tx, commands_rx) = mpsc::unbounded_channel();
         let (kick_tx, kick_rx) = mpsc::unbounded_channel();
+        let (password_tx, password_rx) = mpsc::unbounded_channel();
         let (status_tx, status_rx) = watch::channel(LinkStatus {
             max_players: params.max_players,
             ..LinkStatus::default()
@@ -389,6 +405,7 @@ impl LsLink {
             cancel,
             commands: commands_rx,
             kick_sender: kick_tx,
+            password_sender: password_tx,
             kicks_taken: Arc::clone(&kicks),
             status_tx,
             connection: None,
@@ -406,6 +423,7 @@ impl LsLink {
             commands: commands_tx,
             status: status_rx,
             kicks,
+            password_replies: Arc::new(Mutex::new(Some(password_rx))),
         };
         (link, actor.run())
     }
@@ -466,6 +484,28 @@ impl LsLink {
             account: account.to_owned(),
             level,
         });
+    }
+
+    /// Asks the login server to change the password of an account (the voiced command
+    /// `.changepassword`, M9-C06). The answer comes back through
+    /// [`take_password_replies`](Self::take_password_replies).
+    // Java: LoginServerThread.sendChangePassword
+    pub async fn send_change_password(&self, account: &str, character: &str, old_pass: &str, new_pass: &str) {
+        self.send_command(Command::ChangePassword {
+            account: account.to_owned(),
+            character: character.to_owned(),
+            old_pass: old_pass.to_owned(),
+            new_pass: new_pass.to_owned(),
+        });
+    }
+
+    /// The answers of the login server to [`send_change_password`](Self::send_change_password).
+    /// Whoever owns the world takes this once.
+    pub fn take_password_replies(&self) -> Option<mpsc::UnboundedReceiver<PasswordReply>> {
+        self.password_replies
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .take()
     }
 
     /// Asks the login server to ban an account (and the address) for `minutes` (a negative value
@@ -665,6 +705,7 @@ struct Actor {
     cancel: CancellationToken,
     commands: mpsc::UnboundedReceiver<Command>,
     kick_sender: mpsc::UnboundedSender<KickRequest>,
+    password_sender: mpsc::UnboundedSender<PasswordReply>,
     kicks_taken: Arc<KickChannel>,
     status_tx: watch::Sender<LinkStatus>,
 
@@ -866,6 +907,19 @@ impl Actor {
             Command::AccessLevel { account, level } => {
                 self.send(&ChangeAccessLevel { account, level });
             }
+            Command::ChangePassword {
+                account,
+                character,
+                old_pass,
+                new_pass,
+            } => {
+                self.send(&ChangePassword {
+                    account,
+                    character_name: character,
+                    old_pass,
+                    new_pass,
+                });
+            }
             Command::TempBan { account, ip, minutes } => {
                 let now = std::time::SystemTime::now()
                     .duration_since(std::time::UNIX_EPOCH)
@@ -968,7 +1022,13 @@ impl Actor {
             LsPacket::KickPlayer(kick) => self.on_kick(kick.account),
             LsPacket::RequestCharacters(request) => self.request_characters(request.account),
             // Java parses it and does nothing with it.
-            LsPacket::ChangePasswordResponse(_) => debug!("ChangePasswordResponse ignored."),
+            // Java: `player.sendMessage(msgToSend)` (M9-C06).
+            LsPacket::ChangePasswordResponse(response) => {
+                let _ = self.password_sender.send(PasswordReply {
+                    character: response.character_name,
+                    message: response.message,
+                });
+            }
         }
     }
 

@@ -257,6 +257,13 @@ impl World {
                 let mut team = Vec::with_capacity(members.len());
                 for noble in &members {
                     if !self.check_noble(*noble, player) {
+                        // "remove previously registered party members" (`DualboxCheckConfig`).
+                        for unreg in &members {
+                            if unreg == noble {
+                                break;
+                            }
+                            self.olympiad_dualbox_remove(*unreg);
+                        }
                         return false;
                     }
                     if self.remaining_weekly_matches_team(noble.0) < 1 {
@@ -269,6 +276,10 @@ impl World {
                 if team_points < 10 {
                     // "TODO: replace with retail message"
                     self.send_message(player, "Your team must have at least 10 points in total.");
+                    // "remove previously registered party members"
+                    for unreg in &members {
+                        self.olympiad_dualbox_remove(*unreg);
+                    }
                     return false;
                 }
                 let message = SystemMessage::new(
@@ -316,6 +327,7 @@ impl World {
         let removed = SystemMessage::new(SystemMessageId::YouHaveBeenRemovedFromTheGrandOlympiadWaitingList);
         if let Some(index) = self.olympiad.non_class_based.iter().position(|id| *id == obj) {
             self.olympiad.non_class_based.remove(index);
+            self.olympiad_dualbox_remove(noble);
             self.send(noble, &removed);
             return true;
         }
@@ -324,6 +336,7 @@ impl World {
             && let Some(index) = list.iter().position(|id| *id == obj)
         {
             list.remove(index);
+            self.olympiad_dualbox_remove(noble);
             self.send(noble, &removed);
             return true;
         }
@@ -341,13 +354,22 @@ impl World {
     }
 
     /// `AnnounceUnregToTeam.run()` (Java runs it on the thread pool at once).
-    fn announce_unreg_to_team(&self, team: &[i32]) {
+    fn announce_unreg_to_team(&mut self, team: &[i32]) {
         let message = SystemMessage::new(SystemMessageId::YouHaveBeenRemovedFromTheGrandOlympiadWaitingList);
         for member in team {
             let member = ObjectId(*member);
             if self.players.contains_key(&member) {
                 self.send(member, &message);
+                self.olympiad_dualbox_remove(member);
             }
+        }
+    }
+
+    /// `if (DUALBOX_CHECK_MAX_OLYMPIAD_PARTICIPANTS_PER_IP > 0)
+    /// AntiFeedManager.removePlayer(OLYMPIAD_ID, player)` (M9-C06).
+    pub(crate) fn olympiad_dualbox_remove(&mut self, player: ObjectId) {
+        if self.settings.custom_misc.dualbox.max_olympiad_participants_per_ip > 0 {
+            self.anti_feed_remove_player(crate::custom::dualbox::OLYMPIAD_ID, player);
         }
     }
 
@@ -477,7 +499,23 @@ impl World {
             }
             return false;
         }
-        // `DUALBOX_CHECK_MAX_OLYMPIAD_PARTICIPANTS_PER_IP` (default 0, off): not ported.
+        // `DUALBOX_CHECK_MAX_OLYMPIAD_PARTICIPANTS_PER_IP` (default 0, off): the IP limit (M9-C06).
+        let max = self.settings.custom_misc.dualbox.max_olympiad_participants_per_ip;
+        if max > 0 {
+            self.anti_feed_register_event(crate::custom::dualbox::OLYMPIAD_ID);
+            if !self.anti_feed_try_add_player(crate::custom::dualbox::OLYMPIAD_ID, noble, max) {
+                let origin = self.players.get(&player).map_or(0, |p| p.talk.last_origin());
+                let ip = self.players.get(&player).and_then(|p| p.client_ip);
+                let limit = self.anti_feed_limit(ip, max);
+                if let Some(mut html) =
+                    self.html_from_file(player, origin, "data/html/mods/OlympiadIPRestriction.htm")
+                {
+                    html.html = html.html.replace("%max%", &limit.to_string());
+                    self.send_html(player, &html);
+                }
+                return false;
+            }
+        }
         true
     }
 

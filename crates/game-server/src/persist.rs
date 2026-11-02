@@ -145,6 +145,13 @@ pub enum LsNotice {
     PlayerLogout { account: String },
     /// Java `LoginServerThread.sendAccessLevel` -> `ChangeAccessLevel` (a ban is -1, its end 0).
     AccessLevel { account: String, level: i32 },
+    /// Java `LoginServerThread.sendChangePassword` -> `ChangePassword` (M9-C06).
+    ChangePassword {
+        account: String,
+        character: String,
+        old_pass: String,
+        new_pass: String,
+    },
     /// Java `LoginServerThread.setServerStatus`: the list status.
     SetServerStatus(i32),
     /// Java `LoginServerThread.setMaxPlayer`.
@@ -626,6 +633,23 @@ pub trait PlayerStore: Send + 'static {
         _since_ms: i64,
     ) -> impl Future<Output = Result<Vec<(i32, String, i32)>, PersistError>> + Send {
         async { Ok(Vec::new()) }
+    }
+
+    /// `SELECT * FROM custom_mail` (`CustomMailManager`, M9-C06). A store without a database has
+    /// no rows.
+    fn load_custom_mail(
+        &mut self,
+    ) -> impl Future<Output = Result<Vec<l2_world::CustomMailEntry>, PersistError>> + Send {
+        async { Ok(Vec::new()) }
+    }
+
+    /// `DELETE FROM custom_mail WHERE date=? AND receiver=?` of a mail that was sent (M9-C06).
+    fn delete_custom_mail(
+        &mut self,
+        _date: &str,
+        _receiver: i32,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
     }
 
     /// The named `global_variables` rows read again (D-50, D-54, S-API-04). A store without a
@@ -1592,6 +1616,26 @@ async fn run<S: PlayerStore>(
                     warn!("The birthday gifts could not be handed to the world.");
                 }
             }
+            OutboxMessage::Persist(PersistCommand::CustomMailRequest) => {
+                // Not a write: the answer goes back to the world (D-15). A failed read is
+                // reported as a failure; Java logs it and tries again at the next run.
+                let result = match store.load_custom_mail().await {
+                    Ok(rows) => Ok(rows),
+                    Err(e) => {
+                        warn!("CustomMailManager: Error reading from database: {e}");
+                        Err(())
+                    }
+                };
+                if !acks.send_to_world(l2_world::WorldCommand::CustomMailLoaded { result }) {
+                    warn!("The custom mails could not be handed to the world.");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::CustomMailDelete { date, receiver }) => {
+                // Java logs a failed delete and sends the mail anyway.
+                if let Err(e) = store.delete_custom_mail(&date, receiver).await {
+                    warn!("CustomMailManager: Error deleting entry from database: {e}");
+                }
+            }
             OutboxMessage::Persist(PersistCommand::GlobalVariablesRereadRequest { token, names }) => {
                 // Not a write: the answer goes back to the world (D-15). A failed read is reported
                 // as a failure; the script's action is then refused (D-50).
@@ -1665,6 +1709,19 @@ async fn run<S: PlayerStore>(
             }
             OutboxMessage::Ls(LsEvent::PlayerLogout { account }) => {
                 let _ = notices.send(LsNotice::PlayerLogout { account });
+            }
+            OutboxMessage::Ls(LsEvent::ChangePassword {
+                account,
+                character,
+                old_pass,
+                new_pass,
+            }) => {
+                let _ = notices.send(LsNotice::ChangePassword {
+                    account,
+                    character,
+                    old_pass,
+                    new_pass,
+                });
             }
             OutboxMessage::Ls(LsEvent::SetServerStatus(status)) => {
                 let _ = notices.send(LsNotice::SetServerStatus(status));
@@ -3965,6 +4022,7 @@ pub struct DbStore {
     instance_times: InstanceTimeRepository,
     quests: l2_db::QuestRepository,
     global_variables: l2_db::GlobalVariableRepository,
+    custom_mail: l2_db::CustomMailRepository,
     coliseum: UndergroundColiseumRepository,
     bookmarks: BookmarkRepository,
     contacts: ContactRepository,
@@ -4066,6 +4124,7 @@ impl DbStore {
             instance_times: InstanceTimeRepository::new(pool.clone()),
             quests: l2_db::QuestRepository::new(pool.clone()),
             global_variables: l2_db::GlobalVariableRepository::new(pool.clone()),
+            custom_mail: l2_db::CustomMailRepository::new(pool.clone()),
             coliseum: UndergroundColiseumRepository::new(pool.clone()),
             bookmarks: BookmarkRepository::new(pool.clone()),
             contacts: ContactRepository::new(pool.clone()),
@@ -5808,6 +5867,30 @@ impl PlayerStore for DbStore {
 
     async fn delete_items_of_item_id(&mut self, item_id: i32) -> Result<(), PersistError> {
         self.items.delete_items_of_item_id(item_id).await?;
+        Ok(())
+    }
+
+    async fn load_custom_mail(&mut self) -> Result<Vec<l2_world::CustomMailEntry>, PersistError> {
+        Ok(self
+            .custom_mail
+            .load_all()
+            .await?
+            .into_iter()
+            .map(|row| l2_world::CustomMailEntry {
+                date: row.date,
+                // `receiver` is an unsigned column; the object ids of characters fit an `i32`.
+                receiver: i32::try_from(row.receiver).unwrap_or(i32::MAX),
+                subject: row.subject,
+                message: row.message,
+                items: row.items,
+            })
+            .collect())
+    }
+
+    async fn delete_custom_mail(&mut self, date: &str, receiver: i32) -> Result<(), PersistError> {
+        self.custom_mail
+            .delete_entry(date, u32::try_from(receiver).unwrap_or(0))
+            .await?;
         Ok(())
     }
 

@@ -136,6 +136,8 @@ impl World {
         if !self.players.contains_key(&id) {
             return;
         }
+        // `Disconnection`: `AntiFeedManager.onDisconnect(client)`, before anything else (M9-C06).
+        self.custom_misc_on_leave(id);
         // `Logout` and `RequestRestart`: "Unregister from olympiad." (M8-OLY-01).
         if matches!(reason, LeaveReason::Logout | LeaveReason::Restart) {
             self.olympiad_unregister_on_leave(id);

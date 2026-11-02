@@ -160,6 +160,9 @@ fn voice_handler(world: &mut World, player: ObjectId, command: &str, _target: Op
         if !vc.is_empty() {
             // `vparams = command.substring(endOfCommand).trim()`, `null` without a space.
             let params = rest.find(' ').map(|end| rest[end..].trim());
+            if let Some(result) = world.custom_misc_voiced_handler(player, vc, params) {
+                return result;
+            }
             return world.script_voiced_handler_with(player, vc, params);
         }
     }

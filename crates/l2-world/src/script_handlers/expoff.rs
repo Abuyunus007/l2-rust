@@ -58,6 +58,10 @@ impl World {
         if !text.starts_with('.') {
             return false;
         }
+        // The voiced commands of `Custom/*.ini` that take parameters (M9-C06).
+        if self.custom_misc_voiced_command(player, text) {
+            return true;
+        }
         // `ChatGeneral.onChat`: with more than one token the command is the first one and the
         // params are the text after it and one character (`text.substring(command.length() + 2)`).
         let command = voiced_command_of(text);

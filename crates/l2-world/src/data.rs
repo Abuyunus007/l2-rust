@@ -432,6 +432,8 @@ pub struct WorldSettings {
     pub leftover: crate::leftover::LeftoverSettings,
     /// The subclass values of `Player.ini` (S-SUB-01).
     pub subclass: crate::subclass::SubclassSettings,
+    /// The misc custom features of `config/Custom` (M9-C06), all off by default.
+    pub custom_misc: crate::custom::CustomMiscSettings,
     /// `Custom/FactionSystem.ini` (M9-C04, off by default).
     pub faction: crate::custom::faction::FactionSettings,
     /// `Custom/FakePlayers.ini` (M9-C04, off by default).
@@ -504,6 +506,7 @@ impl Default for WorldSettings {
             daily_reset_database_writes: false,
             leftover: crate::leftover::LeftoverSettings::default(),
             subclass: crate::subclass::SubclassSettings::default(),
+            custom_misc: crate::custom::CustomMiscSettings::default(),
             faction: crate::custom::faction::FactionSettings::default(),
             fake_players: crate::custom::fake_players::FakePlayerSettings::default(),
         }

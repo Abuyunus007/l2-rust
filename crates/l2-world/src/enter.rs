@@ -618,6 +618,8 @@ impl World {
         self.send(id, &ActionFailed);
         // `MailManager.hasUnreadPost(player)` -> `ExNoticePostArrived(false)` (M6-MAIL-01).
         self.mail_unread_notice(id);
+        // `ScreenWelcomeMessageConfig.WELCOME_MESSAGE_ENABLED` (M9-C06).
+        self.custom_misc_on_enter(id);
         // The `sendSkillList()` of EnterWorld is queued in Java and reaches the client last.
         let mut skills = skill_list(&p.data, &*self.data);
         // `setHero(true)` of the restore: the hero skills are known but not stored (M8-HERO-01).
