@@ -1954,6 +1954,23 @@ mod tests {
     }
 
     #[test]
+    fn the_faction_is_loaded_and_stored_back() {
+        // Java `Player.restore`: 1 is good, 2 is evil; the store writes 1, 2 or 0.
+        let mut r = row();
+        r.faction = 2;
+        let mut p = player_from_row(&r);
+        assert_eq!(p.profile.faction, 2);
+        assert_eq!(crate::persist::build_character_update(&p, &r).faction, 2);
+        p.profile.faction = 1;
+        assert_eq!(crate::persist::build_character_update(&p, &r).faction, 1);
+        // Any other value is no faction.
+        r.faction = 7;
+        let p = player_from_row(&r);
+        assert_eq!(p.profile.faction, 0);
+        assert_eq!(crate::persist::build_character_update(&p, &r).faction, 0);
+    }
+
+    #[test]
     fn the_clan_columns_are_loaded_and_stored_back() {
         let mut r = row();
         r.clanid = Some(500);

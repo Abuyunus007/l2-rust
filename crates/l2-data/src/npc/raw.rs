@@ -52,7 +52,7 @@ pub(super) enum RawNpcChild {
     #[serde(rename = "status")]
     Status(RawStatus),
     #[serde(rename = "fakePlayer")]
-    FakePlayer(RawFakePlayer),
+    FakePlayer(Box<RawFakePlayer>),
     #[serde(rename = "skillList")]
     SkillList(RawSkillList),
     #[serde(rename = "shots")]
