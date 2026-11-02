@@ -137,8 +137,73 @@ fn disabled_reason(connected: bool, state: ServerState) -> String {
     }
 }
 
+/// A plain-words hint for the common startup errors (G-06), or `None` when the line is not a
+/// known cause. The checks run from the most to the least specific.
+fn error_hint(error: &str) -> Option<String> {
+    let lower = error.to_lowercase();
+    if lower.contains("unknown authentication plugin") || lower.contains("access denied") {
+        return Some(
+            "Database login failed: check Login/Password in config/Database.ini (the GUI's Config view)"
+                .into(),
+        );
+    }
+    let in_use = [
+        "address already in use",
+        "address in use",
+        "only one usage of each socket address",
+        "bindexception",
+    ];
+    if in_use.iter().any(|p| lower.contains(p)) {
+        return Some(match port_in_text(error) {
+            Some(port) => format!("port {port} is used by another program"),
+            None => "a port is used by another program".into(),
+        });
+    }
+    let names_data = ["datapack", "geodata", "geo data"]
+        .iter()
+        .any(|p| lower.contains(p));
+    let missing = [
+        "not found",
+        "no such file",
+        "cannot find",
+        "can't find",
+        "does not exist",
+        "missing",
+        "os error 2",
+        "os error 3",
+    ];
+    if names_data && missing.iter().any(|p| lower.contains(p)) {
+        return Some("check DatapackRoot / GeoDataPath".into());
+    }
+    None
+}
+
+/// The port named in an error: `port 2106`, `port: 2106`, or the `:2106` of `127.0.0.1:2106`.
+/// A bare `:digits` is not enough (log timestamps look like that).
+fn port_in_text(text: &str) -> Option<u16> {
+    let digits = |s: &str| -> Option<u16> {
+        let n: String = s.chars().take_while(char::is_ascii_digit).collect();
+        n.parse().ok().filter(|p| *p > 0)
+    };
+    let lower = text.to_lowercase();
+    for (at, _) in lower.match_indices("port") {
+        let rest = lower[at + 4..].trim_start_matches([' ', ':', '=']);
+        if let Some(port) = digits(rest) {
+            return Some(port);
+        }
+    }
+    text.split_whitespace().find_map(|token| {
+        let (host, port) = token.rsplit_once(':')?;
+        let host = host.trim_start_matches(['/', '(', '[']);
+        let addressy = host.matches('.').count() == 3 || host.ends_with("localhost") || host == "*";
+        if addressy { digits(port) } else { None }
+    })
+}
+
 #[derive(Default)]
 pub struct ServersView {
+    /// Set by a "Show log" click; the app takes it and switches to the Logs view.
+    show_log: Option<String>,
     servers: Vec<ServerStatus>,
     login: Option<LoginStatus>,
     login_error: Option<String>,
@@ -160,6 +225,32 @@ pub struct ServersView {
 }
 
 impl ServersView {
+    /// The server whose log the user asked for. The app switches to the Logs view for it.
+    pub fn take_show_log(&mut self) -> Option<String> {
+        self.show_log.take()
+    }
+
+    /// Why a stopped server ended, under the table: the line, a hint if it is a known cause, and
+    /// the button that opens the Logs view for that server.
+    fn exit_reasons(&mut self, ui: &mut egui::Ui) {
+        for server in self.servers.iter().filter(|s| {
+            matches!(s.state, ServerState::Crashed | ServerState::Stopped) && s.last_error.is_some()
+        }) {
+            let Some(error) = &server.last_error else { continue };
+            ui.add_space(4.0);
+            ui.horizontal_wrapped(|ui| {
+                ui.colored_label(state_color(server.state), format!("{}:", server.name));
+                ui.label(error.as_str());
+                if ui.small_button("Show log").clicked() {
+                    self.show_log = Some(server.name.clone());
+                }
+            });
+            if let Some(hint) = error_hint(error) {
+                ui.colored_label(ui.visuals().warn_fg_color, hint);
+            }
+        }
+    }
+
     fn server(&self, name: &str) -> Option<&ServerStatus> {
         self.servers.iter().find(|s| s.name == name)
     }
@@ -394,6 +485,8 @@ impl ServersView {
                 }
             });
 
+        self.exit_reasons(ui);
+
         if let Some((action, name)) = clicked {
             if action.needs_confirm() {
                 self.confirm = Some((action, name));
@@ -558,7 +651,53 @@ mod tests {
             pid: None,
             uptime_secs: None,
             last_exit_code: None,
+            last_error: None,
         }
+    }
+
+    #[test]
+    fn hints_for_known_startup_errors() {
+        let db = "Database login failed: check Login/Password in config/Database.ini (the GUI's Config view)";
+        assert_eq!(
+            error_hint("Access denied for user 'x'@'localhost'").as_deref(),
+            Some(db)
+        );
+        assert_eq!(
+            error_hint("SQLException: Unknown authentication plugin").as_deref(),
+            Some(db)
+        );
+        assert_eq!(
+            error_hint("bind 127.0.0.1:2106 failed: Address already in use (os error 98)").as_deref(),
+            Some("port 2106 is used by another program")
+        );
+        assert_eq!(
+            error_hint("Cannot bind to port 7777: Address already in use").as_deref(),
+            Some("port 7777 is used by another program")
+        );
+        assert_eq!(
+            error_hint("[02/11 12:34:56] java.net.BindException: Address already in use: bind").as_deref(),
+            Some("a port is used by another program")
+        );
+        assert_eq!(
+            error_hint("Datapack folder not found: C:/x").as_deref(),
+            Some("check DatapackRoot / GeoDataPath")
+        );
+        assert_eq!(
+            error_hint("cannot read geodata file: No such file or directory").as_deref(),
+            Some("check DatapackRoot / GeoDataPath")
+        );
+        assert_eq!(error_hint("NullPointerException"), None);
+        assert_eq!(error_hint("loaded datapack in 3 s"), None);
+    }
+
+    #[test]
+    fn show_log_is_taken_once() {
+        let mut view = ServersView {
+            show_log: Some("game".into()),
+            ..ServersView::default()
+        };
+        assert_eq!(view.take_show_log().as_deref(), Some("game"));
+        assert_eq!(view.take_show_log(), None);
     }
 
     fn list(servers: Vec<ServerStatus>) -> BridgeEvent {

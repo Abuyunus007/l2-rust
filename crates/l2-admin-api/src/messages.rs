@@ -219,6 +219,10 @@ pub struct ServerStatus {
     pub pid: Option<u32>,
     pub uptime_secs: Option<u64>,
     pub last_exit_code: Option<i32>,
+    /// Why the process ended (G-06): the last ERROR/FATAL line of its output, else the last line.
+    /// Only set after a crash or exit. Optional on the wire, so older peers stay compatible.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_error: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -426,6 +430,34 @@ mod tests {
     use super::*;
 
     #[test]
+    fn last_error_round_trips_and_is_optional() {
+        let status = ServerStatus {
+            name: "game".into(),
+            state: ServerState::Crashed,
+            pid: None,
+            uptime_secs: None,
+            last_exit_code: Some(1),
+            last_error: Some("ERROR Access denied for user".into()),
+        };
+        let event = Message::Event {
+            event: Event::ServerStateChanged {
+                status: status.clone(),
+            },
+        };
+        let json = serde_json::to_string(&event).unwrap();
+        assert!(
+            json.contains(r#""last_error":"ERROR Access denied for user""#),
+            "{json}"
+        );
+        assert_eq!(serde_json::from_str::<Message>(&json).unwrap(), event);
+
+        // A peer that doesn't know the field omits it.
+        let old = r#"{"name":"game","state":"crashed","pid":null,"uptime_secs":null,"last_exit_code":1}"#;
+        let parsed: ServerStatus = serde_json::from_str(old).unwrap();
+        assert_eq!(parsed.last_error, None);
+    }
+
+    #[test]
     fn debug_never_shows_passwords() {
         let create = AccountsAction::Create {
             login: "bob".into(),
@@ -456,6 +488,7 @@ mod tests {
             pid: Some(4242),
             uptime_secs: Some(60),
             last_exit_code: None,
+            last_error: None,
         };
         let login = LoginStatus {
             game_servers: vec![GameServerStatus {
