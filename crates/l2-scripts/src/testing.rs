@@ -393,6 +393,21 @@ impl Pages {
         self
     }
 
+    /// The default page of each NPC with a link to the script itself (`bypass Script <name>`):
+    /// what the html of an NPC that has a script without a quest id offers.
+    pub fn npcs_by_name(mut self, npc_ids: &[i32]) -> Self {
+        for npc in npc_ids {
+            self.pages.push((
+                format!("data/html/default/{npc}.htm"),
+                format!(
+                    r#"<html><body>npc {npc} <a action="bypass Script {}">Script</a></body></html>"#,
+                    self.name
+                ),
+            ));
+        }
+        self
+    }
+
     /// Any other file of the datapack.
     pub fn file(mut self, path: &str, text: &str) -> Self {
         self.pages.push((path.to_owned(), text.to_owned()));
@@ -416,6 +431,15 @@ impl ScriptTest {
     pub fn quest_page(&mut self, player: i32, npc: ObjectId) -> String {
         self.talk(player, npc);
         self.bypass(player, "Script");
+        pages_to(&self.take(), player).pop().unwrap_or_default()
+    }
+
+    /// Talks to the NPC (two clicks), opens the script `script_name` by name (`bypass Script
+    /// <name>`: `showQuestWindow(player, npc, name)`, the `onTalk` of a script that is not in the
+    /// quest list) and returns the last page it shows.
+    pub fn script_page(&mut self, player: i32, npc: ObjectId, script_name: &str) -> String {
+        self.talk(player, npc);
+        self.bypass(player, &format!("Script {script_name}"));
         pages_to(&self.take(), player).pop().unwrap_or_default()
     }
 

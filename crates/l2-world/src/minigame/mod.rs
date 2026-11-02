@@ -47,7 +47,7 @@
 mod block_checker;
 mod bypass;
 mod coliseum;
-mod cron;
+pub(crate) mod cron;
 mod krateis;
 
 use std::collections::{BTreeMap, HashMap};

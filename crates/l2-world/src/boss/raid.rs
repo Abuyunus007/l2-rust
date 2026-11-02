@@ -466,6 +466,14 @@ impl World {
         self.boss.raid.spawns.contains_key(&boss_id)
     }
 
+    /// The place of the `Spawn` the raid boss was added with (`SpawnTable.getAnySpawn(bossId)`
+    /// of a boss, which `RaidBossSpawnManager.addNewSpawn` put into the table; M9-C07).
+    pub fn raid_spawn_location(&self, boss_id: i32) -> Option<(i32, i32, i32)> {
+        let index = self.boss.raid.spawns.get(&boss_id)?.index;
+        self.spawn_def(index)
+            .map(|s| (s.location.x, s.location.y, s.location.z))
+    }
+
     /// Java `Spawn.stopRespawn()` of a raid boss spawn (`//spawn` with a respawn of 0 or a spawn
     /// that is not permanent).
     pub(crate) fn raid_stop_respawn(&mut self, boss_id: i32) {

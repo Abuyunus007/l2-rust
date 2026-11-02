@@ -93,6 +93,28 @@ pub trait Script: Send + Sync + 'static {
         self.setup(setup);
     }
 
+    /// Java `script instanceof Event` (`mechanics/script/Event.java`): the script has an
+    /// `eventStart` / `eventStop` / `eventBypass` for `//event_start` and its siblings (M9-C07).
+    fn is_event(&self) -> bool {
+        false
+    }
+
+    /// Java `Event.eventStart(eventMaker)` (`//event_start <name>`, or the event's own schedule
+    /// with no maker). `true` when the event started.
+    fn event_start(&self, ctx: &mut ScriptCtx<'_>, event_maker: Option<ObjectId>) -> bool {
+        false
+    }
+
+    /// Java `Event.eventStop()`. `true` when the event was running and stopped.
+    fn event_stop(&self, ctx: &mut ScriptCtx<'_>) -> bool {
+        false
+    }
+
+    /// Java `Event.eventBypass(player, bypass)` (`//event_bypass <name> <bypass>`).
+    fn event_bypass(&self, ctx: &mut ScriptCtx<'_>, player: ObjectId, bypass: &str) -> bool {
+        false
+    }
+
     /// Java `onLoad()`: called once after every script was registered and the world data is in.
     fn on_load(&self, ctx: &mut ScriptCtx<'_>) {}
 

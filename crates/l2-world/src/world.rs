@@ -120,6 +120,8 @@ pub struct World {
     pub(crate) friends: crate::friends::FriendWorld,
     /// The mails, the names they need and the deletion task (M6-MAIL-01, `mail/`).
     pub(crate) mail: crate::mail::MailWorld,
+    /// The switches and state of the custom scripts (M9-C07, `custom/`).
+    pub(crate) custom_scripts: crate::custom::CustomScriptWorld,
     /// The multisell lists and settings (M6-MULTISELL-01, `multisell.rs`).
     pub(crate) multisell: crate::multisell::MultisellWorld,
     /// The PC cafe settings and each player's retail timer (M6-FU-11, `pccafe.rs`).
@@ -247,6 +249,7 @@ impl World {
             duel: crate::duel::DuelWorld::default(),
             friends: crate::friends::FriendWorld::default(),
             mail: crate::mail::MailWorld::default(),
+            custom_scripts: crate::custom::CustomScriptWorld::default(),
             multisell: crate::multisell::MultisellWorld::default(),
             pccafe: crate::pccafe::PcCafeWorld::default(),
             enchant: crate::enchant::EnchantWorld::default(),
