@@ -619,9 +619,9 @@ impl World {
             }
             return;
         }
-        // NOTE: `(reference instanceof EventMonster) && eventDropOnGround()` is a script switch
-        // (D-05) that is off by default.
-        if !settings.auto_loot
+        // `(reference instanceof EventMonster) && eventDropOnGround()` is a script switch (D-05):
+        // an event monster set to drop on the ground protects its drop even with `AutoLoot`.
+        if (!settings.auto_loot || self.event_monster_drops_on_ground(reference))
             && let Some(actor) = actor
         {
             self.set_loot_owner(item, actor);

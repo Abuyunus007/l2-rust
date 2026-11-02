@@ -457,6 +457,11 @@ pub enum WorldCommand {
         token: u64,
         result: Result<Vec<(String, Option<String>)>, ()>,
     },
+    /// The answer to `PersistCommand::TransmogLoadRequest` (M9-C07).
+    TransmogLoaded {
+        player: l2_util::ObjectId,
+        result: Result<crate::custom::transmog::TransmogLoad, ()>,
+    },
     /// The answer to `PersistCommand::BirthdayGiftsRequest`: `(charId, char_name, age)` of each
     /// character found, or `Err` when the query failed (S-LEFT-01).
     BirthdayGiftsLoaded {
@@ -657,6 +662,12 @@ impl fmt::Debug for WorldCommand {
             Self::GlobalVariablesReread { token, result } => write!(
                 f,
                 "GlobalVariablesReread({token}, {})",
+                if result.is_ok() { "ok" } else { "failed" }
+            ),
+            Self::TransmogLoaded { player, result } => write!(
+                f,
+                "TransmogLoaded({}, {})",
+                player.0,
                 if result.is_ok() { "ok" } else { "failed" }
             ),
             Self::CustomMailLoaded { result } => write!(

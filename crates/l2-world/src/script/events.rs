@@ -436,6 +436,17 @@ impl<'w> ScriptCtx<'w> {
 }
 
 impl World {
+    /// The scripts that listen to `kind` of `object` (its own listeners, in the order they were
+    /// added), for `RequestRestartPoint`'s event resurrection (M9-C07).
+    pub(crate) fn object_listener_scripts(&self, object: ObjectId, kind: EventKind) -> Vec<ScriptId> {
+        self.scripts
+            .object_listeners
+            .by_object
+            .get(&(object, kind))
+            .map(|list| list.iter().map(|l| l.script).collect())
+            .unwrap_or_default()
+    }
+
     /// Java `EventDispatcher.hasListener(type, container)`: the object's, the NPC template's or a
     /// global listener exists.
     pub(crate) fn script_has_listener(&self, kind: EventKind, container: Option<ObjectId>) -> bool {

@@ -365,7 +365,9 @@ impl World {
             || (!(template.is_some_and(|t| t.dropable)
                 && item
                     .as_ref()
-                    .is_none_or(|i| !i.is_augmented() || settings.alt_allow_augment_trade))
+                    .is_none_or(|i| !i.is_augmented() || settings.alt_allow_augment_trade)
+                // `isEquipable() && getTransmogId() > 0` (`Transmog.ini`, M9-C07).
+                && !template.zip(item.as_ref()).is_some_and(|(t, i)| self.item_is_transmogrified(i.object_id, t)))
                 && !(gm && settings.gm_trade_restricted_items))
             // `(item.getItemType() == PET_COLLAR) && player.havePetInvItems()`.
             || (template.is_some_and(|t| t.is_pet_item()) && self.have_pet_inv_items(id))

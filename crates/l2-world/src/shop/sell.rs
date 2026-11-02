@@ -20,10 +20,17 @@ pub(super) const LOC_REFUND: &str = "REFUND";
 impl World {
     /// Java `Item.isSellable()`: the template, and an augmented item only with
     /// `AltAllowAugmentTrade`.
-    // The transmog check (`isEquipable() && getTransmogId() > 0`) needs the appearance system,
-    // which does not exist; no item has a transmog id.
     fn item_is_sellable(&self, item: &ItemData, sellable: bool) -> bool {
         if !sellable {
+            return false;
+        }
+        // `isEquipable() && getTransmogId() > 0` (`Transmog.ini`, M9-C07).
+        if self.item_transmog_id(item.object_id) > 0
+            && self
+                .item_templates()
+                .and_then(|t| t.get(item.item_id).map(crate::inventory::is_equipable))
+                .unwrap_or(false)
+        {
             return false;
         }
         if item.is_augmented() {

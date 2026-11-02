@@ -306,6 +306,87 @@ mod tests {
         assert!(t.take_writes().is_empty());
     }
 
+    /// The scene of the switched-on checks: `SkillCheckEnable` (and `SkillCheckRemove`).
+    fn checking(
+        remove: bool,
+        skills: &[(i32, i32)],
+        items: Vec<l2_world::ItemData>,
+        vars: &[(&str, &str)],
+    ) -> ScriptTest {
+        let mut registry = ScriptRegistry::new();
+        registry.add(SubClassSkills);
+        let mut t = ScriptTest::new_with(registry, "", "", &[], |world, _| {
+            world.set_settings(l2_world::WorldSettings {
+                subclass: l2_world::SubclassSettings {
+                    skill_check_enable: true,
+                    skill_check_remove: remove,
+                    skill_check_gm: true,
+                    ..l2_world::SubclassSettings::default()
+                },
+                ..l2_world::WorldSettings::default()
+            });
+        });
+        t.set_skills(
+            "<item id=\"10280\" type=\"EtcItem\" name=\"Book\"/>",
+            r#"<skill id="631" levels="1" name="Cert A"><operateType>P</operateType><targetType>SELF</targetType></skill>
+               <skill id="637" levels="1" name="Cert B"><operateType>P</operateType><targetType>SELF</targetType></skill>"#,
+        );
+        let mut data = player_data(1, 80, items);
+        data.skills = skills
+            .iter()
+            .map(|(id, level)| SkillData {
+                skill_id: *id,
+                skill_level: *level,
+            })
+            .collect();
+        for (name, value) in vars {
+            data.profile
+                .variables
+                .insert((*name).to_owned(), (*value).to_owned());
+        }
+        t.enter_with(data);
+        t.ticks(3);
+        t
+    }
+
+    fn knows(t: &ScriptTest, skill_id: i32) -> bool {
+        t.world
+            .player(Oid(1))
+            .is_some_and(|p| p.core.skills.iter().any(|(id, _)| *id == skill_id))
+    }
+
+    #[test]
+    fn switched_on_a_cert_skill_without_its_variable_is_removed_and_a_proper_one_stays() {
+        // 631 is a certificate of level 65 (`EmergentAbility65-1`), 637 has no variable.
+        let t = checking(
+            true,
+            &[(631, 1), (637, 1)],
+            vec![],
+            &[("EmergentAbility65-1", "631;")],
+        );
+        assert!(knows(&t, 631), "the skill with its variable stays");
+        assert!(!knows(&t, 637), "the skill without one is removed");
+        // The state of the script is made on the check.
+        assert!(
+            t.world
+                .player_quests(Oid(1))
+                .is_some_and(|q| q.contains("SubClassSkills"))
+        );
+    }
+
+    #[test]
+    fn switched_on_without_the_remove_switch_the_skill_is_only_reported() {
+        let t = checking(false, &[(637, 1)], vec![], &[]);
+        assert!(knows(&t, 637));
+    }
+
+    #[test]
+    fn switched_on_a_cert_book_without_a_variable_is_only_reported() {
+        let t = checking(true, &[], vec![item(100, 10280, 1)], &[]);
+        // Nothing is taken from the inventory.
+        assert_eq!(t.count(1, 10280), 1);
+    }
+
     #[test]
     fn the_cert_tables_are_sorted_for_the_binary_search() {
         assert!(ALL_CERT_SKILL_IDS.windows(2).all(|w| w[0] < w[1]));

@@ -42,10 +42,12 @@ pub(crate) struct Transferred {
 
 impl World {
     /// Java `Item.isTradeable()`: the template, and for an augmented item `AltAllowAugmentTrade`.
-    // The transmog check (`isEquipable() && getTransmogId() > 0`) needs the appearance system
-    // (item_variables), which does not exist; no item has a transmog id.
     pub(crate) fn item_is_tradeable(&self, item: &ItemData, template: &ItemTemplate) -> bool {
         if !template.tradeable {
+            return false;
+        }
+        // `isEquipable() && getTransmogId() > 0` (`Transmog.ini`, M9-C07).
+        if self.item_is_transmogrified(item.object_id, template) {
             return false;
         }
         if item.is_augmented() {

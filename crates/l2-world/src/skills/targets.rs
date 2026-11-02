@@ -332,6 +332,13 @@ impl World {
                 if self.is_in_party_with(caster, target) || self.is_in_same_command_channel(caster, target) {
                     return false;
                 }
+                if self.is_on_event(caster)
+                    && !self.is_on_solo_event(caster)
+                    && self.is_on_event(target)
+                    && self.team_of(caster) == self.team_of(target)
+                {
+                    return false;
+                }
                 // Auto play target mode check (M9-C02).
                 if self.auto_play_refuses_unflagged_target(caster, target) {
                     return false;

@@ -201,6 +201,22 @@ impl World {
         }
     }
 
+    /// Java `for (List<QuestTimer> timers : getQuestTimers().values()) for (QuestTimer timer :
+    /// timers) timer.cancel()`: every quest timer of the script (M9-C07).
+    pub(crate) fn cancel_all_quest_timers(&mut self, script: ScriptId) {
+        let ids: Vec<u64> = self
+            .scripts
+            .timers
+            .timers
+            .iter()
+            .filter(|(_, t)| !t.unmerged && t.script == script)
+            .map(|(id, _)| *id)
+            .collect();
+        for id in ids {
+            self.remove_quest_timer(id);
+        }
+    }
+
     /// Java `Npc.stopQuestTimers()` (at `onDecay`) and `Player.stopAllTasks()`: the timers bound
     /// to an object stop.
     pub(crate) fn script_cancel_timers_of(&mut self, object: ObjectId) {

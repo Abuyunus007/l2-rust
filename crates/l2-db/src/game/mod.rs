@@ -58,6 +58,7 @@ mod sql_number;
 mod subclasses;
 mod summons;
 mod territories;
+mod transmog;
 mod underground_coliseum;
 mod variables;
 mod wedding;
@@ -136,6 +137,7 @@ pub use summons::{NewSummonSkillSave, SummonRepository, SummonSkillSaveRow};
 pub use territories::{
     NEXT_TW_START_DATE, TerritoryRegistrationRow, TerritoryRepository, TerritoryRow, TerritorySpawnRow,
 };
+pub use transmog::TransmogRepository;
 pub use underground_coliseum::{ColiseumBestTeamRow, UndergroundColiseumRepository};
 pub use variables::VariableRepository;
 pub use wedding::{CoupleRow, WeddingRepository, married_text};
