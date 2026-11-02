@@ -5,6 +5,7 @@
 //! integration tests can run a whole supervisor on an ephemeral port.
 
 pub mod api;
+pub mod backup;
 pub mod config;
 pub mod launcher;
 pub mod logs;
@@ -23,6 +24,7 @@ use tokio::sync::Notify;
 use tokio::task::JoinHandle;
 
 use crate::api::{SupervisorHandler, spawn_admin_link};
+use crate::backup::{BackupConfig, BackupService};
 use crate::config::SupervisorConfig;
 use crate::logs::LogStore;
 use crate::process::Supervisor;
@@ -40,6 +42,12 @@ pub struct Running {
 impl Running {
     /// Binds the admin listener and creates the (idle) server actors.
     pub async fn start(config: SupervisorConfig) -> std::io::Result<Self> {
+        // No `Backup.ini` known: defaults (no schedule; "backup now" still works).
+        Self::start_with_backup(config, BackupConfig::defaults(std::path::Path::new("."))).await
+    }
+
+    /// Like [`Running::start`], with the settings of `Backup.ini`.
+    pub async fn start_with_backup(config: SupervisorConfig, backup: BackupConfig) -> std::io::Result<Self> {
         let listener = TcpListener::bind(config.listen).await?;
         let local_addr = listener.local_addr()?;
 
@@ -62,7 +70,14 @@ impl Running {
             }
         }
         let stop_requested = Arc::new(Notify::new());
-        let handler = SupervisorHandler::new(Arc::clone(&supervisor), links, Arc::clone(&stop_requested));
+        let backups = BackupService::new(backup);
+        tasks.extend(backups.spawn_scheduler());
+        let handler = SupervisorHandler::new(
+            Arc::clone(&supervisor),
+            links,
+            Arc::clone(&stop_requested),
+            backups,
+        );
         tasks.push(tokio::spawn(serve(
             listener,
             "supervisor".into(),

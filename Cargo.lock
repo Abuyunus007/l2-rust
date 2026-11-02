@@ -2575,6 +2575,8 @@ name = "l2-supervisor"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
+ "flate2",
  "l2-admin-api",
  "l2-config",
  "rand 0.10.3",

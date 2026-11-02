@@ -12,6 +12,7 @@
 //! [`View::on_event`], which receives every [`BridgeEvent`].
 
 pub mod accounts;
+pub mod backups;
 pub mod config_editor;
 pub mod connection;
 pub mod data_browser;
@@ -40,6 +41,7 @@ pub enum ViewId {
     Servers,
     Players,
     Accounts,
+    Backups,
     Logs,
     Packets,
     Data,
@@ -48,11 +50,12 @@ pub enum ViewId {
 }
 
 impl ViewId {
-    pub const ALL: [ViewId; 9] = [
+    pub const ALL: [ViewId; 10] = [
         ViewId::Connection,
         ViewId::Servers,
         ViewId::Players,
         ViewId::Accounts,
+        ViewId::Backups,
         ViewId::Logs,
         ViewId::Packets,
         ViewId::Data,
@@ -66,6 +69,7 @@ impl ViewId {
             ViewId::Servers => "Servers",
             ViewId::Players => "Players",
             ViewId::Accounts => "Accounts",
+            ViewId::Backups => "Backups",
             ViewId::Logs => "Logs",
             ViewId::Packets => "Packets",
             ViewId::Data => "Data",
@@ -82,6 +86,7 @@ impl ViewId {
                 | ViewId::Servers
                 | ViewId::Players
                 | ViewId::Accounts
+                | ViewId::Backups
                 | ViewId::Logs
                 | ViewId::Packets
                 | ViewId::Data
@@ -98,6 +103,7 @@ impl ViewId {
             | ViewId::Servers
             | ViewId::Players
             | ViewId::Accounts
+            | ViewId::Backups
             | ViewId::Logs
             | ViewId::Packets
             | ViewId::Data
@@ -114,6 +120,7 @@ pub struct Views {
     pub servers: servers::ServersView,
     pub players: players::PlayersView,
     pub accounts: accounts::AccountsView,
+    pub backups: backups::BackupsView,
     pub logs: logs::LogsView,
     pub packets: packets::PacketsView,
     pub data: data_browser::DataBrowserView,
@@ -129,6 +136,7 @@ impl Views {
             ViewId::Servers => Some(&mut self.servers),
             ViewId::Players => Some(&mut self.players),
             ViewId::Accounts => Some(&mut self.accounts),
+            ViewId::Backups => Some(&mut self.backups),
             ViewId::Logs => Some(&mut self.logs),
             ViewId::Packets => Some(&mut self.packets),
             ViewId::Data => Some(&mut self.data),
@@ -142,6 +150,7 @@ impl Views {
         self.servers.on_event(event);
         self.players.on_event(event);
         self.accounts.on_event(event);
+        self.backups.on_event(event);
         self.logs.on_event(event);
         self.packets.on_event(event);
     }
