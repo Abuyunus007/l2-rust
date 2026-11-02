@@ -170,10 +170,10 @@ impl World {
 
     /// `RequestActionUse` actions 37 (dwarven manufacture) and 51 (general manufacture): the
     /// manage window of the shop.
-    // Action 37 also refuses one who sells buffs (`SellBuffsManager`); buff shops do not exist yet.
+    // Action 37 also refuses one who sells buffs (`SellBuffsManager`).
     pub(crate) fn action_manufacture(&mut self, id: ObjectId, dwarven: bool) {
         // Player shouldn't be able to set stores if he/she is alike dead (dead or fake death).
-        if self.is_alike_dead(id) {
+        if self.is_alike_dead(id) || (dwarven && self.is_selling_buffs(id)) {
             self.send(id, &ActionFailed);
             return;
         }

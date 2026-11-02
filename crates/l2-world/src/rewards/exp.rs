@@ -751,7 +751,7 @@ impl World {
             .and_then(|m| i32::try_from(m + 1).ok())
     }
 
-    fn set_exp(&mut self, id: ObjectId, value: i64) {
+    pub(crate) fn set_exp(&mut self, id: ObjectId, value: i64) {
         // Java `PlayerStat.setExp`: an active subclass keeps it in its holder, which caps it at
         // the last exp of its maximum level (S-SUB-01).
         let value = if self.is_subclass_active(id) {
@@ -1063,6 +1063,14 @@ impl World {
             upserts: writes.upserts,
             removed: writes.removed,
         });
+    }
+
+    /// Java `Player.checkPlayerSkills()` with its rows written (the custom board's delevel,
+    /// M9-C03).
+    pub(crate) fn check_player_skills_and_store(&mut self, id: ObjectId) {
+        let mut writes = SkillWrites::default();
+        self.check_player_skills(id, &mut writes);
+        self.flush_skill_writes(id, writes);
     }
 
     /// Java `Player.checkPlayerSkills()`: a skill whose level needs more than the player has (9

@@ -34,7 +34,7 @@ pub(crate) fn register(handlers: &mut BypassHandlers) {
 }
 
 /// Java `HtmlUtil.getGauge` with the HP and MP images (`displayAsPercentage` is false here).
-fn gauge(width: i64, current_value: i64, max: i64, background: &str, image: &str) -> String {
+pub(crate) fn gauge(width: i64, current_value: i64, max: i64, background: &str, image: &str) -> String {
     let current = current_value.min(max);
     let fill = ((current as f64 / max as f64) * width as f64) as i64;
     let td_width = (width - 10) / 2;

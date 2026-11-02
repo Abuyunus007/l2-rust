@@ -574,7 +574,7 @@ fn the_first_rebirth_resets_the_character_and_pays_the_tokens() {
     // The menu page, with the real file's placeholders filled in.
     let page = pages(&sent, ME.0).pop().unwrap();
     assert!(page.contains("1/3"), "{page}");
-    assert!(page.contains("Max Rebirth reached.") == false);
+    assert!(!page.contains("Max Rebirth reached."));
     assert!(page.contains("rebirth_confirmrequest"));
     assert!(!page.contains("%rebirth_count%"));
 }

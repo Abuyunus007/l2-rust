@@ -284,7 +284,7 @@ impl World {
     // ------------------------------------------------------------------ the customer's windows
 
     /// Java `new PrivateStoreListSell(player, seller)`.
-    // `seller.isSellingBuffs()` sends the buff menu instead (`SellBuffsManager`): not ported.
+    // `seller.isSellingBuffs()` sends the buff menu instead: `do_interact_player` (M9-C03).
     pub(crate) fn private_store_list_sell(
         &self,
         customer: ObjectId,
@@ -349,7 +349,11 @@ impl World {
         self.send(id, &ActionFailed);
         match self.private_store_type(target) {
             PrivateStoreType::Sell | PrivateStoreType::PackageSell => {
-                if let Some(packet) = self.private_store_list_sell(id, target) {
+                if self.is_selling_buffs(target) {
+                    // `PrivateStoreListSell.writeImpl`: the buff menu instead of the list
+                    // (M9-C03, `custom/sell_buffs.rs`).
+                    self.sell_send_buff_menu(id, target, 0);
+                } else if let Some(packet) = self.private_store_list_sell(id, target) {
                     self.send(id, &packet);
                 }
             }
