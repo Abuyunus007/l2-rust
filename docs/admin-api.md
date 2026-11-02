@@ -42,6 +42,9 @@ Requests may be answered out of order. Match responses by `id`. An empty configu
 | `accounts` | `server` (LS itself: null), `action`: AccountsAction | LS endpoint, or the supervisor (relays to the named server) | `accounts` or `error` |
 | `shutdown` | `restart` (bool) | server endpoints only (the supervisor sends it on stop, D-38) | `ok`, then the server exits (code 0, or 2 with `restart`) |
 | `stop_supervisor` | none | supervisor | `ok` at once; stops all servers in reverse `Servers` order, then the supervisor exits and the connection closes (G-01) |
+| `backup_now` | none | supervisor | `ok` at once (the dump runs in the background), or `error` when one is running (M9-H01) |
+| `list_backups` | none | supervisor | `backups`: list of `name`, `size`, `modified_ms`, newest first |
+| `backup_state` | none | supervisor | `backup_state`: `enabled`, `running`, `interval_hours`, `keep`, `folder`, `database` (`host`, `port`, `user`, `database`; no password) or null, `last` (`ok`, `message`, `finished_ms`) or null, `next_run_ms` or null |
 
 ### Responses
 | kind | Fields |
@@ -63,7 +66,7 @@ Requests may be answered out of order. Match responses by `id`. An empty configu
 | `login_status_changed` | `server`, `status`: LoginStatus | a GS registers/disconnects or its status changes |
 
 ### Types
-- **ServerStatus:** `name`, `state` (`stopped` / `starting` / `running` / `stopping` / `crashed`), `pid`, `uptime_secs`, `last_exit_code`
+- **ServerStatus:** `name`, `state` (`stopped` / `starting` / `running` / `stopping` / `crashed`), `pid`, `uptime_secs`, `last_exit_code`, `last_error` (optional, omitted when null; G-06: the last ERROR/FATAL line of the output, else the last line, set when the process ended)
 - **LogLine:** `server`, `seq` (per server, increasing), `ts_ms`, `level` (`error` / `warn` / `info` / `debug` / `trace` / null), `target`, `message`
 - **LoginStatus:** `game_servers` (list of `id`, `name`, `authed`, `online`, `max_players`, `status`), `authed_clients`
 - **GameStatus:** `players`: list of GamePlayer, sorted by `name`. The list is the characters in the world now (not the accounts on the LS).

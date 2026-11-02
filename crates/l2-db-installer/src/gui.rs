@@ -6,74 +6,13 @@
 // channel, and the worker blocks until the window answers.
 
 use std::path::PathBuf;
-use std::sync::mpsc::{self, Receiver, Sender};
+use std::sync::mpsc::{Receiver, Sender};
 
 use egui::{Color32, RichText};
-use sqlx::mysql::MySqlConnectOptions;
 
+use crate::background::{self, Event};
 use crate::console::{DEFAULT_DB, DEFAULT_HOST, DEFAULT_PORT, DEFAULT_USER};
-use crate::installer::{self, ErrorChoice, ExistsChoice, Level, Params, Ui};
-
-enum Event {
-    Log(Level, String),
-    Progress(f32),
-    AskExists {
-        db_name: String,
-        reply: Sender<ExistsChoice>,
-    },
-    AskError {
-        error: String,
-        reply: Sender<ErrorChoice>,
-    },
-    Done,
-}
-
-/// The [`Ui`] of the worker thread: forwards everything to the window.
-struct ChannelUi {
-    tx: Sender<Event>,
-    ctx: egui::Context,
-}
-
-impl ChannelUi {
-    fn send(&self, event: Event) {
-        // The window may be gone; the questions below then answer Cancel/Abort.
-        let _ = self.tx.send(event);
-        self.ctx.request_repaint();
-    }
-}
-
-impl Ui for ChannelUi {
-    fn log(&mut self, level: Level, message: &str) {
-        self.send(Event::Log(level, message.to_owned()));
-    }
-
-    fn progress(&mut self, done: usize, total: usize) {
-        let fraction = if total == 0 {
-            1.0
-        } else {
-            done as f32 / total as f32
-        };
-        self.send(Event::Progress(fraction));
-    }
-
-    fn ask_exists(&mut self, db_name: &str) -> ExistsChoice {
-        let (reply, answer) = mpsc::channel();
-        self.send(Event::AskExists {
-            db_name: db_name.to_owned(),
-            reply,
-        });
-        answer.recv().unwrap_or(ExistsChoice::Cancel)
-    }
-
-    fn ask_error(&mut self, _sql: &str, error: &str) -> ErrorChoice {
-        let (reply, answer) = mpsc::channel();
-        self.send(Event::AskError {
-            error: error.to_owned(),
-            reply,
-        });
-        answer.recv().unwrap_or(ErrorChoice::Abort)
-    }
-}
+use crate::installer::{self, ErrorChoice, ExistsChoice, Level, Params};
 
 enum Question {
     Exists {
@@ -134,23 +73,19 @@ impl InstallerApp {
             return;
         };
         let params = Params {
-            options: MySqlConnectOptions::new()
-                .host(self.host.trim())
-                .port(port)
-                .username(self.user.trim())
-                .password(self.password.trim()),
+            options: installer::connect_options(
+                self.host.trim(),
+                port,
+                self.user.trim(),
+                self.password.trim(),
+            ),
             db_name: self.db_name.trim().to_owned(),
             sql_dir: self.sql_dir.clone(),
             login: self.login,
             game: self.game,
         };
-        let (tx, rx) = mpsc::channel();
-        let ui_ctx = ctx.clone();
-        let spawned = std::thread::Builder::new()
-            .name("db-installer".to_owned())
-            .spawn(move || worker(params, tx, ui_ctx));
-        match spawned {
-            Ok(_) => {
+        match background::spawn_install(params, ctx.clone()) {
+            Ok(rx) => {
                 self.events = Some(rx);
                 self.running = true;
                 self.progress = 0.0;
@@ -285,39 +220,6 @@ impl InstallerApp {
     }
 }
 
-fn worker(params: Params, tx: Sender<Event>, ctx: egui::Context) {
-    let mut ui = ChannelUi { tx, ctx: ctx.clone() };
-    let runtime = tokio::runtime::Builder::new_current_thread().enable_all().build();
-    match runtime {
-        Ok(rt) => match rt.block_on(installer::run(&params, &mut ui)) {
-            Ok(summary) => {
-                let what = match (params.login, params.game) {
-                    (true, true) => "Login and Game databases are installed.",
-                    (true, false) => "Login database is installed.",
-                    _ => "Game database is installed.",
-                };
-                ui.log(Level::Success, what);
-                ui.log(
-                    Level::Info,
-                    &format!(
-                        "{} files, {} statements ok, {} failed.",
-                        summary.files, summary.statements_ok, summary.statements_failed
-                    ),
-                );
-            }
-            Err(e) => {
-                ui.log(Level::Error, &e.to_string());
-                ui.log(
-                    Level::Error,
-                    "Installation failed. Please check the messages above.",
-                );
-            }
-        },
-        Err(e) => ui.log(Level::Error, &format!("Cannot start the runtime: {e}")),
-    }
-    ui.send(Event::Done);
-}
-
 impl eframe::App for InstallerApp {
     fn logic(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         ctx.set_theme(if self.dark {
@@ -373,17 +275,5 @@ mod tests {
         assert_eq!(app.db_name, "l2jmobiush5");
         assert!(app.login && app.game);
         assert!(!app.running && app.events.is_none());
-    }
-
-    #[test]
-    fn channel_ui_questions_cancel_when_the_window_is_gone() {
-        let (tx, rx) = mpsc::channel();
-        drop(rx);
-        let mut ui = ChannelUi {
-            tx,
-            ctx: egui::Context::default(),
-        };
-        assert_eq!(ui.ask_exists("db"), ExistsChoice::Cancel);
-        assert_eq!(ui.ask_error("s", "e"), ErrorChoice::Abort);
     }
 }

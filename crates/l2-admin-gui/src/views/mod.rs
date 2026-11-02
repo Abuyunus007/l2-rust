@@ -12,6 +12,7 @@
 //! [`View::on_event`], which receives every [`BridgeEvent`].
 
 pub mod accounts;
+pub mod backups;
 pub mod config_editor;
 pub mod connection;
 pub mod data_browser;
@@ -21,6 +22,8 @@ pub mod logs;
 pub mod packets;
 pub mod players;
 pub mod servers;
+pub mod setup;
+pub mod setup_core;
 
 use crate::app::AppCtx;
 use crate::bridge::BridgeEvent;
@@ -38,10 +41,12 @@ pub trait View {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ViewId {
     Connection,
+    Setup,
     Servers,
     Players,
     GameAdmin,
     Accounts,
+    Backups,
     Logs,
     Packets,
     Data,
@@ -50,12 +55,14 @@ pub enum ViewId {
 }
 
 impl ViewId {
-    pub const ALL: [ViewId; 10] = [
+    pub const ALL: [ViewId; 12] = [
         ViewId::Connection,
+        ViewId::Setup,
         ViewId::Servers,
         ViewId::Players,
         ViewId::GameAdmin,
         ViewId::Accounts,
+        ViewId::Backups,
         ViewId::Logs,
         ViewId::Packets,
         ViewId::Data,
@@ -66,10 +73,12 @@ impl ViewId {
     pub fn label(self) -> &'static str {
         match self {
             ViewId::Connection => "Connection",
+            ViewId::Setup => "Setup",
             ViewId::Servers => "Servers",
             ViewId::Players => "Players",
             ViewId::GameAdmin => "Game admin",
             ViewId::Accounts => "Accounts",
+            ViewId::Backups => "Backups",
             ViewId::Logs => "Logs",
             ViewId::Packets => "Packets",
             ViewId::Data => "Data",
@@ -83,10 +92,12 @@ impl ViewId {
         matches!(
             self,
             ViewId::Connection
+                | ViewId::Setup
                 | ViewId::Servers
                 | ViewId::Players
                 | ViewId::GameAdmin
                 | ViewId::Accounts
+                | ViewId::Backups
                 | ViewId::Logs
                 | ViewId::Packets
                 | ViewId::Data
@@ -100,10 +111,12 @@ impl ViewId {
     pub fn planned_in(self) -> &'static str {
         match self {
             ViewId::Connection
+            | ViewId::Setup
             | ViewId::Servers
             | ViewId::Players
             | ViewId::GameAdmin
             | ViewId::Accounts
+            | ViewId::Backups
             | ViewId::Logs
             | ViewId::Packets
             | ViewId::Data
@@ -117,10 +130,12 @@ impl ViewId {
 #[derive(Default)]
 pub struct Views {
     pub connection: connection::ConnectionView,
+    pub setup: setup::SetupView,
     pub servers: servers::ServersView,
     pub players: players::PlayersView,
     pub game_admin: game_admin::GameAdminView,
     pub accounts: accounts::AccountsView,
+    pub backups: backups::BackupsView,
     pub logs: logs::LogsView,
     pub packets: packets::PacketsView,
     pub data: data_browser::DataBrowserView,
@@ -133,10 +148,12 @@ impl Views {
     pub fn get_mut(&mut self, id: ViewId) -> Option<&mut dyn View> {
         match id {
             ViewId::Connection => Some(&mut self.connection),
+            ViewId::Setup => Some(&mut self.setup),
             ViewId::Servers => Some(&mut self.servers),
             ViewId::Players => Some(&mut self.players),
             ViewId::GameAdmin => Some(&mut self.game_admin),
             ViewId::Accounts => Some(&mut self.accounts),
+            ViewId::Backups => Some(&mut self.backups),
             ViewId::Logs => Some(&mut self.logs),
             ViewId::Packets => Some(&mut self.packets),
             ViewId::Data => Some(&mut self.data),
@@ -147,10 +164,12 @@ impl Views {
 
     pub fn dispatch(&mut self, event: &BridgeEvent) {
         self.connection.on_event(event);
+        self.setup.on_event(event);
         self.servers.on_event(event);
         self.players.on_event(event);
         self.game_admin.on_event(event);
         self.accounts.on_event(event);
+        self.backups.on_event(event);
         self.logs.on_event(event);
         self.packets.on_event(event);
     }

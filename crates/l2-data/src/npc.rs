@@ -199,9 +199,75 @@ java_enum! {
     }
 }
 
+/// The multipliers of one NPC kind in `Custom/NpcStatMultipliers.ini` (`<Kind>HpMultiplier` and
+/// the like; the keys of the aggro and clan help range are spelled `AgrroRange` there).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct StatMultipliers {
+    /// `<Kind>HpMultiplier`.
+    pub hp: f64,
+    /// `<Kind>MpMultiplier`.
+    pub mp: f64,
+    /// `<Kind>PAtkMultiplier`.
+    pub p_atk: f64,
+    /// `<Kind>MAtkMultiplier`.
+    pub m_atk: f64,
+    /// `<Kind>PDefMultiplier`.
+    pub p_def: f64,
+    /// `<Kind>MDefMultiplier`.
+    pub m_def: f64,
+    /// `<Kind>AgrroRangeMultiplier`.
+    pub aggro_range: f64,
+    /// `<Kind>ClanHelpRangeMultiplier`.
+    pub clan_help_range: f64,
+}
+
+impl Default for StatMultipliers {
+    /// Java's default of every key: 1.
+    fn default() -> Self {
+        Self {
+            hp: 1.0,
+            mp: 1.0,
+            p_atk: 1.0,
+            m_atk: 1.0,
+            p_def: 1.0,
+            m_def: 1.0,
+            aggro_range: 1.0,
+            clan_help_range: 1.0,
+        }
+    }
+}
+
+/// Java `NpcStatMultipliersConfig` with `EnableNpcStatMultipliers` on: what `NpcTemplate`'s
+/// constructor multiplies, by the template's `type`.
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub struct NpcStatMultipliers {
+    /// Type `Monster`.
+    pub monster: StatMultipliers,
+    /// Types `RaidBoss` and `GrandBoss`.
+    pub raidboss: StatMultipliers,
+    /// Type `Guard`.
+    pub guard: StatMultipliers,
+    /// Type `Defender`.
+    pub defender: StatMultipliers,
+}
+
+impl NpcStatMultipliers {
+    /// The multipliers for an NPC `type`, `None` for every other type (Java's `switch` has no
+    /// `default`; `QuestGuard`, `FortCommander` and the rest are not multiplied).
+    pub fn for_type(&self, npc_type: &str) -> Option<&StatMultipliers> {
+        match npc_type {
+            "Monster" => Some(&self.monster),
+            "RaidBoss" | "GrandBoss" => Some(&self.raidboss),
+            "Guard" => Some(&self.guard),
+            "Defender" => Some(&self.defender),
+            _ => None,
+        }
+    }
+}
+
 /// What the server config contributes to loading NPCs. The defaults are Java's *code* defaults
 /// (not the values of the shipped `.ini` files), like [`crate::item::ItemTemplates::load`].
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NpcLoadOptions {
     /// `General.ini` `CustomNpcData` (default false): also load `data/stats/npcs/custom`.
     pub custom_npc_data: bool,
@@ -212,6 +278,8 @@ pub struct NpcLoadOptions {
     pub max_aggro_range: i32,
     /// `NPC.ini` `DefaultCorpseTime` (default 7): the corpse time of NPCs without `<corpseTime>`.
     pub default_corpse_time: i32,
+    /// `Custom/NpcStatMultipliers.ini`: `Some` when `EnableNpcStatMultipliers` is on (default off).
+    pub stat_multipliers: Option<NpcStatMultipliers>,
 }
 
 impl Default for NpcLoadOptions {
@@ -221,6 +289,7 @@ impl Default for NpcLoadOptions {
             fake_players_enabled: false,
             max_aggro_range: 450,
             default_corpse_time: 7,
+            stat_multipliers: None,
         }
     }
 }
@@ -622,6 +691,22 @@ impl NpcTemplate {
     }
 
     /// Reads a finished `StatSet` into a template, like `NpcTemplate.set`.
+    /// The end of Java's `NpcTemplate` constructor: "Custom NPC Stat Multipliers". The fields
+    /// are `float` and `int`, so every product is narrowed back (`x *= double`).
+    fn apply_stat_multipliers(&mut self, multipliers: &NpcStatMultipliers) {
+        let Some(m) = multipliers.for_type(&self.npc_type) else {
+            return;
+        };
+        self.base_hp_max = (f64::from(self.base_hp_max) * m.hp) as f32;
+        self.base_mp_max = (f64::from(self.base_mp_max) * m.mp) as f32;
+        self.base_p_atk = (f64::from(self.base_p_atk) * m.p_atk) as i32;
+        self.base_m_atk = (f64::from(self.base_m_atk) * m.m_atk) as i32;
+        self.base_p_def = (f64::from(self.base_p_def) * m.p_def) as i32;
+        self.base_m_def = (f64::from(self.base_m_def) * m.m_def) as i32;
+        self.aggro_range = (f64::from(self.aggro_range) * m.aggro_range) as i32;
+        self.clan_help_range = (f64::from(self.clan_help_range) * m.clan_help_range) as i32;
+    }
+
     fn from_set(set: &StatSet, parts: Parts, options: &NpcLoadOptions) -> Result<Self, DataError> {
         let id = set.get_int("id", 0)?;
         let npc_type = set.get_string("type", "Folk");
@@ -935,7 +1020,10 @@ impl NpcTemplates {
             return Ok(None);
         }
 
-        let template = NpcTemplate::from_set(&set, parts, options)?;
+        let mut template = NpcTemplate::from_set(&set, parts, options)?;
+        if let Some(multipliers) = &options.stat_multipliers {
+            template.apply_stat_multipliers(multipliers);
+        }
         if !template.minion_list("Privates").is_empty()
             && !template.parameters.contains_key("SummonPrivateRate")
         {

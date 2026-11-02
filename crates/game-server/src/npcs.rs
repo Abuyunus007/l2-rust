@@ -106,6 +106,7 @@ pub fn spawn_npcs_with_scripts(
     scripts: Option<l2_world::ScriptRegistry>,
 ) {
     world.set_npc_settings(npc_settings(config, config_dir));
+    world.set_custom_settings(crate::custom_monsters::custom_settings(config, config_dir));
     world.set_ai_settings(ai_settings(config));
     world.set_water_check(water_check(datapack));
     world.set_id_factory(ids);

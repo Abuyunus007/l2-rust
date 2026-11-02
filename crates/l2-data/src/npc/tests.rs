@@ -518,3 +518,83 @@ fn missing_folder_loads_nothing() {
     let dir = tempfile::tempdir().unwrap();
     assert!(NpcTemplates::load(dir.path(), &NpcLoadOptions::default()).is_empty());
 }
+
+// ---- Custom/NpcStatMultipliers.ini (M9-C01)
+
+const MULTIPLIED: &str = r#"
+    <npc id="1" type="Monster"><stats><vitals hp="1000" mp="100"/><attack physical="100" magical="50"/><defence physical="80" magical="40"/></stats><ai aggroRange="200" clanHelpRange="300"/></npc>
+    <npc id="2" type="RaidBoss"><stats><vitals hp="1000" mp="100"/></stats></npc>
+    <npc id="3" type="GrandBoss"><stats><vitals hp="1000" mp="100"/></stats></npc>
+    <npc id="4" type="Guard"><stats><vitals hp="1000" mp="100"/></stats></npc>
+    <npc id="5" type="Defender"><stats><vitals hp="1000" mp="100"/></stats></npc>
+    <npc id="6" type="Folk"><stats><vitals hp="1000" mp="100"/></stats></npc>
+    <npc id="7" type="QuestGuard"><stats><vitals hp="1000" mp="100"/></stats></npc>"#;
+
+fn scaled(factor: f64) -> NpcLoadOptions {
+    let all = StatMultipliers {
+        hp: factor,
+        mp: factor,
+        p_atk: factor,
+        m_atk: factor,
+        p_def: factor,
+        m_def: factor,
+        aggro_range: factor,
+        clan_help_range: factor,
+    };
+    NpcLoadOptions {
+        stat_multipliers: Some(NpcStatMultipliers {
+            monster: all,
+            raidboss: StatMultipliers { hp: 3.0, ..all },
+            guard: StatMultipliers { hp: 4.0, ..all },
+            defender: StatMultipliers { hp: 5.0, ..all },
+        }),
+        ..NpcLoadOptions::default()
+    }
+}
+
+/// `EnableNpcStatMultipliers = False` (the default): the templates are what the XML says.
+#[test]
+fn stat_multipliers_off_change_nothing() {
+    let t = load(MULTIPLIED);
+    let n = t.get(1).unwrap();
+    assert_eq!((n.base_hp_max, n.base_mp_max), (1000.0, 100.0));
+    assert_eq!(
+        (n.base_p_atk, n.base_m_atk, n.base_p_def, n.base_m_def),
+        (100, 50, 80, 40)
+    );
+    assert_eq!((n.aggro_range, n.clan_help_range), (200, 300));
+}
+
+/// On: every stat of a `Monster` is multiplied (`int *= double` truncates), a raid boss and a grand
+/// boss use the raid boss values, `Guard` and `Defender` their own; other types keep their stats.
+#[test]
+fn stat_multipliers_on_scale_by_type() {
+    let t = load_with(MULTIPLIED, &scaled(1.5));
+    let n = t.get(1).unwrap();
+    assert_eq!((n.base_hp_max, n.base_mp_max), (1500.0, 150.0));
+    assert_eq!(
+        (n.base_p_atk, n.base_m_atk, n.base_p_def, n.base_m_def),
+        (150, 75, 120, 60)
+    );
+    assert_eq!((n.aggro_range, n.clan_help_range), (300, 450));
+    assert_eq!(t.get(2).unwrap().base_hp_max, 3000.0);
+    assert_eq!(t.get(3).unwrap().base_hp_max, 3000.0);
+    assert_eq!(t.get(4).unwrap().base_hp_max, 4000.0);
+    assert_eq!(t.get(5).unwrap().base_hp_max, 5000.0);
+    // `Folk` and `QuestGuard` have no case in Java's switch.
+    assert_eq!(t.get(6).unwrap().base_hp_max, 1000.0);
+    assert_eq!(t.get(7).unwrap().base_hp_max, 1000.0);
+}
+
+/// The aggro range is capped (`MaxAggroRange`) before the multiplier, like the constructor.
+#[test]
+fn stat_multipliers_apply_after_the_aggro_cap() {
+    let t = load_with(
+        r#"<npc id="1" type="Monster"><ai aggroRange="2000"/></npc>"#,
+        &NpcLoadOptions {
+            max_aggro_range: 450,
+            ..scaled(2.0)
+        },
+    );
+    assert_eq!(t.get(1).unwrap().aggro_range, 900);
+}

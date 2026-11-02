@@ -461,12 +461,12 @@ impl<'w> ScriptCtx<'w> {
 
     /// Java `giveItemRandomly(player, npc, itemId, minAmount, maxAmount, limit, dropChance,
     /// playSound)`. `true` when the item was given and the limit is reached (or there is no
-    /// limit). Champions are not rolled in this server, so their bonus never applies.
+    /// limit). A champion `npc` raises the chance and the amounts (`ChampionMonsters.ini`).
     #[allow(clippy::too_many_arguments)]
     pub fn give_item_randomly(
         &mut self,
         player: ObjectId,
-        _npc: Option<ScriptNpc>,
+        npc: Option<ScriptNpc>,
         item_id: i32,
         min_amount: i64,
         max_amount: i64,
@@ -479,8 +479,18 @@ impl<'w> ScriptCtx<'w> {
             return true;
         }
         let multiplier = self.world.scripts.settings.quest_item_drop_amount_multiplier;
-        let min_with_bonus = (min_amount as f32 * multiplier) as i64;
-        let max_with_bonus = (max_amount as f32 * multiplier) as i64;
+        let mut min_with_bonus = (min_amount as f32 * multiplier) as i64;
+        let mut max_with_bonus = (max_amount as f32 * multiplier) as i64;
+        let mut drop_chance_with_bonus = drop_chance;
+        // `(npc != null) && CHAMPION_ENABLE && npc.isChampion()` (`custom/champion.rs`): the
+        // `long *= float` of Java is a float product narrowed back to a long.
+        if let Some((chance, amount)) =
+            npc.and_then(|n| self.world.champion_quest_drop_factors(n.object_id, item_id))
+        {
+            drop_chance_with_bonus *= f64::from(chance);
+            min_with_bonus = (min_with_bonus as f32 * amount) as i64;
+            max_with_bonus = (max_with_bonus as f32 * amount) as i64;
+        }
         let mut amount = if min_with_bonus == max_with_bonus {
             min_with_bonus
         } else {
@@ -488,7 +498,10 @@ impl<'w> ScriptCtx<'w> {
         };
         let random = self.world.rng().next_f64();
         // Inventory slot check (almost useless for non-stacking items).
-        if drop_chance >= random && amount > 0 && self.world.validate_capacity_by_item_id(player, item_id) {
+        if drop_chance_with_bonus >= random
+            && amount > 0
+            && self.world.validate_capacity_by_item_id(player, item_id)
+        {
             if limit > 0 && current + amount > limit {
                 amount = limit - current;
             }

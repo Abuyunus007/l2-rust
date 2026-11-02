@@ -851,7 +851,7 @@ impl World {
             is_raid: view.is_raid(),
             hp_regen_multiplier: self.regen.hp_regen_multiplier,
             raid_hp_regen_multiplier: self.regen.raid_hp_regen_multiplier,
-            champion_hp_regen: None,
+            champion_hp_regen: self.champion_hp_regen(id),
             multipliers: &[],
             mother_tree_hp_regen_bonus: 0,
             regenerate_hp_rate: &rate,
