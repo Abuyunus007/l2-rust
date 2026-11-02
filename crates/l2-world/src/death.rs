@@ -534,7 +534,7 @@ impl World {
         // `!OlympiadManager.isRegistered(player) && !player.isOnEvent()` (M8-OLY-01; the events
         // are scripts).
         let fixed_res = self.players.get(&id).is_some_and(|p| {
-            (!self.olympiad_is_registered(id) && self.have_item_for_self_resurrection(id))
+            (!self.olympiad_is_registered(id) && !self.is_on_event(id) && self.have_item_for_self_resurrection(id))
                 || self.data.access_level_allows_fixed_res(p.data.access_level)
         });
         let (to_clan_hall, to_castle, to_siege_hq, to_fortress) = if can_teleport {
@@ -645,7 +645,10 @@ impl World {
         if !self.is_dead(id) {
             return;
         }
-        // Custom event resurrection: events are not modelled.
+        // Custom event resurrection management.
+        if self.is_on_event(id) && self.custom_event_resurrect(id) {
+            return;
+        }
         // An attacker of the siege the player lies in waits `AttackerRespawn` (M7-SIEGE-01).
         if self.siege_delay_attacker_restart(id, point_type) {
             return;

@@ -821,7 +821,11 @@ impl World {
         {
             return false;
         }
-        // Events (`isOnEvent`): not modelled.
+        // Check if the attacker is in an event.
+        if self.is_on_event(subject) {
+            return self.is_on_solo_event(subject)
+                || self.team_of(subject) != self.acting_player_of(attacker).map_or(0, |a| self.team_of(a));
+        }
         // Check if the attacker is a Playable.
         if attacker_is_player {
             if self.is_inside_zone(subject, ZoneId::Peace) || self.is_inside_zone(subject, ZoneId::NoPvp) {

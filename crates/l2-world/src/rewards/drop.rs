@@ -809,7 +809,10 @@ impl World {
     /// Java `Player.onDieDropItem(killer)`: a player with karma, or one killed by a monster, may
     /// drop items on the ground.
     pub(crate) fn player_on_die_drop_item(&mut self, dying: ObjectId, killer: ObjectId) {
-        // `isOnEvent()`: no events.
+        // `isOnEvent()`.
+        if self.is_on_event(dying) {
+            return;
+        }
         let killer_is_player = self.players.contains_key(&killer);
         // A player without karma killed by a player whose clan declared war on its clan drops
         // nothing. NOTE(java-quirk): only this direction counts (the other one is commented out

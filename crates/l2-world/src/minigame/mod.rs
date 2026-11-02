@@ -167,6 +167,10 @@ pub(crate) struct PlayerMinigame {
     pub(crate) block_arena: i32,
     /// `_isRegisteredOnEvent`.
     pub(crate) registered_on_event: bool,
+    /// `_isOnEvent` and `_isOnSoloEvent`: the custom events of `data/scripts/custom/events`
+    /// (M9-C07).
+    pub(crate) on_event: bool,
+    pub(crate) on_solo_event: bool,
     /// `_krateiArena`.
     pub(crate) krateis_arena: Option<i32>,
     /// `_ucState`.
@@ -183,6 +187,8 @@ impl Default for PlayerMinigame {
         Self {
             block_arena: -1,
             registered_on_event: false,
+            on_event: false,
+            on_solo_event: false,
             krateis_arena: None,
             uc_state: UC_STATE_NONE,
             uc_kills: 0,
@@ -288,13 +294,36 @@ impl World {
         Some(self.minigames.players.entry(id).or_default())
     }
 
-    /// Java `Player.isRegisteredOnEvent()`: `_isRegisteredOnEvent || _isOnEvent` (the custom events
-    /// that set `_isOnEvent` are not ported).
+    /// Java `Player.isRegisteredOnEvent()`: `_isRegisteredOnEvent || _isOnEvent`.
     pub fn is_registered_on_event(&self, id: ObjectId) -> bool {
         self.minigames
             .players
             .get(&id)
-            .is_some_and(|p| p.registered_on_event)
+            .is_some_and(|p| p.registered_on_event || p.on_event)
+    }
+
+    /// Java `Player.isOnEvent()`.
+    pub fn is_on_event(&self, id: ObjectId) -> bool {
+        self.minigames.players.get(&id).is_some_and(|p| p.on_event)
+    }
+
+    /// Java `Player.setOnEvent(value)`.
+    pub fn set_on_event(&mut self, id: ObjectId, value: bool) {
+        if let Some(p) = self.player_minigame_mut(id) {
+            p.on_event = value;
+        }
+    }
+
+    /// Java `Player.isOnSoloEvent()`.
+    pub fn is_on_solo_event(&self, id: ObjectId) -> bool {
+        self.minigames.players.get(&id).is_some_and(|p| p.on_solo_event)
+    }
+
+    /// Java `Player.setOnSoloEvent(value)`.
+    pub fn set_on_solo_event(&mut self, id: ObjectId, value: bool) {
+        if let Some(p) = self.player_minigame_mut(id) {
+            p.on_solo_event = value;
+        }
     }
 
     /// Java `Player.setRegisteredOnEvent(value)`.

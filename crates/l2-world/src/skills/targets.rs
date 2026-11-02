@@ -328,6 +328,13 @@ impl World {
                 if self.is_in_party_with(caster, target) || self.is_in_same_command_channel(caster, target) {
                     return false;
                 }
+                if self.is_on_event(caster)
+                    && !self.is_on_solo_event(caster)
+                    && self.is_on_event(target)
+                    && self.team_of(caster) == self.team_of(target)
+                {
+                    return false;
+                }
                 if !source_in_arena
                     && !(self.is_inside_zone(target, ZoneId::Pvp)
                         && !self.is_inside_zone(target, ZoneId::Siege))

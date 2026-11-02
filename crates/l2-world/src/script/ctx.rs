@@ -791,6 +791,11 @@ impl<'w> ScriptCtx<'w> {
             .cancel_quest_timer(self.script, name, npc.map(|n| n.object_id), player);
     }
 
+    /// Java `getQuestTimers().values()` cancelled one by one: every quest timer of the script.
+    pub fn cancel_all_quest_timers(&mut self) {
+        self.world.cancel_all_quest_timers(self.script);
+    }
+
     /// Java `cancelQuestTimers(name)`.
     pub fn cancel_quest_timers(&mut self, name: &str) {
         self.world.cancel_quest_timers(self.script, name);
