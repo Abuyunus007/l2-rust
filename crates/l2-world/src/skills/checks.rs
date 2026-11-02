@@ -645,7 +645,11 @@ impl World {
                 self.send(id, &ActionFailed);
                 return false;
             }
-            // Event monsters: none.
+            // Check for Event Mob's (a script flags them, M9-C07).
+            if self.event_monster_blocks_skills(target) {
+                self.send(id, &ActionFailed);
+                return false;
+            }
             // Check if a Forced ATTACK is in progress on non-attackable target.
             if !self.is_auto_attackable_by(target, id) && !force_use {
                 let allowed = matches!(

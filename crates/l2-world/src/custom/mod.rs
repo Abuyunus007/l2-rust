@@ -4,6 +4,7 @@
 //! M9-C07: the switches of the custom scripts (DelevelManager, NoblessMaster, Transmog, the
 //! custom events), `//event_start` and friends, the transmog appearance collection.
 
+pub mod events;
 pub mod script_features;
 pub mod transmog;
 

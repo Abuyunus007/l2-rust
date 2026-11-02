@@ -109,6 +109,8 @@ pub struct CustomScriptSettings {
 pub struct CustomScriptWorld {
     pub(crate) settings: CustomScriptSettings,
     pub(crate) transmog: super::transmog::TransmogWorld,
+    /// The flags of the `EventMonster`s a script set.
+    pub(crate) event_monsters: BTreeMap<ObjectId, super::events::EventMonsterFlags>,
 }
 
 impl World {
@@ -231,8 +233,11 @@ fn admin_events(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
                 world.send_sys_message(gm, "Usage: //event_bypass <eventname> <bypass>");
             }
             Some((id, true, script)) => {
-                script.event_bypass(&mut crate::script::ScriptCtx::new(world, id), gm, event_bypass);
+                let result = script.event_bypass(&mut crate::script::ScriptCtx::new(world, id), gm, event_bypass);
                 world.script_drain();
+                if result.is_err() {
+                    world.send_sys_message(gm, "Usage: //event_bypass <eventname> <bypass>");
+                }
             }
             None => {}
         }

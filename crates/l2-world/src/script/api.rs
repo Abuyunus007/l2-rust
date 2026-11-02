@@ -110,9 +110,15 @@ pub trait Script: Send + Sync + 'static {
         false
     }
 
-    /// Java `Event.eventBypass(player, bypass)` (`//event_bypass <name> <bypass>`).
-    fn event_bypass(&self, ctx: &mut ScriptCtx<'_>, player: ObjectId, bypass: &str) -> bool {
-        false
+    /// Java `Event.eventBypass(player, bypass)` (`//event_bypass <name> <bypass>`). An `Err` is
+    /// the exception Java throws (a bad number), which `AdminEvents` answers with its usage line.
+    fn event_bypass(
+        &self,
+        ctx: &mut ScriptCtx<'_>,
+        player: ObjectId,
+        bypass: &str,
+    ) -> Result<bool, crate::admin::JavaException> {
+        Ok(false)
     }
 
     /// Java `onLoad()`: called once after every script was registered and the world data is in.
