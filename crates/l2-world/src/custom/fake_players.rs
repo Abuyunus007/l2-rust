@@ -16,8 +16,8 @@
 // # Left out
 // - The `PvpRewardItem` and `PvpAnnounce` custom features Java runs when a fake player is killed
 //   (`Npc.doDie`) or kills (`Player.doDie`): they are their own custom cards.
-// - `//reload fakeplayerchat` (like every reload of a table loaded at the start, it needs a
-//   restart).
+// - Nothing of M9-L01's list: `//reload fakeplayerchat` (`ControlRequest::ReloadFakePlayerChat`),
+//   the bot report, the follow after a click, the herbs and the aggro of monsters are ported.
 
 use std::collections::{BTreeMap, HashMap};
 
@@ -30,6 +30,7 @@ use l2_util::ObjectId;
 use tracing::info;
 
 use crate::admin::{AdminHandler, AdminHandlers, JavaException};
+use crate::effects::SkillKey;
 use crate::timer::{TimerKind, TimerWheel};
 use crate::world::World;
 
@@ -152,12 +153,54 @@ impl World {
         }
     }
 
+    /// The answer to `//reload fakeplayerchat` (Java `FakePlayerChatManager.load()`): with the
+    /// system on, the templates are reported, and with the chat on the lines are replaced
+    /// (`MESSAGES.clear()`, then the file). The GMs hear it either way.
+    pub(crate) fn on_fake_player_chat_reloaded(
+        &mut self,
+        requester: ObjectId,
+        chat: Vec<FakePlayerChatEntry>,
+    ) {
+        if self.settings.fake_players.enabled {
+            info!(
+                "FakePlayerData: Loaded {} templates.",
+                self.fake_players.names.len()
+            );
+            if self.settings.fake_players.chat {
+                info!("FakePlayerChatManager: Loaded {} chat templates.", chat.len());
+                self.fake_players.chat = chat;
+            }
+        }
+        let name = self.object_name(requester).unwrap_or_default();
+        self.broadcast_message_to_gms(&format!("{name}: Reloaded Fake Player Chat data."));
+        if self.players.contains_key(&requester) {
+            crate::admin::reload::reload_warning(self, requester);
+        }
+    }
+
     /// Java `NpcTemplate.isFakePlayer()` of an NPC in the world.
     pub fn is_fake_player(&self, id: ObjectId) -> bool {
         self.npcs
             .get(&id)
             .and_then(|n| self.npc_world.template(n.npc_id))
             .is_some_and(|t| t.fake_player)
+    }
+
+    /// Java `npc.getTemplate().getFakePlayerInfo().isTalkable()` of a fake player in the world.
+    pub(crate) fn fake_player_npc_talkable(&self, id: ObjectId) -> bool {
+        self.npcs
+            .get(&id)
+            .and_then(|n| self.npc_world.template(n.npc_id))
+            .and_then(|t| t.fake_player_info.as_ref())
+            .is_some_and(|look| look.fake_player_talkable)
+    }
+
+    /// Java `Npc.getName()` of a fake player (the name its `FakePlayerInfo` sends).
+    pub(crate) fn fake_player_npc_name(&self, id: ObjectId) -> Option<String> {
+        self.npcs
+            .get(&id)
+            .and_then(|n| self.npc_world.template(n.npc_id))
+            .map(|t| t.name.clone())
     }
 
     /// Java `FakePlayerData.getProperName(name)`: `None` for a name no fake player has.
@@ -653,7 +696,8 @@ impl World {
         let Some(item) = self.fake_players.drops.get(&id).and_then(|d| d.last()).copied() else {
             return;
         };
-        if self.ground_item(item).is_some() {
+        if let Some(ground) = self.ground_item(item) {
+            let item_id = ground.data.item_id;
             let (Some(here), Some(there)) = (self.position_of(id), self.position_of(item)) else {
                 return;
             };
@@ -674,13 +718,34 @@ impl World {
                     },
                 );
                 // `pickupMe` and `ItemsOnGroundManager.removeObject`: the item is gone.
-                // NOTE: an herb's skills (`hasExImmediateEffect`) are not cast by the fake player.
                 self.decay_ground_item(item);
+                // "if (droppedItem.getTemplate().hasExImmediateEffect())": an herb's skills are cast
+                // by the fake player.
+                self.fake_player_cast_herb(id, item_id);
             }
         } else if let Some(drops) = self.fake_players.drops.get_mut(&id) {
             drops.pop();
         }
         self.set_running(id, true);
+    }
+
+    /// The herb part of the pickup: each skill of an item with `hasExImmediateEffect()` is cast
+    /// by the fake player (`doSimultaneousCast`), then `broadcastInfo()` ("check if this is
+    /// necessary" in Java).
+    fn fake_player_cast_herb(&mut self, id: ObjectId, item_id: i32) {
+        let Some(templates) = self.item_templates() else {
+            return;
+        };
+        let Some(template) = templates.get(item_id) else {
+            return;
+        };
+        if !template.ex_immediate_effect {
+            return;
+        }
+        for holder in template.skills.item_skills.iter().flatten() {
+            self.do_simultaneous_cast(id, SkillKey::new(holder.id, holder.level));
+        }
+        self.broadcast_info(id);
     }
 
     /// `Attackable.doItemDrop` for a fake player as the main damage dealer
@@ -737,7 +802,10 @@ impl World {
             if auto_loot {
                 // Do nothing.
             } else if ground.auto_loot_herbs && item.ex_immediate_effect {
-                // NOTE: the herb's skills are not cast by the fake player.
+                // `doSimultaneousCast` of each skill of the herb, then `broadcastInfo()`.
+                for holder in item.skills.item_skills.iter().flatten() {
+                    self.do_simultaneous_cast(dealer, SkillKey::new(holder.id, holder.level));
+                }
                 self.broadcast_info(dealer);
             } else {
                 let dropped = self.npc_drop_item(dying, Some(dealer), drop.id, drop.count);
