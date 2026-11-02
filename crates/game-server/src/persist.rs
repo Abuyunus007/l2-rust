@@ -4722,7 +4722,8 @@ pub fn build_character_update(player: &PlayerData, row: &CharacterRow) -> Charac
             i32::from(row.vitality_points)
         },
         language: row.language.clone(),
-        faction: i32::from(row.faction),
+        // Java writes 1 for a good player, 2 for an evil one, else 0 (M9-C04).
+        faction: player.profile.faction,
         // Java writes `getPcCafePoints()`: hunting, the retail timer and multisell change it
         // (M6-FU-11).
         pccafe_points: player.profile.pccafe_points,

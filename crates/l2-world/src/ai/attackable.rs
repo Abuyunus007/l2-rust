@@ -28,7 +28,7 @@
 // # Left out (each with its card)
 // - Scripts: `ON_NPC_HATE`, `ON_ATTACKABLE_FACTION_CALL` and the other events (D-05);
 //   `isCoreAIDisabled` is always false.
-// - Fake players, the faction system, champions. (`WalkingManager` is `walking.rs`, M8-MISC-01.)
+// - Fake players, champions. (`WalkingManager` is `walking.rs`, M8-MISC-01.)
 // - The siege guards' own AIs (`SiegeGuardAI`, `FortSiegeGuardAI`): `siege_guard.rs` and
 //   `fort_siege_guard.rs` (M7-SIEGE-02); the entry points here hand a defender over to them.
 //
@@ -610,7 +610,11 @@ impl World {
             if self.is_recent_fake_death(player) {
                 return false;
             }
-            // The faction system's guards are custom (not ported).
+            // The faction system's guards (`Custom/FactionSystem.ini`): any NPC of the clan of the
+            // other team is aggressive towards the player.
+            if self.faction_guard_hates(player, me) {
+                return true;
+            }
             // Dimensional Rift check.
             if self.rift_invader_out_of_room(me, target) {
                 return false;
@@ -723,17 +727,21 @@ impl World {
         if global_aggro >= 0 {
             // Only players can be aggressed (see `is_aggressive_towards`; a guard may also
             // aggress monsters), and they are far fewer than the objects around the NPC.
-            let targets: Vec<ObjectId> = self
-                .aggro_candidates(id)
-                .into_iter()
-                // A festival monster only goes for the participants of the festival.
-                .filter(|target| {
-                    !(self.is_festival_monster(id)
-                        && self.is_player(*target)
-                        && !self.is_festival_participant(*target))
-                })
-                .filter(|target| self.is_aggressive_towards(id, *target))
-                .collect();
+            // An aggressive fake player picks its own targets and loot (`Custom/FakePlayers.ini`).
+            let targets: Vec<ObjectId> = if self.fake_player_aggro_scan(id) {
+                Vec::new()
+            } else {
+                self.aggro_candidates(id)
+                    .into_iter()
+                    // A festival monster only goes for the participants of the festival.
+                    .filter(|target| {
+                        !(self.is_festival_monster(id)
+                            && self.is_player(*target)
+                            && !self.is_festival_participant(*target))
+                    })
+                    .filter(|target| self.is_aggressive_towards(id, *target))
+                    .collect()
+            };
             for target in targets {
                 // `ON_NPC_HATE` can terminate the aggression here (S-API-01).
                 if !self.script_npc_hate(id, target) {
@@ -808,7 +816,10 @@ impl World {
                 }
             };
             if !self.is_walker(id) && away && target_gone {
-                self.set_running(id, false);
+                // A fake player keeps running (`Attackable.addDamageHate`'s `setWalking`).
+                if !self.is_fake_player(id) {
+                    self.set_running(id, false);
+                }
                 self.return_home(id);
                 return;
             }
@@ -1046,7 +1057,9 @@ impl World {
             self.set_ai_target(id, None);
             self.aggro_clear(id);
             self.attack_by_clear(id);
-            self.set_running(id, false);
+            if !self.is_fake_player(id) {
+                self.set_running(id, false);
+            }
             // Monster teleport to spawn.
             if class.is_monster()
                 && self.npcs.get(&id).is_some_and(|n| n.spawn.is_some())
@@ -2028,6 +2041,8 @@ impl World {
         // Clear all aggro char from list
         self.aggro_clear(id);
         self.set_running(id, false);
+        // A fake player runs, has no karma and no flag (`Custom/FakePlayers.ini`).
+        self.fake_player_on_spawn(id);
         // Check the region where this mob is, do not activate the AI if region is inactive.
         if self.has_ai(id) {
             // Roll the aggro timeout again, the AI object survives a respawn

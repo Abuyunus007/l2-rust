@@ -344,8 +344,12 @@ impl World {
         let Some(skill) = skills.get(key.id, key.level) else {
             return false;
         };
+        // A fake player passes every condition (`Custom/FakePlayers.ini`).
+        if self.is_fake_player(creature) {
+            return true;
+        }
         // `creature.isPlayer() && isMounted() && hasNegativeEffect() && !MountEnabledSkillList
-        // .contains(_id)`, after the GM exemption (fake players are not ported).
+        // .contains(_id)`, after the GM exemption.
         let mount_refused = self.stats(creature).is_some_and(|v| {
             v.is_mounted()
                 && !(v.is_gm() && !v.settings().gm_skill_restriction)
@@ -368,7 +372,6 @@ impl World {
             let Some(view) = self.stats(creature) else {
                 return false;
             };
-            // Fake players are not ported.
             if view.is_gm() && !view.settings().gm_skill_restriction {
                 return true;
             }

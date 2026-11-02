@@ -169,7 +169,7 @@ impl World {
     /// `this`: only fights between playables are stopped by peace and no-PvP zones.
     pub(crate) fn is_inside_peace_zone(&self, this: ObjectId, attacker: ObjectId, target: ObjectId) -> bool {
         // `(target.isPlayable() || target.isFakePlayer()) && attacker.isPlayable()`.
-        if !(self.is_playable(target) && self.is_playable(attacker)) {
+        if !((self.is_playable(target) || self.is_fake_player(target)) && self.is_playable(attacker)) {
             return false;
         }
         // `InstanceManager.getInstance(getInstanceId()).isPvP()`: no peace in a PvP instance

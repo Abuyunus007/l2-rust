@@ -178,7 +178,7 @@ impl World {
     /// The `ALT_GAME_VIEWNPC` branch of `NpcShiftClick.onAction` for a player: target the NPC and
     /// show its page while it is alive.
     pub(crate) fn npc_view_shift_click(&mut self, player: ObjectId, target: ObjectId) {
-        if !self.is_plain_npc(target) {
+        if !self.is_plain_npc(target) || self.is_fake_player(target) {
             return;
         }
         self.set_target(player, Some(target));
