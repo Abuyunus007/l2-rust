@@ -77,6 +77,10 @@ pub struct PvpSettings {
     pub faction_system_enabled: bool,
     /// `PvpTitleColorConfig` (`Custom/PvpTitleColor.ini`).
     pub title_color: PvpTitleColorSettings,
+    /// `PvpRewardItemConfig` (`Custom/PvpRewardItem.ini`, M9-C05).
+    pub reward: crate::custom::pvp_rewards::PvpRewardItemSettings,
+    /// `PvpAnnounceConfig` (`Custom/PvpAnnounce.ini`, M9-C05).
+    pub announce: crate::custom::pvp_rewards::PvpAnnounceSettings,
 }
 
 impl Default for PvpSettings {
@@ -94,6 +98,8 @@ impl Default for PvpSettings {
             antifeed_interval_ms: 120_000,
             faction_system_enabled: false,
             title_color: PvpTitleColorSettings::default(),
+            reward: Default::default(),
+            announce: Default::default(),
         }
     }
 }

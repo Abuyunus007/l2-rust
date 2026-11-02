@@ -102,6 +102,9 @@ impl StaticData for Data {
             AccessLevelStatic::USER
         }
     }
+    fn item_stackable(&self, item_id: i32) -> bool {
+        self.0.items.get(item_id).is_some_and(|t| t.stackable)
+    }
     fn stat_data(&self) -> Option<&StatData> {
         Some(&self.0)
     }
@@ -171,6 +174,8 @@ const CLASS: &str = r#"<list><classId>0</classId><staticData>
 const ITEMS: &str = r#"<list>
 <item id="2" type="Weapon" name="Sword"><set name="weapon_type" val="SWORD" /><set name="bodypart" val="rhand" />
 <stats><stat type="pAtk">50</stat><stat type="mAtk">40</stat><stat type="pAtkSpd">379</stat><stat type="pAtkRange">40</stat></stats></item>
+<item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true" /></item>
+<item id="9500" type="EtcItem" name="Reward Coin"><set name="is_stackable" val="true" /></item>
 </list>"#;
 
 const WIND_STRIKE: i32 = 1177;
@@ -1060,4 +1065,194 @@ fn karma_and_the_kill_counts_are_stored() {
     s.input(ME, ClientInput::Logout);
     let stored = s.persisted.last_store();
     assert_eq!((stored.karma, stored.pk_kills, stored.pvp_kills), (720, 1, 1));
+}
+
+// ------------------------------------------------------------------ M9-C05 customs
+
+fn rewards_on() -> PvpSettings {
+    PvpSettings {
+        reward: PvpRewardItemSettings {
+            reward_pvp_item: true,
+            reward_pvp_item_id: 9500,
+            reward_pvp_item_amount: 1000,
+            reward_pk_item: true,
+            reward_pk_item_id: 57,
+            reward_pk_item_amount: 500,
+            ..PvpRewardItemSettings::default()
+        },
+        ..PvpSettings::default()
+    }
+}
+
+fn count_of(s: &Scene, id: ObjectId, item_id: i32) -> i64 {
+    s.world.inventory_item_count(id, item_id)
+}
+
+/// `PvpRewardItem.ini` with both switches off (the default): a PvP kill and a PK give nothing.
+#[test]
+fn pvp_reward_items_are_off_by_default() {
+    let mut s = Scene::new("reward-off");
+    s.three();
+    s.world.update_pvp_status(P2);
+    s.kill(P2, ME);
+    s.kill(P3, ME);
+    assert_eq!(count_of(&s, ME, 9500), 0);
+    assert_eq!(count_of(&s, ME, 57), 0);
+    assert!(!PvpRewardItemSettings::default().reward_pvp_item);
+    assert!(!PvpRewardItemSettings::default().reward_pk_item);
+}
+
+/// `Player.doDie`: a flagged victim pays the PvP item, an unflagged one the PK item, both to the
+/// killer, with the "You have obtained" message (`RewardPvpItemMessage`).
+#[test]
+fn pvp_reward_items_pay_the_killer_by_the_flag_of_the_victim() {
+    let mut s = Scene::with_pvp("reward-on", rewards_on());
+    s.three();
+    s.world.update_pvp_status(P2);
+    s.log.take();
+    s.kill(P2, ME);
+    assert_eq!((count_of(&s, ME, 9500), count_of(&s, ME, 57)), (1000, 0));
+    let sent = s.log.take();
+    assert!(names(&sent, ME.0).contains(&"SYSTEM_MESSAGE".to_string()));
+    // The victim has no flag: a PK.
+    s.kill(P3, ME);
+    assert_eq!((count_of(&s, ME, 9500), count_of(&s, ME, 57)), (1000, 500));
+    // Nobody else got anything.
+    assert_eq!(count_of(&s, P2, 57), 0);
+}
+
+/// `DisableRewardsInPvpZones` (default on) keeps the reward in an arena, `false` pays it.
+#[test]
+fn pvp_reward_items_respect_the_zone_switch() {
+    let mut s = Scene::build("reward-zone", rewards_on(), &cuboid(1, "ArenaZone"));
+    s.three();
+    s.kill(P3, ME);
+    assert_eq!(count_of(&s, ME, 57), 0);
+    let mut open = rewards_on();
+    open.reward.disable_rewards_in_pvp_zones = false;
+    let mut s = Scene::build("reward-zone-open", open, &cuboid(1, "ArenaZone"));
+    s.three();
+    s.kill(P3, ME);
+    assert_eq!(count_of(&s, ME, 57), 500);
+}
+
+fn announce_on(normal: bool) -> PvpSettings {
+    PvpSettings {
+        announce: PvpAnnounceSettings {
+            announce_pk_pvp: true,
+            announce_pk_pvp_normal_message: normal,
+            ..PvpAnnounceSettings::default()
+        },
+        ..PvpSettings::default()
+    }
+}
+
+/// The texts one client got in system messages (text parameters).
+fn announcements(sent: &Sent, to: i32) -> Vec<String> {
+    use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
+    let mut out = Vec::new();
+    for raw in of(sent, to, "SYSTEM_MESSAGE") {
+        let message = decode::<SystemMessage>(raw);
+        // The announcement is the `S1` message; others (the kill messages) carry names too.
+        if message.id != l2_protocol_game::SystemMessageId::S1 {
+            continue;
+        }
+        for p in message.params {
+            if let SystemMessageParam::Text(t) = p {
+                out.push(t);
+            }
+        }
+    }
+    out
+}
+
+/// `PvpAnnounce.ini` off: nothing is announced.
+#[test]
+fn pvp_announcements_are_off_by_default() {
+    let mut s = Scene::new("announce-off");
+    s.three();
+    s.world.update_pvp_status(P2);
+    s.log.take();
+    s.kill(P2, ME);
+    let sent = s.log.take();
+    for to in [ME, P2, P3] {
+        assert!(announcements(&sent, to.0).is_empty());
+    }
+}
+
+/// A PvP kill and a PK are announced to everybody with Java's texts, as a system message or as
+/// an announcement chat line (`AnnouncePkPvPNormalMessage`).
+#[test]
+fn pvp_and_pk_kills_are_announced_to_everybody() {
+    let mut s = Scene::with_pvp("announce-on", announce_on(true));
+    s.three();
+    s.world.update_pvp_status(P2);
+    s.log.take();
+    s.kill(P2, ME);
+    let sent = s.log.take();
+    let (killer, victim) = (s.data(ME).name.clone(), s.data(P2).name.clone());
+    for to in [ME, P2, P3] {
+        assert_eq!(
+            announcements(&sent, to.0),
+            [format!("{killer} has defeated {victim}")]
+        );
+    }
+    s.log.take();
+    s.kill(P3, ME);
+    let sent = s.log.take();
+    let victim = s.data(P3).name.clone();
+    assert_eq!(
+        announcements(&sent, P2.0),
+        [format!("{killer} has slaughtered {victim}")]
+    );
+
+    let mut s = Scene::with_pvp("announce-chat", announce_on(false));
+    s.three();
+    s.kill(P3, ME);
+    let sent = s.log.take();
+    assert!(announcements(&sent, P2.0).is_empty());
+    let chat = of(&sent, P2.0, "SAY2");
+    assert_eq!(chat.len(), 1);
+    let text = format!("{} has slaughtered {}", s.data(ME).name, s.data(P3).name);
+    let utf16: Vec<u8> = text.encode_utf16().flat_map(u16::to_le_bytes).collect();
+    assert!(chat[0].windows(utf16.len()).any(|w| w == utf16.as_slice()));
+}
+
+/// `PvpTitleColor.ini` off (the default): a PvP kill changes neither title nor colour.
+#[test]
+fn pvp_title_colour_is_off_by_default() {
+    let mut s = Scene::new("title-off");
+    let mut data = player_data(ME, "Killer", (X, Y, Z), sword());
+    data.pvp_kills = 499;
+    s.enter_data(data);
+    s.enter(P2, 40, vec![]);
+    s.ticks(20);
+    s.world.update_pvp_status(P2);
+    s.kill(P2, ME);
+    assert_eq!(s.data(ME).pvp_kills, 500);
+    assert_eq!(s.data(ME).title, "");
+}
+
+/// `Npc.doDie` of a fake player: the reward item and the announcement for the killing player
+/// (the fake player card calls it; the object stands in for the fake player here).
+#[test]
+fn a_fake_player_kill_pays_and_announces() {
+    let mut settings = rewards_on();
+    settings.announce = announce_on(true).announce;
+    let mut s = Scene::with_pvp("fake-kill", settings);
+    s.three();
+    s.log.take();
+    s.world.custom_fake_player_killed_rewards(P2, ME, true);
+    assert_eq!(count_of(&s, ME, 57), 500);
+    s.world.custom_fake_player_killed_rewards(P2, ME, false);
+    assert_eq!(count_of(&s, ME, 9500), 1000);
+    let sent = s.log.take();
+    let (killer, victim) = (s.data(ME).name.clone(), s.data(P2).name.clone());
+    assert_eq!(
+        announcements(&sent, P3.0),
+        [
+            format!("{killer} has slaughtered {victim}"),
+            format!("{killer} has defeated {victim}")
+        ]
+    );
 }

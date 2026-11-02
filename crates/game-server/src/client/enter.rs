@@ -89,6 +89,9 @@ pub struct DbPlayerLoader {
     hennas: HennaRepository,
     bookmarks: BookmarkRepository,
     contacts: ContactRepository,
+    rebirth: l2_db::RebirthRepository,
+    /// `RebirthConfig.REBIRTH_ALLOW_REBIRTH`: without it `rebirth_system` is not read.
+    rebirth_enabled: bool,
     subclasses: SubclassRepository,
     macros: MacroRepository,
     reco: RecommendationRepository,
@@ -116,6 +119,8 @@ impl DbPlayerLoader {
             hennas: HennaRepository::new(pool.clone()),
             bookmarks: BookmarkRepository::new(pool.clone()),
             contacts: ContactRepository::new(pool.clone()),
+            rebirth: l2_db::RebirthRepository::new(pool.clone()),
+            rebirth_enabled: false,
             subclasses: SubclassRepository::new(pool.clone()),
             macros: MacroRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
@@ -130,6 +135,13 @@ impl DbPlayerLoader {
             instance_times: l2_db::InstanceTimeRepository::new(pool.clone()),
             quests: l2_db::QuestRepository::new(pool),
         }
+    }
+
+    /// Reads `rebirth_system` for the characters (`Custom/Rebirth.ini` `RebirthAllow`, M9-C05).
+    #[must_use]
+    pub fn with_rebirth(mut self, enabled: bool) -> Self {
+        self.rebirth_enabled = enabled;
+        self
     }
 
     // Java: Player.restore
@@ -386,6 +398,15 @@ impl DbPlayerLoader {
             }
         };
 
+        // Java: RebirthManager.getCount / getSelectedSkills (read on demand there, here once at
+        // the load). A failed read is logged and the character counts as never reborn.
+        if self.rebirth_enabled {
+            match self.rebirth.rebirth_of(char_id).await {
+                Ok(row) => data.profile.rebirth = rebirth_data_of_row(row),
+                Err(e) => error!("Failed to load rebirth data: charId={char_id}: {e}"),
+            }
+        }
+
         // Java: Player.loadRecommendations (called from `checkRecoBonusTask` at EnterWorld)
         match self.reco.reco_bonus_of(char_id).await? {
             Some(reco) => {
@@ -598,6 +619,15 @@ fn bookmarks_of_rows(rows: Vec<BookmarkRow>) -> Vec<l2_world::BookmarkData> {
     }
     list.sort_by_key(|b| b.id);
     list
+}
+
+/// The `rebirth_system` row of a character (Java `RebirthManager.getCount` and
+/// `getSelectedSkills`); no row is a character that was never reborn.
+fn rebirth_data_of_row(row: Option<l2_db::RebirthRow>) -> l2_world::RebirthData {
+    match row {
+        Some(row) => l2_world::RebirthData::from_columns(row.rebirth_count, &row.selected_skills),
+        None => l2_world::RebirthData::default(),
+    }
 }
 
 /// The names of the `character_contacts` rows (Java `ContactList.restore`): a contact without a

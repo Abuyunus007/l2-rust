@@ -271,6 +271,10 @@ pub struct PlayerProfile {
     /// Java `Quest.playerEnter`); the world takes them at enter world, so snapshots never carry
     /// them.
     pub quests: crate::script::QuestLoad,
+    /// The `rebirth_system` row of the character (M9-C05, `custom/rebirth.rs`); the session
+    /// reads it with `Rebirth.ini` `RebirthAllow = True`, the world writes every change through
+    /// its own statements, so snapshots do not store it.
+    pub rebirth: crate::custom::rebirth::RebirthData,
 }
 
 impl Default for PlayerProfile {
@@ -322,6 +326,7 @@ impl Default for PlayerProfile {
             seven_signs_to_store: None,
             instance_times: Vec::new(),
             quests: crate::script::QuestLoad::default(),
+            rebirth: crate::custom::rebirth::RebirthData::default(),
         }
     }
 }

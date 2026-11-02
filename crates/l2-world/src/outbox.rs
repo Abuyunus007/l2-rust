@@ -137,6 +137,8 @@ pub enum PersistCommand {
     Bookmark(crate::bookmarks::BookmarkWrite),
     /// A `character_contacts` row change with Java's statement (L-04, see `contacts.rs`).
     Contact(crate::contacts::ContactWrite),
+    /// A `rebirth_system` row change with Java's statement (M9-C05, see `custom/rebirth.rs`).
+    Rebirth(crate::custom::rebirth::RebirthWrite),
     /// Asks the persistence task to read the `characters` rows (name, online, class, level) of
     /// friends who are not in the world for `FriendListExtended` (L-04). The answer comes back
     /// as `WorldCommand::FriendSummariesLoaded`.

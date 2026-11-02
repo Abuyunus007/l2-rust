@@ -947,7 +947,10 @@ impl World {
             self.check_player_skills(id, &mut writes);
         }
         self.give_free_mount_skills(id);
-        // The `RebirthConfig` skills: a Custom config, off by default.
+        // The `RebirthConfig` skills (M9-C05, `custom/rebirth.rs`), off by default.
+        if self.settings.rebirth.allow_rebirth {
+            self.rebirth_grant_skills(id);
+        }
 
         self.flush_skill_writes(id, writes);
 

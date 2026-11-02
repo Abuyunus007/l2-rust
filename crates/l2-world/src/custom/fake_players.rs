@@ -576,12 +576,15 @@ impl World {
         if self.npc_script_value(id) == 0 && self.fake_player_karma(id) < 0 {
             if self.settings.fake_players.kill_karma {
                 // Unreachable, kept for the shape of Java's code.
+                self.custom_fake_player_killed_rewards(id, player, true);
             }
         } else if self.settings.fake_players.kill_pvp {
             if let Some(p) = self.players.get_mut(&player) {
                 p.data.pvp_kills = p.data.pvp_kills.wrapping_add(1);
             }
             self.broadcast_user_info(player);
+            // The pvp item reward and the announcement (`PvpRewardItem.ini`, `PvpAnnounce.ini`).
+            self.custom_fake_player_killed_rewards(id, player, false);
         }
     }
 

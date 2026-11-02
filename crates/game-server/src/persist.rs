@@ -99,7 +99,7 @@ use l2_world::territory::{
 use l2_world::{AirshipRow, CursedLoad, CursedRow, CursedWrite, VehicleLoad, VehicleWrite};
 use l2_world::{AnnouncementRecord, AnnouncementWrite};
 use l2_world::{AuctionBidRecord, AuctionRecord, AuctionWrite};
-use l2_world::{BookmarkWrite, ContactWrite, FriendSummary};
+use l2_world::{BookmarkWrite, ContactWrite, FriendSummary, RebirthWrite};
 use l2_world::{
     BossLoad, BossReadKind, BossRereadRows, BossWrite, GrandBossData, GrandBossStoreRow, RaidBossData,
     RaidPointsRecord,
@@ -517,6 +517,15 @@ pub trait PlayerStore: Send + 'static {
     fn store_contact_write(
         &mut self,
         _write: &ContactWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// A `rebirth_system` row change (M9-C05): Java `RebirthManager.insertFirst` / `updateCount` /
+    /// `saveSelectedSkills`.
+    fn store_rebirth_write(
+        &mut self,
+        _write: &RebirthWrite,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
     }
@@ -1386,6 +1395,12 @@ async fn run<S: PlayerStore>(
                 // Java logs a failed contact statement and goes on (no retry).
                 if let Err(e) = store.store_contact_write(&write).await {
                     error!("Contact list data could NOT be stored ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::Rebirth(write)) => {
+                // Java logs a failed statement and goes on (no retry).
+                if let Err(e) = store.store_rebirth_write(&write).await {
+                    error!("Rebirth data could NOT be stored ({write:?}): {e}");
                 }
             }
             OutboxMessage::Persist(PersistCommand::FriendSummariesRequest { requester, friends }) => {
@@ -3953,6 +3968,7 @@ pub struct DbStore {
     coliseum: UndergroundColiseumRepository,
     bookmarks: BookmarkRepository,
     contacts: ContactRepository,
+    rebirth: l2_db::RebirthRepository,
     reco: RecommendationRepository,
     variables: VariableRepository,
     punishments: PunishmentRepository,
@@ -4053,6 +4069,7 @@ impl DbStore {
             coliseum: UndergroundColiseumRepository::new(pool.clone()),
             bookmarks: BookmarkRepository::new(pool.clone()),
             contacts: ContactRepository::new(pool.clone()),
+            rebirth: l2_db::RebirthRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
             variables: VariableRepository::new(pool.clone()),
             summons: SummonRepository::new(pool.clone()),
@@ -5480,6 +5497,21 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn store_rebirth_write(&mut self, write: &RebirthWrite) -> Result<(), PersistError> {
+        match write {
+            RebirthWrite::Insert { char_id } => {
+                self.rebirth.insert_first(*char_id).await?;
+            }
+            RebirthWrite::Count { char_id, count } => {
+                self.rebirth.update_count(*char_id, *count).await?;
+            }
+            RebirthWrite::Skills { char_id, skills } => {
+                self.rebirth.save_selected_skills(*char_id, skills).await?;
+            }
+        }
+        Ok(())
+    }
+
     async fn load_boss_rows(&mut self, kind: BossReadKind) -> Result<BossRereadRows, PersistError> {
         Ok(match kind {
             BossReadKind::GrandBoss(boss_id) => BossRereadRows::GrandBoss {
@@ -6741,6 +6773,8 @@ mod tests {
         Bookmark(BookmarkWrite),
         /// A `character_contacts` write (L-04).
         Contact(ContactWrite),
+        /// A `rebirth_system` write (M9-C05).
+        Rebirth(RebirthWrite),
         /// The `characters` row read of a friend (L-04).
         FriendSummary(i32),
         /// A cursed weapon write (M8-CURSED-01).
@@ -7021,6 +7055,11 @@ mod tests {
 
         async fn store_contact_write(&mut self, write: &ContactWrite) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::Contact(*write));
+            Ok(())
+        }
+
+        async fn store_rebirth_write(&mut self, write: &RebirthWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::Rebirth(write.clone()));
             Ok(())
         }
 
@@ -8785,6 +8824,30 @@ mod tests {
                 Call::Bookmark(delete),
                 Call::Contact(contact_remove),
             ]
+        );
+    }
+
+    /// M9-C05: the rebirth statements are stored one by one, in order.
+    #[tokio::test]
+    async fn rebirth_writes_are_stored_in_order() {
+        let insert = RebirthWrite::Insert { char_id: 5 };
+        let skills = RebirthWrite::Skills {
+            char_id: 5,
+            skills: "1059,1085".into(),
+        };
+        let count = RebirthWrite::Count { char_id: 5, count: 2 };
+        let (calls, _) = run_all(
+            Recording::default(),
+            vec![
+                OutboxMessage::Persist(PersistCommand::Rebirth(insert.clone())),
+                OutboxMessage::Persist(PersistCommand::Rebirth(skills.clone())),
+                OutboxMessage::Persist(PersistCommand::Rebirth(count.clone())),
+            ],
+        )
+        .await;
+        assert_eq!(
+            calls,
+            vec![Call::Rebirth(insert), Call::Rebirth(skills), Call::Rebirth(count)]
         );
     }
 

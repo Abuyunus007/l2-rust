@@ -196,7 +196,9 @@ pub async fn start_listener(server: &mut Server) -> Result<(), StartupError> {
                 .map(|t| t.name.to_lowercase())
                 .collect(),
         ),
-        loader: Arc::new(DbPlayerLoader::new(state.pool.clone())),
+        loader: Arc::new(
+            DbPlayerLoader::new(state.pool.clone()).with_rebirth(state.config.rebirth.rebirth_allow_rebirth),
+        ),
         data: Arc::clone(&state.static_data),
         settings: state.world_settings.clone(),
         left_acks: state.left_acks.clone(),

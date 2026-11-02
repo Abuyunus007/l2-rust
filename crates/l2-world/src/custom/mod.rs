@@ -21,6 +21,8 @@ pub mod fake_players;
 pub mod offline_play;
 pub mod offline_trade;
 pub mod premium;
+pub mod pvp_rewards;
+pub mod rebirth;
 pub mod scheme_buffer;
 pub mod sell_buffs;
 

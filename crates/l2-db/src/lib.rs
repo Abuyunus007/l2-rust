@@ -80,6 +80,7 @@ pub use game::{NewSummonSkillSave, SummonRepository, SummonSkillSaveRow};
 pub use game::{OfflineTradeItemRow, OfflineTradeRepository, OfflineTradeStatusRow};
 pub use game::{OlympiadDataRow, OlympiadFightRow, OlympiadNobleRow, OlympiadRepository};
 pub use game::{RandomSpawnRepository, RandomSpawnRow};
+pub use game::{RebirthRepository, RebirthRow};
 pub use game::{RecipeBookRow, RecipeRepository, RecipeShopRow};
 pub use game::{SubclassRepository, SubclassRow, SubclassValues};
 pub use login::{
