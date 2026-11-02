@@ -124,7 +124,7 @@ pub enum CustomBoardTimer {
 
 /// Java `String.split(regex)` for a one character separator: trailing empty strings are dropped,
 /// and a text without the separator is one part.
-fn java_split<'a>(text: &'a str, separator: char) -> Vec<&'a str> {
+fn java_split(text: &str, separator: char) -> Vec<&str> {
     if !text.contains(separator) {
         return vec![text];
     }
