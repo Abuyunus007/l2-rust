@@ -16,10 +16,9 @@ pub struct RebirthConfig {
     pub rebirth_inherit_skills_to_subclasses: bool,
     /// Key: `RebirthDeleteAllSkills`, default true.
     pub rebirth_delete_all_skills: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Set<Integer>`; the unit type makes any use fail to compile until then.
+    /// Key: `RebirthSkillDeleteWhitelist`, default empty (Java type `Set<Integer>`).
     /// Java (line 109): `REBIRTH_SKILL_DELETE_WHITELIST = parseIntegerSet(config.getString("RebirthSkillDeleteWhitelist", ""));`
-    /// Key: `RebirthSkillDeleteWhitelist`, Java default `""` (before the Java post-processing).
-    pub rebirth_skill_delete_whitelist: (),
+    pub rebirth_skill_delete_whitelist: std::collections::BTreeSet<i32>,
     /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Set<String>`; the unit type makes any use fail to compile until then.
     /// Java (line 110): `REBIRTH_DELETE_PROTECTED_SKILL_GROUPS = parseProtectedSkillGroups(config.getString("RebirthDeleteProtectedSkillGroups", ""));`
     /// Key: `RebirthDeleteProtectedSkillGroups`, Java default `""` (before the Java post-processing).
@@ -40,14 +39,12 @@ pub struct RebirthConfig {
     /// Java (line 117): `REBIRTH_SKILL_REFUND_MODE = config.getString("RebirthSkillRefundMode", "MID").trim().toUpperCase();`
     /// Key: `RebirthSkillRefundMode`, Java default `"MID"` (before the Java post-processing).
     pub rebirth_skill_refund_mode: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `List<String>`; the unit type makes any use fail to compile until then.
+    /// Key: `RebirthMageSkills`, default empty (Java type `List<String>`).
     /// Java (line 118): `REBIRTH_MAGE_SKILLS = parseSkillList(config.getString("RebirthMageSkills", ""));`
-    /// Key: `RebirthMageSkills`, Java default `""` (before the Java post-processing).
-    pub rebirth_mage_skills: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `List<String>`; the unit type makes any use fail to compile until then.
+    pub rebirth_mage_skills: Vec<String>,
+    /// Key: `RebirthFighterSkills`, default empty (Java type `List<String>`).
     /// Java (line 119): `REBIRTH_FIGHTER_SKILLS = parseSkillList(config.getString("RebirthFighterSkills", ""));`
-    /// Key: `RebirthFighterSkills`, Java default `""` (before the Java post-processing).
-    pub rebirth_fighter_skills: (),
+    pub rebirth_fighter_skills: Vec<String>,
     /// Key: `RebirthFinishSocialId`, default 3.
     pub rebirth_finish_social_id: i32,
     /// Key: `RebirthFinishEffectSkillId`, default 2024.
@@ -89,7 +86,8 @@ impl RebirthConfig {
             rebirth_inherit_skills_to_subclasses: ini
                 .get_bool("RebirthInheritSkillsToSubclasses", true),
             rebirth_delete_all_skills: ini.get_bool("RebirthDeleteAllSkills", true),
-            rebirth_skill_delete_whitelist: (),
+            rebirth_skill_delete_whitelist: ini
+                .get_int_set("RebirthSkillDeleteWhitelist", ""),
             rebirth_delete_protected_skill_groups: (),
             rebirth_delete_restore_temporary_skills: ini
                 .get_bool("RebirthDeleteRestoreTemporarySkills", true),
@@ -99,8 +97,8 @@ impl RebirthConfig {
             rebirth_reward_item_id: ini.get_int("RebirthRewardItemId", 57),
             rebirth_reward_item_amount: ini.get_int("RebirthRewardItemAmount", 1),
             rebirth_skill_refund_mode: (),
-            rebirth_mage_skills: (),
-            rebirth_fighter_skills: (),
+            rebirth_mage_skills: ini.get_string_list("RebirthMageSkills", "", ';'),
+            rebirth_fighter_skills: ini.get_string_list("RebirthFighterSkills", "", ';'),
             rebirth_finish_social_id: ini.get_int("RebirthFinishSocialId", 3),
             rebirth_finish_effect_skill_id: ini
                 .get_int("RebirthFinishEffectSkillId", 2024),

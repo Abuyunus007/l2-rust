@@ -23,6 +23,7 @@
 //! for a field that is not declared or declared with another type, duplicate names.
 
 mod java;
+mod lists;
 mod ported;
 
 use super::{Output, render};
@@ -31,6 +32,7 @@ use java::{
     ClassScan, GetterCall, JavaField, Kind, Literal, Statement, eval_default, find_assignment, find_getters,
     identifiers, is_constant_name, parse_getter, parse_string_literal, scan_class, squash,
 };
+use lists::ListKind;
 use quote::{ToTokens, format_ident, quote};
 use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::fmt::Write as _;
@@ -173,8 +175,20 @@ struct ManualField {
     elsewhere: Vec<usize>,
 }
 
+/// A list, set or map field that [`lists::LIST_FIELDS`] teaches the generator to read.
+struct ListField {
+    java: JavaField,
+    kind: ListKind,
+    key: String,
+    /// The Java default string, unescaped.
+    default: String,
+    /// Indexes into `ClassModel::others`, ascending (the Java loops that build it).
+    statements: Vec<usize>,
+}
+
 enum Field {
     Simple(SimpleField),
+    List(ListField),
     Manual(ManualField),
 }
 
@@ -182,6 +196,7 @@ impl Field {
     fn name(&self) -> &str {
         match self {
             Self::Simple(s) => &s.name,
+            Self::List(l) => &l.java.name,
             Self::Manual(m) => &m.java.name,
         }
     }
@@ -215,10 +230,14 @@ impl ClassModel {
             .count()
     }
 
+    fn list_count(&self) -> usize {
+        self.fields.iter().filter(|f| matches!(f, Field::List(_))).count()
+    }
+
     fn manual(&self) -> impl Iterator<Item = &ManualField> {
         self.fields.iter().filter_map(|f| match f {
             Field::Manual(m) => Some(m),
-            Field::Simple(_) => None,
+            Field::Simple(_) | Field::List(_) => None,
         })
     }
 }
@@ -538,7 +557,7 @@ fn analyze(source: &ClassSource, dist_ini: &BTreeMap<String, String>) -> Result<
             .get(&java.name)
             .map(|s| s.iter().copied().collect())
             .unwrap_or_default();
-        let getters = statements
+        let getters: Vec<GetterCall> = statements
             .iter()
             .flat_map(|&k| find_getters(&others[k].text, &reader_vars))
             .collect();
@@ -547,6 +566,10 @@ fn analyze(source: &ClassSource, dist_ini: &BTreeMap<String, String>) -> Result<
         } else {
             Vec::new()
         };
+        if let Some(kind) = lists::list_kind(name, &java.name) {
+            fields.push(Field::List(list_field(name, java, kind, statements, &getters)?));
+            continue;
+        }
         fields.push(Field::Manual(ManualField {
             java: java.clone(),
             statements,
@@ -566,7 +589,7 @@ fn analyze(source: &ClassSource, dist_ini: &BTreeMap<String, String>) -> Result<
         .collect();
     known.extend(fields.iter().filter_map(|f| match f {
         Field::Simple(s) => Some(s.key.clone()),
-        Field::Manual(_) => None,
+        Field::List(_) | Field::Manual(_) => None,
     }));
     let unread_keys = dist_ini
         .get(&ini_file)
@@ -589,6 +612,60 @@ fn analyze(source: &ClassSource, dist_ini: &BTreeMap<String, String>) -> Result<
         touched,
         nontrivial,
         unread_keys,
+    })
+}
+
+/// Checks a `lists::LIST_FIELDS` row against the Java source: the declared type, and one literal
+/// key with a string literal default.
+fn list_field(
+    class: &str,
+    java: &JavaField,
+    kind: ListKind,
+    statements: Vec<usize>,
+    getters: &[GetterCall],
+) -> Result<ListField> {
+    let declared: String = java.java_type.chars().filter(|c| !c.is_whitespace()).collect();
+    if declared != kind.java_type() {
+        bail!(
+            "{class}.{}: listed as {kind:?} but declared `{}`",
+            java.name,
+            java.java_type
+        );
+    }
+    if ported::ported_at(class, &java.name).is_some() {
+        bail!("{class}.{} is in both lists.rs and ported.rs", java.name);
+    }
+    let mut keys: Vec<(&str, &str)> = Vec::new();
+    for g in getters.iter().filter(|g| g.key_is_literal) {
+        let default = g.default_expr.as_deref().unwrap_or_default();
+        if g.kind == "String" && !keys.iter().any(|(k, _)| *k == g.key) {
+            keys.push((&g.key, default));
+        }
+    }
+    let [(key, default_expr)] = keys.as_slice() else {
+        bail!(
+            "{class}.{}: expected exactly one getString key, found {keys:?}",
+            java.name
+        );
+    };
+    let Some((default, rest)) = parse_string_literal(default_expr) else {
+        bail!(
+            "{class}.{}: the default `{default_expr}` is not a string literal",
+            java.name
+        );
+    };
+    if !rest.trim().is_empty() {
+        bail!(
+            "{class}.{}: the default `{default_expr}` is not a string literal",
+            java.name
+        );
+    }
+    Ok(ListField {
+        java: java.clone(),
+        kind,
+        key: (*key).to_string(),
+        default,
+        statements,
     })
 }
 
@@ -699,6 +776,32 @@ fn class_tokens(class: &ClassModel) -> Result<impl ToTokens> {
                     quote! { #ident: #ty::from(ini.#getter(#key, #default)), }
                 });
             }
+            Field::List(l) => {
+                let ty: syn::Type = syn::parse_str(l.kind.rust_type())?;
+                let mut docs = vec![format!(
+                    " Key: `{}`, default {} (Java type `{}`).",
+                    l.key,
+                    literal_doc(&Literal::Str(l.default.clone())),
+                    l.java.java_type
+                )];
+                if let Some(&first) = l.statements.first() {
+                    docs.push(format!(
+                        " Java (line {}): `{}`",
+                        class.others[first].line,
+                        doc_snippet(&class.others[first], 200)
+                    ));
+                }
+                let docs = docs.iter().map(|d| quote! { #[doc = #d] });
+                members.push(quote! { #(#docs)* pub #ident: #ty, });
+                let getter = format_ident!("{}", l.kind.getter());
+                let (key, default) = (&l.key, &l.default);
+                inits.push(match l.kind {
+                    ListKind::StringList(separator) => {
+                        quote! { #ident: ini.#getter(#key, #default, #separator), }
+                    }
+                    _ => quote! { #ident: ini.#getter(#key, #default), },
+                });
+            }
             Field::Manual(m) => {
                 let mut docs = vec![match ported::ported_where(&class.java_name, &m.java.name) {
                     Some(at) => format!(
@@ -753,7 +856,7 @@ fn class_tokens(class: &ClassModel) -> Result<impl ToTokens> {
         " Settings of `config/{}` (Java: `{}`).",
         class.ini_file, class.java_name
     );
-    let ini_param = if class.simple_count() == 0 {
+    let ini_param = if class.simple_count() + class.list_count() == 0 {
         format_ident!("_ini")
     } else {
         format_ident!("ini")
@@ -817,7 +920,7 @@ fn game_mod_tokens(classes: &[ClassModel]) -> impl ToTokens {
 
 fn report(classes: &[ClassModel]) -> String {
     let mut out = String::new();
-    let total_simple: usize = classes.iter().map(ClassModel::simple_count).sum();
+    let total_simple: usize = classes.iter().map(|c| c.simple_count() + c.list_count()).sum();
     let total_manual: usize = classes.iter().map(|c| c.manual().count()).sum();
     let _ = writeln!(out, "<!-- @generated by codegen — do not edit -->");
     let _ = writeln!(out, "# Game config: fields left for hand-porting (M2-CFG-01)\n");
@@ -853,7 +956,7 @@ fn report(classes: &[ClassModel]) -> String {
             "| `{}` | `{}` | {} | {} | {} | {} |",
             c.java_name,
             c.ini_file,
-            c.simple_count(),
+            c.simple_count() + c.list_count(),
             c.manual().count(),
             ported_in(c),
             c.orphans.len()
@@ -1215,8 +1318,10 @@ mod tests {
             44
         );
         assert_eq!(simple, 1024);
-        assert_eq!(manual, 185);
-        assert_eq!(simple + manual, declared);
+        // M9-L03: 12 list fields are generated (`lists::LIST_FIELDS`), no longer placeholders.
+        let lists: usize = classes.iter().map(ClassModel::list_count).sum();
+        assert_eq!((lists, manual), (lists::LIST_FIELDS.len(), 173));
+        assert_eq!(simple + lists + manual, declared);
         // Every simple field has a key that exists in its dist file or is simply defaulted; the
         // classes that read keys through helper methods are the ones with unread keys.
         let helper_classes: Vec<_> = classes
@@ -1285,6 +1390,151 @@ mod tests {
         open.sort();
         // Constant `false` that `load()` never assigns (Java never reads a setting for it).
         assert_eq!(open, ["ServerConfig.RESERVE_HOST_ON_LOGIN"]);
+    }
+
+    const LIST_BODY: &str = r#"
+		public static Set<Integer> IDS = new HashSet<>();
+		public static List<ItemHolder> ITEMS = new ArrayList<>();
+		public static Map<Integer, Integer> PAIRS;
+		public static Map<String, Location> PLACES;
+		public static List<String> NAMES;
+		public static Set<Integer> LOOSE;
+		public static void load()
+		{
+			final ConfigReader config = new ConfigReader(F);
+			IDS.clear();
+			for (String s : config.getString("Ids", "7,8").split(","))
+			{
+				IDS.add(Integer.parseInt(s));
+			}
+			ITEMS.clear();
+			for (String s : config.getString("Items", "4356,10").split(";"))
+			{
+				ITEMS.add(new ItemHolder(Integer.parseInt(s.split(",")[0]), Integer.parseInt(s.split(",")[1])));
+			}
+			PAIRS = parse(config.getString("Pairs", ""));
+			PLACES = parse(config.getString("Places", ""));
+			NAMES = parse(config.getString("Names", ""));
+		}
+	"#;
+
+    fn list_class(class: &str, body: &str) -> Result<ClassModel> {
+        analyze(&class_source(class, body), &BTreeMap::new())
+    }
+
+    /// The kinds of `lists::LIST_FIELDS` become typed fields with the key and default of the Java
+    /// getter; a field that is not in the table stays `()`.
+    #[test]
+    fn list_fields_are_typed() {
+        // `NpcConfig` has two rows (LIST_PET_RENT_NPC, MINIONS_RESPAWN_TIME); use the other classes.
+        let body = |field: &str, ty: &str, key: &str, default: &str| {
+            format!(
+                "public static {ty} {field};
+public static void load()
+{{
+final ConfigReader config = new ConfigReader(F);
+{field} = parse(config.getString(\"{key}\", \"{default}\"));
+}}"
+            )
+        };
+        let class = list_class(
+            "ChampionMonstersConfig",
+            &body("CHAMPION_REWARD_ITEMS", "List<ItemHolder>", "ChampionRewardItems", "4356,10"),
+        )
+        .unwrap();
+        assert_eq!(class.list_count(), 1);
+        assert_eq!(class.manual().count(), 0);
+        let class = list_class(
+            "NpcConfig",
+            &format!(
+                "{}
+{}",
+                body("MINIONS_RESPAWN_TIME", "Map<Integer, Integer>", "CustomMinionsRespawnTime", ""),
+                "public static Set<Integer> UNLISTED;"
+            ),
+        )
+        .unwrap();
+        assert_eq!((class.list_count(), class.manual().count()), (1, 1));
+
+        let sources = Sources {
+            classes: vec![class_source(
+                "ChampionMonstersConfig",
+                &body("CHAMPION_REWARD_ITEMS", "List<ItemHolder>", "ChampionRewardItems", "4356,10"),
+            )],
+            dist_ini: BTreeMap::new(),
+        };
+        let outputs = generate(&sources).unwrap();
+        let rs = &outputs[0].contents;
+        for expected in [
+            "pub champion_reward_items: Vec<crate::ItemHolder>,",
+            ".get_item_holder_list(\"ChampionRewardItems\", \"4356,10\")",
+        ] {
+            assert!(rs.contains(expected), "missing `{expected}` in:
+{rs}");
+        }
+        syn::parse_file(rs).unwrap();
+    }
+
+    #[test]
+    fn list_fields_are_checked_against_the_java_source() {
+        // Wrong declared type.
+        let body = "public static Set<Integer> CHAMPION_REWARD_ITEMS;
+public static void load()
+{
+final ConfigReader config = new ConfigReader(F);
+CHAMPION_REWARD_ITEMS = parse(config.getString(\"K\", \"\"));
+}";
+        let err = list_class("ChampionMonstersConfig", body).err().unwrap();
+        assert!(format!("{err:#}").contains("declared"), "{err:#}");
+        // No getter at all.
+        let body = "public static List<ItemHolder> CHAMPION_REWARD_ITEMS;
+public static void load()
+{
+final ConfigReader config = new ConfigReader(F);
+CHAMPION_REWARD_ITEMS = new ArrayList<>();
+}";
+        let err = list_class("ChampionMonstersConfig", body).err().unwrap();
+        assert!(format!("{err:#}").contains("exactly one getString key"), "{err:#}");
+        // The sample class has fields the table does not know: they stay placeholders.
+        let class = list_class("FooConfig", LIST_BODY).unwrap();
+        assert_eq!(class.list_count(), 0);
+        assert_eq!(class.manual().count(), 6);
+    }
+
+    /// Every row of the table names a field of the real Java source with the declared type and
+    /// the key of the `.ini` file. Runs only where the Java checkout exists.
+    #[test]
+    fn list_table_matches_the_real_java() {
+        let root = std::path::PathBuf::from(
+            std::env::var("L2J_ROOT").unwrap_or_else(|_| r"C:\l2-rust\l2jmobius".to_string()),
+        );
+        if !root.is_dir() {
+            eprintln!("skipped: no Java source at {}", root.display());
+            return;
+        }
+        let sources = read_sources(&root).unwrap();
+        let classes = analyze_all(&sources).unwrap();
+        for (class, field, kind) in lists::LIST_FIELDS {
+            let found = classes
+                .iter()
+                .find(|c| c.java_name == *class)
+                .and_then(|c| {
+                    c.fields.iter().find_map(|f| match f {
+                        Field::List(l) if l.java.name == *field => Some((c, l)),
+                        _ => None,
+                    })
+                })
+                .unwrap_or_else(|| panic!("{class}.{field} is not a list field"));
+            assert_eq!(found.1.kind, *kind);
+            // The key is in the dist file (or the field simply keeps its default).
+            let ini = sources.dist_ini.get(&found.0.ini_file).map(String::as_str).unwrap_or("");
+            assert!(
+                ini_keys(ini).contains(&found.1.key) || found.1.key == "CustomMinionsRespawnTime",
+                "{class}.{field}: key {} is not in {}",
+                found.1.key,
+                found.0.ini_file
+            );
+        }
     }
 
     #[test]

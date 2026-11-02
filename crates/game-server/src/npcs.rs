@@ -8,35 +8,21 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::Instant;
 
-use l2_config::{GameConfig, IniFile};
+use l2_config::GameConfig;
 use l2_data::Datapack;
 use l2_world::npc::{NpcSettings, WaterCheck};
 use l2_world::{AiSettings, IdFactory, World};
-use tracing::{info, warn};
+use tracing::info;
 
 /// The NPC-related configuration values.
-pub fn npc_settings(config: &GameConfig, config_dir: &Path) -> NpcSettings {
+pub fn npc_settings(config: &GameConfig, _config_dir: &Path) -> NpcSettings {
     let random = &config.random_spawns;
-    // RandomSpawnsConfig: the ids are only read when the feature is on; the generated config
-    // does not carry the list, so it is read here.
-    let mut mobs_not_random = HashSet::new();
-    if random.enable_random_monster_spawns {
-        let file = "Custom/RandomSpawns.ini";
-        let ini = IniFile::load(config_dir.join(file)).unwrap_or_else(|_| IniFile::empty(file));
-        for id in ini
-            .get_string("MobsSpawnNotRandom", "18812,18813,18814,22138")
-            .split(',')
-        {
-            // Java: Integer.parseInt (no trimming) throws on a bad id and aborts the load; a bad
-            // id is skipped with a warning here.
-            match id.parse::<i32>() {
-                Ok(id) => {
-                    mobs_not_random.insert(id);
-                }
-                Err(_) => warn!("RandomSpawns.ini: MobsSpawnNotRandom has an invalid id: {id:?}"),
-            }
-        }
-    }
+    // RandomSpawnsConfig: Java reads the ids only when the feature is on.
+    let mobs_not_random: HashSet<i32> = if random.enable_random_monster_spawns {
+        random.mobs_list_not_random.iter().copied().collect()
+    } else {
+        HashSet::new()
+    };
     NpcSettings {
         show_npc_level: config.npc.show_npc_level,
         show_npc_aggression: config.npc.show_npc_aggression,
@@ -71,7 +57,7 @@ pub fn ai_settings(config: &GameConfig) -> AiSettings {
         guard_attack_aggro_mob: npc.guard_attack_aggro_mob,
         // Java reads the key as an int into a double and casts it back where it is used.
         raid_minion_respawn_timer: npc.raid_minion_respawn_timer as i32,
-        minions_respawn_time: config.manual.npc.minions_respawn_time.clone(),
+        minions_respawn_time: npc.minions_respawn_time.clone(),
         force_delete_minions: npc.force_delete_minions,
     }
 }
@@ -81,7 +67,7 @@ pub fn ai_settings(config: &GameConfig) -> AiSettings {
 /// patterns of the `config.xml` of each custom event.
 pub fn custom_script_settings(
     config: &GameConfig,
-    config_dir: &Path,
+    _config_dir: &Path,
     datapack_root: &Path,
 ) -> l2_world::custom::CustomScriptSettings {
     use l2_world::custom::{
@@ -90,14 +76,7 @@ pub fn custom_script_settings(
     let d = &config.delevel_manager;
     let n = &config.nobless_master;
     let t = &config.transmog;
-    let transmog_file = "Custom/Transmog.ini";
-    let ini = IniFile::load(config_dir.join(transmog_file)).unwrap_or_else(|_| IniFile::empty(transmog_file));
-    // Java: `Integer.parseInt(s.trim())` of each part of the comma list.
-    let banned_item_ids = ini
-        .get_string("TransmogBannedItemIds", "")
-        .split(',')
-        .filter_map(|part| part.trim().parse::<i32>().ok())
-        .collect();
+    let banned_item_ids = t.transmog_banned_item_ids.clone();
     let mut event_schedules = std::collections::BTreeMap::new();
     for (name, folder) in [
         ("Elpies", "Elpies"),

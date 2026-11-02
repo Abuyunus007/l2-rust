@@ -76,11 +76,9 @@ pub struct NpcConfig {
     pub guard_attack_aggro_mob: bool,
     /// Key: `AllowWyvernUpgrader`, default false.
     pub allow_wyvern_upgrader: bool,
-    /// Hand-ported, the value is `GameConfig::manual.core.npc.list_pet_rent_npc` (Java type `List<Integer>`); the unit type keeps this field from being used by mistake.
+    /// Key: `ListPetRentNpc`, default `30827` (Java type `List<Integer>`).
     /// Java (line 156): `split = config.getString("ListPetRentNpc", "30827").split(",");`
-    /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
-    /// Key: `ListPetRentNpc`, Java default `"30827"` (before the Java post-processing).
-    pub list_pet_rent_npc: (),
+    pub list_pet_rent_npc: Vec<i32>,
     /// Hand-ported, the value is `GameConfig::manual.npc.raid_hp_regen_multiplier` (Java type `double`); the unit type keeps this field from being used by mistake.
     /// Java (line 163): `RAID_HP_REGEN_MULTIPLIER = config.getDouble("RaidHpRegenMultiplier", 100) / 100;`
     /// Key: `RaidHpRegenMultiplier`, Java default `100` (before the Java post-processing).
@@ -111,11 +109,9 @@ pub struct NpcConfig {
     pub raid_max_respawn_multiplier: f32,
     /// Key: `RaidMinionRespawnTime`, default 300000.
     pub raid_minion_respawn_timer: f64,
-    /// Hand-ported, the value is `GameConfig::manual.npc.minions_respawn_time` (Java type `Map<Integer, Integer>`); the unit type keeps this field from being used by mistake.
+    /// Key: `CustomMinionsRespawnTime`, default empty (Java type `Map<Integer, Integer>`).
     /// Java (line 173): `split = config.getString("CustomMinionsRespawnTime", "").split(";");`
-    /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
-    /// Key: `CustomMinionsRespawnTime`, Java default `""` (before the Java post-processing).
-    pub minions_respawn_time: (),
+    pub minions_respawn_time: std::collections::HashMap<i32, i32>,
     /// Key: `ForceDeleteMinions`, default false.
     pub force_delete_minions: bool,
     /// Key: `DisableRaidCurse`, default false.
@@ -179,7 +175,7 @@ impl NpcConfig {
                 .get_bool("AggroDistanceCheckRestoreLife", true),
             guard_attack_aggro_mob: ini.get_bool("GuardAttackAggroMob", false),
             allow_wyvern_upgrader: ini.get_bool("AllowWyvernUpgrader", false),
-            list_pet_rent_npc: (),
+            list_pet_rent_npc: ini.get_int_list("ListPetRentNpc", "30827"),
             raid_hp_regen_multiplier: (),
             raid_mp_regen_multiplier: (),
             raid_pdefence_multiplier: (),
@@ -191,7 +187,7 @@ impl NpcConfig {
             raid_minion_respawn_timer: f64::from(
                 ini.get_int("RaidMinionRespawnTime", 300000),
             ),
-            minions_respawn_time: (),
+            minions_respawn_time: ini.get_int_map("CustomMinionsRespawnTime", ""),
             force_delete_minions: ini.get_bool("ForceDeleteMinions", false),
             raid_disable_curse: ini.get_bool("DisableRaidCurse", false),
             raid_chaos_time: ini.get_int("RaidChaosTime", 10),

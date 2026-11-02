@@ -42,16 +42,15 @@ pub struct CommunityBoardConfig {
     pub community_premium_coin_id: i32,
     /// Key: `CommunityPremiumPricePerDay`, default 1000000.
     pub community_premium_price_per_day: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Set<Integer>`; the unit type makes any use fail to compile until then.
+    /// Key: `CommunityAvailableBuffs`, default empty (Java type `Set<Integer>`).
     /// Java (line 83): `final String[] allowedBuffs = config.getString("CommunityAvailableBuffs", "").split(",");`
-    /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
-    /// Key: `CommunityAvailableBuffs`, Java default `""` (before the Java post-processing).
-    pub community_available_buffs: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Map<String, Location>`; the unit type makes any use fail to compile until then.
+    pub community_available_buffs: std::collections::BTreeSet<i32>,
+    /// Key: `CommunityTeleportList`, default empty (Java type `Map<String, Location>`).
     /// Java (line 89): `final String[] availableTeleports = config.getString("CommunityTeleportList", "").split(";");`
-    /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
-    /// Key: `CommunityTeleportList`, Java default `""` (before the Java post-processing).
-    pub community_available_teleports: (),
+    pub community_available_teleports: std::collections::BTreeMap<
+        String,
+        crate::game_manual::Location,
+    >,
 }
 impl CommunityBoardConfig {
     /// File name inside the config directory.
@@ -83,8 +82,9 @@ impl CommunityBoardConfig {
             community_premium_coin_id: ini.get_int("CommunityPremiumBuyCoinId", 57),
             community_premium_price_per_day: ini
                 .get_int("CommunityPremiumPricePerDay", 1000000),
-            community_available_buffs: (),
-            community_available_teleports: (),
+            community_available_buffs: ini.get_int_set("CommunityAvailableBuffs", ""),
+            community_available_teleports: ini
+                .get_location_map("CommunityTeleportList", ""),
         }
     }
 }
