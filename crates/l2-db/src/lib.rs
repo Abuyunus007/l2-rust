@@ -27,6 +27,7 @@ pub use game::{
     RaidPointsRow,
 };
 pub use game::{BotReportDbRow, BotReportRepository};
+pub use game::{BufferSchemeRepository, BufferSchemeRow};
 pub use game::{BuyListRepository, BuyListRow};
 pub use game::{
     CalendarDate, CharacterIdName, CharacterNameAccess, CharacterRepository, CharacterRow, CharacterUpdate,

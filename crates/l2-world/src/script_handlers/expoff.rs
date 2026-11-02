@@ -75,6 +75,10 @@ impl World {
         if let Some(result) = self.hellbound_voiced_handler(player, word) {
             return result;
         }
+        // `SellBuffCommandHandler` registers `sellbuff` and `sellbuffs` with `SellBuffEnable` (M9-C03).
+        if let Some(result) = self.sell_buffs_voiced_handler(player, word) {
+            return result;
+        }
         if !matches!(word, "expoff" | "expon") {
             return false;
         }

@@ -52,6 +52,8 @@ pub enum BoardTimer {
         y: i32,
         z: i32,
     },
+    /// The delayed tasks of the custom board (M9-C03, `custom/community_board.rs`).
+    Custom(crate::custom::community_board::CustomBoardTimer),
 }
 
 /// Java `Double.toString` for the values this board prints: plain with a fraction for
@@ -206,6 +208,7 @@ impl World {
     /// The task of [`BoardTimer`].
     pub(crate) fn on_board_timer(&mut self, timer: BoardTimer) {
         match timer {
+            BoardTimer::Custom(task) => self.on_custom_board_timer(task),
             BoardTimer::RadarTrace { player, x, y, z } => {
                 if !self.players.contains_key(&player) {
                     return;
