@@ -12,12 +12,16 @@
 //   the one folder or file named; the Rust cache is always preloaded as a whole (see
 //   `HtmCache::load_with`), so the whole cache is read again and the answer only names the file.
 //
+// - `//reload fakeplayerchat` (M9-L01): `data/FakePlayerChatData.xml` is read by the game server
+//   task (`ControlRequest::ReloadFakePlayerChat`) and the lines are replaced when the answer
+//   (`WorldCommand::FakePlayerChatReloaded`) comes back.
+//
 // # What does not
 // Every other type of Java's switch reads data the Rust server holds as immutable, shared
 // tables (`Arc`) built once at the start, or runs scripts (D-16). `//reload <type>` for those
 // answers that it needs a restart. The types: access, buylist, category, classlist, config,
 // crest, cubic, cw, door, dynamicexprate, effect, elementalattribute, enchant, enchantitemhpbonus,
-// enchantskillgroups, experience, experienceloss, fakeplayerchat, fence, fish, fishingmonsters,
+// enchantskillgroups, experience, experienceloss, fence, fish, fishingmonsters,
 // fishingrods, handler, henna, hitconditionbonus, initialequipment, initialshortcut, instance,
 // item, itemmall, primeshop, karmaloss, levelupcrystal, localisations, mapregion, multisell, npc,
 // options, petdata, petskill, playertemplate, recipe, secondaryauth, sets, siegeschedule,
@@ -138,7 +142,6 @@ const NOT_RELOADABLE: &[&str] = &[
     "enchantskillgroups",
     "experience",
     "experienceloss",
-    "fakeplayerchat",
     "fence",
     "fish",
     "fishingmonsters",
@@ -218,6 +221,14 @@ fn admin_reload(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
                 // The answer (`on_html_reloaded`) says the rest.
                 return Ok(());
             }
+            "fakeplayerchat" => {
+                // The file is read by the game server task (D-15); the answer
+                // (`on_fake_player_chat_reloaded`) says the rest.
+                world
+                    .outbox
+                    .control(ControlRequest::ReloadFakePlayerChat { requester: gm });
+                return Ok(());
+            }
             "quest" => {
                 // Unload-then-load of the compiled-in script (S-ADMIN-08, D-16).
                 let value = st.next_token().map(str::to_owned);
@@ -239,7 +250,7 @@ fn admin_reload(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     Ok(())
 }
 
-fn reload_warning(world: &mut World, gm: ObjectId) {
+pub(crate) fn reload_warning(world: &mut World, gm: ObjectId) {
     world.send_sys_message(
         gm,
         "WARNING: There are several known issues regarding this feature. Reloading server data during runtime is STRONGLY NOT RECOMMENDED for live servers, just for developing environments.",
@@ -414,7 +425,7 @@ mod tests {
         for (_, action) in RELOAD_COMMANDS {
             let kind = action.split(' ').nth(1).unwrap();
             assert!(
-                NOT_RELOADABLE.contains(&kind) || ["htm", "html", "quest"].contains(&kind),
+                NOT_RELOADABLE.contains(&kind) || ["htm", "html", "quest", "fakeplayerchat"].contains(&kind),
                 "{kind}"
             );
         }

@@ -159,6 +159,11 @@ impl World {
             return None;
         }
         let limit = self.anti_feed_limit(ip, max);
+        Some(self.ip_restriction_page(limit))
+    }
+
+    /// `data/html/mods/IPRestriction.htm` with `%max%` filled in.
+    pub(crate) fn ip_restriction_page(&self, limit: i32) -> String {
         let page = self
             .talk
             .html
@@ -168,7 +173,7 @@ impl World {
                 || format!("<html><body>My Text is missing:<br>{IP_RESTRICTION_PAGE}</body></html>"),
                 str::to_owned,
             );
-        Some(page.replace("%max%", &limit.to_string()))
+        page.replace("%max%", &limit.to_string())
     }
 
     /// `Disconnection.onDisconnect` for a client that selected a character and never entered the

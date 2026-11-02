@@ -313,7 +313,7 @@ impl World {
         cur / max
     }
 
-    fn is_chaos(&self, id: ObjectId) -> bool {
+    pub(crate) fn is_chaos(&self, id: ObjectId) -> bool {
         self.npc_template(id).is_some_and(|t| t.is_chaos)
     }
 

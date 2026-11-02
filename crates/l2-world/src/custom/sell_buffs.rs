@@ -16,9 +16,9 @@
 //   [`World::sell_buffs_voiced_handler`]).
 // - A seller sits down with the private store type `PACKAGE_SELL` and `isSellingBuffs()` set; a
 //   customer who clicks him gets the buff menu instead of the sell list (`PrivateStoreListSell`).
-// - The shop's state (the buffs and prices of each seller) is memory only, as in Java; Java also
-//   writes it into the offline trader tables (`OfflineTraderTable`), which this server does not
-//   write (D-52, `trade/offline.rs`).
+// - The shop's state (the buffs and prices of each seller) lives in memory; a seller who goes
+//   offline is written to and restored from the offline trader tables (type 9, `SELL_BUFFS`) under
+//   the same switch as the other offline shops (D-52, `trade/offline.rs`, M9-L01).
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
@@ -147,6 +147,18 @@ impl World {
     /// Java `Player.getSellingBuffs()`.
     pub fn selling_buffs(&self, id: ObjectId) -> &[SellBuffHolder] {
         self.custom_buffers.sell.lists.get(&id).map_or(&[], Vec::as_slice)
+    }
+
+    /// `OfflineTraderTable.restoreOfflineTraders` of a `SELL_BUFFS` row: `setSellingBuffs(true)` and
+    /// the skills with their prices (the caller then sits the player down).
+    pub(crate) fn sell_buffs_restore(&mut self, id: ObjectId, holders: Vec<SellBuffHolder>) {
+        self.custom_buffers.sell.selling.insert(id);
+        self.custom_buffers
+            .sell
+            .lists
+            .entry(id)
+            .or_default()
+            .extend(holders);
     }
 
     /// The player left: his buff list goes with him (Java keeps it in the `Player` object).

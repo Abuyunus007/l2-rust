@@ -237,6 +237,20 @@ impl ClientSession {
             return None;
         };
         let mut characters = self.ctx.characters.character_list(&account).await;
+        // Java `loadCharacterSelectInfo`: the list is built from the rows first, then the offline
+        // trader / offline player of a character is disconnected (`OfflineDisconnectSameAccount`,
+        // `OfflinePlayDisconnectSameAccount`; M9-L01).
+        let config = &self.ctx.charscreen.config;
+        let (trader, play) = (
+            config.offline_trade.offline_disconnect_same_account,
+            config.offline_play.offline_play_disconnect_same_account,
+        );
+        if trader || play {
+            for c in &characters {
+                self.release_offline_same_account(c.entry.object_id, trader, play)
+                    .await;
+            }
+        }
         let last_access: Vec<i64> = characters.iter().map(|c| c.last_access).collect();
         let selected = active.or_else(|| active_slot(&last_access));
         for (i, c) in characters.iter_mut().enumerate() {
