@@ -123,6 +123,8 @@ pub enum TimerKind {
     Clan(crate::clan::ClanTimer),
     /// Java `PvpFlagTaskManager`'s 1 s pass over one flagged player, see `pvp.rs`.
     PvpFlag(ObjectId),
+    /// The answer of a fake player to a whisper, after its random delay (`custom/fake_players.rs`).
+    FakePlayerChat(u64),
     /// Java `PcCafePointsManager`'s retail point task of one player, see `pccafe.rs`.
     PcCafe(ObjectId),
     /// The restock of limited products and the inventory block of a shop window, see `shop/`.

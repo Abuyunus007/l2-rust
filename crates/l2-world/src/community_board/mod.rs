@@ -24,10 +24,9 @@
 // # Left out, with the card that brings it
 // - `DropSearchBoard` is `drop_search.rs` (S-HAND-04).
 // - The custom commands of `HomeBoard` (`_bbsmultisell`, `_bbsexcmultisell`, `_bbssell`,
-//   `_bbsteleport`, `_bbsbuff`, `_bbsheal`, `_bbsdelevel`, `_bbspremium`): `CommunityBoard.ini`
-//   keeps their lists (`CommunityTeleportList`, `CommunityAvailableBuffs`) as maps the generated
-//   config does not read yet, and premium is M9. A command of that kind is "not handled", as in a
-//   Java server that has not registered it.
+//   `_bbsteleport`, `_bbsbuff`, `_bbsheal`, `_bbsdelevel`) are `custom/community_board.rs`
+//   (M9-C03). `_bbspremium` needs the premium system: it is "not handled", as in a Java server
+//   that has not registered it.
 
 mod clan_board;
 mod drop_search;
@@ -154,7 +153,13 @@ impl World {
 
     /// Java `CommunityBoardHandler.isCommunityBoardCommand(cmd)`.
     pub fn is_community_board_command(&self, command: &str) -> bool {
-        Board::find(command).is_some()
+        self.find_board(command).is_some()
+    }
+
+    /// `CommunityBoardHandler.getHandler(cmd)`: the boards' words, then the custom words of
+    /// `HomeBoard` (M9-C03, `custom/community_board.rs`; none with `CustomCommunityBoard = False`).
+    fn find_board(&self, command: &str) -> Option<Board> {
+        Board::find(command).or_else(|| self.is_custom_board_command(command).then_some(Board::Home))
     }
 
     /// Java `RequestShowBoard.runImpl`: the page `BBSDefault` names.
@@ -178,7 +183,7 @@ impl World {
             );
             return;
         }
-        let Some(board) = Board::find(command) else {
+        let Some(board) = self.find_board(command) else {
             warn!("CommunityBoardHandler: Couldn't find parse handler for command {command}!");
             return;
         };

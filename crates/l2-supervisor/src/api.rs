@@ -12,6 +12,7 @@ use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::{Notify, broadcast};
 use tokio::task::JoinHandle;
 
+use crate::backup::BackupService;
 use crate::config::ServerConfig;
 use crate::logs::LogStore;
 use crate::process::Supervisor;
@@ -108,6 +109,7 @@ pub struct SupervisorHandler {
     log_streams: Mutex<HashMap<u64, JoinHandle<()>>>,
     /// Raised once a `StopSupervisor` has stopped all servers: the binary then exits.
     stop_requested: Arc<Notify>,
+    backups: Arc<BackupService>,
 }
 
 impl SupervisorHandler {
@@ -116,6 +118,7 @@ impl SupervisorHandler {
         supervisor: Arc<Supervisor>,
         links: HashMap<String, AdminLink>,
         stop_requested: Arc<Notify>,
+        backups: Arc<BackupService>,
     ) -> Arc<Self> {
         let sessions: Arc<Mutex<HashMap<u64, Session>>> = Arc::default();
         tokio::spawn(broadcast_events(
@@ -129,6 +132,7 @@ impl SupervisorHandler {
             sessions,
             log_streams: Mutex::default(),
             stop_requested,
+            backups,
         })
     }
 
@@ -259,6 +263,18 @@ impl AdminHandler for SupervisorHandler {
                 });
                 Response::Ok
             }
+            Request::BackupNow => match self.backups.start_now() {
+                Ok(()) => Response::Ok,
+                Err(e) => Response::Error {
+                    message: e.to_string(),
+                },
+            },
+            Request::ListBackups => Response::Backups {
+                backups: self.backups.list(),
+            },
+            Request::BackupState => Response::BackupState {
+                state: Box::new(self.backups.status()),
+            },
             // The GUI stops servers with StopServer; `shutdown` is for server endpoints.
             Request::Shutdown { .. } => Response::Error {
                 message: "shutdown is sent to a server endpoint; use stop_server here".into(),

@@ -34,7 +34,7 @@ pub(crate) fn register(handlers: &mut BypassHandlers) {
 }
 
 /// Java `HtmlUtil.getGauge` with the HP and MP images (`displayAsPercentage` is false here).
-fn gauge(width: i64, current_value: i64, max: i64, background: &str, image: &str) -> String {
+pub(crate) fn gauge(width: i64, current_value: i64, max: i64, background: &str, image: &str) -> String {
     let current = current_value.min(max);
     let fill = ((current as f64 / max as f64) * width as f64) as i64;
     let td_width = (width - 10) / 2;
@@ -178,7 +178,7 @@ impl World {
     /// The `ALT_GAME_VIEWNPC` branch of `NpcShiftClick.onAction` for a player: target the NPC and
     /// show its page while it is alive.
     pub(crate) fn npc_view_shift_click(&mut self, player: ObjectId, target: ObjectId) {
-        if !self.is_plain_npc(target) {
+        if !self.is_plain_npc(target) || self.is_fake_player(target) {
             return;
         }
         self.set_target(player, Some(target));

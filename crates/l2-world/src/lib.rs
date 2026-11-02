@@ -147,6 +147,11 @@ pub use craft::{
 pub use cursed::{
     CursedInput, CursedLoad, CursedRow, CursedSettings, CursedTimer, CursedWeapon, CursedWrite,
 };
+pub use custom::community_board::{CustomBoardSettings, CustomBoardTimer};
+pub use custom::faction::{FACTION_EVIL, FACTION_GOOD, FactionLocation, FactionSettings};
+pub use custom::fake_players::{FakePlayerChatEntry, FakePlayerSettings};
+pub use custom::scheme_buffer::SchemeBufferSettings;
+pub use custom::sell_buffs::{SellBuffHolder, SellBuffsSettings};
 pub use custom::{
     BankingSettings, CaptchaSettings, CustomMailEntry, CustomMiscSettings, CustomMiscState, CustomMiscTimer,
     DualboxSettings, MultilangSettings, ScreenWelcomeSettings,

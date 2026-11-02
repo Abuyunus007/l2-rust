@@ -172,8 +172,8 @@ impl NpcClass {
 
     /// Java `isAutoAttackable(player)` for a player outside any siege, arena or faction war.
     // Siege NPCs (`Defender`, `FortCommander`, `TerritoryWard`) are only attackable while a siege
-    // runs, `Guard` only with the faction system on (`QuestGuard` never for a player): all false
-    // here until sieges exist.
+    // runs, `Guard` only with the faction system on (`QuestGuard` never for a player, the faction
+    // guards are `World::faction_guard_auto_attackable`): all false here.
     pub(crate) fn auto_attackable_by(self, viewer_karma: i32) -> bool {
         match self {
             Self::Monster | Self::RaidBoss | Self::GrandBoss => true,
@@ -756,6 +756,8 @@ impl World {
         if class.is_monster() && templates.master_monster_ids().contains(&template.id) {
             self.spawn_minions(id, template, &templates, report);
         }
+        // "Set champion on next spawn." (ChampionMonsters.ini, `custom/champion.rs`)
+        self.roll_champion(id, spawn_instance);
         Some(id)
     }
 
@@ -990,6 +992,7 @@ impl World {
             display_effect: 0,
             collision_radius: f64::from(template.collision_radius),
             must_reward_exp_sp: true,
+            champion: false,
             special_drop: false,
             movement: crate::movement::NpcMovement::default(),
             spawn_point: spawn_point.unwrap_or_default(),
@@ -1041,7 +1044,10 @@ impl World {
         } else {
             template.weapon_enchant
         };
-        self.create_npc(template, class, None, None, (x, y, z), heading, in_water, enchant)
+        let id = self.create_npc(template, class, None, None, (x, y, z), heading, in_water, enchant)?;
+        // A `Spawn.doSpawn()` like any other: it rolls the champion too (instance 0).
+        self.roll_champion(id, 0);
+        Some(id)
     }
 
     /// [`World::spawn_npc_at`] with the class of a Java instance class the template's `type`
@@ -1101,6 +1107,11 @@ impl World {
         if !self.is_visible_for(subject, viewer) {
             return;
         }
+        // A fake player is told as a player (`FakePlayerInfo`, `Custom/FakePlayers.ini`).
+        if self.is_fake_player(subject) {
+            self.send_fake_player_info(subject, viewer);
+            return;
+        }
         if let Some(info) = self.npc_info(subject, viewer) {
             self.send(viewer, &info);
         }
@@ -1108,7 +1119,7 @@ impl World {
 
     /// `new AbstractNpcInfo.NpcInfo(npc, viewer)`: what `viewer` is told when `subject` comes
     /// into view. `None` for a decayed NPC (Java writes nothing), an unknown template and a fake
-    /// player (`FakePlayerInfo`, not ported).
+    /// player (`FakePlayerInfo`, `World::fake_player_info`).
     // Java: Npc.sendInfo sends ServerObjectInfo instead when getRunSpeed() == 0; the template
     // loader never lets a speed reach 0, so that packet is not ported.
     pub fn npc_info(&self, subject: ObjectId, viewer: ObjectId) -> Option<NpcInfo> {
@@ -1164,7 +1175,11 @@ impl World {
                 t1 += " ";
                 t1 += &title;
             }
-            title = t1;
+            // `_npc.isChampion() ? CHAMP_TITLE + " " + t1 : t1`.
+            title = self.champion_level_title(subject, t1);
+        } else if let Some(champion_title) = self.champion_plain_title(subject) {
+            // `else if (CHAMPION_ENABLE && _npc.isChampion()) _title = CHAMP_TITLE`.
+            title = champion_title;
         }
 
         Some(NpcInfo {
@@ -1173,7 +1188,10 @@ impl World {
             attackable: self
                 .siege_npc_auto_attackable(subject, viewer)
                 .or_else(|| self.npc_auto_attackable_override(subject))
-                .unwrap_or_else(|| npc.class.auto_attackable_by(viewer_karma)),
+                .unwrap_or_else(|| {
+                    self.faction_guard_auto_attackable(subject, viewer)
+                        || npc.class.auto_attackable_by(viewer_karma)
+                }),
             x: npc.core.x,
             y: npc.core.y,
             z: npc.core.z,
@@ -1216,7 +1234,11 @@ impl World {
             } else {
                 0
             },
-            team: self.minigame_npc_team(subject),
+            // `_npc.getTeam()`: a match's team, else the red aura of a champion.
+            team: match self.minigame_npc_team(subject) {
+                0 => self.champion_team(subject),
+                team => team,
+            },
             enchant_effect: npc.enchant_effect,
             flying: template.flying,
             color_effect: self.minigame_npc_color_effect(subject),

@@ -224,6 +224,7 @@ impl Default for AdminWorld {
         punishments::register(&mut handlers);
         clan::register(&mut handlers);
         karma::register(&mut handlers);
+        crate::custom::fake_players::admin_register(&mut handlers);
         party::register(&mut handlers);
         summon::register(&mut handlers);
         transform::register(&mut handlers);

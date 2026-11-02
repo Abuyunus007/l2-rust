@@ -48,6 +48,22 @@ def set_keys(path: Path, values: dict[str, str]) -> None:
     path.write_bytes("".join(out).encode("utf-8"))
 
 
+def backup_ini() -> str:
+    """Backup.ini next to supervisor.ini (M9-H01). The schedule is off until the owner turns it on."""
+    return """# Database backups of the supervisor. Relative paths are relative to this file's folder (bin/).
+# A backup is mysqldump --single-transaction --routines --events <db>, written gzip-compressed to
+# <Folder>/<db>-YYYYMMDD-HHMMSS.sql.gz. The password comes from Database.ini and is never logged.
+# "Backup now" in the admin GUI (Backups) works whatever Enabled says.
+Enabled = False
+IntervalHours = 24
+Keep = 7
+Folder = backups
+# Empty = look on the PATH, then in the usual MariaDB/MySQL/XAMPP folders.
+MysqldumpPath =
+DatabaseIni = ../login/config/Database.ini
+"""
+
+
 def supervisor_ini() -> str:
     return f"""# Supervisor settings of this package. The admin GUI reads Listen and Token from here.
 # Relative paths are relative to this file's folder (bin/).
@@ -152,6 +168,7 @@ def main() -> int:
         shutil.copy2(f, out / "game" / "data" / "geodata" / f.name)
 
     (out / "bin" / "supervisor.ini").write_text(supervisor_ini(), encoding="utf-8", newline="\n")
+    (out / "bin" / "Backup.ini").write_text(backup_ini(), encoding="utf-8", newline="\n")
     (out / "README.txt").write_text(README.replace("\n", "\r\n"), encoding="utf-8", newline="")
     (out / "Start-AdminGUI.cmd").write_text(START_GUI, encoding="utf-8", newline="")
     (out / "Install-Database.cmd").write_text(INSTALL_DB, encoding="utf-8", newline="")

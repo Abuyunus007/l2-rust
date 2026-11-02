@@ -12,6 +12,7 @@ mod bbs_favorites;
 mod bookmarks;
 mod bosses;
 mod bot_reports;
+mod buffer_schemes;
 mod buylists;
 mod characters;
 mod clans;
@@ -72,6 +73,7 @@ pub use bosses::{
     RaidPointsRow,
 };
 pub use bot_reports::{BotReportDbRow, BotReportRepository};
+pub use buffer_schemes::{BufferSchemeRepository, BufferSchemeRow};
 pub use buylists::{BuyListRepository, BuyListRow};
 pub use characters::{
     CalendarDate, CharacterIdName, CharacterNameAccess, CharacterRepository, CharacterRow, CharacterUpdate,

@@ -52,6 +52,8 @@ pub struct World {
     pub(crate) npcs: HashMap<ObjectId, Npc>,
     /// Spawn lists, NPC templates and settings (M3-NPC-01).
     pub(crate) npc_world: crate::npc::NpcWorld,
+    /// The custom features (`Custom/*.ini`, D-57; see `custom/`).
+    pub(crate) custom: crate::custom::CustomWorld,
     /// Html pages, gatekeeper lists and bypass handlers (M3-TALK-01).
     pub(crate) talk: crate::dialog::TalkWorld,
     /// The admin command handlers (M3-ADMIN-01).
@@ -112,6 +114,8 @@ pub struct World {
     pub(crate) clans: crate::clan::ClanWorld,
     /// The PvP flag of every player and the anti feed death times (M6-PVP-01, `pvp.rs`).
     pub(crate) pvp: crate::pvp::PvpWorld,
+    /// The fake player names, chat lines and karma (M9-C04, `custom/fake_players.rs`).
+    pub(crate) fake_players: crate::custom::fake_players::FakePlayerWorld,
     /// The buy lists' stock and restock queue (M6-SHOP-01, `shop/`).
     pub(crate) shop: crate::shop::ShopWorld,
     /// The duels going on and the duel state of every duelist (M6-DUEL-01, `duel.rs`).
@@ -144,6 +148,8 @@ pub struct World {
     pub(crate) bot_report: crate::bot_report::BotReportWorld,
     /// The community board settings and the last page of each player (S-HAND-01, `community_board/`).
     pub(crate) community_board: crate::community_board::CommunityBoardWorld,
+    /// The custom buffer features: custom board, scheme buffer, buff shop (M9-C03, `custom/`).
+    pub(crate) custom_buffers: crate::custom::CustomBuffers,
     /// `/time` and the other information user commands (S-HAND-01, `user_command_info.rs`).
     pub(crate) user_command_info: crate::user_command_info::UserCommandInfoWorld,
     /// The script handlers of S-HAND-02 (`script_handlers/`).
@@ -214,6 +220,7 @@ impl World {
             regions: RegionGrid::new(false),
             npcs: HashMap::new(),
             npc_world: crate::npc::NpcWorld::default(),
+            custom: crate::custom::CustomWorld::default(),
             talk: crate::dialog::TalkWorld::default(),
             admin: crate::admin::AdminWorld::default(),
             doors: HashMap::new(),
@@ -245,6 +252,7 @@ impl World {
             summons: crate::summon::SummonWorld::default(),
             clans: crate::clan::ClanWorld::default(),
             pvp: crate::pvp::PvpWorld::default(),
+            fake_players: crate::custom::fake_players::FakePlayerWorld::default(),
             shop: crate::shop::ShopWorld::default(),
             duel: crate::duel::DuelWorld::default(),
             friends: crate::friends::FriendWorld::default(),
@@ -261,6 +269,7 @@ impl World {
             clanhall: crate::clanhall::ClanHallWorld::default(),
             bot_report: crate::bot_report::BotReportWorld::default(),
             community_board: crate::community_board::CommunityBoardWorld::default(),
+            custom_buffers: crate::custom::CustomBuffers::default(),
             user_command_info: crate::user_command_info::UserCommandInfoWorld::default(),
             script_handlers: crate::script_handlers::unstuck::ScriptHandlerWorld::default(),
             decoy_trap: crate::decoy_trap::DecoyTrapWorld::default(),
@@ -422,6 +431,7 @@ impl World {
                 }
             }
             WorldCommand::Kick { account } => self.kick_account(&account),
+            WorldCommand::FactionBalanceCheck { faction, done } => done(self.faction_balance_page(faction)),
             WorldCommand::ReleaseOfflineTrader { object_id, done } => {
                 let was_trader = self.release_offline_trader_quietly(object_id);
                 done(was_trader);
@@ -1028,6 +1038,8 @@ impl World {
             TimerKind::Clan(timer) => self.on_clan_timer(timer),
             // Java: PvpFlagTaskManager.run (for one player)
             TimerKind::PvpFlag(id) => self.on_pvp_flag_timer(id),
+            // Java: FakePlayerChatManager.manageChat's ThreadPool.schedule
+            TimerKind::FakePlayerChat(key) => self.on_fake_player_chat_timer(key),
             // Java: PcCafePointsManager.giveRetailPcCafePont
             TimerKind::PcCafe(id) => self.on_pc_cafe_timer(id),
             // Java: BuyListTaskManager, InventoryEnableTask

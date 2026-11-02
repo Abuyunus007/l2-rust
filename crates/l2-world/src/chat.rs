@@ -6,7 +6,7 @@
 // General chat reaches the players within 1250 of the speaker (M3-WREG-01 regions). Shout and
 // trade in `ON` mode go to the players in the speaker's map region (M3-TELE-01's map regions),
 // `GLOBAL` to everybody. Chat bans and jail come from the punishments (`punishments.rs`). Left
-// out because the systems do not exist: factions, the say filter
+// out because the systems do not exist: the say filter
 // (`UseChatFilter`), voiced commands, fake players, the global-chat flood protector, and the
 // clan, alliance, petition and room channels (their messages are dropped with a debug line, like
 // Java does for a channel without handler). The party channel is `chat_party` (M6-PARTY-01).
@@ -302,7 +302,7 @@ impl World {
         let mut ids: Vec<ObjectId> = self.players.keys().copied().collect();
         ids.sort_unstable();
         for to in ids {
-            if !self.is_blocked(to, id) {
+            if !self.is_blocked(to, id) && self.faction_chat_allows(id, to) {
                 self.send(to, packet);
             }
         }
@@ -332,11 +332,27 @@ impl World {
             return;
         }
         // World.forEachVisibleObjectInRange(activeChar, Player.class, 1250, ...), then the speaker.
-        let packet = self.say_packet(id, ChatType::General, &player.data.name, text);
+        let name = player.data.name.clone();
+        let packet = self.say_packet(id, ChatType::General, &name, text);
+        // The other faction hears gibberish (`ChatRandomizer`, `Custom/FactionSystem.ini`).
+        let faction_chat = self.settings.faction.enabled && self.settings.faction.specific_chat;
+        let random_packet = if faction_chat {
+            let randomized = chat_randomize(self, text);
+            Some(self.say_packet(id, ChatType::General, &name, &randomized))
+        } else {
+            None
+        };
         for to in self.visible_objects_in_range(id, GENERAL_CHAT_RANGE) {
             // Java: `!BlockList.isBlocked(player, activeChar)`.
             if self.players.contains_key(&to) && !self.is_blocked(to, id) {
-                self.send(to, &packet);
+                match &random_packet {
+                    Some(random) if self.factions_oppose(id, to) => {
+                        self.send(to, random);
+                    }
+                    _ => {
+                        self.send(to, &packet);
+                    }
+                }
             }
         }
         self.send(id, &packet);
@@ -444,6 +460,7 @@ impl World {
                 && self.objects.get(&to).map_or(0, |e| e.instance_id) == instance
                 && !self.is_blocked(to, id)
                 && !(mutual_block && self.is_blocked(id, to))
+                && self.faction_chat_allows(id, to)
             {
                 self.send(to, packet);
             }
@@ -452,17 +469,24 @@ impl World {
 
     // Java: ChatWhisper.onChat
     fn chat_whisper(&mut self, id: ObjectId, target: Option<&str>, text: &str) {
-        let Some(player) = self.players.get(&id) else {
+        if !self.players.contains_key(&id) {
             return;
-        };
+        }
         if self.channel_refuses(id, ChatType::Whisper, true) {
             return;
         }
-        let sender_silent = player.gm.silence;
         // "Return if no target is set."
         let Some(target) = target else {
             return;
         };
+        // A whisper to a fake player (`Custom/FakePlayers.ini`).
+        if self.fake_player_whisper(id, target, text) {
+            return;
+        }
+        let Some(player) = self.players.get(&id) else {
+            return;
+        };
+        let sender_silent = player.gm.silence;
         // `World.getPlayer(name)`: `CharInfoTable.getIdByName` compares ignoring case.
         let wanted = target.to_lowercase();
         let receiver = if target.is_empty() {
@@ -491,6 +515,13 @@ impl World {
                         id,
                         &SystemMessage::new(SystemMessageId::ThatPersonIsInMessageRefusalMode),
                     );
+                    return;
+                }
+                if self.settings.faction.enabled
+                    && self.settings.faction.specific_chat
+                    && self.factions_oppose(id, receiver_id)
+                {
+                    self.send_message(id, "Player belongs to the opposing faction.");
                     return;
                 }
                 // Java: `!BlockList.isBlocked(receiver, activeChar)`: the receiver refuses messages
@@ -582,7 +613,7 @@ impl World {
         }
     }
 
-    // Java: ChatHeroVoice.onChat (without the faction chat, M9).
+    // Java: ChatHeroVoice.onChat
     fn chat_hero_voice(&mut self, id: ObjectId, text: &str) {
         let Some(player) = self.players.get(&id) else {
             return;
@@ -607,5 +638,39 @@ impl World {
         };
         let packet = self.say_packet(id, ChatType::HeroVoice, &player.data.name, text);
         self.broadcast_say(id, &packet);
+    }
+}
+
+/// Java `ChatRandomizer.randomize(text)` (`handlers/chat/channels/ChatRandomizer.java`): what the
+/// other faction hears of a general chat line. Letters become other letters, spaces, commas and
+/// dots stay, everything else becomes a character from `/` to `?`.
+fn chat_randomize(world: &mut World, text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    // Java iterates the UTF-16 units of the string.
+    for unit in text.encode_utf16() {
+        let code = if unit > 96 && unit < 123 {
+            world.rng().get(96, 123)
+        } else if unit > 64 && unit < 91 {
+            world.rng().get(64, 91)
+        } else if unit == 32 || unit == 44 || unit == 46 {
+            i32::from(unit)
+        } else {
+            world.rng().get(47, 64)
+        };
+        out.push(u32::try_from(code).ok().and_then(char::from_u32).unwrap_or('?'));
+    }
+    out
+}
+
+impl World {
+    /// The faction filter of `ChatShout`, `ChatTrade`, `ChatHeroVoice` and `ChatPartyMatchRoom`:
+    /// with the faction system and its chat on, only the own faction hears the speaker (Java sends
+    /// nothing to a player without a faction either, when the speaker has none).
+    pub(crate) fn faction_chat_allows(&self, speaker: ObjectId, listener: ObjectId) -> bool {
+        let settings = &self.settings.faction;
+        if !(settings.enabled && settings.specific_chat) {
+            return true;
+        }
+        self.same_faction(speaker, listener)
     }
 }

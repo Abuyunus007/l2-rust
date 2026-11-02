@@ -722,6 +722,15 @@ pub trait PlayerStore: Send + 'static {
         }
     }
 
+    /// The `buffer_schemes` rows of one character replaced (M9-C03, the scheme buffer).
+    fn store_buffer_schemes(
+        &mut self,
+        _object_id: ObjectId,
+        _schemes: &[(String, String)],
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
     /// A `bbs_favorites` write of the community board (S-HAND-01).
     fn store_bbs_favorite(
         &mut self,
@@ -1324,6 +1333,16 @@ async fn run<S: PlayerStore>(
                 };
                 if !acks.send_to_world(l2_world::WorldCommand::LotteryReread { result, then }) {
                     warn!("The lottery answer ({then:?}) could not be handed to the world.");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::BufferSchemes { object_id, schemes }) => {
+                // The scheme buffer's rows of one character; a failed write is logged (Java's
+                // `saveSchemes` logs and goes on).
+                if let Err(e) = store.store_buffer_schemes(object_id, &schemes).await {
+                    warn!(
+                        "SchemeBufferTable: Error while saving the schemes of {}: {e}",
+                        object_id.0
+                    );
                 }
             }
             OutboxMessage::Persist(PersistCommand::BbsFavorite(write)) => {
@@ -2270,6 +2289,27 @@ pub async fn load_auto_spawns(pool: &Pool) -> Vec<l2_world::sevensigns::AutoSpaw
             .collect(),
         Err(e) => {
             warn!("AutoSpawnHandler: Could not restore spawn data: {e}");
+            Vec::new()
+        }
+    }
+}
+
+/// Java `SchemeBufferTable.loadPlayerSchemes`: every row of `buffer_schemes` as `(object_id,
+/// scheme_name, skills)`. Java logs a failed read and starts without them.
+pub async fn load_buffer_schemes(pool: &Pool) -> Vec<(i32, String, String)> {
+    match l2_db::BufferSchemeRepository::new(pool.clone()).load_all().await {
+        Ok(rows) => rows
+            .into_iter()
+            .map(|row| {
+                (
+                    i32::try_from(row.object_id).unwrap_or(i32::MAX),
+                    row.scheme_name,
+                    row.skills,
+                )
+            })
+            .collect(),
+        Err(e) => {
+            warn!("SchemeBufferTable: Failed to load buff schemes from database. {e}");
             Vec::new()
         }
     }
@@ -3967,6 +4007,7 @@ pub struct DbStore {
     /// `character_subclasses` (S-SUB-01).
     subclasses: SubclassRepository,
     bbs_favorites: BbsFavoriteRepository,
+    buffer_schemes: l2_db::BufferSchemeRepository,
     lottery: LotteryRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
@@ -4064,6 +4105,7 @@ impl DbStore {
             petition_feedback: PetitionFeedbackRepository::new(pool.clone()),
             subclasses: SubclassRepository::new(pool.clone()),
             bbs_favorites: BbsFavoriteRepository::new(pool.clone()),
+            buffer_schemes: l2_db::BufferSchemeRepository::new(pool.clone()),
             lottery: LotteryRepository::new(pool.clone()),
             offline_trades: OfflineTradeRepository::new(pool),
             punishment_ids: HashMap::new(),
@@ -4739,7 +4781,8 @@ pub fn build_character_update(player: &PlayerData, row: &CharacterRow) -> Charac
             i32::from(row.vitality_points)
         },
         language: row.language.clone(),
-        faction: i32::from(row.faction),
+        // Java writes 1 for a good player, 2 for an evil one, else 0 (M9-C04).
+        faction: player.profile.faction,
         // Java writes `getPcCafePoints()`: hunting, the retail timer and multisell change it
         // (M6-FU-11).
         pccafe_points: player.profile.pccafe_points,
@@ -5950,6 +5993,17 @@ impl PlayerStore for DbStore {
         })
     }
 
+    async fn store_buffer_schemes(
+        &mut self,
+        object_id: ObjectId,
+        schemes: &[(String, String)],
+    ) -> Result<(), PersistError> {
+        self.buffer_schemes
+            .replace_schemes_of(object_id.0, schemes)
+            .await?;
+        Ok(())
+    }
+
     async fn store_bbs_favorite(&mut self, write: &FavoriteWrite) -> Result<(), PersistError> {
         match write {
             FavoriteWrite::Add {
@@ -6731,6 +6785,7 @@ mod tests {
         LotteryRead(l2_world::LotteryThen),
         /// A `bbs_favorites` write (S-HAND-01).
         BbsFavorite(FavoriteWrite),
+        BufferSchemes(i32, Vec<(String, String)>),
         /// A `bbs_favorites` read (S-HAND-01).
         BbsFavoriteRead(i32, FavoriteRead),
     }
@@ -7085,6 +7140,18 @@ mod tests {
         ) -> Result<l2_world::LotteryReply, PersistError> {
             self.calls.lock().unwrap().push(Call::LotteryRead(then));
             Ok(l2_world::LotteryReply::Tickets(vec![(1, 0)]))
+        }
+
+        async fn store_buffer_schemes(
+            &mut self,
+            object_id: ObjectId,
+            schemes: &[(String, String)],
+        ) -> Result<(), PersistError> {
+            self.calls
+                .lock()
+                .unwrap()
+                .push(Call::BufferSchemes(object_id.0, schemes.to_vec()));
+            Ok(())
         }
 
         async fn store_bbs_favorite(&mut self, write: &FavoriteWrite) -> Result<(), PersistError> {
@@ -8955,6 +9022,31 @@ mod tests {
             &answers[2],
             l2_world::WorldCommand::BbsFavoritesLoaded { result: Err(()), .. }
         ));
+    }
+
+    /// M9-C03: the scheme rows of a player go to the store in order with the other commands.
+    #[tokio::test]
+    async fn buffer_scheme_rows_reach_the_store() {
+        let store = Recording::default();
+        let calls = Arc::clone(&store.calls);
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
+        let task = spawn(store, rx, notice_tx, NO_WAIT, LeftAcks::default());
+        let schemes = vec![("Alpha".to_owned(), "1040,1059".to_owned())];
+        tx.send(OutboxMessage::Persist(PersistCommand::BufferSchemes {
+            object_id: ObjectId(7),
+            schemes: schemes.clone(),
+        }))
+        .unwrap();
+        drop(tx);
+        tokio::time::timeout(Duration::from_secs(10), task)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            calls.lock().unwrap().clone(),
+            vec![Call::BufferSchemes(7, schemes)]
+        );
     }
 
     /// M7-ADMIN-10: the requests of the world that are not its to do go to the control handler.

@@ -12,6 +12,7 @@
 //! [`View::on_event`], which receives every [`BridgeEvent`].
 
 pub mod accounts;
+pub mod backups;
 pub mod config_editor;
 pub mod connection;
 pub mod data_browser;
@@ -23,6 +24,8 @@ pub mod players;
 pub mod servers;
 pub mod setup;
 pub mod setup_core;
+pub mod switch;
+pub mod switch_core;
 
 use crate::app::AppCtx;
 use crate::bridge::BridgeEvent;
@@ -45,6 +48,7 @@ pub enum ViewId {
     Players,
     GameAdmin,
     Accounts,
+    Backups,
     Logs,
     Packets,
     Data,
@@ -53,13 +57,14 @@ pub enum ViewId {
 }
 
 impl ViewId {
-    pub const ALL: [ViewId; 11] = [
+    pub const ALL: [ViewId; 12] = [
         ViewId::Connection,
         ViewId::Setup,
         ViewId::Servers,
         ViewId::Players,
         ViewId::GameAdmin,
         ViewId::Accounts,
+        ViewId::Backups,
         ViewId::Logs,
         ViewId::Packets,
         ViewId::Data,
@@ -75,6 +80,7 @@ impl ViewId {
             ViewId::Players => "Players",
             ViewId::GameAdmin => "Game admin",
             ViewId::Accounts => "Accounts",
+            ViewId::Backups => "Backups",
             ViewId::Logs => "Logs",
             ViewId::Packets => "Packets",
             ViewId::Data => "Data",
@@ -93,6 +99,7 @@ impl ViewId {
                 | ViewId::Players
                 | ViewId::GameAdmin
                 | ViewId::Accounts
+                | ViewId::Backups
                 | ViewId::Logs
                 | ViewId::Packets
                 | ViewId::Data
@@ -111,6 +118,7 @@ impl ViewId {
             | ViewId::Players
             | ViewId::GameAdmin
             | ViewId::Accounts
+            | ViewId::Backups
             | ViewId::Logs
             | ViewId::Packets
             | ViewId::Data
@@ -129,6 +137,7 @@ pub struct Views {
     pub players: players::PlayersView,
     pub game_admin: game_admin::GameAdminView,
     pub accounts: accounts::AccountsView,
+    pub backups: backups::BackupsView,
     pub logs: logs::LogsView,
     pub packets: packets::PacketsView,
     pub data: data_browser::DataBrowserView,
@@ -146,6 +155,7 @@ impl Views {
             ViewId::Players => Some(&mut self.players),
             ViewId::GameAdmin => Some(&mut self.game_admin),
             ViewId::Accounts => Some(&mut self.accounts),
+            ViewId::Backups => Some(&mut self.backups),
             ViewId::Logs => Some(&mut self.logs),
             ViewId::Packets => Some(&mut self.packets),
             ViewId::Data => Some(&mut self.data),
@@ -161,6 +171,7 @@ impl Views {
         self.players.on_event(event);
         self.game_admin.on_event(event);
         self.accounts.on_event(event);
+        self.backups.on_event(event);
         self.logs.on_event(event);
         self.packets.on_event(event);
     }

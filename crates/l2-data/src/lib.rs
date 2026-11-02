@@ -22,6 +22,7 @@ pub mod enchant_hp_bonus;
 pub mod enchant_options;
 pub mod enchant_skill;
 pub mod experience;
+pub mod fake_player_chat;
 pub mod fence;
 pub mod fishing;
 pub mod henna;
@@ -45,7 +46,9 @@ pub mod player_template;
 pub mod recipe;
 pub mod residence;
 pub mod route;
+pub mod scheme_buffer;
 pub mod seed;
+pub mod sell_buff_data;
 pub mod skill;
 pub mod skill_learn;
 pub mod skill_tree;
@@ -84,6 +87,7 @@ pub use enchant_hp_bonus::EnchantHpBonus;
 pub use enchant_options::EnchantItemOptions;
 pub use enchant_skill::{EnchantSkillGroup, EnchantSkillGroupsData, EnchantSkillHolder, EnchantSkillLearn};
 pub use experience::ExperienceTable;
+pub use fake_player_chat::{FakePlayerChat, load_fake_player_chat};
 pub use fence::{FenceState, FenceTemplate, FenceTemplates};
 pub use fishing::{Fish, FishData, FishingMonster, FishingMonstersData, FishingRod, FishingRodsData};
 pub use henna::{Henna, Hennas};
@@ -106,7 +110,9 @@ pub use minigame::{
     ArenaReward, ColiseumArenaDef, ColiseumPoint, ColiseumTower, KrateisArenaDef, MinigameData,
 };
 pub use multisell::{MultisellData, MultisellLoadOptions};
-pub use npc::{NpcLoadOptions, NpcTemplate, NpcTemplates};
+pub use npc::{
+    FakePlayerHolder, NpcLoadOptions, NpcStatMultipliers, NpcTemplate, NpcTemplates, StatMultipliers,
+};
 pub use pet::{PetData, PetDataTable, PetLevelData, PetSkillLearn};
 pub use pet_skill::{PetSkill, PetSkillData};
 pub use player_template::{
@@ -115,7 +121,9 @@ pub use player_template::{
 pub use recipe::{RecipeData, RecipeHolder, RecipeList, RecipeStat};
 pub use residence::{SiegeSchedule, SiegeScheduleDate};
 pub use route::{RouteSay, Routes, WalkNode, WalkRoute};
+pub use scheme_buffer::{BuffSkillHolder, SchemeBufferSkills};
 pub use seed::{Seed, Seeds};
+pub use sell_buff_data::SellBuffData;
 pub use skill::{EffectTemplate, SkillLoadOptions, SkillOperateType, SkillTemplate, SkillTemplates};
 pub use skill_learn::SkillLearnData;
 pub use skill_tree::{SkillLearn, SkillLearnItem, SkillTrees, SocialClass};
@@ -225,6 +233,10 @@ pub struct Datapack {
     pub instances: Arc<InstanceTemplates>,
     /// `data/Routes.xml`: the walking routes of NPCs (M8-MISC-01).
     pub routes: Arc<Routes>,
+    /// `data/SchemeBufferSkills.xml`: the scheme buffer's skills (M9-C03).
+    pub scheme_buffer_skills: Arc<SchemeBufferSkills>,
+    /// `data/SellBuffData.xml`: the skills the buff shop may sell (M9-C03).
+    pub sell_buff_data: Arc<SellBuffData>,
 }
 
 /// The config values that change what the loaders read. The game server builds it from
@@ -232,7 +244,7 @@ pub struct Datapack {
 ///
 /// [`DatapackOptions::default`] holds Java's *code* defaults, not the values of the shipped
 /// `.ini` files, so [`Datapack::load`] behaves as it always did. Each field names its key.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DatapackOptions {
     /// `General.ini` `CustomItemsLoad` (default false): also load `data/stats/items/custom`.
     pub custom_items_load: bool,
@@ -247,6 +259,8 @@ pub struct DatapackOptions {
     pub max_aggro_range: i32,
     /// `NPC.ini` `DefaultCorpseTime` (default 7).
     pub default_corpse_time: i32,
+    /// `Custom/NpcStatMultipliers.ini` (default off): `Some` when `EnableNpcStatMultipliers` is on.
+    pub npc_stat_multipliers: Option<NpcStatMultipliers>,
     /// `General.ini` `HtmCache` (default true). False is Java's lazy mode. The Rust HTML cache
     /// preloads in both cases (see `HtmCache::load`), so this only changes the log note.
     pub htm_cache: bool,
@@ -273,6 +287,7 @@ impl Default for DatapackOptions {
             no_spawns: false,
             max_aggro_range: npc.max_aggro_range,
             default_corpse_time: npc.default_corpse_time,
+            npc_stat_multipliers: npc.stat_multipliers,
             htm_cache: true,
             check_html_encoding: true,
             skills: SkillLoadOptions::default(),
@@ -306,6 +321,7 @@ impl Datapack {
             fake_players_enabled: options.fake_players_enabled,
             max_aggro_range: options.max_aggro_range,
             default_corpse_time: options.default_corpse_time,
+            stat_multipliers: options.npc_stat_multipliers,
         };
         let npcs = NpcTemplates::load(root, &npc_options);
         let spawn_options = SpawnLoadOptions {
@@ -402,6 +418,8 @@ impl Datapack {
             seeds,
             instances: Arc::new(InstanceTemplates::load(root)),
             routes,
+            scheme_buffer_skills: Arc::new(SchemeBufferSkills::load(root)),
+            sell_buff_data: Arc::new(SellBuffData::load(root)),
         })
     }
 }

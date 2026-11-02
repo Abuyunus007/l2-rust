@@ -308,6 +308,12 @@ pub enum PersistCommand {
         player: ObjectId,
         kind: crate::community_board::FavoriteRead,
     },
+    /// The `buffer_schemes` rows of one player after a scheme changed: his rows are replaced by
+    /// these `(scheme_name, skills)` (M9-C03, `custom/scheme_buffer.rs`).
+    BufferSchemes {
+        object_id: ObjectId,
+        schemes: Vec<(String, String)>,
+    },
 }
 
 /// One row write of [`PersistCommand::ItemRows`], with Java's statement (`Item.updateInDb`,

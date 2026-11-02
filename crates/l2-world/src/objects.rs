@@ -105,6 +105,8 @@ pub struct Npc {
     pub collision_radius: f64,
     /// Java `Attackable._mustGiveExpSp` (`mustRewardExpSp()`): `OpenChest` turns it off.
     pub must_reward_exp_sp: bool,
+    /// Java `Attackable._champion` (`isChampion()`), rolled at spawn, see `custom/champion.rs`.
+    pub champion: bool,
     /// Java `Chest._specialDrop`: the chest was unlocked (`OpenChest`).
     pub special_drop: bool,
     /// The Creature fields an NPC's movement uses: `_move`, `_isRunning`, `_isTeleporting`, the
