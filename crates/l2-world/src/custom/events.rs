@@ -150,6 +150,25 @@ impl World {
         );
     }
 
+    /// Java `ZoneManager.getZoneByName(name).getZone().getRandomPoint()`: a random point of the
+    /// zone's shape, its Z from the geodata (the middle of the zone without any). `None` for no
+    /// such zone.
+    pub fn zone_random_point(&mut self, name: &str) -> Option<(i32, i32, i32)> {
+        let id = self.zone_id_by_name(name)?;
+        let form = self
+            .zoning
+            .zones
+            .as_ref()?
+            .iter()
+            .find(|z| z.id == id)?
+            .form
+            .clone();
+        let (x, y) = form.random_xy(&mut |min, max| self.rng().get(min, max));
+        let mid = form.mid_z();
+        let z = self.geo.as_ref().map_or(mid, |g| g.height(x, y, mid));
+        Some((x, y, z))
+    }
+
     /// Java `skill.getHitTime()` and `skill.getReuseDelay()` of a skill ((0, 0) for an unknown one).
     pub fn skill_hit_and_reuse(&self, skill_id: i32, level: i32) -> (i32, i32) {
         self.data
