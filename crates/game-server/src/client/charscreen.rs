@@ -738,14 +738,6 @@ impl ClientSession {
             ctl.send_and_close(ServerClose.to_bytes());
             return;
         }
-        // Java: `DualboxCheckMaxPlayersPerIP` (M9-C06): over the limit the client gets a page and
-        // does not select the character.
-        if let Some(page) = self.dualbox_refusal(info.access_level).await {
-            if let Some(message) = l2_protocol_game::server::NpcHtmlMessage::new(0, &page) {
-                ctl.send(message.to_bytes());
-            }
-            return;
-        }
         let ctx = Arc::clone(&self.ctx);
         let screen = &ctx.charscreen;
         let Some(account) = self.account.clone() else {
@@ -754,6 +746,24 @@ impl ClientSession {
         // Java: "Disconnect offline trader." The trader of the character is stored and removed
         // before the character is read, so the read sees what the shop sold (M6-FU-14).
         self.release_offline_trader(info.entry.object_id).await;
+        // Java: `DualboxCheckMaxOfflinePlay(Premium)PerIP` of the character that was just released,
+        // then `DualboxCheckMaxPlayersPerIP` (M9-C06, M9-L01): over the limit the client gets a page
+        // and does not select the character.
+        if let Some(page) = self
+            .offline_play_refusal(info.entry.object_id, info.access_level)
+            .await
+        {
+            if let Some(message) = l2_protocol_game::server::NpcHtmlMessage::new(0, &page) {
+                ctl.send(message.to_bytes());
+            }
+            return;
+        }
+        if let Some(page) = self.dualbox_refusal(info.access_level).await {
+            if let Some(message) = l2_protocol_game::server::NpcHtmlMessage::new(0, &page) {
+                ctl.send(message.to_bytes());
+            }
+            return;
+        }
         // Java: `client.load(slot)`. A character that cannot be loaded is not selected; Java
         // logs it and sends nothing.
         let player = match ctx.loader.load_player(&account, info.entry.object_id).await {
@@ -860,6 +870,26 @@ impl ClientSession {
         rx.await.ok().flatten()
     }
 
+    /// The `OFFLINE_PLAY` limit of `CharacterSelect` for the character that was just released.
+    async fn offline_play_refusal(&self, char_id: i32, access_level: i32) -> Option<String> {
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        let sent = self
+            .ctx
+            .world
+            .send(l2_world::WorldCommand::OfflinePlaySelectCheck {
+                object_id: ObjectId(char_id),
+                ip: Some(self.ip),
+                access_level,
+                done: Box::new(move |page| {
+                    let _ = tx.send(page);
+                }),
+            });
+        if !sent {
+            return None;
+        }
+        rx.await.ok().flatten()
+    }
+
     /// Java `CharacterSelect`: `World.getPlayer(objectId)` is the character's offline trader, if
     /// there is one; `Disconnection.of(player).storeAndDelete()`. The world answers whether it
     /// was one, and the final store is awaited (a bounded wait, like the restart's).
@@ -878,16 +908,36 @@ impl ClientSession {
     }
 
     async fn release_offline_trader(&self, char_id: i32) {
+        self.release_offline(char_id, None).await;
+    }
+
+    /// `CharSelectionInfo.loadCharacterSelectInfo`: an offline trader (`OfflineDisconnectSameAccount`)
+    /// or offline player (`OfflinePlayDisconnectSameAccount`) of the account is stored and deleted
+    /// as the list is built (M9-L01).
+    pub(super) async fn release_offline_same_account(&self, char_id: i32, trader: bool, play: bool) {
+        self.release_offline(char_id, Some((trader, play))).await;
+    }
+
+    /// The release of an offline character and the wait for its final store. `same_account` is
+    /// `None` for `CharacterSelect` (any character that is in the world) and the two switches of
+    /// the character list otherwise.
+    async fn release_offline(&self, char_id: i32, same_account: Option<(bool, bool)>) {
         const WAIT: std::time::Duration = std::time::Duration::from_secs(10);
         let id = ObjectId(char_id);
         // Registered before the command, so the acknowledgement cannot be missed.
         let stored = self.ctx.left_acks.wait_for(id);
         let (tx, rx) = tokio::sync::oneshot::channel();
-        let sent = self.ctx.world.send(l2_world::WorldCommand::ReleaseOfflineTrader {
-            object_id: id,
-            done: Box::new(move |was_trader| {
-                let _ = tx.send(was_trader);
-            }),
+        let done: Box<dyn FnOnce(bool) + Send> = Box::new(move |was_trader| {
+            let _ = tx.send(was_trader);
+        });
+        let sent = self.ctx.world.send(match same_account {
+            None => l2_world::WorldCommand::ReleaseOfflineTrader { object_id: id, done },
+            Some((trader, play)) => l2_world::WorldCommand::ReleaseOfflineSameAccount {
+                object_id: id,
+                trader,
+                play,
+                done,
+            },
         });
         if !sent {
             self.ctx.left_acks.cancel_wait(id);

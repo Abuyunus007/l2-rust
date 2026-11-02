@@ -417,6 +417,15 @@ impl World {
                     .filter(|o| self.is_monster(*o)),
             );
         }
+        // The fake players in view (`Custom/FakePlayers.ini`): Java's scan goes through every
+        // creature, and only a fake player can be aggressed besides the players (M9-L01).
+        if self.settings.fake_players.enabled {
+            for object in self.visible_objects(id) {
+                if object != id && !candidates.contains(&object) && self.is_fake_player(object) {
+                    candidates.push(object);
+                }
+            }
+        }
         candidates
     }
 
@@ -651,10 +660,23 @@ impl World {
         }
         if kind == ObjectKind::Npc {
             // Java: `if (target.isAttackable()) { if (!target.isAutoAttackable(me)) return false;
-            // if (me.isChaos() ...) ... }` and then `if (target.isAttackable() || target
-            // instanceof Npc) return false`. An attackable monster's `isAutoAttackable(attacker)`
-            // is false for a monster attacker, so the chaos branch cannot be reached by the
-            // classes that run this AI; every NPC target ends in `false`.
+            // if (me.isChaos() && me.isInsideRadius2D(target, aggroRange)) { if
+            // (target.isInMyClan(me)) return false; return canSeeTarget } }` and then
+            // `if (target.isAttackable() || target instanceof Npc) return false`. An attackable
+            // monster's `isAutoAttackable(attacker)` is false for a monster attacker, so only a
+            // fake player (`Monster.isAutoAttackable`, M9-L01) reaches the chaos branch.
+            if self.is_attackable_npc(target) {
+                if !self.npc_auto_attackable_by_npc(target, me) {
+                    return false;
+                }
+                if self.is_chaos(me) && self.dist_2d(me, target) < f64::from(self.aggro_range_of(me)) {
+                    if self.is_in_my_clan(me, target) {
+                        return false;
+                    }
+                    // Los Check
+                    return self.can_see_target(me, target);
+                }
+            }
             return false;
         }
         // Depending on config, do not allow mobs to attack _new_ players in peacezones, unless
@@ -743,6 +765,16 @@ impl World {
                     .collect()
             };
             for target in targets {
+                // `if (target.isFakePlayer()) { if (!npc.isFakePlayer() || FAKE_PLAYER_AGGRO_FPC)
+                // { if (hating == 0) addDamageHate(target, 0, 0) } return; }`: no `ON_NPC_HATE`.
+                if self.is_fake_player(target) {
+                    if (!self.is_fake_player(id) || self.settings.fake_players.aggro_fpc)
+                        && self.aggro_hating(id, target) == 0
+                    {
+                        self.add_damage_hate(id, target, 0, 0);
+                    }
+                    continue;
+                }
                 // `ON_NPC_HATE` can terminate the aggression here (S-API-01).
                 if !self.script_npc_hate(id, target) {
                     continue;

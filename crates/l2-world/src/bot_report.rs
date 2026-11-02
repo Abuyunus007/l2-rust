@@ -291,10 +291,23 @@ impl World {
             return false;
         };
         // `!bot.isPlayer() && !bot.isFakePlayer()`, or the reporter itself.
-        if !self.players.contains_key(&bot) || bot == reporter {
+        let fake = self.is_fake_player(bot);
+        if (!self.players.contains_key(&bot) && !fake) || bot == reporter {
             return false;
         }
-        if self.is_inside_zone(bot, ZoneId::Peace) || self.is_inside_zone(bot, ZoneId::Pvp) {
+        // A fake player can be reported only when it is talkable (M9-L01).
+        if fake && !self.fake_player_npc_talkable(bot) {
+            return false;
+        }
+        let (peace, pvp) = if fake {
+            self.npc_peace_and_pvp(bot)
+        } else {
+            (
+                self.is_inside_zone(bot, ZoneId::Peace),
+                self.is_inside_zone(bot, ZoneId::Pvp),
+            )
+        };
+        if peace || pvp {
             self.report_tell(
                 reporter,
                 SystemMessageId::YouCannotReportACharacterWhoIsInAPeaceZoneOrABattlefield,
@@ -423,6 +436,7 @@ impl World {
             .players
             .get(&bot)
             .map(|p| p.data.name.clone())
+            .or_else(|| self.fake_player_npc_name(bot))
             .unwrap_or_default();
         self.send(
             reporter,
@@ -437,7 +451,10 @@ impl World {
             .with(SystemMessageParam::Text(bot_name))
             .with(SystemMessageParam::IntNumber(i32::from(points_left))),
         );
-        self.handle_bot_report(bot, count);
+        // `if (bot.isPlayer()) handleReport(...)`: a fake player is only counted.
+        if self.players.contains_key(&bot) {
+            self.handle_bot_report(bot, count);
+        }
         true
     }
 

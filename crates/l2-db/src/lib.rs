@@ -79,6 +79,7 @@ pub use game::{NewPunishment, PunishmentRepository, PunishmentRow};
 pub use game::{NewShortcut, ShortcutRepository, ShortcutRow};
 pub use game::{NewSkillSave, SkillLevel, SkillRepository, SkillSaveRow};
 pub use game::{NewSummonSkillSave, SummonRepository, SummonSkillSaveRow};
+pub use game::{OfflinePlayGroupRow, OfflinePlayRepository, OfflinePlayRow};
 pub use game::{OfflineTradeItemRow, OfflineTradeRepository, OfflineTradeStatusRow};
 pub use game::{OlympiadDataRow, OlympiadFightRow, OlympiadNobleRow, OlympiadRepository};
 pub use game::{RandomSpawnRepository, RandomSpawnRow};

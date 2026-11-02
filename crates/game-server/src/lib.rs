@@ -960,6 +960,16 @@ impl Server {
         } else {
             Vec::new()
         };
+        // Java: OfflinePlayTable.restoreOfflinePlayers (GameServer, with EnableOfflinePlayCommand and
+        // RestoreAutoPlayOffliners; here also with OfflineTradeDatabaseWrites, D-52), read only.
+        let restore_offline_play = custom_play
+            .offline_play
+            .restore_wanted(offline_settings.database_writes);
+        let (offline_players, offline_play_groups) = if restore_offline_play {
+            persist::load_offline_players(&pool).await
+        } else {
+            (Vec::new(), Vec::new())
+        };
         // Java: FloodProtectorConfig.load (FloodProtector.ini).
         let flood_settings = world_data::flood_settings_from_config(&config);
         // Java: GeneralConfig / CommunityBoardConfig (the community board, S-HAND-01).
@@ -1377,6 +1387,10 @@ impl Server {
                     if restore_traders {
                         world.restore_offline_traders(offline_traders);
                     }
+                    // Java: GameServer, after the traders: OfflinePlayTable.restoreOfflinePlayers.
+                    if restore_offline_play {
+                        world.restore_offline_players(offline_players, offline_play_groups);
+                    }
                 },
                 move |outbox| persist::spawn(store, outbox, notices_tx, RetryPolicy::default(), acks),
             )
@@ -1395,6 +1409,9 @@ impl Server {
             let (stop, acks) = (shutdown.clone(), left_acks.clone());
             let root = datapack_root.clone();
             let (lazy, check_encoding) = (!config.general.htm_cache, config.general.check_html_encoding);
+            // `//reload fakeplayerchat` (`Custom/FakePlayers.ini`).
+            let read_fake_player_chat =
+                config.fake_players.fake_players_enabled && config.fake_players.fake_player_chat;
             // `//respawnall` reads the spawn files again with the same options as the start.
             let (npcs, spawn_options, spawn_root) = {
                 let options = options_from_config(&config, &paths.config_dir);
@@ -1417,6 +1434,20 @@ impl Server {
                         let spawns = Arc::new(l2_data::SpawnData::load(&root, &npcs, &options));
                         if !acks.send_to_world(WorldCommand::SpawnsReloaded { spawns }) {
                             warn!("The reloaded spawns could not be handed to the world.");
+                        }
+                    });
+                }
+                l2_world::ControlRequest::ReloadFakePlayerChat { requester } => {
+                    let (acks, root) = (acks.clone(), root.clone());
+                    tokio::task::spawn_blocking(move || {
+                        // The file is read only while the chat is on (Java `FakePlayerChatManager.load`).
+                        let chat = if read_fake_player_chat {
+                            npcs::fake_player_chat_entries(&root)
+                        } else {
+                            Vec::new()
+                        };
+                        if !acks.send_to_world(WorldCommand::FakePlayerChatReloaded { requester, chat }) {
+                            warn!("The reloaded fake player chat could not be handed to the world.");
                         }
                     });
                 }
