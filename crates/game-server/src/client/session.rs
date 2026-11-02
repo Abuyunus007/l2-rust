@@ -247,7 +247,8 @@ impl ClientSession {
         );
         if trader || play {
             for c in &characters {
-                self.release_offline_same_account(c.entry.object_id, trader, play).await;
+                self.release_offline_same_account(c.entry.object_id, trader, play)
+                    .await;
             }
         }
         let last_access: Vec<i64> = characters.iter().map(|c| c.last_access).collect();

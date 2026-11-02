@@ -425,7 +425,7 @@ mod tests {
         for (_, action) in RELOAD_COMMANDS {
             let kind = action.split(' ').nth(1).unwrap();
             assert!(
-                NOT_RELOADABLE.contains(&kind) || ["htm", "html", "quest"].contains(&kind),
+                NOT_RELOADABLE.contains(&kind) || ["htm", "html", "quest", "fakeplayerchat"].contains(&kind),
                 "{kind}"
             );
         }

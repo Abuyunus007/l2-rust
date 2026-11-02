@@ -660,7 +660,10 @@ fn auto_play_lists_the_pet_skills_of_pet_skill_data() {
     };
     let summon = s.summon();
     assert_eq!(s.world.pet_known_skills(summon), vec![SkillKey::new(5110, 1)]);
-    assert_eq!(s.world.pet_known_skill(summon, 5110), Some(SkillKey::new(5110, 1)));
+    assert_eq!(
+        s.world.pet_known_skill(summon, 5110),
+        Some(SkillKey::new(5110, 1))
+    );
     assert_eq!(s.world.pet_known_skill(summon, 9999), None);
     s.me.take();
     say(&mut s, ".playskills");

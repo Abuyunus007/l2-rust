@@ -153,7 +153,12 @@ impl World {
     /// the skills with their prices (the caller then sits the player down).
     pub(crate) fn sell_buffs_restore(&mut self, id: ObjectId, holders: Vec<SellBuffHolder>) {
         self.custom_buffers.sell.selling.insert(id);
-        self.custom_buffers.sell.lists.entry(id).or_default().extend(holders);
+        self.custom_buffers
+            .sell
+            .lists
+            .entry(id)
+            .or_default()
+            .extend(holders);
     }
 
     /// The player left: his buff list goes with him (Java keeps it in the `Player` object).

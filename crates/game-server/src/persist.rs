@@ -123,8 +123,8 @@ use l2_world::{
     NobleRow, NobleStats, OlympiadData, OlympiadLoad, OlympiadRereadRequest, OlympiadRereadRows,
     OlympiadWrite,
 };
-use l2_world::{OfflineSettings, OfflineTradeLine, OfflineTradeRow, OfflineTradeStatus, OfflineTradeWrite};
 use l2_world::{OfflinePlayGroup, OfflinePlayRestore, OfflinePlayWrite};
+use l2_world::{OfflineSettings, OfflineTradeLine, OfflineTradeRow, OfflineTradeStatus, OfflineTradeWrite};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
 use tokio::task;
@@ -2229,10 +2229,7 @@ pub async fn load_offline_players(pool: &Pool) -> (Vec<OfflinePlayRestore>, Vec<
             }
         };
         let rows = match repo.load_player(char_id).await {
-            Ok(rows) => rows
-                .into_iter()
-                .map(|r| (i32::from(r.kind), r.id))
-                .collect(),
+            Ok(rows) => rows.into_iter().map(|r| (i32::from(r.kind), r.id)).collect(),
             Err(e) => {
                 warn!("OfflinePlayTable: Error loading auto player {char_id}: {e}");
                 continue;
@@ -2249,7 +2246,9 @@ pub async fn load_offline_players(pool: &Pool) -> (Vec<OfflinePlayRestore>, Vec<
                         leader: ObjectId(leader),
                         members: members
                             .into_iter()
-                            .filter_map(|m| Some((ObjectId(i32::try_from(m.char_id).ok()?), i32::from(m.kind))))
+                            .filter_map(|m| {
+                                Some((ObjectId(i32::try_from(m.char_id).ok()?), i32::from(m.kind)))
+                            })
                             .collect(),
                     }),
                     Err(e) => warn!("OfflinePlayTable: Error while restoring offline groups. {e}"),
@@ -5538,7 +5537,10 @@ impl PlayerStore for DbStore {
                 repo.remove_player(char_id.0).await?;
                 for (kind, id) in rows {
                     if let Err(e) = repo.insert_player(char_id.0, *kind, *id).await {
-                        warn!("OfflinePlayTable: Error while saving offline auto player {}: {e}", char_id.0);
+                        warn!(
+                            "OfflinePlayTable: Error while saving offline auto player {}: {e}",
+                            char_id.0
+                        );
                     }
                 }
             }

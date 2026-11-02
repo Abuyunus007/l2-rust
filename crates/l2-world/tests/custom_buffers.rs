@@ -1118,7 +1118,11 @@ fn a_buff_seller_is_stored_and_restored_like_an_offline_trader() {
     s.bypass(A, "sellbuffaddskill 1040 200");
     s.bypass(A, "voice .sellbuff");
     s.bypass(A, "sellbuffstart cheap buffs");
-    assert!(s.world.is_selling_buffs(ObjectId(A)), "{:?}", texts(&s.log.take(), A));
+    assert!(
+        s.world.is_selling_buffs(ObjectId(A)),
+        "{:?}",
+        texts(&s.log.take(), A)
+    );
     s.log.take();
     s.input(A, ClientInput::Logout);
     let out = s.log.take();
@@ -1157,7 +1161,10 @@ fn a_buff_seller_is_stored_and_restored_like_an_offline_trader() {
     )]);
     assert!(t.world.is_offline_trader(ObjectId(A)));
     assert!(t.world.is_selling_buffs(ObjectId(A)));
-    assert_eq!(t.world.private_store_type(ObjectId(A)), PrivateStoreType::PackageSell);
+    assert_eq!(
+        t.world.private_store_type(ObjectId(A)),
+        PrivateStoreType::PackageSell
+    );
     assert_eq!(
         t.world.selling_buffs(ObjectId(A)),
         [SellBuffHolder {

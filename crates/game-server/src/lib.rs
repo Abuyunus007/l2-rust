@@ -971,7 +971,7 @@ impl Server {
             (Vec::new(), Vec::new())
         };
         // Java: FloodProtectorConfig.load (FloodProtector.ini).
-        let flood_settings =world_data::flood_settings_from_config(&config);
+        let flood_settings = world_data::flood_settings_from_config(&config);
         // Java: GeneralConfig / CommunityBoardConfig (the community board, S-HAND-01).
         let community_board_settings = world_data::community_board_settings(&config);
         // Java: CommunityBoardConfig (the custom board), SchemeBufferConfig, SellBuffsConfig (M9-C03).

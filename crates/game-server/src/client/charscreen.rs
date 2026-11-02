@@ -749,7 +749,10 @@ impl ClientSession {
         // Java: `DualboxCheckMaxOfflinePlay(Premium)PerIP` of the character that was just released,
         // then `DualboxCheckMaxPlayersPerIP` (M9-C06, M9-L01): over the limit the client gets a page
         // and does not select the character.
-        if let Some(page) = self.offline_play_refusal(info.entry.object_id, info.access_level).await {
+        if let Some(page) = self
+            .offline_play_refusal(info.entry.object_id, info.access_level)
+            .await
+        {
             if let Some(message) = l2_protocol_game::server::NpcHtmlMessage::new(0, &page) {
                 ctl.send(message.to_bytes());
             }
@@ -870,14 +873,17 @@ impl ClientSession {
     /// The `OFFLINE_PLAY` limit of `CharacterSelect` for the character that was just released.
     async fn offline_play_refusal(&self, char_id: i32, access_level: i32) -> Option<String> {
         let (tx, rx) = tokio::sync::oneshot::channel();
-        let sent = self.ctx.world.send(l2_world::WorldCommand::OfflinePlaySelectCheck {
-            object_id: ObjectId(char_id),
-            ip: Some(self.ip),
-            access_level,
-            done: Box::new(move |page| {
-                let _ = tx.send(page);
-            }),
-        });
+        let sent = self
+            .ctx
+            .world
+            .send(l2_world::WorldCommand::OfflinePlaySelectCheck {
+                object_id: ObjectId(char_id),
+                ip: Some(self.ip),
+                access_level,
+                done: Box::new(move |page| {
+                    let _ = tx.send(page);
+                }),
+            });
         if !sent {
             return None;
         }

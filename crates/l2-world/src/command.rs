@@ -614,7 +614,9 @@ impl fmt::Debug for WorldCommand {
             Self::ReleaseOfflineSameAccount { object_id, .. } => {
                 write!(f, "ReleaseOfflineSameAccount({object_id})")
             }
-            Self::OfflinePlaySelectCheck { object_id, .. } => write!(f, "OfflinePlaySelectCheck({object_id})"),
+            Self::OfflinePlaySelectCheck { object_id, .. } => {
+                write!(f, "OfflinePlaySelectCheck({object_id})")
+            }
             Self::Admin(query) => write!(f, "Admin({query:?})"),
             Self::PathFound {
                 requester,

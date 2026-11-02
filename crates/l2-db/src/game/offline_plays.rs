@@ -68,7 +68,10 @@ impl OfflinePlayRepository {
     /// The characters with rows (`SELECT DISTINCT charId`).
     pub async fn load_player_ids(&self) -> Result<Vec<i32>> {
         let rows: Vec<(u32,)> = sqlx::query_as(LOAD_PLAYER_IDS).fetch_all(&self.pool).await?;
-        Ok(rows.into_iter().filter_map(|(id,)| i32::try_from(id).ok()).collect())
+        Ok(rows
+            .into_iter()
+            .filter_map(|(id,)| i32::try_from(id).ok())
+            .collect())
     }
 
     /// The rows of one character.
@@ -81,7 +84,10 @@ impl OfflinePlayRepository {
 
     /// `DELETE FROM character_offline_play WHERE charId=?`.
     pub async fn remove_player(&self, char_id: i32) -> Result<()> {
-        sqlx::query(REMOVE_PLAYER).bind(char_id).execute(&self.pool).await?;
+        sqlx::query(REMOVE_PLAYER)
+            .bind(char_id)
+            .execute(&self.pool)
+            .await?;
         Ok(())
     }
 
@@ -98,8 +104,13 @@ impl OfflinePlayRepository {
 
     /// The leaders with members (`SELECT DISTINCT leaderId`).
     pub async fn load_group_leader_ids(&self) -> Result<Vec<i32>> {
-        let rows: Vec<(u32,)> = sqlx::query_as(LOAD_GROUP_LEADER_IDS).fetch_all(&self.pool).await?;
-        Ok(rows.into_iter().filter_map(|(id,)| i32::try_from(id).ok()).collect())
+        let rows: Vec<(u32,)> = sqlx::query_as(LOAD_GROUP_LEADER_IDS)
+            .fetch_all(&self.pool)
+            .await?;
+        Ok(rows
+            .into_iter()
+            .filter_map(|(id,)| i32::try_from(id).ok())
+            .collect())
     }
 
     /// The members of one leader.

@@ -1187,14 +1187,19 @@ fn offline_players_are_restored_with_their_settings_and_groups() {
         assert!(s.world.is_auto_playing(ObjectId(id)));
     }
     s.advance(3000);
-    assert!(s.world.is_affected_by_skill(ObjectId(2), 9002), "the auto buff was cast");
+    assert!(
+        s.world.is_affected_by_skill(ObjectId(2), 9002),
+        "the auto buff was cast"
+    );
     assert!(!s.world.is_affected_by_skill(ObjectId(3), 9002));
     assert!(s.world.party_of(ObjectId(2)).is_some());
     assert_eq!(s.world.party_of(ObjectId(2)), s.world.party_of(ObjectId(3)));
     assert_eq!(offline_play_commands(&s.out), vec![OfflinePlayWrite::ClearGroups]);
 
     // `Shutdown`: `storeOfflineGroups` writes the member whose leader auto plays too.
-    s.world.handle(WorldCommand::Shutdown { done: Box::new(|| {}) });
+    s.world.handle(WorldCommand::Shutdown {
+        done: Box::new(|| {}),
+    });
     assert_eq!(
         offline_play_commands(&s.out),
         vec![OfflinePlayWrite::StoreGroups(vec![(ObjectId(2), ObjectId(3), 1)])]
@@ -1268,7 +1273,10 @@ fn a_bot_report_on_a_fake_player_follows_java() {
     let rat = s.world.spawn_npc_at(20001, X + 70, Y, Z, 0).unwrap();
     s.me.take();
     assert!(!s.world.report_bot(ME, Some(silent)), "not talkable");
-    assert!(!s.world.report_bot(ME, Some(rat)), "not a player, not a fake player");
+    assert!(
+        !s.world.report_bot(ME, Some(rat)),
+        "not a player, not a fake player"
+    );
     assert!(s.me.take().is_empty());
     assert!(s.world.report_bot(ME, Some(talkable)));
     let out = s.me.take();
@@ -1293,7 +1301,7 @@ fn a_bot_report_on_a_fake_player_follows_java() {
 fn clicking_a_fake_player_follows_it() {
     let mut s = Scene::new(fakes_on());
     let fake = s.world.spawn_npc_at(20002, X + 50, Y, Z, 0).unwrap();
-    let click =|s: &mut Scene, object: ObjectId| {
+    let click = |s: &mut Scene, object: ObjectId| {
         s.world.handle(WorldCommand::Input {
             session: SessionId(u64::try_from(ME.0).unwrap()),
             input: ClientInput::Action {
@@ -1383,7 +1391,10 @@ fn the_captcha_counter_skips_a_player_in_auto_play() {
         s.world.do_die(rat, Some(ME));
         s.world.captcha_is_in_report_mode(ME)
     };
-    assert!(kill_one(false), "the first kill asks for the code (the counter is 0)");
+    assert!(
+        kill_one(false),
+        "the first kill asks for the code (the counter is 0)"
+    );
     assert!(!kill_one(true), "a kill in auto play is not counted");
 }
 
@@ -1437,7 +1448,10 @@ fn offline_play_counts_the_connections_of_an_address() {
     s.say(".offlineplay");
     s.dlg_answer(1);
     assert!(!s.world.is_offline_play(ME));
-    assert!(said_contains(&s.me.take(), "Only 1 offline players allowed per IP."));
+    assert!(said_contains(
+        &s.me.take(),
+        "Only 1 offline players allowed per IP."
+    ));
     // The place is free again: the character goes.
     s.world.anti_feed_remove_client(OFFLINE_PLAY, Some(ip));
     s.say(".offlineplay");

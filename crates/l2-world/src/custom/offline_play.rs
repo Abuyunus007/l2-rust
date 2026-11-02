@@ -74,7 +74,10 @@ pub type OfflinePlayLine = (i32, i32);
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OfflinePlayWrite {
     /// `storeOfflinePlay`: the rows of the character are deleted, then these are written.
-    Store { char_id: ObjectId, rows: Vec<OfflinePlayLine> },
+    Store {
+        char_id: ObjectId,
+        rows: Vec<OfflinePlayLine>,
+    },
     /// `removeOfflinePlay`.
     Remove { char_id: ObjectId },
     /// `storeOfflineGroups`: `(leader, member, distribution type id)`.
@@ -205,7 +208,9 @@ impl World {
     /// `OfflinePlayTable.removeOfflinePlay(player)`.
     fn offline_play_remove_rows(&mut self, id: ObjectId) {
         self.outbox
-            .persist(PersistCommand::OfflinePlay(OfflinePlayWrite::Remove { char_id: id }));
+            .persist(PersistCommand::OfflinePlay(OfflinePlayWrite::Remove {
+                char_id: id,
+            }));
     }
 
     /// `ON_PLAYER_LOGIN` of `OfflinePlay`: the login message.
@@ -370,10 +375,11 @@ impl World {
         // `if (RESTORE_AUTO_PLAY_OFFLINERS) storeOfflinePlay(this)`.
         if self.offline_play_writes() {
             let rows = self.offline_play_rows(id);
-            self.outbox.persist(PersistCommand::OfflinePlay(OfflinePlayWrite::Store {
-                char_id: id,
-                rows,
-            }));
+            self.outbox
+                .persist(PersistCommand::OfflinePlay(OfflinePlayWrite::Store {
+                    char_id: id,
+                    rows,
+                }));
         }
         tracing::info!("Entered offline play, {id}.");
     }
@@ -446,7 +452,11 @@ impl World {
     /// Java `OfflinePlayTable.restoreOfflinePlayers`, once the characters are loaded: each one
     /// enters without a client with its auto play settings, plays again, and the groups are put
     /// together.
-    pub fn restore_offline_players(&mut self, players: Vec<OfflinePlayRestore>, groups: Vec<OfflinePlayGroup>) {
+    pub fn restore_offline_players(
+        &mut self,
+        players: Vec<OfflinePlayRestore>,
+        groups: Vec<OfflinePlayGroup>,
+    ) {
         let mut restored = 0;
         for OfflinePlayRestore { data, rows } in players {
             let id = data.object_id;
@@ -458,15 +468,15 @@ impl World {
             for (kind, value) in rows {
                 match kind {
                     row_type::ACTIVE_SOULSHOT => self.add_auto_soul_shot(id, value),
-                    row_type::AUTO_SUPPLY_ITEM => push_unique(&mut self.auto_player_mut(id).supply_items, value),
+                    row_type::AUTO_SUPPLY_ITEM => {
+                        push_unique(&mut self.auto_player_mut(id).supply_items, value)
+                    }
                     row_type::AUTO_BUFF => push_unique(&mut self.auto_player_mut(id).buffs, value),
                     row_type::AUTO_SKILL => self.auto_player_mut(id).skills.push(value),
                     row_type::AUTO_ACTION => push_unique(&mut self.auto_player_mut(id).actions, value),
                     row_type::AUTO_POTION_ITEM => self.auto_player_mut(id).potion_item = value,
-                    row_type::CUSTOM_AUTO_POTION_SYSTEM => {
-                        if self.auto_potion_enabled() {
-                            self.add_auto_potion(id);
-                        }
+                    row_type::CUSTOM_AUTO_POTION_SYSTEM if self.auto_potion_enabled() => {
+                        self.add_auto_potion(id);
                     }
                     _ => {}
                 }
@@ -504,7 +514,8 @@ impl World {
                         continue;
                     }
                     let party = *party.get_or_insert_with(|| {
-                        let kind = PartyDistributionType::from_id(kind).unwrap_or(PartyDistributionType::FindersKeepers);
+                        let kind = PartyDistributionType::from_id(kind)
+                            .unwrap_or(PartyDistributionType::FindersKeepers);
                         self.create_party(group.leader, kind)
                     });
                     self.join_party(member, party);

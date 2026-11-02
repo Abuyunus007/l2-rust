@@ -16,8 +16,8 @@
 // # Left out
 // - The `PvpRewardItem` and `PvpAnnounce` custom features Java runs when a fake player is killed
 //   (`Npc.doDie`) or kills (`Player.doDie`): they are their own custom cards.
-// - `//reload fakeplayerchat` (like every reload of a table loaded at the start, it needs a
-//   restart).
+// - Nothing of M9-L01's list: `//reload fakeplayerchat` (`ControlRequest::ReloadFakePlayerChat`),
+//   the bot report, the follow after a click, the herbs and the aggro of monsters are ported.
 
 use std::collections::{BTreeMap, HashMap};
 
@@ -156,9 +156,16 @@ impl World {
     /// The answer to `//reload fakeplayerchat` (Java `FakePlayerChatManager.load()`): with the
     /// system on, the templates are reported, and with the chat on the lines are replaced
     /// (`MESSAGES.clear()`, then the file). The GMs hear it either way.
-    pub(crate) fn on_fake_player_chat_reloaded(&mut self, requester: ObjectId, chat: Vec<FakePlayerChatEntry>) {
+    pub(crate) fn on_fake_player_chat_reloaded(
+        &mut self,
+        requester: ObjectId,
+        chat: Vec<FakePlayerChatEntry>,
+    ) {
         if self.settings.fake_players.enabled {
-            info!("FakePlayerData: Loaded {} templates.", self.fake_players.names.len());
+            info!(
+                "FakePlayerData: Loaded {} templates.",
+                self.fake_players.names.len()
+            );
             if self.settings.fake_players.chat {
                 info!("FakePlayerChatManager: Loaded {} chat templates.", chat.len());
                 self.fake_players.chat = chat;

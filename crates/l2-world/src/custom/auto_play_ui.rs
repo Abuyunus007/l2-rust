@@ -444,7 +444,14 @@ impl World {
         let worn: Vec<crate::player::ItemData> = self
             .players
             .get(&player)
-            .map(|p| p.data.items.iter().filter(|i| i.loc == "PAPERDOLL").cloned().collect())
+            .map(|p| {
+                p.data
+                    .items
+                    .iter()
+                    .filter(|i| i.loc == "PAPERDOLL")
+                    .cloned()
+                    .collect()
+            })
             .unwrap_or_default();
         let templates = self.item_templates();
         for item in worn {
@@ -456,7 +463,12 @@ impl World {
             }
             let mut option_ids: Vec<i32> = Vec::new();
             if let Some(template) = template {
-                option_ids.extend(template.enchant_options_at(item.enchant_level).into_iter().filter(|id| *id != 0));
+                option_ids.extend(
+                    template
+                        .enchant_options_at(item.enchant_level)
+                        .into_iter()
+                        .filter(|id| *id != 0),
+                );
             }
             // NOTE(java-quirk): Java looks the augmentation up with `getAugmentationId()`, the two
             // option ids packed in one number, not with each option id: only an augmentation whose
