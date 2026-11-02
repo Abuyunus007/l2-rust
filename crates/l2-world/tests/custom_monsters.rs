@@ -101,6 +101,12 @@ const TEMPLATES: &str = r#"<?xml version="1.0"?><list>
   <npc id="2001" type="Monster" level="70" name="High Mob"><stats><vitals hp="700" mp="10"/></stats></npc>
   <npc id="2002" type="Monster" level="20" name="Quest Mob" title="Quest Monster"/>
   <npc id="2003" type="Monster" level="20" name="Undying Mob"><status undying="true"/></npc>
+  <npc id="2004" type="Monster" level="20" name="Regen Mob"><stats><vitals hp="1000" hpRegen="5" mp="10"/></stats></npc>
+  <npc id="2005" type="Monster" level="20" name="Wolf">
+    <parameters><param name="SetAggressiveTime" value="0" /></parameters>
+    <stats><vitals hp="3000" mp="40"/></stats>
+    <ai aggroRange="300" />
+  </npc>
   <npc id="3000" type="RaidBoss" level="50" name="Raid Alpha"/>
   <npc id="3001" type="GrandBoss" level="80" name="Grand Beta"/>
   <npc id="3002" type="RaidBoss" level="50" name="Raid Gamma"/>
@@ -243,6 +249,71 @@ fn a_champion_takes_a_share_of_the_damage() {
     let before = world.npc(plain).unwrap().core.cur_hp;
     world.reduce_current_hp(plain, 30.0, Some(ObjectId(10)));
     assert_eq!(before - world.npc(plain).unwrap().core.cur_hp, 30.0);
+}
+
+/// `ChampionHpRegen`: the regeneration of a champion is the template value times it (`Formulas.
+/// calcHpRegen`), the one of a plain monster the template value.
+#[test]
+fn champion_hp_regen_multiplies_the_template_regeneration() {
+    let mut custom = champions_on(100);
+    custom.champion.hp_regen = 3.0;
+    let (mut world, log, _dir) = world_with(custom, NpcSettings::default());
+    enter(&mut world, &log, 10);
+    let champion = world.spawn_npc_at(2004, X, Y, Z, 5).unwrap();
+    let plain = world.spawn_npc_at(2004, X, Y, Z, 5).unwrap();
+    assert!(world.is_champion(champion));
+    world.set_champion(plain, false);
+    for npc in [champion, plain] {
+        world.set_current_hp(npc, 500.0, false);
+    }
+    // One regeneration period is 3 s (60 ticks): 5 for the plain monster, 5 * 3 for the champion.
+    for _ in 0..60 {
+        world.tick();
+    }
+    assert_eq!(world.npc(plain).unwrap().core.cur_hp, 505.0);
+    assert_eq!(world.npc(champion).unwrap().core.cur_hp, 515.0);
+}
+
+/// A world with an aggressive monster 250 units from where the player will stand, inside its
+/// aggro range of 300; `passive` is `ChampionPassive`, `champion` whether the monster stays a
+/// champion. Returns whether the monster took the player as a target when he entered.
+fn aggressive_monster_notices_player(passive: bool, champion: bool) -> bool {
+    let mut custom = champions_on(100);
+    custom.champion.passive = passive;
+    let spawns = format!(
+        r#"<spawn><npc id="2005" x="{}" y="{Y}" z="{Z}" heading="0"/></spawn>"#,
+        X + 250
+    );
+    let (mut world, log, _dir) = world_spawning(&spawns, custom, NpcSettings::default());
+    // Spawned before anybody is online: the regions are off, nobody thinks.
+    world.spawn_all_npcs(false);
+    let wolf = world.npc_ids()[0];
+    assert!(world.is_champion(wolf));
+    world.set_champion(wolf, champion);
+    enter(&mut world, &log, 10);
+    for _ in 0..40 {
+        world.tick();
+    }
+    !world.aggro_list(wolf).is_empty()
+}
+
+/// `ChampionPassive`: a champion does not start a fight (`AttackableAI.autoAttackCondition`), a
+/// plain aggressive monster does, and a champion does too when the switch is off.
+#[test]
+fn a_passive_champion_does_not_attack_a_player_in_its_aggro_range() {
+    assert!(aggressive_monster_notices_player(false, false), "plain monster");
+    assert!(
+        aggressive_monster_notices_player(false, true),
+        "champion, ChampionPassive off"
+    );
+    assert!(
+        !aggressive_monster_notices_player(true, true),
+        "champion, ChampionPassive on"
+    );
+    assert!(
+        aggressive_monster_notices_player(true, false),
+        "plain monster, ChampionPassive on"
+    );
 }
 
 /// `ChampionHp = 0` turns the division off.

@@ -14,11 +14,11 @@ mod party_scene;
 
 use std::sync::Arc;
 
-use l2_data::{NpcLoadOptions, NpcTemplates, SpawnData};
+use l2_data::{HtmCache, NpcLoadOptions, NpcTemplates, SpawnData};
 use l2_net::{Decode, PacketReader};
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{
-    ExOlympiadMatchList, ExOlympiadMatchResult, ExOlympiadMode, ExOlympiadUserInfo,
+    ExOlympiadMatchList, ExOlympiadMatchResult, ExOlympiadMode, ExOlympiadUserInfo, NpcHtmlMessage,
 };
 use l2_world::*;
 use party_scene::*;
@@ -49,7 +49,15 @@ fn npc_xml(id: i32, name: &str) -> String {
 /// The scene of `party_scene::install_arena` with a stadium Java's game manager knows by name
 /// ("Grassy Arena", template 147) and the town manager's template.
 fn stadium_scene() -> Scene {
-    let mut s = Scene::new();
+    stadium_scene_with(Config::default().settings)
+}
+
+/// The same with other world settings (the custom dualbox limits live in them).
+fn stadium_scene_with(settings: WorldSettings) -> Scene {
+    let mut s = Scene::with(Config {
+        settings,
+        ..Config::default()
+    });
     s.world.set_regen_settings(RegenSettings {
         hp_regen_multiplier: 0.0,
         mp_regen_multiplier: 0.0,
@@ -116,7 +124,10 @@ fn settings(cycle_database_writes: bool) -> OlympiadSettings {
 
 /// A world in the competition period of cycle 1 (a period end far away).
 fn olympiad_scene(cycle_database_writes: bool) -> Scene {
-    let mut s = stadium_scene();
+    olympiad_scene_with(cycle_database_writes, stadium_scene())
+}
+
+fn olympiad_scene_with(cycle_database_writes: bool, mut s: Scene) -> Scene {
     s.world.set_olympiad_settings(settings(cycle_database_writes));
     s.world.load_olympiad(OlympiadLoad {
         data: Some(OlympiadData {
@@ -137,6 +148,15 @@ fn noble(s: &mut Scene, who: i32, name: &str, base_class: i32) {
     data.base_class = base_class;
     data.profile.noble = true;
     s.enter_data(data);
+}
+
+/// A noble who connected from `address`.
+fn noble_from(s: &mut Scene, who: i32, name: &str, address: &str) {
+    let mut data = player_data(who, name, 40, (X - 3_000, Y + (who & 0xF) * 100, Z));
+    data.class_id = 0;
+    data.base_class = DUELIST;
+    data.profile.noble = true;
+    s.enter_data_from(data, Some(address.parse().unwrap()));
 }
 
 /// Selects the NPC, then talks to it (the second click).
@@ -883,4 +903,74 @@ fn the_class_ranking_and_the_passes_are_read_again() {
         then,
     });
     assert!(s.persisted.0.lock().unwrap().is_empty());
+}
+
+/// `DualboxCheckMaxOlympiadParticipantsPerIp` (M9-C06): registering counts the player's address
+/// (`AntiFeedManager.tryAddPlayer(OLYMPIAD_ID, ...)`); over the limit the registration is refused
+/// with `OlympiadIPRestriction.htm` (`%max%` is the limit), unregistering frees the place.
+#[test]
+fn the_olympiad_dualbox_limit_counts_client_ips() {
+    let mut settings = Config::default().settings;
+    settings.custom_misc.dualbox.max_olympiad_participants_per_ip = 1;
+    let mut s = olympiad_scene_with(false, stadium_scene_with(settings));
+    let pages = tempfile::tempdir().unwrap();
+    let page = pages.path().join("data/html/mods/OlympiadIPRestriction.htm");
+    std::fs::create_dir_all(page.parent().unwrap()).unwrap();
+    std::fs::write(&page, "<html>Only %max% per IP.</html>").unwrap();
+    s.world
+        .set_html_cache(Arc::new(HtmCache::load(pages.path(), false)));
+
+    // Documentation addresses (RFC 5737): no real address in the repo.
+    noble_from(&mut s, P1, "Alpha", "192.0.2.1");
+    noble_from(&mut s, P2, "Beta", "192.0.2.1");
+    noble_from(&mut s, P3, "Gamma", "192.0.2.2");
+    s.ticks(2);
+    s.log.take();
+    assert!(
+        s.world
+            .olympiad_register_noble(id(P1), CompetitionType::NonClassed)
+    );
+    s.log.take();
+
+    // The second player on the same address is refused, with the page.
+    assert!(
+        !s.world
+            .olympiad_register_noble(id(P2), CompetitionType::NonClassed)
+    );
+    let sent = s.log.take();
+    let html = decode::<NpcHtmlMessage>(of(&sent, P2, "NPC_HTML_MESSAGE")[0]);
+    assert_eq!(html.html, "<html>Only 1 per IP.</html>");
+    assert_eq!(s.world.olympiad().registered_non_classed(), [P1]);
+
+    // Another address registers.
+    assert!(
+        s.world
+            .olympiad_register_noble(id(P3), CompetitionType::NonClassed)
+    );
+    assert_eq!(s.world.olympiad().registered_non_classed(), [P1, P3]);
+
+    // Unregistering frees the place of the address.
+    assert!(s.world.olympiad_unregister_noble(id(P1)));
+    assert!(
+        s.world
+            .olympiad_register_noble(id(P2), CompetitionType::NonClassed)
+    );
+    assert_eq!(s.world.olympiad().registered_non_classed(), [P3, P2]);
+}
+
+/// The default (0) is off: any number of nobles may register from one address.
+#[test]
+fn the_olympiad_dualbox_limit_is_off_by_default() {
+    let mut s = olympiad_scene(false);
+    noble_from(&mut s, P1, "Alpha", "192.0.2.1");
+    noble_from(&mut s, P2, "Beta", "192.0.2.1");
+    s.ticks(2);
+    assert!(
+        s.world
+            .olympiad_register_noble(id(P1), CompetitionType::NonClassed)
+    );
+    assert!(
+        s.world
+            .olympiad_register_noble(id(P2), CompetitionType::NonClassed)
+    );
 }

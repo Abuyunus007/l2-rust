@@ -222,6 +222,10 @@ impl Root {
             "<html>%navigation%MERCHANT</html>",
         );
         write(
+            &format!("{board}premium/thankyou.html"),
+            "<html>%navigation%THANKS</html>",
+        );
+        write(
             &format!("{board}delevel/complete.html"),
             "<html>%navigation%DELEVELED</html>",
         );
@@ -722,6 +726,128 @@ fn board_delevel() {
     assert_eq!(player.data.exp, exp_of_level(39));
     assert_eq!(s.adena_of(B), 975);
     assert_eq!(board_page(&out, B).as_deref(), Some("<html>NAVDELEVELED</html>"));
+}
+
+// ------------------------------------------------------------------------------ _bbspremium
+
+fn premium_board() -> CustomBoardSettings {
+    CustomBoardSettings {
+        premium_enabled: true,
+        premium_coin_id: 57,
+        premium_price_per_day: 100,
+        ..custom_settings()
+    }
+}
+
+fn premium_system(enabled: bool) -> PremiumSettings {
+    PremiumSettings {
+        enabled,
+        ..PremiumSettings::default()
+    }
+}
+
+fn now_ms() -> i64 {
+    i64::try_from(
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_millis(),
+    )
+    .unwrap()
+}
+
+/// `_bbspremium` is registered only with `EnablePremiumSystem` and `CommunityPremiumSystem`
+/// together; with either off it is no board command and a bypass buys nothing.
+#[test]
+fn board_premium_switch_off_takes_no_command() {
+    let key = format!("acc{A}");
+    for (system, board) in [(false, true), (true, false), (false, false)] {
+        let mut s = Scene::new();
+        s.board(
+            true,
+            CustomBoardSettings {
+                premium_enabled: board,
+                ..premium_board()
+            },
+        );
+        s.world.set_premium_settings(premium_system(system));
+        s.enter(pdata(A, 40, 1000, &[]));
+        assert!(
+            !s.world.is_community_board_command("_bbspremium;3"),
+            "{system} {board}"
+        );
+        s.bypass(A, "_bbspremium;3");
+        let out = s.log.take();
+        assert!(board_packets(&out, A).is_empty());
+        assert_eq!(s.adena_of(A), 1000);
+        assert_eq!(s.world.premium_expiration(&key), 0);
+        assert!(!s.world.has_premium_status(ObjectId(A)));
+    }
+    let mut on = Scene::new();
+    on.board(true, premium_board());
+    on.world.set_premium_settings(premium_system(true));
+    assert!(on.world.is_community_board_command("_bbspremium;3"));
+}
+
+/// `_bbspremium;<days>`: the days cost `CommunityPremiumPricePerDay` each in the coin, the
+/// premium time is added (and written), the status turns on and the thank-you page comes.
+#[test]
+fn board_premium_charges_and_adds_the_premium_time() {
+    let key = format!("acc{A}");
+    let mut s = Scene::new();
+    s.board(true, premium_board());
+    s.world.set_premium_settings(premium_system(true));
+    s.enter(pdata(A, 40, 1000, &[]));
+    let before = now_ms();
+    s.bypass(A, "_bbspremium;3");
+    let out = s.log.take();
+    let after = now_ms();
+    assert_eq!(s.adena_of(A), 700);
+    let day = 86_400_000;
+    let end = s.world.premium_expiration(&key);
+    assert!((before + 3 * day..=after + 3 * day).contains(&end), "{end}");
+    assert!(s.world.has_premium_status(ObjectId(A)));
+    assert!(
+        out.contains(&Out::Persist(PersistCommand::Premium(PremiumWrite::Replace {
+            account: key.clone(),
+            end_date: end,
+        })))
+    );
+    assert!(
+        texts(&out, A)
+            .iter()
+            .any(|t| t.starts_with("You will now have premium status until "))
+    );
+    assert_eq!(board_page(&out, A).as_deref(), Some("<html>NAVTHANKS</html>"));
+
+    // A second purchase extends the time that is left.
+    s.bypass(A, "_bbspremium;2");
+    s.log.take();
+    assert_eq!(s.adena_of(A), 500);
+    assert_eq!(s.world.premium_expiration(&key), end + 2 * day);
+}
+
+/// Days outside 1 to 30, a missing coin amount and a days part that is no number buy nothing.
+#[test]
+fn board_premium_refuses_bad_days_and_missing_currency() {
+    let key = format!("acc{A}");
+    let mut s = Scene::new();
+    s.board(true, premium_board());
+    s.world.set_premium_settings(premium_system(true));
+    s.enter(pdata(A, 40, 250, &[]));
+    for command in ["_bbspremium;0", "_bbspremium;31", "_bbspremium;-1"] {
+        s.bypass(A, command);
+        assert_eq!(texts(&s.log.take(), A), ["Not enough currency!"], "{command}");
+    }
+    // 3 days cost 300, the player has 250.
+    s.bypass(A, "_bbspremium;3");
+    assert_eq!(texts(&s.log.take(), A), ["Not enough currency!"]);
+    // A days part that is no number is Java's NumberFormatException: nothing at all.
+    s.bypass(A, "_bbspremium;abc");
+    assert!(s.log.take().is_empty());
+    assert_eq!(s.adena_of(A), 250);
+    assert_eq!(s.world.premium_expiration(&key), 0);
+    assert!(!s.world.has_premium_status(ObjectId(A)));
 }
 
 /// `experience.xml` row of a level as the test table writes it: the exp the level starts at.

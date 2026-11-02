@@ -460,12 +460,17 @@ impl Scene {
     }
 
     pub fn enter_data(&mut self, data: PlayerData) {
+        self.enter_data_from(data, None);
+    }
+
+    /// Enters with a client address, for the features that count connections per IP.
+    pub fn enter_data_from(&mut self, data: PlayerData, ip: Option<std::net::IpAddr>) {
         let id = data.object_id.0;
         self.world.handle(WorldCommand::EnterWorld {
             session: SessionId(u64::try_from(id).unwrap()),
             player: Box::new(data),
             sink: Box::new(Sink(id, self.log.clone())),
-            ip: None,
+            ip,
         });
         self.log.take();
     }
