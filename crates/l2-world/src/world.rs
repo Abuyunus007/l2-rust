@@ -465,6 +465,7 @@ impl World {
             WorldCommand::GlobalVariablesReread { token, result } => {
                 self.on_global_variables_reread(token, result)
             }
+            WorldCommand::TransmogLoaded { player, result } => self.on_transmog_loaded(player, result),
             WorldCommand::BirthdayGiftsLoaded { result } => self.on_birthday_gifts_loaded(result),
             WorldCommand::OfflinePetRowsLoaded {
                 owner,

@@ -619,6 +619,34 @@ pub trait PlayerStore: Send + 'static {
         async { Ok(Vec::new()) }
     }
 
+    /// The transmog rows of a player entering the world: its collection and the `transmogId` of
+    /// its items (M9-C07). A store without a database has none.
+    fn load_transmog(
+        &mut self,
+        _owner: &str,
+        _item_object_ids: &[i32],
+    ) -> impl Future<Output = Result<l2_world::custom::transmog::TransmogLoad, PersistError>> + Send {
+        async { Ok(l2_world::custom::transmog::TransmogLoad::default()) }
+    }
+
+    /// The collection of a player who leaves, stored (M9-C07).
+    fn store_transmog_collection(
+        &mut self,
+        _owner: &str,
+        _item_ids: &[i32],
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// The `transmogId` row of an item, written or deleted (M9-C07).
+    fn store_item_transmog(
+        &mut self,
+        _object_id: i32,
+        _transmog_id: Option<i32>,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
     /// The named `global_variables` rows read again (D-50, D-54, S-API-04). A store without a
     /// database has no rows.
     fn load_global_variable_rows(
@@ -1534,6 +1562,36 @@ async fn run<S: PlayerStore>(
                 let answer = l2_world::WorldCommand::GlobalVariablesReread { token, result };
                 if !acks.send_to_world(answer) {
                     warn!("The global variables {names:?} could not be handed to the world.");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::TransmogLoadRequest {
+                player,
+                owner,
+                item_object_ids,
+            }) => {
+                // Not a write: the answer goes back to the world (D-15). Java logs a failed read
+                // ("Problem with Transmog") and goes on without a collection.
+                let result = match store.load_transmog(&owner, &item_object_ids).await {
+                    Ok(rows) => Ok(rows),
+                    Err(e) => {
+                        warn!("Problem with Transmog: {e}");
+                        Err(())
+                    }
+                };
+                let answer = l2_world::WorldCommand::TransmogLoaded { player, result };
+                if !acks.send_to_world(answer) {
+                    warn!("The transmog rows of {} could not be handed to the world.", player.0);
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::TransmogSaveCollection { owner, item_ids }) => {
+                // Java logs a failed statement and goes on (no retry).
+                if let Err(e) = store.store_transmog_collection(&owner, &item_ids).await {
+                    warn!("Problem with Transmog: {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::ItemTransmog { object_id, transmog_id }) => {
+                if let Err(e) = store.store_item_transmog(object_id, transmog_id).await {
+                    warn!("ItemVariables: Could not update variables for: {object_id}: {e}");
                 }
             }
             OutboxMessage::Persist(PersistCommand::BossRereadRequest { kind, then }) => {
@@ -3873,6 +3931,7 @@ pub struct DbStore {
     instance_times: InstanceTimeRepository,
     quests: l2_db::QuestRepository,
     global_variables: l2_db::GlobalVariableRepository,
+    transmog: l2_db::TransmogRepository,
     coliseum: UndergroundColiseumRepository,
     bookmarks: BookmarkRepository,
     contacts: ContactRepository,
@@ -3971,6 +4030,7 @@ impl DbStore {
             instance_times: InstanceTimeRepository::new(pool.clone()),
             quests: l2_db::QuestRepository::new(pool.clone()),
             global_variables: l2_db::GlobalVariableRepository::new(pool.clone()),
+            transmog: l2_db::TransmogRepository::new(pool.clone()),
             coliseum: UndergroundColiseumRepository::new(pool.clone()),
             bookmarks: BookmarkRepository::new(pool.clone()),
             contacts: ContactRepository::new(pool.clone()),
@@ -5690,6 +5750,30 @@ impl PlayerStore for DbStore {
         names: &[String],
     ) -> Result<Vec<(String, Option<String>)>, PersistError> {
         Ok(self.global_variables.load_variables(names).await?)
+    }
+
+    async fn load_transmog(
+        &mut self,
+        owner: &str,
+        item_object_ids: &[i32],
+    ) -> Result<l2_world::custom::transmog::TransmogLoad, PersistError> {
+        Ok(l2_world::custom::transmog::TransmogLoad {
+            collection: self.transmog.load_collection(owner).await?,
+            items: self.transmog.load_item_transmogs(item_object_ids).await?,
+        })
+    }
+
+    async fn store_transmog_collection(&mut self, owner: &str, item_ids: &[i32]) -> Result<(), PersistError> {
+        self.transmog.save_collection(owner, item_ids).await?;
+        Ok(())
+    }
+
+    async fn store_item_transmog(&mut self, object_id: i32, transmog_id: Option<i32>) -> Result<(), PersistError> {
+        match transmog_id {
+            Some(id) => self.transmog.set_item_transmog(object_id, id).await?,
+            None => self.transmog.remove_item_transmog(object_id).await?,
+        }
+        Ok(())
     }
 
     async fn delete_items_of_item_id(&mut self, item_id: i32) -> Result<(), PersistError> {

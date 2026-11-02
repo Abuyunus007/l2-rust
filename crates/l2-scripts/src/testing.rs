@@ -55,6 +55,9 @@ impl Outbox for RecordingOutbox {
                 | PersistCommand::BirthdayGiftsRequest { .. }
                 | PersistCommand::ItemRows { .. }
                 | PersistCommand::Mail(_)
+                | PersistCommand::TransmogLoadRequest { .. }
+                | PersistCommand::TransmogSaveCollection { .. }
+                | PersistCommand::ItemTransmog { .. }
         ) {
             self.1.0.lock().unwrap().push(command);
         }

@@ -43,6 +43,7 @@ pub use game::{
     RecommendationRepository, VariableRepository,
 };
 pub use game::{ColiseumBestTeamRow, UndergroundColiseumRepository};
+pub use game::TransmogRepository;
 pub use game::{CoupleRow, WeddingRepository, married_text};
 pub use game::{CrestRepository, CrestRow};
 pub use game::{

@@ -252,6 +252,19 @@ pub enum PersistCommand {
     /// the rows named, by `SELECT * FROM global_variables WHERE var = ?`. The answer comes back
     /// as `WorldCommand::GlobalVariablesReread` with the same `token`.
     GlobalVariablesRereadRequest { token: u64, names: Vec<String> },
+    /// Transmog (`Transmog.ini`, M9-C07): reads the collection of `owner` (`character_transmogs`)
+    /// and the `transmogId` of the given items (`item_variables`). The answer comes back as
+    /// `WorldCommand::TransmogLoaded`.
+    TransmogLoadRequest {
+        player: l2_util::ObjectId,
+        owner: String,
+        item_object_ids: Vec<i32>,
+    },
+    /// Transmog: `REPLACE INTO character_transmogs (owner,itemId)` for each item (Java's
+    /// `onPlayerLogout`).
+    TransmogSaveCollection { owner: String, item_ids: Vec<i32> },
+    /// Transmog: the `transmogId` row of an item, written (`Some`) or deleted (`None`).
+    ItemTransmog { object_id: i32, transmog_id: Option<i32> },
     /// A `character_instance_time` row change with Java's statement (M8-INST-01, see
     /// `instance/times.rs`). Applied in order with the other commands.
     InstanceTime(crate::instance::InstanceTimeWrite),

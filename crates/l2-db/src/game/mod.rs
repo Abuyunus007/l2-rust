@@ -56,6 +56,7 @@ mod summons;
 mod territories;
 mod underground_coliseum;
 mod variables;
+mod transmog;
 mod wedding;
 
 pub use account_data::{
@@ -130,4 +131,5 @@ pub use territories::{
 };
 pub use underground_coliseum::{ColiseumBestTeamRow, UndergroundColiseumRepository};
 pub use variables::VariableRepository;
+pub use transmog::TransmogRepository;
 pub use wedding::{CoupleRow, WeddingRepository, married_text};

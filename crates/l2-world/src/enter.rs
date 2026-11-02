@@ -826,8 +826,10 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
             object_ids[slot] = item.object_id.0;
             // `getPaperdollAugmentationId`
             augmentation_ids[slot] = item.augmentation.unwrap_or(0);
-            // `getPaperdollItemDisplayId`
-            item_ids[slot] = item_static(st, item).display_id;
+            // `getPaperdollItemDisplayId` (the transmog id of the item with `Transmog.ini` on)
+            item_ids[slot] = world
+                .transmog_display_id(item.object_id)
+                .unwrap_or_else(|| item_static(st, item).display_id);
         }
     }
     // `getMovementSpeedMultiplier()` and the speeds divided by it, `(int) Math.round(...)`.

@@ -90,7 +90,7 @@ pub fn custom_script_settings(
     let d = &config.delevel_manager;
     let n = &config.nobless_master;
     let t = &config.transmog;
-    let transmog_file = l2_config::TransmogConfig::FILE;
+    let transmog_file = "Custom/Transmog.ini";
     let ini = IniFile::load(config_dir.join(transmog_file)).unwrap_or_else(|_| IniFile::empty(transmog_file));
     // Java: `Integer.parseInt(s.trim())` of each part of the comma list.
     let banned_item_ids = ini
