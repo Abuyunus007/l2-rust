@@ -4,6 +4,7 @@
 // `splitter` and `installer` are the logic; `console` and `gui` are the two front ends;
 // `paths` finds the SQL folder and `Interface.ini`.
 
+pub mod background;
 pub mod console;
 pub mod gui;
 pub mod installer;

@@ -20,6 +20,8 @@ pub mod logs;
 pub mod packets;
 pub mod players;
 pub mod servers;
+pub mod setup;
+pub mod setup_core;
 
 use crate::app::AppCtx;
 use crate::bridge::BridgeEvent;
@@ -37,6 +39,7 @@ pub trait View {
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ViewId {
     Connection,
+    Setup,
     Servers,
     Players,
     Accounts,
@@ -48,8 +51,9 @@ pub enum ViewId {
 }
 
 impl ViewId {
-    pub const ALL: [ViewId; 9] = [
+    pub const ALL: [ViewId; 10] = [
         ViewId::Connection,
+        ViewId::Setup,
         ViewId::Servers,
         ViewId::Players,
         ViewId::Accounts,
@@ -63,6 +67,7 @@ impl ViewId {
     pub fn label(self) -> &'static str {
         match self {
             ViewId::Connection => "Connection",
+            ViewId::Setup => "Setup",
             ViewId::Servers => "Servers",
             ViewId::Players => "Players",
             ViewId::Accounts => "Accounts",
@@ -79,6 +84,7 @@ impl ViewId {
         matches!(
             self,
             ViewId::Connection
+                | ViewId::Setup
                 | ViewId::Servers
                 | ViewId::Players
                 | ViewId::Accounts
@@ -95,6 +101,7 @@ impl ViewId {
     pub fn planned_in(self) -> &'static str {
         match self {
             ViewId::Connection
+            | ViewId::Setup
             | ViewId::Servers
             | ViewId::Players
             | ViewId::Accounts
@@ -111,6 +118,7 @@ impl ViewId {
 #[derive(Default)]
 pub struct Views {
     pub connection: connection::ConnectionView,
+    pub setup: setup::SetupView,
     pub servers: servers::ServersView,
     pub players: players::PlayersView,
     pub accounts: accounts::AccountsView,
@@ -126,6 +134,7 @@ impl Views {
     pub fn get_mut(&mut self, id: ViewId) -> Option<&mut dyn View> {
         match id {
             ViewId::Connection => Some(&mut self.connection),
+            ViewId::Setup => Some(&mut self.setup),
             ViewId::Servers => Some(&mut self.servers),
             ViewId::Players => Some(&mut self.players),
             ViewId::Accounts => Some(&mut self.accounts),
@@ -139,6 +148,7 @@ impl Views {
 
     pub fn dispatch(&mut self, event: &BridgeEvent) {
         self.connection.on_event(event);
+        self.setup.on_event(event);
         self.servers.on_event(event);
         self.players.on_event(event);
         self.accounts.on_event(event);
