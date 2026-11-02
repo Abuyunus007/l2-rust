@@ -42,6 +42,22 @@ const SELECT_PASSWORD_SQL: &str = "SELECT password FROM accounts WHERE login=?";
 const UPDATE_PASSWORD_MATCHING_SQL: &str = "UPDATE accounts SET password=? WHERE login=? AND password=?";
 // Java: RequestTempBan.banUser
 const TEMP_BAN_UPSERT: &str = "INSERT INTO account_data VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE value=?";
+// Java: tools/AccountManager.searchAccount (the GUI tool lists with LIKE; paging from loadAccounts)
+const ACCOUNTS_SEARCH: &str = "SELECT login, accessLevel, lastactive, lastServer FROM accounts WHERE login LIKE ? ORDER BY login LIMIT ? OFFSET ?";
+// Java: tools/AccountManager.getTotalAccountCount, narrowed by the same LIKE
+const ACCOUNTS_COUNT: &str = "SELECT COUNT(*) FROM accounts WHERE login LIKE ?";
+// Java: tools/AccountManager.createAccount (existence check)
+const ACCOUNT_EXISTS: &str = "SELECT COUNT(*) FROM accounts WHERE login = ?";
+// Java: tools/AccountManager.createAccount
+const ACCOUNT_INSERT: &str = "INSERT INTO accounts (login, password, accessLevel) VALUES (?, ?, ?)";
+// Java: tools/AccountManager.updateAccount (the password part of its dynamic UPDATE)
+const ACCOUNT_PASSWORD_UPDATE: &str = "UPDATE accounts SET password = ? WHERE login = ?";
+// Java: tools/AccountManager.showAccountInfo (accessLevel)
+const ACCOUNT_ACCESS_LEVEL_SELECT: &str = "SELECT accessLevel FROM accounts WHERE login = ?";
+// Java: tools/AccountManager.showAccountInfo (lastIP)
+const ACCOUNT_LAST_IP_SELECT: &str = "SELECT lastIP FROM accounts WHERE login = ?";
+// Java: tools/AccountManager.deleteAccount
+const ACCOUNT_DELETE: &str = "DELETE FROM accounts WHERE login = ?";
 /// `account_data.var` of a temporary ban.
 const BAN_TEMP_VAR: &str = "ban_temp";
 
@@ -98,6 +114,33 @@ impl AccountInfoRow {
     pub fn last_server_or_zero(&self) -> i32 {
         self.last_server.unwrap_or(0)
     }
+}
+
+/// A row of the account list ([`LoginRepository::search_accounts`]).
+#[derive(Debug, Clone, PartialEq, Eq, FromRow)]
+pub struct AccountListRow {
+    /// `accounts.login`.
+    pub login: String,
+    /// `accounts.accessLevel` (TINYINT; negative = banned).
+    #[sqlx(rename = "accessLevel")]
+    pub access_level: i32,
+    /// `accounts.lastactive`: Unix time in milliseconds, 0 = never.
+    pub lastactive: u64,
+    /// `accounts.lastServer` (TINYINT, nullable).
+    #[sqlx(rename = "lastServer")]
+    pub last_server: Option<i32>,
+}
+
+/// Escapes `\`, `%` and `_` so `text` matches literally inside a `LIKE` pattern.
+pub fn escape_like(text: &str) -> String {
+    let mut out = String::with_capacity(text.len());
+    for c in text.chars() {
+        if matches!(c, '\\' | '%' | '_') {
+            out.push('\\');
+        }
+        out.push(c);
+    }
+    out
 }
 
 /// The five address columns written by [`LoginRepository::update_tracert`].
@@ -327,6 +370,94 @@ impl LoginRepository {
         })
     }
 
+    /// One page of accounts whose login starts with `prefix` (literal text, not a pattern),
+    /// ordered by login, and the number of matching accounts in total.
+    // Java: tools/AccountManager.searchAccount / loadAccounts
+    pub async fn search_accounts(
+        &self,
+        prefix: &str,
+        limit: u32,
+        offset: u32,
+    ) -> Result<(Vec<AccountListRow>, u64)> {
+        let pattern = format!("{}%", escape_like(prefix));
+        let rows = sqlx::query_as::<_, AccountListRow>(ACCOUNTS_SEARCH)
+            .bind(&pattern)
+            .bind(i64::from(limit))
+            .bind(i64::from(offset))
+            .fetch_all(&self.pool)
+            .await?;
+        let total: i64 = sqlx::query_scalar(ACCOUNTS_COUNT)
+            .bind(&pattern)
+            .fetch_one(&self.pool)
+            .await?;
+        Ok((rows, u64::try_from(total).unwrap_or(0)))
+    }
+
+    /// Whether an account with exactly this login exists.
+    // Java: tools/AccountManager.createAccount (SELECT COUNT(*))
+    pub async fn account_exists(&self, login: &str) -> Result<bool> {
+        let count: i64 = sqlx::query_scalar(ACCOUNT_EXISTS)
+            .bind(login)
+            .fetch_one(&self.pool)
+            .await?;
+        Ok(count > 0)
+    }
+
+    /// Inserts an account the way the AccountManager tool does (other columns keep their
+    /// defaults). Fails on an existing login (primary key).
+    // Java: tools/AccountManager.createAccount
+    pub async fn insert_account(&self, login: &str, password_hash: &str, access_level: i32) -> Result<()> {
+        sqlx::query(ACCOUNT_INSERT)
+            .bind(login)
+            .bind(password_hash)
+            .bind(access_level)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
+    /// Sets the password hash without asking for the old one (admin tool).
+    // Java: tools/AccountManager.updateAccount
+    pub async fn set_password(&self, login: &str, password_hash: &str) -> Result<()> {
+        sqlx::query(ACCOUNT_PASSWORD_UPDATE)
+            .bind(password_hash)
+            .bind(login)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
+    /// `accounts.accessLevel` as stored (a temporary ban is not applied), `None` = no such account.
+    // Java: tools/AccountManager.showAccountInfo
+    pub async fn access_level(&self, login: &str) -> Result<Option<i32>> {
+        let level: Option<i32> = sqlx::query_scalar(ACCOUNT_ACCESS_LEVEL_SELECT)
+            .bind(login)
+            .fetch_optional(&self.pool)
+            .await?;
+        Ok(level)
+    }
+
+    /// `accounts.lastIP`: outer `None` = no such account, inner `None` = never logged in.
+    // Java: tools/AccountManager.showAccountInfo
+    pub async fn last_ip(&self, login: &str) -> Result<Option<Option<String>>> {
+        let ip: Option<Option<String>> = sqlx::query_scalar(ACCOUNT_LAST_IP_SELECT)
+            .bind(login)
+            .fetch_optional(&self.pool)
+            .await?;
+        Ok(ip)
+    }
+
+    /// Deletes the account row. Like the Java tool it touches nothing else: the characters and
+    /// the `account_data` rows stay behind.
+    // Java: tools/AccountManager.deleteAccount
+    pub async fn delete_account(&self, login: &str) -> Result<()> {
+        sqlx::query(ACCOUNT_DELETE)
+            .bind(login)
+            .execute(&self.pool)
+            .await?;
+        Ok(())
+    }
+
     /// Bans an account until `ban_time_ms` (`account_data.ban_temp`), replacing an older ban.
     // Java: RequestTempBan.banUser
     pub async fn temp_ban(&self, login: &str, ban_time_ms: i64) -> Result<()> {
@@ -352,6 +483,12 @@ mod tests {
         assert_eq!(hash_password("password"), "W6ph5Mm5Pz8GgiULbPgzG37mj9g=");
         assert_eq!(hash_password(""), "2jmj7l5rSw0yVb/vlWAYkK/YBwk=");
         assert_eq!(hash_password("abc"), "qZk+NkcGgWq6PiVxeFDCbJzQ2J0=");
+    }
+
+    #[test]
+    fn like_patterns_are_escaped() {
+        assert_eq!(escape_like("a_b%c\\d"), "a\\_b\\%c\\\\d");
+        assert_eq!(escape_like("plain"), "plain");
     }
 
     #[test]

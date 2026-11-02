@@ -414,6 +414,60 @@ async fn connect_from_database_config() {
     db.drop_database().await;
 }
 
+#[tokio::test]
+async fn account_admin_queries() {
+    let Some(db) = TestDb::create().await else {
+        return;
+    };
+    let repo = db.repo();
+
+    for (login, level) in [("ann", 0), ("anna", 100), ("a_b", 0), ("bob", -1)] {
+        repo.insert_account(login, &hash_password("pw"), level)
+            .await
+            .unwrap();
+    }
+    assert!(
+        repo.insert_account("ann", "x", 0)
+            .await
+            .unwrap_err()
+            .is_duplicate_key()
+    );
+    assert!(repo.account_exists("bob").await.unwrap());
+    assert!(!repo.account_exists("zed").await.unwrap());
+    assert_eq!(repo.access_level("anna").await.unwrap(), Some(100));
+    assert_eq!(repo.access_level("zed").await.unwrap(), None);
+
+    // Paging and prefix (the underscore is literal, not "any character").
+    let (all, total) = repo.search_accounts("", 2, 0).await.unwrap();
+    assert_eq!((all.len(), total), (2, 4));
+    assert_eq!(all[0].login, "a_b");
+    let (rest, _) = repo.search_accounts("", 2, 2).await.unwrap();
+    assert_eq!(
+        rest.iter().map(|r| r.login.as_str()).collect::<Vec<_>>(),
+        ["anna", "bob"]
+    );
+    let (ann, total) = repo.search_accounts("an", 50, 0).await.unwrap();
+    assert_eq!((ann.len(), total), (2, 2));
+    let (under, total) = repo.search_accounts("a_", 50, 0).await.unwrap();
+    assert_eq!((under.len(), total), (1, 1));
+    assert_eq!(ann[0].last_server, Some(1), "column default");
+    assert_eq!(ann[0].lastactive, 0);
+
+    repo.set_password("ann", &hash_password("new")).await.unwrap();
+    let info = repo.account_info("ann", NOW).await.unwrap().unwrap();
+    assert_eq!(info.password.as_deref(), Some(hash_password("new").as_str()));
+
+    assert_eq!(repo.last_ip("ann").await.unwrap(), Some(None));
+    repo.update_last_active("ann", NOW, "10.0.0.9").await.unwrap();
+    assert_eq!(repo.last_ip("ann").await.unwrap(), Some(Some("10.0.0.9".into())));
+    assert_eq!(repo.last_ip("zed").await.unwrap(), None);
+
+    repo.delete_account("ann").await.unwrap();
+    assert!(!repo.account_exists("ann").await.unwrap());
+
+    db.drop_database().await;
+}
+
 /// Password part of `mysql://user:password@host...` (empty when there is none).
 fn password_of(url: &str) -> String {
     let rest = url.split_once("://").map_or(url, |(_, r)| r);

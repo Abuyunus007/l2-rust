@@ -39,7 +39,9 @@ Requests may be answered out of order. Match responses by `id`. An empty configu
 | `get_login_status` | `server` (supervisor: which LS to ask; LS itself: null) | supervisor → LS | `login_status` |
 | `get_game_status` | `server` (GS itself: null) | GS endpoint, or the supervisor (relays to the named server) | `game_status` |
 | `game_admin` | `server`, `action`: GameAction (see Types) | GS endpoint, or the supervisor (relays to the named server) | `game_reply` or `game_info` |
+| `accounts` | `server` (LS itself: null), `action`: AccountsAction | LS endpoint, or the supervisor (relays to the named server) | `accounts` or `error` |
 | `shutdown` | `restart` (bool) | server endpoints only (the supervisor sends it on stop, D-38) | `ok`, then the server exits (code 0, or 2 with `restart`) |
+| `stop_supervisor` | none | supervisor | `ok` at once; stops all servers in reverse `Servers` order, then the supervisor exits and the connection closes (G-01) |
 
 ### Responses
 | kind | Fields |
@@ -51,6 +53,7 @@ Requests may be answered out of order. Match responses by `id`. An empty configu
 | `game_status` | `status`: GameStatus |
 | `game_reply` | `lines`: the system messages a GM action produced (html as plain text) |
 | `game_info` | `info`: GameInfo (`uptime_secs`, `online`, `memory_bytes`, `threads`, `ticks`, `tick_ms`, `shutdown_in_secs`) |
+| `accounts` | `result`: AccountsResult |
 
 ### Events
 | kind | Fields | Sent when |
@@ -68,6 +71,8 @@ Requests may be answered out of order. Match responses by `id`. An empty configu
 - **GameAction** (G-03, tagged by `kind`; each runs as the matching `//` command of a virtual GM named "GUI" with the master access level, and is written to the GM audit log):
   `player` (`name`, `action`: PlayerAction), `announce` (`text`, `critical`: `//announce` / `//announce_crit`), `command` (`command`: any admin command without the slashes), `shutdown` (`seconds`, `restart`: `//server_shutdown` / `//server_restart`), `abort_shutdown` (`//server_abort`), `server_info`.
 - **PlayerAction** (tagged by `kind`): `kick`, `jail` / `ban_char` / `ban_account` / `chat_ban` (`minutes`, `reason`; 0 minutes = no end; sent as `//punishment_add`), `teleport` (`town`: a name of `TOWNS` in `l2-admin-api`), `message` (`text`: a whisper from "[GM]").
+- **AccountsAction** (tag `action`, G-04): `search` (`prefix`, `page` from 0; 50 per page), `last_ip` (`login`), `create` (`login`, `password`, `access_level`), `set_password` (`login`, `password`), `set_access_level` (`login`, `access_level`), `ban` / `unban` / `delete` (`login`). Passwords are clear text on the (token protected) connection, hashed by the login server (SHA-1, Base64), never logged or returned. `ban` writes `accessLevel = -1`, `unban` writes 0 (only on banned accounts), `delete` removes only the `accounts` row (like Java's AccountManager).
+- **AccountsResult** (tag `kind`): `page` (`page`, `page_size`, `total`, `accounts`: list of `login`, `access_level`, `last_active_ms`, `last_server`, `banned`), `last_ip` (`login`, `ip` or null), `done` (`login`, `access_level` or null). Failures are `error` responses.
 
 ## Settings (Rust-only files, D-36)
 

@@ -11,6 +11,8 @@
 //! block: send requests with `cx.bridge.request(..)` and handle the answers in
 //! [`View::on_event`], which receives every [`BridgeEvent`].
 
+pub mod accounts;
+pub mod config_editor;
 pub mod connection;
 pub mod data_browser;
 pub mod game_admin;
@@ -39,22 +41,26 @@ pub enum ViewId {
     Servers,
     Players,
     GameAdmin,
+    Accounts,
     Logs,
     Packets,
     Data,
     Geodata,
+    Config,
 }
 
 impl ViewId {
-    pub const ALL: [ViewId; 8] = [
+    pub const ALL: [ViewId; 10] = [
         ViewId::Connection,
         ViewId::Servers,
         ViewId::Players,
         ViewId::GameAdmin,
+        ViewId::Accounts,
         ViewId::Logs,
         ViewId::Packets,
         ViewId::Data,
         ViewId::Geodata,
+        ViewId::Config,
     ];
 
     pub fn label(self) -> &'static str {
@@ -63,10 +69,12 @@ impl ViewId {
             ViewId::Servers => "Servers",
             ViewId::Players => "Players",
             ViewId::GameAdmin => "Game admin",
+            ViewId::Accounts => "Accounts",
             ViewId::Logs => "Logs",
             ViewId::Packets => "Packets",
             ViewId::Data => "Data",
             ViewId::Geodata => "Geodata",
+            ViewId::Config => "Config",
         }
     }
 
@@ -78,10 +86,12 @@ impl ViewId {
                 | ViewId::Servers
                 | ViewId::Players
                 | ViewId::GameAdmin
+                | ViewId::Accounts
                 | ViewId::Logs
                 | ViewId::Packets
                 | ViewId::Data
                 | ViewId::Geodata
+                | ViewId::Config
         )
     }
 
@@ -93,10 +103,12 @@ impl ViewId {
             | ViewId::Servers
             | ViewId::Players
             | ViewId::GameAdmin
+            | ViewId::Accounts
             | ViewId::Logs
             | ViewId::Packets
             | ViewId::Data
-            | ViewId::Geodata => "",
+            | ViewId::Geodata
+            | ViewId::Config => "",
         }
     }
 }
@@ -108,10 +120,12 @@ pub struct Views {
     pub servers: servers::ServersView,
     pub players: players::PlayersView,
     pub game_admin: game_admin::GameAdminView,
+    pub accounts: accounts::AccountsView,
     pub logs: logs::LogsView,
     pub packets: packets::PacketsView,
     pub data: data_browser::DataBrowserView,
     pub geodata: geodata::GeodataView,
+    pub config: config_editor::ConfigEditorView,
 }
 
 impl Views {
@@ -122,10 +136,12 @@ impl Views {
             ViewId::Servers => Some(&mut self.servers),
             ViewId::Players => Some(&mut self.players),
             ViewId::GameAdmin => Some(&mut self.game_admin),
+            ViewId::Accounts => Some(&mut self.accounts),
             ViewId::Logs => Some(&mut self.logs),
             ViewId::Packets => Some(&mut self.packets),
             ViewId::Data => Some(&mut self.data),
             ViewId::Geodata => Some(&mut self.geodata),
+            ViewId::Config => Some(&mut self.config),
         }
     }
 
@@ -134,6 +150,7 @@ impl Views {
         self.servers.on_event(event);
         self.players.on_event(event);
         self.game_admin.on_event(event);
+        self.accounts.on_event(event);
         self.logs.on_event(event);
         self.packets.on_event(event);
     }

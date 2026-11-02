@@ -44,6 +44,7 @@ use std::collections::BTreeMap;
 use std::fmt::{Debug, Display};
 use std::path::Path;
 use std::str::FromStr;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use tracing::warn;
@@ -56,6 +57,8 @@ pub struct IniFile {
     /// `File.getName()`: only used in log messages.
     name: String,
     values: BTreeMap<String, String>,
+    /// Set by [`IniFile::recording`] only: collects the default of every key that is asked for.
+    recorder: Option<Arc<Mutex<BTreeMap<String, String>>>>,
 }
 
 impl IniFile {
@@ -111,7 +114,34 @@ impl IniFile {
         Self {
             name: name.into(),
             values: BTreeMap::new(),
+            recorder: None,
         }
+    }
+
+    /// An empty `IniFile` that remembers the default of every key a getter asks for (as text),
+    /// and does not log. Feed it to a `from_ini` and read [`Self::recorded_defaults`]: this is how
+    /// the config editor learns the Java defaults without a second table of them.
+    pub fn recording(name: impl Into<String>) -> Self {
+        let mut file = Self::empty(name);
+        file.recorder = Some(Arc::default());
+        file
+    }
+
+    /// The defaults collected by a [`Self::recording`] file (key -> default as text, e.g. `true`,
+    /// `9013`, `Admin`). Empty for an ordinary file.
+    pub fn recorded_defaults(&self) -> BTreeMap<String, String> {
+        match &self.recorder {
+            Some(map) => map.lock().map(|m| m.clone()).unwrap_or_default(),
+            None => BTreeMap::new(),
+        }
+    }
+
+    fn record_default(&self, key: &str, default: &dyn Display) -> bool {
+        let Some(map) = &self.recorder else { return false };
+        if let Ok(mut map) = map.lock() {
+            map.entry(key.to_owned()).or_insert_with(|| default.to_string());
+        }
+        true
     }
 
     /// The file name used in log messages.
@@ -243,10 +273,14 @@ impl IniFile {
                     self.name
                 ),
             },
-            None => warn!(
-                "Config '{key}' not found in file '{}', using default values.",
-                self.name
-            ),
+            None => {
+                if !self.record_default(key, &default) {
+                    warn!(
+                        "Config '{key}' not found in file '{}', using default values.",
+                        self.name
+                    );
+                }
+            }
         }
         parse_int_array(default, delimiter).unwrap_or_else(|| {
             warn!(
@@ -280,6 +314,9 @@ impl IniFile {
     }
 
     fn warn_missing(&self, key: &str, default: impl Display) {
+        if self.record_default(key, &default) {
+            return;
+        }
         warn!(
             "Config '{key}' not found in file '{}', using default: {default}.",
             self.name

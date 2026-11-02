@@ -1,12 +1,13 @@
 //! `l2-supervisor [path/to/supervisor.ini]`
 //!
-//! Runs until Ctrl+C (or SIGTERM on Unix), then stops the servers it started.
+//! Runs until Ctrl+C (or SIGTERM on Unix) or an admin `StopSupervisor`, then stops the servers
+//! it started. `supervisor.pid` next to the ini file names the running process.
 
 use std::path::PathBuf;
 
 use anyhow::Context;
-use l2_supervisor::Running;
 use l2_supervisor::config::SupervisorConfig;
+use l2_supervisor::{Running, pidfile, secret};
 use tracing_subscriber::EnvFilter;
 
 #[tokio::main]
@@ -18,11 +19,31 @@ async fn main() -> anyhow::Result<()> {
     let path = std::env::args_os()
         .nth(1)
         .map_or_else(|| PathBuf::from("supervisor.ini"), PathBuf::from);
-    let config = SupervisorConfig::load(&path).with_context(|| format!("loading {}", path.display()))?;
-    if config.token.is_empty() {
+    let mut config = SupervisorConfig::load(&path).with_context(|| format!("loading {}", path.display()))?;
+    // D-56: no token to type. An empty `Token` on a local `Listen` lets this machine in without
+    // one; an empty `AdminToken` means a fresh one per start, handed to that server.
+    if config.token.is_empty() && !config.listen.ip().is_loopback() {
         tracing::warn!(
-            "Token is empty in {}: every admin connection will be refused",
+            "Token is empty in {} and Listen is not a local address: every admin connection will be refused",
             path.display()
+        );
+    }
+    for server in &mut config.servers {
+        if server.admin_endpoint.is_some() && server.admin_token.is_empty() {
+            server.admin_token = secret::random_token();
+        }
+    }
+
+    // Refuse to run twice on one supervisor.ini; the GUI relies on this file (G-01).
+    let pid_path = pidfile::path_for(&path);
+    if let Some(other) = pidfile::read(&pid_path)
+        && other.pid != std::process::id()
+        && other.is_alive()
+    {
+        anyhow::bail!(
+            "a supervisor is already running (pid {}, {})",
+            other.pid,
+            other.exe
         );
     }
 
@@ -34,9 +55,20 @@ async fn main() -> anyhow::Result<()> {
         running.local_addr(),
         config.servers.len()
     );
+    // Written after the bind succeeded, so a failed start never touches another supervisor's file.
+    let _pid_guard = match pidfile::PidFileGuard::create(&pid_path) {
+        Ok(guard) => Some(guard),
+        Err(e) => {
+            tracing::warn!("cannot write {}: {e}", pid_path.display());
+            None
+        }
+    };
     running.autostart().await;
 
-    wait_for_shutdown_signal().await;
+    tokio::select! {
+        () = wait_for_shutdown_signal() => {}
+        () = running.stop_requested() => tracing::info!("stop requested through the admin API"),
+    }
     tracing::info!("shutting down, stopping servers");
     running.shutdown().await;
     Ok(())

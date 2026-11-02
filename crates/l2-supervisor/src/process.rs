@@ -199,6 +199,16 @@ impl Supervisor {
         }
     }
 
+    /// Stops the servers one after the other in reverse configuration order (the game server
+    /// before the login server it registered with). Used by the `StopSupervisor` request.
+    pub async fn stop_all_reverse(&self) {
+        for server in self.servers.iter().rev() {
+            if let Err(e) = server.stop().await {
+                tracing::warn!("stopping {} failed: {e}", server.name());
+            }
+        }
+    }
+
     /// Stops every server (in parallel). Used when the supervisor exits.
     pub async fn shutdown(&self) {
         let stops = self.servers.iter().map(|s| {
@@ -382,6 +392,10 @@ impl Actor {
             .kill_on_drop(true);
         if let Some(dir) = &self.cfg.working_dir {
             command.current_dir(dir);
+        }
+        // The server uses it when its Admin.ini has no token (D-56).
+        if self.cfg.admin_endpoint.is_some() && !self.cfg.admin_token.is_empty() {
+            command.env(crate::secret::ADMIN_TOKEN_ENV, &self.cfg.admin_token);
         }
         #[cfg(unix)]
         command.process_group(0);

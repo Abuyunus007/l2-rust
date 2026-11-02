@@ -9,5 +9,9 @@ pub mod messages;
 pub mod transport;
 
 pub use auth::Token;
+
+/// The environment variable a supervisor sets for the servers it starts: the token of their admin
+/// endpoint, used when `Admin.ini` has none (D-56). Its presence also turns the endpoint on.
+pub const ADMIN_TOKEN_ENV: &str = "L2_ADMIN_TOKEN";
 pub use messages::*;
 pub use transport::{AdminClient, AdminError, AdminHandler, Session, serve};

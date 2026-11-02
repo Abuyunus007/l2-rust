@@ -5,6 +5,7 @@
 
 mod app;
 mod bridge;
+mod launch;
 mod settings;
 mod views;
 

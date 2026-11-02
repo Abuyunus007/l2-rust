@@ -8,8 +8,8 @@ use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
 
 use l2_admin_api::{AdminClient, AdminHandler, Event, Request, Response, Session};
-use tokio::sync::broadcast;
 use tokio::sync::broadcast::error::RecvError;
+use tokio::sync::{Notify, broadcast};
 use tokio::task::JoinHandle;
 
 use crate::config::ServerConfig;
@@ -106,11 +106,17 @@ pub struct SupervisorHandler {
     sessions: Arc<Mutex<HashMap<u64, Session>>>,
     /// The running log forwarder of each session (one `SubscribeLogs` at a time).
     log_streams: Mutex<HashMap<u64, JoinHandle<()>>>,
+    /// Raised once a `StopSupervisor` has stopped all servers: the binary then exits.
+    stop_requested: Arc<Notify>,
 }
 
 impl SupervisorHandler {
     /// Creates the handler and the task that pushes state/status events to all clients.
-    pub fn new(supervisor: Arc<Supervisor>, links: HashMap<String, AdminLink>) -> Arc<Self> {
+    pub fn new(
+        supervisor: Arc<Supervisor>,
+        links: HashMap<String, AdminLink>,
+        stop_requested: Arc<Notify>,
+    ) -> Arc<Self> {
         let sessions: Arc<Mutex<HashMap<u64, Session>>> = Arc::default();
         tokio::spawn(broadcast_events(
             supervisor.subscribe_events(),
@@ -122,6 +128,7 @@ impl SupervisorHandler {
             links,
             sessions,
             log_streams: Mutex::default(),
+            stop_requested,
         })
     }
 
@@ -242,6 +249,16 @@ impl AdminHandler for SupervisorHandler {
                 }
                 Response::Ok
             }
+            Request::StopSupervisor => {
+                // Answer first: the servers can take up to StopTimeoutSecs each to stop.
+                let (supervisor, stop_requested) =
+                    (Arc::clone(&self.supervisor), Arc::clone(&self.stop_requested));
+                tokio::spawn(async move {
+                    supervisor.stop_all_reverse().await;
+                    stop_requested.notify_one();
+                });
+                Response::Ok
+            }
             // The GUI stops servers with StopServer; `shutdown` is for server endpoints.
             Request::Shutdown { .. } => Response::Error {
                 message: "shutdown is sent to a server endpoint; use stop_server here".into(),
@@ -266,6 +283,17 @@ impl AdminHandler for SupervisorHandler {
                 action,
             } => {
                 self.relay(&name, Request::GameAdmin { server: None, action })
+                    .await
+            }
+            // Account management belongs to the login server (it owns the `accounts` table).
+            Request::Accounts { server: None, .. } => Response::Error {
+                message: "the supervisor needs a server name".into(),
+            },
+            Request::Accounts {
+                server: Some(name),
+                action,
+            } => {
+                self.relay(&name, Request::Accounts { server: None, action })
                     .await
             }
         }
@@ -339,6 +367,89 @@ mod tests {
                 },
             }
         }
+    }
+
+    /// A stand-in for the login server: answers every account action with `Done`.
+    struct FakeLoginServer;
+
+    impl AdminHandler for FakeLoginServer {
+        async fn handle(&self, request: Request, _session: &Session) -> Response {
+            match request {
+                Request::Accounts {
+                    server: None,
+                    action: l2_admin_api::AccountsAction::Ban { login },
+                } => Response::Accounts {
+                    result: l2_admin_api::AccountsResult::Done {
+                        login,
+                        access_level: Some(-1),
+                    },
+                },
+                _ => Response::Error {
+                    message: "unsupported".into(),
+                },
+            }
+        }
+    }
+
+    #[tokio::test]
+    async fn account_actions_are_relayed_to_the_named_server() {
+        use l2_admin_api::{AccountsAction, AccountsResult};
+
+        let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+        let fake_addr = listener.local_addr().unwrap();
+        tokio::spawn(serve(
+            listener,
+            "login".into(),
+            Token::new("ls-secret"),
+            Arc::new(FakeLoginServer),
+        ));
+        let mut login = server("login", Some(fake_addr.to_string()));
+        login.admin_token = "ls-secret".into();
+        let running = Running::start(SupervisorConfig {
+            listen: "127.0.0.1:0".parse().unwrap(),
+            token: "secret".into(),
+            log_buffer_lines: 100,
+            stop_timeout: std::time::Duration::from_secs(2),
+            restart_delay: std::time::Duration::ZERO,
+            servers: vec![login],
+        })
+        .await
+        .unwrap();
+        let (client, _events) = AdminClient::connect(&format!("ws://{}", running.local_addr()), "secret")
+            .await
+            .unwrap();
+        let ban = |server: Option<&str>| Request::Accounts {
+            server: server.map(Into::into),
+            action: AccountsAction::Ban {
+                login: "alice".into(),
+            },
+        };
+
+        let mut answer = None;
+        for _ in 0..200 {
+            let response = client.request(ban(Some("login"))).await.unwrap();
+            if matches!(response, Response::Accounts { .. }) {
+                answer = Some(response);
+                break;
+            }
+            tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+        }
+        assert_eq!(
+            answer,
+            Some(Response::Accounts {
+                result: AccountsResult::Done {
+                    login: "alice".into(),
+                    access_level: Some(-1)
+                }
+            })
+        );
+        assert_eq!(
+            client.request(ban(None)).await.unwrap(),
+            Response::Error {
+                message: "the supervisor needs a server name".into()
+            }
+        );
+        running.shutdown().await;
     }
 
     fn server(name: &str, admin_endpoint: Option<String>) -> ServerConfig {

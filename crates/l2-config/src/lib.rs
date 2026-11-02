@@ -4,12 +4,14 @@
 //! are built on top of it (see the later config cards).
 
 mod database;
+pub mod defaults;
 mod error;
 pub mod game;
 pub mod game_manual;
 pub mod game_manual_core;
 #[rustfmt::skip]
 pub mod generated;
+pub mod ini_edit;
 mod interface;
 mod login;
 mod network;

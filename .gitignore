@@ -38,3 +38,10 @@ crates/l2-supervisor/supervisor.ini
 /dist/game/config/hexid.txt
 /dist/**/log/
 /dist/game/data/geodata/*.l2j
+
+# Local build output and geodata copies (never commit)
+/release/
+/geodata/
+
+# Generated admin key of a local supervisor (D-56)
+supervisor.token
