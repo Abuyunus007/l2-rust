@@ -148,6 +148,8 @@ pub use cursed::{
     CursedInput, CursedLoad, CursedRow, CursedSettings, CursedTimer, CursedWeapon, CursedWrite,
 };
 pub use custom::community_board::{CustomBoardSettings, CustomBoardTimer};
+pub use custom::faction::{FACTION_EVIL, FACTION_GOOD, FactionLocation, FactionSettings};
+pub use custom::fake_players::{FakePlayerChatEntry, FakePlayerSettings};
 pub use custom::pvp_rewards::{PvpAnnounceSettings, PvpRewardItemSettings};
 pub use custom::rebirth::{RebirthData, RebirthSettings, RebirthWrite};
 pub use custom::scheme_buffer::SchemeBufferSettings;

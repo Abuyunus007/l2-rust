@@ -13,6 +13,8 @@
 pub mod boss_announcements;
 pub mod champion;
 pub mod community_board;
+pub mod faction;
+pub mod fake_players;
 pub mod pvp_rewards;
 pub mod rebirth;
 pub mod scheme_buffer;

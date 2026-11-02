@@ -260,7 +260,7 @@ impl World {
             return;
         }
         // `if (!getMustRewardExpSP()) return;` (`OpenChest` unlocked the chest: no exp).
-        if self.npcs.get(&dying).is_some_and(|n| !n.must_reward_exp_sp) {
+        if self.npcs.get(&dying).is_some_and(|n| !n.must_reward_exp_sp) || self.is_fake_player(dying) {
             return;
         }
         let Some(at) = self.position_of(dying) else {

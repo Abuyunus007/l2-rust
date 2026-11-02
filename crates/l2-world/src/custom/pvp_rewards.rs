@@ -79,21 +79,13 @@ impl Default for PvpAnnounceSettings {
 }
 
 impl World {
-    /// Java `Npc.isFakePlayer()`: the NPC template is a fake player (`fakePlayer` in the NPC data).
-    pub(crate) fn is_fake_player_npc(&self, id: ObjectId) -> bool {
-        self.npcs
-            .get(&id)
-            .and_then(|n| self.npc_world.template(n.npc_id))
-            .is_some_and(|t| t.fake_player)
-    }
-
     /// The part of `Player.doDie(killer)` that reads the two configs, after the
     /// `ON_PLAYER_PVP_KILL` event: `victim` is the dying player, `killer` whoever dealt the
     /// blow (a summon counts through its owner for the reward, by its own name for the PvP text;
     /// a fake player kills with `fpcKill`: no reward, but the announcement).
     pub(crate) fn custom_pvp_kill_rewards(&mut self, victim: ObjectId, killer: ObjectId) {
         let pk = self.acting_player(killer);
-        let fpc_kill = self.is_fake_player_npc(killer);
+        let fpc_kill = self.is_fake_player(killer);
         if pk.is_none() && !fpc_kill {
             return;
         }

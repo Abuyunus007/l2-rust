@@ -186,7 +186,16 @@ pub async fn start_listener(server: &mut Server) -> Result<(), StartupError> {
             CharScreen::DEFAULT_SELECT_INTERVAL_TICKS,
         )
         .with_select_flood(character_select_flood(&state.paths.config_dir))
-        .with_master_access_level(state.static_data.master_access_level()),
+        .with_master_access_level(state.static_data.master_access_level())
+        .with_reserved_names(
+            state
+                .datapack
+                .npcs
+                .iter()
+                .filter(|t| t.fake_player)
+                .map(|t| t.name.to_lowercase())
+                .collect(),
+        ),
         loader: Arc::new(
             DbPlayerLoader::new(state.pool.clone()).with_rebirth(state.config.rebirth.rebirth_allow_rebirth),
         ),

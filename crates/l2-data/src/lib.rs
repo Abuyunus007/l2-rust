@@ -22,6 +22,7 @@ pub mod enchant_hp_bonus;
 pub mod enchant_options;
 pub mod enchant_skill;
 pub mod experience;
+pub mod fake_player_chat;
 pub mod fence;
 pub mod fishing;
 pub mod henna;
@@ -86,6 +87,7 @@ pub use enchant_hp_bonus::EnchantHpBonus;
 pub use enchant_options::EnchantItemOptions;
 pub use enchant_skill::{EnchantSkillGroup, EnchantSkillGroupsData, EnchantSkillHolder, EnchantSkillLearn};
 pub use experience::ExperienceTable;
+pub use fake_player_chat::{FakePlayerChat, load_fake_player_chat};
 pub use fence::{FenceState, FenceTemplate, FenceTemplates};
 pub use fishing::{Fish, FishData, FishingMonster, FishingMonstersData, FishingRod, FishingRodsData};
 pub use henna::{Henna, Hennas};
@@ -108,7 +110,9 @@ pub use minigame::{
     ArenaReward, ColiseumArenaDef, ColiseumPoint, ColiseumTower, KrateisArenaDef, MinigameData,
 };
 pub use multisell::{MultisellData, MultisellLoadOptions};
-pub use npc::{NpcLoadOptions, NpcStatMultipliers, NpcTemplate, NpcTemplates, StatMultipliers};
+pub use npc::{
+    FakePlayerHolder, NpcLoadOptions, NpcStatMultipliers, NpcTemplate, NpcTemplates, StatMultipliers,
+};
 pub use pet::{PetData, PetDataTable, PetLevelData, PetSkillLearn};
 pub use pet_skill::{PetSkill, PetSkillData};
 pub use player_template::{

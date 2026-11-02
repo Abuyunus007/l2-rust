@@ -283,7 +283,7 @@ impl World {
         }
         // `_currentCollisionRadius` goes back to the template's (`Grow` may have changed it).
         // `_currentCollisionHeight` is the template's already. `_killingBlowWeaponId` is read by
-        // scripts only (D-05). Fake players are not ported.
+        // scripts only (D-05).
         let radius = self
             .npcs
             .get(&id)
@@ -292,7 +292,8 @@ impl World {
         if let (Some(npc), Some(radius)) = (self.npcs.get_mut(&id), radius) {
             npc.collision_radius = radius;
         }
-        let _ = killer;
+        // A fake player killed by a playable (`Custom/FakePlayers.ini`).
+        self.fake_player_on_die(id, killer);
         self.add_decay_task(id);
         // `UCTower.doDie`: the tower leaves its team (M8-GAMES-01).
         self.minigame_on_npc_die(id);
@@ -321,9 +322,11 @@ impl World {
             self.stop_fake_death(id, true);
         }
         if let Some(killer) = killer {
-            // Ultimate Combat teams and ON_PLAYER_PVP_KILL (D-05); fake player karma.
+            // Ultimate Combat teams and ON_PLAYER_PVP_KILL (D-05).
             // The PvP/PK reward items and the kill announcements (M9-C05, off by default).
             self.custom_pvp_kill_rewards(id, killer);
+            // "FakePlayerUnflaggedKillsKarma" (`Custom/FakePlayers.ini`).
+            self.fake_player_killed_player(id, killer);
             self.broadcast_status_update(id);
 
             // Clear resurrect xp calculation.

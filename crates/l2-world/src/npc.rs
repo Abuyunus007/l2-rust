@@ -172,8 +172,8 @@ impl NpcClass {
 
     /// Java `isAutoAttackable(player)` for a player outside any siege, arena or faction war.
     // Siege NPCs (`Defender`, `FortCommander`, `TerritoryWard`) are only attackable while a siege
-    // runs, `Guard` only with the faction system on (`QuestGuard` never for a player): all false
-    // here until sieges exist.
+    // runs, `Guard` only with the faction system on (`QuestGuard` never for a player, the faction
+    // guards are `World::faction_guard_auto_attackable`): all false here.
     pub(crate) fn auto_attackable_by(self, viewer_karma: i32) -> bool {
         match self {
             Self::Monster | Self::RaidBoss | Self::GrandBoss => true,
@@ -1107,6 +1107,11 @@ impl World {
         if !self.is_visible_for(subject, viewer) {
             return;
         }
+        // A fake player is told as a player (`FakePlayerInfo`, `Custom/FakePlayers.ini`).
+        if self.is_fake_player(subject) {
+            self.send_fake_player_info(subject, viewer);
+            return;
+        }
         if let Some(info) = self.npc_info(subject, viewer) {
             self.send(viewer, &info);
         }
@@ -1114,7 +1119,7 @@ impl World {
 
     /// `new AbstractNpcInfo.NpcInfo(npc, viewer)`: what `viewer` is told when `subject` comes
     /// into view. `None` for a decayed NPC (Java writes nothing), an unknown template and a fake
-    /// player (`FakePlayerInfo`, not ported).
+    /// player (`FakePlayerInfo`, `World::fake_player_info`).
     // Java: Npc.sendInfo sends ServerObjectInfo instead when getRunSpeed() == 0; the template
     // loader never lets a speed reach 0, so that packet is not ported.
     pub fn npc_info(&self, subject: ObjectId, viewer: ObjectId) -> Option<NpcInfo> {
@@ -1183,7 +1188,10 @@ impl World {
             attackable: self
                 .siege_npc_auto_attackable(subject, viewer)
                 .or_else(|| self.npc_auto_attackable_override(subject))
-                .unwrap_or_else(|| npc.class.auto_attackable_by(viewer_karma)),
+                .unwrap_or_else(|| {
+                    self.faction_guard_auto_attackable(subject, viewer)
+                        || npc.class.auto_attackable_by(viewer_karma)
+                }),
             x: npc.core.x,
             y: npc.core.y,
             z: npc.core.z,
