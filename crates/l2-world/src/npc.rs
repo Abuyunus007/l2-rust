@@ -756,6 +756,8 @@ impl World {
         if class.is_monster() && templates.master_monster_ids().contains(&template.id) {
             self.spawn_minions(id, template, &templates, report);
         }
+        // "Set champion on next spawn." (ChampionMonsters.ini, `custom/champion.rs`)
+        self.roll_champion(id, spawn_instance);
         Some(id)
     }
 
@@ -990,6 +992,7 @@ impl World {
             display_effect: 0,
             collision_radius: f64::from(template.collision_radius),
             must_reward_exp_sp: true,
+            champion: false,
             special_drop: false,
             movement: crate::movement::NpcMovement::default(),
             spawn_point: spawn_point.unwrap_or_default(),
@@ -1041,7 +1044,10 @@ impl World {
         } else {
             template.weapon_enchant
         };
-        self.create_npc(template, class, None, None, (x, y, z), heading, in_water, enchant)
+        let id = self.create_npc(template, class, None, None, (x, y, z), heading, in_water, enchant)?;
+        // A `Spawn.doSpawn()` like any other: it rolls the champion too (instance 0).
+        self.roll_champion(id, 0);
+        Some(id)
     }
 
     /// [`World::spawn_npc_at`] with the class of a Java instance class the template's `type`
@@ -1164,7 +1170,11 @@ impl World {
                 t1 += " ";
                 t1 += &title;
             }
-            title = t1;
+            // `_npc.isChampion() ? CHAMP_TITLE + " " + t1 : t1`.
+            title = self.champion_level_title(subject, t1);
+        } else if let Some(champion_title) = self.champion_plain_title(subject) {
+            // `else if (CHAMPION_ENABLE && _npc.isChampion()) _title = CHAMP_TITLE`.
+            title = champion_title;
         }
 
         Some(NpcInfo {
@@ -1216,7 +1226,11 @@ impl World {
             } else {
                 0
             },
-            team: self.minigame_npc_team(subject),
+            // `_npc.getTeam()`: a match's team, else the red aura of a champion.
+            team: match self.minigame_npc_team(subject) {
+                0 => self.champion_team(subject),
+                team => team,
+            },
             enchant_effect: npc.enchant_effect,
             flying: template.flying,
             color_effect: self.minigame_npc_color_effect(subject),
