@@ -87,7 +87,7 @@ Shops/buylists, multisell, warehouse, trade, private stores, party (+ exp share)
 Sieges, fortresses, clan halls, territory war, olympiad, seven signs, grand bosses, instances, vehicles, festival, coliseum, fishing, manor.
 
 ## M9: Customs, hardening, switch from Java
-The `Custom/*.ini` features, performance/load tests, crash recovery, backups, full GUI admin tasks, then **switch from Java to Rust** for your server.
+The `Custom/*.ini` features and custom scripts (all, off by default, D-57), a load test tool (2000 players), scheduled database backups, the GUI admin tasks (milestone G), then **switch from Java to Rust** for your server (runbook + GUI assistant, backup first, a way back).
 
 ---
 

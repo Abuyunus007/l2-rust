@@ -490,6 +490,21 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [G-04](G/G-04.md) | Accounts: search, create, password, access level, ban | sonnet | full | — | merged |
 | [G-05](G/G-05.md) | Config editor | sonnet | spot | — | merged |
 
+## M9: customs, hardening, switch from Java (approved 2026-11-02)
+
+| Card | Title | Model | Review | Depends | Status |
+|---|---|---|---|---|---|
+| [M9-C01](M9/M9-C01.md) | Customs: monsters, spawns, shops | sonnet | spot | — | ready |
+| [M9-C02](M9/M9-C02.md) | Customs: premium, offline play, auto play | sonnet | spot | — | ready |
+| [M9-C03](M9/M9-C03.md) | Customs: buffers and the community board | sonnet | spot | — | ready |
+| [M9-C04](M9/M9-C04.md) | Customs: faction system and fake players | sonnet | spot | — | ready |
+| [M9-C05](M9/M9-C05.md) | Customs: PvP features | sonnet | spot | — | ready |
+| [M9-C06](M9/M9-C06.md) | Customs: player start, chat, accounts, misc | sonnet | spot | — | ready |
+| [M9-C07](M9/M9-C07.md) | Custom scripts and custom events | sonnet | spot | — | ready |
+| [M9-H01](M9/M9-H01.md) | Automatic database backups | sonnet | full | — | ready |
+| [M9-H02](M9/M9-H02.md) | Load test tool (2000 players) | sonnet | spot | — | ready |
+| [M9-S01](M9/M9-S01.md) | Switch from Java to Rust | sonnet | full | M9-H01, G-02 | ready |
+
 ## Milestone test results
 
 ### M1 (2026-10-18)
