@@ -537,4 +537,10 @@ pub struct OnlinePlayer {
     pub online_since_unix_ms: i64,
     /// The client's address (`None` when the session didn't report one).
     pub ip: Option<IpAddr>,
+    /// The name of the character's clan (G-03).
+    pub clan: Option<String>,
+    /// Where the character stands (G-03).
+    pub x: i32,
+    pub y: i32,
+    pub z: i32,
 }

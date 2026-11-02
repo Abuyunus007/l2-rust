@@ -35,6 +35,7 @@ pub mod clanhall;
 pub mod combat;
 pub mod commands;
 pub mod config_page;
+pub mod console;
 pub mod control;
 pub mod create_item;
 pub mod debug;

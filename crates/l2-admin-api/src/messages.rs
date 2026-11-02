@@ -78,20 +78,118 @@ pub enum Request {
     Shutdown {
         restart: bool,
     },
+    /// Game server endpoint (G-03): a GM function. The supervisor relays it to the named
+    /// server (`server: None` on the wire to the game server itself).
+    GameAdmin {
+        server: Option<String>,
+        action: GameAction,
+    },
     /// Supervisor: stop all servers cleanly (reverse `Servers` order), then exit. Answered `Ok`
     /// at once; the connection closes when the supervisor is gone (G-01).
     StopSupervisor,
 }
 
+/// What a GM can do through the game server's endpoint. Every action runs inside the world
+/// through the same code as the matching `//` command.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum GameAction {
+    /// An action on one online character (by name).
+    Player { name: String, action: PlayerAction },
+    /// `//announce` (normal) or `//announce_crit` (critical).
+    Announce { text: String, critical: bool },
+    /// Any admin command without the slashes (`kick Amy`), run as a virtual GM.
+    Command { command: String },
+    /// `//server_shutdown` or `//server_restart` with a countdown.
+    Shutdown { seconds: u32, restart: bool },
+    /// `//server_abort`.
+    AbortShutdown,
+    /// What `//serverinfo` shows.
+    ServerInfo,
+}
+
+/// An action on a character. `minutes` 0 = no end; `reason` may be empty.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum PlayerAction {
+    Kick,
+    Jail {
+        minutes: u32,
+        reason: String,
+    },
+    BanChar {
+        minutes: u32,
+        reason: String,
+    },
+    BanAccount {
+        minutes: u32,
+        reason: String,
+    },
+    ChatBan {
+        minutes: u32,
+        reason: String,
+    },
+    /// To one of [`TOWNS`] (by name).
+    Teleport {
+        town: String,
+    },
+    /// A private message shown as from "[GM]".
+    Message {
+        text: String,
+    },
+}
+
+/// The towns the GUI offers for "teleport to a town": the "Town Center" / "Village Center"
+/// entries of `data/html/admin/teleports/TownAreas/*.htm`.
+pub const TOWNS: [(&str, i32, i32, i32); 18] = [
+    ("Talking Island", -82687, 243157, -3734),
+    ("Elven Village", 45873, 49288, -3064),
+    ("Dark Elven Village", 12428, 16551, -4588),
+    ("Orc Village", -44133, -113911, -244),
+    ("Dwarven Village", 116551, -182493, -1525),
+    ("Kamael Village", -116934, 46616, 368),
+    ("Gludin", -83063, 150791, -3133),
+    ("Gludio", -14225, 123540, -3121),
+    ("Dion", 18748, 145437, -3132),
+    ("Giran", 82698, 148638, -3473),
+    ("Oren", 82321, 55139, -1529),
+    ("Aden", 147450, 27064, -2208),
+    ("Heine", 111115, 219017, -3547),
+    ("Hunters Village", 116589, 76268, -2734),
+    ("Goddard", 147725, -56517, -2780),
+    ("Rune", 44070, -50243, -796),
+    ("Schuttgart", 87358, -141982, -1341),
+    ("Floran", 17144, 170156, -3502),
+];
+
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
 pub enum Response {
     Ok,
-    Servers { servers: Vec<ServerStatus> },
-    LoginStatus { status: LoginStatus },
-    GameStatus { status: GameStatus },
-    Accounts { result: AccountsResult },
-    Error { message: String },
+    Servers {
+        servers: Vec<ServerStatus>,
+    },
+    LoginStatus {
+        status: LoginStatus,
+    },
+    GameStatus {
+        status: GameStatus,
+    },
+    /// The answer of a [`GameAction`]: the system messages the command produced (html as plain
+    /// text).
+    GameReply {
+        lines: Vec<String>,
+    },
+    /// The answer of [`GameAction::ServerInfo`].
+    GameInfo {
+        info: GameInfo,
+    },
+    Accounts {
+        result: AccountsResult,
+    },
+    Error {
+        message: String,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -121,6 +219,10 @@ pub struct ServerStatus {
     pub pid: Option<u32>,
     pub uptime_secs: Option<u64>,
     pub last_exit_code: Option<i32>,
+    /// Why the process ended (G-06): the last ERROR/FATAL line of its output, else the last line.
+    /// Only set after a crash or exit. Optional on the wire, so older peers stay compatible.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_error: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
@@ -183,6 +285,27 @@ pub struct GamePlayer {
     pub ip: Option<String>,
     /// Unix time in milliseconds at which the character entered the world.
     pub online_since_ms: i64,
+    /// The clan's name (G-03).
+    pub clan: Option<String>,
+    /// World position (G-03).
+    pub x: i32,
+    pub y: i32,
+    pub z: i32,
+}
+
+/// What `//serverinfo` shows (G-03).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct GameInfo {
+    pub uptime_secs: u64,
+    pub online: u32,
+    /// Resident memory in bytes (0 where the platform does not tell).
+    pub memory_bytes: u64,
+    pub threads: u32,
+    /// World ticks since the start, and the length of one tick in milliseconds.
+    pub ticks: u64,
+    pub tick_ms: u32,
+    /// The countdown of a running shutdown, in seconds.
+    pub shutdown_in_secs: Option<u32>,
 }
 
 /// Accounts per page of [`AccountsAction::Search`].
@@ -307,6 +430,34 @@ mod tests {
     use super::*;
 
     #[test]
+    fn last_error_round_trips_and_is_optional() {
+        let status = ServerStatus {
+            name: "game".into(),
+            state: ServerState::Crashed,
+            pid: None,
+            uptime_secs: None,
+            last_exit_code: Some(1),
+            last_error: Some("ERROR Access denied for user".into()),
+        };
+        let event = Message::Event {
+            event: Event::ServerStateChanged {
+                status: status.clone(),
+            },
+        };
+        let json = serde_json::to_string(&event).unwrap();
+        assert!(
+            json.contains(r#""last_error":"ERROR Access denied for user""#),
+            "{json}"
+        );
+        assert_eq!(serde_json::from_str::<Message>(&json).unwrap(), event);
+
+        // A peer that doesn't know the field omits it.
+        let old = r#"{"name":"game","state":"crashed","pid":null,"uptime_secs":null,"last_exit_code":1}"#;
+        let parsed: ServerStatus = serde_json::from_str(old).unwrap();
+        assert_eq!(parsed.last_error, None);
+    }
+
+    #[test]
     fn debug_never_shows_passwords() {
         let create = AccountsAction::Create {
             login: "bob".into(),
@@ -337,6 +488,7 @@ mod tests {
             pid: Some(4242),
             uptime_secs: Some(60),
             last_exit_code: None,
+            last_error: None,
         };
         let login = LoginStatus {
             game_servers: vec![GameServerStatus {
@@ -357,6 +509,10 @@ mod tests {
                 class_id: 88,
                 ip: Some("127.0.0.1".into()),
                 online_since_ms: 1_700_000_000_000,
+                clan: Some("Bears".into()),
+                x: 1,
+                y: -2,
+                z: 3,
             }],
         };
         let line = LogLine {
@@ -458,7 +614,85 @@ mod tests {
                     id: 7,
                     response: Response::GameStatus { status: game },
                 },
-                r#"{"type":"response","id":7,"response":{"kind":"game_status","status":{"players":[{"name":"Amy","account":"acc1","level":80,"class_id":88,"ip":"127.0.0.1","online_since_ms":1700000000000}]}}}"#,
+                r#"{"type":"response","id":7,"response":{"kind":"game_status","status":{"players":[{"name":"Amy","account":"acc1","level":80,"class_id":88,"ip":"127.0.0.1","online_since_ms":1700000000000,"clan":"Bears","x":1,"y":-2,"z":3}]}}}"#,
+            ),
+            (
+                Message::Request {
+                    id: 8,
+                    request: Request::GameAdmin {
+                        server: Some("game".into()),
+                        action: GameAction::Player {
+                            name: "Amy".into(),
+                            action: PlayerAction::Jail {
+                                minutes: 30,
+                                reason: "botting".into(),
+                            },
+                        },
+                    },
+                },
+                r#"{"type":"request","id":8,"request":{"kind":"game_admin","server":"game","action":{"kind":"player","name":"Amy","action":{"kind":"jail","minutes":30,"reason":"botting"}}}}"#,
+            ),
+            (
+                Message::Request {
+                    id: 9,
+                    request: Request::GameAdmin {
+                        server: None,
+                        action: GameAction::Shutdown {
+                            seconds: 60,
+                            restart: true,
+                        },
+                    },
+                },
+                r#"{"type":"request","id":9,"request":{"kind":"game_admin","server":null,"action":{"kind":"shutdown","seconds":60,"restart":true}}}"#,
+            ),
+            (
+                Message::Request {
+                    id: 10,
+                    request: Request::GameAdmin {
+                        server: None,
+                        action: GameAction::Announce {
+                            text: "Hi".into(),
+                            critical: false,
+                        },
+                    },
+                },
+                r#"{"type":"request","id":10,"request":{"kind":"game_admin","server":null,"action":{"kind":"announce","text":"Hi","critical":false}}}"#,
+            ),
+            (
+                Message::Request {
+                    id: 11,
+                    request: Request::GameAdmin {
+                        server: None,
+                        action: GameAction::AbortShutdown,
+                    },
+                },
+                r#"{"type":"request","id":11,"request":{"kind":"game_admin","server":null,"action":{"kind":"abort_shutdown"}}}"#,
+            ),
+            (
+                Message::Response {
+                    id: 8,
+                    response: Response::GameReply {
+                        lines: vec!["Done.".into()],
+                    },
+                },
+                r#"{"type":"response","id":8,"response":{"kind":"game_reply","lines":["Done."]}}"#,
+            ),
+            (
+                Message::Response {
+                    id: 9,
+                    response: Response::GameInfo {
+                        info: GameInfo {
+                            uptime_secs: 5,
+                            online: 2,
+                            memory_bytes: 1024,
+                            threads: 8,
+                            ticks: 100,
+                            tick_ms: 50,
+                            shutdown_in_secs: None,
+                        },
+                    },
+                },
+                r#"{"type":"response","id":9,"response":{"kind":"game_info","info":{"uptime_secs":5,"online":2,"memory_bytes":1024,"threads":8,"ticks":100,"tick_ms":50,"shutdown_in_secs":null}}}"#,
             ),
             (
                 Message::Request {
