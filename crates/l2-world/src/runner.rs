@@ -59,6 +59,7 @@ fn run(world: &mut World, commands: &Receiver<WorldCommand>) {
         let started = Instant::now();
         world.tick();
         let took = started.elapsed();
+        world.record_tick_duration(took);
         if took > TICK {
             warn!(
                 "World tick {} took {} ms (budget {} ms).",

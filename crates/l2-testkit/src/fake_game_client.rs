@@ -94,6 +94,12 @@ impl FakeGameClient {
         &self.log
     }
 
+    /// Forgets the log. A long-running user (the load test, M9-H02) calls it so the log does not
+    /// grow with every packet.
+    pub fn clear_log(&mut self) {
+        self.log.clear();
+    }
+
     /// The names of the packets received so far, in order.
     pub fn received_names(&self) -> Vec<String> {
         self.names(Dir::S2c)

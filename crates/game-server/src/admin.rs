@@ -175,6 +175,11 @@ async fn game_action(state: &GameState, action: GameAction) -> Response {
                 threads: thread_count(),
                 ticks: info.ticks,
                 tick_ms: info.tick_ms,
+                tick_stats: l2_admin_api::TickStats {
+                    avg_us: info.tick_avg_us,
+                    p99_us: info.tick_p99_us,
+                    samples: info.tick_samples,
+                },
                 shutdown_in_secs: info.shutdown_in_secs,
             },
         },

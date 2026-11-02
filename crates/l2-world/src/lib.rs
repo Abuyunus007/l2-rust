@@ -97,6 +97,7 @@ pub mod target;
 pub mod teleport;
 pub mod teleporter;
 pub mod territory;
+pub mod tick_stats;
 pub mod timer;
 pub mod trade;
 pub mod transform;
