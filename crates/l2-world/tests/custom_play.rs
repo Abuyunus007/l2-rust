@@ -593,9 +593,11 @@ fn premium_rates_apply_to_the_drop_of_a_premium_killer() {
         champion: false,
         seeded: false,
     };
-    let mut rates = PremiumRates::default();
-    rates.drop_amount = 2.0;
-    rates.drop_chance = 3.0;
+    let rates = PremiumRates {
+        drop_amount: 2.0,
+        drop_chance: 3.0,
+        ..PremiumRates::default()
+    };
     let mut rng = WorldRng::from_seed(1);
     let mut roll = |killer: &DropKiller| {
         calculate_drops(

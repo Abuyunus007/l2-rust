@@ -490,23 +490,24 @@ impl World {
                     .players
                     .get(&id)
                     .is_some_and(|p| p.skills.contains(&254));
-                if self.is_monster(creature) && self.is_dead(creature) && has_spoil {
-                    if let Some(sweeper) = self.known_skill(id, 42)
-                        && self.check_spoil_owner(creature, id)
-                    {
-                        // Move to target.
-                        if self.play_distance_2d(id, creature) > 40.0 {
-                            if !self.is_moving(id)
-                                && let Some((x, y, z)) = self.position_of(creature)
-                            {
-                                self.set_intention_move_to(id, x, y, z);
-                            }
-                            return;
+                if self.is_monster(creature)
+                    && self.is_dead(creature)
+                    && has_spoil
+                    && let Some(sweeper) = self.known_skill(id, 42)
+                    && self.check_spoil_owner(creature, id)
+                {
+                    // Move to target.
+                    if self.play_distance_2d(id, creature) > 40.0 {
+                        if !self.is_moving(id)
+                            && let Some((x, y, z)) = self.position_of(creature)
+                        {
+                            self.set_intention_move_to(id, x, y, z);
                         }
-                        // Sweep target.
-                        self.do_cast(id, sweeper);
                         return;
                     }
+                    // Sweep target.
+                    self.do_cast(id, sweeper);
+                    return;
                 }
                 // Clear target.
                 self.set_target(id, None);
