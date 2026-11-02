@@ -496,7 +496,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | Card | Title | Model | Review | Depends | Status |
 |---|---|---|---|---|---|
 | [M9-C01](M9/M9-C01.md) | Customs: monsters, spawns, shops | sonnet | spot | — | merged |
-| [M9-C02](M9/M9-C02.md) | Customs: premium, offline play, auto play | sonnet | spot | — | running |
+| [M9-C02](M9/M9-C02.md) | Customs: premium, offline play, auto play | sonnet | spot | — | merged |
 | [M9-C03](M9/M9-C03.md) | Customs: buffers and the community board | sonnet | spot | — | running |
 | [M9-C04](M9/M9-C04.md) | Customs: faction system and fake players | sonnet | spot | — | merged |
 | [M9-C05](M9/M9-C05.md) | Customs: PvP features | sonnet | spot | — | ready |
