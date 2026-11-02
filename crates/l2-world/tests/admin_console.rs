@@ -328,8 +328,11 @@ fn html_pages_come_back_as_plain_text() {
         s.console("serverinfo"),
         ["HTML: html/admin/serverinfo.htm", "Slots: 2/2000", "Online: 2"]
     );
-    // The buttons do not want the page.
-    assert!(s.command("serverinfo", false).is_empty());
+    // The buttons do not want the page, only the messages around it.
+    assert_eq!(
+        s.command("serverinfo", false),
+        ["HTML: html/admin/serverinfo.htm"]
+    );
 }
 
 #[test]
