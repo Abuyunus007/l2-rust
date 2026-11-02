@@ -12,6 +12,7 @@ use tokio::sync::broadcast::error::RecvError;
 use tokio::sync::{Notify, broadcast};
 use tokio::task::JoinHandle;
 
+use crate::backup::BackupService;
 use crate::config::ServerConfig;
 use crate::logs::LogStore;
 use crate::process::Supervisor;
@@ -108,6 +109,7 @@ pub struct SupervisorHandler {
     log_streams: Mutex<HashMap<u64, JoinHandle<()>>>,
     /// Raised once a `StopSupervisor` has stopped all servers: the binary then exits.
     stop_requested: Arc<Notify>,
+    backups: Arc<BackupService>,
 }
 
 impl SupervisorHandler {
@@ -116,6 +118,7 @@ impl SupervisorHandler {
         supervisor: Arc<Supervisor>,
         links: HashMap<String, AdminLink>,
         stop_requested: Arc<Notify>,
+        backups: Arc<BackupService>,
     ) -> Arc<Self> {
         let sessions: Arc<Mutex<HashMap<u64, Session>>> = Arc::default();
         tokio::spawn(broadcast_events(
@@ -129,6 +132,7 @@ impl SupervisorHandler {
             sessions,
             log_streams: Mutex::default(),
             stop_requested,
+            backups,
         })
     }
 
@@ -259,6 +263,18 @@ impl AdminHandler for SupervisorHandler {
                 });
                 Response::Ok
             }
+            Request::BackupNow => match self.backups.start_now() {
+                Ok(()) => Response::Ok,
+                Err(e) => Response::Error {
+                    message: e.to_string(),
+                },
+            },
+            Request::ListBackups => Response::Backups {
+                backups: self.backups.list(),
+            },
+            Request::BackupState => Response::BackupState {
+                state: Box::new(self.backups.status()),
+            },
             // The GUI stops servers with StopServer; `shutdown` is for server endpoints.
             Request::Shutdown { .. } => Response::Error {
                 message: "shutdown is sent to a server endpoint; use stop_server here".into(),
@@ -273,6 +289,17 @@ impl AdminHandler for SupervisorHandler {
             }
             Request::GetGameStatus { server: Some(name) } => {
                 self.relay(&name, Request::GetGameStatus { server: None }).await
+            }
+            // G-03: the GM functions of the game server's endpoint.
+            Request::GameAdmin { server: None, .. } => Response::Error {
+                message: "the supervisor needs a server name".into(),
+            },
+            Request::GameAdmin {
+                server: Some(name),
+                action,
+            } => {
+                self.relay(&name, Request::GameAdmin { server: None, action })
+                    .await
             }
             // Account management belongs to the login server (it owns the `accounts` table).
             Request::Accounts { server: None, .. } => Response::Error {
@@ -316,7 +343,8 @@ mod tests {
     use std::sync::Arc;
 
     use l2_admin_api::{
-        AdminClient, AdminHandler, GamePlayer, GameStatus, Request, Response, Session, Token, serve,
+        AdminClient, AdminHandler, GameAction, GamePlayer, GameStatus, Request, Response, Session, Token,
+        serve,
     };
     use tokio::net::TcpListener;
 
@@ -338,9 +366,18 @@ mod tests {
                             class_id: 88,
                             ip: None,
                             online_since_ms: 1_700_000_000_000,
+                            clan: None,
+                            x: 0,
+                            y: 0,
+                            z: 0,
                         }],
                     },
                 },
+                // G-03: echoes what the supervisor relayed.
+                Request::GameAdmin {
+                    server: None,
+                    action: GameAction::Command { command },
+                } => Response::GameReply { lines: vec![command] },
                 _ => Response::Error {
                     message: "unsupported".into(),
                 },
@@ -486,6 +523,36 @@ mod tests {
             tokio::time::sleep(std::time::Duration::from_millis(50)).await;
         }
         assert_eq!(answer.unwrap().players[0].name, "Amy");
+
+        // G-03: a GM action reaches the game server with `server` cleared.
+        let reply = client
+            .request(Request::GameAdmin {
+                server: Some("game".into()),
+                action: GameAction::Command {
+                    command: "kick Amy".into(),
+                },
+            })
+            .await
+            .unwrap();
+        assert_eq!(
+            reply,
+            Response::GameReply {
+                lines: vec!["kick Amy".into()]
+            }
+        );
+        let reply = client
+            .request(Request::GameAdmin {
+                server: None,
+                action: GameAction::ServerInfo,
+            })
+            .await
+            .unwrap();
+        assert_eq!(
+            reply,
+            Response::Error {
+                message: "the supervisor needs a server name".into()
+            }
+        );
 
         // Errors: no endpoint, unknown server, missing name.
         for (server, expected) in [

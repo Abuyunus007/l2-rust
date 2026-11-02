@@ -1,21 +1,21 @@
 //! Players view: the characters in the Rust game server's world, polled through the supervisor
 //! (`GetGameStatus`, relayed to the game server's admin endpoint). Sortable by column, with a
-//! text filter.
+//! text filter. G-03 adds the actions on the selected player (kick, jail, bans, teleport to a
+//! town, private message), which run as the matching `//` commands on the game server.
 //!
 //! Java: `gameserver/ui/Gui.java` has no player list; the columns follow the M2-GUI-01 card.
+//! Java: `AdminKick`, `AdminPunishment` for the actions.
 
 use std::cmp::Ordering;
 use std::net::IpAddr;
 use std::time::{Duration, Instant};
 
-use l2_admin_api::{GamePlayer, Request, Response};
+use l2_admin_api::{GameAction, GamePlayer, PlayerAction, Request, Response, TOWNS};
 
 use crate::app::AppCtx;
 use crate::bridge::BridgeEvent;
 use crate::views::View;
-
-/// The supervisor's name for the game server (`Server.game.*` in `supervisor.ini`).
-const GAME_SERVER: &str = "game";
+use crate::views::game_admin::{GAME_SERVER, game_request, reply_lines};
 /// How often the list is asked for again while the view is open.
 const REFRESH: Duration = Duration::from_secs(2);
 
@@ -25,16 +25,20 @@ pub enum Column {
     Account,
     Level,
     Class,
+    Clan,
+    Location,
     Ip,
     OnlineSince,
 }
 
 impl Column {
-    pub const ALL: [Column; 6] = [
+    pub const ALL: [Column; 8] = [
         Column::Name,
         Column::Account,
         Column::Level,
         Column::Class,
+        Column::Clan,
+        Column::Location,
         Column::Ip,
         Column::OnlineSince,
     ];
@@ -45,6 +49,8 @@ impl Column {
             Column::Account => "Account",
             Column::Level => "Level",
             Column::Class => "Class",
+            Column::Clan => "Clan",
+            Column::Location => "Location",
             Column::Ip => "IP",
             Column::OnlineSince => "Online since",
         }
@@ -58,6 +64,9 @@ impl Column {
             Column::Account => ci_cmp(&a.account, &b.account),
             Column::Level => a.level.cmp(&b.level),
             Column::Class => a.class_id.cmp(&b.class_id),
+            // No clan sorts first.
+            Column::Clan => ci_cmp(a.clan.as_deref().unwrap_or(""), b.clan.as_deref().unwrap_or("")),
+            Column::Location => (a.x, a.y, a.z).cmp(&(b.x, b.y, b.z)),
             Column::Ip => ip_key(a.ip.as_deref()).cmp(&ip_key(b.ip.as_deref())),
             Column::OnlineSince => a.online_since_ms.cmp(&b.online_since_ms),
         }
@@ -165,10 +174,11 @@ impl PlayerTable {
     }
 }
 
-/// `needle` is already lower case. Matches name, account, IP, level or class id as text.
+/// `needle` is already lower case. Matches name, account, clan, IP, level or class id as text.
 fn matches_filter(p: &GamePlayer, needle: &str) -> bool {
     p.name.to_lowercase().contains(needle)
         || p.account.to_lowercase().contains(needle)
+        || p.clan.as_deref().unwrap_or("").to_lowercase().contains(needle)
         || p.ip.as_deref().unwrap_or("").to_lowercase().contains(needle)
         || p.level.to_string().contains(needle)
         || p.class_id.to_string().contains(needle)
@@ -207,9 +217,125 @@ fn civil_from_days(z: i64) -> (i64, u32, u32) {
     )
 }
 
+/// The actions of the player panel.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ActionKind {
+    Kick,
+    Jail,
+    BanChar,
+    BanAccount,
+    ChatBan,
+    Teleport,
+    Message,
+}
+
+impl ActionKind {
+    pub const ALL: [ActionKind; 7] = [
+        ActionKind::Kick,
+        ActionKind::Jail,
+        ActionKind::BanChar,
+        ActionKind::BanAccount,
+        ActionKind::ChatBan,
+        ActionKind::Teleport,
+        ActionKind::Message,
+    ];
+
+    pub fn label(self) -> &'static str {
+        match self {
+            ActionKind::Kick => "Kick",
+            ActionKind::Jail => "Jail",
+            ActionKind::BanChar => "Ban character",
+            ActionKind::BanAccount => "Ban account",
+            ActionKind::ChatBan => "Chat ban",
+            ActionKind::Teleport => "Teleport to town",
+            ActionKind::Message => "Send message",
+        }
+    }
+
+    /// The actions that are asked about twice (a second click confirms).
+    pub fn needs_confirm(self) -> bool {
+        matches!(
+            self,
+            ActionKind::Kick | ActionKind::BanChar | ActionKind::BanAccount
+        )
+    }
+}
+
+/// The fields next to the buttons.
+#[derive(Debug, Default, Clone, PartialEq, Eq)]
+pub struct ActionForm {
+    /// Minutes of a jail or ban; empty or 0 = no end.
+    pub minutes: String,
+    pub reason: String,
+    pub message: String,
+    /// Index into [`TOWNS`].
+    pub town: usize,
+}
+
+/// The request for `kind` on the character `name`, or the reason it cannot be sent.
+pub fn player_action_request(name: &str, kind: ActionKind, form: &ActionForm) -> Result<Request, String> {
+    let minutes = || -> Result<u32, String> {
+        let text = form.minutes.trim();
+        if text.is_empty() {
+            return Ok(0);
+        }
+        text.parse()
+            .map_err(|_| format!("'{text}' is not a number of minutes"))
+    };
+    let reason = form.reason.trim().to_owned();
+    let action = match kind {
+        ActionKind::Kick => PlayerAction::Kick,
+        ActionKind::Jail => PlayerAction::Jail {
+            minutes: minutes()?,
+            reason,
+        },
+        ActionKind::BanChar => PlayerAction::BanChar {
+            minutes: minutes()?,
+            reason,
+        },
+        ActionKind::BanAccount => PlayerAction::BanAccount {
+            minutes: minutes()?,
+            reason,
+        },
+        ActionKind::ChatBan => PlayerAction::ChatBan {
+            minutes: minutes()?,
+            reason,
+        },
+        ActionKind::Teleport => {
+            let (town, ..) = TOWNS.get(form.town).ok_or("choose a town")?;
+            PlayerAction::Teleport {
+                town: (*town).to_owned(),
+            }
+        }
+        ActionKind::Message => {
+            let text = form.message.trim();
+            if text.is_empty() {
+                return Err("the message is empty".into());
+            }
+            PlayerAction::Message {
+                text: text.to_owned(),
+            }
+        }
+    };
+    Ok(game_request(GameAction::Player {
+        name: name.to_owned(),
+        action,
+    }))
+}
+
 #[derive(Default)]
 pub struct PlayersView {
     table: PlayerTable,
+    /// The character the actions apply to.
+    selected: Option<String>,
+    form: ActionForm,
+    /// The action waiting for its second click.
+    armed: Option<ActionKind>,
+    /// The action request in flight, and what it answered.
+    action_request: Option<u64>,
+    action_status: Option<Result<String, String>>,
+    /// Characters whose IP the GM asked to see.
+    revealed: Vec<String>,
     /// The `GetGameStatus` request in flight, if any.
     request: Option<u64>,
     /// No new request before this instant. `None` = due now.
@@ -228,6 +354,28 @@ impl PlayersView {
         self.next_at = None;
         self.error = None;
         self.loaded = false;
+        self.selected = None;
+        self.armed = None;
+        self.action_request = None;
+        self.revealed.clear();
+    }
+
+    /// The request for `kind` on the selected character. A confirm-first action only arms on the
+    /// first click.
+    fn trigger(&mut self, kind: ActionKind) -> Option<Request> {
+        let name = self.selected.clone()?;
+        if kind.needs_confirm() && self.armed != Some(kind) {
+            self.armed = Some(kind);
+            return None;
+        }
+        self.armed = None;
+        match player_action_request(&name, kind, &self.form) {
+            Ok(request) => Some(request),
+            Err(error) => {
+                self.action_status = Some(Err(error));
+                None
+            }
+        }
     }
 
     /// True when connected, no request is pending, and the refresh time has come.
@@ -246,6 +394,19 @@ impl PlayersView {
             | BridgeEvent::Rejected { .. } => self.reset(),
             BridgeEvent::Event(_) => {}
             BridgeEvent::Response { id, result } => {
+                if self.action_request == Some(*id) {
+                    self.action_request = None;
+                    self.action_status = Some(reply_lines(result).map(|lines| {
+                        if lines.is_empty() {
+                            "Done.".to_owned()
+                        } else {
+                            lines.join(" | ")
+                        }
+                    }));
+                    // The list changes after a kick or a ban: ask again now.
+                    self.next_at = None;
+                    return;
+                }
                 if self.request != Some(*id) {
                     return;
                 }
@@ -269,6 +430,65 @@ impl PlayersView {
         self.table.clear();
         self.error = Some(message);
         self.loaded = false;
+    }
+}
+
+impl PlayersView {
+    /// The buttons for the selected character.
+    fn action_panel(&mut self, ui: &mut egui::Ui, cx: &mut AppCtx<'_>, connected: bool) {
+        ui.add_space(12.0);
+        ui.separator();
+        let Some(name) = self.selected.clone() else {
+            ui.label("Click a name to act on that character.");
+            return;
+        };
+        ui.strong(format!("Selected: {name}"));
+        egui::Grid::new("player_action_form")
+            .num_columns(2)
+            .show(ui, |ui| {
+                ui.label("Minutes (jail, bans; empty = no end):");
+                ui.add(egui::TextEdit::singleline(&mut self.form.minutes).desired_width(80.0));
+                ui.end_row();
+                ui.label("Reason:");
+                ui.add(egui::TextEdit::singleline(&mut self.form.reason).desired_width(300.0));
+                ui.end_row();
+                ui.label("Message:");
+                ui.add(egui::TextEdit::singleline(&mut self.form.message).desired_width(300.0));
+                ui.end_row();
+                ui.label("Town:");
+                let current = TOWNS.get(self.form.town).map_or("?", |t| t.0);
+                egui::ComboBox::from_id_salt("player_action_town")
+                    .selected_text(current)
+                    .show_ui(ui, |ui| {
+                        for (index, (town, ..)) in TOWNS.iter().enumerate() {
+                            ui.selectable_value(&mut self.form.town, index, *town);
+                        }
+                    });
+                ui.end_row();
+            });
+        ui.horizontal_wrapped(|ui| {
+            for kind in ActionKind::ALL {
+                let label = if self.armed == Some(kind) {
+                    format!("Really {}?", kind.label().to_lowercase())
+                } else {
+                    kind.label().to_owned()
+                };
+                if ui.add_enabled(connected, egui::Button::new(label)).clicked()
+                    && let Some(request) = self.trigger(kind)
+                {
+                    self.action_request = Some(cx.bridge.request(request));
+                }
+            }
+        });
+        match &self.action_status {
+            Some(Ok(text)) => {
+                ui.label(text.as_str());
+            }
+            Some(Err(error)) => {
+                ui.colored_label(ui.visuals().error_fg_color, error.as_str());
+            }
+            None => {}
+        }
     }
 }
 
@@ -322,6 +542,8 @@ impl View for PlayersView {
         let total = self.table.len();
         let rows = self.table.rows();
         let mut clicked: Option<Column> = None;
+        let mut picked: Option<String> = None;
+        let mut reveal: Option<String> = None;
         ui.label(if rows.len() == total {
             format!("{total} online")
         } else {
@@ -346,11 +568,25 @@ impl View for PlayersView {
                     }
                     ui.end_row();
                     for player in &rows {
-                        ui.label(player.name.as_str());
+                        let is_selected = self.selected.as_deref() == Some(player.name.as_str());
+                        if ui.selectable_label(is_selected, player.name.as_str()).clicked() {
+                            picked = Some(player.name.clone());
+                        }
                         ui.label(player.account.as_str());
                         ui.label(player.level.to_string());
                         ui.label(player.class_id.to_string());
-                        ui.label(player.ip.as_deref().unwrap_or("-"));
+                        ui.label(player.clan.as_deref().unwrap_or("-"));
+                        ui.label(format!("{} {} {}", player.x, player.y, player.z));
+                        // The IP only on demand: a click on the dots shows it.
+                        let shown = self.revealed.contains(&player.name);
+                        let text = match (&player.ip, shown) {
+                            (None, _) => "-".to_owned(),
+                            (Some(ip), true) => ip.clone(),
+                            (Some(_), false) => "show".to_owned(),
+                        };
+                        if ui.selectable_label(shown, text).clicked() {
+                            reveal = Some(player.name.clone());
+                        }
                         ui.label(format_utc(player.online_since_ms));
                         ui.end_row();
                     }
@@ -362,6 +598,21 @@ impl View for PlayersView {
         if let Some(column) = clicked {
             self.table.click(column);
         }
+        if let Some(name) = picked {
+            if self.selected.as_deref() != Some(name.as_str()) {
+                self.armed = None;
+            }
+            self.selected = Some(name);
+        }
+        if let Some(name) = reveal {
+            match self.revealed.iter().position(|n| *n == name) {
+                Some(index) => {
+                    self.revealed.remove(index);
+                }
+                None => self.revealed.push(name),
+            }
+        }
+        self.action_panel(ui, cx, connected);
     }
 
     fn on_event(&mut self, event: &BridgeEvent) {
@@ -389,6 +640,10 @@ mod tests {
             class_id,
             ip: ip.map(Into::into),
             online_since_ms: since,
+            clan: None,
+            x: 0,
+            y: 0,
+            z: 0,
         }
     }
 
@@ -463,6 +718,148 @@ mod tests {
         assert!(names(&t).is_empty());
         // Total stays the same while filtering.
         assert_eq!(t.len(), 3);
+    }
+
+    #[test]
+    fn clan_and_location_sort_and_filter() {
+        let mut t = PlayerTable::default();
+        let mut a = player("Amy", "acc1", 1, 0, None, 0);
+        a.clan = Some("Bears".into());
+        a.x = 100;
+        let mut b = player("Bo", "acc2", 1, 0, None, 0);
+        b.x = -5;
+        t.set_players(vec![a, b]);
+        t.click(Column::Clan);
+        assert_eq!(names(&t), ["Bo", "Amy"], "no clan first");
+        t.click(Column::Location);
+        assert_eq!(names(&t), ["Bo", "Amy"]);
+        *t.filter_mut() = "bear".into();
+        assert_eq!(names(&t), ["Amy"]);
+    }
+
+    fn form() -> ActionForm {
+        ActionForm {
+            minutes: " 30 ".into(),
+            reason: " botting ".into(),
+            message: "hello".into(),
+            town: 9,
+        }
+    }
+
+    fn player_action(request: Request) -> (String, PlayerAction) {
+        match request {
+            Request::GameAdmin {
+                server,
+                action: GameAction::Player { name, action },
+            } => {
+                assert_eq!(server.as_deref(), Some("game"));
+                (name, action)
+            }
+            other => panic!("{other:?}"),
+        }
+    }
+
+    #[test]
+    fn actions_become_requests() {
+        let f = form();
+        let build = |kind| player_action(player_action_request("Amy", kind, &f).unwrap()).1;
+        assert_eq!(build(ActionKind::Kick), PlayerAction::Kick);
+        assert_eq!(
+            build(ActionKind::Jail),
+            PlayerAction::Jail {
+                minutes: 30,
+                reason: "botting".into()
+            }
+        );
+        assert_eq!(
+            build(ActionKind::BanAccount),
+            PlayerAction::BanAccount {
+                minutes: 30,
+                reason: "botting".into()
+            }
+        );
+        assert_eq!(
+            build(ActionKind::ChatBan),
+            PlayerAction::ChatBan {
+                minutes: 30,
+                reason: "botting".into()
+            }
+        );
+        assert_eq!(
+            build(ActionKind::Teleport),
+            PlayerAction::Teleport { town: "Giran".into() }
+        );
+        assert_eq!(
+            build(ActionKind::Message),
+            PlayerAction::Message { text: "hello".into() }
+        );
+        // Empty minutes = no end.
+        let empty = ActionForm::default();
+        assert_eq!(
+            player_action(player_action_request("Amy", ActionKind::BanChar, &empty).unwrap()).1,
+            PlayerAction::BanChar {
+                minutes: 0,
+                reason: String::new()
+            }
+        );
+    }
+
+    #[test]
+    fn bad_forms_are_refused() {
+        let mut f = form();
+        f.minutes = "soon".into();
+        assert_eq!(
+            player_action_request("Amy", ActionKind::Jail, &f).unwrap_err(),
+            "'soon' is not a number of minutes"
+        );
+        f.message = "  ".into();
+        assert!(player_action_request("Amy", ActionKind::Message, &f).is_err());
+        f.town = 999;
+        assert!(player_action_request("Amy", ActionKind::Teleport, &f).is_err());
+    }
+
+    #[test]
+    fn destructive_actions_need_a_second_click() {
+        let mut view = PlayersView::default();
+        assert!(view.trigger(ActionKind::Kick).is_none(), "nobody selected");
+        view.selected = Some("Amy".into());
+        assert!(view.trigger(ActionKind::Kick).is_none());
+        assert_eq!(view.armed, Some(ActionKind::Kick));
+        // Another action does not confirm the armed one.
+        assert!(view.trigger(ActionKind::BanChar).is_none());
+        assert_eq!(view.armed, Some(ActionKind::BanChar));
+        assert!(view.trigger(ActionKind::BanChar).is_some());
+        assert_eq!(view.armed, None);
+        // Jail and the others go at once.
+        assert!(view.trigger(ActionKind::Jail).is_some());
+        // A form error is shown, nothing is sent.
+        view.form.minutes = "x".into();
+        assert!(view.trigger(ActionKind::Jail).is_none());
+        assert!(matches!(view.action_status, Some(Err(_))));
+    }
+
+    #[test]
+    fn the_answer_of_an_action_sets_the_status_and_refreshes_the_list() {
+        let now = Instant::now();
+        let mut view = PlayersView {
+            action_request: Some(7),
+            next_at: Some(now + REFRESH),
+            ..PlayersView::default()
+        };
+        view.apply(
+            &BridgeEvent::Response {
+                id: 7,
+                result: Ok(Response::GameReply {
+                    lines: vec!["You kicked Amy from the game.".into()],
+                }),
+            },
+            now,
+        );
+        assert_eq!(
+            view.action_status,
+            Some(Ok("You kicked Amy from the game.".into()))
+        );
+        assert!(view.refresh_due(true, now));
     }
 
     #[test]

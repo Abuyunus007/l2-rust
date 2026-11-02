@@ -32,6 +32,7 @@
 
 pub mod admin;
 pub mod client;
+pub mod custom_monsters;
 pub mod geo;
 pub mod hexid;
 pub mod item_auctions;
@@ -1686,6 +1687,7 @@ fn options_from_config(config: &GameConfig, config_dir: &Path) -> DatapackOption
         no_spawns: config.development.no_spawns,
         max_aggro_range: config.npc.max_aggro_range,
         default_corpse_time: config.npc.default_corpse_time,
+        npc_stat_multipliers: custom_monsters::npc_stat_multipliers(config),
         htm_cache: config.general.htm_cache,
         check_html_encoding: config.general.check_html_encoding,
         custom_multisell_load: config.general.custom_multisell_load,
@@ -1710,7 +1712,19 @@ pub(crate) mod test_support {
 
     /// A server with a running world, no listeners and a pool that is never used.
     pub(crate) fn idle_server() -> Server {
-        let world = WorldRuntime::start(WorldRng::from_seed(1), crate::runtime::spawn_stub_consumer).unwrap();
+        idle_server_with(|_| {})
+    }
+
+    /// Like [`idle_server`], and `setup` configures the world before its thread starts (G-03:
+    /// the admin tests give it GM rights).
+    pub(crate) fn idle_server_with(setup: impl FnOnce(&mut l2_world::World)) -> Server {
+        let world = WorldRuntime::start_configured(
+            WorldRng::from_seed(1),
+            l2_world::DEFAULT_AUTOSAVE_INTERVAL,
+            setup,
+            crate::runtime::spawn_stub_consumer,
+        )
+        .unwrap();
         let (shutdown, shutdown_requests) = ShutdownHandle::channel();
         let handle: WorldHandle = world.handle();
         let state = Arc::new(GameState {
@@ -2006,6 +2020,7 @@ mod tests {
                 no_spawns: true,
                 max_aggro_range: 900,
                 default_corpse_time: 3,
+                npc_stat_multipliers: None,
                 htm_cache: false,
                 check_html_encoding: false,
                 custom_multisell_load: true,

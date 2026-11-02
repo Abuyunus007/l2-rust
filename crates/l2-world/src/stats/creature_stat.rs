@@ -365,10 +365,10 @@ impl<'w> StatView<'w> {
         self.npc().is_some_and(|n| n.class.is_raid())
     }
 
-    /// Java `isChampion()`: champions are rolled at spawn (`ChampionMonstersConfig`), which is
-    /// not ported; nobody is one.
+    /// Java `isChampion()`: an attackable that was rolled a champion at spawn
+    /// (`custom/champion.rs`).
     pub fn is_champion(&self) -> bool {
-        false
+        self.npc().is_some_and(|n| n.champion)
     }
 
     /// The template values the getters start from.

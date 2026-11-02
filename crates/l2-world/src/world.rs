@@ -52,6 +52,8 @@ pub struct World {
     pub(crate) npcs: HashMap<ObjectId, Npc>,
     /// Spawn lists, NPC templates and settings (M3-NPC-01).
     pub(crate) npc_world: crate::npc::NpcWorld,
+    /// The custom features (`Custom/*.ini`, D-57; see `custom/`).
+    pub(crate) custom: crate::custom::CustomWorld,
     /// Html pages, gatekeeper lists and bypass handlers (M3-TALK-01).
     pub(crate) talk: crate::dialog::TalkWorld,
     /// The admin command handlers (M3-ADMIN-01).
@@ -212,6 +214,7 @@ impl World {
             regions: RegionGrid::new(false),
             npcs: HashMap::new(),
             npc_world: crate::npc::NpcWorld::default(),
+            custom: crate::custom::CustomWorld::default(),
             talk: crate::dialog::TalkWorld::default(),
             admin: crate::admin::AdminWorld::default(),
             doors: HashMap::new(),
@@ -1090,10 +1093,18 @@ impl World {
                         online_secs: self.tick.saturating_sub(p.entered_at_tick) * tick_ms / 1000,
                         online_since_unix_ms: p.entered_at_unix_ms,
                         ip: p.client_ip,
+                        clan: self.clan_of(p.core.object_id).map(|c| c.name.clone()),
+                        x: p.core.x,
+                        y: p.core.y,
+                        z: p.core.z,
                     })
                     .collect();
                 list.sort_by(|a, b| a.name.cmp(&b.name));
                 reply(list);
+            }
+            AdminQuery::Gui(request, reply) => {
+                let answer = self.on_gui_request(request);
+                reply(answer);
             }
         }
     }

@@ -293,6 +293,11 @@ impl eframe::App for AdminApp {
                 }
             }
         });
+        // The Servers view's "Show log" button (G-06).
+        if let Some(server) = self.views.servers.take_show_log() {
+            self.views.logs.show_server(&server);
+            self.selected = ViewId::Logs;
+        }
     }
 
     fn save(&mut self, storage: &mut dyn eframe::Storage) {

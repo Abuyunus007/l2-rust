@@ -251,6 +251,14 @@ pub struct LogsView {
 }
 
 impl LogsView {
+    /// Shows only `server` (the Servers view's "Show log" button). The text filter is cleared so
+    /// the lines of the exit are not hidden by an old search.
+    pub fn show_server(&mut self, server: &str) {
+        self.filter.server = Some(server.to_string());
+        self.filter.text.clear();
+        self.dirty = true;
+    }
+
     /// Server names for the selector: the server list first, then any others seen in the logs.
     fn server_options(&self) -> Vec<String> {
         let mut names = self.server_names.clone();

@@ -291,9 +291,9 @@ pub fn status_text(state: &LaunchState, connected: bool) -> String {
     }
 }
 
-/// The hint under the status when there is no `supervisor.ini` yet (G-02 adds the wizard).
-pub const SETUP_HINT: &str = "Run the setup wizard. Until it exists: copy crates/l2-supervisor/supervisor.example.ini to \
-     run/supervisor.ini and set Token (README, section \"Supervisor\").";
+/// The hint under the status when there is no `supervisor.ini` yet.
+pub const SETUP_HINT: &str =
+    "Open \"Setup\" in the left menu: the wizard creates the run folder and supervisor.ini.";
 
 /// True when [`SETUP_HINT`] applies.
 pub fn needs_setup(state: &LaunchState) -> bool {
