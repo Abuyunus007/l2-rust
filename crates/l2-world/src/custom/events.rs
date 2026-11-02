@@ -169,6 +169,53 @@ impl World {
         Some((x, y, z))
     }
 
+    /// Java `player.getInventory().blockAllItems()`: "some id must be sended", the one past the
+    /// last template (`ItemData.getArraySize() + 2`), in the mode that lets only the listed
+    /// items be used.
+    pub fn event_block_all_items(&mut self, player: ObjectId) {
+        let size = self.item_templates().map_or(0, |t| t.highest_id() + 1);
+        self.set_inventory_block(player, vec![size + 2], 1);
+    }
+
+    /// Java `player.getInventory().equipItem(ItemManager.createItem(PICKUP, itemId, 1, player,
+    /// null))`: a new item, worn at once. The object id of the item.
+    pub fn event_equip_new_item(&mut self, player: ObjectId, item_id: i32) -> Option<ObjectId> {
+        let object_id = self.add_item(player, item_id, 1, false)?;
+        self.equip_item_and_record(player, object_id);
+        self.send_item_list(player, false);
+        Some(object_id)
+    }
+
+    /// Java `player.getInventory().equipItem(item)`.
+    pub fn event_equip_object(&mut self, player: ObjectId, object_id: ObjectId) {
+        self.equip_item_and_record(player, object_id);
+        self.send_item_list(player, false);
+    }
+
+    /// Java `player.getInventory().unEquipItemInSlot(slot)`.
+    pub fn event_unequip_slot(&mut self, player: ObjectId, slot: usize) {
+        self.unequip_item_in_slot_and_record(player, slot);
+        self.send_item_list(player, false);
+    }
+
+    /// Java `player.getInventory().getPaperdollItem(slot)`: the object id and the item id.
+    pub fn event_paperdoll_item(&self, player: ObjectId, slot: usize) -> Option<(ObjectId, i32)> {
+        let object = self.paperdoll_object(player, slot)?;
+        let item = self.inventory_item(player, object)?;
+        Some((object, item.item_id))
+    }
+
+    /// Java `player.calculateDistance2D(other)`.
+    pub fn event_distance_2d(&self, a: ObjectId, b: ObjectId) -> f64 {
+        match (self.position_of(a), self.position_of(b)) {
+            (Some(a), Some(b)) => {
+                let (dx, dy) = (f64::from(a.0 - b.0), f64::from(a.1 - b.1));
+                (dx * dx + dy * dy).sqrt()
+            }
+            _ => 0.0,
+        }
+    }
+
     /// Java `skill.getHitTime()` and `skill.getReuseDelay()` of a skill ((0, 0) for an unknown one).
     pub fn skill_hit_and_reuse(&self, skill_id: i32, level: i32) -> (i32, i32) {
         self.data
