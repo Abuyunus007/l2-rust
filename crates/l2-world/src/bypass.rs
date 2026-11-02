@@ -109,6 +109,8 @@ impl Default for BypassHandlers {
         crate::script_handlers::rent::register(&mut handlers);
         crate::script_handlers::find_pvp::register(&mut handlers);
         crate::script_handlers::npc_view::register(&mut handlers);
+        // dist/game/data/scripts/handlers/bypass/npc/Rebirth.java (M9-C05)
+        crate::custom::rebirth::register(&mut handlers);
         handlers
     }
 }

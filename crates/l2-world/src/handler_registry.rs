@@ -19,7 +19,7 @@ mod tests {
 
     /// `bypass/npc` classes that are left. The ported ones are found by their command words
     /// (S-HAND-03 ported `Loto` and `NpcViewMod`).
-    const NPC_LEFT: &[(&str, &str)] = &[("Rebirth", "custom feature (M9)")];
+    const NPC_LEFT: &[(&str, &str)] = &[];
 
     /// `chat/commands/user` classes that are left (none: `Unstuck` and `MyBirthday` are ported).
     const USER_LEFT: &[(&str, &str)] = &[];

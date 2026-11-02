@@ -99,7 +99,7 @@ use l2_world::territory::{
 use l2_world::{AirshipRow, CursedLoad, CursedRow, CursedWrite, VehicleLoad, VehicleWrite};
 use l2_world::{AnnouncementRecord, AnnouncementWrite};
 use l2_world::{AuctionBidRecord, AuctionRecord, AuctionWrite};
-use l2_world::{BookmarkWrite, ContactWrite, FriendSummary};
+use l2_world::{BookmarkWrite, ContactWrite, FriendSummary, RebirthWrite};
 use l2_world::{
     BossLoad, BossReadKind, BossRereadRows, BossWrite, GrandBossData, GrandBossStoreRow, RaidBossData,
     RaidPointsRecord,
@@ -517,6 +517,15 @@ pub trait PlayerStore: Send + 'static {
     fn store_contact_write(
         &mut self,
         _write: &ContactWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// A `rebirth_system` row change (M9-C05): Java `RebirthManager.insertFirst` / `updateCount` /
+    /// `saveSelectedSkills`.
+    fn store_rebirth_write(
+        &mut self,
+        _write: &RebirthWrite,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
     }
@@ -1330,6 +1339,12 @@ async fn run<S: PlayerStore>(
                 // Java logs a failed contact statement and goes on (no retry).
                 if let Err(e) = store.store_contact_write(&write).await {
                     error!("Contact list data could NOT be stored ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::Rebirth(write)) => {
+                // Java logs a failed statement and goes on (no retry).
+                if let Err(e) = store.store_rebirth_write(&write).await {
+                    error!("Rebirth data could NOT be stored ({write:?}): {e}");
                 }
             }
             OutboxMessage::Persist(PersistCommand::FriendSummariesRequest { requester, friends }) => {
@@ -3876,6 +3891,7 @@ pub struct DbStore {
     coliseum: UndergroundColiseumRepository,
     bookmarks: BookmarkRepository,
     contacts: ContactRepository,
+    rebirth: l2_db::RebirthRepository,
     reco: RecommendationRepository,
     variables: VariableRepository,
     punishments: PunishmentRepository,
@@ -3974,6 +3990,7 @@ impl DbStore {
             coliseum: UndergroundColiseumRepository::new(pool.clone()),
             bookmarks: BookmarkRepository::new(pool.clone()),
             contacts: ContactRepository::new(pool.clone()),
+            rebirth: l2_db::RebirthRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
             variables: VariableRepository::new(pool.clone()),
             summons: SummonRepository::new(pool.clone()),
@@ -5393,6 +5410,21 @@ impl PlayerStore for DbStore {
             }
             ContactWrite::Remove { char_id, contact_id } => {
                 self.contacts.remove_contact(char_id, contact_id).await?;
+            }
+        }
+        Ok(())
+    }
+
+    async fn store_rebirth_write(&mut self, write: &RebirthWrite) -> Result<(), PersistError> {
+        match write {
+            RebirthWrite::Insert { char_id } => {
+                self.rebirth.insert_first(*char_id).await?;
+            }
+            RebirthWrite::Count { char_id, count } => {
+                self.rebirth.update_count(*char_id, *count).await?;
+            }
+            RebirthWrite::Skills { char_id, skills } => {
+                self.rebirth.save_selected_skills(*char_id, skills).await?;
             }
         }
         Ok(())

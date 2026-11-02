@@ -795,6 +795,24 @@ pub fn pvp_settings(config: &GameConfig, config_dir: &Path) -> l2_world::PvpSett
             ],
             ..PvpTitleColorSettings::default()
         },
+        reward: l2_world::PvpRewardItemSettings {
+            reward_pvp_item: config.pvp_reward_item.reward_pvp_item,
+            reward_pvp_item_id: config.pvp_reward_item.reward_pvp_item_id,
+            reward_pvp_item_amount: config.pvp_reward_item.reward_pvp_item_amount,
+            reward_pvp_item_message: config.pvp_reward_item.reward_pvp_item_message,
+            reward_pk_item: config.pvp_reward_item.reward_pk_item,
+            reward_pk_item_id: config.pvp_reward_item.reward_pk_item_id,
+            reward_pk_item_amount: config.pvp_reward_item.reward_pk_item_amount,
+            reward_pk_item_message: config.pvp_reward_item.reward_pk_item_message,
+            disable_rewards_in_instances: config.pvp_reward_item.disable_rewards_in_instances,
+            disable_rewards_in_pvp_zones: config.pvp_reward_item.disable_rewards_in_pvp_zones,
+        },
+        announce: l2_world::PvpAnnounceSettings {
+            announce_pk_pvp: config.pvp_announce.announce_pk_pvp,
+            announce_pk_pvp_normal_message: config.pvp_announce.announce_pk_pvp_normal_message,
+            announce_pk_msg: config.pvp_announce.announce_pk_msg.clone(),
+            announce_pvp_msg: config.pvp_announce.announce_pvp_msg.clone(),
+        },
         ..PvpSettings::default()
     };
     // `ANTIFEED_INTERVAL = getInt("AntiFeedInterval", 120) * 1000`.
@@ -808,6 +826,61 @@ pub fn pvp_settings(config: &GameConfig, config_dir: &Path) -> l2_world::PvpSett
                 Err(_) => warn!("{key} = {text} is not a hex colour; using 00FF00."),
             }
         }
+    }
+    s
+}
+
+/// `Custom/Rebirth.ini` (Java `RebirthConfig`, M9-C05). The lists, the refund mode and the
+/// screen position are post-processed in Java (placeholders in the generated config), so they are
+/// read from the file here.
+pub fn rebirth_settings(config: &GameConfig, config_dir: &Path) -> l2_world::RebirthSettings {
+    use l2_config::IniFile;
+    use l2_world::custom::rebirth::{parse_integer_set, parse_protected_skill_groups, parse_skill_list};
+
+    let r = &config.rebirth;
+    let mut s = l2_world::RebirthSettings {
+        allow_rebirth: r.rebirth_allow_rebirth,
+        min_level: r.rebirth_min_level,
+        max_count: r.rebirth_max_count,
+        inherit_skills_to_subclasses: r.rebirth_inherit_skills_to_subclasses,
+        delete_all_skills: r.rebirth_delete_all_skills,
+        delete_restore_temporary_skills: r.rebirth_delete_restore_temporary_skills,
+        item_id: r.rebirth_item_id,
+        item_amount: r.rebirth_item_amount,
+        max_selected_skills: r.rebirth_max_selected_skills,
+        reward_item_id: r.rebirth_reward_item_id,
+        reward_item_amount: r.rebirth_reward_item_amount,
+        finish_social_id: r.rebirth_finish_social_id,
+        finish_effect_skill_id: r.rebirth_finish_effect_skill_id,
+        finish_effect_skill_lvl: r.rebirth_finish_effect_skill_lvl,
+        select_social_id: r.rebirth_select_social_id,
+        select_effect_skill_id: r.rebirth_select_effect_skill_id,
+        select_effect_skill_lvl: r.rebirth_select_effect_skill_lvl,
+        screen_message_enabled: r.rebirth_screen_message_enabled,
+        screen_message: r.rebirth_screen_message.clone(),
+        screen_message_time: r.rebirth_screen_message_time,
+        global_announcement_enabled: r.rebirth_global_announcement_enabled,
+        global_announcement: r.rebirth_global_announcement.clone(),
+        global_announcement_critical: r.rebirth_global_announcement_critical,
+        ..l2_world::RebirthSettings::default()
+    };
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::RebirthConfig::FILE)) {
+        s.skill_delete_whitelist = parse_integer_set(&ini.get_string("RebirthSkillDeleteWhitelist", ""));
+        s.delete_protected_skill_groups =
+            parse_protected_skill_groups(&ini.get_string("RebirthDeleteProtectedSkillGroups", ""));
+        s.skill_refund_mode = ini
+            .get_string("RebirthSkillRefundMode", "MID")
+            .trim()
+            .to_uppercase();
+        s.mage_skills = parse_skill_list(&ini.get_string("RebirthMageSkills", ""));
+        s.fighter_skills = parse_skill_list(&ini.get_string("RebirthFighterSkills", ""));
+        s.screen_message_position = ini
+            .get_string("RebirthScreenMessagePosition", "TOP_CENTER")
+            .trim()
+            .to_uppercase();
+    } else {
+        // No file: Java's defaults of the string keys.
+        s.screen_message_position = "TOP_CENTER".to_owned();
     }
     s
 }
@@ -1159,6 +1232,7 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             alt_game_karma_player_can_trade: p.alt_game_karma_player_can_trade,
         },
         pvp: pvp_settings(config, config_dir),
+        rebirth: rebirth_settings(config, config_dir),
         fishing: fishing_settings(config, config_dir),
         enchant: enchant_settings(config, config_dir),
         augment: augment_settings(config, config_dir),
@@ -2209,6 +2283,55 @@ BotReportPointsResetHour = noon
         }
         // A table whose key is not in the file stays at 1.0.
         assert!(cb.pve_physical_attack_damage.iter().all(|v| *v == 1.0));
+    }
+
+    /// M9-C05: every key of the shipped `Custom/ClassBalance.ini` is read: the skill reuse table
+    /// and the exp and SP amounts by their own settings, all others by `load_class_balance`.
+    #[test]
+    fn class_balance_reads_every_key_of_the_shipped_file() {
+        let shipped = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dist/game/config/Custom/ClassBalance.ini");
+        let Ok(text) = std::fs::read_to_string(&shipped) else {
+            eprintln!("skipped: {} is missing", shipped.display());
+            return;
+        };
+        let keys: Vec<&str> = text
+            .lines()
+            .filter(|l| !l.trim_start().starts_with('#'))
+            .filter_map(|l| l.split_once('='))
+            .map(|(k, _)| k.trim())
+            .filter(|k| !k.is_empty())
+            .collect();
+        assert!(keys.len() >= 37, "{keys:?}");
+        for key in keys {
+            let line = format!("{key} = 3*7
+");
+            match key {
+                "SkillReuseMultipliers" | "ExpAmountMultipliers" | "SpAmountMultipliers" => {
+                    let dir = tempfile::tempdir().unwrap();
+                    std::fs::create_dir_all(dir.path().join("Custom")).unwrap();
+                    std::fs::write(dir.path().join(l2_config::game::ClassBalanceConfig::FILE), &line).unwrap();
+                    let config = GameConfig::load(dir.path()).unwrap();
+                    match key {
+                        "SkillReuseMultipliers" => {
+                            let settings = world_settings(&config, dir.path());
+                            assert_eq!(settings.cast.skill_reuse_multipliers[3], 7.0, "{key}");
+                        }
+                        "ExpAmountMultipliers" => {
+                            assert_eq!(party_settings(&config, dir.path()).exp_amount_multipliers[3], 7.0, "{key}");
+                        }
+                        _ => {
+                            assert_eq!(party_settings(&config, dir.path()).sp_amount_multipliers[3], 7.0, "{key}");
+                        }
+                    }
+                }
+                _ => {
+                    let ini = l2_config::IniFile::parse("ClassBalance.ini", &line).unwrap();
+                    let mut cb = l2_world::stats::ClassBalance::default();
+                    load_class_balance(&ini, &mut cb);
+                    assert_ne!(cb, l2_world::stats::ClassBalance::default(), "{key} is not read");
+                }
+            }
+        }
     }
 
     /// M5-FU-04: `DefaultPunish`, `DefaultPunishParam`, `JailDisableChat` and `BanChatChannels`.

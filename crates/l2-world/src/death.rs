@@ -321,8 +321,9 @@ impl World {
             self.stop_fake_death(id, true);
         }
         if let Some(killer) = killer {
-            // Ultimate Combat teams and ON_PLAYER_PVP_KILL (D-05); the PvP/PK reward items and the
-            // kill announcements (Custom configs, off by default); fake player karma.
+            // Ultimate Combat teams and ON_PLAYER_PVP_KILL (D-05); fake player karma.
+            // The PvP/PK reward items and the kill announcements (M9-C05, off by default).
+            self.custom_pvp_kill_rewards(id, killer);
             self.broadcast_status_update(id);
 
             // Clear resurrect xp calculation.

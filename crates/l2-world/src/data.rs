@@ -408,6 +408,8 @@ pub struct WorldSettings {
     pub party: crate::party::PartySettings,
     /// The PvP flag times, the anti feed rules and the PvP title colours (M6-PVP-01).
     pub pvp: crate::pvp::PvpSettings,
+    /// `Custom/Rebirth.ini` (M9-C05).
+    pub rebirth: crate::custom::rebirth::RebirthSettings,
     /// The values the NPC shops read (M6-SHOP-01).
     pub shop: crate::shop::ShopSettings,
     /// The freight price and slots, the clan warehouse rule, the sorted lists (M6-WH-01).
@@ -487,6 +489,7 @@ impl Default for WorldSettings {
             cast: crate::skills::cast::CastSettings::default(),
             party: crate::party::PartySettings::default(),
             pvp: crate::pvp::PvpSettings::default(),
+            rebirth: crate::custom::rebirth::RebirthSettings::default(),
             shop: crate::shop::ShopSettings::default(),
             warehouse: crate::warehouse::WarehouseSettings::default(),
             craft: crate::craft::CraftSettings::default(),

@@ -43,6 +43,7 @@ mod pets;
 mod punishments;
 mod quests;
 mod random_spawn;
+mod rebirth;
 mod recipes;
 mod recommendations;
 mod residences;
@@ -111,6 +112,7 @@ pub use pets::{NewPetSkillSave, PetRepository, PetRow, PetSkillSaveRow, PetValue
 pub use punishments::{NewPunishment, PunishmentRepository, PunishmentRow};
 pub use quests::{QUEST_STATE_VAR, QuestRepository, QuestStateRow, QuestVariableRow};
 pub use random_spawn::{RandomSpawnRepository, RandomSpawnRow};
+pub use rebirth::{RebirthRepository, RebirthRow};
 pub use recipes::{RecipeBookRow, RecipeRepository, RecipeShopRow};
 pub use recommendations::{RecoBonus, RecommendationRepository};
 pub use residences::{
