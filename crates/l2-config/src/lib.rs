@@ -9,6 +9,7 @@ mod error;
 pub mod game;
 pub mod game_manual;
 pub mod game_manual_core;
+pub mod game_manual_custom_misc;
 #[rustfmt::skip]
 pub mod generated;
 pub mod ini_edit;

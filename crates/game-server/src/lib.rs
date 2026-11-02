@@ -32,6 +32,7 @@
 
 pub mod admin;
 pub mod client;
+pub mod custom_misc_data;
 pub mod geo;
 pub mod hexid;
 pub mod item_auctions;
@@ -1138,6 +1139,8 @@ impl Server {
                 move |world| {
                     world.set_static_data(Box::new(data));
                     world.set_settings(settings);
+                    // Java: `GameServer` starts the `CustomMailManager` (M9-C06).
+                    world.start_custom_misc();
                     world.set_regen_settings(regen_settings);
                     world.set_summon_settings(summon_settings);
                     world.set_pc_cafe_settings(pc_cafe_settings);
@@ -1505,6 +1508,15 @@ impl Server {
                         LsNotice::PlayerLogout { account } => link.player_logout(&account).await,
                         LsNotice::AccessLevel { account, level } => {
                             link.send_access_level(&account, level).await
+                        }
+                        LsNotice::ChangePassword {
+                            account,
+                            character,
+                            old_pass,
+                            new_pass,
+                        } => {
+                            link.send_change_password(&account, &character, &old_pass, &new_pass)
+                                .await
                         }
                         // The world only sends the six valid statuses.
                         LsNotice::SetServerStatus(status) => {

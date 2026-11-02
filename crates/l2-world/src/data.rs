@@ -430,6 +430,8 @@ pub struct WorldSettings {
     pub leftover: crate::leftover::LeftoverSettings,
     /// The subclass values of `Player.ini` (S-SUB-01).
     pub subclass: crate::subclass::SubclassSettings,
+    /// The misc custom features of `config/Custom` (M9-C06), all off by default.
+    pub custom_misc: crate::custom::CustomMiscSettings,
 }
 
 impl Default for WorldSettings {
@@ -497,6 +499,7 @@ impl Default for WorldSettings {
             daily_reset_database_writes: false,
             leftover: crate::leftover::LeftoverSettings::default(),
             subclass: crate::subclass::SubclassSettings::default(),
+            custom_misc: crate::custom::CustomMiscSettings::default(),
         }
     }
 }

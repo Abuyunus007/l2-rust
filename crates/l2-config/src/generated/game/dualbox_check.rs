@@ -18,7 +18,7 @@ pub struct DualboxCheckConfig {
     pub dualbox_check_max_offlineplay_premium_per_ip: i32,
     /// Key: `DualboxCountOfflineTraders`, default false.
     pub dualbox_count_offline_traders: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Map<Integer, Integer>`; the unit type makes any use fail to compile until then.
+    /// Hand-ported, the value is `GameConfig::manual.custom_misc.dualbox_check_whitelist` (Java type `Map<Integer, Integer>`); the unit type keeps this field from being used by mistake.
     /// Java (line 62): `final String[] dualboxCheckWhiteList = config.getString("DualboxCheckWhitelist", "127.0.0.1,0").split(";");`
     /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
     /// Key: `DualboxCheckWhitelist`, Java default `"127.0.0.1,0"` (before the Java post-processing).

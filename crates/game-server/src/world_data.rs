@@ -1236,6 +1236,10 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         }
     }
     settings.daily_reset_database_writes = daily_reset_database_writes(config_dir);
+    settings.custom_misc = crate::custom_misc_data::custom_misc_settings(
+        config,
+        crate::hexid::load(config_dir).map_or(0, |h| h.server_id),
+    );
     settings
 }
 

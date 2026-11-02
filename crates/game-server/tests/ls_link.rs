@@ -22,9 +22,9 @@ use l2_crypto::rsa::{RsaKeyPair, strip_leading_zeros};
 use l2_db::{hex_to_string, string_to_hex};
 use l2_net::{CancellationToken, Encode, PacketReader};
 use l2_protocol_login::link::{
-    AuthResponse, BlowFishKey, GameServerAuth, GsPacket, InitLS, KickPlayer, LinkState, LoginServerFail,
-    PlayerAuthResponse, PlayerInGame, PlayerLogout, ReplyCharacters, RequestCharacters, ServerStatus,
-    decode_from_gs,
+    AuthResponse, BlowFishKey, ChangePasswordResponse, GameServerAuth, GsPacket, InitLS, KickPlayer,
+    LinkState, LoginServerFail, PlayerAuthResponse, PlayerInGame, PlayerLogout, ReplyCharacters,
+    RequestCharacters, ServerStatus, decode_from_gs,
 };
 use l2_testkit::wait::until;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
@@ -636,6 +636,40 @@ async fn status_calls_reach_the_login_server() {
     assert_eq!(
         (status.server_status, status.max_players),
         (ServerStatus::STATUS_FULL, 50)
+    );
+}
+
+#[tokio::test]
+async fn a_password_change_goes_to_the_login_server_and_the_answer_comes_back() {
+    let mut rig = Rig::new().await;
+    let mut replies = rig
+        .link
+        .take_password_replies()
+        .expect("the first taker gets the receiver");
+    assert!(rig.link.take_password_replies().is_none());
+    rig.link.send_change_password("anna", "Anna", "old", "new").await;
+    let GsPacket::ChangePassword(request) = rig.conn.next().await else {
+        panic!("expected ChangePassword");
+    };
+    assert_eq!(
+        (
+            request.account.as_str(),
+            request.character_name.as_str(),
+            request.old_pass.as_str(),
+            request.new_pass.as_str()
+        ),
+        ("anna", "Anna", "old", "new")
+    );
+    rig.conn
+        .send(&ChangePasswordResponse {
+            character_name: "Anna".to_owned(),
+            message: "Password changed.".to_owned(),
+        })
+        .await;
+    let reply = timeout(WAIT, replies.recv()).await.unwrap().unwrap();
+    assert_eq!(
+        (reply.character.as_str(), reply.message.as_str()),
+        ("Anna", "Password changed.")
     );
 }
 

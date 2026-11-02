@@ -398,6 +398,8 @@ pub struct GameManual {
     /// The rest of the core (non-custom) classes (L-09). `from_inis` leaves it at the defaults;
     /// `GameConfig::load` fills it.
     pub core: crate::game_manual_core::CoreManual,
+    /// The misc custom configs (M9-C06). `GameConfig::load` fills it.
+    pub custom_misc: crate::game_manual_custom_misc::CustomMiscManual,
 }
 
 impl GameManual {
@@ -414,6 +416,7 @@ impl GameManual {
             npc: NpcManual::from_ini(npc),
             faction_system: FactionSystemManual::from_ini(faction_system)?,
             core: crate::game_manual_core::CoreManual::default(),
+            custom_misc: crate::game_manual_custom_misc::CustomMiscManual::default(),
         })
     }
 }

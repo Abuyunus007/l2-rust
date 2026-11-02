@@ -96,6 +96,11 @@ impl World {
             return;
         }
 
+        // `WalkerBotProtectionConfig.L2WALKER_PROTECTION` (M9-C06).
+        if self.walker_protection_refuses(id, chat_type == ChatType::Whisper, &text) {
+            return;
+        }
+
         if self.is_cursed_weapon_equipped(id) && matches!(chat_type, ChatType::Trade | ChatType::Shout) {
             self.send(
                 id,

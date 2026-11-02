@@ -58,6 +58,10 @@ impl World {
         if !text.starts_with('.') {
             return false;
         }
+        // The voiced commands of `Custom/*.ini` that take parameters (M9-C06).
+        if self.custom_misc_voiced_command(player, text) {
+            return true;
+        }
         self.script_voiced_handler(player, voiced_command_of(text))
     }
 

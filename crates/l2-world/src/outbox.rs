@@ -294,6 +294,11 @@ pub enum PersistCommand {
     /// (`CharacterBirthday.onDailyReset`, only sent with `DailyResetDatabaseWrites`, D-49). The
     /// answer comes back as `WorldCommand::BirthdayGiftsLoaded` (S-LEFT-01).
     BirthdayGiftsRequest { since_ms: i64 },
+    /// Asks the persistence task to read `custom_mail` (`CustomMailManager`, M9-C06). The answer
+    /// comes back as `WorldCommand::CustomMailLoaded`.
+    CustomMailRequest,
+    /// `DELETE FROM custom_mail WHERE date=? AND receiver=?` of a mail that was sent (M9-C06).
+    CustomMailDelete { date: String, receiver: i32 },
     /// A write of `bbs_favorites` with Java's statement (S-HAND-01, see `community_board/`).
     /// Applied in order with the other commands.
     BbsFavorite(crate::community_board::FavoriteWrite),
@@ -338,6 +343,13 @@ pub enum LsEvent {
     SetServerStatus(i32),
     /// Java `LoginServerThread.setMaxPlayer`: the `MAX_PLAYERS` attribute, kept for the pages.
     SetMaxPlayer(i32),
+    /// Java `LoginServerThread.sendChangePassword` -> `ChangePassword` (M9-C06).
+    ChangePassword {
+        account: String,
+        character: String,
+        old_pass: String,
+        new_pass: String,
+    },
     /// Java `LoginServerThread.sendServerStatus(id, value)`: one attribute of `ServerStatus`
     /// (`sendServerType`, the age).
     ServerStatus { id: i32, value: i32 },
