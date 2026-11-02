@@ -112,6 +112,7 @@ pub mod zone_trap;
 pub mod zones;
 
 pub use admin::announce::{AnnouncementRecord, AnnouncementType, AnnouncementWrite};
+pub use admin::console::{GUI_GM_ID, GUI_GM_NAME, GuiReply, GuiRequest, ServerInfo};
 pub use admin::control::{AdminSettings, AdminTimer};
 pub use admin::reload::HtmlReloadResult;
 pub use admin::{AdminHandler, AdminHandlers, AdminRights, JavaException};

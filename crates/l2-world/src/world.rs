@@ -1090,10 +1090,18 @@ impl World {
                         online_secs: self.tick.saturating_sub(p.entered_at_tick) * tick_ms / 1000,
                         online_since_unix_ms: p.entered_at_unix_ms,
                         ip: p.client_ip,
+                        clan: self.clan_of(p.core.object_id).map(|c| c.name.clone()),
+                        x: p.core.x,
+                        y: p.core.y,
+                        z: p.core.z,
                     })
                     .collect();
                 list.sort_by(|a, b| a.name.cmp(&b.name));
                 reply(list);
+            }
+            AdminQuery::Gui(request, reply) => {
+                let answer = self.on_gui_request(request);
+                reply(answer);
             }
         }
     }
