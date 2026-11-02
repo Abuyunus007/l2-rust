@@ -14,6 +14,8 @@ tokio.workspace = true
 thiserror.workspace = true
 anyhow.workspace = true
 rand.workspace = true
+flate2.workspace = true
+chrono.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 
@@ -24,6 +26,12 @@ tempfile.workspace = true
 [[bin]]
 name = "supervisor-test-child"
 path = "tests/bin/child.rs"
+test = false
+
+# Stand-in for mysqldump in the backup tests: writes a known dump, never touches a database.
+[[bin]]
+name = "backup-test-dump"
+path = "tests/bin/fake_mysqldump.rs"
 test = false
 
 [lints]

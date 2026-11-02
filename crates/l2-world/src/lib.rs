@@ -29,6 +29,7 @@ pub mod contacts;
 pub mod craft;
 pub mod crystallize;
 pub mod cursed;
+pub mod custom;
 pub mod data;
 pub mod death;
 pub mod decoy_trap;

@@ -106,7 +106,7 @@ pub use minigame::{
     ArenaReward, ColiseumArenaDef, ColiseumPoint, ColiseumTower, KrateisArenaDef, MinigameData,
 };
 pub use multisell::{MultisellData, MultisellLoadOptions};
-pub use npc::{NpcLoadOptions, NpcTemplate, NpcTemplates};
+pub use npc::{NpcLoadOptions, NpcStatMultipliers, NpcTemplate, NpcTemplates, StatMultipliers};
 pub use pet::{PetData, PetDataTable, PetLevelData, PetSkillLearn};
 pub use pet_skill::{PetSkill, PetSkillData};
 pub use player_template::{
@@ -232,7 +232,7 @@ pub struct Datapack {
 ///
 /// [`DatapackOptions::default`] holds Java's *code* defaults, not the values of the shipped
 /// `.ini` files, so [`Datapack::load`] behaves as it always did. Each field names its key.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DatapackOptions {
     /// `General.ini` `CustomItemsLoad` (default false): also load `data/stats/items/custom`.
     pub custom_items_load: bool,
@@ -247,6 +247,8 @@ pub struct DatapackOptions {
     pub max_aggro_range: i32,
     /// `NPC.ini` `DefaultCorpseTime` (default 7).
     pub default_corpse_time: i32,
+    /// `Custom/NpcStatMultipliers.ini` (default off): `Some` when `EnableNpcStatMultipliers` is on.
+    pub npc_stat_multipliers: Option<NpcStatMultipliers>,
     /// `General.ini` `HtmCache` (default true). False is Java's lazy mode. The Rust HTML cache
     /// preloads in both cases (see `HtmCache::load`), so this only changes the log note.
     pub htm_cache: bool,
@@ -273,6 +275,7 @@ impl Default for DatapackOptions {
             no_spawns: false,
             max_aggro_range: npc.max_aggro_range,
             default_corpse_time: npc.default_corpse_time,
+            npc_stat_multipliers: npc.stat_multipliers,
             htm_cache: true,
             check_html_encoding: true,
             skills: SkillLoadOptions::default(),
@@ -306,6 +309,7 @@ impl Datapack {
             fake_players_enabled: options.fake_players_enabled,
             max_aggro_range: options.max_aggro_range,
             default_corpse_time: options.default_corpse_time,
+            stat_multipliers: options.npc_stat_multipliers,
         };
         let npcs = NpcTemplates::load(root, &npc_options);
         let spawn_options = SpawnLoadOptions {

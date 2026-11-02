@@ -13,8 +13,9 @@ impl World {
     /// in x and y with `random_offset`), in `instance_id`, that does not respawn; with a
     /// `despawn_delay_ms` above 0 it is deleted after that time.
     ///
-    /// The summoner and `isSummonSpawn` (the spawn animation) are not modelled; Java's
-    /// `RandomSpawnsConfig.ENABLE_RANDOM_MONSTER_SPAWNS` branch is a custom that is off by default.
+    /// The summoner and `isSummonSpawn` (the spawn animation) are not modelled. With
+    /// `RandomSpawns.ini` on, a monster without `random_offset` is put back on the place it was
+    /// given (Java "Retain monster original position").
     pub fn script_add_spawn(
         &mut self,
         npc_id: i32,
@@ -87,6 +88,14 @@ impl World {
         };
         if despawn_delay_ms > 0 {
             self.schedule_script_despawn(npc, despawn_delay_ms);
+        }
+        // "Retain monster original position if ENABLE_RANDOM_MONSTER_SPAWNS is enabled."
+        // (RandomSpawns.ini: `initialize_npc` moved it by the random spawn range.)
+        if self.npc_world.settings.random_monster_spawns && !random_offset && self.is_monster(npc) {
+            self.set_position(npc, x, y, z);
+            if heading > -1 {
+                self.set_heading(npc, heading);
+            }
         }
         Some(npc)
     }

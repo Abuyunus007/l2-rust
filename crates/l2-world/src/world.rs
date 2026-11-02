@@ -52,6 +52,8 @@ pub struct World {
     pub(crate) npcs: HashMap<ObjectId, Npc>,
     /// Spawn lists, NPC templates and settings (M3-NPC-01).
     pub(crate) npc_world: crate::npc::NpcWorld,
+    /// The custom features (`Custom/*.ini`, D-57; see `custom/`).
+    pub(crate) custom: crate::custom::CustomWorld,
     /// Html pages, gatekeeper lists and bypass handlers (M3-TALK-01).
     pub(crate) talk: crate::dialog::TalkWorld,
     /// The admin command handlers (M3-ADMIN-01).
@@ -214,6 +216,7 @@ impl World {
             regions: RegionGrid::new(false),
             npcs: HashMap::new(),
             npc_world: crate::npc::NpcWorld::default(),
+            custom: crate::custom::CustomWorld::default(),
             talk: crate::dialog::TalkWorld::default(),
             admin: crate::admin::AdminWorld::default(),
             doors: HashMap::new(),
