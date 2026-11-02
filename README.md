@@ -11,9 +11,10 @@ rows are ported as they are, Java quirks included (marked `NOTE(java-quirk)` in 
 The Rust game server can run **next to** an existing Java game server on the same database, so
 the two can be compared with the same characters and a player can move between them.
 
-> Status: all planned milestones up to the scripts are ported and pass their automated tests
-> (8185 tests). In-game testing of the later milestones is ongoing. Customs, premium features
-> and the final switch from Java (M9) are still to come. See the [progress log](#progress-log).
+> Status: every planned milestone, M9 included, is ported and passes its automated tests
+> (8673 tests). The Java custom features are all there, off by default as in Java. In-game testing
+> of the later milestones is ongoing; the switch from Java is a guided step in the admin GUI.
+> See the [progress log](#progress-log).
 
 ---
 
@@ -357,7 +358,8 @@ cargo run -p codegen -- <target>     # regenerate generated code (needs the Java
 | Leftovers of M0..M7 | Remaining GM commands and admin panels, open follow-ups | 2026-10-27 | ✅ |
 | M8 Big systems | Olympiad, heroes, Seven Signs, festival, rift, instances, boats, raid and grand bosses, cursed weapons, mini games, weddings | 2026-10-27 | ✅ automated tests |
 | Scripts | Script engine; all 509 quests; area, NPC and boss AIs; instances (Kamaloka, Pailaka, Crystal Caverns, Gracia, ...); class change and subclasses; Territory War quests; 10 seasonal events; decoys and traps; drop search board; quest admin commands | 2026-10-31 | ✅ automated tests, including end-to-end; in-game tests pending |
-| M9 Customs, hardening, switch from Java | `scripts/custom/`, premium, hardening, replacing the Java server | — | ⏳ planned |
+| G Admin GUI | The GUI starts the supervisor itself (no token on this PC), setup wizard with database installer, game admin (players, punishments, announcements, console, shutdown), accounts, config editor, why a server stopped | 2026-11-02 | ✅ automated tests |
+| M9 Customs, hardening, switch from Java | All 44 `Custom/*.ini` features and the custom scripts and events (champions, premium, auto play, offline play, scheme buffer, community board, faction, fake players, PvP rewards, rebirth, captcha, banking, transmog, CTF, TvT, deathmatch, ...), all off by default; scheduled database backups; load test tool; the "Switch to Rust" assistant and runbook | 2026-11-02 | ✅ automated tests; in-game tests and the switch pending |
 
 How each milestone is tested in game: [`docs/runbooks/`](docs/runbooks/). Task cards and
 their status: [`docs/tasks/BOARD.md`](docs/tasks/BOARD.md).

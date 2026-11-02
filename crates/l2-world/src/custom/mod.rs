@@ -27,6 +27,7 @@ pub mod chat_admin;
 pub mod community_board;
 pub mod custom_mail;
 pub mod dualbox;
+pub mod events;
 pub mod faction;
 pub mod fake_players;
 pub mod misc;
@@ -40,7 +41,9 @@ pub mod pvp_rewards;
 pub mod rebirth;
 pub mod scheme_buffer;
 pub mod screen_welcome;
+pub mod script_features;
 pub mod sell_buffs;
+pub mod transmog;
 pub mod walker_bot;
 
 pub use boss_announcements::BossAnnouncementSettings;
@@ -56,6 +59,9 @@ pub use auto_potion::AutoPotionSettings;
 pub use offline_play::OfflinePlaySettings;
 pub use offline_trade::OfflineCommandSettings;
 pub use premium::{PremiumRates, PremiumSettings, PremiumWrite, ShownRates};
+pub use script_features::{
+    CustomScriptSettings, CustomScriptWorld, DelevelManagerSettings, NoblessMasterSettings, TransmogSettings,
+};
 
 use std::collections::BTreeMap;
 

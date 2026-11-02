@@ -256,8 +256,8 @@ impl World {
         else {
             return;
         };
-        // `!player.isOnEvent()`: the custom events are not ported.
-        if eject_time <= 0 {
+        // `!player.isOnEvent() && (_ejectTime > 0)`.
+        if self.is_on_event(id) || eject_time <= 0 {
             return;
         }
         self.send(

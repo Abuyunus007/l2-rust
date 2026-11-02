@@ -1157,7 +1157,10 @@ impl World {
         if !self.settings.exp.player_delevel || self.is_lucky(id) || self.is_advent_blessing_active(id) {
             return;
         }
-        // Events: not modelled. `atWar` needs clans (M5).
+        // Events: `Player.doDie` does not call it for a player on an event (`!isOnEvent()`).
+        if self.is_on_event(id) {
+            return;
+        }
         let (Some(max_level), Some(player)) = (self.java_max_level(), self.players.get(&id)) else {
             return;
         };

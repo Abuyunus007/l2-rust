@@ -76,6 +76,102 @@ pub fn ai_settings(config: &GameConfig) -> AiSettings {
     }
 }
 
+/// The switches of the custom scripts (M9-C07): `Custom/DelevelManager.ini`,
+/// `Custom/NoblessMaster.ini`, `Custom/Transmog.ini`, `CustomNpcData`, and the `<schedule>`
+/// patterns of the `config.xml` of each custom event.
+pub fn custom_script_settings(
+    config: &GameConfig,
+    config_dir: &Path,
+    datapack_root: &Path,
+) -> l2_world::custom::CustomScriptSettings {
+    use l2_world::custom::{
+        CustomScriptSettings, DelevelManagerSettings, NoblessMasterSettings, TransmogSettings,
+    };
+    let d = &config.delevel_manager;
+    let n = &config.nobless_master;
+    let t = &config.transmog;
+    let transmog_file = "Custom/Transmog.ini";
+    let ini = IniFile::load(config_dir.join(transmog_file)).unwrap_or_else(|_| IniFile::empty(transmog_file));
+    // Java: `Integer.parseInt(s.trim())` of each part of the comma list.
+    let banned_item_ids = ini
+        .get_string("TransmogBannedItemIds", "")
+        .split(',')
+        .filter_map(|part| part.trim().parse::<i32>().ok())
+        .collect();
+    let mut event_schedules = std::collections::BTreeMap::new();
+    for (name, folder) in [
+        ("Elpies", "Elpies"),
+        ("Rabbits", "Rabbits"),
+        ("Race", "Race"),
+        ("Deathmatch", "Deathmatch"),
+        ("TvT", "TeamVsTeam"),
+        ("CtF", "CaptureTheFlag"),
+    ] {
+        let path = datapack_root.join(format!("data/scripts/custom/events/{folder}/config.xml"));
+        let patterns = std::fs::read_to_string(&path)
+            .map(|text| event_schedule_patterns(&text))
+            .unwrap_or_default();
+        event_schedules.insert(name.to_owned(), patterns);
+    }
+    CustomScriptSettings {
+        delevel: DelevelManagerSettings {
+            enabled: d.delevel_manager_enabled,
+            npc_id: d.delevel_manager_npcid,
+            item_id: d.delevel_manager_itemid,
+            item_count: d.delevel_manager_itemcount,
+            minimum_delevel: d.delevel_manager_minimum_delevel,
+        },
+        nobless: NoblessMasterSettings {
+            enabled: n.nobless_master_enabled,
+            npc_id: n.nobless_master_npcid,
+            level_requirement: n.nobless_master_level_requirement,
+            item_id: n.nobless_master_item_id,
+            item_count: n.nobless_master_item_count,
+            reward_tiara: n.nobless_master_reward_tiara,
+        },
+        transmog: TransmogSettings {
+            enabled: t.enable_transmog,
+            share_account: t.transmog_share_account,
+            apply_cost: t.transmog_apply_cost,
+            remove_cost: t.transmog_remove_cost,
+            banned_item_ids,
+        },
+        event_schedules,
+        custom_npc_data: config.general.custom_npc_data,
+    }
+}
+
+/// The `pattern` attributes of the `<schedule>` elements of an event's `config.xml`, in file
+/// order; the commented-out ones (the shipped default) do not count.
+pub fn event_schedule_patterns(xml: &str) -> Vec<String> {
+    let mut text = String::new();
+    let mut rest = xml;
+    while let Some(start) = rest.find("<!--") {
+        text.push_str(&rest[..start]);
+        match rest[start..].find("-->") {
+            Some(end) => rest = &rest[start + end + 3..],
+            None => {
+                rest = "";
+                break;
+            }
+        }
+    }
+    text.push_str(rest);
+    let mut patterns = Vec::new();
+    let mut tail = text.as_str();
+    while let Some(at) = tail.find("<schedule") {
+        tail = &tail[at + "<schedule".len()..];
+        let element = tail.split('>').next().unwrap_or("");
+        if let Some(p) = element.find("pattern=\"") {
+            let value = &element[p + "pattern=\"".len()..];
+            if let Some(end) = value.find('"') {
+                patterns.push(value[..end].to_owned());
+            }
+        }
+    }
+    patterns
+}
+
 /// `ZoneManager.getZone(x, y, z, WaterZone.class) != null` over the datapack's zones.
 pub fn water_check(datapack: &Arc<Datapack>) -> WaterCheck {
     let datapack = Arc::clone(datapack);
@@ -120,6 +216,7 @@ pub fn spawn_npcs_with_scripts(
     scripts: Option<l2_world::ScriptRegistry>,
 ) {
     world.set_npc_settings(npc_settings(config, config_dir));
+    world.set_custom_script_settings(custom_script_settings(config, config_dir, &datapack.root));
     world.set_custom_settings(crate::custom_monsters::custom_settings(config, config_dir));
     world.set_ai_settings(ai_settings(config));
     world.set_water_check(water_check(datapack));
@@ -155,4 +252,21 @@ pub fn spawn_npcs_with_scripts(
         report.minions,
         started.elapsed().as_millis()
     );
+}
+
+#[cfg(test)]
+mod custom_script_tests {
+    use super::event_schedule_patterns;
+
+    #[test]
+    fn the_shipped_event_configs_schedule_nothing() {
+        let xml = r#"<event name="Elpies"><!-- <schedule pattern="0 20 * * *" /> --></event>"#;
+        assert!(event_schedule_patterns(xml).is_empty());
+    }
+
+    #[test]
+    fn an_uncommented_schedule_is_read_in_file_order() {
+        let xml = r#"<event name="Race"><!-- c --><schedule pattern="0 20 * * *" /><schedule pattern="30 6 * * 1"/></event>"#;
+        assert_eq!(event_schedule_patterns(xml), ["0 20 * * *", "30 6 * * 1"]);
+    }
 }

@@ -159,6 +159,9 @@ pub struct DbCharacterList {
     items: ItemRepository,
     subclasses: SubclassRepository,
     datapack: Arc<Datapack>,
+    /// `TransmogConfig.ENABLE_TRANSMOG`: the list shows the `transmogId` of the worn items
+    /// (M9-C07).
+    transmog: Option<l2_db::TransmogRepository>,
 }
 
 impl DbCharacterList {
@@ -169,7 +172,15 @@ impl DbCharacterList {
             items: ItemRepository::new(pool.clone()),
             subclasses: SubclassRepository::new(pool),
             datapack,
+            transmog: None,
         }
+    }
+
+    /// Java `PlayerInventory.restoreVisibleInventory` with `TransmogConfig.ENABLE_TRANSMOG`: a
+    /// worn item shows its `transmogId` (else the item id itself, not the display id).
+    pub fn with_transmog(mut self, pool: Pool, enabled: bool) -> Self {
+        self.transmog = enabled.then(|| l2_db::TransmogRepository::new(pool));
+        self
     }
 
     async fn load(&self, account: &str) -> Vec<CharacterInfo> {
@@ -208,7 +219,10 @@ impl DbCharacterList {
                 warn!("Could not restore inventory: {e}");
                 Vec::new()
             });
-            let slots = visible_paperdoll(&paperdoll_rows, &self.datapack);
+            let mut slots = visible_paperdoll(&paperdoll_rows, &self.datapack);
+            if let Some(transmog) = &self.transmog {
+                self.show_transmogs(transmog, &paperdoll_rows, &mut slots).await;
+            }
             let weapon = slots[paperdoll::RHAND].0;
             let augmentation = if weapon > 0 {
                 self.items.augmentation_of(weapon).await.unwrap_or_else(|e| {
@@ -223,6 +237,36 @@ impl DbCharacterList {
             }
         }
         list
+    }
+
+    // Java: PlayerInventory.restoreVisibleInventory (the transmog branch)
+    async fn show_transmogs(
+        &self,
+        transmog: &l2_db::TransmogRepository,
+        rows: &[PaperdollItemRow],
+        slots: &mut [(i32, i32, i32); paperdoll::TOTAL_SLOTS],
+    ) {
+        let object_ids: Vec<i32> = rows.iter().map(|r| r.object_id).collect();
+        let found = transmog
+            .load_item_transmogs(&object_ids)
+            .await
+            .unwrap_or_else(|e| {
+                warn!("Could not restore the transmogs: {e}");
+                Vec::new()
+            });
+        for row in rows {
+            let Some(slot) = row.loc_data.and_then(|s| usize::try_from(s).ok()) else {
+                continue;
+            };
+            let Some(target) = slots.get_mut(slot) else {
+                continue;
+            };
+            // `vars.getInt(TRANSMOG_ID, invdata.getInt("item_id"))`.
+            target.1 = found
+                .iter()
+                .find(|(object_id, _)| *object_id == row.object_id)
+                .map_or(row.item_id.unwrap_or(0), |(_, id)| *id);
+        }
     }
 
     // Java: CharSelectionInfo.loadCharacterSubclassInfo

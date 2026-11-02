@@ -1112,6 +1112,11 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                 Out::Persist(
                     PersistCommand::DeleteItemsOfItemId { .. } | PersistCommand::BirthdayGiftsRequest { .. },
                 ) => "event",
+                Out::Persist(
+                    PersistCommand::TransmogLoadRequest { .. }
+                    | PersistCommand::TransmogSaveCollection { .. }
+                    | PersistCommand::ItemTransmog { .. },
+                ) => "transmog",
                 Out::Persist(PersistCommand::CustomMailRequest | PersistCommand::CustomMailDelete { .. }) => {
                     "custom mail"
                 }
