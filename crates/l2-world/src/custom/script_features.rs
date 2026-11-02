@@ -266,3 +266,126 @@ fn show_menu(world: &mut World, gm: ObjectId) {
     page.replace("%LIST%", &list);
     world.send_admin_html(gm, &page);
 }
+
+#[cfg(test)]
+mod tests {
+    use std::sync::{Arc, Mutex};
+
+    use l2_util::{ObjectId, WorldRng};
+
+    use super::*;
+    use crate::outbox::{LsEvent, Outbox, PersistCommand};
+    use crate::script::{Script, ScriptCtx, ScriptRegistry, ScriptSetup};
+
+    struct Quiet;
+
+    impl Outbox for Quiet {
+        fn persist(&mut self, _command: PersistCommand) {}
+        fn ls_event(&mut self, _event: LsEvent) {}
+    }
+
+    type Log = Arc<Mutex<Vec<String>>>;
+
+    /// A script with `Event`'s three methods: it can be started once and stopped once.
+    struct Fake {
+        log: Log,
+        running: Arc<Mutex<bool>>,
+    }
+
+    impl Script for Fake {
+        fn name(&self) -> &'static str {
+            "Fake"
+        }
+
+        fn path(&self) -> &'static str {
+            "custom/events/Fake"
+        }
+
+        fn setup(&self, _s: &mut ScriptSetup) {}
+
+        fn is_event(&self) -> bool {
+            true
+        }
+
+        fn event_start(&self, _ctx: &mut ScriptCtx<'_>, maker: Option<ObjectId>) -> bool {
+            let mut running = self.running.lock().unwrap();
+            self.log.lock().unwrap().push(format!("start {maker:?}"));
+            !std::mem::replace(&mut *running, true)
+        }
+
+        fn event_stop(&self, _ctx: &mut ScriptCtx<'_>) -> bool {
+            self.log.lock().unwrap().push("stop".to_owned());
+            std::mem::replace(&mut *self.running.lock().unwrap(), false)
+        }
+
+        fn event_bypass(
+            &self,
+            _ctx: &mut ScriptCtx<'_>,
+            _player: ObjectId,
+            bypass: &str,
+        ) -> Result<bool, JavaException> {
+            self.log.lock().unwrap().push(format!("bypass {bypass}"));
+            bypass
+                .parse::<i32>()
+                .map(|_| true)
+                .map_err(|_| JavaException::number_format(bypass))
+        }
+    }
+
+    struct NotAnEvent;
+
+    impl Script for NotAnEvent {
+        fn name(&self) -> &'static str {
+            "NotAnEvent"
+        }
+
+        fn path(&self) -> &'static str {
+            "custom/events/NotAnEvent"
+        }
+
+        fn setup(&self, _s: &mut ScriptSetup) {}
+    }
+
+    #[test]
+    fn the_admin_words_start_stop_and_bypass_an_event_script() {
+        let log: Log = Arc::default();
+        let mut registry = ScriptRegistry::new();
+        registry.add(Fake {
+            log: Arc::clone(&log),
+            running: Arc::default(),
+        });
+        registry.add(NotAnEvent);
+        let mut world = World::new(WorldRng::from_seed(1), Box::new(Quiet));
+        world.install_scripts(registry);
+        let gm = ObjectId(1);
+
+        admin_events(&mut world, gm, "admin_event_start Fake").unwrap();
+        admin_events(&mut world, gm, "admin_event_start Fake").unwrap();
+        admin_events(&mut world, gm, "admin_event_bypass Fake 5").unwrap();
+        admin_events(&mut world, gm, "admin_event_bypass Fake x").unwrap();
+        admin_events(&mut world, gm, "admin_event_stop Fake").unwrap();
+        admin_events(&mut world, gm, "admin_event_stop Fake").unwrap();
+        // A script that is no event, and a name nobody has.
+        admin_events(&mut world, gm, "admin_event_start NotAnEvent").unwrap();
+        admin_events(&mut world, gm, "admin_event_start Nobody").unwrap();
+        assert_eq!(
+            *log.lock().unwrap(),
+            [
+                "start Some(ObjectId(1))",
+                "start Some(ObjectId(1))",
+                "bypass 5",
+                "bypass x",
+                "stop",
+                "stop"
+            ]
+        );
+    }
+
+    #[test]
+    fn the_defaults_are_off() {
+        let settings = CustomScriptSettings::default();
+        assert!(!settings.delevel.enabled && !settings.nobless.enabled && !settings.transmog.enabled);
+        assert!(settings.event_schedules.is_empty());
+        assert!(!settings.custom_npc_data);
+    }
+}

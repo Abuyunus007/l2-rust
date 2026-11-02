@@ -463,3 +463,27 @@ Found by S-PILOT-01: the tutorial's player listeners (now engine events since S-
 configuration (Java constructors do: `if (!PlayerConfig.DISABLE_TUTORIAL) addStartNpc(..)`), so such
 scripts check `ctx.script_settings()` in their hooks; the client ground location of a player's
 `MagicSkillUse` in `broadcast_magic_skill_use` (always none).
+
+## Added by M9-C07 (custom scripts and events, D-57)
+
+- **Switches:** `l2_world::custom::CustomScriptSettings` (`DelevelManager.ini`, `NoblessMaster.ini`, `Transmog.ini`,
+  `CustomNpcData`, the `<schedule pattern>` of each event's `config.xml`); the game server fills it before the scripts are
+  installed (`npcs::custom_script_settings`), a script reads it in `setup_with(.., world)` or `ctx.world().custom_script_settings()`.
+  Everything is off by default; `Default` is Java's default of each key.
+- **Event scripts (`Event`):** `Script::is_event`, `event_start(ctx, Option<maker>)`, `event_stop`, `event_bypass` (`Err` = the
+  exception Java throws, answered with the usage line). `//event_menu`, `//event_start|stop <name>`, `//event_bypass <name> <word>`
+  are `AdminEvents` (`custom/script_features.rs`). The `Schedule<n>` timers of `loadConfig` are `events/schedule.rs`
+  (`World::scheduling_delay_to_next`); a script starts itself with `event_start(ctx, None)`.
+- **`isOnEvent`:** `World::{is_on_event, set_on_event, is_on_solo_event, set_on_solo_event}` (the flags live in the player's
+  minigame state and `isRegisteredOnEvent` includes them). They change `isAutoAttackable` (other team, or anybody on a solo
+  event), the death exp loss and item drop, the area-skill team check, the self-resurrection button of `Die`, the dead-eject of an
+  instance, and `RequestRestartPoint` (an `ON_CREATURE_DEATH` listener of an `Event` script gets `"ResurrectPlayer"`).
+  `World::set_player_team(player, 0|1|2)` is `Player.setTeam`.
+- **Arena helpers:** `events/arena.rs` (buffs, screen messages, scoreboard, registration checks) shared by TvT, Deathmatch and CtF;
+  world side `event_make_team_parties`, `event_teleport`, `instance_eject_player`, `event_set_player_disabled`,
+  `event_registration_refusal`, `zone_random_point`, `player_full_restore`, `ScriptCtx::cancel_all_quest_timers`.
+- **`EventMonster`:** `World::event_monster_set_drop_on_ground` / `event_monster_set_block_offensive_skills` (the loot privilege and
+  the skill check read them).
+- **Transmog:** `custom/transmog.rs` (collection, item transmog ids, the look in `UserInfo`/`CharInfo`, trade/sell/drop refused,
+  the character list). Persistence: `PersistCommand::{TransmogLoadRequest, TransmogSaveCollection, ItemTransmog}`,
+  `WorldCommand::TransmogLoaded`, `l2_db::TransmogRepository` (`character_transmogs`, `item_variables`).

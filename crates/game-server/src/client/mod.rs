@@ -168,11 +168,14 @@ pub async fn start_listener(server: &mut Server) -> Result<(), StartupError> {
             link: link.clone(),
             hexid_server_id: state.hexid.as_ref().map_or(0, |h| h.server_id),
         }),
-        characters: Arc::new(DbCharacterList::new(
-            state.pool.clone(),
-            Arc::clone(&state.datapack),
-            state.config.wedding.allow_wedding,
-        )),
+        characters: Arc::new(
+            DbCharacterList::new(
+                state.pool.clone(),
+                Arc::clone(&state.datapack),
+                state.config.wedding.allow_wedding,
+            )
+            .with_transmog(state.pool.clone(), state.config.transmog.enable_transmog),
+        ),
         registry: Arc::clone(&registry),
         world: state.world.clone(),
         protocol_list: state.config.manual.server.protocol_list.clone(),
