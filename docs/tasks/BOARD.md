@@ -504,7 +504,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [M9-C07](M9/M9-C07.md) | Custom scripts and custom events | sonnet | spot | — | ready |
 | [M9-H01](M9/M9-H01.md) | Automatic database backups | sonnet | full | — | merged |
 | [M9-H02](M9/M9-H02.md) | Load test tool (2000 players) | sonnet | spot | — | ready |
-| [M9-S01](M9/M9-S01.md) | Switch from Java to Rust | sonnet | full | M9-H01, G-02 | ready |
+| [M9-S01](M9/M9-S01.md) | Switch from Java to Rust | sonnet | full | M9-H01, G-02 | merged |
 
 ## Milestone test results
 
