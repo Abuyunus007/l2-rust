@@ -94,6 +94,20 @@ pub fn spawn_npcs(
     spawn_npcs_with_scripts(world, datapack, ids, config, config_dir, None);
 }
 
+/// The lines of `data/FakePlayerChatData.xml` for the world (at the start and for
+/// `//reload fakeplayerchat`).
+pub fn fake_player_chat_entries(root: &Path) -> Vec<l2_world::FakePlayerChatEntry> {
+    l2_data::load_fake_player_chat(root)
+        .into_iter()
+        .map(|c| l2_world::FakePlayerChatEntry {
+            fpc_name: c.fpc_name,
+            search_method: c.search_method,
+            search_text: c.search_text,
+            answers: c.answers,
+        })
+        .collect()
+}
+
 /// [`spawn_npcs`] with the scripts installed between the NPC templates and the spawns (Java
 /// `GameServer`: the "Scripts" section, then `SpawnData`), so `ON_NPC_SPAWN` hears the first
 /// spawns (S-API-01).
@@ -122,15 +136,7 @@ pub fn spawn_npcs_with_scripts(
     // are on (`Custom/FakePlayers.ini`).
     if config.fake_players.fake_players_enabled {
         let chat = if config.fake_players.fake_player_chat {
-            l2_data::load_fake_player_chat(&datapack.root)
-                .into_iter()
-                .map(|c| l2_world::FakePlayerChatEntry {
-                    fpc_name: c.fpc_name,
-                    search_method: c.search_method,
-                    search_text: c.search_text,
-                    answers: c.answers,
-                })
-                .collect()
+            fake_player_chat_entries(&datapack.root)
         } else {
             Vec::new()
         };

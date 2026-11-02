@@ -769,7 +769,7 @@ impl World {
                 if attackable {
                     creature = leader_target;
                 } else if self.intention_of(id) != Intention::Follow && !self.is_disabled(id) {
-                    self.auto_play_follow(id, leader);
+                    self.set_intention_follow_player(id, leader);
                 }
             }
             return creature;
@@ -837,7 +837,7 @@ impl World {
     }
 
     /// Java `PlayerAI.setIntentionFollow(target)`.
-    fn auto_play_follow(&mut self, id: ObjectId, target: ObjectId) {
+    pub(crate) fn set_intention_follow_player(&mut self, id: ObjectId, target: ObjectId) {
         if self.intention_of(id) == Intention::Rest
             || self.is_all_skills_disabled(id)
             || self.is_casting_now(id)

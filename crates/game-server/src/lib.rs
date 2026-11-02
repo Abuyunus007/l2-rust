@@ -1400,6 +1400,9 @@ impl Server {
             let (stop, acks) = (shutdown.clone(), left_acks.clone());
             let root = datapack_root.clone();
             let (lazy, check_encoding) = (!config.general.htm_cache, config.general.check_html_encoding);
+            // `//reload fakeplayerchat` (`Custom/FakePlayers.ini`).
+            let read_fake_player_chat =
+                config.fake_players.fake_players_enabled && config.fake_players.fake_player_chat;
             // `//respawnall` reads the spawn files again with the same options as the start.
             let (npcs, spawn_options, spawn_root) = {
                 let options = options_from_config(&config, &paths.config_dir);
@@ -1422,6 +1425,20 @@ impl Server {
                         let spawns = Arc::new(l2_data::SpawnData::load(&root, &npcs, &options));
                         if !acks.send_to_world(WorldCommand::SpawnsReloaded { spawns }) {
                             warn!("The reloaded spawns could not be handed to the world.");
+                        }
+                    });
+                }
+                l2_world::ControlRequest::ReloadFakePlayerChat { requester } => {
+                    let (acks, root) = (acks.clone(), root.clone());
+                    tokio::task::spawn_blocking(move || {
+                        // The file is read only while the chat is on (Java `FakePlayerChatManager.load`).
+                        let chat = if read_fake_player_chat {
+                            npcs::fake_player_chat_entries(&root)
+                        } else {
+                            Vec::new()
+                        };
+                        if !acks.send_to_world(WorldCommand::FakePlayerChatReloaded { requester, chat }) {
+                            warn!("The reloaded fake player chat could not be handed to the world.");
                         }
                     });
                 }

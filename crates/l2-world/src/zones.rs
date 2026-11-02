@@ -408,6 +408,31 @@ impl World {
         self.players.get(&id).is_some_and(|p| p.zones.is_inside(zone))
     }
 
+    /// Java `isInsideZone(PEACE)` and `isInsideZone(PVP)` of an NPC (a fake player): the world keeps
+    /// no zone counters for NPCs, so they come from the zones at its position. The same zone kinds
+    /// as `on_zone_enter` set the flags for a player; PvP is off in a peace or no-PvP zone
+    /// (`ZoneId` counters, M9-L01).
+    pub(crate) fn npc_peace_and_pvp(&self, id: ObjectId) -> (bool, bool) {
+        let Some((x, y, z)) = self.position_of(id) else {
+            return (false, false);
+        };
+        let Some(zones) = self.zoning.zones.as_ref() else {
+            return (false, false);
+        };
+        let peace_mode = self.settings.zones.peace_zone_mode;
+        let (mut peace, mut no_pvp, mut pvp) = (false, false, false);
+        for zone in zones.zones_at(x, y, z) {
+            match ZoneKind::of(&zone.zone_type) {
+                ZoneKind::Peace if peace_mode != 2 => peace = true,
+                ZoneKind::NoPvp if peace_mode != 2 => no_pvp = true,
+                ZoneKind::Arena => pvp = true,
+                ZoneKind::Jail if self.settings.zones.jail_is_pvp => pvp = true,
+                _ => {}
+            }
+        }
+        (peace, pvp && !peace && !no_pvp)
+    }
+
     // ------------------------------------------------------------------ one zone (S-BOSS-01)
     //
     // Java's `ZoneManager.getZoneById(id, Class)` and the `ZoneType` methods the boss scripts use.

@@ -561,6 +561,9 @@ impl World {
                 content,
             } => self.on_html_file_loaded(requester, &path, content),
             WorldCommand::SpawnsReloaded { spawns } => self.on_spawns_reloaded(spawns),
+            WorldCommand::FakePlayerChatReloaded { requester, chat } => {
+                self.on_fake_player_chat_reloaded(requester, chat);
+            }
             WorldCommand::LoginServerRegistered { name } => self.on_login_server_registered(name),
             WorldCommand::SevenSignsLoaded { result, then } => self.on_seven_signs_loaded(result, then),
             WorldCommand::ClassIndexLoaded {

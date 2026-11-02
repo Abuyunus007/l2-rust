@@ -393,6 +393,10 @@ pub enum ControlRequest {
     /// `//respawnall`, `//spawn_reload`: read the spawn files again (Java `SpawnData.load()`). The
     /// answer comes back as `WorldCommand::SpawnsReloaded`.
     ReloadSpawns,
+    /// `//reload fakeplayerchat`: read `data/FakePlayerChatData.xml` again (Java
+    /// `FakePlayerChatManager.load()`). The answer comes back as
+    /// `WorldCommand::FakePlayerChatReloaded` (M9-L01).
+    ReloadFakePlayerChat { requester: l2_util::ObjectId },
     /// `SpawnData.addNewSpawn`: write the spawn of an admin command into the spawn file of its map
     /// tile (`data/spawns/Others/<x>_<y>.xml`, under the server's own folder).
     StoreSpawn { spawn: l2_data::spawn_store::NewSpawn },

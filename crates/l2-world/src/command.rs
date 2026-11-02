@@ -549,6 +549,12 @@ pub enum WorldCommand {
         path: Option<String>,
         result: crate::admin::reload::HtmlReloadResult,
     },
+    /// The answer to `ControlRequest::ReloadFakePlayerChat` (`//reload fakeplayerchat`): the chat
+    /// lines of `FakePlayerChatData.xml`, read again (empty while the chat is off).
+    FakePlayerChatReloaded {
+        requester: l2_util::ObjectId,
+        chat: Vec<crate::custom::fake_players::FakePlayerChatEntry>,
+    },
     /// The answer to `ControlRequest::LoadHtmlFile` (`//loadhtml`, see `admin/page.rs`): the text
     /// of the file, `None` when there is no such html file.
     HtmlFileLoaded {
@@ -736,6 +742,9 @@ impl fmt::Debug for WorldCommand {
                 result,
             } => {
                 write!(f, "HtmlReloaded({requester}, {path:?}, {result:?})")
+            }
+            Self::FakePlayerChatReloaded { requester, chat } => {
+                write!(f, "FakePlayerChatReloaded({requester}, {} lines)", chat.len())
             }
             Self::HtmlFileLoaded {
                 requester,

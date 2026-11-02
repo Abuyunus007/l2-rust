@@ -73,6 +73,7 @@ const ITEMS: &str = r#"<list>
 <item id="1060" type="EtcItem" name="Healing Potion"><set name="is_stackable" val="true" /></item>
 <item id="1539" type="EtcItem" name="Greater Healing Potion"><set name="is_stackable" val="true" /></item>
 <item id="1540" type="EtcItem" name="Buff Scroll"><set name="handler" val="ItemSkills" /><skills><skill id="9001" level="1" /></skills></item>
+<item id="1541" type="EtcItem" name="Herb of Test"><set name="ex_immediate_effect" val="true" /><skills><skill id="9001" level="1" /></skills></item>
 </list>"#;
 
 /// 9001 is the skill of the Buff Scroll, 9002 a buff the player knows.
@@ -97,6 +98,42 @@ const NPCS: &str = r#"<?xml version="1.0"?><list>
     <speed><walk ground="20" /><run ground="50" /></speed>
   </stats>
   <collision><radius normal="10"/><height normal="20"/></collision>
+  <dropLists><drop><item id="1541" min="1" max="1" chance="100"/></drop></dropLists>
+</npc>
+<npc id="20002" type="Monster" level="5" name="Fakey" usingServerSideName="true">
+  <race>HUMAN</race>
+  <stats str="40" int="21" dex="30" wit="20" con="43" men="20">
+    <vitals hp="300" hpRegen="2" mp="400.0" mpRegen="0.9" />
+    <attack physical="8" magical="5" random="30" critical="4" accuracy="4.75" attackSpeed="253" type="SWORD" range="40" distance="80" width="120" />
+    <defence physical="44.44444" magical="29.5" />
+    <speed><walk ground="20" /><run ground="50" /></speed>
+  </stats>
+  <collision><radius normal="10"/><height normal="20"/></collision>
+  <ai aggroRange="300" isAggressive="true"/>
+  <fakePlayer classId="1" fakePlayerTalkable="true"/>
+</npc>
+<npc id="20003" type="Monster" level="5" name="Silent Fakey" usingServerSideName="true">
+  <race>HUMAN</race>
+  <stats str="40" int="21" dex="30" wit="20" con="43" men="20">
+    <vitals hp="300" hpRegen="2" mp="400.0" mpRegen="0.9" />
+    <attack physical="8" magical="5" random="30" critical="4" accuracy="4.75" attackSpeed="253" type="SWORD" range="40" distance="80" width="120" />
+    <defence physical="44.44444" magical="29.5" />
+    <speed><walk ground="20" /><run ground="50" /></speed>
+  </stats>
+  <collision><radius normal="10"/><height normal="20"/></collision>
+  <ai aggroRange="300" isAggressive="false"/>
+  <fakePlayer classId="1" fakePlayerTalkable="false"/>
+</npc>
+<npc id="20004" type="Monster" level="5" name="Chaos Rat" usingServerSideName="true">
+  <race>BEAST</race>
+  <stats str="40" int="21" dex="30" wit="20" con="43" men="20">
+    <vitals hp="300" hpRegen="2" mp="400.0" mpRegen="0.9" />
+    <attack physical="8" magical="5" random="30" critical="4" accuracy="4.75" attackSpeed="253" type="SWORD" range="40" distance="80" width="120" />
+    <defence physical="44.44444" magical="29.5" />
+    <speed><walk ground="20" /><run ground="50" /></speed>
+  </stats>
+  <collision><radius normal="10"/><height normal="20"/></collision>
+  <ai aggroRange="400" isChaos="true" isAggressive="true"/>
 </npc>
 </list>"#;
 
@@ -242,6 +279,9 @@ struct Switches {
     /// M9-L01: the dual-box limits and the client address of the player.
     dualbox: Option<DualboxSettings>,
     captcha: Option<CaptchaSettings>,
+    fake: Option<FakePlayerSettings>,
+    auto_loot_herbs: bool,
+    bot_report: bool,
     option: Option<l2_data::AugmentationOption>,
     ip: Option<std::net::IpAddr>,
 }
@@ -293,7 +333,16 @@ impl Scene {
         });
         world.set_id_factory(Arc::new(IdFactory::new(Vec::<i32>::new()).unwrap()));
         world.set_npc_data(
-            Arc::new(NpcTemplates::from_xml(NPCS, &NpcLoadOptions::default()).unwrap()),
+            Arc::new(
+                NpcTemplates::from_xml(
+                    NPCS,
+                    &NpcLoadOptions {
+                        fake_players_enabled: true,
+                        ..NpcLoadOptions::default()
+                    },
+                )
+                .unwrap(),
+            ),
             Arc::new(SpawnData::default()),
         );
         world.set_html_cache(Arc::new(HtmCache::load(root.path(), false)));
@@ -327,7 +376,7 @@ impl Scene {
         if let Some(s) = switches.offline {
             world.set_offline_settings(s);
         }
-        if switches.dualbox.is_some() || switches.captcha.is_some() {
+        if switches.dualbox.is_some() || switches.captcha.is_some() || switches.fake.is_some() {
             let mut settings = WorldSettings::default();
             if let Some(d) = switches.dualbox {
                 settings.custom_misc.dualbox = d;
@@ -335,7 +384,17 @@ impl Scene {
             if let Some(c) = switches.captcha {
                 settings.custom_misc.captcha = c;
             }
+            if let Some(f) = switches.fake {
+                settings.fake_players = f;
+            }
+            settings.ground.auto_loot_herbs = switches.auto_loot_herbs;
             world.set_settings(settings);
+        }
+        if switches.bot_report {
+            world.set_bot_report(BotReportSettings {
+                enable: true,
+                ..BotReportSettings::default()
+            });
         }
         let me = Log::default();
         world.handle(WorldCommand::EnterWorld {
@@ -1179,6 +1238,127 @@ fn playskills_leaves_out_augmentation_option_skills() {
     assert!(!page(Some(77), Some(option.clone())).contains("Test Buff 9002"));
     // NOTE(java-quirk): a packed id with a high option is not the option id: nothing is left out.
     assert!(page(Some(77 + (5 << 16)), Some(option)).contains("Test Buff 9002"));
+}
+
+// ------------------------------------------------------------------ M9-L01: the fake players
+
+fn fakes_on() -> Switches {
+    Switches {
+        fake: Some(FakePlayerSettings {
+            enabled: true,
+            can_drop_items: true,
+            can_pickup: true,
+            ..FakePlayerSettings::default()
+        }),
+        ip: Some("10.0.0.5".parse().unwrap()),
+        ..Switches::default()
+    }
+}
+
+/// `BotReportTable.reportBot`: a talkable fake player can be reported, counted and named, and is
+/// never punished; one that is not talkable cannot be reported.
+#[test]
+fn a_bot_report_on_a_fake_player_follows_java() {
+    let mut s = Scene::new(Switches {
+        bot_report: true,
+        ..fakes_on()
+    });
+    let talkable = s.world.spawn_npc_at(20002, X + 50, Y, Z, 0).unwrap();
+    let silent = s.world.spawn_npc_at(20003, X + 60, Y, Z, 0).unwrap();
+    let rat = s.world.spawn_npc_at(20001, X + 70, Y, Z, 0).unwrap();
+    s.me.take();
+    assert!(!s.world.report_bot(ME, Some(silent)), "not talkable");
+    assert!(!s.world.report_bot(ME, Some(rat)), "not a player, not a fake player");
+    assert!(s.me.take().is_empty());
+    assert!(s.world.report_bot(ME, Some(talkable)));
+    let out = s.me.take();
+    let messages: Vec<SystemMessage> = of(&out, ServerOpcode::SystemMessage);
+    assert_eq!(messages.len(), 2);
+    assert_eq!(messages[0].id, SystemMessageId::C1WasReportedAsABot);
+    assert_eq!(
+        messages[1].id,
+        SystemMessageId::YouHaveUsedAReportPointOnC1YouHaveS2PointsRemainingOnThisAccount
+    );
+    assert!(
+        s.out
+            .take()
+            .iter()
+            .any(|c| matches!(c, PersistCommand::BotReport(row) if row.bot_id == talkable.0))
+    );
+}
+
+/// `NpcClick`: the second click on a fake player that stands close and can be seen sets the
+/// player to follow it.
+#[test]
+fn clicking_a_fake_player_follows_it() {
+    let mut s = Scene::new(fakes_on());
+    let fake = s.world.spawn_npc_at(20002, X + 50, Y, Z, 0).unwrap();
+    let click =|s: &mut Scene, object: ObjectId| {
+        s.world.handle(WorldCommand::Input {
+            session: SessionId(u64::try_from(ME.0).unwrap()),
+            input: ClientInput::Action {
+                object_id: object.0,
+                action_id: 0,
+            },
+        });
+    };
+    click(&mut s, fake);
+    assert_eq!(s.world.follow_target_of(ME), None, "the first click selects");
+    s.advance(1000);
+    click(&mut s, fake);
+    assert_eq!(s.world.follow_target_of(ME), Some(fake));
+    assert_eq!(s.world.intention_of(ME), Intention::Follow);
+    // Any other NPC is not followed (a monster is attacked instead).
+    let mut t = Scene::new(fakes_on());
+    let rat = t.world.spawn_npc_at(20001, X + 60, Y, Z, 0).unwrap();
+    click(&mut t, rat);
+    t.advance(1000);
+    click(&mut t, rat);
+    assert_eq!(t.world.intention_of(ME), Intention::Attack);
+}
+
+/// `Attackable.doItemDrop` and `AttackableAI.thinkActive`: the skills of a herb are cast by the
+/// fake player, with the auto loot of herbs and when it picks the herb up from the ground.
+#[test]
+fn a_herb_dropped_for_a_fake_player_casts_its_skill() {
+    // Auto loot of herbs: cast at once.
+    let mut s = Scene::new(Switches {
+        auto_loot_herbs: true,
+        ..fakes_on()
+    });
+    let fake = s.world.spawn_npc_at(20002, X + 50, Y, Z, 0).unwrap();
+    let rat = s.world.spawn_npc_at(20001, X + 60, Y, Z, 0).unwrap();
+    s.world.do_item_drop(rat, Some(fake));
+    s.advance(500);
+    assert!(s.world.is_affected_by_skill(fake, 9001), "cast on the spot");
+
+    // On the ground: the fake player walks to it, takes it and casts it.
+    let mut s = Scene::new(fakes_on());
+    let fake = s.world.spawn_npc_at(20002, X + 50, Y, Z, 0).unwrap();
+    let rat = s.world.spawn_npc_at(20001, X + 55, Y, Z, 0).unwrap();
+    s.world.do_item_drop(rat, Some(fake));
+    assert!(!s.world.is_affected_by_skill(fake, 9001));
+    s.advance(15_000);
+    assert!(s.world.is_affected_by_skill(fake, 9001), "cast when picked up");
+}
+
+/// `AttackableAI.thinkActive`: a chaos monster hates the fake players in range
+/// (`isAggressiveTowards` of an attackable target), an ordinary monster does not.
+#[test]
+fn monsters_aggro_fake_players_like_javas_scan() {
+    let setup = |chaos_id: i32| {
+        let mut s = Scene::new(fakes_on());
+        // Far from the player (it would be aggressed otherwise), in the view of its region.
+        let fake = s.world.spawn_npc_at(20002, X + 900, Y, Z, 0).unwrap();
+        let mob = s.world.spawn_npc_at(chaos_id, X + 1000, Y, Z, 0).unwrap();
+        s.advance(15_000);
+        (s, fake, mob)
+    };
+    let (s, fake, mob) = setup(20004);
+    assert_eq!(s.world.attack_target_of(mob), Some(fake));
+    // A plain aggressive monster (the rat has the default AI) leaves it alone.
+    let (s, fake, mob) = setup(20001);
+    assert_ne!(s.world.attack_target_of(mob), Some(fake));
 }
 
 /// `CaptchaManager.updateCounter`: the kill of a player in auto play is not counted (with
