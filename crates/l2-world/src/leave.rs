@@ -160,6 +160,8 @@ impl World {
         self.stop_all_toggles(id, true);
         // `deleteMe`: the cursed weapon forgets its player (it keeps the owner's id).
         self.cursed_player_left(id);
+        // The buff shop's list goes with the player (M9-C03, `custom/sell_buffs.rs`).
+        self.sell_buffs_player_left(id);
         // `deleteMe`: the Block Checker disconnect, and the arenas forget the player (M8-GAMES-01).
         self.minigame_on_player_left(id);
         // `deleteMe`: `_vehicle.oustPlayer(this)` (M8-VEHICLE-01).

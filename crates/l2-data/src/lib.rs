@@ -45,7 +45,9 @@ pub mod player_template;
 pub mod recipe;
 pub mod residence;
 pub mod route;
+pub mod scheme_buffer;
 pub mod seed;
+pub mod sell_buff_data;
 pub mod skill;
 pub mod skill_learn;
 pub mod skill_tree;
@@ -115,7 +117,9 @@ pub use player_template::{
 pub use recipe::{RecipeData, RecipeHolder, RecipeList, RecipeStat};
 pub use residence::{SiegeSchedule, SiegeScheduleDate};
 pub use route::{RouteSay, Routes, WalkNode, WalkRoute};
+pub use scheme_buffer::{BuffSkillHolder, SchemeBufferSkills};
 pub use seed::{Seed, Seeds};
+pub use sell_buff_data::SellBuffData;
 pub use skill::{EffectTemplate, SkillLoadOptions, SkillOperateType, SkillTemplate, SkillTemplates};
 pub use skill_learn::SkillLearnData;
 pub use skill_tree::{SkillLearn, SkillLearnItem, SkillTrees, SocialClass};
@@ -225,6 +229,10 @@ pub struct Datapack {
     pub instances: Arc<InstanceTemplates>,
     /// `data/Routes.xml`: the walking routes of NPCs (M8-MISC-01).
     pub routes: Arc<Routes>,
+    /// `data/SchemeBufferSkills.xml`: the scheme buffer's skills (M9-C03).
+    pub scheme_buffer_skills: Arc<SchemeBufferSkills>,
+    /// `data/SellBuffData.xml`: the skills the buff shop may sell (M9-C03).
+    pub sell_buff_data: Arc<SellBuffData>,
 }
 
 /// The config values that change what the loaders read. The game server builds it from
@@ -406,6 +414,8 @@ impl Datapack {
             seeds,
             instances: Arc::new(InstanceTemplates::load(root)),
             routes,
+            scheme_buffer_skills: Arc::new(SchemeBufferSkills::load(root)),
+            sell_buff_data: Arc::new(SellBuffData::load(root)),
         })
     }
 }
