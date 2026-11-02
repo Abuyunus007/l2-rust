@@ -31,10 +31,10 @@
 // off): off, the trader lives until this server stops and no row is written, removed or restored.
 //
 // # Left out
-// - The olympiad and events, a dual-box counter (`DualboxCountOfflineTraders`), the buff shop
-//   (`isSellingBuffs`). The `.offline` command (`EnableOfflineCommand`) and `OfflineAbnormalEffect`
-//   are in `custom/offline_trade.rs` (M9-C02), which also says why `OfflineDisconnectSameAccount`
-//   is not ported.
+// - The buff shop (`isSellingBuffs`, type 9) is stored and restored like the other shops, under
+//   the same switch (M9-L01). The `.offline` command (`EnableOfflineCommand`) and
+//   `OfflineAbnormalEffect` are in `custom/offline_trade.rs` (M9-C02);
+//   `OfflineDisconnectSameAccount` is `release_offline_same_account` (`custom/offline_play.rs`).
 // - `OfflineMaxDays` is checked only when the shops are restored, like Java: a running trader
 //   never times out.
 
@@ -197,11 +197,9 @@ pub fn restorable_store_type(
         4 => PrivateStoreType::BuyManage,
         5 => PrivateStoreType::Manufacture,
         8 => PrivateStoreType::PackageSell,
-        // `SELL_BUFFS`: the buff shop (`SellBuffsManager`) is not ported.
-        9 => {
-            warn!("OfflineTraderTable: a buff shop cannot be restored (not ported).");
-            return None;
-        }
+        // `SELL_BUFFS`: the buff shop (`SellBuffsManager`) comes back as a package sale whose
+        // lines are skills (`isSellBuff ? PACKAGE_SELL : findById(typeId)`).
+        9 => PrivateStoreType::PackageSell,
         other => {
             warn!("OfflineTraderTable: PrivateStoreType with id {other} could not be found.");
             return None;
@@ -400,15 +398,26 @@ impl World {
                     return None;
                 }
                 let list = self.sell_list_copy(id);
-                let items = list
-                    .items
-                    .iter()
-                    .map(|i| OfflineTradeLine {
-                        item: i.object_id.0,
-                        count: i.count,
-                        price: i.price,
-                    })
-                    .collect();
+                // `isSellingBuffs()`: the lines are the skills of the buff shop, with count 0.
+                let items = if self.is_selling_buffs(id) {
+                    self.selling_buffs(id)
+                        .iter()
+                        .map(|b| OfflineTradeLine {
+                            item: b.skill_id,
+                            count: 0,
+                            price: b.price,
+                        })
+                        .collect()
+                } else {
+                    list.items
+                        .iter()
+                        .map(|i| OfflineTradeLine {
+                            item: i.object_id.0,
+                            count: i.count,
+                            price: i.price,
+                        })
+                        .collect()
+                };
                 (items, Some(list.title))
             }
             PrivateStoreType::Manufacture => {
@@ -431,6 +440,14 @@ impl World {
         })
     }
 
+    /// The `type` column of a trader: `isSellingBuffs() ? SELL_BUFFS : getPrivateStoreType()`.
+    fn offline_store_type_id(&self, id: ObjectId) -> i32 {
+        if self.is_selling_buffs(id) {
+            return i32::from(PrivateStoreType::SellBuffs.id());
+        }
+        i32::from(self.private_store_type(id).id())
+    }
+
     /// Java `OfflineTraderTable.onTransaction(trader, finished, firstCall)`.
     pub(crate) fn offline_on_transaction(&mut self, id: ObjectId, finished: bool, first_call: bool) {
         if !self.offline_writes() {
@@ -446,7 +463,7 @@ impl World {
             if first_call {
                 status = Some(OfflineTradeStatus {
                     time: start,
-                    store_type: i32::from(self.private_store_type(id).id()),
+                    store_type: self.offline_store_type_id(id),
                     // Only the first call records the title.
                     title,
                 });
@@ -563,7 +580,7 @@ impl World {
                 char_id: id,
                 status: OfflineTradeStatus {
                     time: start,
-                    store_type: i32::from(self.private_store_type(id).id()),
+                    store_type: self.offline_store_type_id(id),
                     title,
                 },
                 items,
@@ -604,6 +621,8 @@ impl World {
                 4 => PrivateStoreType::BuyManage,
                 5 => PrivateStoreType::Manufacture,
                 8 => PrivateStoreType::PackageSell,
+                // `SELL_BUFFS`: a package sale of the buff shop.
+                9 => PrivateStoreType::PackageSell,
                 _ => continue,
             };
             if self.restore_offline_trader(data, row, kind) {
@@ -678,8 +697,21 @@ impl World {
                 }
             }
             PrivateStoreType::Sell | PrivateStoreType::PackageSell => {
-                for line in &row.items {
-                    self.sell_list_add_item(id, line.item, line.count, line.price);
+                if row.status.store_type == i32::from(PrivateStoreType::SellBuffs.id()) {
+                    // The buff shop: the lines are skills and prices.
+                    let holders = row
+                        .items
+                        .iter()
+                        .map(|l| crate::custom::sell_buffs::SellBuffHolder {
+                            skill_id: l.item,
+                            price: l.price,
+                        })
+                        .collect();
+                    self.sell_buffs_restore(id, holders);
+                } else {
+                    for line in &row.items {
+                        self.sell_list_add_item(id, line.item, line.count, line.price);
+                    }
                 }
                 if let Some(list) = self.sell_list_mut(id) {
                     list.title = row.status.title.clone().unwrap_or_default();
@@ -759,9 +791,9 @@ mod tests {
         let kind = |id| restorable_store_type(&s, now, id, now);
         assert_eq!(kind(5), Some(PrivateStoreType::Manufacture));
         assert_eq!(kind(8), Some(PrivateStoreType::PackageSell));
-        // NONE, the buff shop and unknown ids are skipped.
+        // The buff shop comes back as a package sale (M9-L01); NONE and unknown ids are skipped.
+        assert_eq!(kind(9), Some(PrivateStoreType::PackageSell));
         assert_eq!(kind(0), None);
-        assert_eq!(kind(9), None);
         assert_eq!(kind(77), None);
     }
 }

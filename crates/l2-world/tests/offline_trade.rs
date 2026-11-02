@@ -887,14 +887,16 @@ fn buy_stores_and_workshops_are_restored_with_their_lists() {
     assert_eq!(s.world.manufacture_items(A), vec![(1234, 800)]);
     assert_eq!(s.world.recipe_store_name(A), "Crafts");
 
-    // An unknown type, or the buff shop, brings nobody back.
+    // An unknown type brings nobody back; the buff shop (type 9, M9-L01) comes back as a package
+    // sale (its lines are skills, see `custom_buffers.rs`).
     let mut s = Scene::new(trade_on());
     s.world.restore_offline_traders(vec![
         (player(A, "Alice", 1000, vec![]), row(77, "?", vec![])),
         (player(B, "Bob", 1050, vec![]), row(9, "Buffs", vec![])),
     ]);
-    assert_eq!(s.world.offline_trader_count(), 0);
-    assert!(s.world.player(A).is_none() && s.world.player(B).is_none());
+    assert_eq!(s.world.offline_trader_count(), 1);
+    assert!(s.world.player(A).is_none() && s.world.player(B).is_some());
+    assert_eq!(s.world.private_store_type(B), PrivateStoreType::PackageSell);
 }
 
 /// Switch on (Java's behaviour): the account was freed at logout, so the trader's end sends no
