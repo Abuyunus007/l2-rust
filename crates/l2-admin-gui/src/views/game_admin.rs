@@ -385,6 +385,7 @@ mod tests {
             threads: 0,
             ticks: 100,
             tick_ms: 50,
+            tick_stats: Default::default(),
             shutdown_in_secs: Some(30),
         };
         assert_eq!(
@@ -417,6 +418,7 @@ mod tests {
             threads: 0,
             ticks: 0,
             tick_ms: 50,
+            tick_stats: Default::default(),
             shutdown_in_secs: None,
         };
         view.apply(

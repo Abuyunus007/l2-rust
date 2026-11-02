@@ -59,6 +59,8 @@ pub struct World {
     pub(crate) doors: HashMap<ObjectId, Door>,
     /// Java `GameTimeTaskManager._isNight`; `None` while the game clock is off.
     pub(crate) game_clock_night: Option<bool>,
+    /// The measured duration of the last ticks (M9-H02), fed by the runner.
+    pub(crate) tick_stats: crate::tick_stats::TickStats,
     /// The loaded geodata (M3-GEO-03); `None` in tests that need none. Immutable, shared with
     /// the path workers (D-14).
     pub(crate) geo: Option<Arc<l2_geo::GeoEngine>>,
@@ -216,6 +218,7 @@ impl World {
             admin: crate::admin::AdminWorld::default(),
             doors: HashMap::new(),
             game_clock_night: None,
+            tick_stats: crate::tick_stats::TickStats::default(),
             geo: None,
             path_requests: None,
             next_path_request_id: 0,
@@ -318,6 +321,11 @@ impl World {
     // there either; callers clamp to one second.
     pub fn set_autosave_interval(&mut self, interval: Duration) {
         self.autosave_ticks = TimerWheel::duration_to_ticks(interval);
+    }
+
+    /// Records how long one `tick()` really took (the runner measures it; M9-H02).
+    pub fn record_tick_duration(&mut self, took: Duration) {
+        self.tick_stats.record(took);
     }
 
     /// Ticks since the world started.

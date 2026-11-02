@@ -293,6 +293,17 @@ pub struct GamePlayer {
     pub z: i32,
 }
 
+/// How long the world's ticks really took (M9-H02), against the nominal `tick_ms`.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TickStats {
+    /// Mean duration in microseconds.
+    pub avg_us: u32,
+    /// 99th percentile in microseconds.
+    pub p99_us: u32,
+    /// How many ticks the two numbers are over (0: nothing measured yet).
+    pub samples: u32,
+}
+
 /// What `//serverinfo` shows (G-03).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct GameInfo {
@@ -304,6 +315,9 @@ pub struct GameInfo {
     /// World ticks since the start, and the length of one tick in milliseconds.
     pub ticks: u64,
     pub tick_ms: u32,
+    /// The measured tick duration over the last samples (M9-H02). Zeros from an older server.
+    #[serde(default)]
+    pub tick_stats: TickStats,
     /// The countdown of a running shutdown, in seconds.
     pub shutdown_in_secs: Option<u32>,
 }
@@ -688,11 +702,16 @@ mod tests {
                             threads: 8,
                             ticks: 100,
                             tick_ms: 50,
+                            tick_stats: TickStats {
+                                avg_us: 1200,
+                                p99_us: 4000,
+                                samples: 1200,
+                            },
                             shutdown_in_secs: None,
                         },
                     },
                 },
-                r#"{"type":"response","id":9,"response":{"kind":"game_info","info":{"uptime_secs":5,"online":2,"memory_bytes":1024,"threads":8,"ticks":100,"tick_ms":50,"shutdown_in_secs":null}}}"#,
+                r#"{"type":"response","id":9,"response":{"kind":"game_info","info":{"uptime_secs":5,"online":2,"memory_bytes":1024,"threads":8,"ticks":100,"tick_ms":50,"tick_stats":{"avg_us":1200,"p99_us":4000,"samples":1200},"shutdown_in_secs":null}}}"#,
             ),
             (
                 Message::Request {

@@ -70,6 +70,10 @@ pub struct ServerInfo {
     pub memory_bytes: u64,
     pub ticks: u64,
     pub tick_ms: u32,
+    /// The measured duration of `World::tick` over the last samples, in microseconds (M9-H02).
+    pub tick_avg_us: u32,
+    pub tick_p99_us: u32,
+    pub tick_samples: u32,
     /// Seconds left of a running shutdown or restart countdown.
     pub shutdown_in_secs: Option<u32>,
 }
@@ -212,6 +216,9 @@ impl World {
             memory_bytes: super::control::used_memory_bytes(),
             ticks: self.tick,
             tick_ms: u32::try_from(tick_ms).unwrap_or(u32::MAX),
+            tick_avg_us: self.tick_stats.average_us(),
+            tick_p99_us: self.tick_stats.p99_us(),
+            tick_samples: self.tick_stats.samples(),
             shutdown_in_secs: counting.then(|| u32::try_from(ctl.shutdown.seconds).unwrap_or(0)),
         }
     }
