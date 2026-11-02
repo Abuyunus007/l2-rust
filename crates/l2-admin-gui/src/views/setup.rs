@@ -22,6 +22,7 @@ use super::setup_core::{
     self as core, Check, CopyPlan, DbTest, Form, Layout, LayoutKind, Status, count_geodata, execute_copy,
     plan_copy, run_checks,
 };
+use super::switch::SwitchAssistant;
 use crate::app::AppCtx;
 use crate::bridge::BridgeEvent;
 use crate::launch::{self, LaunchState};
@@ -78,6 +79,7 @@ struct State {
     starting: Starting,
     checks: Vec<Check>,
     checked_at: Option<Instant>,
+    switch: SwitchAssistant,
 }
 
 impl SetupView {
@@ -123,6 +125,7 @@ impl State {
             starting: Starting::default(),
             checks: Vec::new(),
             checked_at: None,
+            switch: SwitchAssistant::default(),
         }
     }
 
@@ -239,12 +242,16 @@ impl View for SetupView {
                 egui::CollapsingHeader::new("5. Check and start")
                     .default_open(true)
                     .show(ui, |ui| state.step_check(ui, &layout, cx));
+                egui::CollapsingHeader::new("6. Switch to Rust (M9)")
+                    .default_open(false)
+                    .show(ui, |ui| state.switch.ui(ui, &layout, cx));
             });
         state.question_window(ui.ctx());
     }
 
     fn on_event(&mut self, event: &BridgeEvent) {
         let Some(state) = &mut self.state else { return };
+        state.switch.on_event(event);
         if let BridgeEvent::Response { id, result } = event
             && let Some((inflight, name)) = state.starting.inflight
             && inflight == *id

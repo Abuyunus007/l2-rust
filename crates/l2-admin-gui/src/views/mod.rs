@@ -24,6 +24,8 @@ pub mod players;
 pub mod servers;
 pub mod setup;
 pub mod setup_core;
+pub mod switch;
+pub mod switch_core;
 
 use crate::app::AppCtx;
 use crate::bridge::BridgeEvent;
