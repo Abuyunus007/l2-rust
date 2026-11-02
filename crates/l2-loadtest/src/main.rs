@@ -7,7 +7,9 @@ use l2_loadtest::report;
 #[tokio::main]
 async fn main() -> ExitCode {
     tracing_subscriber::fmt()
-        .with_env_filter(tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()))
+        .with_env_filter(
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
+        )
         .init();
     // The fake clients panic when a bot goes wrong; `run` counts those panics with their message,
     // so the default hook's output (2000 backtraces) is only noise.

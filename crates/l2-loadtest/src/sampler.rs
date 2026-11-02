@@ -168,7 +168,12 @@ mod tests {
     async fn fake_endpoint(token: &str) -> String {
         let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
         let addr = listener.local_addr().unwrap().to_string();
-        tokio::spawn(serve(listener, "game".into(), Token::new(token), Arc::new(FakeGame)));
+        tokio::spawn(serve(
+            listener,
+            "game".into(),
+            Token::new(token),
+            Arc::new(FakeGame),
+        ));
         addr
     }
 

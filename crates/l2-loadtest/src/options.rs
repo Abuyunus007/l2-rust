@@ -156,9 +156,18 @@ mod tests {
 
     #[test]
     fn refuses_nonsense() {
-        assert!(matches!(options("nohost").validate(), Err(OptionsError::BadLogin(_))));
-        assert!(matches!(options(":2106").validate(), Err(OptionsError::BadLogin(_))));
-        assert!(matches!(options("h:99999").validate(), Err(OptionsError::BadLogin(_))));
+        assert!(matches!(
+            options("nohost").validate(),
+            Err(OptionsError::BadLogin(_))
+        ));
+        assert!(matches!(
+            options(":2106").validate(),
+            Err(OptionsError::BadLogin(_))
+        ));
+        assert!(matches!(
+            options("h:99999").validate(),
+            Err(OptionsError::BadLogin(_))
+        ));
         let mut o = options("h:1");
         o.count = 0;
         assert_eq!(o.validate(), Err(OptionsError::NoBots));

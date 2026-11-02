@@ -103,7 +103,11 @@ fn timing_row(out: &mut String, label: &str, s: Option<Summary>) {
 pub fn summary_table(o: &Outcome) -> String {
     let mut out = String::new();
     let _ = writeln!(out, "l2-loadtest summary ({:.0} s)", o.elapsed_secs);
-    let _ = writeln!(out, "  bots requested / started   {} / {}", o.requested, o.started);
+    let _ = writeln!(
+        out,
+        "  bots requested / started   {} / {}",
+        o.requested, o.started
+    );
     let _ = writeln!(out, "  logged in (PlayOk)         {}", o.logged_in);
     let _ = writeln!(
         out,
@@ -285,7 +289,11 @@ mod tests {
 
     #[test]
     fn the_worst_sample_counts() {
-        let o = outcome(vec![sample(5.0, admin(10_000)), sample(10.0, admin(70_000)), sample(15.0, None)]);
+        let o = outcome(vec![
+            sample(5.0, admin(10_000)),
+            sample(10.0, admin(70_000)),
+            sample(15.0, None),
+        ]);
         assert_eq!(o.worst_tick_p99_us(), Some(70_000));
         assert_eq!(o.verdict(), Verdict::Fail);
     }
@@ -297,13 +305,19 @@ mod tests {
         let table = summary_table(&o);
         assert!(table.contains("bots requested / started   5 / 5"), "{table}");
         assert!(table.contains("peak 5 at once, 1 restarts"), "{table}");
-        assert!(table.contains("tick p99, worst sample   12.0 ms (limit 50 ms)"), "{table}");
+        assert!(
+            table.contains("tick p99, worst sample   12.0 ms (limit 50 ms)"),
+            "{table}"
+        );
         assert!(table.contains("3 x login failed"), "{table}");
         assert!(summary_table(&outcome(vec![])).contains("UNCHECKED"));
     }
 
     #[test]
     fn the_csv_goes_next_to_the_report() {
-        assert_eq!(csv_path(Path::new("out/run1.txt")), PathBuf::from("out/run1.txt.csv"));
+        assert_eq!(
+            csv_path(Path::new("out/run1.txt")),
+            PathBuf::from("out/run1.txt.csv")
+        );
     }
 }

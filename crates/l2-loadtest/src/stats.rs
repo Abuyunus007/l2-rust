@@ -131,10 +131,12 @@ impl Stats {
         // Never below zero, whatever the order of calls.
         let mut current = self.in_world.load(Ordering::Relaxed);
         while current > 0 {
-            match self
-                .in_world
-                .compare_exchange_weak(current, current - 1, Ordering::Relaxed, Ordering::Relaxed)
-            {
+            match self.in_world.compare_exchange_weak(
+                current,
+                current - 1,
+                Ordering::Relaxed,
+                Ordering::Relaxed,
+            ) {
                 Ok(_) => break,
                 Err(actual) => current = actual,
             }
@@ -144,7 +146,13 @@ impl Stats {
     /// Counts one failed bot and remembers why (the text is cut, equal texts are counted).
     pub fn record_error(&self, text: &str) {
         self.errors.fetch_add(1, Ordering::Relaxed);
-        let key: String = text.lines().next().unwrap_or("").chars().take(MAX_ERROR_CHARS).collect();
+        let key: String = text
+            .lines()
+            .next()
+            .unwrap_or("")
+            .chars()
+            .take(MAX_ERROR_CHARS)
+            .collect();
         if let Ok(mut errors) = self.error_texts.lock() {
             *errors.entry(key).or_insert(0) += 1;
         }
@@ -182,7 +190,10 @@ mod tests {
     fn summary_of_one_to_hundred() {
         let values: Vec<u32> = (1..=100).collect();
         let s = Summary::of(&values).unwrap();
-        assert_eq!((s.count, s.min, s.avg, s.p50, s.p99, s.max), (100, 1, 50, 50, 99, 100));
+        assert_eq!(
+            (s.count, s.min, s.avg, s.p50, s.p99, s.max),
+            (100, 1, 50, 50, 99, 100)
+        );
         assert_eq!(Summary::of(&[]), None);
         let one = Summary::of(&[7]).unwrap();
         assert_eq!((one.min, one.p50, one.p99, one.max), (7, 7, 7, 7));

@@ -142,7 +142,9 @@ impl Seen {
                     && self.monsters.len() < MAX_MONSTERS
                     && !self.monsters.iter().any(|m| m.object_id == npc.object_id)
                 {
-                    self.monsters.push(Monster { object_id: npc.object_id });
+                    self.monsters.push(Monster {
+                        object_id: npc.object_id,
+                    });
                 }
             }
             "DIE" => self.died = true,
@@ -275,7 +277,8 @@ pub async fn run_bot(ctx: BotContext) -> Result<BotEnd, String> {
                 stats.packets_tx.fetch_add(1, Ordering::Relaxed);
             }
             Action::Chat => {
-                game.say(CHAT_ALL, &format!("hello {}", rng.below(1000)), None).await;
+                game.say(CHAT_ALL, &format!("hello {}", rng.below(1000)), None)
+                    .await;
                 stats.packets_tx.fetch_add(1, Ordering::Relaxed);
             }
             Action::Combat => {
@@ -289,7 +292,8 @@ pub async fn run_bot(ctx: BotContext) -> Result<BotEnd, String> {
                     pos = target;
                     stats.packets_tx.fetch_add(1, Ordering::Relaxed);
                 } else {
-                    let pick = seen.monsters[usize::try_from(rng.below(seen.monsters.len() as u64)).unwrap_or(0)];
+                    let pick =
+                        seen.monsters[usize::try_from(rng.below(seen.monsters.len() as u64)).unwrap_or(0)];
                     // The first click targets, the attack request after it hits.
                     game.click(pick.object_id, pos).await;
                     game.attack(pick.object_id, pos).await;

@@ -85,7 +85,10 @@ pub async fn run(options: &Options) -> Result<Outcome, RunError> {
     for index in 0..options.count {
         let due = started + Duration::from_secs_f64(f64::from(index) / options.ramp);
         if due >= deadline {
-            warn!("the ramp is longer than --duration: bots {}.. are not started", index + 1);
+            warn!(
+                "the ramp is longer than --duration: bots {}.. are not started",
+                index + 1
+            );
             break;
         }
         tokio::time::sleep_until(tokio::time::Instant::from_std(due)).await;
