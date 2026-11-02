@@ -459,6 +459,24 @@ impl World {
                 let was_trader = self.release_offline_trader_quietly(object_id);
                 done(was_trader);
             }
+            WorldCommand::ReleaseOfflineSameAccount {
+                object_id,
+                trader,
+                play,
+                done,
+            } => {
+                let released = self.release_offline_same_account(object_id, trader, play);
+                done(released);
+            }
+            WorldCommand::OfflinePlaySelectCheck {
+                object_id,
+                ip,
+                access_level,
+                done,
+            } => {
+                let page = self.offline_play_select_refusal(object_id, ip, access_level);
+                done(page);
+            }
             WorldCommand::ReleaseOfflineAccount { account, done } => {
                 let released = self.release_offline_account(&account);
                 done(released);
@@ -547,6 +565,9 @@ impl World {
                 content,
             } => self.on_html_file_loaded(requester, &path, content),
             WorldCommand::SpawnsReloaded { spawns } => self.on_spawns_reloaded(spawns),
+            WorldCommand::FakePlayerChatReloaded { requester, chat } => {
+                self.on_fake_player_chat_reloaded(requester, chat);
+            }
             WorldCommand::LoginServerRegistered { name } => self.on_login_server_registered(name),
             WorldCommand::SevenSignsLoaded { result, then } => self.on_seven_signs_loaded(result, then),
             WorldCommand::ClassIndexLoaded {
@@ -558,6 +579,8 @@ impl World {
             WorldCommand::Shutdown { done } => {
                 // Java `Shutdown`: the offline shops are stored before the players are disconnected.
                 self.offline_store_offliners();
+                // Java `Shutdown`: `OfflinePlayTable.storeOfflineGroups()` (M9-L01).
+                self.offline_play_store_groups();
                 let online: Vec<ObjectId> = self.players.keys().copied().collect();
                 info!("World shutting down, storing {} player(s).", online.len());
                 for id in online {

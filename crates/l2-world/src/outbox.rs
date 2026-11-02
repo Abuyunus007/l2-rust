@@ -219,6 +219,9 @@ pub enum PersistCommand {
     /// A write of the offline trade tables with Java's statements (`OfflineTraderTable`, M6-FU-14,
     /// see `trade/offline.rs`). Only sent with `OfflineTradeDatabaseWrites` (D-52).
     OfflineTrade(crate::trade::OfflineTradeWrite),
+    /// A write of the offline play tables with Java's statements (`OfflinePlayTable`, M9-L01, see
+    /// `custom/offline_play.rs`). Only sent with `OfflineTradeDatabaseWrites` (D-52).
+    OfflinePlay(crate::custom::offline_play::OfflinePlayWrite),
     /// A row write of the item auctions with Java's statement (`item_auction`,
     /// `item_auction_bid`), see `item_auction/` (L-05). The global ones are sent only with
     /// `CycleDatabaseWrites` (D-53).
@@ -406,6 +409,10 @@ pub enum ControlRequest {
     /// `//respawnall`, `//spawn_reload`: read the spawn files again (Java `SpawnData.load()`). The
     /// answer comes back as `WorldCommand::SpawnsReloaded`.
     ReloadSpawns,
+    /// `//reload fakeplayerchat`: read `data/FakePlayerChatData.xml` again (Java
+    /// `FakePlayerChatManager.load()`). The answer comes back as
+    /// `WorldCommand::FakePlayerChatReloaded` (M9-L01).
+    ReloadFakePlayerChat { requester: l2_util::ObjectId },
     /// `SpawnData.addNewSpawn`: write the spawn of an admin command into the spawn file of its map
     /// tile (`data/spawns/Others/<x>_<y>.xml`, under the server's own folder).
     StoreSpawn { spawn: l2_data::spawn_store::NewSpawn },

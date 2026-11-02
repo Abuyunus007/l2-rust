@@ -123,6 +123,7 @@ use l2_world::{
     NobleRow, NobleStats, OlympiadData, OlympiadLoad, OlympiadRereadRequest, OlympiadRereadRows,
     OlympiadWrite,
 };
+use l2_world::{OfflinePlayGroup, OfflinePlayRestore, OfflinePlayWrite};
 use l2_world::{OfflineSettings, OfflineTradeLine, OfflineTradeRow, OfflineTradeStatus, OfflineTradeWrite};
 use tokio::sync::mpsc::{UnboundedReceiver, UnboundedSender};
 use tokio::sync::oneshot;
@@ -452,6 +453,14 @@ pub trait PlayerStore: Send + 'static {
     fn store_offline_trade(
         &mut self,
         _write: &OfflineTradeWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// A write of the offline play tables (Java `OfflinePlayTable`, M9-L01).
+    fn store_offline_play(
+        &mut self,
+        _write: &OfflinePlayWrite,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
     }
@@ -1361,6 +1370,12 @@ async fn run<S: PlayerStore>(
                     error!("Offline trade data could NOT be stored: {e}");
                 }
             }
+            OutboxMessage::Persist(PersistCommand::OfflinePlay(write)) => {
+                // Java logs a failed statement and goes on (no retry).
+                if let Err(e) = store.store_offline_play(&write).await {
+                    error!("Offline play data could NOT be stored: {e}");
+                }
+            }
             OutboxMessage::Persist(PersistCommand::Bookmark(write)) => {
                 // Java logs a failed bookmark statement and goes on (no retry).
                 if let Err(e) = store.store_bookmark_write(&write).await {
@@ -2179,6 +2194,70 @@ pub async fn load_offline_traders(
         ));
     }
     traders
+}
+
+/// Java `OfflinePlayTable.restoreOfflinePlayers`, the database half: the characters of
+/// `character_offline_play` with their rows, each loaded like at `CharacterSelect`, and the
+/// groups of `character_offline_play_group`. Only reads (D-39); the world puts them together
+/// (`World::restore_offline_players`) and clears the group table.
+pub async fn load_offline_players(pool: &Pool) -> (Vec<OfflinePlayRestore>, Vec<OfflinePlayGroup>) {
+    use crate::client::enter::{DbPlayerLoader, PlayerLoader};
+    let repo = l2_db::OfflinePlayRepository::new(pool.clone());
+    let characters = CharacterRepository::new(pool.clone());
+    let loader = DbPlayerLoader::new(pool.clone());
+    let ids = match repo.load_player_ids().await {
+        Ok(ids) => ids,
+        Err(e) => {
+            warn!("OfflinePlayTable: Error while loading offline auto players. {e}");
+            return (Vec::new(), Vec::new());
+        }
+    };
+    let mut players = Vec::new();
+    for char_id in ids {
+        let account = match characters.restore_character(char_id).await {
+            Ok(Some(row)) => row.account_name.unwrap_or_default(),
+            _ => {
+                warn!("OfflinePlayTable: Error loading auto player: the character {char_id} is not there.");
+                continue;
+            }
+        };
+        let data = match loader.load_player(&account, char_id).await {
+            Ok(data) => data,
+            Err(e) => {
+                warn!("OfflinePlayTable: Error loading auto player {char_id}: {e}");
+                continue;
+            }
+        };
+        let rows = match repo.load_player(char_id).await {
+            Ok(rows) => rows.into_iter().map(|r| (i32::from(r.kind), r.id)).collect(),
+            Err(e) => {
+                warn!("OfflinePlayTable: Error loading auto player {char_id}: {e}");
+                continue;
+            }
+        };
+        players.push(OfflinePlayRestore { data, rows });
+    }
+    let mut groups = Vec::new();
+    match repo.load_group_leader_ids().await {
+        Ok(leaders) => {
+            for leader in leaders {
+                match repo.load_group_members(leader).await {
+                    Ok(members) => groups.push(OfflinePlayGroup {
+                        leader: ObjectId(leader),
+                        members: members
+                            .into_iter()
+                            .filter_map(|m| {
+                                Some((ObjectId(i32::try_from(m.char_id).ok()?), i32::from(m.kind)))
+                            })
+                            .collect(),
+                    }),
+                    Err(e) => warn!("OfflinePlayTable: Error while restoring offline groups. {e}"),
+                }
+            }
+        }
+        Err(e) => warn!("OfflinePlayTable: Error while restoring offline groups. {e}"),
+    }
+    (players, groups)
 }
 
 /// Java `BotReportTable.loadReportedCharData`, the database half: the rows of
@@ -4118,6 +4197,7 @@ pub struct DbStore {
     auctions: AuctionRepository,
     bot_reports: BotReportRepository,
     offline_trades: OfflineTradeRepository,
+    offline_plays: l2_db::OfflinePlayRepository,
     announcements: AnnouncementRepository,
     wedding: l2_db::WeddingRepository,
     seven_signs: l2_db::SevenSignsRepository,
@@ -4229,7 +4309,8 @@ impl DbStore {
             premium: l2_db::PremiumRepository::new(pool.clone()),
             buffer_schemes: l2_db::BufferSchemeRepository::new(pool.clone()),
             lottery: LotteryRepository::new(pool.clone()),
-            offline_trades: OfflineTradeRepository::new(pool),
+            offline_trades: OfflineTradeRepository::new(pool.clone()),
+            offline_plays: l2_db::OfflinePlayRepository::new(pool),
             punishment_ids: HashMap::new(),
             baselines: HashMap::new(),
             rows_written: HashSet::new(),
@@ -5443,6 +5524,35 @@ impl PlayerStore for DbStore {
                 repo.clear_player_items(char_id.0).await?;
                 repo.clear_player_status(char_id.0).await?;
             }
+        }
+        Ok(())
+    }
+
+    async fn store_offline_play(&mut self, write: &OfflinePlayWrite) -> Result<(), PersistError> {
+        let repo = &self.offline_plays;
+        match write {
+            // Java `storeOfflinePlay`: the old rows go, the new ones are written; a failed line is
+            // logged and the others go on.
+            OfflinePlayWrite::Store { char_id, rows } => {
+                repo.remove_player(char_id.0).await?;
+                for (kind, id) in rows {
+                    if let Err(e) = repo.insert_player(char_id.0, *kind, *id).await {
+                        warn!(
+                            "OfflinePlayTable: Error while saving offline auto player {}: {e}",
+                            char_id.0
+                        );
+                    }
+                }
+            }
+            // Java `removeOfflinePlay`.
+            OfflinePlayWrite::Remove { char_id } => repo.remove_player(char_id.0).await?,
+            // Java `storeOfflineGroups`.
+            OfflinePlayWrite::StoreGroups(rows) => {
+                for (leader, member, kind) in rows {
+                    repo.insert_group_member(leader.0, member.0, *kind).await?;
+                }
+            }
+            OfflinePlayWrite::ClearGroups => repo.clear_groups().await?,
         }
         Ok(())
     }
@@ -6922,6 +7032,7 @@ mod tests {
         /// One bot report row: bot, reporter, date (M6-FU-09).
         BotReport(i32, i32, i64),
         OfflineTrade(OfflineTradeWrite),
+        OfflinePlay(OfflinePlayWrite),
         /// The read of an offline owner's pet and inventory rows (M6-FU-09).
         OfflinePetRows(i32),
         /// A recipe book row.
@@ -7155,6 +7266,11 @@ mod tests {
 
         async fn store_offline_trade(&mut self, write: &OfflineTradeWrite) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::OfflineTrade(write.clone()));
+            Ok(())
+        }
+
+        async fn store_offline_play(&mut self, write: &OfflinePlayWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::OfflinePlay(write.clone()));
             Ok(())
         }
 
@@ -7839,6 +7955,37 @@ mod tests {
                 ..
             }
         ));
+    }
+
+    /// M9-L01: the offline play writes go to the store in order.
+    #[tokio::test]
+    async fn offline_play_writes_are_applied_in_order() {
+        let store = OfflinePlayWrite::Store {
+            char_id: ObjectId(7),
+            rows: vec![(0, 1463), (3, 11)],
+        };
+        let groups = OfflinePlayWrite::StoreGroups(vec![(ObjectId(7), ObjectId(8), 1)]);
+        let (calls, _) = run_all(
+            Recording::default(),
+            vec![
+                OutboxMessage::Persist(PersistCommand::OfflinePlay(store.clone())),
+                OutboxMessage::Persist(PersistCommand::OfflinePlay(OfflinePlayWrite::Remove {
+                    char_id: ObjectId(7),
+                })),
+                OutboxMessage::Persist(PersistCommand::OfflinePlay(groups.clone())),
+                OutboxMessage::Persist(PersistCommand::OfflinePlay(OfflinePlayWrite::ClearGroups)),
+            ],
+        )
+        .await;
+        assert_eq!(
+            calls,
+            vec![
+                Call::OfflinePlay(store),
+                Call::OfflinePlay(OfflinePlayWrite::Remove { char_id: ObjectId(7) }),
+                Call::OfflinePlay(groups),
+                Call::OfflinePlay(OfflinePlayWrite::ClearGroups),
+            ]
+        );
     }
 
     /// M6-FU-14: the offline trade writes go to the store in order with the other commands, and a

@@ -633,6 +633,50 @@ fn action_22_sends_the_servitor_at_the_owners_target() {
     assert_eq!(s.world.attack_target_of(summon), Some(mob));
 }
 
+/// M9-L01: `PetSkillData.getKnownSkills(summon)` is in the `.playskills` list of an auto player,
+/// once, with level `max(level, 1)`; a skill only the pet knows is never toggled (Java's `break`).
+#[test]
+fn auto_play_lists_the_pet_skills_of_pet_skill_data() {
+    let mut s = Scene::new(vec![ore(10)]);
+    let root = tempfile::tempdir().unwrap();
+    let file = root.path().join("data/html/mods/AutoPlay/Skills.htm");
+    std::fs::create_dir_all(file.parent().unwrap()).unwrap();
+    std::fs::write(file, "<html><body>%skills%</body></html>").unwrap();
+    s.world
+        .set_html_cache(Arc::new(l2_data::HtmCache::load(root.path(), false)));
+    s.world.set_auto_play_rules(AutoPlayRules {
+        enable_auto_play: true,
+        ..AutoPlayRules::default()
+    });
+    let say = |s: &mut Scene, text: &str| {
+        s.world.handle(WorldCommand::Input {
+            session: SessionId(1),
+            input: ClientInput::Say {
+                chat_type: 0,
+                text: text.to_owned(),
+                target: None,
+            },
+        });
+    };
+    let summon = s.summon();
+    assert_eq!(s.world.pet_known_skills(summon), vec![SkillKey::new(5110, 1)]);
+    assert_eq!(
+        s.world.pet_known_skill(summon, 5110),
+        Some(SkillKey::new(5110, 1))
+    );
+    assert_eq!(s.world.pet_known_skill(summon, 9999), None);
+    s.me.take();
+    say(&mut s, ".playskills");
+    let out = s.me.take();
+    let pages = of(&out, "NPC_HTML_MESSAGE");
+    assert_eq!(pages.len(), 1);
+    let page = decode::<l2_protocol_game::server::NpcHtmlMessage>(pages[0]).html;
+    assert!(page.contains("Cannon Fodder"), "{page}");
+    // The skill is the pet's only: the toggle does nothing and sends no page.
+    say(&mut s, ".playskills 1 5110");
+    assert!(of(&s.me.take(), "NPC_HTML_MESSAGE").is_empty());
+}
+
 /// The skill actions: 45 (`HealMagic` of the template's parameters, on the owner) and 1039 (skill
 /// 5110, the level from `PetSkillData`: level 0 = `22 / 10` for a level 22 summon).
 /// `SummonAI.thinkCast` stops following (`setFollowStatus(false)`, `setIntentionIdle()`) before

@@ -727,6 +727,38 @@ fn reload_answers_what_it_cannot_do() {
     assert!(texts[1].starts_with("WARNING: There are several known issues"));
 }
 
+/// M9-L01: `//reload fakeplayerchat` asks the server to read `FakePlayerChatData.xml`; the answer
+/// tells the GMs (even with the fake players off, like Java's unconditional message) and ends with
+/// the warning.
+#[test]
+fn fake_player_chat_is_read_by_the_server_and_the_gms_hear_it() {
+    let mut s = Scene::new();
+    for id in [GM, GM2] {
+        s.enter(id);
+    }
+    s.outs.take();
+    s.log.take();
+
+    s.cmd(GM, "reload fakeplayerchat");
+    assert_eq!(
+        controls(&s.outs.take()),
+        [ControlRequest::ReloadFakePlayerChat {
+            requester: ObjectId(GM)
+        }]
+    );
+    // Nothing is said before the file is read.
+    assert!(texts_to(&s.log.take(), GM).is_empty());
+    s.world.handle(WorldCommand::FakePlayerChatReloaded {
+        requester: ObjectId(GM),
+        chat: Vec::new(),
+    });
+    let out = s.log.take();
+    let texts = texts_to(&out, GM);
+    assert_eq!(texts[0], "P100: Reloaded Fake Player Chat data.");
+    assert!(texts[1].starts_with("WARNING: There are several known issues"));
+    assert!(texts_to(&out, GM2).contains(&"P100: Reloaded Fake Player Chat data.".to_owned()));
+}
+
 #[test]
 fn html_is_read_by_the_server_and_swapped_in() {
     let mut s = Scene::new();

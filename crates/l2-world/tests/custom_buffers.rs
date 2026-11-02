@@ -1224,3 +1224,103 @@ fn sell_buffs_add_start_buy_and_stop() {
     assert_eq!(s.world.private_store_type(ObjectId(A)), PrivateStoreType::None);
     assert!(board_page(&out, A).unwrap().starts_with("<html>MENU"));
 }
+
+/// M9-L01: a buff seller who logs out stays as an offline trader (type 9, `SELL_BUFFS`) under the
+/// offline trade switch, its skills go to the table as lines with count 0, and a restore brings
+/// the shop back as a package sale with `isSellingBuffs()`.
+#[test]
+fn a_buff_seller_is_stored_and_restored_like_an_offline_trader() {
+    let offline = |database_writes| OfflineSettings {
+        offline_trade_enable: true,
+        database_writes,
+        ..OfflineSettings::default()
+    };
+    let mut s = Scene::new();
+    s.shop(true);
+    s.world.set_offline_settings(offline(true));
+    s.enter(pdata(A, 40, 0, &[1040]));
+    s.say(A, ".sellbuff");
+    s.bypass(A, "sellbuffadd");
+    s.bypass(A, "sellbuffaddskill 1040 200");
+    s.bypass(A, "voice .sellbuff");
+    s.bypass(A, "sellbuffstart cheap buffs");
+    assert!(
+        s.world.is_selling_buffs(ObjectId(A)),
+        "{:?}",
+        texts(&s.log.take(), A)
+    );
+    s.log.take();
+    s.input(A, ClientInput::Logout);
+    let out = s.log.take();
+    assert!(s.world.is_offline_trader(ObjectId(A)));
+    let status = out.iter().find_map(|o| match o {
+        Out::Persist(PersistCommand::OfflineTrade(OfflineTradeWrite::Transaction {
+            items,
+            status: Some(status),
+            ..
+        })) => Some((items.clone(), status.clone())),
+        _ => None,
+    });
+    let (items, status) = status.expect("the first call writes the shop");
+    assert_eq!(status.store_type, 9);
+    assert_eq!(status.title.as_deref(), Some("BUFF SELL: cheap buffs "));
+    assert_eq!(
+        items,
+        vec![OfflineTradeLine {
+            item: 1040,
+            count: 0,
+            price: 200
+        }]
+    );
+
+    // A restore (a start with `OfflineTradeDatabaseWrites`) brings the seller back.
+    let mut t = Scene::new();
+    t.shop(true);
+    t.world.set_offline_settings(offline(true));
+    t.world.restore_offline_traders(vec![(
+        pdata(A, 40, 0, &[1040]),
+        OfflineTradeRow {
+            char_id: ObjectId(A),
+            status,
+            items,
+        },
+    )]);
+    assert!(t.world.is_offline_trader(ObjectId(A)));
+    assert!(t.world.is_selling_buffs(ObjectId(A)));
+    assert_eq!(
+        t.world.private_store_type(ObjectId(A)),
+        PrivateStoreType::PackageSell
+    );
+    assert_eq!(
+        t.world.selling_buffs(ObjectId(A)),
+        [SellBuffHolder {
+            skill_id: 1040,
+            price: 200
+        }]
+    );
+}
+
+/// Without `OfflineTradeDatabaseWrites` the buff seller stays in memory and writes no row (D-52).
+#[test]
+fn a_buff_seller_writes_no_row_without_the_switch() {
+    let mut s = Scene::new();
+    s.shop(true);
+    s.world.set_offline_settings(OfflineSettings {
+        offline_trade_enable: true,
+        ..OfflineSettings::default()
+    });
+    s.enter(pdata(A, 40, 0, &[1040]));
+    s.say(A, ".sellbuff");
+    s.bypass(A, "sellbuffadd");
+    s.bypass(A, "sellbuffaddskill 1040 200");
+    s.bypass(A, "voice .sellbuff");
+    s.bypass(A, "sellbuffstart cheap buffs");
+    s.log.take();
+    s.input(A, ClientInput::Logout);
+    let out = s.log.take();
+    assert!(s.world.is_offline_trader(ObjectId(A)));
+    assert!(
+        !out.iter()
+            .any(|o| matches!(o, Out::Persist(PersistCommand::OfflineTrade(_))))
+    );
+}

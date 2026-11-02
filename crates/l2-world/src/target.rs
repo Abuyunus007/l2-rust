@@ -569,6 +569,12 @@ impl World {
         if self.settings.player_movement_block_time_ms > 0 {
             self.update_not_move_until(player);
         }
+
+        // `if (npc.isFakePlayer() && canSeeTarget(player, npc)) player.getAI().setIntentionFollow(npc)`
+        // (M9-L01).
+        if self.is_fake_player(npc) && self.can_see_target(player, npc) {
+            self.set_intention_follow_player(player, npc);
+        }
     }
 
     /// `PlayerClick.onAction`.

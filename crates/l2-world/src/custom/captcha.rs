@@ -9,8 +9,7 @@
 // and hands them out in turn; here one picture is made per challenge (same code alphabet, same id
 // range). Java also sends a first `PledgeCrest` with a different random id and picture before the
 // one the window shows; that packet is never referred to and is not sent here.
-// Not ported: the kills of a player who is in auto play are not counted in Java (`AutoPlayConfig`);
-// the auto play of C02 is another feature and does not exist in this world yet.
+// The kills of a player who is in auto play are not counted, as in Java (M9-L01).
 
 use std::collections::HashMap;
 
@@ -71,6 +70,10 @@ impl World {
             return;
         };
         if !self.is_player(killer) || !self.is_monster(victim) {
+            return;
+        }
+        // "Check if auto-play is enabled and player is auto-playing."
+        if self.auto_play_enabled() && self.is_auto_playing(killer) {
             return;
         }
         if self.custom_misc.captcha.validation.contains_key(&killer) {
