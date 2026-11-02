@@ -60,7 +60,7 @@ Requests may be answered out of order. Match responses by `id`. An empty configu
 | `login_status_changed` | `server`, `status`: LoginStatus | a GS registers/disconnects or its status changes |
 
 ### Types
-- **ServerStatus:** `name`, `state` (`stopped` / `starting` / `running` / `stopping` / `crashed`), `pid`, `uptime_secs`, `last_exit_code`
+- **ServerStatus:** `name`, `state` (`stopped` / `starting` / `running` / `stopping` / `crashed`), `pid`, `uptime_secs`, `last_exit_code`, `last_error` (optional, omitted when null; G-06: the last ERROR/FATAL line of the output, else the last line, set when the process ended)
 - **LogLine:** `server`, `seq` (per server, increasing), `ts_ms`, `level` (`error` / `warn` / `info` / `debug` / `trace` / null), `target`, `message`
 - **LoginStatus:** `game_servers` (list of `id`, `name`, `authed`, `online`, `max_players`, `status`), `authed_clients`
 - **GameStatus:** `players`: list of GamePlayer, sorted by `name`. The list is the characters in the world now (not the accounts on the LS).

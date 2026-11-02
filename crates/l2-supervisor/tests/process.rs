@@ -45,6 +45,27 @@ async fn exit_one_means_crashed_and_is_not_restarted() {
 }
 
 #[tokio::test]
+async fn a_crash_carries_the_last_error_line() {
+    let (sup, _logs) = setup(vec![child_server("s", &["fail"])]);
+    let s = sup.get("s").unwrap();
+    let mut events = sup.subscribe_events();
+    s.start().await.unwrap();
+    let status = wait_state(s, ServerState::Crashed).await;
+    // The ERROR line wins over the plain line after it; the supervisor's own notes never count.
+    assert_eq!(status.last_error.as_deref(), Some("Access denied for user"));
+    let mut event_error = None;
+    while event_error.is_none() {
+        let event = tokio::time::timeout(WAIT, events.recv()).await.unwrap().unwrap();
+        if let l2_admin_api::Event::ServerStateChanged { status } = event
+            && status.state == ServerState::Crashed
+        {
+            event_error = status.last_error;
+        }
+    }
+    assert_eq!(event_error.as_deref(), Some("Access denied for user"));
+}
+
+#[tokio::test]
 async fn exit_two_restarts_the_process() {
     let marker = tempfile::tempdir().unwrap();
     let marker_file = marker.path().join("ran").to_string_lossy().into_owned();
