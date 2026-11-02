@@ -528,6 +528,8 @@ impl World {
         // the session read at `CharacterSelect` (S-API-01). Nothing between here and `QuestList`
         // reads them, so it runs before the packets are built.
         self.script_player_enter(id);
+        // "Faction System": the colours and the welcome (`Custom/FactionSystem.ini`, M9-C04).
+        self.faction_on_enter_world(id);
         // Macros, items, bookmarks, shortcuts, actions, hennas, quests, rotation, status icons,
         // storage limits, friends, the welcome message and the skill cool times.
         for bytes in self.enter_packets(id, now_ms) {
@@ -634,6 +636,8 @@ impl World {
         debug!("enter-world packets sent to {id}");
         // `PcCafePointsManager.run(player)` (M6-FU-11).
         self.pc_cafe_on_enter(id);
+        // `ON_PLAYER_LOGIN` of the custom features (premium, auto play, offline play; M9-C02).
+        self.custom_play_on_enter(id);
         // `ON_PLAYER_LOGIN`: `JailHandler.onPlayerLogin`.
         self.punishment_on_player_login(id);
         // EnterWorld's "Wedding checks" (M8-MISC-01).

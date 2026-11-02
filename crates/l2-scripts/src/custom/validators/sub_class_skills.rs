@@ -307,7 +307,12 @@ mod tests {
     }
 
     /// The scene of the switched-on checks: `SkillCheckEnable` (and `SkillCheckRemove`).
-    fn checking(remove: bool, skills: &[(i32, i32)], items: Vec<l2_world::ItemData>, vars: &[(&str, &str)]) -> ScriptTest {
+    fn checking(
+        remove: bool,
+        skills: &[(i32, i32)],
+        items: Vec<l2_world::ItemData>,
+        vars: &[(&str, &str)],
+    ) -> ScriptTest {
         let mut registry = ScriptRegistry::new();
         registry.add(SubClassSkills);
         let mut t = ScriptTest::new_with(registry, "", "", &[], |world, _| {
@@ -335,7 +340,9 @@ mod tests {
             })
             .collect();
         for (name, value) in vars {
-            data.profile.variables.insert((*name).to_owned(), (*value).to_owned());
+            data.profile
+                .variables
+                .insert((*name).to_owned(), (*value).to_owned());
         }
         t.enter_with(data);
         t.ticks(3);
@@ -351,11 +358,20 @@ mod tests {
     #[test]
     fn switched_on_a_cert_skill_without_its_variable_is_removed_and_a_proper_one_stays() {
         // 631 is a certificate of level 65 (`EmergentAbility65-1`), 637 has no variable.
-        let t = checking(true, &[(631, 1), (637, 1)], vec![], &[("EmergentAbility65-1", "631;")]);
+        let t = checking(
+            true,
+            &[(631, 1), (637, 1)],
+            vec![],
+            &[("EmergentAbility65-1", "631;")],
+        );
         assert!(knows(&t, 631), "the skill with its variable stays");
         assert!(!knows(&t, 637), "the skill without one is removed");
         // The state of the script is made on the check.
-        assert!(t.world.player_quests(Oid(1)).is_some_and(|q| q.contains("SubClassSkills")));
+        assert!(
+            t.world
+                .player_quests(Oid(1))
+                .is_some_and(|q| q.contains("SubClassSkills"))
+        );
     }
 
     #[test]

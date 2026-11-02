@@ -14,6 +14,8 @@ mod schema;
 
 pub use error::{DbError, Result};
 pub use game::PetitionFeedbackRepository;
+pub use game::PremiumRepository;
+pub use game::TransmogRepository;
 pub use game::{
     AccountDataRepository, AccountDataRow, VAR_PWD, VAR_WTE, crypt_secondary_password, sha1_digest,
 };
@@ -27,6 +29,7 @@ pub use game::{
     RaidPointsRow,
 };
 pub use game::{BotReportDbRow, BotReportRepository};
+pub use game::{BufferSchemeRepository, BufferSchemeRow};
 pub use game::{BuyListRepository, BuyListRow};
 pub use game::{
     CalendarDate, CharacterIdName, CharacterNameAccess, CharacterRepository, CharacterRow, CharacterUpdate,
@@ -43,7 +46,6 @@ pub use game::{
     RecommendationRepository, VariableRepository,
 };
 pub use game::{ColiseumBestTeamRow, UndergroundColiseumRepository};
-pub use game::TransmogRepository;
 pub use game::{CoupleRow, WeddingRepository, married_text};
 pub use game::{CrestRepository, CrestRow};
 pub use game::{
@@ -79,6 +81,7 @@ pub use game::{NewSummonSkillSave, SummonRepository, SummonSkillSaveRow};
 pub use game::{OfflineTradeItemRow, OfflineTradeRepository, OfflineTradeStatusRow};
 pub use game::{OlympiadDataRow, OlympiadFightRow, OlympiadNobleRow, OlympiadRepository};
 pub use game::{RandomSpawnRepository, RandomSpawnRow};
+pub use game::{RebirthRepository, RebirthRow};
 pub use game::{RecipeBookRow, RecipeRepository, RecipeShopRow};
 pub use game::{SubclassRepository, SubclassRow, SubclassValues};
 pub use login::{

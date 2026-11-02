@@ -1085,8 +1085,10 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                 Out::Persist(PersistCommand::BbsFavorite(_) | PersistCommand::BbsFavoriteRequest { .. }) => {
                     "community board"
                 }
+                Out::Persist(PersistCommand::BufferSchemes { .. }) => "buffer schemes",
                 Out::Persist(PersistCommand::Lottery(_) | PersistCommand::LotteryRequest { .. }) => "lottery",
                 Out::Persist(PersistCommand::Contact(_)) => "contact",
+                Out::Persist(PersistCommand::Rebirth(_)) => "rebirth",
                 Out::Persist(PersistCommand::FriendSummariesRequest { .. }) => "sync read",
                 Out::Persist(PersistCommand::Mail(_)) => "mail",
                 Out::Persist(
@@ -1110,10 +1112,16 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                 Out::Persist(
                     PersistCommand::DeleteItemsOfItemId { .. } | PersistCommand::BirthdayGiftsRequest { .. },
                 ) => "event",
+                Out::Persist(
+                    PersistCommand::TransmogLoadRequest { .. }
+                    | PersistCommand::TransmogSaveCollection { .. }
+                    | PersistCommand::ItemTransmog { .. },
+                ) => "transmog",
                 Out::Persist(PersistCommand::Cursed(_)) => "cursed",
                 Out::Persist(PersistCommand::Olympiad(_) | PersistCommand::OlympiadRereadRequest { .. }) => {
                     "olympiad"
                 }
+                Out::Persist(PersistCommand::Premium(_) | PersistCommand::PremiumRequest { .. }) => "premium",
                 Out::Persist(PersistCommand::Minigame(_)) => "minigame",
                 Out::Persist(PersistCommand::Vehicle(_)) => "vehicle",
                 Out::Persist(

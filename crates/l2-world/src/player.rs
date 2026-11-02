@@ -145,6 +145,9 @@ pub struct PlayerProfile {
     pub vitality_points: i32,
     /// `characters.pccafe_points` (M6-FU-11, `pccafe.rs`).
     pub pccafe_points: i32,
+    /// `characters.faction`: 0 none, 1 good, 2 evil (Java `_isGood` / `_isEvil`, M9-C04,
+    /// `custom/faction.rs`). Written back with every store, as Java does.
+    pub faction: i32,
     /// `characters.bookmarkslot`.
     pub bookmark_slot: i32,
     /// `characters.death_penalty_level`.
@@ -268,6 +271,10 @@ pub struct PlayerProfile {
     /// Java `Quest.playerEnter`); the world takes them at enter world, so snapshots never carry
     /// them.
     pub quests: crate::script::QuestLoad,
+    /// The `rebirth_system` row of the character (M9-C05, `custom/rebirth.rs`); the session
+    /// reads it with `Rebirth.ini` `RebirthAllow = True`, the world writes every change through
+    /// its own statements, so snapshots do not store it.
+    pub rebirth: crate::custom::rebirth::RebirthData,
 }
 
 impl Default for PlayerProfile {
@@ -278,6 +285,7 @@ impl Default for PlayerProfile {
             title_color: DEFAULT_TITLE_COLOR,
             vitality_points: 0,
             pccafe_points: 0,
+            faction: 0,
             bookmark_slot: 0,
             death_penalty_level: 0,
             exp_before_death: 0,
@@ -318,6 +326,7 @@ impl Default for PlayerProfile {
             seven_signs_to_store: None,
             instance_times: Vec::new(),
             quests: crate::script::QuestLoad::default(),
+            rebirth: crate::custom::rebirth::RebirthData::default(),
         }
     }
 }

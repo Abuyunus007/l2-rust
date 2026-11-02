@@ -346,8 +346,8 @@ impl World {
         match self.npcs.get(&npc).map(|n| n.class) {
             Some(NpcClass::RaidBoss) => self.settings.vitality.raidboss_use_vitality,
             Some(NpcClass::GrandBoss) => false,
-            // `!_champion || CHAMPION_ENABLE_VITALITY`: champions are not rolled.
-            _ => true,
+            // `!_champion || CHAMPION_ENABLE_VITALITY`.
+            _ => self.champion_allows_vitality(npc),
         }
     }
 

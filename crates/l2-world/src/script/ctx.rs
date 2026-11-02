@@ -461,12 +461,12 @@ impl<'w> ScriptCtx<'w> {
 
     /// Java `giveItemRandomly(player, npc, itemId, minAmount, maxAmount, limit, dropChance,
     /// playSound)`. `true` when the item was given and the limit is reached (or there is no
-    /// limit). Champions are not rolled in this server, so their bonus never applies.
+    /// limit). A champion `npc` raises the chance and the amounts (`ChampionMonsters.ini`).
     #[allow(clippy::too_many_arguments)]
     pub fn give_item_randomly(
         &mut self,
         player: ObjectId,
-        _npc: Option<ScriptNpc>,
+        npc: Option<ScriptNpc>,
         item_id: i32,
         min_amount: i64,
         max_amount: i64,
@@ -479,8 +479,18 @@ impl<'w> ScriptCtx<'w> {
             return true;
         }
         let multiplier = self.world.scripts.settings.quest_item_drop_amount_multiplier;
-        let min_with_bonus = (min_amount as f32 * multiplier) as i64;
-        let max_with_bonus = (max_amount as f32 * multiplier) as i64;
+        let mut min_with_bonus = (min_amount as f32 * multiplier) as i64;
+        let mut max_with_bonus = (max_amount as f32 * multiplier) as i64;
+        let mut drop_chance_with_bonus = drop_chance;
+        // `(npc != null) && CHAMPION_ENABLE && npc.isChampion()` (`custom/champion.rs`): the
+        // `long *= float` of Java is a float product narrowed back to a long.
+        if let Some((chance, amount)) =
+            npc.and_then(|n| self.world.champion_quest_drop_factors(n.object_id, item_id))
+        {
+            drop_chance_with_bonus *= f64::from(chance);
+            min_with_bonus = (min_with_bonus as f32 * amount) as i64;
+            max_with_bonus = (max_with_bonus as f32 * amount) as i64;
+        }
         let mut amount = if min_with_bonus == max_with_bonus {
             min_with_bonus
         } else {
@@ -488,7 +498,10 @@ impl<'w> ScriptCtx<'w> {
         };
         let random = self.world.rng().next_f64();
         // Inventory slot check (almost useless for non-stacking items).
-        if drop_chance >= random && amount > 0 && self.world.validate_capacity_by_item_id(player, item_id) {
+        if drop_chance_with_bonus >= random
+            && amount > 0
+            && self.world.validate_capacity_by_item_id(player, item_id)
+        {
             if limit > 0 && current + amount > limit {
                 amount = limit - current;
             }
@@ -585,8 +598,10 @@ impl<'w> ScriptCtx<'w> {
     // ------------------------------------------------------------------ exp
 
     /// Java `addExpAndSp(player, exp, sp)`: times the quest reward rates and the player's
-    /// `EXPSP_RATE`; the PC cafe points of the exp. Premium rates are M9.
+    /// `EXPSP_RATE`; the PC cafe points of the exp. The premium quest rates come first.
     pub fn add_exp_and_sp(&mut self, player: ObjectId, exp: i64, sp: i32) {
+        // Premium rates (`PREMIUM_RATE_QUEST_XP`, M9-C02).
+        let (exp, sp) = self.world.premium_quest_exp_sp(player, exp, sp);
         let rates = &self.world.scripts.settings;
         // `addExp * RATE_QUEST_REWARD_XP`: a long times a float is a float.
         let exp_rated = exp as f32 * rates.rate_quest_reward_xp;
@@ -681,6 +696,26 @@ impl<'w> ScriptCtx<'w> {
             parameters: Vec::new(),
         };
         self.world.broadcast_packet(npc.object_id, &packet);
+    }
+
+    /// Java `npc.broadcastSay(chatType, text, radius)`: `NpcSay` to the players within `radius`.
+    pub fn broadcast_npc_say_text_in_range(
+        &mut self,
+        npc: ScriptNpc,
+        chat: ChatType,
+        text: &str,
+        radius: i32,
+    ) {
+        let packet = NpcSay {
+            object_id: npc.object_id.0,
+            text_type: chat.client_id(),
+            npc_id: self.npc_display_id(npc),
+            npc_string: -1,
+            text: text.to_owned(),
+            parameters: Vec::new(),
+        };
+        self.world
+            .broadcast_packet_in_range(npc.object_id, &packet, radius);
     }
 
     /// `npc.getTemplate().getDisplayId()`.

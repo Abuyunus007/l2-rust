@@ -242,7 +242,9 @@ impl Script for CtF {
 
                 // Check if there are enough players to start the event.
                 if ctx.state::<CtfState>().player_list.len() < MINIMUM_PARTICIPANT_COUNT {
-                    ctx.broadcast_to_all_online_players("CtF Event: Event was canceled, not enough participants.");
+                    ctx.broadcast_to_all_online_players(
+                        "CtF Event: Event was canceled, not enough participants.",
+                    );
                     for participant in ctx.state::<CtfState>().player_list.clone() {
                         remove_listeners(ctx, participant);
                         ctx.world_mut().set_registered_on_event(participant, false);
@@ -345,7 +347,13 @@ impl Script for CtF {
                 }
 
                 // Send message.
-                arena::broadcast_screen_message(ctx, world, "Capture The Flag Event Started - Go to flags!", 5, true);
+                arena::broadcast_screen_message(
+                    ctx,
+                    world,
+                    "Capture The Flag Event Started - Go to flags!",
+                    5,
+                    true,
+                );
 
                 // Schedule finish.
                 for second in (1..=10).rev() {
@@ -394,7 +402,10 @@ impl Script for CtF {
                     arena::broadcast_screen_message(
                         ctx,
                         world,
-                        &format!("Team {} won the event by forfeit!", if blue_wins { "Blue" } else { "Red" }),
+                        &format!(
+                            "Team {} won the event by forfeit!",
+                            if blue_wins { "Blue" } else { "Red" }
+                        ),
                         7,
                         true,
                     );
@@ -518,7 +529,8 @@ impl Script for CtF {
                     }
                     ctx.world_mut().set_on_event(player, false);
                     remove_listeners(ctx, player);
-                    ctx.world().send_message(player, "You have been kicked for been inactive.");
+                    ctx.world()
+                        .send_message(player, "You have been kicked for been inactive.");
                     // Manage forfeit.
                     let one_side_left = one_side_left(ctx);
                     if one_side_left {
@@ -615,7 +627,9 @@ impl Script for CtF {
             reset_activity_timers(ctx, player);
         }
 
-        if player_is_carrier(ctx, player) && ((blue_zone && team == TEAM_RED) || (red_zone && team == TEAM_BLUE)) {
+        if player_is_carrier(ctx, player)
+            && ((blue_zone && team == TEAM_RED) || (red_zone && team == TEAM_BLUE))
+        {
             remove_flag_carrier(ctx, player);
             enemy_team_flag(ctx, player);
             for active_char in participant_enemy_team(ctx, player) {
@@ -651,7 +665,8 @@ impl Script for CtF {
 
             // Removed invulnerability shield.
             if ctx.is_affected_by_skill(player, GHOST_WALKING.id) {
-                ctx.world_mut().stop_skill_effects_removed(player, GHOST_WALKING.id);
+                ctx.world_mut()
+                    .stop_skill_effects_removed(player, GHOST_WALKING.id);
             }
         }
     }
@@ -789,7 +804,9 @@ impl Script for CtF {
         ctx.start_quest_timer("TeleportToArena", REGISTRATION_TIME * 60_000, None, None, false);
 
         // Send message to players.
-        ctx.broadcast_to_all_online_players(&format!("CtF Event: Registration opened for {REGISTRATION_TIME} minutes."));
+        ctx.broadcast_to_all_online_players(&format!(
+            "CtF Event: Registration opened for {REGISTRATION_TIME} minutes."
+        ));
         ctx.broadcast_to_all_online_players("CtF Event: You can register at Giran CtF Event Manager.");
 
         for warn in [10, 5, 4, 3, 2, 1] {
@@ -968,7 +985,14 @@ fn broadcast_score_message(ctx: &mut ScriptCtx<'_>, world: i32) {
     };
     ctx.world().instance_broadcast_packet(
         world,
-        &ExShowScreenMessage::styled_text(&format!("Blue: {blue} - Red: {red}"), BOTTOM_RIGHT, 15_000, 0, true, false),
+        &ExShowScreenMessage::styled_text(
+            &format!("Blue: {blue} - Red: {red}"),
+            BOTTOM_RIGHT,
+            15_000,
+            0,
+            true,
+            false,
+        ),
     );
 }
 
@@ -1018,14 +1042,22 @@ fn participant_enemy_team_name(ctx: &mut ScriptCtx<'_>, player: ObjectId) -> &'s
 fn participant_team(ctx: &mut ScriptCtx<'_>, player: ObjectId) -> Vec<ObjectId> {
     let blue = ctx.world().team_of(player) == TEAM_BLUE;
     let s = ctx.state::<CtfState>();
-    if blue { s.blue_team.clone() } else { s.red_team.clone() }
+    if blue {
+        s.blue_team.clone()
+    } else {
+        s.red_team.clone()
+    }
 }
 
 /// Java `getParticipantEnemyTeam(player)`.
 fn participant_enemy_team(ctx: &mut ScriptCtx<'_>, player: ObjectId) -> Vec<ObjectId> {
     let blue = ctx.world().team_of(player) == TEAM_BLUE;
     let s = ctx.state::<CtfState>();
-    if blue { s.red_team.clone() } else { s.blue_team.clone() }
+    if blue {
+        s.red_team.clone()
+    } else {
+        s.blue_team.clone()
+    }
 }
 
 /// Java `getEnemyTeamFlagId(player)`.
@@ -1060,7 +1092,12 @@ fn carrier_is_gone(ctx: &mut ScriptCtx<'_>, carrier: Option<ObjectId>) -> bool {
 fn team_carrier(ctx: &mut ScriptCtx<'_>, player: ObjectId) -> Option<ObjectId> {
     let (in_blue, in_red, blue_carrier, red_carrier) = {
         let s = ctx.state::<CtfState>();
-        (s.in_blue(player), s.in_red(player), s.blue_team_carrier, s.red_team_carrier)
+        (
+            s.in_blue(player),
+            s.in_red(player),
+            s.blue_team_carrier,
+            s.red_team_carrier,
+        )
     };
     // Check if team carrier has disconnected.
     if (in_blue && carrier_is_gone(ctx, blue_carrier)) || (in_red && carrier_is_gone(ctx, red_carrier)) {
@@ -1077,7 +1114,12 @@ fn team_carrier(ctx: &mut ScriptCtx<'_>, player: ObjectId) -> Option<ObjectId> {
 fn enemy_carrier(ctx: &mut ScriptCtx<'_>, player: ObjectId) -> Option<ObjectId> {
     let (in_blue, in_red, blue_carrier, red_carrier) = {
         let s = ctx.state::<CtfState>();
-        (s.in_blue(player), s.in_red(player), s.blue_team_carrier, s.red_team_carrier)
+        (
+            s.in_blue(player),
+            s.in_red(player),
+            s.blue_team_carrier,
+            s.red_team_carrier,
+        )
     };
     // Check if enemy carrier has disconnected.
     if (in_blue && carrier_is_gone(ctx, red_carrier)) || (in_red && carrier_is_gone(ctx, blue_carrier)) {
@@ -1152,13 +1194,19 @@ fn remove_flag_carrier(ctx: &mut ScriptCtx<'_>, player: ObjectId) {
 fn set_team_carrier(ctx: &mut ScriptCtx<'_>, player: ObjectId) {
     let (in_blue, in_red, blue, red) = {
         let s = ctx.state::<CtfState>();
-        (s.in_blue(player), s.in_red(player), s.blue_team_carrier, s.red_team_carrier)
+        (
+            s.in_blue(player),
+            s.in_red(player),
+            s.blue_team_carrier,
+            s.red_team_carrier,
+        )
     };
     if in_blue {
         if blue.is_none() {
             ctx.state::<CtfState>().blue_team_carrier = Some(player);
         } else {
-            ctx.world().send_message(player, "The Blue flag has already been taken");
+            ctx.world()
+                .send_message(player, "The Blue flag has already been taken");
         }
     }
 
@@ -1166,7 +1214,8 @@ fn set_team_carrier(ctx: &mut ScriptCtx<'_>, player: ObjectId) {
         if red.is_none() {
             ctx.state::<CtfState>().red_team_carrier = Some(player);
         } else {
-            ctx.world().send_message(player, "The Red flag has already been taken");
+            ctx.world()
+                .send_message(player, "The Red flag has already been taken");
         }
     }
 }
@@ -1245,8 +1294,12 @@ fn flag_talk(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId) {
     if flag == team {
         if team_carrier(ctx, player) == Some(player) {
             if distance > 70 {
-                ctx.world().send_message(player, &format!("{npc_name} : Your request cannot be completed."));
-                ctx.world().send_message(player, &format!("{npc_name} : you are not at the correct distance."));
+                ctx.world()
+                    .send_message(player, &format!("{npc_name} : Your request cannot be completed."));
+                ctx.world().send_message(
+                    player,
+                    &format!("{npc_name} : you are not at the correct distance."),
+                );
             } else {
                 // Player has returned with enemy flag.
                 ctx.broadcast_magic_skill_use(player, player, npc.object_id, 1034, 1, 1, 1);
@@ -1254,27 +1307,66 @@ fn flag_talk(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId) {
                 enemy_team_flag(ctx, player);
                 ctx.world().instance_broadcast_packet(
                     world,
-                    &ExShowScreenMessage::text(&format!("{player_name} has captured the {enemyteam} flag!"), 5 * 1000),
+                    &ExShowScreenMessage::text(
+                        &format!("{player_name} has captured the {enemyteam} flag!"),
+                        5 * 1000,
+                    ),
                 );
                 increase_points(ctx, player);
             }
         } else if enemy_carrier(ctx, player).is_none() {
             // Team flag is missing.
-            send_flag_page(ctx, npc, player, "flag_friendly.html", enemyteam, Some(team), &player_name);
+            send_flag_page(
+                ctx,
+                npc,
+                player,
+                "flag_friendly.html",
+                enemyteam,
+                Some(team),
+                &player_name,
+            );
         } else {
             // Go get the flag.
-            send_flag_page(ctx, npc, player, "flag_friendly_missing.html", enemyteam, Some(team), &player_name);
+            send_flag_page(
+                ctx,
+                npc,
+                player,
+                "flag_friendly_missing.html",
+                enemyteam,
+                Some(team),
+                &player_name,
+            );
         }
     } else if let Some(carrier) = team_carrier(ctx, player) {
         // enemy flag enemy is missing
         let carrier_name = ctx.player_name(carrier);
-        send_flag_page(ctx, npc, player, "flag_enemy_missing.html", enemyteam, None, &carrier_name);
+        send_flag_page(
+            ctx,
+            npc,
+            player,
+            "flag_enemy_missing.html",
+            enemyteam,
+            None,
+            &carrier_name,
+        );
     } else if distance > 70 {
-        ctx.world().send_message(player, &format!("{npc_name} : Your request cannot be completed."));
-        ctx.world().send_message(player, &format!("{npc_name} : you are not at the correct distance."));
+        ctx.world()
+            .send_message(player, &format!("{npc_name} : Your request cannot be completed."));
+        ctx.world().send_message(
+            player,
+            &format!("{npc_name} : you are not at the correct distance."),
+        );
     } else {
         // player has flag
-        send_flag_page(ctx, npc, player, "flag_enemy.html", enemyteam, Some(team), &player_name);
+        send_flag_page(
+            ctx,
+            npc,
+            player,
+            "flag_enemy.html",
+            enemyteam,
+            Some(team),
+            &player_name,
+        );
 
         // take flag
         let right = ctx.world().event_paperdoll_item(player, PAPERDOLL_RHAND);
@@ -1303,7 +1395,10 @@ fn send_flag_page(
     team: Option<&str>,
     player_name: &str,
 ) {
-    let mut html = ctx.get_htm(player, file).unwrap_or_default().replace("%enemyteam%", enemyteam);
+    let mut html = ctx
+        .get_htm(player, file)
+        .unwrap_or_default()
+        .replace("%enemyteam%", enemyteam);
     // NOTE(java-quirk): the page of the missing enemy flag is sent without a `%team%` replaced.
     if let Some(team) = team {
         html = html.replace("%team%", team);
@@ -1346,11 +1441,11 @@ mod tests {
         .iter()
         .map(|(n, t)| (format!("{DIR}/{n}"), (*t).to_owned()))
         .collect();
-        pages.push((
-            "data/zones/ctf.xml".to_owned(),
-            String::new(),
-        ));
-        let pages: Vec<(String, String)> = pages.into_iter().filter(|(p, _)| !p.starts_with("data/zones")).collect();
+        pages.push(("data/zones/ctf.xml".to_owned(), String::new()));
+        let pages: Vec<(String, String)> = pages
+            .into_iter()
+            .filter(|(p, _)| !p.starts_with("data/zones"))
+            .collect();
         let refs: Vec<(&str, &str)> = pages.iter().map(|(a, b)| (a.as_str(), b.as_str())).collect();
         let mut t = ScriptTest::new_with(registry, NPCS, ITEMS, &refs, |world, root| {
             std::fs::create_dir_all(root.join("data/zones")).unwrap();
@@ -1419,8 +1514,16 @@ mod tests {
         }
         t.wait_ms(10 * 60_000 + 2_000);
         let players: Vec<ObjectId> = (1..=4).map(ObjectId).collect();
-        let blue: Vec<ObjectId> = players.iter().copied().filter(|p| t.world.team_of(*p) == TEAM_BLUE).collect();
-        let red: Vec<ObjectId> = players.iter().copied().filter(|p| t.world.team_of(*p) == TEAM_RED).collect();
+        let blue: Vec<ObjectId> = players
+            .iter()
+            .copied()
+            .filter(|p| t.world.team_of(*p) == TEAM_BLUE)
+            .collect();
+        let red: Vec<ObjectId> = players
+            .iter()
+            .copied()
+            .filter(|p| t.world.team_of(*p) == TEAM_RED)
+            .collect();
         assert_eq!((blue.len(), red.len()), (2, 2));
         let instance = t.world.instance_id_of(blue[0]);
         assert!(instance > 0);
@@ -1432,23 +1535,32 @@ mod tests {
         let red_hq = t.npcs_of(RED_TEAM_HEADQUARTERS)[0];
         let carrier = blue[0];
         // The blue player goes to the red flag and takes it.
-        t.world.event_teleport(carrier, (150_452 + 10, 46_714, -3414), instance, 0);
+        t.world
+            .event_teleport(carrier, (150_452 + 10, 46_714, -3414), instance, 0);
         assert_eq!(first_talk(&mut t, red_hq, carrier), None);
         assert_eq!(t.world.inventory_item_count(carrier, RED_TEAM_FLAG_ITEM_ID), 1);
-        assert_eq!(t.world.paperdoll_object(carrier, PAPERDOLL_RHAND).is_some(), true);
-        assert!(t.world.can_manipulate_with_item_id(carrier, 57) == false, "the inventory is blocked");
+        assert!(t.world.paperdoll_object(carrier, PAPERDOLL_RHAND).is_some());
+        assert!(
+            !t.world.can_manipulate_with_item_id(carrier, 57),
+            "the inventory is blocked"
+        );
         // The red headquarters flag is gone from the world until it comes back.
         assert!(!t.in_world(red_hq));
 
         // A second flag cannot be taken; the other blue player sees the "missing" page.
-        t.world.event_teleport(blue[1], (148_487 + 10, 46_703, -3414), instance, 0);
+        t.world
+            .event_teleport(blue[1], (148_487 + 10, 46_703, -3414), instance, 0);
         assert!(first_talk(&mut t, blue_hq, blue[1]).is_none());
 
         // The carrier goes home and captures: the score is 1 for blue.
-        t.world.event_teleport(carrier, (148_487 + 10, 46_703, -3414), instance, 0);
+        t.world
+            .event_teleport(carrier, (148_487 + 10, 46_703, -3414), instance, 0);
         assert_eq!(first_talk(&mut t, blue_hq, carrier), None);
         assert_eq!(t.world.inventory_item_count(carrier, RED_TEAM_FLAG_ITEM_ID), 0);
-        assert!(t.world.can_manipulate_with_item_id(carrier, 57), "the inventory is free again");
+        assert!(
+            t.world.can_manipulate_with_item_id(carrier, 57),
+            "the inventory is free again"
+        );
         // The enemy flag is back at its headquarters.
         assert_eq!(t.npcs_of(RED_TEAM_HEADQUARTERS).len(), 1);
 
@@ -1477,11 +1589,20 @@ mod tests {
         }
         t.wait_ms(10 * 60_000 + 2_000 + 60_000);
         let players: Vec<ObjectId> = (1..=4).map(ObjectId).collect();
-        let blue: Vec<ObjectId> = players.iter().copied().filter(|p| t.world.team_of(*p) == TEAM_BLUE).collect();
-        let red: Vec<ObjectId> = players.iter().copied().filter(|p| t.world.team_of(*p) == TEAM_RED).collect();
+        let blue: Vec<ObjectId> = players
+            .iter()
+            .copied()
+            .filter(|p| t.world.team_of(*p) == TEAM_BLUE)
+            .collect();
+        let red: Vec<ObjectId> = players
+            .iter()
+            .copied()
+            .filter(|p| t.world.team_of(*p) == TEAM_RED)
+            .collect();
         let instance = t.world.instance_id_of(blue[0]);
         let red_hq = t.npcs_of(RED_TEAM_HEADQUARTERS)[0];
-        t.world.event_teleport(blue[0], (150_452 + 10, 46_714, -3414), instance, 0);
+        t.world
+            .event_teleport(blue[0], (150_452 + 10, 46_714, -3414), instance, 0);
         first_talk(&mut t, red_hq, blue[0]);
         assert_eq!(t.world.inventory_item_count(blue[0], RED_TEAM_FLAG_ITEM_ID), 1);
 
@@ -1489,7 +1610,11 @@ mod tests {
         t.world.do_die(blue[0], Some(red[0]));
         t.ticks(2);
         assert_eq!(t.world.inventory_item_count(blue[0], RED_TEAM_FLAG_ITEM_ID), 0);
-        assert_eq!(t.npcs_of(RED_TEAM_HEADQUARTERS).len(), 1, "the flag is back at its base");
+        assert_eq!(
+            t.npcs_of(RED_TEAM_HEADQUARTERS).len(),
+            1,
+            "the flag is back at its base"
+        );
         assert!(t.world.can_manipulate_with_item_id(blue[0], 57));
     }
 

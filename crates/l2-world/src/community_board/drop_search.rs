@@ -52,6 +52,8 @@ pub enum BoardTimer {
         y: i32,
         z: i32,
     },
+    /// The delayed tasks of the custom board (M9-C03, `custom/community_board.rs`).
+    Custom(crate::custom::community_board::CustomBoardTimer),
 }
 
 /// Java `Double.toString` for the values this board prints: plain with a fraction for
@@ -206,6 +208,7 @@ impl World {
     /// The task of [`BoardTimer`].
     pub(crate) fn on_board_timer(&mut self, timer: BoardTimer) {
         match timer {
+            BoardTimer::Custom(task) => self.on_custom_board_timer(task),
             BoardTimer::RadarTrace { player, x, y, z } => {
                 if !self.players.contains_key(&player) {
                     return;
@@ -323,6 +326,11 @@ impl World {
             if d.is_spoil {
                 rate_chance = f64::from(settings.rate_spoil_drop_chance_multiplier);
                 rate_amount = f64::from(settings.rate_spoil_drop_amount_multiplier);
+                // Also check premium rates if available.
+                if let Some(premium) = &killer.premium {
+                    rate_chance *= f64::from(premium.spoil_chance);
+                    rate_amount *= f64::from(premium.spoil_amount);
+                }
                 rate_chance *= killer.bonus_spoil_rate;
             } else {
                 if let Some(by_id) = settings.rate_drop_chance_by_id.get(&d.item_id) {
@@ -345,6 +353,10 @@ impl World {
                     rate_amount *= f64::from(settings.rate_raid_drop_amount_multiplier);
                 } else {
                     rate_amount *= f64::from(settings.rate_death_drop_amount_multiplier);
+                }
+                if let Some(premium) = &killer.premium {
+                    rate_chance *= premium.drop_chance_factor(d.item_id, ex_immediate, d.is_raid);
+                    rate_amount *= premium.drop_amount_factor(d.item_id, ex_immediate, d.is_raid);
                 }
                 rate_amount *= killer.bonus_drop_amount;
                 if d.item_id == ADENA_ID {

@@ -247,10 +247,13 @@ impl DbCharacterList {
         slots: &mut [(i32, i32, i32); paperdoll::TOTAL_SLOTS],
     ) {
         let object_ids: Vec<i32> = rows.iter().map(|r| r.object_id).collect();
-        let found = transmog.load_item_transmogs(&object_ids).await.unwrap_or_else(|e| {
-            warn!("Could not restore the transmogs: {e}");
-            Vec::new()
-        });
+        let found = transmog
+            .load_item_transmogs(&object_ids)
+            .await
+            .unwrap_or_else(|e| {
+                warn!("Could not restore the transmogs: {e}");
+                Vec::new()
+            });
         for row in rows {
             let Some(slot) = row.loc_data.and_then(|s| usize::try_from(s).ok()) else {
                 continue;

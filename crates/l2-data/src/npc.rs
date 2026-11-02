@@ -66,9 +66,9 @@ use crate::loader::{DataError, load_dir, log_loaded};
 use raw::{
     RawAi, RawAiChild, RawAttack, RawAttribute, RawAttributeChild, RawClanListChild, RawCollision,
     RawCollisionChild, RawDefence, RawDropItem, RawDropList, RawDropLists, RawDropListsChild, RawDropNode,
-    RawEquipment, RawGroupNode, RawMinion, RawMinions, RawNpc, RawNpcChild, RawNpcFile, RawParameter,
-    RawParameters, RawShots, RawSkillList, RawSkillListChild, RawSpeed, RawSpeedChild, RawStats,
-    RawStatsChild, RawStatus, RawText, RawVitals,
+    RawEquipment, RawFakePlayer, RawGroupNode, RawMinion, RawMinions, RawNpc, RawNpcChild, RawNpcFile,
+    RawParameter, RawParameters, RawShots, RawSkillList, RawSkillListChild, RawSpeed, RawSpeedChild,
+    RawStats, RawStatsChild, RawStatus, RawText, RawVitals,
 };
 use stat_set::{StatSet, decode_i32, decode_i64, parse_java_double};
 
@@ -199,9 +199,75 @@ java_enum! {
     }
 }
 
+/// The multipliers of one NPC kind in `Custom/NpcStatMultipliers.ini` (`<Kind>HpMultiplier` and
+/// the like; the keys of the aggro and clan help range are spelled `AgrroRange` there).
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct StatMultipliers {
+    /// `<Kind>HpMultiplier`.
+    pub hp: f64,
+    /// `<Kind>MpMultiplier`.
+    pub mp: f64,
+    /// `<Kind>PAtkMultiplier`.
+    pub p_atk: f64,
+    /// `<Kind>MAtkMultiplier`.
+    pub m_atk: f64,
+    /// `<Kind>PDefMultiplier`.
+    pub p_def: f64,
+    /// `<Kind>MDefMultiplier`.
+    pub m_def: f64,
+    /// `<Kind>AgrroRangeMultiplier`.
+    pub aggro_range: f64,
+    /// `<Kind>ClanHelpRangeMultiplier`.
+    pub clan_help_range: f64,
+}
+
+impl Default for StatMultipliers {
+    /// Java's default of every key: 1.
+    fn default() -> Self {
+        Self {
+            hp: 1.0,
+            mp: 1.0,
+            p_atk: 1.0,
+            m_atk: 1.0,
+            p_def: 1.0,
+            m_def: 1.0,
+            aggro_range: 1.0,
+            clan_help_range: 1.0,
+        }
+    }
+}
+
+/// Java `NpcStatMultipliersConfig` with `EnableNpcStatMultipliers` on: what `NpcTemplate`'s
+/// constructor multiplies, by the template's `type`.
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub struct NpcStatMultipliers {
+    /// Type `Monster`.
+    pub monster: StatMultipliers,
+    /// Types `RaidBoss` and `GrandBoss`.
+    pub raidboss: StatMultipliers,
+    /// Type `Guard`.
+    pub guard: StatMultipliers,
+    /// Type `Defender`.
+    pub defender: StatMultipliers,
+}
+
+impl NpcStatMultipliers {
+    /// The multipliers for an NPC `type`, `None` for every other type (Java's `switch` has no
+    /// `default`; `QuestGuard`, `FortCommander` and the rest are not multiplied).
+    pub fn for_type(&self, npc_type: &str) -> Option<&StatMultipliers> {
+        match npc_type {
+            "Monster" => Some(&self.monster),
+            "RaidBoss" | "GrandBoss" => Some(&self.raidboss),
+            "Guard" => Some(&self.guard),
+            "Defender" => Some(&self.defender),
+            _ => None,
+        }
+    }
+}
+
 /// What the server config contributes to loading NPCs. The defaults are Java's *code* defaults
 /// (not the values of the shipped `.ini` files), like [`crate::item::ItemTemplates::load`].
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct NpcLoadOptions {
     /// `General.ini` `CustomNpcData` (default false): also load `data/stats/npcs/custom`.
     pub custom_npc_data: bool,
@@ -212,6 +278,8 @@ pub struct NpcLoadOptions {
     pub max_aggro_range: i32,
     /// `NPC.ini` `DefaultCorpseTime` (default 7): the corpse time of NPCs without `<corpseTime>`.
     pub default_corpse_time: i32,
+    /// `Custom/NpcStatMultipliers.ini`: `Some` when `EnableNpcStatMultipliers` is on (default off).
+    pub stat_multipliers: Option<NpcStatMultipliers>,
 }
 
 impl Default for NpcLoadOptions {
@@ -221,6 +289,7 @@ impl Default for NpcLoadOptions {
             fake_players_enabled: false,
             max_aggro_range: 450,
             default_corpse_time: 7,
+            stat_multipliers: None,
         }
     }
 }
@@ -287,6 +356,75 @@ pub struct DropGroup {
     pub chance: f64,
     /// The group's items.
     pub items: Vec<DropEntry>,
+}
+
+/// Java `FakePlayerHolder`: how a fake player NPC looks (`<fakePlayer .../>`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FakePlayerHolder {
+    /// `classId`.
+    pub class_id: i32,
+    /// `hair`.
+    pub hair: i32,
+    /// `hairColor`.
+    pub hair_color: i32,
+    /// `face`.
+    pub face: i32,
+    /// `nameColor`.
+    pub name_color: i32,
+    /// `titleColor`.
+    pub title_color: i32,
+    /// `equipHead`.
+    pub equip_head: i32,
+    /// `equipRHand`.
+    pub equip_r_hand: i32,
+    /// `equipLHand`.
+    pub equip_l_hand: i32,
+    /// `equipGloves`.
+    pub equip_gloves: i32,
+    /// `equipChest`.
+    pub equip_chest: i32,
+    /// `equipLegs`.
+    pub equip_legs: i32,
+    /// `equipFeet`.
+    pub equip_feet: i32,
+    /// `equipCloak`.
+    pub equip_cloak: i32,
+    /// `equipHair`.
+    pub equip_hair: i32,
+    /// `equipHair2`.
+    pub equip_hair2: i32,
+    /// `agathionId`.
+    pub agathion_id: i32,
+    /// `weaponEnchantLevel`.
+    pub weapon_enchant_level: i32,
+    /// `armorEnchantLevel`.
+    pub armor_enchant_level: i32,
+    /// `fishing`.
+    pub fishing: bool,
+    /// `baitLocationX`.
+    pub bait_location_x: i32,
+    /// `baitLocationY`.
+    pub bait_location_y: i32,
+    /// `baitLocationZ`.
+    pub bait_location_z: i32,
+    /// `recommends`.
+    pub recommends: i32,
+    /// `nobleLevel`.
+    pub noble_level: i32,
+    /// `hero`.
+    pub hero: bool,
+    /// `clanId`.
+    pub clan_id: i32,
+    /// `pledgeStatus`.
+    pub pledge_status: i32,
+    /// `sitting`.
+    pub sitting: bool,
+    /// `privateStoreType`.
+    pub private_store_type: i32,
+    /// `privateStoreMessage`.
+    pub private_store_message: String,
+    /// `fakePlayerTalkable`.
+    pub fake_player_talkable: bool,
 }
 
 /// Java `NpcTemplate` (with the `CreatureTemplate` fields it inherits).
@@ -356,6 +494,9 @@ pub struct NpcTemplate {
     pub flying: bool,
     /// True when the NPC has a `<fakePlayer>` element (only loaded when fake players are enabled).
     pub fake_player: bool,
+    /// Java `getFakePlayerInfo()`: the look of a fake player (`Some` exactly when
+    /// [`fake_player`](Self::fake_player) is set).
+    pub fake_player_info: Option<FakePlayerHolder>,
     /// Java `canMove()`: `<status canMove>` (default true), or true when the ground walk speed is 0.1.
     pub can_move: bool,
     /// `<status noSleepMode>`.
@@ -550,6 +691,22 @@ impl NpcTemplate {
     }
 
     /// Reads a finished `StatSet` into a template, like `NpcTemplate.set`.
+    /// The end of Java's `NpcTemplate` constructor: "Custom NPC Stat Multipliers". The fields
+    /// are `float` and `int`, so every product is narrowed back (`x *= double`).
+    fn apply_stat_multipliers(&mut self, multipliers: &NpcStatMultipliers) {
+        let Some(m) = multipliers.for_type(&self.npc_type) else {
+            return;
+        };
+        self.base_hp_max = (f64::from(self.base_hp_max) * m.hp) as f32;
+        self.base_mp_max = (f64::from(self.base_mp_max) * m.mp) as f32;
+        self.base_p_atk = (f64::from(self.base_p_atk) * m.p_atk) as i32;
+        self.base_m_atk = (f64::from(self.base_m_atk) * m.m_atk) as i32;
+        self.base_p_def = (f64::from(self.base_p_def) * m.p_def) as i32;
+        self.base_m_def = (f64::from(self.base_m_def) * m.m_def) as i32;
+        self.aggro_range = (f64::from(self.aggro_range) * m.aggro_range) as i32;
+        self.clan_help_range = (f64::from(self.clan_help_range) * m.clan_help_range) as i32;
+    }
+
     fn from_set(set: &StatSet, parts: Parts, options: &NpcLoadOptions) -> Result<Self, DataError> {
         let id = set.get_int("id", 0)?;
         let npc_type = set.get_string("type", "Folk");
@@ -623,6 +780,7 @@ impl NpcTemplate {
             drops: parts.drops,
             spoils: parts.spoils,
             drop_groups: parts.drop_groups,
+            fake_player_info: parts.fake_player,
             base_str: set.get_int("baseSTR", 0)?,
             base_con: set.get_int("baseCON", 0)?,
             base_dex: set.get_int("baseDEX", 0)?,
@@ -842,7 +1000,10 @@ impl NpcTemplates {
                 }
                 RawNpcChild::Stats(stats) => read_stats(stats, &mut set)?,
                 RawNpcChild::Status(status) => read_status(status, &mut set),
-                RawNpcChild::FakePlayer(_) => set.set_bool("fakePlayer", Some(true)),
+                RawNpcChild::FakePlayer(fake) => {
+                    set.set_bool("fakePlayer", Some(true));
+                    parts.fake_player = Some(read_fake_player(fake)?);
+                }
                 RawNpcChild::SkillList(list) => parts.skills = read_skill_list(list)?,
                 RawNpcChild::Shots(shots) => read_shots(shots, &mut set)?,
                 RawNpcChild::CorpseTime(text) => {
@@ -859,7 +1020,10 @@ impl NpcTemplates {
             return Ok(None);
         }
 
-        let template = NpcTemplate::from_set(&set, parts, options)?;
+        let mut template = NpcTemplate::from_set(&set, parts, options)?;
+        if let Some(multipliers) = &options.stat_multipliers {
+            template.apply_stat_multipliers(multipliers);
+        }
         if !template.minion_list("Privates").is_empty()
             && !template.parameters.contains_key("SummonPrivateRate")
         {
@@ -922,6 +1086,7 @@ struct Parts {
     drops: Vec<DropEntry>,
     spoils: Vec<DropEntry>,
     drop_groups: Vec<DropGroup>,
+    fake_player: Option<FakePlayerHolder>,
 }
 
 // ---- reading attributes the way IXmlReader does ----
@@ -1018,6 +1183,44 @@ fn read_minions(minions: &RawMinions) -> Result<Vec<MinionDef>, DataError> {
         });
     }
     Ok(list)
+}
+
+/// Java `case "fakeplayer"` of `NpcData.parseDocument` (the defaults are Java's).
+fn read_fake_player(raw: &RawFakePlayer) -> Result<FakePlayerHolder, DataError> {
+    Ok(FakePlayerHolder {
+        class_id: attr_int(&raw.class_id)?.unwrap_or(1),
+        hair: attr_int(&raw.hair)?.unwrap_or(1),
+        hair_color: attr_int(&raw.hair_color)?.unwrap_or(1),
+        face: attr_int(&raw.face)?.unwrap_or(1),
+        name_color: attr_int(&raw.name_color)?.unwrap_or(0xFF_FFFF),
+        title_color: attr_int(&raw.title_color)?.unwrap_or(0xEC_F9A2),
+        equip_head: attr_int(&raw.equip_head)?.unwrap_or(0),
+        equip_r_hand: attr_int(&raw.equip_r_hand)?.unwrap_or(0),
+        equip_l_hand: attr_int(&raw.equip_l_hand)?.unwrap_or(0),
+        equip_gloves: attr_int(&raw.equip_gloves)?.unwrap_or(0),
+        equip_chest: attr_int(&raw.equip_chest)?.unwrap_or(0),
+        equip_legs: attr_int(&raw.equip_legs)?.unwrap_or(0),
+        equip_feet: attr_int(&raw.equip_feet)?.unwrap_or(0),
+        equip_cloak: attr_int(&raw.equip_cloak)?.unwrap_or(0),
+        equip_hair: attr_int(&raw.equip_hair)?.unwrap_or(0),
+        equip_hair2: attr_int(&raw.equip_hair2)?.unwrap_or(0),
+        agathion_id: attr_int(&raw.agathion_id)?.unwrap_or(0),
+        weapon_enchant_level: attr_int(&raw.weapon_enchant_level)?.unwrap_or(0),
+        armor_enchant_level: attr_int(&raw.armor_enchant_level)?.unwrap_or(0),
+        fishing: attr_bool(&raw.fishing).unwrap_or(false),
+        bait_location_x: attr_int(&raw.bait_location_x)?.unwrap_or(0),
+        bait_location_y: attr_int(&raw.bait_location_y)?.unwrap_or(0),
+        bait_location_z: attr_int(&raw.bait_location_z)?.unwrap_or(0),
+        recommends: attr_int(&raw.recommends)?.unwrap_or(0),
+        noble_level: attr_int(&raw.noble_level)?.unwrap_or(0),
+        hero: attr_bool(&raw.hero).unwrap_or(false),
+        clan_id: attr_int(&raw.clan_id)?.unwrap_or(0),
+        pledge_status: attr_int(&raw.pledge_status)?.unwrap_or(0),
+        sitting: attr_bool(&raw.sitting).unwrap_or(false),
+        private_store_type: attr_int(&raw.private_store_type)?.unwrap_or(0),
+        private_store_message: raw.private_store_message.clone().unwrap_or_default(),
+        fake_player_talkable: attr_bool(&raw.fake_player_talkable).unwrap_or(true),
+    })
 }
 
 fn read_equipment(equipment: &RawEquipment, set: &mut StatSet) -> Result<(), DataError> {

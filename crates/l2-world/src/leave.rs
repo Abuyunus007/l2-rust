@@ -151,6 +151,9 @@ impl World {
         // the store (they change what is stored), `stopAllTimers` ends the vitality task.
         self.nevit_on_leave(id);
         self.forget_vitality(id);
+        // `ON_PLAYER_LOGOUT` of the custom features: the auto play settings go to the variables
+        // that the store writes (M9-C02).
+        self.custom_play_before_store(id);
         // `storeMe()` comes next: the snapshot is taken while the effects are still on (with them
         // the buffs to save, `store_snapshot`).
         let Some(snapshot) = self.store_snapshot(id) else {
@@ -160,6 +163,8 @@ impl World {
         self.stop_all_toggles(id, true);
         // `deleteMe`: the cursed weapon forgets its player (it keeps the owner's id).
         self.cursed_player_left(id);
+        // The buff shop's list goes with the player (M9-C03, `custom/sell_buffs.rs`).
+        self.sell_buffs_player_left(id);
         // `deleteMe`: the Block Checker disconnect, and the arenas forget the player (M8-GAMES-01).
         self.minigame_on_player_left(id);
         // `deleteMe`: `_vehicle.oustPlayer(this)` (M8-VEHICLE-01).
@@ -196,7 +201,9 @@ impl World {
         // `deleteMe`: "Remove player from instance and set spawn location if any." (M8-INST-01).
         self.instance_on_delete(id);
         // A trader without a client left the login server's books when it went offline.
-        let was_trader = self.offline.traders.remove(&id).is_some();
+        // A character that plays without a client (`custom/offline_play.rs`) is held the same way.
+        let was_offline_player = self.offline_play_on_delete(id);
+        let was_trader = self.offline.traders.remove(&id).is_some() || was_offline_player;
         // `deleteMe`: whoever channels a skill at the player stops.
         if self.is_channelized(id) {
             self.abort_channelization(id);
@@ -211,6 +218,8 @@ impl World {
             self.sessions.remove(&session);
         }
         self.pc_cafe_on_player_leave(id);
+        // The premium expiry, the auto play and auto potion tasks, the offline play (M9-C02).
+        self.custom_play_on_leave(id);
         self.wedding_on_player_leave(id);
         self.lottery_on_player_leave(id);
         // `Player.stopAllTasks`: the quest timers stop; the quest states go with the player

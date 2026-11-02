@@ -109,6 +109,8 @@ impl Default for BypassHandlers {
         crate::script_handlers::rent::register(&mut handlers);
         crate::script_handlers::find_pvp::register(&mut handlers);
         crate::script_handlers::npc_view::register(&mut handlers);
+        // dist/game/data/scripts/handlers/bypass/npc/Rebirth.java (M9-C05)
+        crate::custom::rebirth::register(&mut handlers);
         handlers
     }
 }
@@ -380,6 +382,7 @@ impl World {
             .and_then(|n| self.npc_world.template(n.npc_id))
             .map(|t| t.npc_type.as_str());
         let (is_teleporter, is_fisherman) = (npc_type == Some("Teleporter"), npc_type == Some("Fisherman"));
+        let is_scheme_buffer = npc_type == Some("SchemeBuffer");
         let (is_auctioneer, is_hall_manager, is_hall_doorman) = (
             npc_type == Some("Auctioneer"),
             npc_type == Some("ClanHallManager"),
@@ -407,6 +410,8 @@ impl World {
             // Java: Fisherman.onBypassFeedback (the championship, `fishing/championship.rs`).
         } else if self.fort_npc_bypass_feedback(npc, player, command) {
             // Java: FortManager, FortDoorman, FortLogistics.onBypassFeedback (`fort/npc.rs`).
+        } else if is_scheme_buffer && self.scheme_buffer_bypass_feedback(npc, player, command) {
+            // Java: SchemeBuffer.onBypassFeedback (M9-C03, `custom/scheme_buffer.rs`).
         } else if self.is_village_master(npc) {
             // Java: VillageMaster.onBypassFeedback (the clan commands, `clan/village_master.rs`).
             self.village_master_bypass_feedback(npc, player, command);

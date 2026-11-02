@@ -43,7 +43,11 @@ async fn the_collection_and_the_item_transmogs_round_trip() {
     let admin_options = MySqlConnectOptions::from_str(&url).unwrap();
     let mut admin = MySqlConnection::connect_with(&admin_options).await.unwrap();
     let nanos = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
-    let name = format!("l2_test_transmog_{}_{}", std::process::id(), nanos % 1_000_000_000);
+    let name = format!(
+        "l2_test_transmog_{}_{}",
+        std::process::id(),
+        nanos % 1_000_000_000
+    );
     assert!(name.starts_with("l2_test_"));
     sqlx::query(AssertSqlSafe(format!(
         "CREATE DATABASE `{name}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci"
@@ -54,7 +58,10 @@ async fn the_collection_and_the_item_transmogs_round_trip() {
     let pool = connect_with(admin_options.database(&name), 5).await.unwrap();
     for file in SCHEMA {
         for statement in statements(file) {
-            sqlx::query(AssertSqlSafe(statement)).execute(&pool).await.unwrap();
+            sqlx::query(AssertSqlSafe(statement))
+                .execute(&pool)
+                .await
+                .unwrap();
         }
     }
 
@@ -69,16 +76,28 @@ async fn the_collection_and_the_item_transmogs_round_trip() {
     assert_eq!(repo.load_collection("268500001").await.unwrap(), [1]);
 
     // The transmog id of an item: set, read, changed, removed.
-    assert!(repo.load_item_transmogs(&[268_600_001, 268_600_002]).await.unwrap().is_empty());
+    assert!(
+        repo.load_item_transmogs(&[268_600_001, 268_600_002])
+            .await
+            .unwrap()
+            .is_empty()
+    );
     repo.set_item_transmog(268_600_001, 2375).await.unwrap();
     repo.set_item_transmog(268_600_002, 6408).await.unwrap();
     repo.set_item_transmog(268_600_001, 57).await.unwrap();
     assert_eq!(
-        repo.load_item_transmogs(&[268_600_001, 268_600_002, 268_600_003]).await.unwrap(),
+        repo.load_item_transmogs(&[268_600_001, 268_600_002, 268_600_003])
+            .await
+            .unwrap(),
         [(268_600_001, 57), (268_600_002, 6408)]
     );
     repo.remove_item_transmog(268_600_001).await.unwrap();
-    assert_eq!(repo.load_item_transmogs(&[268_600_001, 268_600_002]).await.unwrap(), [(268_600_002, 6408)]);
+    assert_eq!(
+        repo.load_item_transmogs(&[268_600_001, 268_600_002])
+            .await
+            .unwrap(),
+        [(268_600_002, 6408)]
+    );
 
     pool.close().await;
     sqlx::query(AssertSqlSafe(format!("DROP DATABASE IF EXISTS `{name}`")))

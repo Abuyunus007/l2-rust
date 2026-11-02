@@ -134,7 +134,10 @@ mod tests {
     fn the_defaults_are_javas_and_off() {
         let d = NoblessMasterSettings::default();
         assert!(!d.enabled);
-        assert_eq!((d.npc_id, d.level_requirement, d.item_id, d.item_count), (1_003_000, 80, 57, 0));
+        assert_eq!(
+            (d.npc_id, d.level_requirement, d.item_id, d.item_count),
+            (1_003_000, 80, 57, 0)
+        );
         assert!(!d.reward_tiara);
     }
 

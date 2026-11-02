@@ -77,7 +77,8 @@ mod tests {
 
     const NPC: i32 = 1_002_000;
     const NPCS: &str = r#"<npc id="1002000" type="Folk" level="70" name="Delevel"/>"#;
-    const ITEMS: &str = r#"<item id="4356" type="EtcItem" name="Gold Coin"><set name="is_stackable" val="true"/></item>"#;
+    const ITEMS: &str =
+        r#"<item id="4356" type="EtcItem" name="Gold Coin"><set name="is_stackable" val="true"/></item>"#;
     const DIR: &str = "data/scripts/custom/DelevelManager";
 
     fn pages() -> Vec<(String, String)> {
@@ -114,7 +115,10 @@ mod tests {
     fn the_defaults_are_javas_and_off() {
         let d = DelevelManagerSettings::default();
         assert!(!d.enabled);
-        assert_eq!((d.npc_id, d.item_id, d.item_count, d.minimum_delevel), (1_002_000, 4356, 2, 20));
+        assert_eq!(
+            (d.npc_id, d.item_id, d.item_count, d.minimum_delevel),
+            (1_002_000, 4356, 2, 20)
+        );
     }
 
     #[test]

@@ -385,8 +385,10 @@ impl World {
             {
                 self.minions_assist(target, attacker);
             }
-            // Champions are not rolled (`ChampionMonstersConfig`), so the HP is not divided.
         }
+        // `Creature.reduceCurrentHp`: a champion takes `amount / CHAMPION_HP` (the damage and hate
+        // above were counted with the whole amount, `Attackable.reduceCurrentHp` runs first).
+        let amount = self.champion_damage(target, amount);
         // `AttackableStatus.reduceHp`: the over-hit values of a hit that kills (S-API-04).
         let attackable = self.is_attackable_npc(target) && !self.is_dead(target);
         if attackable {

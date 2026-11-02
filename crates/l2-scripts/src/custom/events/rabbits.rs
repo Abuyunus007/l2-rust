@@ -97,7 +97,8 @@ impl Script for Rabbits {
             // NOTE(java-quirk): Java calls `eventMaker.sendMessage` unchecked: a scheduled start
             // (no maker) while the event runs is a NullPointerException.
             if let Some(maker) = event_maker {
-                ctx.world().send_message(maker, "Event Rabbits is already started!");
+                ctx.world()
+                    .send_message(maker, "Event Rabbits is already started!");
             }
             return false;
         }
@@ -106,8 +107,10 @@ impl Script for Rabbits {
         if !ctx.world().custom_script_settings().custom_npc_data {
             tracing::info!("Rabbits: Event can't be started, because custom NPCs are disabled!");
             if let Some(maker) = event_maker {
-                ctx.world()
-                    .send_message(maker, "Event Rabbits can't be started because custom NPCs are disabled!");
+                ctx.world().send_message(
+                    maker,
+                    "Event Rabbits can't be started because custom NPCs are disabled!",
+                );
             }
             return false;
         }
@@ -160,7 +163,9 @@ impl Script for Rabbits {
 
         let players = std::mem::take(&mut ctx.state::<RabbitsState>().players);
         for player in players {
-            if ctx.world().player(player).is_some() && ctx.world().transformation_id(player) == TRANSFORMATION_ID {
+            if ctx.world().player(player).is_some()
+                && ctx.world().transformation_id(player) == TRANSFORMATION_ID
+            {
                 ctx.world_mut().untransform(player);
             }
         }
@@ -230,7 +235,11 @@ impl Script for Rabbits {
             }
         } else if skill.id == RABBIT_MAGIC_EYE.id
             && ctx.world().is_object_invisible(npc.object_id)
-            && ctx.is_inside_radius_2d(npc.object_id, caster, ctx.world().script_skill_affect_range(skill))
+            && ctx.is_inside_radius_2d(
+                npc.object_id,
+                caster,
+                ctx.world().script_skill_affect_range(skill),
+            )
         {
             ctx.world_mut().set_invisible(npc.object_id, false);
         }
@@ -358,7 +367,10 @@ mod tests {
         let manager = t.npcs_of(NPC_MANAGER)[0];
         t.world.run_as_script("Rabbits", |ctx| {
             let n = ctx.script_npc(manager).unwrap();
-            assert_eq!(Rabbits.on_first_talk(ctx, n, ObjectId(1)).as_deref(), Some("900101.htm"));
+            assert_eq!(
+                Rabbits.on_first_talk(ctx, n, ObjectId(1)).as_deref(),
+                Some("900101.htm")
+            );
         });
     }
 

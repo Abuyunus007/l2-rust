@@ -134,6 +134,8 @@ impl World {
         self.world_add_visible(id, region);
         // Java `onSpawn()`.
         self.on_spawn(id);
+        // The end of `Creature.onSpawn()`: the custom boss announcements.
+        self.boss_announce_spawn(id);
         // Java `Npc.onSpawn()`: `WalkingManager.onSpawn` (M8-MISC-01).
         self.walking_on_spawn(id);
         // Java `Attackable.onSpawn()`.

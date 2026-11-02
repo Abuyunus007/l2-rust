@@ -408,6 +408,8 @@ pub struct WorldSettings {
     pub party: crate::party::PartySettings,
     /// The PvP flag times, the anti feed rules and the PvP title colours (M6-PVP-01).
     pub pvp: crate::pvp::PvpSettings,
+    /// `Custom/Rebirth.ini` (M9-C05).
+    pub rebirth: crate::custom::rebirth::RebirthSettings,
     /// The values the NPC shops read (M6-SHOP-01).
     pub shop: crate::shop::ShopSettings,
     /// The freight price and slots, the clan warehouse rule, the sorted lists (M6-WH-01).
@@ -430,6 +432,10 @@ pub struct WorldSettings {
     pub leftover: crate::leftover::LeftoverSettings,
     /// The subclass values of `Player.ini` (S-SUB-01).
     pub subclass: crate::subclass::SubclassSettings,
+    /// `Custom/FactionSystem.ini` (M9-C04, off by default).
+    pub faction: crate::custom::faction::FactionSettings,
+    /// `Custom/FakePlayers.ini` (M9-C04, off by default).
+    pub fake_players: crate::custom::fake_players::FakePlayerSettings,
 }
 
 impl Default for WorldSettings {
@@ -487,6 +493,7 @@ impl Default for WorldSettings {
             cast: crate::skills::cast::CastSettings::default(),
             party: crate::party::PartySettings::default(),
             pvp: crate::pvp::PvpSettings::default(),
+            rebirth: crate::custom::rebirth::RebirthSettings::default(),
             shop: crate::shop::ShopSettings::default(),
             warehouse: crate::warehouse::WarehouseSettings::default(),
             craft: crate::craft::CraftSettings::default(),
@@ -497,6 +504,8 @@ impl Default for WorldSettings {
             daily_reset_database_writes: false,
             leftover: crate::leftover::LeftoverSettings::default(),
             subclass: crate::subclass::SubclassSettings::default(),
+            faction: crate::custom::faction::FactionSettings::default(),
+            fake_players: crate::custom::fake_players::FakePlayerSettings::default(),
         }
     }
 }

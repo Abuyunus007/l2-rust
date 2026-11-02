@@ -17,7 +17,10 @@ pub(super) const TOP_CENTER: i32 = 2;
 pub(super) const BOTTOM_RIGHT: i32 = 8;
 
 /// The custom Ghost Walking skill (`tvt_event.xml`).
-pub(super) const GHOST_WALKING: SkillKey = SkillKey { id: 100_000, level: 1 };
+pub(super) const GHOST_WALKING: SkillKey = SkillKey {
+    id: 100_000,
+    level: 1,
+};
 
 pub(super) const FIGHTER_BUFFS: [SkillKey; 7] = [
     SkillKey { id: 4322, level: 1 }, // Wind Walk
@@ -47,7 +50,11 @@ pub(super) fn buff_heal(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectI
             return Some("manager-combat.html".to_owned());
         }
 
-        let buffs = if ctx.is_mage_class(player) { MAGE_BUFFS } else { FIGHTER_BUFFS };
+        let buffs = if ctx.is_mage_class(player) {
+            MAGE_BUFFS
+        } else {
+            FIGHTER_BUFFS
+        };
         for skill in buffs {
             // `npc.setTarget(player); npc.doCast(skill)`: no animation of `applyEffects`.
             ctx.cast_skill(npc, player, skill);
@@ -103,7 +110,7 @@ pub(super) fn send_time_remaining(ctx: &ScriptCtx<'_>, player: ObjectId, seconds
 /// order they were put in.
 pub(super) fn sorted_scores(scores: &[(ObjectId, i32)]) -> Vec<(ObjectId, i32)> {
     let mut sorted = scores.to_vec();
-    sorted.sort_by(|a, b| b.1.cmp(&a.1));
+    sorted.sort_by_key(|entry| std::cmp::Reverse(entry.1));
     sorted
 }
 
@@ -119,7 +126,11 @@ pub(super) fn broadcast_scoreboard(
 }
 
 /// The scoreboard packet.
-pub(super) fn scoreboard_packet(ctx: &ScriptCtx<'_>, state: i32, scores: &[(ObjectId, i32)]) -> ExPvpMatchCcRecord {
+pub(super) fn scoreboard_packet(
+    ctx: &ScriptCtx<'_>,
+    state: i32,
+    scores: &[(ObjectId, i32)],
+) -> ExPvpMatchCcRecord {
     ExPvpMatchCcRecord {
         state,
         players: sorted_scores(scores)
@@ -189,23 +200,27 @@ pub(super) fn can_register(
     maximum_count: usize,
 ) -> bool {
     if registered {
-        ctx.world().send_message(player, "You are already registered on this event.");
+        ctx.world()
+            .send_message(player, "You are already registered on this event.");
         return false;
     }
 
     let level = ctx.player_level(player);
     if level < levels.0 {
-        ctx.world().send_message(player, "Your level is too low to participate.");
+        ctx.world()
+            .send_message(player, "Your level is too low to participate.");
         return false;
     }
 
     if level > levels.1 {
-        ctx.world().send_message(player, "Your level is too high to participate.");
+        ctx.world()
+            .send_message(player, "Your level is too high to participate.");
         return false;
     }
 
     if ctx.world().is_registered_on_event(player) || ctx.world().block_checker_arena_of(player) > -1 {
-        ctx.world().send_message(player, "You are already registered on an event.");
+        ctx.world()
+            .send_message(player, "You are already registered on an event.");
         return false;
     }
 

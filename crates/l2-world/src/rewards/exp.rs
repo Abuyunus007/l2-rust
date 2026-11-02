@@ -28,7 +28,7 @@
 //   (M4-VIT-01); this file calls them where `PlayerStat.addExpAndSp` and
 //   `Attackable.calculateRewards` do.
 // - The over-hit bonus (a skill effect,
-//   M5), champions (not rolled), premium rates (`PremiumSystemEnabled` is off by default),
+//   M5), champions (not rolled), premium rates (`custom/premium.rs`, M9-C02, off by default),
 //   `DynamicExpRates.xml` (every shipped rate is 1, so Java reports it disabled), clans and the
 //   tutorial quest event, scripts (D-05). The subclass limits of `setExp`/`setLevel` are
 //   `subclass/` (S-SUB-01).
@@ -260,7 +260,7 @@ impl World {
             return;
         }
         // `if (!getMustRewardExpSP()) return;` (`OpenChest` unlocked the chest: no exp).
-        if self.npcs.get(&dying).is_some_and(|n| !n.must_reward_exp_sp) {
+        if self.npcs.get(&dying).is_some_and(|n| !n.must_reward_exp_sp) || self.is_fake_player(dying) {
             return;
         }
         let Some(at) = self.position_of(dying) else {
@@ -319,7 +319,8 @@ impl World {
             // Calculate the difference of level between this attacker and the Attackable.
             let level = self.core_of(attacker).map_or(1, |c| c.level);
             let (exp, sp) = self.calculate_exp_and_sp(dying, level, damage, total_damage);
-            // Champions: see the module comment.
+            // `CHAMPION_ENABLE && _champion`: `exp *= CHAMPION_REWARDS_EXP_SP` (`custom/champion.rs`).
+            let (exp, sp) = self.champion_exp_sp(dying, exp, sp);
             // `exp *= penalty` (a float widened to double).
             let mut exp = exp * f64::from(penalty);
             // Check for an over-hit enabled strike.
@@ -337,7 +338,8 @@ impl World {
             };
             let add_exp = java_round(view.calc_stat(Stat::ExpspRate, exp, None, None));
             let add_sp = view.calc_stat(Stat::ExpspRate, sp, None, None) as i32;
-            // Premium rates: `PremiumSystemEnabled` is off by default.
+            // Premium rates: `addExp *= PREMIUM_RATE_XP` (M9-C02, `custom/premium.rs`).
+            let (add_exp, add_sp) = self.premium_exp_sp(attacker, add_exp, add_sp);
             // NOTE(java-quirk): `useVitalityRate()` is the `useBonuses` flag, so a raid boss kill
             // (`RaidbossUseVitality = False` in the shipped config) gets no bonus of any kind,
             // not even the `BONUS_EXP` skills.
@@ -415,8 +417,9 @@ impl World {
         // Calculate Exp and SP rewards.
         // NOTE(java-quirk): `calculateExpAndSp` already takes `partyDmg / totalDamage` of the
         // reward, and `partyMul` takes the same share once more.
-        let (mut exp, mut sp) = self.calculate_exp_and_sp(dying, party_level, party_damage, total_damage);
-        // Champions: see the module comment.
+        let (exp, sp) = self.calculate_exp_and_sp(dying, party_level, party_damage, total_damage);
+        // `CHAMPION_ENABLE && _champion` (`custom/champion.rs`).
+        let (mut exp, mut sp) = self.champion_exp_sp(dying, exp, sp);
         exp *= party_mul;
         sp *= party_mul;
         // Check for an over-hit enabled strike. (When in party, the over-hit exp bonus is given
@@ -749,7 +752,7 @@ impl World {
             .and_then(|m| i32::try_from(m + 1).ok())
     }
 
-    fn set_exp(&mut self, id: ObjectId, value: i64) {
+    pub(crate) fn set_exp(&mut self, id: ObjectId, value: i64) {
         // Java `PlayerStat.setExp`: an active subclass keeps it in its holder, which caps it at
         // the last exp of its maximum level (S-SUB-01).
         let value = if self.is_subclass_active(id) {
@@ -944,7 +947,10 @@ impl World {
             self.check_player_skills(id, &mut writes);
         }
         self.give_free_mount_skills(id);
-        // The `RebirthConfig` skills: a Custom config, off by default.
+        // The `RebirthConfig` skills (M9-C05, `custom/rebirth.rs`), off by default.
+        if self.settings.rebirth.allow_rebirth {
+            self.rebirth_grant_skills(id);
+        }
 
         self.flush_skill_writes(id, writes);
 
@@ -1058,6 +1064,14 @@ impl World {
             upserts: writes.upserts,
             removed: writes.removed,
         });
+    }
+
+    /// Java `Player.checkPlayerSkills()` with its rows written (the custom board's delevel,
+    /// M9-C03).
+    pub(crate) fn check_player_skills_and_store(&mut self, id: ObjectId) {
+        let mut writes = SkillWrites::default();
+        self.check_player_skills(id, &mut writes);
+        self.flush_skill_writes(id, writes);
     }
 
     /// Java `Player.checkPlayerSkills()`: a skill whose level needs more than the player has (9

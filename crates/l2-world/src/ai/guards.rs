@@ -17,8 +17,8 @@
 // `FortCommander`'s speech and `killedCommander`: M7-FORT-01.
 //
 // # Left out
-// - The faction system's guards (`FactionSystemConfig.FACTION_GUARDS_ENABLED`, a Custom config
-//   that is off by default).
+// The faction system's guards (`FactionSystemConfig.FACTION_GUARDS_ENABLED`) are
+// `custom/faction.rs` (M9-C04).
 // - Scripts: `QuestGuard.setPassive` / `setAutoAttackable` and its `ON_ATTACKABLE_*` events (D-05).
 // - Fake players.
 
@@ -125,6 +125,15 @@ impl World {
         damage: i64,
         aggro: i64,
     ) -> bool {
+        // Check if fake players should aggro each other (`Attackable.addDamageHate`,
+        // `Custom/FakePlayers.ini`).
+        if self.settings.fake_players.enabled
+            && !self.settings.fake_players.aggro_fpc
+            && self.is_fake_player(npc)
+            && self.is_fake_player(attacker)
+        {
+            return true;
+        }
         match self.npc_class(npc) {
             Some(NpcClass::Defender) => {
                 self.npc_class(attacker).is_some_and(NpcClass::is_defender)
@@ -148,6 +157,10 @@ impl World {
             NpcClass::Block => true,
             // `Monster.isAutoAttackable`.
             NpcClass::Monster | NpcClass::RaidBoss | NpcClass::GrandBoss => {
+                // A fake player (`Custom/FakePlayers.ini`).
+                if let Some(attackable) = self.fake_player_auto_attackable(target, attacker) {
+                    return attackable;
+                }
                 // Check if the Monster target is aggressive.
                 if self.ai.attackable.settings.guard_attack_aggro_mob
                     && self.is_aggressive_npc(target)
@@ -157,7 +170,7 @@ impl World {
                 }
                 // `attacker.isMonster()`: `attacker.isFakePlayer()`.
                 if attacker_class.is_monster() {
-                    return false;
+                    return self.is_fake_player(attacker);
                 }
                 // "Anything considers monsters friendly except Players, Attackables (Guards,
                 // Friendly NPC), Traps and EffectPoints."
@@ -167,7 +180,7 @@ impl World {
             }
             // `Guard.isAutoAttackable`: "attacker.isMonster() && !attacker.isFakePlayer()", then
             // the faction rule, then `Npc._isAutoAttackable`, false for a guard.
-            NpcClass::Guard => attacker_class.is_monster(),
+            NpcClass::Guard => attacker_class.is_monster() && !self.is_fake_player(attacker),
             // `_isAutoAttackable && !attacker.isPlayer()`; `setAutoAttackable` is a script call.
             NpcClass::QuestGuard => self.is_quest_guard_auto_attackable(target),
             // `FriendlyMob`: only players with karma. `Defender` / `FortCommander`: only players

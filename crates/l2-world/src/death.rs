@@ -192,8 +192,8 @@ impl World {
         if self.is_channelized(id) {
             self.abort_channelization(id);
         }
-        // The boss defeat announcements (Custom/BossAnnouncements.ini, off by default) are not
-        // ported.
+        // The custom boss defeat announcements (Custom/BossAnnouncements.ini).
+        self.boss_announce_defeat(id);
         true
     }
 
@@ -283,7 +283,7 @@ impl World {
         }
         // `_currentCollisionRadius` goes back to the template's (`Grow` may have changed it).
         // `_currentCollisionHeight` is the template's already. `_killingBlowWeaponId` is read by
-        // scripts only (D-05). Fake players are not ported.
+        // scripts only (D-05).
         let radius = self
             .npcs
             .get(&id)
@@ -292,7 +292,8 @@ impl World {
         if let (Some(npc), Some(radius)) = (self.npcs.get_mut(&id), radius) {
             npc.collision_radius = radius;
         }
-        let _ = killer;
+        // A fake player killed by a playable (`Custom/FakePlayers.ini`).
+        self.fake_player_on_die(id, killer);
         self.add_decay_task(id);
         // `UCTower.doDie`: the tower leaves its team (M8-GAMES-01).
         self.minigame_on_npc_die(id);
@@ -321,8 +322,11 @@ impl World {
             self.stop_fake_death(id, true);
         }
         if let Some(killer) = killer {
-            // Ultimate Combat teams and ON_PLAYER_PVP_KILL (D-05); the PvP/PK reward items and the
-            // kill announcements (Custom configs, off by default); fake player karma.
+            // Ultimate Combat teams and ON_PLAYER_PVP_KILL (D-05).
+            // The PvP/PK reward items and the kill announcements (M9-C05, off by default).
+            self.custom_pvp_kill_rewards(id, killer);
+            // "FakePlayerUnflaggedKillsKarma" (`Custom/FakePlayers.ini`).
+            self.fake_player_killed_player(id, killer);
             self.broadcast_status_update(id);
 
             // Clear resurrect xp calculation.
@@ -534,7 +538,9 @@ impl World {
         // `!OlympiadManager.isRegistered(player) && !player.isOnEvent()` (M8-OLY-01; the events
         // are scripts).
         let fixed_res = self.players.get(&id).is_some_and(|p| {
-            (!self.olympiad_is_registered(id) && !self.is_on_event(id) && self.have_item_for_self_resurrection(id))
+            (!self.olympiad_is_registered(id)
+                && !self.is_on_event(id)
+                && self.have_item_for_self_resurrection(id))
                 || self.data.access_level_allows_fixed_res(p.data.access_level)
         });
         let (to_clan_hall, to_castle, to_siege_hq, to_fortress) = if can_teleport {

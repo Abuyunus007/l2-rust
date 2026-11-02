@@ -5,6 +5,7 @@
 //! mirror the column types.
 
 mod account_data;
+mod account_premium;
 mod airships;
 mod announcements;
 mod auctions;
@@ -12,6 +13,7 @@ mod bbs_favorites;
 mod bookmarks;
 mod bosses;
 mod bot_reports;
+mod buffer_schemes;
 mod buylists;
 mod characters;
 mod clans;
@@ -43,6 +45,7 @@ mod pets;
 mod punishments;
 mod quests;
 mod random_spawn;
+mod rebirth;
 mod recipes;
 mod recommendations;
 mod residences;
@@ -54,14 +57,15 @@ mod sql_number;
 mod subclasses;
 mod summons;
 mod territories;
+mod transmog;
 mod underground_coliseum;
 mod variables;
-mod transmog;
 mod wedding;
 
 pub use account_data::{
     AccountDataRepository, AccountDataRow, VAR_PWD, VAR_WTE, crypt_secondary_password, sha1_digest,
 };
+pub use account_premium::PremiumRepository;
 pub use airships::{AirshipRepository, AirshipRow};
 pub use announcements::{AnnouncementRepository, AnnouncementRow, AutoColumns};
 pub use auctions::{AuctionBidRow, AuctionRepository, AuctionRow, NewAuction};
@@ -72,6 +76,7 @@ pub use bosses::{
     RaidPointsRow,
 };
 pub use bot_reports::{BotReportDbRow, BotReportRepository};
+pub use buffer_schemes::{BufferSchemeRepository, BufferSchemeRow};
 pub use buylists::{BuyListRepository, BuyListRow};
 pub use characters::{
     CalendarDate, CharacterIdName, CharacterNameAccess, CharacterRepository, CharacterRow, CharacterUpdate,
@@ -112,6 +117,7 @@ pub use pets::{NewPetSkillSave, PetRepository, PetRow, PetSkillSaveRow, PetValue
 pub use punishments::{NewPunishment, PunishmentRepository, PunishmentRow};
 pub use quests::{QUEST_STATE_VAR, QuestRepository, QuestStateRow, QuestVariableRow};
 pub use random_spawn::{RandomSpawnRepository, RandomSpawnRow};
+pub use rebirth::{RebirthRepository, RebirthRow};
 pub use recipes::{RecipeBookRow, RecipeRepository, RecipeShopRow};
 pub use recommendations::{RecoBonus, RecommendationRepository};
 pub use residences::{
@@ -129,7 +135,7 @@ pub use summons::{NewSummonSkillSave, SummonRepository, SummonSkillSaveRow};
 pub use territories::{
     NEXT_TW_START_DATE, TerritoryRegistrationRow, TerritoryRepository, TerritoryRow, TerritorySpawnRow,
 };
+pub use transmog::TransmogRepository;
 pub use underground_coliseum::{ColiseumBestTeamRow, UndergroundColiseumRepository};
 pub use variables::VariableRepository;
-pub use transmog::TransmogRepository;
 pub use wedding::{CoupleRow, WeddingRepository, married_text};

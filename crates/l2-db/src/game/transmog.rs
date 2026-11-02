@@ -40,7 +40,10 @@ impl TransmogRepository {
             .bind(owner)
             .fetch_all(&self.pool)
             .await?;
-        Ok(rows.into_iter().map(|(id,)| i32::try_from(id).unwrap_or(i32::MAX)).collect())
+        Ok(rows
+            .into_iter()
+            .map(|(id,)| i32::try_from(id).unwrap_or(i32::MAX))
+            .collect())
     }
 
     /// One `REPLACE` per item of the collection (Java batches them).

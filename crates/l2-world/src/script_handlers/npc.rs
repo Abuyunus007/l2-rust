@@ -158,7 +158,9 @@ fn voice_handler(world: &mut World, player: ObjectId, command: &str, _target: Op
             None => rest.trim(),
         };
         if !vc.is_empty() {
-            return world.script_voiced_handler(player, vc);
+            // `vparams = command.substring(endOfCommand).trim()`, `null` without a space.
+            let params = rest.find(' ').map(|end| rest[end..].trim());
+            return world.script_voiced_handler_with(player, vc, params);
         }
     }
     false

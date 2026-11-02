@@ -137,6 +137,8 @@ pub enum PersistCommand {
     Bookmark(crate::bookmarks::BookmarkWrite),
     /// A `character_contacts` row change with Java's statement (L-04, see `contacts.rs`).
     Contact(crate::contacts::ContactWrite),
+    /// A `rebirth_system` row change with Java's statement (M9-C05, see `custom/rebirth.rs`).
+    Rebirth(crate::custom::rebirth::RebirthWrite),
     /// Asks the persistence task to read the `characters` rows (name, online, class, level) of
     /// friends who are not in the world for `FriendListExtended` (L-04). The answer comes back
     /// as `WorldCommand::FriendSummariesLoaded`.
@@ -235,6 +237,12 @@ pub enum PersistCommand {
     /// (D-50). The answer comes back as `WorldCommand::LotteryReread`; it includes every write sent
     /// before it.
     LotteryRequest { then: crate::lottery::LotteryThen },
+    /// A write of `account_premium` with Java's statement (`PremiumManager`, M9-C02).
+    Premium(crate::custom::PremiumWrite),
+    /// Asks the persistence task for the `account_premium` row of `key` (`SELECT account_name,enddate
+    /// FROM account_premium WHERE account_name = ?`) when a player enters the world (D-50). The
+    /// answer comes back as `WorldCommand::PremiumLoaded`; it includes every write sent before it.
+    PremiumRequest { player: ObjectId, key: String },
     /// A write of the `announcements` table with Java's statement (`//announces`), see
     /// `admin/announce.rs`. An `Insert` is answered with `WorldCommand::AnnouncementStored`.
     Announcement(crate::admin::announce::AnnouncementWrite),
@@ -264,7 +272,10 @@ pub enum PersistCommand {
     /// `onPlayerLogout`).
     TransmogSaveCollection { owner: String, item_ids: Vec<i32> },
     /// Transmog: the `transmogId` row of an item, written (`Some`) or deleted (`None`).
-    ItemTransmog { object_id: i32, transmog_id: Option<i32> },
+    ItemTransmog {
+        object_id: i32,
+        transmog_id: Option<i32>,
+    },
     /// A `character_instance_time` row change with Java's statement (M8-INST-01, see
     /// `instance/times.rs`). Applied in order with the other commands.
     InstanceTime(crate::instance::InstanceTimeWrite),
@@ -315,6 +326,12 @@ pub enum PersistCommand {
     BbsFavoriteRequest {
         player: ObjectId,
         kind: crate::community_board::FavoriteRead,
+    },
+    /// The `buffer_schemes` rows of one player after a scheme changed: his rows are replaced by
+    /// these `(scheme_name, skills)` (M9-C03, `custom/scheme_buffer.rs`).
+    BufferSchemes {
+        object_id: ObjectId,
+        schemes: Vec<(String, String)>,
     },
 }
 

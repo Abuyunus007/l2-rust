@@ -84,8 +84,10 @@ impl Script for Transmog {
                             if cost > 0 {
                                 if ctx.world().adena_of(player) < cost {
                                     ctx.world_mut().transmog_equip(player, item);
-                                    ctx.world()
-                                        .send(player, &SystemMessage::new(SystemMessageId::YouDoNotHaveEnoughAdena));
+                                    ctx.world().send(
+                                        player,
+                                        &SystemMessage::new(SystemMessageId::YouDoNotHaveEnoughAdena),
+                                    );
                                     menu_page(ctx, &format!("{slot}!{page}"), player);
                                     return None;
                                 }
@@ -119,8 +121,13 @@ impl Script for Transmog {
                 match ctx.world_mut().transmog_unequip_body_slot(player, slot) {
                     Some(item) => {
                         if let Some((name, _, _)) = ctx.world().transmog_item_info(transmog_id) {
-                            if ctx.world().transmog_collection(player, mask).contains(&transmog_id) {
-                                let cost = i64::from(ctx.world().custom_script_settings().transmog.apply_cost);
+                            if ctx
+                                .world()
+                                .transmog_collection(player, mask)
+                                .contains(&transmog_id)
+                            {
+                                let cost =
+                                    i64::from(ctx.world().custom_script_settings().transmog.apply_cost);
                                 if cost > 0 {
                                     if ctx.world().adena_of(player) < cost {
                                         ctx.world_mut().transmog_equip(player, item);
@@ -136,8 +143,10 @@ impl Script for Transmog {
                                 }
 
                                 ctx.world_mut().transmog_set_item(item, transmog_id);
-                                ctx.world()
-                                    .send_message(player, &format!("You have set your item transmog to {name}."));
+                                ctx.world().send_message(
+                                    player,
+                                    &format!("You have set your item transmog to {name}."),
+                                );
                             }
                         }
 
@@ -256,7 +265,6 @@ fn menu_page(ctx: &mut ScriptCtx<'_>, event: &str, player: ObjectId) -> Option<S
     None
 }
 
-
 #[cfg(test)]
 mod tests {
     use l2_world::ScriptRegistry;
@@ -294,7 +302,10 @@ mod tests {
         let mut registry = ScriptRegistry::new();
         registry.add(Transmog);
         let pages: Vec<(String, String)> = [
-            ("900009-03.html", "<html>%title%<br>%1%%2%%3%<br>%previous% %next% %remove%</html>"),
+            (
+                "900009-03.html",
+                "<html>%title%<br>%1%%2%%3%<br>%previous% %next% %remove%</html>",
+            ),
             ("900009-01.html", "<html>menu</html>"),
             ("900009-02.html", "<html>empty</html>"),
         ]
@@ -330,7 +341,8 @@ mod tests {
         let mut t = scene(false, 0, 0);
         t.ticks(3);
         assert!(commands(&t).is_empty(), "no read at the login");
-        t.world.run_as_script("Transmog", |ctx| ctx.give_items(ObjectId(PLAYER), 101, 1));
+        t.world
+            .run_as_script("Transmog", |ctx| ctx.give_items(ObjectId(PLAYER), 101, 1));
         assert!(t.world.transmog_collection(ObjectId(PLAYER), 0x400).is_empty());
         // The menu answers: the pages of an empty collection.
         assert_eq!(event(&mut t, "menu").as_deref(), Some("900009-01.html"));
@@ -396,9 +408,13 @@ mod tests {
         assert_eq!(t.world.item_transmog_id(ObjectId(WORN)), 101);
         assert_eq!(t.world.transmog_display_id(ObjectId(WORN)), Some(101));
         assert_eq!(t.count(PLAYER, 57), 9_950);
-        assert!(commands(&t).iter().any(
-            |c| matches!(c, PersistCommand::ItemTransmog { object_id: WORN, transmog_id: Some(101) })
-        ));
+        assert!(commands(&t).iter().any(|c| matches!(
+            c,
+            PersistCommand::ItemTransmog {
+                object_id: WORN,
+                transmog_id: Some(101)
+            }
+        )));
         // It is worn again.
         assert!(t.world.paperdoll_object(ObjectId(PLAYER), 6).is_some());
 
@@ -411,29 +427,43 @@ mod tests {
         assert_eq!(event(&mut t, "rem!CHEST!1"), None);
         assert_eq!(t.world.item_transmog_id(ObjectId(WORN)), 0);
         assert_eq!(t.count(PLAYER, 57), 9_930);
-        assert!(commands(&t).iter().any(
-            |c| matches!(c, PersistCommand::ItemTransmog { object_id: WORN, transmog_id: None })
-        ));
+        assert!(commands(&t).iter().any(|c| matches!(
+            c,
+            PersistCommand::ItemTransmog {
+                object_id: WORN,
+                transmog_id: None
+            }
+        )));
     }
 
     #[test]
     fn without_the_adena_the_item_stays_as_it_was() {
         let mut t = scene(true, 20_000, 0);
-        t.world.run_as_script("Transmog", |ctx| ctx.give_items(ObjectId(PLAYER), 101, 1));
+        t.world
+            .run_as_script("Transmog", |ctx| ctx.give_items(ObjectId(PLAYER), 101, 1));
         commands(&t);
         assert_eq!(event(&mut t, "set!CHEST!1!101"), None);
         assert_eq!(t.world.item_transmog_id(ObjectId(WORN)), 0);
         assert_eq!(t.count(PLAYER, 57), 10_000);
-        assert!(commands(&t).iter().all(|c| !matches!(c, PersistCommand::ItemTransmog { .. })));
-        assert!(t.world.paperdoll_object(ObjectId(PLAYER), 6).is_some(), "worn again");
+        assert!(
+            commands(&t)
+                .iter()
+                .all(|c| !matches!(c, PersistCommand::ItemTransmog { .. }))
+        );
+        assert!(
+            t.world.paperdoll_object(ObjectId(PLAYER), 6).is_some(),
+            "worn again"
+        );
     }
 
     #[test]
     fn the_collection_is_stored_when_the_player_leaves() {
         let mut t = scene(true, 0, 0);
-        t.world.run_as_script("Transmog", |ctx| ctx.give_items(ObjectId(PLAYER), 101, 1));
+        t.world
+            .run_as_script("Transmog", |ctx| ctx.give_items(ObjectId(PLAYER), 101, 1));
         commands(&t);
-        t.world.run_as_script("Transmog", |ctx| Transmog.on_player_logout(ctx, ObjectId(PLAYER)));
+        t.world
+            .run_as_script("Transmog", |ctx| Transmog.on_player_logout(ctx, ObjectId(PLAYER)));
         let stored = commands(&t);
         assert!(
             stored.iter().any(|c| matches!(c,

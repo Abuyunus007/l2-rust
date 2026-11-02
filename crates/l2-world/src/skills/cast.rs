@@ -1807,6 +1807,11 @@ impl World {
                         self.update_pvp_status(player);
                     }
                 }
+                // A fake player that is not auto attackable flags the attacker
+                // (`Custom/FakePlayers.ini`).
+                if self.is_fake_player(target) && !self.settings.fake_players.auto_attackable {
+                    self.update_pvp_status(player);
+                }
             }
 
             // Mobs in range 1000 see spell.
@@ -1869,6 +1874,9 @@ impl World {
                     // Notify target AI about the attack.
                     self.notify_action_attacked(target, caster);
                 }
+                // A fake player that attacks a playable gets its pvp flag
+                // (`Custom/FakePlayers.ini`).
+                self.fake_player_flag_on_attack(caster, target);
             }
         }
     }

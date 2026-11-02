@@ -58,14 +58,35 @@ impl World {
         if !text.starts_with('.') {
             return false;
         }
-        self.script_voiced_handler(player, voiced_command_of(text))
+        // `ChatGeneral.onChat`: with more than one token the command is the first one and the
+        // params are the text after it and one character (`text.substring(command.length() + 2)`).
+        let command = voiced_command_of(text);
+        let params = (tokens(text).len() > 1).then(|| text.get(command.len() + 2..).unwrap_or(""));
+        self.script_voiced_handler_with(player, command, params)
     }
 
     /// `VoicedCommandHandler.getHandler(command)` and `onCommand` of the voiced commands of this
     /// module (`ExperienceGain`, which always answers `true`). `false`: no handler.
+    // Kept for callers that run a voiced command without params.
+    #[allow(dead_code)]
     pub(crate) fn script_voiced_handler(&mut self, player: ObjectId, command: &str) -> bool {
+        self.script_voiced_handler_with(player, command, None)
+    }
+
+    /// [`World::script_voiced_handler`] with the params the voiced command got (`onCommand`'s last
+    /// argument: the text after the command, `None` for `null`).
+    pub(crate) fn script_voiced_handler_with(
+        &mut self,
+        player: ObjectId,
+        command: &str,
+        params: Option<&str>,
+    ) -> bool {
         // `VoicedCommandHandler.getHandler`: the text up to the first space.
         let word = command.split(' ').next().unwrap_or(command);
+        // The voiced commands of the custom features (`custom/`, M9-C02).
+        if let Some(result) = self.custom_voiced_handler(player, word, params) {
+            return result;
+        }
         // `Wedding` registers `engage`, `divorce` and `gotolove` (with `AllowWedding`) and answers
         // with its own result.
         if let Some(result) = self.wedding_voiced_handler(player, word) {
@@ -73,6 +94,10 @@ impl World {
         }
         // `HellboundLoader` registers `hellbound` (S-API-05, `script/hellbound_api.rs`).
         if let Some(result) = self.hellbound_voiced_handler(player, word) {
+            return result;
+        }
+        // `SellBuffCommandHandler` registers `sellbuff` and `sellbuffs` with `SellBuffEnable` (M9-C03).
+        if let Some(result) = self.sell_buffs_voiced_handler(player, word) {
             return result;
         }
         if !matches!(word, "expoff" | "expon") {

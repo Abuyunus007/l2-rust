@@ -52,6 +52,8 @@ pub struct World {
     pub(crate) npcs: HashMap<ObjectId, Npc>,
     /// Spawn lists, NPC templates and settings (M3-NPC-01).
     pub(crate) npc_world: crate::npc::NpcWorld,
+    /// The custom features (`Custom/*.ini`, D-57; see `custom/`).
+    pub(crate) custom: crate::custom::CustomWorld,
     /// Html pages, gatekeeper lists and bypass handlers (M3-TALK-01).
     pub(crate) talk: crate::dialog::TalkWorld,
     /// The admin command handlers (M3-ADMIN-01).
@@ -59,6 +61,8 @@ pub struct World {
     pub(crate) doors: HashMap<ObjectId, Door>,
     /// Java `GameTimeTaskManager._isNight`; `None` while the game clock is off.
     pub(crate) game_clock_night: Option<bool>,
+    /// The measured duration of the last ticks (M9-H02), fed by the runner.
+    pub(crate) tick_stats: crate::tick_stats::TickStats,
     /// The loaded geodata (M3-GEO-03); `None` in tests that need none. Immutable, shared with
     /// the path workers (D-14).
     pub(crate) geo: Option<Arc<l2_geo::GeoEngine>>,
@@ -112,6 +116,8 @@ pub struct World {
     pub(crate) clans: crate::clan::ClanWorld,
     /// The PvP flag of every player and the anti feed death times (M6-PVP-01, `pvp.rs`).
     pub(crate) pvp: crate::pvp::PvpWorld,
+    /// The fake player names, chat lines and karma (M9-C04, `custom/fake_players.rs`).
+    pub(crate) fake_players: crate::custom::fake_players::FakePlayerWorld,
     /// The buy lists' stock and restock queue (M6-SHOP-01, `shop/`).
     pub(crate) shop: crate::shop::ShopWorld,
     /// The duels going on and the duel state of every duelist (M6-DUEL-01, `duel.rs`).
@@ -126,6 +132,13 @@ pub struct World {
     pub(crate) multisell: crate::multisell::MultisellWorld,
     /// The PC cafe settings and each player's retail timer (M6-FU-11, `pccafe.rs`).
     pub(crate) pccafe: crate::pccafe::PcCafeWorld,
+    /// The premium system (M9-C02, `custom/premium.rs`).
+    pub(crate) premium: crate::custom::premium::PremiumWorld,
+    /// The auto potions, the auto play and the offline play (M9-C02, `custom/`).
+    pub(crate) auto_potion: crate::custom::auto_potion::AutoPotionWorld,
+    pub(crate) auto_play: crate::custom::auto_play::AutoPlayWorld,
+    pub(crate) offline_play: crate::custom::offline_play::OfflinePlayWorld,
+    pub(crate) offline_command: crate::custom::offline_trade::OfflineCommandWorld,
     /// The enchant scrolls, success chances and element stones (M6-ENCHANT-01, `enchant/`).
     pub(crate) enchant: crate::enchant::EnchantWorld,
     /// The recipes and the makers waiting on the timer wheel (M6-CRAFT-01, `craft/`).
@@ -146,6 +159,8 @@ pub struct World {
     pub(crate) bot_report: crate::bot_report::BotReportWorld,
     /// The community board settings and the last page of each player (S-HAND-01, `community_board/`).
     pub(crate) community_board: crate::community_board::CommunityBoardWorld,
+    /// The custom buffer features: custom board, scheme buffer, buff shop (M9-C03, `custom/`).
+    pub(crate) custom_buffers: crate::custom::CustomBuffers,
     /// `/time` and the other information user commands (S-HAND-01, `user_command_info.rs`).
     pub(crate) user_command_info: crate::user_command_info::UserCommandInfoWorld,
     /// The script handlers of S-HAND-02 (`script_handlers/`).
@@ -214,10 +229,12 @@ impl World {
             regions: RegionGrid::new(false),
             npcs: HashMap::new(),
             npc_world: crate::npc::NpcWorld::default(),
+            custom: crate::custom::CustomWorld::default(),
             talk: crate::dialog::TalkWorld::default(),
             admin: crate::admin::AdminWorld::default(),
             doors: HashMap::new(),
             game_clock_night: None,
+            tick_stats: crate::tick_stats::TickStats::default(),
             geo: None,
             path_requests: None,
             next_path_request_id: 0,
@@ -245,6 +262,7 @@ impl World {
             summons: crate::summon::SummonWorld::default(),
             clans: crate::clan::ClanWorld::default(),
             pvp: crate::pvp::PvpWorld::default(),
+            fake_players: crate::custom::fake_players::FakePlayerWorld::default(),
             shop: crate::shop::ShopWorld::default(),
             duel: crate::duel::DuelWorld::default(),
             friends: crate::friends::FriendWorld::default(),
@@ -252,6 +270,11 @@ impl World {
             custom_scripts: crate::custom::CustomScriptWorld::default(),
             multisell: crate::multisell::MultisellWorld::default(),
             pccafe: crate::pccafe::PcCafeWorld::default(),
+            premium: crate::custom::premium::PremiumWorld::default(),
+            auto_potion: crate::custom::auto_potion::AutoPotionWorld::default(),
+            auto_play: crate::custom::auto_play::AutoPlayWorld::default(),
+            offline_play: crate::custom::offline_play::OfflinePlayWorld::default(),
+            offline_command: crate::custom::offline_trade::OfflineCommandWorld::default(),
             enchant: crate::enchant::EnchantWorld::default(),
             craft: crate::craft::CraftWorld::default(),
             augment: crate::augment::AugmentWorld::default(),
@@ -262,6 +285,7 @@ impl World {
             clanhall: crate::clanhall::ClanHallWorld::default(),
             bot_report: crate::bot_report::BotReportWorld::default(),
             community_board: crate::community_board::CommunityBoardWorld::default(),
+            custom_buffers: crate::custom::CustomBuffers::default(),
             user_command_info: crate::user_command_info::UserCommandInfoWorld::default(),
             script_handlers: crate::script_handlers::unstuck::ScriptHandlerWorld::default(),
             decoy_trap: crate::decoy_trap::DecoyTrapWorld::default(),
@@ -321,6 +345,11 @@ impl World {
     // there either; callers clamp to one second.
     pub fn set_autosave_interval(&mut self, interval: Duration) {
         self.autosave_ticks = TimerWheel::duration_to_ticks(interval);
+    }
+
+    /// Records how long one `tick()` really took (the runner measures it; M9-H02).
+    pub fn record_tick_duration(&mut self, took: Duration) {
+        self.tick_stats.record(took);
     }
 
     /// Ticks since the world started.
@@ -422,6 +451,7 @@ impl World {
                 }
             }
             WorldCommand::Kick { account } => self.kick_account(&account),
+            WorldCommand::FactionBalanceCheck { faction, done } => done(self.faction_balance_page(faction)),
             WorldCommand::ReleaseOfflineTrader { object_id, done } => {
                 let was_trader = self.release_offline_trader_quietly(object_id);
                 done(was_trader);
@@ -477,6 +507,9 @@ impl World {
                 owner,
                 result,
             } => self.on_block_list_loaded(sender, owner, result),
+            WorldCommand::PremiumLoaded { player, key, result } => {
+                self.on_premium_loaded(player, &key, result)
+            }
             WorldCommand::BbsFavoritesLoaded { player, kind, result } => {
                 self.on_bbs_favorites_loaded(player, kind, result)
             }
@@ -1015,8 +1048,12 @@ impl World {
             TimerKind::Clan(timer) => self.on_clan_timer(timer),
             // Java: PvpFlagTaskManager.run (for one player)
             TimerKind::PvpFlag(id) => self.on_pvp_flag_timer(id),
+            // Java: FakePlayerChatManager.manageChat's ThreadPool.schedule
+            TimerKind::FakePlayerChat(key) => self.on_fake_player_chat_timer(key),
             // Java: PcCafePointsManager.giveRetailPcCafePont
             TimerKind::PcCafe(id) => self.on_pc_cafe_timer(id),
+            // Java: PremiumManager, AutoPotionTaskManager, AutoPlayTaskManager, AutoUseTaskManager
+            TimerKind::CustomPlay(timer) => self.on_custom_play_timer(timer),
             // Java: BuyListTaskManager, InventoryEnableTask
             TimerKind::Shop(timer) => self.on_shop_timer(timer),
             // Java: Duel.ScheduleStartDuelTask, ScheduleDuelTask, ScheduleEndDuelTask

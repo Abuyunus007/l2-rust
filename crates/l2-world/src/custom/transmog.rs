@@ -131,14 +131,20 @@ impl World {
         let load = match result {
             Ok(load) => load,
             Err(()) => {
-                warn!("Problem with Transmog: the rows of {} could not be read.", player.0);
+                warn!(
+                    "Problem with Transmog: the rows of {} could not be read.",
+                    player.0
+                );
                 return;
             }
         };
         let mut collection: BTreeMap<i32, Vec<i32>> = BTreeMap::new();
         for item_id in load.collection {
             // `ItemData.getTemplate(itemId) != null`.
-            let Some(mask) = self.item_templates().and_then(|t| t.get(item_id).map(|t| t.body_part.mask())) else {
+            let Some(mask) = self
+                .item_templates()
+                .and_then(|t| t.get(item_id).map(|t| t.body_part.mask()))
+            else {
                 continue;
             };
             let ids = collection.entry(mask).or_default();
@@ -147,12 +153,18 @@ impl World {
             }
         }
         if !collection.is_empty() {
-            self.custom_scripts.transmog.collections.insert(player, collection);
+            self.custom_scripts
+                .transmog
+                .collections
+                .insert(player, collection);
         }
         let mut changed = false;
         for (object_id, transmog_id) in load.items {
             if transmog_id > 0 {
-                self.custom_scripts.transmog.item_transmog.insert(ObjectId(object_id), transmog_id);
+                self.custom_scripts
+                    .transmog
+                    .item_transmog
+                    .insert(ObjectId(object_id), transmog_id);
                 changed = true;
             }
         }
@@ -202,7 +214,13 @@ impl World {
         if mask < BodyPart::RightHand.mask() || mask > BodyPart::HairAll.mask() {
             return;
         }
-        if self.custom_scripts.settings.transmog.banned_item_ids.contains(&template.id) {
+        if self
+            .custom_scripts
+            .settings
+            .transmog
+            .banned_item_ids
+            .contains(&template.id)
+        {
             return;
         }
         let ids = self
@@ -243,12 +261,21 @@ impl World {
         if !self.transmog_enabled() {
             return 0;
         }
-        self.custom_scripts.transmog.item_transmog.get(&item).copied().unwrap_or(0)
+        self.custom_scripts
+            .transmog
+            .item_transmog
+            .get(&item)
+            .copied()
+            .unwrap_or(0)
     }
 
     /// Java `isEquipable() && getTransmogId() > 0`, what keeps a transmogrified item from being
     /// dropped, traded or sold.
-    pub(crate) fn item_is_transmogrified(&self, item: ObjectId, template: &l2_data::item::ItemTemplate) -> bool {
+    pub(crate) fn item_is_transmogrified(
+        &self,
+        item: ObjectId,
+        template: &l2_data::item::ItemTemplate,
+    ) -> bool {
         crate::inventory::is_equipable(template) && self.item_transmog_id(item) > 0
     }
 
@@ -261,7 +288,10 @@ impl World {
 
     /// Java `item.setTransmogId(id)` and `storeMe()`.
     pub fn transmog_set_item(&mut self, item: ObjectId, transmog_id: i32) {
-        self.custom_scripts.transmog.item_transmog.insert(item, transmog_id);
+        self.custom_scripts
+            .transmog
+            .item_transmog
+            .insert(item, transmog_id);
         self.outbox.persist(PersistCommand::ItemTransmog {
             object_id: item.0,
             transmog_id: Some(transmog_id),

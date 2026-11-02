@@ -140,7 +140,10 @@ impl World {
             self.send_message(id, "You cannot use this function while you are jailed.");
             return false;
         }
-        // (`FactionSystemConfig.FACTION_SYSTEM_ENABLED` is off by default and not modelled.)
+        if self.settings.faction.enabled && !self.is_good(id) && !self.is_evil(id) {
+            self.send_message(id, "You cannot use this function while you are neutral.");
+            return false;
+        }
         let is_gm = self.is_gm(id);
         let interval = self.script_handlers.settings.unstuck_interval;
         let unstuck_timer = if is_gm { 1000 } else { interval.wrapping_mul(1000) };

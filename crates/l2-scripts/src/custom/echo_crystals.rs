@@ -145,7 +145,10 @@ mod tests {
 
     #[test]
     fn the_score_table_matches_java() {
-        assert_eq!(score_data(4419).map(|s| (s.crystal_id, s.ok_msg)), Some((4417, "16")));
+        assert_eq!(
+            score_data(4419).map(|s| (s.crystal_id, s.ok_msg)),
+            Some((4417, "16"))
+        );
         assert!(score_data(4411).is_none());
     }
 }

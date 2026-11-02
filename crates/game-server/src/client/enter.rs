@@ -89,6 +89,9 @@ pub struct DbPlayerLoader {
     hennas: HennaRepository,
     bookmarks: BookmarkRepository,
     contacts: ContactRepository,
+    rebirth: l2_db::RebirthRepository,
+    /// `RebirthConfig.REBIRTH_ALLOW_REBIRTH`: without it `rebirth_system` is not read.
+    rebirth_enabled: bool,
     subclasses: SubclassRepository,
     macros: MacroRepository,
     reco: RecommendationRepository,
@@ -116,6 +119,8 @@ impl DbPlayerLoader {
             hennas: HennaRepository::new(pool.clone()),
             bookmarks: BookmarkRepository::new(pool.clone()),
             contacts: ContactRepository::new(pool.clone()),
+            rebirth: l2_db::RebirthRepository::new(pool.clone()),
+            rebirth_enabled: false,
             subclasses: SubclassRepository::new(pool.clone()),
             macros: MacroRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
@@ -130,6 +135,13 @@ impl DbPlayerLoader {
             instance_times: l2_db::InstanceTimeRepository::new(pool.clone()),
             quests: l2_db::QuestRepository::new(pool),
         }
+    }
+
+    /// Reads `rebirth_system` for the characters (`Custom/Rebirth.ini` `RebirthAllow`, M9-C05).
+    #[must_use]
+    pub fn with_rebirth(mut self, enabled: bool) -> Self {
+        self.rebirth_enabled = enabled;
+        self
     }
 
     // Java: Player.restore
@@ -386,6 +398,15 @@ impl DbPlayerLoader {
             }
         };
 
+        // Java: RebirthManager.getCount / getSelectedSkills (read on demand there, here once at
+        // the load). A failed read is logged and the character counts as never reborn.
+        if self.rebirth_enabled {
+            match self.rebirth.rebirth_of(char_id).await {
+                Ok(row) => data.profile.rebirth = rebirth_data_of_row(row),
+                Err(e) => error!("Failed to load rebirth data: charId={char_id}: {e}"),
+            }
+        }
+
         // Java: Player.loadRecommendations (called from `checkRecoBonusTask` at EnterWorld)
         match self.reco.reco_bonus_of(char_id).await? {
             Some(reco) => {
@@ -600,6 +621,15 @@ fn bookmarks_of_rows(rows: Vec<BookmarkRow>) -> Vec<l2_world::BookmarkData> {
     list
 }
 
+/// The `rebirth_system` row of a character (Java `RebirthManager.getCount` and
+/// `getSelectedSkills`); no row is a character that was never reborn.
+fn rebirth_data_of_row(row: Option<l2_db::RebirthRow>) -> l2_world::RebirthData {
+    match row {
+        Some(row) => l2_world::RebirthData::from_columns(row.rebirth_count, &row.selected_skills),
+        None => l2_world::RebirthData::default(),
+    }
+}
+
 /// The names of the `character_contacts` rows (Java `ContactList.restore`): a contact without a
 /// name (`CharInfoTable` does not know it), the character itself and its own id are skipped.
 fn contact_names_of_rows(rows: Vec<ContactLink>, own_id: i32, own_name: &str) -> Vec<String> {
@@ -688,6 +718,12 @@ pub fn player_from_row(row: &CharacterRow) -> PlayerData {
             // Java `setPcCafePoints(rset.getInt("pccafe_points"))`; the world applies the cap at
             // enter world (`pc_cafe_on_enter`).
             pccafe_points: row.pccafe_points,
+            // Java `Player.restore`: `factionId` 1 = `setGood()`, 2 = `setEvil()` (M9-C04).
+            faction: if matches!(row.faction, 1 | 2) {
+                i32::from(row.faction)
+            } else {
+                0
+            },
             // Java `setIn7sDungeon(rset.getInt("isin7sdungeon") == 1)` (M8-SS-01).
             in_7s_dungeon: row.isin7sdungeon == 1,
             bookmark_slot: i32::from(row.bookmarkslot),
@@ -1945,6 +1981,23 @@ mod tests {
         );
         // Java `_lastAccess`, in milliseconds.
         assert_eq!(profile.last_access, 1_700_000_000_000);
+    }
+
+    #[test]
+    fn the_faction_is_loaded_and_stored_back() {
+        // Java `Player.restore`: 1 is good, 2 is evil; the store writes 1, 2 or 0.
+        let mut r = row();
+        r.faction = 2;
+        let mut p = player_from_row(&r);
+        assert_eq!(p.profile.faction, 2);
+        assert_eq!(crate::persist::build_character_update(&p, &r).faction, 2);
+        p.profile.faction = 1;
+        assert_eq!(crate::persist::build_character_update(&p, &r).faction, 1);
+        // Any other value is no faction.
+        r.faction = 7;
+        let p = player_from_row(&r);
+        assert_eq!(p.profile.faction, 0);
+        assert_eq!(crate::persist::build_character_update(&p, &r).faction, 0);
     }
 
     #[test]

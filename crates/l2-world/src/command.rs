@@ -354,6 +354,13 @@ pub enum WorldCommand {
     Disconnected {
         session: SessionId,
     },
+    /// `CharacterSelect` with the faction system's balance (`Custom/FactionSystem.ini`): `done`
+    /// hears the page to show instead of entering the world (the side of `faction` has too many
+    /// players online), or `None` when the character may enter. M9-C04.
+    FactionBalanceCheck {
+        faction: i32,
+        done: Box<dyn FnOnce(Option<String>) + Send>,
+    },
     /// The login server asked to kick this account.
     Kick {
         account: String,
@@ -474,6 +481,13 @@ pub enum WorldCommand {
         owner: i32,
         result: Result<Vec<i32>, ()>,
     },
+    /// The answer to `PersistCommand::PremiumRequest`: the `enddate` of the row (`None`: no row),
+    /// or `Err` when the read failed (M9-C02).
+    PremiumLoaded {
+        player: l2_util::ObjectId,
+        key: String,
+        result: Result<Option<i64>, ()>,
+    },
     /// The answer to `PersistCommand::BbsFavoriteRequest`: the favorites (or their number) of a
     /// player, or `Err` when the read failed (S-HAND-01).
     BbsFavoritesLoaded {
@@ -548,6 +562,7 @@ impl fmt::Debug for WorldCommand {
             Self::Input { session, input } => write!(f, "Input({session:?}, {input:?})"),
             Self::Disconnected { session } => write!(f, "Disconnected({session:?})"),
             Self::Kick { account } => write!(f, "Kick({account})"),
+            Self::FactionBalanceCheck { faction, .. } => write!(f, "FactionBalanceCheck({faction})"),
             Self::ReleaseOfflineAccount { account, .. } => write!(f, "ReleaseOfflineAccount({account})"),
             Self::ReleaseOfflineTrader { object_id, .. } => write!(f, "ReleaseOfflineTrader({object_id})"),
             Self::Admin(query) => write!(f, "Admin({query:?})"),
@@ -659,6 +674,9 @@ impl fmt::Debug for WorldCommand {
                 "BlockListLoaded({sender}, {owner}, {})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
+            Self::PremiumLoaded { player, key, result } => {
+                write!(f, "PremiumLoaded({player}, {key}, {result:?})")
+            }
             Self::BbsFavoritesLoaded { player, kind, result } => write!(
                 f,
                 "BbsFavoritesLoaded({player}, {kind:?}, {})",

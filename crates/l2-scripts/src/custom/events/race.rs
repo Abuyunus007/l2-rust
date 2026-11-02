@@ -41,11 +41,11 @@ const COORDS: [[i32; 4]; 4] = [
 ];
 
 const REWARDS: [[i32; 2]; 14] = [
-    [6622, 2],  // Giant's Codex
-    [9625, 2],  // Giant's Codex -
-    [9626, 2],  // Giant's Codex -
-    [9627, 2],  // Giant's Codex -
-    [9546, 5],  // Attr stones
+    [6622, 2], // Giant's Codex
+    [9625, 2], // Giant's Codex -
+    [9626, 2], // Giant's Codex -
+    [9627, 2], // Giant's Codex -
+    [9546, 5], // Attr stones
     [9547, 5],
     [9548, 5],
     [9549, 5],
@@ -142,8 +142,10 @@ impl Script for Race {
             // NOTE(java-quirk): Java calls `eventMaker.sendMessage` unchecked (a NullPointerException
             // for the scheduled start).
             if let Some(maker) = event_maker {
-                ctx.world()
-                    .send_message(maker, "Event Race can't be started because custom NPC table is disabled!");
+                ctx.world().send_message(
+                    maker,
+                    "Event Race can't be started because custom NPC table is disabled!",
+                );
             }
             return false;
         }
@@ -217,25 +219,24 @@ impl Script for Race {
     ) -> Result<bool, JavaException> {
         if let Some(number) = bypass.strip_prefix("skill") {
             if ctx.state::<RaceState>().is_race_started {
-                ctx.world()
-                    .send_message(player, "Race already started, you cannot change transform skill now");
+                ctx.world().send_message(
+                    player,
+                    "Race already started, you cannot change transform skill now",
+                );
             } else {
-                let number: i32 = number
-                    .parse()
-                    .map_err(|_| JavaException::number_format(number))?;
+                let number: i32 = number.parse().map_err(|_| JavaException::number_format(number))?;
                 // `SkillData.getSkill(number, 1)`.
                 if let Some(name) = ctx.world().skill_name_at(number, 1) {
                     ctx.state::<RaceState>().skill = number;
                     ctx.world().send_message(player, "Transform skill set to:");
                     ctx.world().send_message(player, &name);
                 } else {
-                    ctx.world().send_message(player, "Error while changing transform skill");
+                    ctx.world()
+                        .send_message(player, "Error while changing transform skill");
                 }
             }
         } else if let Some(number) = bypass.strip_prefix("tele") {
-            let number: i32 = number
-                .parse()
-                .map_err(|_| JavaException::number_format(number))?;
+            let number: i32 = number.parse().map_err(|_| JavaException::number_format(number))?;
             let randspawn = ctx.state::<RaceState>().randspawn;
             if number > 0 && randspawn.is_some() {
                 if let Some(r) = randspawn {
@@ -346,7 +347,16 @@ fn start_race(script: &Race, ctx: &mut ScriptCtx<'_>) {
     ctx.state::<RaceState>().randspawn = Some(randspawn);
 
     // And spawn NPC
-    record_spawn(ctx, STOP_NPC, randspawn[0], randspawn[1], randspawn[2], randspawn[3], false, 0);
+    record_spawn(
+        ctx,
+        STOP_NPC,
+        randspawn[0],
+        randspawn[1],
+        randspawn[2],
+        randspawn[3],
+        false,
+        0,
+    );
 
     // Transform players and send message.
     let players = ctx.state::<RaceState>().players.clone();
@@ -470,7 +480,10 @@ mod tests {
         let mut registry = ScriptRegistry::new();
         registry.add(Race);
         let pages: Vec<(String, String)> = [
-            ("900103-0.htm", r#"<html><body>start0 <a action="bypass -h Script Race signup">s</a></body></html>"#),
+            (
+                "900103-0.htm",
+                r#"<html><body>start0 <a action="bypass -h Script Race signup">s</a></body></html>"#,
+            ),
             ("900103-1.htm", "<html><body>start1</body></html>"),
             ("900103-signup.htm", "<html><body>signed</body></html>"),
             ("900103-onlist.htm", "<html><body>onlist</body></html>"),

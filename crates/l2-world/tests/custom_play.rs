@@ -1,0 +1,993 @@
+#![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
+//! The custom features of M9-C02: the premium system, the auto potions, the auto play, the offline
+//! play and the `.offline` command. Each has one test with its switch off (nothing changes) and
+//! tests with it on (the Java behaviour named in each test).
+//! Java: managers/PremiumManager.java, taskmanagers/{AutoPotionTaskManager,AutoPlayTaskManager,
+//! AutoUseTaskManager}.java, dist/game/data/scripts/handlers/chat/commands/voiced/*.java.
+
+use std::sync::{Arc, Mutex};
+
+use l2_data::{
+    ArmorSets, EnchantHpBonus, Hennas, HtmCache, ItemTemplates, NpcLoadOptions, NpcTemplates,
+    PlayerTemplates, SkillTemplates, SpawnData,
+};
+use l2_net::{Decode, PacketReader};
+use l2_protocol_game::server::{ConfirmDlg, NpcHtmlMessage, SystemMessage};
+use l2_protocol_game::{ServerOpcode, SystemMessageId};
+use l2_util::WorldRng;
+use l2_world::stats::{BaseStatBonus, StatData};
+use l2_world::*;
+
+// ---------------------------------------------------------------------------------- harness
+
+#[derive(Clone, Default)]
+struct Log(Arc<Mutex<Vec<Vec<u8>>>>);
+
+impl Log {
+    fn take(&self) -> Vec<Vec<u8>> {
+        std::mem::take(&mut self.0.lock().unwrap())
+    }
+}
+
+struct Sink(Log);
+
+impl PacketSink for Sink {
+    fn send(&self, bytes: Vec<u8>) {
+        self.0.0.lock().unwrap().push(bytes);
+    }
+    fn left_world(&self, _reason: LeaveReason) {}
+}
+
+#[derive(Clone, Default)]
+struct Commands(Arc<Mutex<Vec<PersistCommand>>>);
+
+impl Commands {
+    fn take(&self) -> Vec<PersistCommand> {
+        std::mem::take(&mut self.0.lock().unwrap())
+    }
+}
+
+struct RecordingOutbox(Commands);
+
+impl Outbox for RecordingOutbox {
+    fn persist(&mut self, command: PersistCommand) {
+        self.0.0.lock().unwrap().push(command);
+    }
+    fn ls_event(&mut self, _event: LsEvent) {}
+}
+
+const TEMPLATE: &str = r#"<list><classId>0</classId><staticData>
+<baseINT>21</baseINT><baseSTR>40</baseSTR><baseCON>43</baseCON><baseMEN>25</baseMEN><baseDEX>30</baseDEX><baseWIT>11</baseWIT>
+<basePAtk>4</basePAtk><baseCritRate>4</baseCritRate><basePAtkSpd>300</basePAtkSpd>
+<basePDef><chest>31</chest><legs>18</legs><head>12</head><feet>7</feet><gloves>8</gloves><underwear>3</underwear><cloak>1</cloak></basePDef>
+<baseMAtk>6</baseMAtk>
+<baseMDef><rear>9</rear><lear>8</lear><rfinger>5</rfinger><lfinger>4</lfinger><neck>13</neck></baseMDef>
+<baseMoveSpd><walk>80</walk><run>120</run><slowSwim>50</slowSwim><fastSwim>60</fastSwim></baseMoveSpd>
+<collisionMale><radius>9.0</radius><height>23.0</height></collisionMale>
+<collisionFemale><radius>8.0</radius><height>23.5</height></collisionFemale>
+</staticData><lvlUpgainData><level val="1"><hp>100</hp><mp>50</mp><cp>20</cp></level></lvlUpgainData></list>"#;
+
+const ITEMS: &str = r#"<list>
+<item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true" /></item>
+<item id="1060" type="EtcItem" name="Healing Potion"><set name="is_stackable" val="true" /></item>
+<item id="1539" type="EtcItem" name="Greater Healing Potion"><set name="is_stackable" val="true" /></item>
+<item id="1540" type="EtcItem" name="Buff Scroll"><set name="handler" val="ItemSkills" /><skills><skill id="9001" level="1" /></skills></item>
+</list>"#;
+
+/// 9001 is the skill of the Buff Scroll, 9002 a buff the player knows.
+fn skills_xml() -> String {
+    let mut xml = String::from("<list>");
+    for (id, abnormal) in [(9001, "PD_UP"), (9002, "MD_UP")] {
+        xml.push_str(&format!(
+            "<skill id=\"{id}\" levels=\"1\" name=\"Test Buff {id}\"><operateType>A2</operateType><targetType>SELF</targetType>             <abnormalLevel>1</abnormalLevel><abnormalTime>600</abnormalTime><abnormalType>{abnormal}</abnormalType>             <castRange>400</castRange><effectRange>900</effectRange><isMagic>1</isMagic>             <effects><effect name=\"Buff\"><mul stat=\"pDef\" val=\"1.01\"/></effect></effects></skill>"
+        ));
+    }
+    xml.push_str("</list>");
+    xml
+}
+
+const NPCS: &str = r#"<?xml version="1.0"?><list>
+<npc id="20001" type="Monster" level="5" name="Rat" usingServerSideName="true">
+  <race>BEAST</race>
+  <stats str="40" int="21" dex="30" wit="20" con="43" men="20">
+    <vitals hp="300" hpRegen="2" mp="400.0" mpRegen="0.9" />
+    <attack physical="8" magical="5" random="30" critical="4" accuracy="4.75" attackSpeed="253" type="SWORD" range="40" distance="80" width="120" />
+    <defence physical="44.44444" magical="29.5" />
+    <speed><walk ground="20" /><run ground="50" /></speed>
+  </stats>
+  <collision><radius normal="10"/><height normal="20"/></collision>
+</npc>
+</list>"#;
+
+struct Data {
+    items: Arc<ItemTemplates>,
+    stats: StatData,
+}
+
+impl StaticData for Data {
+    fn item(&self, item_id: i32) -> Option<ItemStatic> {
+        let t = self.items.get(item_id)?;
+        Some(ItemStatic {
+            display_id: t.display_id,
+            type2: i16::try_from(t.type2).unwrap(),
+            body_part: t.body_part.mask(),
+            quest_item: t.quest_item,
+            weight: t.weight,
+            shared_reuse_group: t.shared_reuse_group,
+            weapon: t.is_weapon(),
+        })
+    }
+    fn skill_is_passive(&self, _skill_id: i32) -> bool {
+        false
+    }
+    fn exp_percent(&self, _exp: i64, _level: i32) -> f64 {
+        0.0
+    }
+    fn access_level(&self, level: i32) -> AccessLevelStatic {
+        AccessLevelStatic {
+            is_gm: level >= 100,
+            ..AccessLevelStatic::USER
+        }
+    }
+    fn stat_data(&self) -> Option<&StatData> {
+        Some(&self.stats)
+    }
+    fn item_name(&self, item_id: i32) -> Option<String> {
+        self.items.get(item_id).map(|t| t.name.clone())
+    }
+    fn item_stackable(&self, item_id: i32) -> bool {
+        self.items.get(item_id).is_some_and(|t| t.stackable)
+    }
+}
+
+fn data() -> Data {
+    let items = Arc::new(ItemTemplates::from_xml(ITEMS).unwrap());
+    let stats = StatData {
+        items: Arc::clone(&items),
+        player_templates: Arc::new(PlayerTemplates::from_xml(TEMPLATE, 85).unwrap()),
+        armor_sets: Arc::new(ArmorSets::from_xml("<list></list>").unwrap()),
+        enchant_hp_bonus: Arc::new(EnchantHpBonus::default()),
+        hennas: Arc::new(Hennas::default()),
+        base_stat_bonus: Arc::new(BaseStatBonus::default()),
+        skills: Arc::new(SkillTemplates::from_xml(
+            &skills_xml(),
+            &l2_data::skill::EnchantSkillGroups::default(),
+            &l2_data::SkillLoadOptions::default(),
+        )),
+    };
+    Data { items, stats }
+}
+
+const X: i32 = -71_338;
+const Y: i32 = 258_271;
+const Z: i32 = -3_104;
+const ME: ObjectId = ObjectId(0x1000_0001);
+const ACCOUNT: &str = "acc268435457";
+
+fn item(object_id: i32, item_id: i32, count: i64) -> ItemData {
+    ItemData {
+        object_id: ObjectId(object_id),
+        item_id,
+        count,
+        loc: "INVENTORY".to_owned(),
+        mana_left: -1,
+        time: -1,
+        ..Default::default()
+    }
+}
+
+fn player_data(items: Vec<ItemData>, variables: &[(&str, &str)]) -> PlayerData {
+    let mut profile = PlayerProfile::default();
+    for (name, value) in variables {
+        profile.variables.insert((*name).to_owned(), (*value).to_owned());
+    }
+    PlayerData {
+        object_id: ME,
+        account: ACCOUNT.to_owned(),
+        name: "Hunter".to_owned(),
+        title: String::new(),
+        class_id: 0,
+        base_class: 0,
+        race: 0,
+        sex: 0,
+        face: 0,
+        hair_style: 0,
+        hair_color: 0,
+        level: 1,
+        exp: 0,
+        sp: 0,
+        karma: 0,
+        pvp_kills: 0,
+        pk_kills: 0,
+        access_level: 0,
+        x: X,
+        y: Y,
+        z: Z,
+        heading: 0,
+        cur_hp: 100.0,
+        max_hp: 100.0,
+        cur_mp: 50.0,
+        max_mp: 50.0,
+        cur_cp: 20.0,
+        max_cp: 20.0,
+        online_time: 0,
+        items,
+        skills: vec![SkillData {
+            skill_id: 9002,
+            skill_level: 1,
+        }],
+        shortcuts: vec![],
+        profile,
+    }
+}
+
+/// What a scene turns on before the player enters.
+#[derive(Default)]
+struct Switches {
+    premium: Option<PremiumSettings>,
+    auto_potions: Option<AutoPotionSettings>,
+    auto_play: Option<AutoPlayRules>,
+    offline_play: Option<OfflinePlaySettings>,
+    offline: Option<OfflineSettings>,
+}
+
+struct Scene {
+    world: World,
+    me: Log,
+    out: Commands,
+    _root: tempfile::TempDir,
+}
+
+impl Scene {
+    fn new(switches: Switches) -> Self {
+        Self::with(switches, vec![], &[])
+    }
+
+    fn with(switches: Switches, items: Vec<ItemData>, variables: &[(&str, &str)]) -> Self {
+        let root = tempfile::tempdir().unwrap();
+        let write = |path: &str, text: &str| {
+            let file = root.path().join(path);
+            std::fs::create_dir_all(file.parent().unwrap()).unwrap();
+            std::fs::write(file, text).unwrap();
+        };
+        write(
+            "data/html/mods/AutoPlay/Main.htm",
+            "<html><body>%attack% %loot% %mode1% %percent% %status_button% \
+             <button action=\"bypass voice .play attack\" value=\" \"></body></html>",
+        );
+        write(
+            "data/html/mods/AutoPlay/Skills.htm",
+            "<html><body>%skills%</body></html>",
+        );
+        write(
+            "data/html/mods/AutoPlay/Items.htm",
+            "<html><body>%items%</body></html>",
+        );
+        write(
+            "data/html/mods/AutoPlay/Potion.htm",
+            "<html><body>%items%</body></html>",
+        );
+        let out = Commands::default();
+        let mut world = World::new(WorldRng::from_seed(5), Box::new(RecordingOutbox(out.clone())));
+        let data = data();
+        world.set_static_data(Box::new(data));
+        world.set_regen_settings(RegenSettings {
+            mp_regen_multiplier: 0.0,
+            ..RegenSettings::default()
+        });
+        world.set_id_factory(Arc::new(IdFactory::new(Vec::<i32>::new()).unwrap()));
+        world.set_npc_data(
+            Arc::new(NpcTemplates::from_xml(NPCS, &NpcLoadOptions::default()).unwrap()),
+            Arc::new(SpawnData::default()),
+        );
+        world.set_html_cache(Arc::new(HtmCache::load(root.path(), false)));
+        let rows: String = (1..=85)
+            .map(|level| format!(r#"<experience level="{level}" tolevel="{}" />"#, level * 100_000))
+            .collect();
+        world.set_exp_data(
+            Arc::new(
+                l2_data::ExperienceTable::from_xml(&format!(
+                    r#"<table maxLevel="85" maxPetLevel="85">{rows}</table>"#
+                ))
+                .unwrap(),
+            ),
+            Arc::new(l2_data::ExperienceLoss::from_xml("<list></list>").unwrap()),
+            Arc::new(l2_data::KarmaLoss::from_xml("<list></list>").unwrap()),
+            Arc::new(l2_data::SkillTrees::from_xml("<list></list>").unwrap()),
+        );
+        world.set_flood_settings(FloodSettings::java_defaults());
+        if let Some(s) = switches.premium {
+            world.set_premium_settings(s);
+        }
+        if let Some(s) = switches.auto_potions {
+            world.set_auto_potion_settings(s);
+        }
+        if let Some(s) = switches.auto_play {
+            world.set_auto_play_rules(s);
+        }
+        if let Some(s) = switches.offline_play {
+            world.set_offline_play_settings(s);
+        }
+        if let Some(s) = switches.offline {
+            world.set_offline_settings(s);
+        }
+        let me = Log::default();
+        world.handle(WorldCommand::EnterWorld {
+            session: SessionId(u64::try_from(ME.0).unwrap()),
+            player: Box::new(player_data(items, variables)),
+            sink: Box::new(Sink(me.clone())),
+            ip: None,
+        });
+        let mut scene = Self {
+            world,
+            me,
+            out,
+            _root: root,
+        };
+        scene.advance(1000);
+        scene.me.take();
+        scene
+    }
+
+    fn advance(&mut self, ms: u64) {
+        for _ in 0..(ms / 50) {
+            self.world.tick();
+        }
+    }
+
+    fn say(&mut self, text: &str) {
+        self.world.handle(WorldCommand::Input {
+            session: SessionId(u64::try_from(ME.0).unwrap()),
+            input: ClientInput::Say {
+                chat_type: 0,
+                text: text.to_owned(),
+                target: None,
+            },
+        });
+    }
+
+    fn dlg_answer(&mut self, answer: i32) {
+        self.world.handle(WorldCommand::Input {
+            session: SessionId(u64::try_from(ME.0).unwrap()),
+            input: ClientInput::DlgAnswer {
+                message_id: SystemMessageId::S13.id(),
+                answer,
+                requester_id: 0,
+            },
+        });
+    }
+
+    /// Runs the bypass handler of `Java BypassHandler.getHandler(command)`.
+    fn bypass(&mut self, command: &str) -> Option<bool> {
+        let handler = BypassHandlers::default().get(command)?;
+        Some(handler(&mut self.world, ME, command, None))
+    }
+
+    fn variables_stored_on_leave(&mut self) -> std::collections::HashMap<String, String> {
+        self.out.take();
+        self.world.handle(WorldCommand::Disconnected {
+            session: SessionId(u64::try_from(ME.0).unwrap()),
+        });
+        self.out
+            .take()
+            .into_iter()
+            .find_map(|c| match c {
+                PersistCommand::StorePlayer(data) => {
+                    Some(data.profile.variables.clone().into_iter().collect())
+                }
+                _ => None,
+            })
+            .expect("the player was stored")
+    }
+}
+
+fn name_of(body: &[u8]) -> String {
+    let ex = (body[0] == 0xFE).then(|| u16::from_le_bytes([body[1], body[2]]));
+    ServerOpcode::from_id(body[0], ex).map_or_else(|| format!("?{:02X}", body[0]), |o| o.name().to_owned())
+}
+
+fn decode<P: Decode>(raw: &[u8]) -> P {
+    let skip = if raw[0] == 0xFE { 3 } else { 1 };
+    P::decode(&mut PacketReader::new(&raw[skip..])).unwrap()
+}
+
+fn of<P: Decode>(out: &[Vec<u8>], opcode: ServerOpcode) -> Vec<P> {
+    out.iter()
+        .filter(|b| name_of(b) == opcode.name())
+        .map(|b| decode::<P>(b))
+        .collect()
+}
+
+fn html(out: &[Vec<u8>]) -> Vec<NpcHtmlMessage> {
+    of(out, ServerOpcode::NpcHtmlMessage)
+}
+
+/// Whether any packet carries `needle` as a UTF-16 string (`sendMessage` is a `SystemMessage` with
+/// a text, chat is a `Say2`).
+fn said_contains(out: &[Vec<u8>], needle: &str) -> bool {
+    let bytes: Vec<u8> = needle.encode_utf16().flat_map(u16::to_le_bytes).collect();
+    out.iter().any(|b| b.windows(bytes.len()).any(|w| w == bytes))
+}
+
+fn now_ms() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_millis() as i64
+}
+
+fn premium_on() -> PremiumSettings {
+    PremiumSettings {
+        enabled: true,
+        ..PremiumSettings::default()
+    }
+}
+
+// ---------------------------------------------------------------------------------- premium
+
+/// Off (the Java default): nothing asks for a row, nobody is premium and `.premium` is chat.
+#[test]
+fn premium_off_changes_nothing() {
+    let mut s = Scene::new(Switches::default());
+    assert!(!s.world.has_premium_status(ME));
+    assert!(
+        !s.out
+            .take()
+            .iter()
+            .any(|c| matches!(c, PersistCommand::PremiumRequest { .. }))
+    );
+    s.say(".premium");
+    assert!(html(&s.me.take()).is_empty());
+}
+
+/// `PremiumManager`'s `OnPlayerLogin` listener: the row is read, an end date in the future is
+/// the status, and the expire task ends it.
+#[test]
+fn premium_on_a_row_in_the_future_is_the_status() {
+    let mut s = Scene::new(Switches {
+        premium: Some(premium_on()),
+        ..Switches::default()
+    });
+    // The enter-world asked for the row of the account (lower case).
+    let out = s.out.take();
+    assert!(out.contains(&PersistCommand::PremiumRequest {
+        player: ME,
+        key: ACCOUNT.to_owned(),
+    }));
+    assert!(!s.world.has_premium_status(ME));
+    s.world.handle(WorldCommand::PremiumLoaded {
+        player: ME,
+        key: ACCOUNT.to_owned(),
+        result: Ok(Some(now_ms() + 60_000)),
+    });
+    assert!(s.world.has_premium_status(ME));
+    // `.premium` shows the premium page, with the Java item id 5.
+    s.me.take();
+    s.say(".premium");
+    let pages = html(&s.me.take());
+    assert_eq!(pages.len(), 1);
+    assert!(pages[0].html.contains("Status: <font color=\"LEVEL\">Premium"));
+    assert!(pages[0].html.contains("Rate XP: <font color=\"LEVEL\">x2.0"));
+    assert_eq!(pages[0].item_id, 5);
+    // The expire task: the status ends 60 s later, the row stays.
+    s.advance(61_000);
+    assert!(!s.world.has_premium_status(ME));
+    assert!(
+        !s.out
+            .take()
+            .iter()
+            .any(|c| matches!(c, PersistCommand::Premium(_)))
+    );
+}
+
+/// A row in the past is no status; `removePremiumStatus(account, false)` deletes it, but only with
+/// `CycleDatabaseWrites` (D-53).
+#[test]
+fn premium_on_an_expired_row_is_removed_only_with_cycle_writes() {
+    for cycle in [false, true] {
+        let mut s = Scene::new(Switches {
+            premium: Some(PremiumSettings {
+                cycle_database_writes: cycle,
+                ..premium_on()
+            }),
+            ..Switches::default()
+        });
+        s.out.take();
+        s.world.handle(WorldCommand::PremiumLoaded {
+            player: ME,
+            key: ACCOUNT.to_owned(),
+            result: Ok(Some(1_000)),
+        });
+        assert!(!s.world.has_premium_status(ME));
+        let deleted = s.out.take().into_iter().any(|c| {
+            c == PersistCommand::Premium(PremiumWrite::Delete {
+                account: ACCOUNT.to_owned(),
+            })
+        });
+        assert_eq!(deleted, cycle);
+    }
+}
+
+/// `addPremiumTime`: at least from now, the row is replaced, and the first online player of the
+/// account becomes premium. `//premium_info` and `//premium_remove` read the cache.
+#[test]
+fn premium_add_and_remove_time() {
+    let mut s = Scene::new(Switches {
+        premium: Some(premium_on()),
+        ..Switches::default()
+    });
+    s.out.take();
+    s.world.add_premium_time(&ACCOUNT.to_uppercase(), 1);
+    assert!(s.world.has_premium_status(ME));
+    let out = s.out.take();
+    let end = out
+        .iter()
+        .find_map(|c| match c {
+            PersistCommand::Premium(PremiumWrite::Replace { account, end_date }) => {
+                assert_eq!(account, ACCOUNT);
+                Some(*end_date)
+            }
+            _ => None,
+        })
+        .expect("the row is replaced");
+    assert!(end >= now_ms() + 86_400_000 - 5_000);
+    assert_eq!(s.world.premium_expiration(ACCOUNT), end);
+    // An admin removal always writes.
+    s.world.remove_premium_status(ACCOUNT, true);
+    assert!(!s.world.has_premium_status(ME));
+    assert_eq!(s.world.premium_expiration(ACCOUNT), 0);
+    assert!(
+        s.out
+            .take()
+            .contains(&PersistCommand::Premium(PremiumWrite::Delete {
+                account: ACCOUNT.to_owned(),
+            }))
+    );
+}
+
+/// The admin command `//premium_add1 <account>` of a GM, with the system on and off.
+#[test]
+fn premium_admin_command_follows_the_switch() {
+    let mut off = Scene::new(Switches::default());
+    off.world.add_premium_time(ACCOUNT, 1);
+    off.me.take();
+    off.world.premium_admin_command(ME, "admin_premium_add1 someone");
+    // Off: "Premium system is disabled." and the menu page.
+    assert!(said_contains(&off.me.take(), "Premium system is disabled."));
+
+    let mut on = Scene::new(Switches {
+        premium: Some(premium_on()),
+        ..Switches::default()
+    });
+    on.out.take();
+    on.me.take();
+    on.world.premium_admin_command(ME, "admin_premium_add2 someone");
+    assert!(said_contains(&on.me.take(), "will now have premium status until"));
+    assert!(on.out.take().iter().any(|c| matches!(
+        c,
+        PersistCommand::Premium(PremiumWrite::Replace { account, .. }) if account == "someone"
+    )));
+    // No account name: Java's `StringIndexOutOfBoundsException` answer.
+    on.me.take();
+    on.world.premium_admin_command(ME, "admin_premium_add1");
+    assert!(said_contains(&on.me.take(), "Please enter a valid account name."));
+}
+
+/// The premium drop rates: the amount of a death drop is doubled for a premium killer, the chance
+/// of a herb is not (Java: "TODO: Premium herb chance? :)").
+#[test]
+fn premium_rates_apply_to_the_drop_of_a_premium_killer() {
+    use l2_data::npc::DropType;
+    use l2_world::rewards::drop::{DropKiller, DropVictim, calculate_drops};
+
+    let items = ItemTemplates::from_xml(ITEMS).unwrap();
+    let npcs = NpcTemplates::from_xml(
+        r#"<list><npc id="1" type="Monster" level="10" name="M"><dropLists><drop>
+            <item id="1060" min="10" max="10" chance="100"/></drop></dropLists></npc></list>"#,
+        &NpcLoadOptions::default(),
+    )
+    .unwrap();
+    let victim = DropVictim {
+        level: 10,
+        raid: false,
+        champion: false,
+        seeded: false,
+    };
+    let rates = PremiumRates {
+        drop_amount: 2.0,
+        drop_chance: 3.0,
+        ..PremiumRates::default()
+    };
+    let mut rng = WorldRng::from_seed(1);
+    let mut roll = |killer: &DropKiller| {
+        calculate_drops(
+            &DropSettings::default(),
+            &items,
+            npcs.get(1).unwrap(),
+            DropType::Drop,
+            &victim,
+            killer,
+            &mut rng,
+        )
+        .into_iter()
+        .map(|h| (h.id, h.count))
+        .collect::<Vec<_>>()
+    };
+    assert_eq!(roll(&DropKiller::plain(10)), [(1060, 10)]);
+    let mut premium = DropKiller::plain(10);
+    premium.premium = Some(Arc::new(rates));
+    assert_eq!(roll(&premium), [(1060, 20)]);
+}
+
+// ---------------------------------------------------------------------------------- auto potions
+
+fn potions_on() -> AutoPotionSettings {
+    AutoPotionSettings {
+        enabled: true,
+        hp_item_ids: vec![1060, 1539],
+        ..AutoPotionSettings::default()
+    }
+}
+
+/// Off: `.apon` is plain chat and nobody gets potions.
+#[test]
+fn auto_potions_off_changes_nothing() {
+    let mut s = Scene::new(Switches::default());
+    s.say(".apon");
+    assert!(!s.world.has_auto_potion(ME));
+    assert!(!said_contains(&s.me.take(), "Auto potions"));
+}
+
+/// `AutoPotion.onCommand`: on and off with the words of Java, and the level check.
+#[test]
+fn auto_potions_commands() {
+    let mut s = Scene::new(Switches {
+        auto_potions: Some(potions_on()),
+        ..Switches::default()
+    });
+    s.say(".apon");
+    assert!(s.world.has_auto_potion(ME));
+    assert!(said_contains(&s.me.take(), "Auto potions is enabled."));
+    s.say(".potionoff");
+    assert!(!s.world.has_auto_potion(ME));
+    assert!(said_contains(&s.me.take(), "Auto potions is disabled."));
+
+    let mut low = Scene::new(Switches {
+        auto_potions: Some(AutoPotionSettings {
+            min_level: 40,
+            ..potions_on()
+        }),
+        ..Switches::default()
+    });
+    low.say(".apon");
+    assert!(!low.world.has_auto_potion(ME));
+    assert!(said_contains(
+        &low.me.take(),
+        "You need to be at least 40 to use auto potions."
+    ));
+}
+
+/// `AutoPotionTaskManager.run()`: a player under the percentage with a potion of the list uses it
+/// ("Restored HP."), one without any is told so. The list is walked in Java's hash order.
+#[test]
+fn auto_potions_pass() {
+    let mut s = Scene::with(
+        Switches {
+            auto_potions: Some(potions_on()),
+            ..Switches::default()
+        },
+        vec![item(0x1000_0100, 1060, 5)],
+        &[],
+    );
+    s.world.add_auto_potion(ME);
+    // 100/100 HP: not under 70 %, the potion is only counted. MP and CP have no potions.
+    s.advance(1100);
+    assert!(!said_contains(&s.me.take(), "Restored HP."));
+    // Hurt: 30 of 100.
+    s.world.player_mut(ME).unwrap().core.cur_hp = 30.0;
+    s.advance(1100);
+    assert!(said_contains(&s.me.take(), "Auto potion: Restored HP."));
+
+    // Without a potion of any list: the reminder, every second.
+    let mut empty = Scene::new(Switches {
+        auto_potions: Some(potions_on()),
+        ..Switches::default()
+    });
+    empty.world.add_auto_potion(ME);
+    empty.advance(1100);
+    assert!(said_contains(
+        &empty.me.take(),
+        "Auto potion: You are out of potions!"
+    ));
+}
+
+// ---------------------------------------------------------------------------------- auto play
+
+fn auto_play_on() -> AutoPlayRules {
+    AutoPlayRules {
+        enable_auto_play: true,
+        ..AutoPlayRules::default()
+    }
+}
+
+/// Off: `.play` is plain chat and `start_auto_play` never makes a player play.
+#[test]
+fn auto_play_off_changes_nothing() {
+    let mut s = Scene::new(Switches::default());
+    s.say(".play");
+    assert!(html(&s.me.take()).is_empty());
+    assert!(!s.world.is_auto_playing(ME));
+    // A forced start is stopped by the first pass (`!ENABLE_AUTO_PLAY`).
+    s.world.start_auto_play(ME);
+    assert!(s.world.is_auto_playing(ME));
+    s.advance(800);
+    assert!(!s.world.is_auto_playing(ME));
+}
+
+/// `AutoPlay.onCommand`: the page, the toggles and start/stop through the `voice` bypass.
+#[test]
+fn auto_play_commands() {
+    let mut s = Scene::new(Switches {
+        auto_play: Some(auto_play_on()),
+        ..Switches::default()
+    });
+    s.say(".play");
+    let pages = html(&s.me.take());
+    assert_eq!(pages.len(), 1);
+    // Defaults of the holder: no auto attack, loot on, monster mode, 50 percent, "Start" button.
+    assert!(pages[0].html.contains("L2UI.CheckBox "));
+    assert!(pages[0].html.contains("L2UI.CheckBox_checked"));
+    assert!(pages[0].html.contains("L2UI_CH3.radiobutton2"));
+    assert!(pages[0].html.contains("bypass voice .play start"));
+
+    s.say(".play attack");
+    s.say(".play loot");
+    s.say(".play mode2");
+    s.say(".play percent 120");
+    let page = html(&s.me.take()).pop().unwrap();
+    assert!(
+        page.html.contains("100"),
+        "the percent is clamped to 100: {}",
+        page.html
+    );
+    s.bypass("voice .play start").unwrap();
+    assert!(s.world.is_auto_playing(ME));
+    s.bypass("voice .play stop").unwrap();
+    assert!(!s.world.is_auto_playing(ME));
+}
+
+/// `AutoPlayTaskManager`: the player picks the nearest monster and attacks it.
+#[test]
+fn auto_play_picks_a_monster() {
+    let mut s = Scene::new(Switches {
+        auto_play: Some(auto_play_on()),
+        ..Switches::default()
+    });
+    let rat = s.world.spawn_npc_at(20001, X + 100, Y, Z, 0).unwrap();
+    s.say(".play start");
+    assert!(s.world.is_auto_playing(ME));
+    s.advance(800);
+    assert_eq!(s.world.target_of(ME), Some(rat));
+}
+
+/// `AutoUseTaskManager`: a supply item chosen on `.playitems` is used while hunting, a buff chosen
+/// on `.playskills` is cast on the player. Both lists only offer what Java's filters let through.
+#[test]
+fn auto_use_items_and_buffs() {
+    let mut s = Scene::with(
+        Switches {
+            auto_play: Some(auto_play_on()),
+            ..Switches::default()
+        },
+        vec![item(0x1000_0100, 1540, 1), item(0x1000_0101, 1060, 3)],
+        &[],
+    );
+    // The list holds the scroll (a continuous item skill), not the plain potion.
+    s.say(".playitems");
+    let page = html(&s.me.take()).pop().unwrap();
+    assert!(page.html.contains("Buff Scroll"), "{}", page.html);
+    assert!(!page.html.contains("Healing Potion"));
+    // A toggle adds it, the second one takes it away again.
+    s.say(".playitems 1 1540");
+    let page = html(&s.me.take()).pop().unwrap();
+    assert!(page.html.contains("mapbutton_zoomout2"), "{}", page.html);
+    // The buff list shows the known skill; choosing it makes it an auto buff.
+    s.say(".playskills 1 9002");
+    let page = html(&s.me.take()).pop().unwrap();
+    assert!(page.html.contains("Test Buff 9002"));
+    assert!(page.html.contains("mapbutton_zoomout2"));
+
+    s.say(".play start");
+    s.advance(3000);
+    assert!(s.world.is_affected_by_skill(ME, 9001), "the supply item was used");
+    assert!(s.world.is_affected_by_skill(ME, 9002), "the auto buff was cast");
+}
+
+/// With `EnableAutoItem` and `EnableAutoSkill` off the lists do nothing.
+#[test]
+fn auto_play_item_and_skill_switches() {
+    let mut s = Scene::with(
+        Switches {
+            auto_play: Some(AutoPlayRules {
+                enable_auto_item: false,
+                enable_auto_skill: false,
+                ..auto_play_on()
+            }),
+            ..Switches::default()
+        },
+        vec![item(0x1000_0100, 1540, 1)],
+        &[],
+    );
+    s.say(".playitems 1 1540");
+    s.say(".playskills 1 9002");
+    s.say(".play start");
+    s.advance(3000);
+    assert!(!s.world.is_affected_by_skill(ME, 9001));
+    assert!(!s.world.is_affected_by_skill(ME, 9002));
+}
+
+/// The settings go to the variables at logout (`ON_PLAYER_LOGOUT`) and come back at login, and
+/// `ResumeAutoPlay` starts the play again.
+#[test]
+fn auto_play_settings_survive_a_session() {
+    let mut s = Scene::new(Switches {
+        auto_play: Some(auto_play_on()),
+        ..Switches::default()
+    });
+    s.say(".play attack");
+    s.say(".play mode3");
+    s.say(".play start");
+    let variables = s.variables_stored_on_leave();
+    assert_eq!(variables.get("AUTO_USE_ACTIONS").map(String::as_str), Some("2"));
+    assert_eq!(
+        variables.get("AUTO_USE_SETTINGS").map(String::as_str),
+        Some("0,1,1,3,0,50,1")
+    );
+
+    let pairs: Vec<(&str, &str)> = variables.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect();
+    let resumed = Scene::with(
+        Switches {
+            auto_play: Some(AutoPlayRules {
+                resume_auto_play: true,
+                ..auto_play_on()
+            }),
+            ..Switches::default()
+        },
+        vec![],
+        &pairs,
+    );
+    assert!(resumed.world.is_auto_playing(ME));
+    let plain = Scene::with(
+        Switches {
+            auto_play: Some(auto_play_on()),
+            ..Switches::default()
+        },
+        vec![],
+        &pairs,
+    );
+    assert!(!plain.world.is_auto_playing(ME));
+}
+
+// ---------------------------------------------------------------------------------- offline play
+
+fn offline_play_on() -> OfflinePlaySettings {
+    OfflinePlaySettings {
+        enable_offline_play_command: true,
+        ..OfflinePlaySettings::default()
+    }
+}
+
+/// Off: `.offlineplay` is plain chat.
+#[test]
+fn offline_play_off_changes_nothing() {
+    let mut s = Scene::new(Switches::default());
+    s.say(".offlineplay");
+    let out = s.me.take();
+    assert!(of::<ConfirmDlg>(&out, ServerOpcode::ConfirmDlg).is_empty());
+    assert!(!s.world.is_offline_play(ME));
+}
+
+/// `OfflinePlay.onCommand`, `DlgAnswer` and `startOfflinePlay`: without auto play the command is
+/// refused, with it the question is asked and a yes leaves the player in the world without a
+/// client; the settings of the file decide the colour.
+#[test]
+fn offline_play_command_and_dialog() {
+    let mut s = Scene::new(Switches {
+        auto_play: Some(auto_play_on()),
+        offline_play: Some(OfflinePlaySettings {
+            offline_play_set_name_color: true,
+            ..offline_play_on()
+        }),
+        ..Switches::default()
+    });
+    s.say(".offlineplay");
+    assert!(said_contains(
+        &s.me.take(),
+        "You need to enable auto play before exiting."
+    ));
+
+    s.say(".play start");
+    s.me.take();
+    s.say(".offlineplay");
+    let out = s.me.take();
+    let dialogs = of::<ConfirmDlg>(&out, ServerOpcode::ConfirmDlg);
+    assert_eq!(dialogs.len(), 1);
+    assert_eq!(dialogs[0].message.id, SystemMessageId::S13);
+
+    // A no does nothing.
+    s.dlg_answer(0);
+    assert!(!s.world.is_offline_play(ME));
+    // The question is asked again, a yes starts the offline play.
+    s.say(".offlineplay");
+    s.dlg_answer(1);
+    assert!(s.world.is_offline_play(ME));
+    assert!(s.world.player(ME).is_some(), "the character stays in the world");
+    // The auto play goes on without the client.
+    let rat = s.world.spawn_npc_at(20001, X + 100, Y, Z, 0).unwrap();
+    s.advance(800);
+    assert_eq!(s.world.target_of(ME), Some(rat));
+    // A forced answer without a question is nothing.
+    s.dlg_answer(1);
+}
+
+/// `OfflinePlayPremium`: the command needs a premium status.
+#[test]
+fn offline_play_premium_is_required_with_the_key() {
+    let mut s = Scene::new(Switches {
+        auto_play: Some(auto_play_on()),
+        offline_play: Some(OfflinePlaySettings {
+            offline_play_premium: true,
+            ..offline_play_on()
+        }),
+        ..Switches::default()
+    });
+    s.say(".play start");
+    s.me.take();
+    s.say(".offlineplay");
+    let out = s.me.take();
+    assert!(of::<ConfirmDlg>(&out, ServerOpcode::ConfirmDlg).is_empty());
+    assert!(said_contains(
+        &out,
+        "This command is only available to premium players."
+    ));
+}
+
+// ---------------------------------------------------------------------------------- .offline
+
+/// `.offline` needs `EnableOfflineCommand` and a trade or craft key; the shipped file has them
+/// on, the Java default has `OfflineTradeEnable` off.
+#[test]
+fn offline_command_follows_the_trade_keys() {
+    // Defaults: no trade, no craft: not a command.
+    let mut off = Scene::new(Switches::default());
+    off.say(".offline");
+    let out = off.me.take();
+    // No handler took the text: no question, no store message.
+    assert!(of::<ConfirmDlg>(&out, ServerOpcode::ConfirmDlg).is_empty());
+    let messages: Vec<SystemMessage> = of(&out, ServerOpcode::SystemMessage);
+    assert!(
+        !messages
+            .iter()
+            .any(|m| m.id == SystemMessageId::PrivateStoreAlreadyClosed)
+    );
+    assert!(!off.world.is_offline_trader(ME));
+
+    let mut on = Scene::new(Switches {
+        offline: Some(OfflineSettings {
+            offline_trade_enable: true,
+            ..OfflineSettings::default()
+        }),
+        ..Switches::default()
+    });
+    on.me.take();
+    on.say(".offline");
+    // Not in store mode: "PRIVATE_STORE_ALREADY_CLOSED" and no question.
+    let out = on.me.take();
+    assert!(of::<ConfirmDlg>(&out, ServerOpcode::ConfirmDlg).is_empty());
+    let messages: Vec<SystemMessage> = of(&out, ServerOpcode::SystemMessage);
+    assert!(
+        messages
+            .iter()
+            .any(|m| m.id == SystemMessageId::PrivateStoreAlreadyClosed)
+    );
+}

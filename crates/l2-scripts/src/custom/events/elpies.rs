@@ -20,15 +20,15 @@ const EVENT_DURATION_MINUTES: i64 = 2;
 
 // itemId, chance, min amount, max amount
 const DROPLIST_CONSUMABLES: [[i32; 4]; 9] = [
-    [1540, 80, 10, 15],  // Quick Healing Potion
-    [1538, 60, 5, 10],   // Blessed Scroll of Escape
-    [3936, 40, 5, 10],   // Blessed Scroll of Ressurection
-    [6387, 25, 5, 10],   // Blessed Scroll of Ressurection Pets
-    [22025, 15, 5, 10],  // Powerful Healing Potion
-    [6622, 10, 1, 1],    // Giant's Codex
-    [20034, 5, 1, 1],    // Revita Pop
-    [20004, 1, 1, 1],    // Energy Ginseng
-    [20004, 0, 1, 1],    // Energy Ginseng
+    [1540, 80, 10, 15], // Quick Healing Potion
+    [1538, 60, 5, 10],  // Blessed Scroll of Escape
+    [3936, 40, 5, 10],  // Blessed Scroll of Ressurection
+    [6387, 25, 5, 10],  // Blessed Scroll of Ressurection Pets
+    [22025, 15, 5, 10], // Powerful Healing Potion
+    [6622, 10, 1, 1],   // Giant's Codex
+    [20034, 5, 1, 1],   // Revita Pop
+    [20004, 1, 1, 1],   // Energy Ginseng
+    [20004, 0, 1, 1],   // Energy Ginseng
 ];
 
 const DROPLIST_CRYSTALS: [[i32; 4]; 5] = [
@@ -111,8 +111,10 @@ impl Script for Elpies {
             // NOTE(java-quirk): Java calls `eventMaker.sendMessage` here, which is a
             // NullPointerException for the scheduled start (no maker); it ends the timer task.
             if let Some(maker) = event_maker {
-                ctx.world()
-                    .send_message(maker, "Event Elpies can't be started because custom NPC table is disabled!");
+                ctx.world().send_message(
+                    maker,
+                    "Event Elpies can't be started because custom NPC table is disabled!",
+                );
             }
             return false;
         }
@@ -186,8 +188,10 @@ impl Script for Elpies {
     }
 
     fn on_spawn(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
-        ctx.world_mut().event_monster_set_drop_on_ground(npc.object_id, true);
-        ctx.world_mut().event_monster_set_block_offensive_skills(npc.object_id, true);
+        ctx.world_mut()
+            .event_monster_set_drop_on_ground(npc.object_id, true);
+        ctx.world_mut()
+            .event_monster_set_block_offensive_skills(npc.object_id, true);
     }
 }
 
@@ -267,7 +271,8 @@ mod tests {
         // All gone: the event stopped itself and a new start works.
         assert!(start(&mut t));
         let mut stopped = false;
-        t.world.run_as_script("Elpies", |ctx| stopped = Elpies.event_stop(ctx));
+        t.world
+            .run_as_script("Elpies", |ctx| stopped = Elpies.event_stop(ctx));
         assert!(stopped);
         assert!(t.npcs_of(ELPY).iter().all(|n| !t.in_world(*n)));
     }

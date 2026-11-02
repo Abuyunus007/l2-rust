@@ -503,3 +503,16 @@ fn the_player_list_carries_clan_and_place() {
     assert_eq!(list[0].clan, None);
     assert_eq!((list[0].x, list[0].y, list[0].z), (-71_337, 258_271, -3_104));
 }
+
+#[test]
+fn server_info_reports_the_measured_tick_time() {
+    let mut s = Scene::new();
+    assert_eq!(s.info().tick_samples, 0);
+    for ms in [2u64, 4, 6] {
+        s.world.record_tick_duration(std::time::Duration::from_millis(ms));
+    }
+    let info = s.info();
+    assert_eq!(info.tick_samples, 3);
+    assert_eq!(info.tick_avg_us, 4_000);
+    assert_eq!(info.tick_p99_us, 6_000);
+}

@@ -193,7 +193,9 @@ impl Script for TvT {
 
                 // Check if there are enough players to start the event.
                 if ctx.state::<TvtState>().player_list.len() < MINIMUM_PARTICIPANT_COUNT {
-                    ctx.broadcast_to_all_online_players("TvT Event: Event was canceled, not enough participants.");
+                    ctx.broadcast_to_all_online_players(
+                        "TvT Event: Event was canceled, not enough participants.",
+                    );
                     for participant in ctx.state::<TvtState>().player_list.clone() {
                         remove_listeners(ctx, participant);
                         ctx.world_mut().set_registered_on_event(participant, false);
@@ -223,13 +225,15 @@ impl Script for TvT {
                     if team {
                         ctx.state::<TvtState>().blue_team.push(participant);
                         ctx.world_mut().player_leave_party(participant);
-                        ctx.world_mut().event_teleport(participant, BLUE_SPAWN_LOC, world, 50);
+                        ctx.world_mut()
+                            .event_teleport(participant, BLUE_SPAWN_LOC, world, 50);
                         ctx.world_mut().set_player_team(participant, TEAM_BLUE);
                         team = false;
                     } else {
                         ctx.state::<TvtState>().red_team.push(participant);
                         ctx.world_mut().player_leave_party(participant);
-                        ctx.world_mut().event_teleport(participant, RED_SPAWN_LOC, world, 50);
+                        ctx.world_mut()
+                            .event_teleport(participant, RED_SPAWN_LOC, world, 50);
                         ctx.world_mut().set_player_team(participant, TEAM_RED);
                         team = true;
                     }
@@ -262,7 +266,13 @@ impl Script for TvT {
 
                 // Schedule start.
                 for second in (1..=5).rev() {
-                    ctx.start_quest_timer(&second.to_string(), (WAIT_TIME * 60_000) - i64::from(second) * 1000, None, None, false);
+                    ctx.start_quest_timer(
+                        &second.to_string(),
+                        (WAIT_TIME * 60_000) - i64::from(second) * 1000,
+                        None,
+                        None,
+                        false,
+                    );
                 }
                 ctx.start_quest_timer("StartFight", WAIT_TIME * 60_000, None, None, false);
             }
@@ -285,7 +295,13 @@ impl Script for TvT {
 
                 // Schedule finish.
                 for second in (1..=10).rev() {
-                    ctx.start_quest_timer(&second.to_string(), (FIGHT_TIME * 60_000) - i64::from(second) * 1000, None, None, false);
+                    ctx.start_quest_timer(
+                        &second.to_string(),
+                        (FIGHT_TIME * 60_000) - i64::from(second) * 1000,
+                        None,
+                        None,
+                        false,
+                    );
                 }
                 ctx.start_quest_timer("EndFight", FIGHT_TIME * 60_000, None, None, false);
             }
@@ -321,7 +337,10 @@ impl Script for TvT {
                     arena::broadcast_screen_message(
                         ctx,
                         world,
-                        &format!("Team {} won the event by forfeit!", if blue_wins { "Blue" } else { "Red" }),
+                        &format!(
+                            "Team {} won the event by forfeit!",
+                            if blue_wins { "Blue" } else { "Red" }
+                        ),
                         7,
                         true,
                     );
@@ -445,7 +464,8 @@ impl Script for TvT {
                     }
                     ctx.world_mut().set_on_event(player, false);
                     remove_listeners(ctx, player);
-                    ctx.world().send_message(player, "You have been kicked for been inactive.");
+                    ctx.world()
+                        .send_message(player, "You have been kicked for been inactive.");
                     // Manage forfeit.
                     let one_side_left = {
                         let s = ctx.state::<TvtState>();
@@ -528,7 +548,8 @@ impl Script for TvT {
         }
 
         if red_zone && team == TEAM_BLUE {
-            ctx.world_mut().event_teleport(creature, BLUE_SPAWN_LOC, world, 50);
+            ctx.world_mut()
+                .event_teleport(creature, BLUE_SPAWN_LOC, world, 50);
             arena::send_screen_message(ctx, player, "Entering the enemy headquarters is prohibited!", 10);
         }
 
@@ -551,7 +572,8 @@ impl Script for TvT {
 
             // Removed invulnerability shield.
             if ctx.is_affected_by_skill(player, GHOST_WALKING.id) {
-                ctx.world_mut().stop_skill_effects_removed(player, GHOST_WALKING.id);
+                ctx.world_mut()
+                    .stop_skill_effects_removed(player, GHOST_WALKING.id);
             }
         }
     }
@@ -578,7 +600,8 @@ impl Script for TvT {
         // Manage forfeit.
         let one_side_left = {
             let s = ctx.state::<TvtState>();
-            (s.blue_team.is_empty() && !s.red_team.is_empty()) || (s.red_team.is_empty() && !s.blue_team.is_empty())
+            (s.blue_team.is_empty() && !s.red_team.is_empty())
+                || (s.red_team.is_empty() && !s.blue_team.is_empty())
         };
         if one_side_left {
             // NOTE(java-quirk): `broadcastScreenMessageWithEffect` throws for a missing world.
@@ -659,7 +682,9 @@ impl Script for TvT {
         ctx.start_quest_timer("TeleportToArena", REGISTRATION_TIME * 60_000, None, None, false);
 
         // Send message to players.
-        ctx.broadcast_to_all_online_players(&format!("TvT Event: Registration opened for {REGISTRATION_TIME} minutes."));
+        ctx.broadcast_to_all_online_players(&format!(
+            "TvT Event: Registration opened for {REGISTRATION_TIME} minutes."
+        ));
         ctx.broadcast_to_all_online_players("TvT Event: You can register at Giran TvT Event Manager.");
 
         for warn in [10, 5, 4, 3, 2, 1] {
@@ -849,7 +874,8 @@ mod tests {
     use crate::testing::{ScriptTest, names_to, pages_to};
 
     const NPCS: &str = r#"<npc id="70010" type="Folk" level="1" name="Manager"/>"#;
-    const ITEMS: &str = r#"<item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true"/></item>"#;
+    const ITEMS: &str =
+        r#"<item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true"/></item>"#;
     const DIR: &str = "data/scripts/custom/events/TeamVsTeam";
 
     fn scene(players: i32) -> (ScriptTest, ObjectId) {
@@ -969,7 +995,11 @@ mod tests {
         t.take();
         t.world.do_die(red[0], Some(blue[0]));
         t.ticks(2);
-        assert!(names_to(&t.take(), blue[1].0).iter().any(|n| n == "EX_PVP_MATCH_CC_RECORD"));
+        assert!(
+            names_to(&t.take(), blue[1].0)
+                .iter()
+                .any(|n| n == "EX_PVP_MATCH_CC_RECORD")
+        );
         // Ten seconds later the dead player is resurrected at its base.
         t.wait_ms(10_500);
 

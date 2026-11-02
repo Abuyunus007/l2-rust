@@ -8,10 +8,10 @@ use l2_protocol_game::server::{ChatType, CreatureSay, NpcHtmlMessage, SayBody, S
 use l2_util::ObjectId;
 
 use crate::effects::SkillFinishType;
-use l2_protocol_game::server::PartyDistributionType;
 use crate::teleport::TeleportTarget;
-use crate::zones::ZoneId;
 use crate::world::World;
+use crate::zones::ZoneId;
+use l2_protocol_game::server::PartyDistributionType;
 
 /// The two flags of Java `EventMonster` (`drop_on_ground`, `block_skill_attack`), both `false`
 /// until a script sets them.
@@ -26,7 +26,11 @@ pub struct EventMonsterFlags {
 impl World {
     /// Java `EventMonster.eventSetDropOnGround(value)`.
     pub fn event_monster_set_drop_on_ground(&mut self, npc: ObjectId, value: bool) {
-        self.custom_scripts.event_monsters.entry(npc).or_default().drop_on_ground = value;
+        self.custom_scripts
+            .event_monsters
+            .entry(npc)
+            .or_default()
+            .drop_on_ground = value;
     }
 
     /// Java `EventMonster.eventSetBlockOffensiveSkills(value)`.
@@ -128,10 +132,13 @@ impl World {
 
     /// Java `Creature.fullRestore()` of a player: HP, MP and CP to the maximum.
     pub fn player_full_restore(&mut self, player: ObjectId) {
-        let Some((hp, mp, cp)) = self
-            .stats(player)
-            .map(|v| (f64::from(v.max_hp()), f64::from(v.max_mp()), f64::from(v.max_cp())))
-        else {
+        let Some((hp, mp, cp)) = self.stats(player).map(|v| {
+            (
+                f64::from(v.max_hp()),
+                f64::from(v.max_mp()),
+                f64::from(v.max_cp()),
+            )
+        }) else {
             return;
         };
         self.set_current_hp(player, hp, true);
@@ -281,7 +288,11 @@ impl World {
     /// exit point or the town.
     pub fn instance_eject_player(&mut self, instance_id: i32, player: ObjectId) {
         if self.players.contains_key(&player) && self.instance_id_of(player) == instance_id {
-            let exit = self.instances.instances.get(&instance_id).and_then(|i| i.exit_location);
+            let exit = self
+                .instances
+                .instances
+                .get(&instance_id)
+                .and_then(|i| i.exit_location);
             self.set_instance_id(player, 0);
             self.teleport_out_of_instance(player, exit);
         }
@@ -312,7 +323,9 @@ impl World {
             return Some(vec!["You cannot register on the event while flying."]);
         }
         if self.is_transformed(player) {
-            return Some(vec!["You cannot register on the event while on a transformed state."]);
+            return Some(vec![
+                "You cannot register on the event while on a transformed state.",
+            ]);
         }
         let under_80 = self
             .stats(player)
@@ -329,7 +342,9 @@ impl World {
                 "Try removing some items.",
             ]);
         }
-        if self.is_cursed_weapon_equipped(player) || self.players.get(&player).is_some_and(|p| p.data.karma > 0) {
+        if self.is_cursed_weapon_equipped(player)
+            || self.players.get(&player).is_some_and(|p| p.data.karma > 0)
+        {
             return Some(vec!["People with bad reputation can't register."]);
         }
         if self.is_in_duel(player) {

@@ -233,7 +233,8 @@ fn admin_events(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
                 world.send_sys_message(gm, "Usage: //event_bypass <eventname> <bypass>");
             }
             Some((id, true, script)) => {
-                let result = script.event_bypass(&mut crate::script::ScriptCtx::new(world, id), gm, event_bypass);
+                let result =
+                    script.event_bypass(&mut crate::script::ScriptCtx::new(world, id), gm, event_bypass);
                 world.script_drain();
                 if result.is_err() {
                     world.send_sys_message(gm, "Usage: //event_bypass <eventname> <bypass>");

@@ -110,9 +110,18 @@ impl World {
         {
             return true;
         }
+        // `Monster.isAutoAttackable` of a fake player (`Custom/FakePlayers.ini`).
+        if let Some(attackable) = self.fake_player_auto_attackable(target, attacker) {
+            return attackable;
+        }
         // `Block.isAutoAttackable` and `UCTower.isAutoAttackable` (M8-GAMES-01).
         if let Some(attackable) = self.minigame_npc_auto_attackable(target, attacker) {
             return attackable;
+        }
+        // `Guard.isAutoAttackable` with the faction system: the guards of the other side
+        // (`Custom/FactionSystem.ini`, M9-C04).
+        if self.faction_guard_auto_attackable(target, attacker) {
+            return true;
         }
         let karma = self.players.get(&attacker).map_or(0, |p| p.data.karma);
         match self.objects.get(&target).map(|e| e.kind) {
@@ -399,10 +408,11 @@ impl World {
         match action_id {
             0 => self.on_action_object(id, obj, true),
             1 => {
-                // Fake players are not ported: a GM, or any player on an NPC with
-                // `AltGameViewNpc`, gets the shift click.
+                // A GM, or any player on an NPC with `AltGameViewNpc` (a fake player is not one),
+                // gets the shift click.
                 if !self.is_gm(id)
-                    && !(self.script_handlers.settings.alt_game_viewnpc && self.is_plain_npc(obj))
+                    && (!(self.script_handlers.settings.alt_game_viewnpc && self.is_plain_npc(obj))
+                        || self.is_fake_player(obj))
                 {
                     self.on_action_object(id, obj, false);
                 } else {
@@ -470,6 +480,16 @@ impl World {
         }
         // `Tower.onAction` and `SiegeFlag.onAction` do not call `Npc.onAction` (M7-SIEGE-01).
         if self.siege_npc_click(player, npc, interact) {
+            return;
+        }
+        // `Guard.onAction` with the faction system: a guard of the other side is attacked at every
+        // click, never talked to (`Custom/FactionSystem.ini`, M9-C04).
+        if self.npcs.get(&npc).is_some_and(|n| n.class.is_guard()) && self.faction_guard_hates(player, npc) {
+            // TODO(java): "Fix normal targeting".
+            self.set_intention_attack(player, npc);
+            if self.target_of(player) != Some(npc) {
+                self.set_target(player, Some(npc));
+            }
             return;
         }
         if let Some(p) = self.players.get_mut(&player) {

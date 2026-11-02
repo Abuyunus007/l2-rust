@@ -332,7 +332,8 @@ impl Script for Deathmatch {
                     ctx.world_mut().set_on_event(player, false);
                     ctx.world_mut().set_on_solo_event(player, false);
                     remove_listeners(ctx, player);
-                    ctx.world().send_message(player, "You have been kicked for been inactive.");
+                    ctx.world()
+                        .send_message(player, "You have been kicked for been inactive.");
                     let name = ctx.player_name(player);
                     arena::broadcast_screen_message(
                         ctx,
@@ -390,7 +391,8 @@ impl Script for Deathmatch {
 
             // Removed invulnerability shield.
             if ctx.is_affected_by_skill(player, GHOST_WALKING.id) {
-                ctx.world_mut().stop_skill_effects_removed(player, GHOST_WALKING.id);
+                ctx.world_mut()
+                    .stop_skill_effects_removed(player, GHOST_WALKING.id);
             }
         }
     }
@@ -424,7 +426,11 @@ impl Script for Deathmatch {
         };
 
         // Confirm player kill.
-        arena::put_score(&mut ctx.state::<DeathmatchState>().player_scores, killer, score + 1);
+        arena::put_score(
+            &mut ctx.state::<DeathmatchState>().player_scores,
+            killer,
+            score + 1,
+        );
         let Some(world) = ctx.state::<DeathmatchState>().pvp_world else {
             return;
         };
@@ -583,7 +589,8 @@ mod tests {
     use crate::testing::{ScriptTest, names_to, pages_to};
 
     const NPCS: &str = r#"<npc id="70011" type="Folk" level="1" name="Manager"/>"#;
-    const ITEMS: &str = r#"<item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true"/></item>"#;
+    const ITEMS: &str =
+        r#"<item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true"/></item>"#;
     const DIR: &str = "data/scripts/custom/events/Deathmatch";
 
     fn scene(players: i32, level: i32) -> (ScriptTest, ObjectId) {
@@ -676,25 +683,31 @@ mod tests {
         let players: Vec<ObjectId> = (1..=4).map(ObjectId).collect();
         let instance = t.world.instance_id_of(players[0]);
         assert!(instance > 0);
-        assert!(
-            players
-                .iter()
-                .all(|p| t.world.is_on_event(*p) && t.world.is_on_solo_event(*p) && t.world.instance_id_of(*p) == instance)
-        );
-        assert!(players.iter().all(|p| t.world.invul_flag(*p) && t.world.is_immobilized(*p) && t.world.is_all_skills_disabled(*p)));
+        assert!(players.iter().all(|p| t.world.is_on_event(*p)
+            && t.world.is_on_solo_event(*p)
+            && t.world.instance_id_of(*p) == instance));
+        assert!(players.iter().all(|p| t.world.invul_flag(*p)
+            && t.world.is_immobilized(*p)
+            && t.world.is_all_skills_disabled(*p)));
         // Solo: every other player is a target.
         assert!(t.world.is_auto_attackable(players[1], players[0]));
 
         // The fight begins after the 20 seconds.
         t.wait_ms(20_000);
-        assert!(players.iter().all(|p| !t.world.invul_flag(*p) && !t.world.is_immobilized(*p) && !t.world.is_all_skills_disabled(*p)));
+        assert!(players.iter().all(|p| !t.world.invul_flag(*p)
+            && !t.world.is_immobilized(*p)
+            && !t.world.is_all_skills_disabled(*p)));
 
         // Player 2 kills player 3 twice (the dead are brought back after ten seconds), player 1
         // kills once: player 2 leads.
         t.take();
         t.world.do_die(players[2], Some(players[1]));
         t.ticks(2);
-        assert!(names_to(&t.take(), 4).iter().any(|n| n == "EX_PVP_MATCH_CC_RECORD"));
+        assert!(
+            names_to(&t.take(), 4)
+                .iter()
+                .any(|n| n == "EX_PVP_MATCH_CC_RECORD")
+        );
         t.wait_ms(10_500);
         t.world.do_die(players[2], Some(players[1]));
         t.world.do_die(players[3], Some(players[0]));
@@ -705,7 +718,11 @@ mod tests {
         assert_eq!(t.count(2, 57), 1_000_000);
         assert_eq!(t.count(1, 57), 0);
         t.wait_ms(8_000);
-        assert!(players.iter().all(|p| !t.world.is_on_event(*p) && !t.world.is_on_solo_event(*p)));
+        assert!(
+            players
+                .iter()
+                .all(|p| !t.world.is_on_event(*p) && !t.world.is_on_solo_event(*p))
+        );
         assert!(players.iter().all(|p| t.world.instance_id_of(*p) == 0));
         // Inactive again: it can start anew.
         assert!(start(&mut t));
@@ -727,7 +744,8 @@ mod tests {
         assert!(start(&mut t));
         assert!(register(&mut t, 1, manager).contains("success"));
         let mut stopped = false;
-        t.world.run_as_script("Deathmatch", |ctx| stopped = Deathmatch.event_stop(ctx));
+        t.world
+            .run_as_script("Deathmatch", |ctx| stopped = Deathmatch.event_stop(ctx));
         assert!(stopped);
         assert!(!t.world.is_registered_on_event(ObjectId(1)));
     }

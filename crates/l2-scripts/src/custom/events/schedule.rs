@@ -27,7 +27,13 @@ pub(super) fn load_config(ctx: &mut ScriptCtx<'_>, key: &str, name: &str) {
         let params = TimerParams::new()
             .set("Name", name)
             .set("SchedulingPattern", pattern);
-        ctx.add_timer(&format!("Schedule{}", index + 1), Some(params), delay + 5000, None, None);
+        ctx.add_timer(
+            &format!("Schedule{}", index + 1),
+            Some(params),
+            delay + 5000,
+            None,
+            None,
+        );
         info!("Event {name} scheduled in {} s", delay / 1000);
     }
 }

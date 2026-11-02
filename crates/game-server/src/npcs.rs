@@ -203,6 +203,7 @@ pub fn spawn_npcs_with_scripts(
 ) {
     world.set_npc_settings(npc_settings(config, config_dir));
     world.set_custom_script_settings(custom_script_settings(config, config_dir, &datapack.root));
+    world.set_custom_settings(crate::custom_monsters::custom_settings(config, config_dir));
     world.set_ai_settings(ai_settings(config));
     world.set_water_check(water_check(datapack));
     world.set_id_factory(ids);
@@ -214,6 +215,24 @@ pub fn spawn_npcs_with_scripts(
         return;
     }
     world.set_npc_data(Arc::clone(&datapack.npcs), Arc::clone(&datapack.spawns));
+    // Java `FakePlayerChatManager`: the names and the chat lines of the fake players, when they
+    // are on (`Custom/FakePlayers.ini`).
+    if config.fake_players.fake_players_enabled {
+        let chat = if config.fake_players.fake_player_chat {
+            l2_data::load_fake_player_chat(&datapack.root)
+                .into_iter()
+                .map(|c| l2_world::FakePlayerChatEntry {
+                    fpc_name: c.fpc_name,
+                    search_method: c.search_method,
+                    search_text: c.search_text,
+                    answers: c.answers,
+                })
+                .collect()
+        } else {
+            Vec::new()
+        };
+        world.load_fake_players(chat);
+    }
     if let Some(scripts) = scripts {
         world.install_scripts(scripts);
     }

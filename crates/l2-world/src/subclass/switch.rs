@@ -564,7 +564,7 @@ impl World {
 
     /// Java `regiveTemporarySkills()`: the skills that are not stored (noble, hero, clan, siege,
     /// residence), the skills of the worn items and the death penalty.
-    fn regive_temporary_skills(&mut self, id: ObjectId) {
+    pub(crate) fn regive_temporary_skills(&mut self, id: ObjectId) {
         let Some(player) = self.players.get(&id) else {
             return;
         };
@@ -594,6 +594,10 @@ impl World {
             if let Some(fort) = self.fort_by_owner(clan_id) {
                 self.give_residential_skills(ResidenceRef::Fort(fort), id);
             }
+        }
+        // The `RebirthConfig` skills (M9-C05, `custom/rebirth.rs`), off by default.
+        if self.settings.rebirth.allow_rebirth {
+            self.rebirth_grant_skills(id);
         }
         // Reload passive skills from armors / jewels / weapons.
         self.reload_equipped_item_skills(id);

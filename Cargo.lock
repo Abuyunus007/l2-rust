@@ -2507,6 +2507,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "l2-loadtest"
+version = "0.1.0"
+dependencies = [
+ "clap",
+ "game-server",
+ "l2-admin-api",
+ "l2-db",
+ "l2-net",
+ "l2-protocol-game",
+ "l2-testkit",
+ "login-server",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "l2-net"
 version = "0.1.0"
 dependencies = [
@@ -2577,6 +2596,8 @@ name = "l2-supervisor"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
+ "flate2",
  "l2-admin-api",
  "l2-config",
  "rand 0.10.3",

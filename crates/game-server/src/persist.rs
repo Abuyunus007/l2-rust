@@ -99,7 +99,7 @@ use l2_world::territory::{
 use l2_world::{AirshipRow, CursedLoad, CursedRow, CursedWrite, VehicleLoad, VehicleWrite};
 use l2_world::{AnnouncementRecord, AnnouncementWrite};
 use l2_world::{AuctionBidRecord, AuctionRecord, AuctionWrite};
-use l2_world::{BookmarkWrite, ContactWrite, FriendSummary};
+use l2_world::{BookmarkWrite, ContactWrite, FriendSummary, RebirthWrite};
 use l2_world::{
     BossLoad, BossReadKind, BossRereadRows, BossWrite, GrandBossData, GrandBossStoreRow, RaidBossData,
     RaidPointsRecord,
@@ -521,6 +521,15 @@ pub trait PlayerStore: Send + 'static {
         async { Ok(()) }
     }
 
+    /// A `rebirth_system` row change (M9-C05): Java `RebirthManager.insertFirst` / `updateCount` /
+    /// `saveSelectedSkills`.
+    fn store_rebirth_write(
+        &mut self,
+        _write: &RebirthWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
     /// The `characters` row of a friend who is not in the world (Java `FriendListExtended`):
     /// `None` when no row has the id. An `Err` leaves the friend out, like Java's empty `catch`.
     fn load_friend_summary(
@@ -724,6 +733,29 @@ pub trait PlayerStore: Send + 'static {
                 _ => l2_world::LotteryReply::Results(Vec::new()),
             })
         }
+    }
+
+    /// An `account_premium` write of the premium system (M9-C02).
+    fn store_premium(
+        &mut self,
+        _write: &l2_world::PremiumWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// The `buffer_schemes` rows of one character replaced (M9-C03, the scheme buffer).
+    fn store_buffer_schemes(
+        &mut self,
+        _object_id: ObjectId,
+        _schemes: &[(String, String)],
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
+    /// The `account_premium` row of an account or character (M9-C02), `None` when there is none.
+    /// A store without a database has no rows.
+    fn load_premium(&mut self, _key: &str) -> impl Future<Output = Result<Option<i64>, PersistError>> + Send {
+        async { Ok(None) }
     }
 
     /// A `bbs_favorites` write of the community board (S-HAND-01).
@@ -1330,6 +1362,39 @@ async fn run<S: PlayerStore>(
                     warn!("The lottery answer ({then:?}) could not be handed to the world.");
                 }
             }
+            OutboxMessage::Persist(PersistCommand::Premium(write)) => {
+                // Java logs a failed premium statement and goes on (no retry).
+                if let Err(e) = store.store_premium(&write).await {
+                    error!("Premium row could NOT be stored ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::PremiumRequest { player, key }) => {
+                // Not a write: a read the world asked for, answered in order with the writes
+                // before it.
+                let result = match store.load_premium(&key).await {
+                    Ok(row) => Ok(row),
+                    Err(e) => {
+                        warn!("Could not read the premium row of character {}: {e}", player.0);
+                        Err(())
+                    }
+                };
+                if !acks.send_to_world(l2_world::WorldCommand::PremiumLoaded { player, key, result }) {
+                    warn!(
+                        "The premium row of character {} could not be handed to the world.",
+                        player.0
+                    );
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::BufferSchemes { object_id, schemes }) => {
+                // The scheme buffer's rows of one character; a failed write is logged (Java's
+                // `saveSchemes` logs and goes on).
+                if let Err(e) = store.store_buffer_schemes(object_id, &schemes).await {
+                    warn!(
+                        "SchemeBufferTable: Error while saving the schemes of {}: {e}",
+                        object_id.0
+                    );
+                }
+            }
             OutboxMessage::Persist(PersistCommand::BbsFavorite(write)) => {
                 // Java logs a failed favorites statement and goes on (no retry).
                 if let Err(e) = store.store_bbs_favorite(&write).await {
@@ -1358,6 +1423,12 @@ async fn run<S: PlayerStore>(
                 // Java logs a failed contact statement and goes on (no retry).
                 if let Err(e) = store.store_contact_write(&write).await {
                     error!("Contact list data could NOT be stored ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::Rebirth(write)) => {
+                // Java logs a failed statement and goes on (no retry).
+                if let Err(e) = store.store_rebirth_write(&write).await {
+                    error!("Rebirth data could NOT be stored ({write:?}): {e}");
                 }
             }
             OutboxMessage::Persist(PersistCommand::FriendSummariesRequest { requester, friends }) => {
@@ -1580,7 +1651,10 @@ async fn run<S: PlayerStore>(
                 };
                 let answer = l2_world::WorldCommand::TransmogLoaded { player, result };
                 if !acks.send_to_world(answer) {
-                    warn!("The transmog rows of {} could not be handed to the world.", player.0);
+                    warn!(
+                        "The transmog rows of {} could not be handed to the world.",
+                        player.0
+                    );
                 }
             }
             OutboxMessage::Persist(PersistCommand::TransmogSaveCollection { owner, item_ids }) => {
@@ -1589,7 +1663,10 @@ async fn run<S: PlayerStore>(
                     warn!("Problem with Transmog: {e}");
                 }
             }
-            OutboxMessage::Persist(PersistCommand::ItemTransmog { object_id, transmog_id }) => {
+            OutboxMessage::Persist(PersistCommand::ItemTransmog {
+                object_id,
+                transmog_id,
+            }) => {
                 if let Err(e) = store.store_item_transmog(object_id, transmog_id).await {
                     warn!("ItemVariables: Could not update variables for: {object_id}: {e}");
                 }
@@ -2271,6 +2348,27 @@ pub async fn load_auto_spawns(pool: &Pool) -> Vec<l2_world::sevensigns::AutoSpaw
             .collect(),
         Err(e) => {
             warn!("AutoSpawnHandler: Could not restore spawn data: {e}");
+            Vec::new()
+        }
+    }
+}
+
+/// Java `SchemeBufferTable.loadPlayerSchemes`: every row of `buffer_schemes` as `(object_id,
+/// scheme_name, skills)`. Java logs a failed read and starts without them.
+pub async fn load_buffer_schemes(pool: &Pool) -> Vec<(i32, String, String)> {
+    match l2_db::BufferSchemeRepository::new(pool.clone()).load_all().await {
+        Ok(rows) => rows
+            .into_iter()
+            .map(|row| {
+                (
+                    i32::try_from(row.object_id).unwrap_or(i32::MAX),
+                    row.scheme_name,
+                    row.skills,
+                )
+            })
+            .collect(),
+        Err(e) => {
+            warn!("SchemeBufferTable: Failed to load buff schemes from database. {e}");
             Vec::new()
         }
     }
@@ -3935,6 +4033,7 @@ pub struct DbStore {
     coliseum: UndergroundColiseumRepository,
     bookmarks: BookmarkRepository,
     contacts: ContactRepository,
+    rebirth: l2_db::RebirthRepository,
     reco: RecommendationRepository,
     variables: VariableRepository,
     punishments: PunishmentRepository,
@@ -3968,6 +4067,8 @@ pub struct DbStore {
     /// `character_subclasses` (S-SUB-01).
     subclasses: SubclassRepository,
     bbs_favorites: BbsFavoriteRepository,
+    premium: l2_db::PremiumRepository,
+    buffer_schemes: l2_db::BufferSchemeRepository,
     lottery: LotteryRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
     punishment_ids: HashMap<(String, &'static str, &'static str), u32>,
@@ -4034,6 +4135,7 @@ impl DbStore {
             coliseum: UndergroundColiseumRepository::new(pool.clone()),
             bookmarks: BookmarkRepository::new(pool.clone()),
             contacts: ContactRepository::new(pool.clone()),
+            rebirth: l2_db::RebirthRepository::new(pool.clone()),
             reco: RecommendationRepository::new(pool.clone()),
             variables: VariableRepository::new(pool.clone()),
             summons: SummonRepository::new(pool.clone()),
@@ -4065,6 +4167,8 @@ impl DbStore {
             petition_feedback: PetitionFeedbackRepository::new(pool.clone()),
             subclasses: SubclassRepository::new(pool.clone()),
             bbs_favorites: BbsFavoriteRepository::new(pool.clone()),
+            premium: l2_db::PremiumRepository::new(pool.clone()),
+            buffer_schemes: l2_db::BufferSchemeRepository::new(pool.clone()),
             lottery: LotteryRepository::new(pool.clone()),
             offline_trades: OfflineTradeRepository::new(pool),
             punishment_ids: HashMap::new(),
@@ -4740,7 +4844,8 @@ pub fn build_character_update(player: &PlayerData, row: &CharacterRow) -> Charac
             i32::from(row.vitality_points)
         },
         language: row.language.clone(),
-        faction: i32::from(row.faction),
+        // Java writes 1 for a good player, 2 for an evil one, else 0 (M9-C04).
+        faction: player.profile.faction,
         // Java writes `getPcCafePoints()`: hunting, the retail timer and multisell change it
         // (M6-FU-11).
         pccafe_points: player.profile.pccafe_points,
@@ -5458,6 +5563,21 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
+    async fn store_rebirth_write(&mut self, write: &RebirthWrite) -> Result<(), PersistError> {
+        match write {
+            RebirthWrite::Insert { char_id } => {
+                self.rebirth.insert_first(*char_id).await?;
+            }
+            RebirthWrite::Count { char_id, count } => {
+                self.rebirth.update_count(*char_id, *count).await?;
+            }
+            RebirthWrite::Skills { char_id, skills } => {
+                self.rebirth.save_selected_skills(*char_id, skills).await?;
+            }
+        }
+        Ok(())
+    }
+
     async fn load_boss_rows(&mut self, kind: BossReadKind) -> Result<BossRereadRows, PersistError> {
         Ok(match kind {
             BossReadKind::GrandBoss(boss_id) => BossRereadRows::GrandBoss {
@@ -5768,7 +5888,11 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
-    async fn store_item_transmog(&mut self, object_id: i32, transmog_id: Option<i32>) -> Result<(), PersistError> {
+    async fn store_item_transmog(
+        &mut self,
+        object_id: i32,
+        transmog_id: Option<i32>,
+    ) -> Result<(), PersistError> {
         match transmog_id {
             Some(id) => self.transmog.set_item_transmog(object_id, id).await?,
             None => self.transmog.remove_item_transmog(object_id).await?,
@@ -5949,6 +6073,31 @@ impl PlayerStore for DbStore {
                     .collect(),
             ),
         })
+    }
+
+    async fn store_premium(&mut self, write: &l2_world::PremiumWrite) -> Result<(), PersistError> {
+        match write {
+            l2_world::PremiumWrite::Replace { account, end_date } => {
+                self.premium.replace(account, *end_date).await?
+            }
+            l2_world::PremiumWrite::Delete { account } => self.premium.delete(account).await?,
+        }
+        Ok(())
+    }
+
+    async fn load_premium(&mut self, key: &str) -> Result<Option<i64>, PersistError> {
+        Ok(self.premium.end_date_of(key).await?)
+    }
+
+    async fn store_buffer_schemes(
+        &mut self,
+        object_id: ObjectId,
+        schemes: &[(String, String)],
+    ) -> Result<(), PersistError> {
+        self.buffer_schemes
+            .replace_schemes_of(object_id.0, schemes)
+            .await?;
+        Ok(())
     }
 
     async fn store_bbs_favorite(&mut self, write: &FavoriteWrite) -> Result<(), PersistError> {
@@ -6718,6 +6867,8 @@ mod tests {
         Bookmark(BookmarkWrite),
         /// A `character_contacts` write (L-04).
         Contact(ContactWrite),
+        /// A `rebirth_system` write (M9-C05).
+        Rebirth(RebirthWrite),
         /// The `characters` row read of a friend (L-04).
         FriendSummary(i32),
         /// A cursed weapon write (M8-CURSED-01).
@@ -6732,6 +6883,7 @@ mod tests {
         LotteryRead(l2_world::LotteryThen),
         /// A `bbs_favorites` write (S-HAND-01).
         BbsFavorite(FavoriteWrite),
+        BufferSchemes(i32, Vec<(String, String)>),
         /// A `bbs_favorites` read (S-HAND-01).
         BbsFavoriteRead(i32, FavoriteRead),
     }
@@ -7000,6 +7152,11 @@ mod tests {
             Ok(())
         }
 
+        async fn store_rebirth_write(&mut self, write: &RebirthWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::Rebirth(write.clone()));
+            Ok(())
+        }
+
         /// Friend 7 has a row, friend 8 has none, a friend below 0 cannot be read.
         async fn load_friend_summary(&mut self, char_id: i32) -> Result<Option<FriendSummary>, PersistError> {
             self.calls.lock().unwrap().push(Call::FriendSummary(char_id));
@@ -7086,6 +7243,18 @@ mod tests {
         ) -> Result<l2_world::LotteryReply, PersistError> {
             self.calls.lock().unwrap().push(Call::LotteryRead(then));
             Ok(l2_world::LotteryReply::Tickets(vec![(1, 0)]))
+        }
+
+        async fn store_buffer_schemes(
+            &mut self,
+            object_id: ObjectId,
+            schemes: &[(String, String)],
+        ) -> Result<(), PersistError> {
+            self.calls
+                .lock()
+                .unwrap()
+                .push(Call::BufferSchemes(object_id.0, schemes.to_vec()));
+            Ok(())
         }
 
         async fn store_bbs_favorite(&mut self, write: &FavoriteWrite) -> Result<(), PersistError> {
@@ -8752,6 +8921,30 @@ mod tests {
         );
     }
 
+    /// M9-C05: the rebirth statements are stored one by one, in order.
+    #[tokio::test]
+    async fn rebirth_writes_are_stored_in_order() {
+        let insert = RebirthWrite::Insert { char_id: 5 };
+        let skills = RebirthWrite::Skills {
+            char_id: 5,
+            skills: "1059,1085".into(),
+        };
+        let count = RebirthWrite::Count { char_id: 5, count: 2 };
+        let (calls, _) = run_all(
+            Recording::default(),
+            vec![
+                OutboxMessage::Persist(PersistCommand::Rebirth(insert.clone())),
+                OutboxMessage::Persist(PersistCommand::Rebirth(skills.clone())),
+                OutboxMessage::Persist(PersistCommand::Rebirth(count.clone())),
+            ],
+        )
+        .await;
+        assert_eq!(
+            calls,
+            vec![Call::Rebirth(insert), Call::Rebirth(skills), Call::Rebirth(count)]
+        );
+    }
+
     /// L-04: the friend rows are read one by one and handed to the world; a friend without a row
     /// or whose read failed is left out.
     #[tokio::test]
@@ -8956,6 +9149,31 @@ mod tests {
             &answers[2],
             l2_world::WorldCommand::BbsFavoritesLoaded { result: Err(()), .. }
         ));
+    }
+
+    /// M9-C03: the scheme rows of a player go to the store in order with the other commands.
+    #[tokio::test]
+    async fn buffer_scheme_rows_reach_the_store() {
+        let store = Recording::default();
+        let calls = Arc::clone(&store.calls);
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
+        let task = spawn(store, rx, notice_tx, NO_WAIT, LeftAcks::default());
+        let schemes = vec![("Alpha".to_owned(), "1040,1059".to_owned())];
+        tx.send(OutboxMessage::Persist(PersistCommand::BufferSchemes {
+            object_id: ObjectId(7),
+            schemes: schemes.clone(),
+        }))
+        .unwrap();
+        drop(tx);
+        tokio::time::timeout(Duration::from_secs(10), task)
+            .await
+            .unwrap()
+            .unwrap();
+        assert_eq!(
+            calls.lock().unwrap().clone(),
+            vec![Call::BufferSchemes(7, schemes)]
+        );
     }
 
     /// M7-ADMIN-10: the requests of the world that are not its to do go to the control handler.
