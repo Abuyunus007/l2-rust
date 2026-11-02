@@ -11,6 +11,7 @@ use l2_data::Datapack;
 use l2_db::{CharacterRepository, CharacterRow, ItemRepository, PaperdollItemRow, Pool, SubclassRepository};
 use l2_protocol_game::server::charscreen::{CharSelectEntry, delete_seconds, paperdoll};
 use l2_util::time::now_millis;
+use l2_world::MultilangSettings;
 use tracing::warn;
 
 use super::BoxFuture;
@@ -26,6 +27,23 @@ pub struct CharacterInfo {
     pub access_level: i32,
     /// `title` (empty when the column is NULL), for `CharSelected`.
     pub title: String,
+    /// Java `CharacterInfoHolder._htmlPrefix` (`MultilingualSupport.ini`, M9-L02): set from the
+    /// `language` column, empty with the switch off. Java never writes it into the packet; it is
+    /// kept here as Java keeps it in the holder.
+    pub html_prefix: String,
+}
+
+/// `CharSelectionInfo.restoreChar`: `if (MULTILANG_ENABLE)` the language of the row (the default
+/// one when the column is NULL or not allowed) becomes `data/lang/<lang>/`.
+// NOTE(java-quirk): unlike `Player.getHtmlPrefix`, English gets `data/lang/en/` here.
+pub fn char_select_html_prefix(settings: &MultilangSettings, language: Option<&str>) -> String {
+    if !settings.enable {
+        return String::new();
+    }
+    let lang = language
+        .filter(|l| settings.allowed.iter().any(|a| a == l))
+        .unwrap_or(&settings.default_lang);
+    format!("data/lang/{lang}/")
 }
 
 /// Where the character list comes from. The database in the server, a fake in tests.
@@ -148,6 +166,7 @@ pub fn build_character(
         delete_time_ms,
         access_level: row.accesslevel.unwrap_or(0),
         title: row.title.clone().unwrap_or_default(),
+        html_prefix: String::new(),
     })
 }
 
@@ -162,6 +181,8 @@ pub struct DbCharacterList {
     /// `TransmogConfig.ENABLE_TRANSMOG`: the list shows the `transmogId` of the worn items
     /// (M9-C07).
     transmog: Option<l2_db::TransmogRepository>,
+    /// `MultilingualSupport.ini` (M9-L02): the html prefix of the entries.
+    multilang: MultilangSettings,
 }
 
 impl DbCharacterList {
@@ -173,7 +194,14 @@ impl DbCharacterList {
             subclasses: SubclassRepository::new(pool),
             datapack,
             transmog: None,
+            multilang: MultilangSettings::default(),
         }
+    }
+
+    /// `MultilingualSupport.ini`: the html prefix of every entry (`CharSelectionInfo.restoreChar`).
+    pub fn with_multilang(mut self, settings: MultilangSettings) -> Self {
+        self.multilang = settings;
+        self
     }
 
     /// Java `PlayerInventory.restoreVisibleInventory` with `TransmogConfig.ENABLE_TRANSMOG`: a
@@ -232,7 +260,9 @@ impl DbCharacterList {
             } else {
                 None
             };
-            if let Some(info) = build_character(&row, subclass, &slots, augmentation, &self.datapack, now) {
+            if let Some(mut info) = build_character(&row, subclass, &slots, augmentation, &self.datapack, now)
+            {
+                info.html_prefix = char_select_html_prefix(&self.multilang, row.language.as_deref());
                 list.push(info);
             }
         }
@@ -393,6 +423,22 @@ mod tests {
         assert_eq!(e.delete_seconds, 0);
         assert_eq!(e.vitality_points, 20000);
         assert_eq!(info.last_access, 1_000);
+    }
+
+    #[test]
+    fn the_html_prefix_follows_the_language_column() {
+        let off = MultilangSettings::default();
+        assert_eq!(char_select_html_prefix(&off, Some("el")), "");
+        let on = MultilangSettings {
+            enable: true,
+            default_lang: "en".into(),
+            allowed: vec!["en".into(), "el".into()],
+            voiced_allow: true,
+        };
+        assert_eq!(char_select_html_prefix(&on, Some("el")), "data/lang/el/");
+        // NULL and a language that is not allowed show the default one; English is not special.
+        assert_eq!(char_select_html_prefix(&on, None), "data/lang/en/");
+        assert_eq!(char_select_html_prefix(&on, Some("xx")), "data/lang/en/");
     }
 
     #[test]

@@ -174,7 +174,8 @@ pub async fn start_listener(server: &mut Server) -> Result<(), StartupError> {
                 Arc::clone(&state.datapack),
                 state.config.wedding.allow_wedding,
             )
-            .with_transmog(state.pool.clone(), state.config.transmog.enable_transmog),
+            .with_transmog(state.pool.clone(), state.config.transmog.enable_transmog)
+            .with_multilang(crate::custom_misc_data::custom_misc_settings(&state.config, 0).multilang),
         ),
         registry: Arc::clone(&registry),
         world: state.world.clone(),

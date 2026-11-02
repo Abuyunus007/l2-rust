@@ -409,6 +409,12 @@ impl World {
     }
 
     pub fn send_bytes(&self, to: ObjectId, bytes: Vec<u8>) -> bool {
+        // `MultilingualSupport.ini` (M9-L02): the `writeImpl` step of the packets with texts.
+        let bytes = if self.multilang_on() {
+            self.localise_bytes(to, bytes)
+        } else {
+            bytes
+        };
         match self.sinks.get(&to) {
             Some(sink) => {
                 // Java `CreatureSay.runImpl` -> `broadcastSnoop`: GMs who snoop this player get
@@ -682,6 +688,8 @@ impl World {
         player.entered_at_unix_ms = unix_ms_now();
         player.client_ip = ip;
         self.players.insert(id, player);
+        // Java `Player.restore`: `setLang(rset.getString("language"))` (M9-L02).
+        self.restore_player_lang(id);
         // Java `Item.restoreFromDb`: the warehouses keep the items whose template is known.
         self.clean_loaded_warehouses(id);
         // Java `restoreSubClassData`: the holders get Java's level and exp limits (S-SUB-01).

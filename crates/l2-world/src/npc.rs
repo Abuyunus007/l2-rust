@@ -1139,7 +1139,12 @@ impl World {
         let (run_speed, walk_speed) = (speed(stats.run_speed()), speed(stats.walk_speed()));
         let viewer_karma = self.players.get(&viewer).map_or(0, |p| p.data.karma);
 
-        let name = if template.using_server_side_name {
+        // `MultilingualSupport.ini`: the translated name and title of the viewer's language
+        // replace the template's (`AbstractNpcInfo.NpcInfo.writeImpl`, M9-L02).
+        let localised = self.npc_name_localisation_for_info(viewer, npc.npc_id);
+        let name = if let Some((name, _)) = &localised {
+            name.clone()
+        } else if template.using_server_side_name {
             // `npc.getName()`: a script's `setName` first (S-API-05).
             self.npc_custom_name(subject)
                 .map_or_else(|| template.name.clone(), str::to_owned)
@@ -1148,7 +1153,9 @@ impl World {
         };
         // Creature._title of an NPC is null (written as empty) unless the template says to send
         // its own, or the siege gave it one (the headquarters' clan name, M7-SIEGE-01).
-        let mut title = if template.using_server_side_title {
+        let mut title = if let Some((_, title)) = localised {
+            title
+        } else if template.using_server_side_title {
             template.title.clone()
         } else {
             self.npc_custom_title(subject).unwrap_or_default().to_owned()

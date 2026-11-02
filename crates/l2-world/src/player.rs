@@ -148,6 +148,10 @@ pub struct PlayerProfile {
     /// `characters.faction`: 0 none, 1 good, 2 evil (Java `_isGood` / `_isEvil`, M9-C04,
     /// `custom/faction.rs`). Written back with every store, as Java does.
     pub faction: i32,
+    /// `characters.language` (Java `Player._lang`, M9-L02, `custom/multilingual.rs`): the raw
+    /// column at the login, the normalised language (null with `MultiLangEnable = False`) once the
+    /// player is in the world. Written back with every store, as Java does.
+    pub language: Option<String>,
     /// `characters.bookmarkslot`.
     pub bookmark_slot: i32,
     /// `characters.death_penalty_level`.
@@ -286,6 +290,7 @@ impl Default for PlayerProfile {
             vitality_points: 0,
             pccafe_points: 0,
             faction: 0,
+            language: None,
             bookmark_slot: 0,
             death_penalty_level: 0,
             exp_before_death: 0,
