@@ -187,7 +187,9 @@ pub async fn start_listener(server: &mut Server) -> Result<(), StartupError> {
         )
         .with_select_flood(character_select_flood(&state.paths.config_dir))
         .with_master_access_level(state.static_data.master_access_level()),
-        loader: Arc::new(DbPlayerLoader::new(state.pool.clone()).with_rebirth(state.config.rebirth.rebirth_allow_rebirth)),
+        loader: Arc::new(
+            DbPlayerLoader::new(state.pool.clone()).with_rebirth(state.config.rebirth.rebirth_allow_rebirth),
+        ),
         data: Arc::clone(&state.static_data),
         settings: state.world_settings.clone(),
         left_acks: state.left_acks.clone(),

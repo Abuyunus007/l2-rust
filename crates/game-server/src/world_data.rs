@@ -2289,7 +2289,8 @@ BotReportPointsResetHour = noon
     /// and the exp and SP amounts by their own settings, all others by `load_class_balance`.
     #[test]
     fn class_balance_reads_every_key_of_the_shipped_file() {
-        let shipped = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dist/game/config/Custom/ClassBalance.ini");
+        let shipped = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../dist/game/config/Custom/ClassBalance.ini");
         let Ok(text) = std::fs::read_to_string(&shipped) else {
             eprintln!("skipped: {} is missing", shipped.display());
             return;
@@ -2303,13 +2304,16 @@ BotReportPointsResetHour = noon
             .collect();
         assert!(keys.len() >= 37, "{keys:?}");
         for key in keys {
-            let line = format!("{key} = 3*7
-");
+            let line = format!(
+                "{key} = 3*7
+"
+            );
             match key {
                 "SkillReuseMultipliers" | "ExpAmountMultipliers" | "SpAmountMultipliers" => {
                     let dir = tempfile::tempdir().unwrap();
                     std::fs::create_dir_all(dir.path().join("Custom")).unwrap();
-                    std::fs::write(dir.path().join(l2_config::game::ClassBalanceConfig::FILE), &line).unwrap();
+                    std::fs::write(dir.path().join(l2_config::game::ClassBalanceConfig::FILE), &line)
+                        .unwrap();
                     let config = GameConfig::load(dir.path()).unwrap();
                     match key {
                         "SkillReuseMultipliers" => {
@@ -2317,10 +2321,18 @@ BotReportPointsResetHour = noon
                             assert_eq!(settings.cast.skill_reuse_multipliers[3], 7.0, "{key}");
                         }
                         "ExpAmountMultipliers" => {
-                            assert_eq!(party_settings(&config, dir.path()).exp_amount_multipliers[3], 7.0, "{key}");
+                            assert_eq!(
+                                party_settings(&config, dir.path()).exp_amount_multipliers[3],
+                                7.0,
+                                "{key}"
+                            );
                         }
                         _ => {
-                            assert_eq!(party_settings(&config, dir.path()).sp_amount_multipliers[3], 7.0, "{key}");
+                            assert_eq!(
+                                party_settings(&config, dir.path()).sp_amount_multipliers[3],
+                                7.0,
+                                "{key}"
+                            );
                         }
                     }
                 }
@@ -2332,6 +2344,87 @@ BotReportPointsResetHour = noon
                 }
             }
         }
+    }
+
+    /// M9-C05: the three PvP/Rebirth custom files. Without files the Java defaults (the shipped
+    /// files switch everything off); with files the values and the lists come from them.
+    #[test]
+    fn pvp_rewards_announce_and_rebirth_read_their_files() {
+        let dir = tempfile::tempdir().unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let pvp = pvp_settings(&config, dir.path());
+        assert_eq!(pvp.reward, l2_world::PvpRewardItemSettings::default());
+        assert_eq!(pvp.announce, l2_world::PvpAnnounceSettings::default());
+        assert_eq!(
+            rebirth_settings(&config, dir.path()),
+            l2_world::RebirthSettings::default()
+        );
+
+        let custom = dir.path().join("Custom");
+        std::fs::create_dir_all(&custom).unwrap();
+        std::fs::write(
+            dir.path().join(l2_config::game::PvpRewardItemConfig::FILE),
+            "RewardPvpItem = True\nRewardPvpItemId = 4037\nRewardPvpItemAmount = 3\nRewardPvpItemMessage = False\n\
+             RewardPkItem = True\nRewardPkItemId = 57\nRewardPkItemAmount = 9\nDisableRewardsInInstances = False\n",
+        )
+        .unwrap();
+        std::fs::write(
+            dir.path().join(l2_config::game::PvpAnnounceConfig::FILE),
+            "AnnouncePkPvP = True\nAnnouncePkPvPNormalMessage = False\nAnnouncePkMsg = $killer PK $target\n",
+        )
+        .unwrap();
+        std::fs::write(
+            dir.path().join(l2_config::game::RebirthConfig::FILE),
+            "RebirthAllow = True\nRebirthMin = 40\nRebirthSkillDeleteWhitelist = 5, 7\n\
+             RebirthDeleteProtectedSkillGroups = fishing,HERO,nope\nRebirthSkillRefundMode = full \n\
+             RebirthMageSkills = 1,1,2;3,2,4\nRebirthFighterSkills = 9,1,1\nRebirthScreenMessagePosition = bottom_right\n",
+        )
+        .unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        let pvp = pvp_settings(&config, dir.path());
+        assert!(pvp.reward.reward_pvp_item && pvp.reward.reward_pk_item);
+        assert_eq!(
+            (pvp.reward.reward_pvp_item_id, pvp.reward.reward_pvp_item_amount),
+            (4037, 3)
+        );
+        assert!(!pvp.reward.reward_pvp_item_message && !pvp.reward.disable_rewards_in_instances);
+        assert!(pvp.reward.disable_rewards_in_pvp_zones);
+        assert!(pvp.announce.announce_pk_pvp && !pvp.announce.announce_pk_pvp_normal_message);
+        assert_eq!(pvp.announce.announce_pk_msg, "$killer PK $target");
+        let r = rebirth_settings(&config, dir.path());
+        assert!(r.allow_rebirth);
+        assert_eq!(r.min_level, 40);
+        assert_eq!(r.skill_delete_whitelist, [5, 7].into_iter().collect());
+        assert_eq!(
+            r.delete_protected_skill_groups,
+            ["FISHING".to_owned(), "HERO".to_owned()].into_iter().collect()
+        );
+        assert_eq!(r.skill_refund_mode, "FULL");
+        assert_eq!(r.mage_skills, ["1,1,2", "3,2,4"]);
+        assert_eq!(r.fighter_skills, ["9,1,1"]);
+        assert_eq!(r.screen_message_position, "BOTTOM_RIGHT");
+    }
+
+    /// The shipped `Rebirth.ini` and the three PvP files switch everything off.
+    #[test]
+    fn the_shipped_custom_pvp_files_are_off() {
+        let shipped = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dist/game/config");
+        if !shipped.join("Custom/Rebirth.ini").exists() {
+            eprintln!("skipped: {} is missing", shipped.display());
+            return;
+        }
+        let config = GameConfig::load(&shipped).unwrap();
+        let pvp = pvp_settings(&config, &shipped);
+        assert!(!pvp.reward.reward_pvp_item && !pvp.reward.reward_pk_item);
+        assert!(!pvp.announce.announce_pk_pvp && !pvp.title_color.enabled);
+        let r = rebirth_settings(&config, &shipped);
+        assert!(!r.allow_rebirth);
+        assert_eq!((r.min_level, r.max_count, r.reward_item_id), (75, 3, 1232));
+        assert_eq!(r.mage_skills.len(), 6);
+        assert_eq!(r.fighter_skills.len(), 6);
+        assert_eq!(r.delete_protected_skill_groups.len(), 10);
+        assert_eq!(r.screen_message_position, "TOP_CENTER");
+        assert!(!config.find_pvp.enable_find_pvp && !config.cancel_return.cancel_return_on);
     }
 
     /// M5-FU-04: `DefaultPunish`, `DefaultPunishParam`, `JailDisableChat` and `BanChatChannels`.

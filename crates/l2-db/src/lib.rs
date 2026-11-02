@@ -22,7 +22,6 @@ pub use game::{AnnouncementRepository, AnnouncementRow, AutoColumns};
 pub use game::{AuctionBidRow, AuctionRepository, AuctionRow, NewAuction};
 pub use game::{BbsFavoriteRepository, FavoriteRow};
 pub use game::{BookmarkRepository, BookmarkRow, ContactLink, ContactRepository};
-pub use game::{RebirthRepository, RebirthRow};
 pub use game::{
     BossRepository, GrandBossListRow, GrandBossRow, GrandBossStore, GrandBossUpdate, RaidBossRow,
     RaidPointsRow,
@@ -79,6 +78,7 @@ pub use game::{NewSummonSkillSave, SummonRepository, SummonSkillSaveRow};
 pub use game::{OfflineTradeItemRow, OfflineTradeRepository, OfflineTradeStatusRow};
 pub use game::{OlympiadDataRow, OlympiadFightRow, OlympiadNobleRow, OlympiadRepository};
 pub use game::{RandomSpawnRepository, RandomSpawnRow};
+pub use game::{RebirthRepository, RebirthRow};
 pub use game::{RecipeBookRow, RecipeRepository, RecipeShopRow};
 pub use game::{SubclassRepository, SubclassRow, SubclassValues};
 pub use login::{

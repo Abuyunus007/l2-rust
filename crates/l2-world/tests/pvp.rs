@@ -1192,7 +1192,10 @@ fn pvp_and_pk_kills_are_announced_to_everybody() {
     let sent = s.log.take();
     let (killer, victim) = (s.data(ME).name.clone(), s.data(P2).name.clone());
     for to in [ME, P2, P3] {
-        assert_eq!(announcements(&sent, to.0), [format!("{killer} has defeated {victim}")]);
+        assert_eq!(
+            announcements(&sent, to.0),
+            [format!("{killer} has defeated {victim}")]
+        );
     }
     s.log.take();
     s.kill(P3, ME);

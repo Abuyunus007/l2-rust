@@ -6666,6 +6666,8 @@ mod tests {
         Bookmark(BookmarkWrite),
         /// A `character_contacts` write (L-04).
         Contact(ContactWrite),
+        /// A `rebirth_system` write (M9-C05).
+        Rebirth(RebirthWrite),
         /// The `characters` row read of a friend (L-04).
         FriendSummary(i32),
         /// A cursed weapon write (M8-CURSED-01).
@@ -6945,6 +6947,11 @@ mod tests {
 
         async fn store_contact_write(&mut self, write: &ContactWrite) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::Contact(*write));
+            Ok(())
+        }
+
+        async fn store_rebirth_write(&mut self, write: &RebirthWrite) -> Result<(), PersistError> {
+            self.calls.lock().unwrap().push(Call::Rebirth(write.clone()));
             Ok(())
         }
 
@@ -8697,6 +8704,30 @@ mod tests {
                 Call::Bookmark(delete),
                 Call::Contact(contact_remove),
             ]
+        );
+    }
+
+    /// M9-C05: the rebirth statements are stored one by one, in order.
+    #[tokio::test]
+    async fn rebirth_writes_are_stored_in_order() {
+        let insert = RebirthWrite::Insert { char_id: 5 };
+        let skills = RebirthWrite::Skills {
+            char_id: 5,
+            skills: "1059,1085".into(),
+        };
+        let count = RebirthWrite::Count { char_id: 5, count: 2 };
+        let (calls, _) = run_all(
+            Recording::default(),
+            vec![
+                OutboxMessage::Persist(PersistCommand::Rebirth(insert.clone())),
+                OutboxMessage::Persist(PersistCommand::Rebirth(skills.clone())),
+                OutboxMessage::Persist(PersistCommand::Rebirth(count.clone())),
+            ],
+        )
+        .await;
+        assert_eq!(
+            calls,
+            vec![Call::Rebirth(insert), Call::Rebirth(skills), Call::Rebirth(count)]
         );
     }
 

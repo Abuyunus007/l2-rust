@@ -120,7 +120,8 @@ impl Default for RebirthSettings {
             select_effect_skill_lvl: 1,
             screen_message_enabled: true,
             screen_message:
-                "Congratulations %player%! Rebirth status acquired. [%rebirth_count%/%max_rebirth%]".to_owned(),
+                "Congratulations %player%! Rebirth status acquired. [%rebirth_count%/%max_rebirth%]"
+                    .to_owned(),
             screen_message_position: "TOP_CENTER".to_owned(),
             screen_message_time: 5000,
             global_announcement_enabled: true,
@@ -508,7 +509,9 @@ impl World {
     /// Java `consumeItem`.
     fn rebirth_consume_item(&mut self, player: ObjectId, item_id: i32, amount: i64, reason: &str) -> bool {
         if item_id <= 0 || amount <= 0 || amount > i64::from(i32::MAX) {
-            warn!("Invalid consumeItem request: player={player} itemId={item_id} amount={amount} reason={reason}");
+            warn!(
+                "Invalid consumeItem request: player={player} itemId={item_id} amount={amount} reason={reason}"
+            );
             return false;
         }
         let item = self
@@ -543,7 +546,8 @@ impl World {
 
     /// Java `isSkillInTree`: the skill of exactly this level is a line of the tree.
     fn rebirth_in_tree(tree: &[l2_data::SkillLearn], skill_id: i32, level: i32) -> bool {
-        tree.iter().any(|s| s.skill_id == skill_id && s.skill_level == level)
+        tree.iter()
+            .any(|s| s.skill_id == skill_id && s.skill_level == level)
     }
 
     /// Java `isProtectedByGroup`.
@@ -574,8 +578,9 @@ impl World {
                 "COLLECT" => Self::rebirth_in_tree(trees.collect_skills(), skill_id, level),
                 "SUBCLASS" => Self::rebirth_in_tree(trees.sub_class_skills(), skill_id, level),
                 "SUBPLEDGE" => Self::rebirth_in_tree(trees.sub_pledge_skills(), skill_id, level),
-                "TRANSFER" => base_class
-                    .is_some_and(|base| Self::rebirth_in_tree(trees.transfer_skill_tree(base), skill_id, level)),
+                "TRANSFER" => base_class.is_some_and(|base| {
+                    Self::rebirth_in_tree(trees.transfer_skill_tree(base), skill_id, level)
+                }),
                 "TRANSFORM" => Self::rebirth_in_tree(trees.transform_skills(), skill_id, level),
                 _ => false,
             };
@@ -706,7 +711,10 @@ impl World {
     pub(crate) fn rebirth_display_skill_selection_window(&mut self, player: ObjectId, object_id: i32) {
         let rebirth_count = self.rebirth_level(player);
         if rebirth_count <= 0 {
-            self.send_message(player, "You must perform at least one Rebirth before selecting skills.");
+            self.send_message(
+                player,
+                "You must perform at least one Rebirth before selecting skills.",
+            );
             return;
         }
         let defs = self.rebirth_defs(player);
@@ -782,7 +790,12 @@ impl World {
     }
 
     /// Java `displaySkillPreviewWindow(player, objectId, skillId)`.
-    pub(crate) fn rebirth_display_skill_preview_window(&mut self, player: ObjectId, object_id: i32, skill_id: i32) {
+    pub(crate) fn rebirth_display_skill_preview_window(
+        &mut self,
+        player: ObjectId,
+        object_id: i32,
+        skill_id: i32,
+    ) {
         let defs = self.rebirth_defs(player);
         let saved = self.rebirth_validated_skills(player, &defs);
         let rebirth_count = self.rebirth_level(player);
@@ -827,8 +840,12 @@ impl World {
         html.push_str("<table width=256 border=0 cellpadding=1 cellspacing=2>");
         html.push_str("<tr><td width=95 align=center>");
         html.push_str("<font color=\"66CC66\">Your Rebirths</font><br1>");
-        html.push_str(&format!("<font color=\"FFFF99\">{rebirth_count}/{max_count}</font><br1>"));
-        html.push_str(&format!("<font color=\"99FF99\">Tokens: {available_tokens}</font>"));
+        html.push_str(&format!(
+            "<font color=\"FFFF99\">{rebirth_count}/{max_count}</font><br1>"
+        ));
+        html.push_str(&format!(
+            "<font color=\"99FF99\">Tokens: {available_tokens}</font>"
+        ));
         html.push_str("</td><td width=95 align=center>");
         html.push_str(&format!(
             "<img src=\"icon.skill{}\" width=32 height=32><br1>",
@@ -931,7 +948,10 @@ impl World {
         let mut saved = self.rebirth_validated_skills(player, &defs);
         let rebirth_count = self.rebirth_level(player);
         if rebirth_count <= 0 {
-            self.send_message(player, "You must perform at least one Rebirth before selecting skills.");
+            self.send_message(
+                player,
+                "You must perform at least one Rebirth before selecting skills.",
+            );
             self.rebirth_main_window(player, object_id, &saved, rebirth_count, &defs);
             return;
         }
@@ -1059,14 +1079,15 @@ impl World {
                 p.data.profile.rebirth.selected_skills.clear();
             }
         }
-        self.outbox.persist(crate::PersistCommand::Rebirth(if first_birth {
-            RebirthWrite::Insert { char_id: player.0 }
-        } else {
-            RebirthWrite::Count {
-                char_id: player.0,
-                count: new_count,
-            }
-        }));
+        self.outbox
+            .persist(crate::PersistCommand::Rebirth(if first_birth {
+                RebirthWrite::Insert { char_id: player.0 }
+            } else {
+                RebirthWrite::Count {
+                    char_id: player.0,
+                    count: new_count,
+                }
+            }));
 
         // Critical player mutation step.
         let current_exp = self.players.get(&player).map_or(0, |p| p.data.exp);
@@ -1075,7 +1096,11 @@ impl World {
             self.set_level(player, 1);
             self.remove_exp_and_sp(player, current_exp - target_exp, 0, true);
             let (max_hp, max_mp, max_cp) = self.stats(player).map_or((0.0, 0.0, 0.0), |v| {
-                (f64::from(v.max_hp()), f64::from(v.max_mp()), f64::from(v.max_cp()))
+                (
+                    f64::from(v.max_hp()),
+                    f64::from(v.max_mp()),
+                    f64::from(v.max_cp()),
+                )
             });
             self.set_current_hp_mp(player, max_hp, max_mp);
             self.set_current_cp(player, max_cp, true);
@@ -1216,5 +1241,84 @@ impl World {
                 settings.select_effect_skill_lvl,
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn config_lists_parse_like_java() {
+        // `String.split(";")` drops trailing empties and does not trim.
+        assert_eq!(parse_skill_list("1059,1,6;1085,1,6;"), ["1059,1,6", "1085,1,6"]);
+        assert_eq!(parse_skill_list(" 1,2 ; 3"), [" 1,2 ", " 3"]);
+        assert!(parse_skill_list("  ").is_empty());
+        assert_eq!(parse_integer_set("5, 7,x,,7"), BTreeSet::from([5, 7]));
+        assert_eq!(
+            parse_protected_skill_groups("fishing, NOBLE,bogus,"),
+            BTreeSet::from(["FISHING".to_owned(), "NOBLE".to_owned()])
+        );
+    }
+
+    #[test]
+    fn skill_definitions_parse_like_java() {
+        assert_eq!(get_skill_id("1059,1,6"), 1059);
+        assert_eq!(get_skill_id("1059"), 0);
+        assert_eq!(get_skill_id("x,1"), 0);
+        assert_eq!(
+            (
+                get_skill_level("1059,3,6"),
+                get_skill_level("1059"),
+                get_skill_level("1,y")
+            ),
+            (3, 1, 1)
+        );
+        assert_eq!(
+            (
+                get_skill_cost("1059,1"),
+                get_skill_cost("1059,1,6"),
+                get_skill_cost("1059,1,-4"),
+                get_skill_cost("1,1,z")
+            ),
+            (1, 6, 1, 1)
+        );
+        assert_eq!(parse_skill_id("rebirth_resetSkill 12"), Some(12));
+        assert_eq!(parse_skill_id("rebirth_resetSkill  12 "), Some(12));
+        assert_eq!(parse_skill_id("rebirth_resetSkill"), None);
+        assert_eq!(parse_skill_id("rebirth_resetSkill ab"), None);
+    }
+
+    #[test]
+    fn the_stored_selection_is_read_leniently() {
+        let data = RebirthData::from_columns(2, "1059, 1085,oops,1204,");
+        assert_eq!((data.count, data.selected_skills), (2, vec![1059, 1085, 1204]));
+        assert!(RebirthData::from_columns(0, "").selected_skills.is_empty());
+    }
+
+    #[test]
+    fn positions_and_icons() {
+        assert_eq!(screen_message_position("TOP_LEFT"), 1);
+        assert_eq!(screen_message_position("BOTTOM_RIGHT"), 8);
+        assert_eq!(screen_message_position("whatever"), 2);
+        assert_eq!(skill_icon(1059), "1059");
+        assert_eq!(skill_icon(99), "099");
+    }
+
+    #[test]
+    fn the_pool_is_listed_in_java_hash_map_order() {
+        let defs = SkillDefs::new(
+            &[
+                "20,1,1".to_owned(),
+                "3,1,1".to_owned(),
+                "bad".to_owned(),
+                "3,2,5".to_owned(),
+            ],
+            ObjectId(1),
+            "T",
+        );
+        // 3 and 20 share a 16 bucket table: 3 comes first; the duplicate replaced the value.
+        let listed: Vec<(i32, &str)> = defs.entries().iter().map(|(id, d)| (*id, d.as_str())).collect();
+        assert_eq!(listed, [(3, "3,2,5"), (20, "20,1,1")]);
     }
 }
