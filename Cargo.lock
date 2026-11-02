@@ -2577,6 +2577,7 @@ dependencies = [
  "anyhow",
  "l2-admin-api",
  "l2-config",
+ "rand 0.10.3",
  "tempfile",
  "thiserror 2.0.21",
  "tokio",
