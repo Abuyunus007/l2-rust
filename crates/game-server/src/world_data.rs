@@ -865,6 +865,7 @@ pub fn drop_settings(config: &GameConfig, _config_dir: &Path) -> DropSettings {
         boss_drop_min_level: r.boss_drop_min_level,
         boss_drop_max_level: r.boss_drop_max_level,
         alt_party_range: config.player.alt_party_range,
+        champion: None,
         event_item_max_level_difference: r.event_item_max_level_difference,
         player_drop_limit: r.player_drop_limit,
         player_rate_drop: r.player_rate_drop,

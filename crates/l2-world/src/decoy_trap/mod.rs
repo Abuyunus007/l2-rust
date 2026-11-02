@@ -174,6 +174,7 @@ impl World {
             display_effect: 0,
             collision_radius: f64::from(template.collision_radius),
             must_reward_exp_sp: false,
+            champion: false,
             special_drop: false,
             movement: crate::movement::NpcMovement::default(),
             spawn_point: (0, 0, 0),

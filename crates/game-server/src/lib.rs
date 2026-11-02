@@ -32,6 +32,7 @@
 
 pub mod admin;
 pub mod client;
+pub mod custom_monsters;
 pub mod geo;
 pub mod hexid;
 pub mod item_auctions;
@@ -1686,6 +1687,7 @@ fn options_from_config(config: &GameConfig, config_dir: &Path) -> DatapackOption
         no_spawns: config.development.no_spawns,
         max_aggro_range: config.npc.max_aggro_range,
         default_corpse_time: config.npc.default_corpse_time,
+        npc_stat_multipliers: custom_monsters::npc_stat_multipliers(config),
         htm_cache: config.general.htm_cache,
         check_html_encoding: config.general.check_html_encoding,
         custom_multisell_load: config.general.custom_multisell_load,
@@ -2006,6 +2008,7 @@ mod tests {
                 no_spawns: true,
                 max_aggro_range: 900,
                 default_corpse_time: 3,
+                npc_stat_multipliers: None,
                 htm_cache: false,
                 check_html_encoding: false,
                 custom_multisell_load: true,

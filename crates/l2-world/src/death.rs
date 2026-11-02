@@ -192,8 +192,8 @@ impl World {
         if self.is_channelized(id) {
             self.abort_channelization(id);
         }
-        // The boss defeat announcements (Custom/BossAnnouncements.ini, off by default) are not
-        // ported.
+        // The custom boss defeat announcements (Custom/BossAnnouncements.ini).
+        self.boss_announce_defeat(id);
         true
     }
 

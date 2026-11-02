@@ -575,6 +575,24 @@ fn a_store_cannot_be_opened_next_to_a_sitting_player() {
     assert_eq!(s.world.private_store_type(B), PrivateStoreType::BuyManage);
 }
 
+/// `ShopMinRangeFromPlayer = 0` and `ShopMinRangeFromNpc = 0` (PrivateStoreRange.ini switched
+/// off): `canOpenPrivateStore` does not look at the neighbours at all (M9-C01).
+#[test]
+fn private_store_range_off_opens_a_store_next_to_a_sitting_player() {
+    let mut s = Scene::market();
+    s.open_sell_store(false);
+    s.world.set_settings(WorldSettings {
+        store: StoreSettings {
+            shop_min_range_from_player: 0,
+            shop_min_range_from_npc: 0,
+            ..StoreSettings::default()
+        },
+        ..WorldSettings::default()
+    });
+    s.store(B, StoreInput::ActionUse { action_id: 28 });
+    assert_eq!(s.world.private_store_type(B), PrivateStoreType::BuyManage);
+}
+
 // ---- the sell list ------------------------------------------------------------------------------
 
 #[test]
