@@ -137,3 +137,17 @@ async fn installs_both_schemas_then_keeps_then_resets() {
 
     exec(&options, format!("DROP DATABASE `{db}`")).await;
 }
+
+#[tokio::test]
+async fn test_connection_tells_a_missing_database_from_an_existing_one() {
+    use l2_db_installer::installer::{DatabaseState, test_connection};
+    let Some(options) = base_options() else {
+        return;
+    };
+    let db = format!("{}_conn", unique_name());
+    exec(&options, format!("DROP DATABASE IF EXISTS `{db}`")).await;
+    assert_eq!(test_connection(&options, &db).await, Ok(DatabaseState::Missing));
+    exec(&options, format!("CREATE DATABASE `{db}`")).await;
+    assert_eq!(test_connection(&options, &db).await, Ok(DatabaseState::Exists));
+    exec(&options, format!("DROP DATABASE `{db}`")).await;
+}

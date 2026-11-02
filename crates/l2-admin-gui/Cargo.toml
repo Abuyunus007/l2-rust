@@ -13,13 +13,15 @@ l2-config.workspace = true # the config editor lists keys, defaults and writes v
 l2-data.workspace = true # the data browser reads the datapack (NPC and item templates)
 l2-geo.workspace = true # the geodata viewer reads regions and uses the coordinate conversion (M3-GUI-03)
 l2-supervisor = { path = "../l2-supervisor" } # launcher: run folder, supervisor.ini, detached start (G-01)
-l2-proxy = { path = "../l2-proxy" } # the packet inspector runs the proxy in-process (D-35)
+l2-db-installer = { path = "../l2-db-installer" } # the setup wizard installs the database with the installer's library (G-02)
+l2-proxy ={ path = "../l2-proxy" } # the packet inspector runs the proxy in-process (D-35)
 eframe = { workspace = true, features = ["persistence"] } # persistence = settings in eframe storage
 egui.workspace = true
 tokio.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 anyhow.workspace = true
+thiserror.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
 

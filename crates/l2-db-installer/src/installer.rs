@@ -151,6 +151,62 @@ pub fn load_scripts(sql_dir: &Path, schema: Schema) -> Result<Vec<Script>, Insta
     Ok(scripts)
 }
 
+/// The type of [`Params::options`], named so other crates need no sqlx dependency.
+pub type DbOptions = MySqlConnectOptions;
+
+/// Connection options without a selected database: what [`Params::options`] and
+/// [`test_connection`] take. Lets another crate (the admin GUI's setup wizard) build them without
+/// depending on sqlx itself. Nothing connects here.
+pub fn connect_options(host: &str, port: u16, user: &str, password: &str) -> MySqlConnectOptions {
+    MySqlConnectOptions::new()
+        .host(host)
+        .port(port)
+        .username(user)
+        .password(password)
+}
+
+/// What [`test_connection`] found.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DatabaseState {
+    /// The server answered and the database exists.
+    Exists,
+    /// The server answered, but there is no database of that name yet (the installer creates it).
+    Missing,
+}
+
+/// Longest wait for the server to answer a connection test (an unreachable host would otherwise
+/// take the OS timeout).
+const TEST_TIMEOUT: std::time::Duration = std::time::Duration::from_secs(10);
+
+/// Connects once, asks whether `db_name` exists and closes again. Called only when the user
+/// presses "Test connection". The error is a one-line text for the screen (it never holds the
+/// password).
+pub async fn test_connection(options: &MySqlConnectOptions, db_name: &str) -> Result<DatabaseState, String> {
+    let db_name = db_name.trim();
+    if db_name.is_empty() {
+        return Err(InstallError::EmptyName.to_string());
+    }
+    let check = async {
+        let mut conn: MySqlConnection = options.clone().connect().await?;
+        let exists: i64 =
+            sqlx::query_scalar("SELECT COUNT(*) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME = ?")
+                .bind(db_name)
+                .fetch_one(&mut conn)
+                .await?;
+        let _ = conn.close().await;
+        Ok::<_, sqlx::Error>(if exists > 0 {
+            DatabaseState::Exists
+        } else {
+            DatabaseState::Missing
+        })
+    };
+    match tokio::time::timeout(TEST_TIMEOUT, check).await {
+        Ok(Ok(state)) => Ok(state),
+        Ok(Err(e)) => Err(e.to_string()),
+        Err(_) => Err("no answer from the database server within 10 seconds".to_owned()),
+    }
+}
+
 /// Installs the selected schemas. Order as in the Java GUI: create/reset the database, then
 /// login, then game.
 ///
@@ -356,6 +412,12 @@ mod tests {
             login,
             game,
         }
+    }
+
+    #[tokio::test]
+    async fn test_connection_rejects_an_empty_name_without_connecting() {
+        let options = connect_options("127.0.0.1", 1, "u", "p");
+        assert!(test_connection(&options, "  ").await.is_err());
     }
 
     #[tokio::test]
