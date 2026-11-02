@@ -683,6 +683,26 @@ impl<'w> ScriptCtx<'w> {
         self.world.broadcast_packet(npc.object_id, &packet);
     }
 
+    /// Java `npc.broadcastSay(chatType, text, radius)`: `NpcSay` to the players within `radius`.
+    pub fn broadcast_npc_say_text_in_range(
+        &mut self,
+        npc: ScriptNpc,
+        chat: ChatType,
+        text: &str,
+        radius: i32,
+    ) {
+        let packet = NpcSay {
+            object_id: npc.object_id.0,
+            text_type: chat.client_id(),
+            npc_id: self.npc_display_id(npc),
+            npc_string: -1,
+            text: text.to_owned(),
+            parameters: Vec::new(),
+        };
+        self.world
+            .broadcast_packet_in_range(npc.object_id, &packet, radius);
+    }
+
     /// `npc.getTemplate().getDisplayId()`.
     fn npc_display_id(&self, npc: ScriptNpc) -> i32 {
         self.world

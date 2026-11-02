@@ -66,9 +66,9 @@ use crate::loader::{DataError, load_dir, log_loaded};
 use raw::{
     RawAi, RawAiChild, RawAttack, RawAttribute, RawAttributeChild, RawClanListChild, RawCollision,
     RawCollisionChild, RawDefence, RawDropItem, RawDropList, RawDropLists, RawDropListsChild, RawDropNode,
-    RawEquipment, RawGroupNode, RawMinion, RawMinions, RawNpc, RawNpcChild, RawNpcFile, RawParameter,
-    RawParameters, RawShots, RawSkillList, RawSkillListChild, RawSpeed, RawSpeedChild, RawStats,
-    RawStatsChild, RawStatus, RawText, RawVitals,
+    RawEquipment, RawFakePlayer, RawGroupNode, RawMinion, RawMinions, RawNpc, RawNpcChild, RawNpcFile,
+    RawParameter, RawParameters, RawShots, RawSkillList, RawSkillListChild, RawSpeed, RawSpeedChild,
+    RawStats, RawStatsChild, RawStatus, RawText, RawVitals,
 };
 use stat_set::{StatSet, decode_i32, decode_i64, parse_java_double};
 
@@ -289,6 +289,75 @@ pub struct DropGroup {
     pub items: Vec<DropEntry>,
 }
 
+/// Java `FakePlayerHolder`: how a fake player NPC looks (`<fakePlayer .../>`).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FakePlayerHolder {
+    /// `classId`.
+    pub class_id: i32,
+    /// `hair`.
+    pub hair: i32,
+    /// `hairColor`.
+    pub hair_color: i32,
+    /// `face`.
+    pub face: i32,
+    /// `nameColor`.
+    pub name_color: i32,
+    /// `titleColor`.
+    pub title_color: i32,
+    /// `equipHead`.
+    pub equip_head: i32,
+    /// `equipRHand`.
+    pub equip_r_hand: i32,
+    /// `equipLHand`.
+    pub equip_l_hand: i32,
+    /// `equipGloves`.
+    pub equip_gloves: i32,
+    /// `equipChest`.
+    pub equip_chest: i32,
+    /// `equipLegs`.
+    pub equip_legs: i32,
+    /// `equipFeet`.
+    pub equip_feet: i32,
+    /// `equipCloak`.
+    pub equip_cloak: i32,
+    /// `equipHair`.
+    pub equip_hair: i32,
+    /// `equipHair2`.
+    pub equip_hair2: i32,
+    /// `agathionId`.
+    pub agathion_id: i32,
+    /// `weaponEnchantLevel`.
+    pub weapon_enchant_level: i32,
+    /// `armorEnchantLevel`.
+    pub armor_enchant_level: i32,
+    /// `fishing`.
+    pub fishing: bool,
+    /// `baitLocationX`.
+    pub bait_location_x: i32,
+    /// `baitLocationY`.
+    pub bait_location_y: i32,
+    /// `baitLocationZ`.
+    pub bait_location_z: i32,
+    /// `recommends`.
+    pub recommends: i32,
+    /// `nobleLevel`.
+    pub noble_level: i32,
+    /// `hero`.
+    pub hero: bool,
+    /// `clanId`.
+    pub clan_id: i32,
+    /// `pledgeStatus`.
+    pub pledge_status: i32,
+    /// `sitting`.
+    pub sitting: bool,
+    /// `privateStoreType`.
+    pub private_store_type: i32,
+    /// `privateStoreMessage`.
+    pub private_store_message: String,
+    /// `fakePlayerTalkable`.
+    pub fake_player_talkable: bool,
+}
+
 /// Java `NpcTemplate` (with the `CreatureTemplate` fields it inherits).
 #[derive(Debug, Clone, PartialEq)]
 pub struct NpcTemplate {
@@ -356,6 +425,9 @@ pub struct NpcTemplate {
     pub flying: bool,
     /// True when the NPC has a `<fakePlayer>` element (only loaded when fake players are enabled).
     pub fake_player: bool,
+    /// Java `getFakePlayerInfo()`: the look of a fake player (`Some` exactly when
+    /// [`fake_player`](Self::fake_player) is set).
+    pub fake_player_info: Option<FakePlayerHolder>,
     /// Java `canMove()`: `<status canMove>` (default true), or true when the ground walk speed is 0.1.
     pub can_move: bool,
     /// `<status noSleepMode>`.
@@ -623,6 +695,7 @@ impl NpcTemplate {
             drops: parts.drops,
             spoils: parts.spoils,
             drop_groups: parts.drop_groups,
+            fake_player_info: parts.fake_player,
             base_str: set.get_int("baseSTR", 0)?,
             base_con: set.get_int("baseCON", 0)?,
             base_dex: set.get_int("baseDEX", 0)?,
@@ -842,7 +915,10 @@ impl NpcTemplates {
                 }
                 RawNpcChild::Stats(stats) => read_stats(stats, &mut set)?,
                 RawNpcChild::Status(status) => read_status(status, &mut set),
-                RawNpcChild::FakePlayer(_) => set.set_bool("fakePlayer", Some(true)),
+                RawNpcChild::FakePlayer(fake) => {
+                    set.set_bool("fakePlayer", Some(true));
+                    parts.fake_player = Some(read_fake_player(fake)?);
+                }
                 RawNpcChild::SkillList(list) => parts.skills = read_skill_list(list)?,
                 RawNpcChild::Shots(shots) => read_shots(shots, &mut set)?,
                 RawNpcChild::CorpseTime(text) => {
@@ -922,6 +998,7 @@ struct Parts {
     drops: Vec<DropEntry>,
     spoils: Vec<DropEntry>,
     drop_groups: Vec<DropGroup>,
+    fake_player: Option<FakePlayerHolder>,
 }
 
 // ---- reading attributes the way IXmlReader does ----
@@ -1018,6 +1095,44 @@ fn read_minions(minions: &RawMinions) -> Result<Vec<MinionDef>, DataError> {
         });
     }
     Ok(list)
+}
+
+/// Java `case "fakeplayer"` of `NpcData.parseDocument` (the defaults are Java's).
+fn read_fake_player(raw: &RawFakePlayer) -> Result<FakePlayerHolder, DataError> {
+    Ok(FakePlayerHolder {
+        class_id: attr_int(&raw.class_id)?.unwrap_or(1),
+        hair: attr_int(&raw.hair)?.unwrap_or(1),
+        hair_color: attr_int(&raw.hair_color)?.unwrap_or(1),
+        face: attr_int(&raw.face)?.unwrap_or(1),
+        name_color: attr_int(&raw.name_color)?.unwrap_or(0xFF_FFFF),
+        title_color: attr_int(&raw.title_color)?.unwrap_or(0xEC_F9A2),
+        equip_head: attr_int(&raw.equip_head)?.unwrap_or(0),
+        equip_r_hand: attr_int(&raw.equip_r_hand)?.unwrap_or(0),
+        equip_l_hand: attr_int(&raw.equip_l_hand)?.unwrap_or(0),
+        equip_gloves: attr_int(&raw.equip_gloves)?.unwrap_or(0),
+        equip_chest: attr_int(&raw.equip_chest)?.unwrap_or(0),
+        equip_legs: attr_int(&raw.equip_legs)?.unwrap_or(0),
+        equip_feet: attr_int(&raw.equip_feet)?.unwrap_or(0),
+        equip_cloak: attr_int(&raw.equip_cloak)?.unwrap_or(0),
+        equip_hair: attr_int(&raw.equip_hair)?.unwrap_or(0),
+        equip_hair2: attr_int(&raw.equip_hair2)?.unwrap_or(0),
+        agathion_id: attr_int(&raw.agathion_id)?.unwrap_or(0),
+        weapon_enchant_level: attr_int(&raw.weapon_enchant_level)?.unwrap_or(0),
+        armor_enchant_level: attr_int(&raw.armor_enchant_level)?.unwrap_or(0),
+        fishing: attr_bool(&raw.fishing).unwrap_or(false),
+        bait_location_x: attr_int(&raw.bait_location_x)?.unwrap_or(0),
+        bait_location_y: attr_int(&raw.bait_location_y)?.unwrap_or(0),
+        bait_location_z: attr_int(&raw.bait_location_z)?.unwrap_or(0),
+        recommends: attr_int(&raw.recommends)?.unwrap_or(0),
+        noble_level: attr_int(&raw.noble_level)?.unwrap_or(0),
+        hero: attr_bool(&raw.hero).unwrap_or(false),
+        clan_id: attr_int(&raw.clan_id)?.unwrap_or(0),
+        pledge_status: attr_int(&raw.pledge_status)?.unwrap_or(0),
+        sitting: attr_bool(&raw.sitting).unwrap_or(false),
+        private_store_type: attr_int(&raw.private_store_type)?.unwrap_or(0),
+        private_store_message: raw.private_store_message.clone().unwrap_or_default(),
+        fake_player_talkable: attr_bool(&raw.fake_player_talkable).unwrap_or(true),
+    })
 }
 
 fn read_equipment(equipment: &RawEquipment, set: &mut StatSet) -> Result<(), DataError> {

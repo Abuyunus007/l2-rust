@@ -27,7 +27,6 @@
 //   the last one.
 //
 // # Left out
-// - The faction chat filter of `ChatPartyMatchRoom` (`FactionSystemConfig`, the customs milestone).
 // - `MPCC` rooms (`RequestExManageMpccRoom` ...): Java has no handler for their packets.
 
 use std::collections::{BTreeMap, HashMap};
@@ -503,7 +502,10 @@ impl World {
         // NOTE: unlike the party chat, the block list is not asked here (`member.sendPacket(cs)`).
         if let Some(room) = self.party.matching.rooms.get(&room_id) {
             for member in &room.members {
-                self.send(*member, &packet);
+                // The faction chat (`Custom/FactionSystem.ini`).
+                if self.faction_chat_allows(id, *member) {
+                    self.send(*member, &packet);
+                }
             }
         }
     }

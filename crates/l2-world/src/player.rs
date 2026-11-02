@@ -145,6 +145,9 @@ pub struct PlayerProfile {
     pub vitality_points: i32,
     /// `characters.pccafe_points` (M6-FU-11, `pccafe.rs`).
     pub pccafe_points: i32,
+    /// `characters.faction`: 0 none, 1 good, 2 evil (Java `_isGood` / `_isEvil`, M9-C04,
+    /// `custom/faction.rs`). Written back with every store, as Java does.
+    pub faction: i32,
     /// `characters.bookmarkslot`.
     pub bookmark_slot: i32,
     /// `characters.death_penalty_level`.
@@ -278,6 +281,7 @@ impl Default for PlayerProfile {
             title_color: DEFAULT_TITLE_COLOR,
             vitality_points: 0,
             pccafe_points: 0,
+            faction: 0,
             bookmark_slot: 0,
             death_penalty_level: 0,
             exp_before_death: 0,

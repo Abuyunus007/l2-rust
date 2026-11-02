@@ -688,6 +688,12 @@ pub fn player_from_row(row: &CharacterRow) -> PlayerData {
             // Java `setPcCafePoints(rset.getInt("pccafe_points"))`; the world applies the cap at
             // enter world (`pc_cafe_on_enter`).
             pccafe_points: row.pccafe_points,
+            // Java `Player.restore`: `factionId` 1 = `setGood()`, 2 = `setEvil()` (M9-C04).
+            faction: if matches!(row.faction, 1 | 2) {
+                i32::from(row.faction)
+            } else {
+                0
+            },
             // Java `setIn7sDungeon(rset.getInt("isin7sdungeon") == 1)` (M8-SS-01).
             in_7s_dungeon: row.isin7sdungeon == 1,
             bookmark_slot: i32::from(row.bookmarkslot),

@@ -6,7 +6,6 @@
 //! overwrites an earlier one.
 
 use serde::Deserialize;
-use serde::de::IgnoredAny;
 
 #[derive(Deserialize)]
 pub(super) struct RawNpcFile {
@@ -53,7 +52,7 @@ pub(super) enum RawNpcChild {
     #[serde(rename = "status")]
     Status(RawStatus),
     #[serde(rename = "fakePlayer")]
-    FakePlayer(IgnoredAny),
+    FakePlayer(RawFakePlayer),
     #[serde(rename = "skillList")]
     SkillList(RawSkillList),
     #[serde(rename = "shots")]
@@ -143,6 +142,74 @@ pub(super) struct RawMinionNpc {
     pub respawn_time: Option<String>,
     #[serde(rename = "@weightPoint")]
     pub weight_point: Option<String>,
+}
+
+#[derive(Deserialize, Default)]
+pub(super) struct RawFakePlayer {
+    #[serde(rename = "@classId")]
+    pub class_id: Option<String>,
+    #[serde(rename = "@hair")]
+    pub hair: Option<String>,
+    #[serde(rename = "@hairColor")]
+    pub hair_color: Option<String>,
+    #[serde(rename = "@face")]
+    pub face: Option<String>,
+    #[serde(rename = "@nameColor")]
+    pub name_color: Option<String>,
+    #[serde(rename = "@titleColor")]
+    pub title_color: Option<String>,
+    #[serde(rename = "@equipHead")]
+    pub equip_head: Option<String>,
+    #[serde(rename = "@equipRHand")]
+    pub equip_r_hand: Option<String>,
+    #[serde(rename = "@equipLHand")]
+    pub equip_l_hand: Option<String>,
+    #[serde(rename = "@equipGloves")]
+    pub equip_gloves: Option<String>,
+    #[serde(rename = "@equipChest")]
+    pub equip_chest: Option<String>,
+    #[serde(rename = "@equipLegs")]
+    pub equip_legs: Option<String>,
+    #[serde(rename = "@equipFeet")]
+    pub equip_feet: Option<String>,
+    #[serde(rename = "@equipCloak")]
+    pub equip_cloak: Option<String>,
+    #[serde(rename = "@equipHair")]
+    pub equip_hair: Option<String>,
+    #[serde(rename = "@equipHair2")]
+    pub equip_hair2: Option<String>,
+    #[serde(rename = "@agathionId")]
+    pub agathion_id: Option<String>,
+    #[serde(rename = "@weaponEnchantLevel")]
+    pub weapon_enchant_level: Option<String>,
+    #[serde(rename = "@armorEnchantLevel")]
+    pub armor_enchant_level: Option<String>,
+    #[serde(rename = "@fishing")]
+    pub fishing: Option<String>,
+    #[serde(rename = "@baitLocationX")]
+    pub bait_location_x: Option<String>,
+    #[serde(rename = "@baitLocationY")]
+    pub bait_location_y: Option<String>,
+    #[serde(rename = "@baitLocationZ")]
+    pub bait_location_z: Option<String>,
+    #[serde(rename = "@recommends")]
+    pub recommends: Option<String>,
+    #[serde(rename = "@nobleLevel")]
+    pub noble_level: Option<String>,
+    #[serde(rename = "@hero")]
+    pub hero: Option<String>,
+    #[serde(rename = "@clanId")]
+    pub clan_id: Option<String>,
+    #[serde(rename = "@pledgeStatus")]
+    pub pledge_status: Option<String>,
+    #[serde(rename = "@sitting")]
+    pub sitting: Option<String>,
+    #[serde(rename = "@privateStoreType")]
+    pub private_store_type: Option<String>,
+    #[serde(rename = "@privateStoreMessage")]
+    pub private_store_message: Option<String>,
+    #[serde(rename = "@fakePlayerTalkable")]
+    pub fake_player_talkable: Option<String>,
 }
 
 #[derive(Deserialize)]

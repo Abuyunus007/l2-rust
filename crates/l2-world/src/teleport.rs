@@ -420,8 +420,8 @@ impl World {
     /// Java `MapRegionData.getTeleToLocation(player, where)`: the clan's hall, castle, fortress or
     /// siege headquarters (`siege/restart.rs`, M7-SIEGE-01), else outside the town for a karma
     /// player, far from a castle under siege for its participants while Dawn owns the Seal of
-    /// Strife, the exit point of the player's instance (M8-INST-01), else the nearest town. The
-    /// faction base is not modelled.
+    /// Strife, the exit point of the player's instance (M8-INST-01), the base of the player's
+    /// faction (`custom/faction.rs`), else the nearest town.
     pub fn get_tele_to_location(
         &mut self,
         id: ObjectId,
@@ -449,6 +449,10 @@ impl World {
                 .instance(self.instance_id_of(id))
                 .and_then(|i| i.exit_location)
         {
+            return Some(location);
+        }
+        // Faction system base respawn (`Custom/FactionSystem.ini`, M9-C04).
+        if let Some(location) = self.faction_base_respawn(id) {
             return Some(location);
         }
         self.nearest_town_respawn(id)

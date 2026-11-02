@@ -432,6 +432,13 @@ impl World {
         }
         self.set_creature_target(summon, Some(target));
         self.set_intention_attack(summon, target);
-        // Fake players (`FAKE_PLAYER_AUTO_ATTACKABLE`) are not ported.
+        // A fake player that is not auto attackable flags the owner (`Custom/FakePlayers.ini`).
+        if self.settings.fake_players.enabled
+            && !self.settings.fake_players.auto_attackable
+            && self.is_fake_player(target)
+            && let Some(owner) = self.summon_owner(summon)
+        {
+            self.update_pvp_status(owner);
+        }
     }
 }

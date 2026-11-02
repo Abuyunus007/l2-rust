@@ -112,6 +112,8 @@ pub struct World {
     pub(crate) clans: crate::clan::ClanWorld,
     /// The PvP flag of every player and the anti feed death times (M6-PVP-01, `pvp.rs`).
     pub(crate) pvp: crate::pvp::PvpWorld,
+    /// The fake player names, chat lines and karma (M9-C04, `custom/fake_players.rs`).
+    pub(crate) fake_players: crate::custom::fake_players::FakePlayerWorld,
     /// The buy lists' stock and restock queue (M6-SHOP-01, `shop/`).
     pub(crate) shop: crate::shop::ShopWorld,
     /// The duels going on and the duel state of every duelist (M6-DUEL-01, `duel.rs`).
@@ -243,6 +245,7 @@ impl World {
             summons: crate::summon::SummonWorld::default(),
             clans: crate::clan::ClanWorld::default(),
             pvp: crate::pvp::PvpWorld::default(),
+            fake_players: crate::custom::fake_players::FakePlayerWorld::default(),
             shop: crate::shop::ShopWorld::default(),
             duel: crate::duel::DuelWorld::default(),
             friends: crate::friends::FriendWorld::default(),
@@ -419,6 +422,7 @@ impl World {
                 }
             }
             WorldCommand::Kick { account } => self.kick_account(&account),
+            WorldCommand::FactionBalanceCheck { faction, done } => done(self.faction_balance_page(faction)),
             WorldCommand::ReleaseOfflineTrader { object_id, done } => {
                 let was_trader = self.release_offline_trader_quietly(object_id);
                 done(was_trader);
@@ -1011,6 +1015,8 @@ impl World {
             TimerKind::Clan(timer) => self.on_clan_timer(timer),
             // Java: PvpFlagTaskManager.run (for one player)
             TimerKind::PvpFlag(id) => self.on_pvp_flag_timer(id),
+            // Java: FakePlayerChatManager.manageChat's ThreadPool.schedule
+            TimerKind::FakePlayerChat(key) => self.on_fake_player_chat_timer(key),
             // Java: PcCafePointsManager.giveRetailPcCafePont
             TimerKind::PcCafe(id) => self.on_pc_cafe_timer(id),
             // Java: BuyListTaskManager, InventoryEnableTask

@@ -28,7 +28,7 @@ use l2_protocol_game::ConnectionState;
 use l2_protocol_game::client::{CharacterCreate, CharacterDelete, CharacterRestore, CharacterSelect};
 use l2_protocol_game::server::{
     CharCreateFail, CharCreateOk, CharDeleteFail, CharDeleteSuccess, CharSelected, LeaveWorld,
-    NewCharTemplate, NewCharacterSuccess, ServerClose, SsqInfo,
+    NewCharTemplate, NewCharacterSuccess, NpcHtmlMessage, ServerClose, SsqInfo,
 };
 use l2_util::time::now_millis;
 use l2_util::{ObjectId, WorldRng};
@@ -280,8 +280,7 @@ pub struct CharScreen {
     pub ids: Arc<IdFactory>,
     pub stat_bonus: StatBonus,
     pub item_max_mp: ItemMaxMp,
-    /// Names of fake players, lower case (Java `FakePlayerData.getProperName`). NPCs are not
-    /// loaded yet, so the set is empty in the server.
+    /// Names of fake players, lower case (Java `FakePlayerData.getProperName`).
     pub reserved_names: HashSet<String>,
     /// The `CharacterSelect` flood protector of `FloodProtector.ini` (a client at the character
     /// screen has no player in the world, so this one is checked here, with the shared
@@ -342,6 +341,14 @@ impl CharScreen {
     /// `EverybodyHasAdminRights` on. Without it the server keeps 0 (the default of `new`).
     pub fn with_master_access_level(mut self, level: i32) -> Self {
         self.master_access_level = level;
+        self
+    }
+
+    /// The names of the fake players, lower case (Java `FakePlayerData.getProperName`): a new
+    /// character cannot take one. Empty while `EnableFakePlayers` is off, because the fake player
+    /// templates are not loaded then.
+    pub fn with_reserved_names(mut self, names: HashSet<String>) -> Self {
+        self.reserved_names = names;
         self
     }
 
@@ -748,6 +755,17 @@ impl ClientSession {
                 return;
             }
         };
+        // Java `CharacterSelect`: the faction system's balance of the online players
+        // (`Custom/FactionSystem.ini`); the page replaces the entering.
+        if screen.config.faction_system.faction_system_enabled
+            && screen.config.faction_system.faction_balance_online_players
+            && let Some(page) = self.faction_balance_page(player.profile.faction).await
+        {
+            if let Some(message) = NpcHtmlMessage::new(0, &page) {
+                ctl.send(message.to_bytes());
+            }
+            return;
+        }
         let now = now_millis();
         // Player.load ... cha.setOnlineStatus(true, true)
         if let Err(e) = screen.store.set_online(info.entry.object_id, 1, now).await {
@@ -815,6 +833,20 @@ impl ClientSession {
     /// Java `CharacterSelect`: `World.getPlayer(objectId)` is the character's offline trader, if
     /// there is one; `Disconnection.of(player).storeAndDelete()`. The world answers whether it
     /// was one, and the final store is awaited (a bounded wait, like the restart's).
+    async fn faction_balance_page(&self, faction: i32) -> Option<String> {
+        let (tx, rx) = tokio::sync::oneshot::channel();
+        let sent = self.ctx.world.send(l2_world::WorldCommand::FactionBalanceCheck {
+            faction,
+            done: Box::new(move |page| {
+                let _ = tx.send(page);
+            }),
+        });
+        if !sent {
+            return None;
+        }
+        rx.await.ok().flatten()
+    }
+
     async fn release_offline_trader(&self, char_id: i32) {
         const WAIT: std::time::Duration = std::time::Duration::from_secs(10);
         let id = ObjectId(char_id);

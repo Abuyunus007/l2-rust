@@ -812,6 +812,70 @@ pub fn pvp_settings(config: &GameConfig, config_dir: &Path) -> l2_world::PvpSett
     s
 }
 
+/// `Custom/FactionSystem.ini` (Java `FactionSystemConfig`). The locations are post-processed in
+/// Java (`config.manual.faction_system`), the two name colours are `Integer.decode("0x" + text)`
+/// and read from the file here. Off by default.
+pub fn faction_settings(config: &GameConfig, config_dir: &Path) -> l2_world::FactionSettings {
+    use l2_config::IniFile;
+    use l2_world::{FactionLocation, FactionSettings};
+
+    let f = &config.faction_system;
+    let m = &config.manual.faction_system;
+    let place = |l: &l2_config::game_manual::Location| FactionLocation {
+        x: l.x,
+        y: l.y,
+        z: l.z,
+        heading: l.heading,
+    };
+    let mut s = FactionSettings {
+        enabled: f.faction_system_enabled,
+        starting_location: place(&m.faction_starting_location),
+        manager_location: place(&m.faction_manager_location),
+        good_base_location: place(&m.faction_good_base_location),
+        evil_base_location: place(&m.faction_evil_base_location),
+        good_team_name: f.faction_good_team_name.clone(),
+        evil_team_name: f.faction_evil_team_name.clone(),
+        guards_enabled: f.faction_guards_enabled,
+        respawn_at_base: f.faction_respawn_at_base,
+        auto_nobless: f.faction_auto_nobless,
+        specific_chat: f.faction_specific_chat,
+        balance_online_players: f.faction_balance_online_players,
+        balance_player_exceed_limit: f.faction_balance_player_exceed_limit,
+        ..FactionSettings::default()
+    };
+    if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::FactionSystemConfig::FILE)) {
+        for (key, default, color) in [
+            ("GoodNameColor", "00FF00", &mut s.good_name_color),
+            ("EvilNameColor", "0000FF", &mut s.evil_name_color),
+        ] {
+            let text = ini.get_string(key, default);
+            match i32::from_str_radix(text.trim(), 16) {
+                Ok(value) => *color = value,
+                Err(_) => warn!("{key} = {text} is not a hex colour; using {default}."),
+            }
+        }
+    }
+    s
+}
+
+/// `Custom/FakePlayers.ini` (Java `FakePlayersConfig`). Off by default.
+pub fn fake_player_settings(config: &GameConfig) -> l2_world::FakePlayerSettings {
+    let f = &config.fake_players;
+    l2_world::FakePlayerSettings {
+        enabled: f.fake_players_enabled,
+        chat: f.fake_player_chat,
+        use_shots: f.fake_player_use_shots,
+        kill_pvp: f.fake_player_kill_pvp,
+        kill_karma: f.fake_player_kill_karma,
+        auto_attackable: f.fake_player_auto_attackable,
+        aggro_monsters: f.fake_player_aggro_monsters,
+        aggro_players: f.fake_player_aggro_players,
+        aggro_fpc: f.fake_player_aggro_fpc,
+        can_drop_items: f.fake_player_can_drop_items,
+        can_pickup: f.fake_player_can_pickup,
+    }
+}
+
 /// The values ground items read (Java `GeneralConfig` and `PlayerConfig`). The herb destroy time,
 /// the protected item list, the save interval and the auto loot item list are post-processed in
 /// Java (placeholders in the generated config); `config.manual.core` holds them.
@@ -1159,6 +1223,8 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             alt_game_karma_player_can_trade: p.alt_game_karma_player_can_trade,
         },
         pvp: pvp_settings(config, config_dir),
+        faction: faction_settings(config, config_dir),
+        fake_players: fake_player_settings(config),
         fishing: fishing_settings(config, config_dir),
         enchant: enchant_settings(config, config_dir),
         augment: augment_settings(config, config_dir),

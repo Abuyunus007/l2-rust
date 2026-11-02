@@ -378,7 +378,10 @@ impl World {
         if id == target_player {
             return;
         }
-        // The faction system (good against evil does not flag): not modelled.
+        // The faction system: good against evil does not flag.
+        if self.settings.faction.enabled && self.factions_oppose(id, target_player) {
+            return;
+        }
         // Fighting the opponent of one's own duel does not flag.
         if self.is_in_duel(id) && self.duel_id_of(target_player) == self.duel_id_of(id) {
             return;
@@ -573,9 +576,11 @@ impl World {
                 self.increase_pvp_kills(killer, target);
             }
         } else if self.pvp_flag_of(killed) == 0 {
-            // Target player doesn't have karma. The faction system (`_isGood`/`_isEvil`) is not
-            // modelled.
-            self.increase_pk_kills_and_karma(killer, target);
+            // Target player doesn't have karma. With the faction system on, only the killing of a
+            // player of the own faction is a PK.
+            if !self.settings.faction.enabled || self.same_faction(killer, killed) {
+                self.increase_pk_kills_and_karma(killer, target);
+            }
             // Unequip adventurer items.
             let mut changed = Vec::new();
             self.check_item_restriction(killer, &mut changed);
@@ -883,7 +888,14 @@ impl World {
             {
                 return true;
             }
-            // The faction system (good against evil): not modelled.
+            // The faction system: good and evil fight each other.
+            if self.settings.faction.enabled
+                && self
+                    .acting_player_of(attacker)
+                    .is_some_and(|a| self.factions_oppose(subject, a))
+            {
+                return true;
+            }
         }
         // `attacker instanceof Defender && _clan != null`: a siege guard attacks the attackers of
         // the castle siege the player stands in (a fortress commander too, NOTE(java-quirk)).
@@ -895,7 +907,10 @@ impl World {
                 .is_some_and(|siege| siege.is_attacker(clan));
         }
         if self.is_guard(attacker) {
-            // The faction guards: not modelled. Guards attack only PK players.
+            // The faction guards (`Custom/FactionSystem.ini`). Guards attack only PK players.
+            if self.faction_guard_hates(subject, attacker) {
+                return true;
+            }
             return self.karma_of_player(subject) > 0;
         }
         // Check if the Player has Karma.

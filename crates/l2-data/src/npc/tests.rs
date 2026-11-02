@@ -392,6 +392,26 @@ fn fake_players_are_skipped_unless_enabled() {
 }
 
 #[test]
+fn the_fake_player_look_is_read_with_javas_defaults() {
+    let on = NpcLoadOptions {
+        fake_players_enabled: true,
+        ..NpcLoadOptions::default()
+    };
+    let xml = r#"<npc id="2" name="B"><fakePlayer classId="88" equipRHand="5706" privateStoreType="1" privateStoreMessage="sell" fakePlayerTalkable="false" hero="true"/></npc>
+        <npc id="3" name="C"><fakePlayer/></npc>"#;
+    let t = load_with(xml, &on);
+    let b = t.get(2).unwrap().fake_player_info.as_ref().unwrap();
+    assert_eq!((b.class_id, b.equip_r_hand, b.private_store_type), (88, 5706, 1));
+    assert_eq!(b.private_store_message, "sell");
+    assert!(b.hero && !b.fake_player_talkable);
+    let c = t.get(3).unwrap().fake_player_info.as_ref().unwrap();
+    assert_eq!((c.class_id, c.hair, c.hair_color, c.face), (1, 1, 1, 1));
+    assert_eq!((c.name_color, c.title_color), (0xFF_FFFF, 0xEC_F9A2));
+    assert!(c.fake_player_talkable && !c.hero && !c.sitting && !c.fishing);
+    assert!(t.get(1).is_none());
+}
+
+#[test]
 fn a_broken_npc_is_skipped_and_the_rest_loads() {
     let t = load(
         r#"<npc id="1"/>

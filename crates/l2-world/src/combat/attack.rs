@@ -103,6 +103,14 @@ impl World {
             }
         }
 
+        // Check if fake players should aggro each other (`Custom/FakePlayers.ini`).
+        if self.settings.fake_players.enabled
+            && !self.settings.fake_players.aggro_fpc
+            && self.is_fake_player(id)
+            && self.is_fake_player(target)
+        {
+            return;
+        }
         // An NPC does not hit a corpse, nobody hits outside the surrounding regions, and a player
         // does not hit the dead (Java's two branches, which end the same way).
         if !self.is_alike_dead(id)
@@ -250,6 +258,16 @@ impl World {
             }
         };
 
+        // A fake player that fights a playable gets its pvp flag (`Custom/FakePlayers.ini`).
+        self.fake_player_flag_on_attack(id, target);
+        // `Player.doAttack`: attacking a fake player that is not auto attackable flags the player.
+        if self.settings.fake_players.enabled
+            && !self.settings.fake_players.auto_attackable
+            && self.is_player(id)
+            && self.is_fake_player(target)
+        {
+            self.update_pvp_status(id);
+        }
         // Flag the attacker if it's a Player outside a PvP area (`asPlayer()`: a summon's owner).
         let flag_on_raid_or_champion = (self.is_raid(target) && self.settings.pvp.flag_player_on_raid_attack)
             || (self.stats(target).is_some_and(|v| v.is_champion())

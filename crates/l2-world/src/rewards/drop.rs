@@ -947,7 +947,7 @@ impl World {
     /// unlocked (`Chest.doItemDrop`), which drops as the template its id maps to.
     // NOTE: Java passes `NpcData.getTemplate(id)` on, which is `null` for an id without a
     // template (and then fails); the chest's own template is used in that case.
-    fn chest_drop_template_id(&self, dying: ObjectId, npc_id: i32) -> i32 {
+    pub(crate) fn chest_drop_template_id(&self, dying: ObjectId, npc_id: i32) -> i32 {
         let is_chest = self
             .npc_world
             .template(npc_id)
@@ -983,8 +983,11 @@ impl World {
         }
         // `mainDamageDealer.asPlayer()`: a summon's owner.
         let Some(dealer) = main_damage_dealer.and_then(|d| self.acting_player(d)) else {
-            // Don't drop anything if the last attacker or owner isn't Player (a fake player may,
-            // when `FakePlayerCanDropItems` is on: fake players are not ported).
+            // Don't drop anything if the last attacker or owner isn't Player, unless it's a fake
+            // player and they can drop items (`Custom/FakePlayers.ini`).
+            if let Some(dealer) = main_damage_dealer {
+                self.fake_player_drops_loot(dying, dealer);
+            }
             return;
         };
         // `CursedWeaponsManager.checkDrop(this, player)`.
