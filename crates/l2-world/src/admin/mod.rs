@@ -192,6 +192,7 @@ impl Default for AdminWorld {
         element::register(&mut handlers);
         clan_skills::register(&mut handlers);
         pccafe::register(&mut handlers);
+        crate::custom::premium::register(&mut handlers);
         combat::register(&mut handlers);
         exp_sp::register(&mut handlers);
         invul::register(&mut handlers);

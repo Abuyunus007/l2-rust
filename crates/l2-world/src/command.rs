@@ -463,6 +463,13 @@ pub enum WorldCommand {
         owner: i32,
         result: Result<Vec<i32>, ()>,
     },
+    /// The answer to `PersistCommand::PremiumRequest`: the `enddate` of the row (`None`: no row),
+    /// or `Err` when the read failed (M9-C02).
+    PremiumLoaded {
+        player: l2_util::ObjectId,
+        key: String,
+        result: Result<Option<i64>, ()>,
+    },
     /// The answer to `PersistCommand::BbsFavoriteRequest`: the favorites (or their number) of a
     /// player, or `Err` when the read failed (S-HAND-01).
     BbsFavoritesLoaded {
@@ -642,6 +649,9 @@ impl fmt::Debug for WorldCommand {
                 "BlockListLoaded({sender}, {owner}, {})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
+            Self::PremiumLoaded { player, key, result } => {
+                write!(f, "PremiumLoaded({player}, {key}, {result:?})")
+            }
             Self::BbsFavoritesLoaded { player, kind, result } => write!(
                 f,
                 "BbsFavoritesLoaded({player}, {kind:?}, {})",

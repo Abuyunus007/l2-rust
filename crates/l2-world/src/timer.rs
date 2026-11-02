@@ -125,6 +125,8 @@ pub enum TimerKind {
     PvpFlag(ObjectId),
     /// Java `PcCafePointsManager`'s retail point task of one player, see `pccafe.rs`.
     PcCafe(ObjectId),
+    /// The premium expiry, the auto potion pass and the auto play passes (M9-C02), see `custom/`.
+    CustomPlay(crate::custom::CustomPlayTimer),
     /// The restock of limited products and the inventory block of a shop window, see `shop/`.
     Shop(crate::shop::ShopTimer),
     /// The three tasks of a duel (start countdown, the 1 s watch, the end), see `duel.rs`.

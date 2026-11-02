@@ -306,8 +306,12 @@ impl World {
         }
         if self.is_player(caster) {
             if self.is_player(target) {
-                // Auto play settings and event teams: none exist. An observer is no target
-                // (M8-OLY-01).
+                // Auto play: while hunting monsters or NPCs a player is no target (M9-C02). Event
+                // teams: none exist.
+                if self.auto_play_refuses_player_target(caster) {
+                    return false;
+                }
+                // An observer is no target (M8-OLY-01).
                 if self.in_observer_mode(target) {
                     return false;
                 }
@@ -326,6 +330,10 @@ impl World {
                 }
                 // Same party, or same command channel.
                 if self.is_in_party_with(caster, target) || self.is_in_same_command_channel(caster, target) {
+                    return false;
+                }
+                // Auto play target mode check (M9-C02).
+                if self.auto_play_refuses_unflagged_target(caster, target) {
                     return false;
                 }
                 if !source_in_arena

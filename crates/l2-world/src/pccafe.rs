@@ -9,9 +9,9 @@
 // like the fame.
 //
 // # Left out
-// - `hasPremiumStatus()`: the premium system is not ported (nobody is premium), so with
-//   `PcCafeOnlyPremium = True` (the shipped file) no points are given, as on a Java server whose
-//   accounts have no premium.
+// - `hasPremiumStatus()` is `custom/premium.rs` (M9-C02): with the premium system off (the Java
+//   default) nobody is premium, so with `PcCafeOnlyPremium = True` (the shipped file) no points
+//   are given, as on a Java server whose accounts have no premium.
 // - `isInOfflineMode()`: the offline shops are not modelled (nobody is offline).
 // - The other givers (Krateis Cube, Underground Coliseum, Rim Kamaloka, quests' `addExpAndSp`)
 //   and `//pccafe` (`AdminPcCafePoints`) belong to the scripts and the admin cards; they call
@@ -122,9 +122,9 @@ impl World {
         self.send(id, &ExPcCafePointInfo::new(points, points_to_add, time));
     }
 
-    /// Java `player.hasPremiumStatus()`: the premium system is not ported.
-    fn pc_cafe_premium(&self, _id: ObjectId) -> bool {
-        false
+    /// Java `player.hasPremiumStatus()` (`custom/premium.rs`).
+    fn pc_cafe_premium(&self, id: ObjectId) -> bool {
+        self.has_premium_status(id)
     }
 
     /// Java `EnterWorld`: "if ((hasPremiumStatus() || !PC_CAFE_ONLY_PREMIUM) && PC_CAFE_RETAIL_LIKE)

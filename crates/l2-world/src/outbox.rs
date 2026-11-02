@@ -235,6 +235,12 @@ pub enum PersistCommand {
     /// (D-50). The answer comes back as `WorldCommand::LotteryReread`; it includes every write sent
     /// before it.
     LotteryRequest { then: crate::lottery::LotteryThen },
+    /// A write of `account_premium` with Java's statement (`PremiumManager`, M9-C02).
+    Premium(crate::custom::PremiumWrite),
+    /// Asks the persistence task for the `account_premium` row of `key` (`SELECT account_name,enddate
+    /// FROM account_premium WHERE account_name = ?`) when a player enters the world (D-50). The
+    /// answer comes back as `WorldCommand::PremiumLoaded`; it includes every write sent before it.
+    PremiumRequest { player: ObjectId, key: String },
     /// A write of the `announcements` table with Java's statement (`//announces`), see
     /// `admin/announce.rs`. An `Insert` is answered with `WorldCommand::AnnouncementStored`.
     Announcement(crate::admin::announce::AnnouncementWrite),

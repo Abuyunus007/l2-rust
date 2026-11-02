@@ -124,6 +124,13 @@ pub struct World {
     pub(crate) multisell: crate::multisell::MultisellWorld,
     /// The PC cafe settings and each player's retail timer (M6-FU-11, `pccafe.rs`).
     pub(crate) pccafe: crate::pccafe::PcCafeWorld,
+    /// The premium system (M9-C02, `custom/premium.rs`).
+    pub(crate) premium: crate::custom::premium::PremiumWorld,
+    /// The auto potions, the auto play and the offline play (M9-C02, `custom/`).
+    pub(crate) auto_potion: crate::custom::auto_potion::AutoPotionWorld,
+    pub(crate) auto_play: crate::custom::auto_play::AutoPlayWorld,
+    pub(crate) offline_play: crate::custom::offline_play::OfflinePlayWorld,
+    pub(crate) offline_command: crate::custom::offline_trade::OfflineCommandWorld,
     /// The enchant scrolls, success chances and element stones (M6-ENCHANT-01, `enchant/`).
     pub(crate) enchant: crate::enchant::EnchantWorld,
     /// The recipes and the makers waiting on the timer wheel (M6-CRAFT-01, `craft/`).
@@ -249,6 +256,11 @@ impl World {
             mail: crate::mail::MailWorld::default(),
             multisell: crate::multisell::MultisellWorld::default(),
             pccafe: crate::pccafe::PcCafeWorld::default(),
+            premium: crate::custom::premium::PremiumWorld::default(),
+            auto_potion: crate::custom::auto_potion::AutoPotionWorld::default(),
+            auto_play: crate::custom::auto_play::AutoPlayWorld::default(),
+            offline_play: crate::custom::offline_play::OfflinePlayWorld::default(),
+            offline_command: crate::custom::offline_trade::OfflineCommandWorld::default(),
             enchant: crate::enchant::EnchantWorld::default(),
             craft: crate::craft::CraftWorld::default(),
             augment: crate::augment::AugmentWorld::default(),
@@ -473,6 +485,9 @@ impl World {
                 owner,
                 result,
             } => self.on_block_list_loaded(sender, owner, result),
+            WorldCommand::PremiumLoaded { player, key, result } => {
+                self.on_premium_loaded(player, &key, result)
+            }
             WorldCommand::BbsFavoritesLoaded { player, kind, result } => {
                 self.on_bbs_favorites_loaded(player, kind, result)
             }
@@ -1013,6 +1028,8 @@ impl World {
             TimerKind::PvpFlag(id) => self.on_pvp_flag_timer(id),
             // Java: PcCafePointsManager.giveRetailPcCafePont
             TimerKind::PcCafe(id) => self.on_pc_cafe_timer(id),
+            // Java: PremiumManager, AutoPotionTaskManager, AutoPlayTaskManager, AutoUseTaskManager
+            TimerKind::CustomPlay(timer) => self.on_custom_play_timer(timer),
             // Java: BuyListTaskManager, InventoryEnableTask
             TimerKind::Shop(timer) => self.on_shop_timer(timer),
             // Java: Duel.ScheduleStartDuelTask, ScheduleDuelTask, ScheduleEndDuelTask

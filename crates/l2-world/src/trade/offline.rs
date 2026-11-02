@@ -31,10 +31,10 @@
 // off): off, the trader lives until this server stops and no row is written, removed or restored.
 //
 // # Left out
-// - `.offline` voiced command (`DlgAnswer`, `EnableOfflineCommand`), the olympiad and events, a
-//   dual-box counter (`DualboxCountOfflineTraders`), the buff shop
-//   (`isSellingBuffs`), `OfflineAbnormalEffect` and `OfflineDisconnectSameAccount` (Java reads
-//   neither outside the config).
+// - The olympiad and events, a dual-box counter (`DualboxCountOfflineTraders`), the buff shop
+//   (`isSellingBuffs`). The `.offline` command (`EnableOfflineCommand`) and `OfflineAbnormalEffect`
+//   are in `custom/offline_trade.rs` (M9-C02), which also says why `OfflineDisconnectSameAccount`
+//   is not ported.
 // - `OfflineMaxDays` is checked only when the shops are restored, like Java: a running trader
 //   never times out.
 
@@ -242,7 +242,12 @@ impl World {
 
     /// The name colour `OfflineSetNameColor` gives a trader.
     pub(crate) fn offline_name_color(&self, id: ObjectId) -> Option<i32> {
-        self.offline.traders.get(&id).and_then(|t| t.name_color)
+        self.offline
+            .traders
+            .get(&id)
+            .and_then(|t| t.name_color)
+            // A character that plays offline has its own colour (`OfflinePlay.ini`, M9-C02).
+            .or_else(|| self.offline_play_name_color(id))
     }
 
     /// Whether the rows of the tables are written (`OfflineTradeDatabaseWrites`).
@@ -353,6 +358,8 @@ impl World {
         {
             self.outbox.ls_event(LsEvent::PlayerLogout { account });
         }
+        // `OfflineAbnormalEffect` (`OfflineTrade.ini`, M9-C02).
+        self.offline_trade_abnormal_effect(id);
         info!("Entered offline mode, {id}.");
         true
     }
@@ -482,6 +489,8 @@ impl World {
             .copied()
             .filter(|id| self.players.get(id).is_some_and(|p| p.data.account == account))
             .collect();
+        // The characters that play offline (`custom/offline_play.rs`) are held the same way.
+        ids.extend(self.offline_play_of_account(account));
         ids.sort();
         for id in &ids {
             self.leave(*id, LeaveReason::Disconnected);
@@ -492,7 +501,7 @@ impl World {
     /// `CharacterSelect`: "Disconnect offline trader." The account is in use by the new session,
     /// so the login server is not told.
     pub(crate) fn release_offline_trader_quietly(&mut self, id: ObjectId) -> bool {
-        if !self.is_offline_trader(id) {
+        if !self.is_offline_trader(id) && !self.is_offline_play(id) {
             return false;
         }
         self.offline.quiet_release = true;

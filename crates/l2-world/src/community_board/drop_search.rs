@@ -323,6 +323,11 @@ impl World {
             if d.is_spoil {
                 rate_chance = f64::from(settings.rate_spoil_drop_chance_multiplier);
                 rate_amount = f64::from(settings.rate_spoil_drop_amount_multiplier);
+                // Also check premium rates if available.
+                if let Some(premium) = &killer.premium {
+                    rate_chance *= f64::from(premium.spoil_chance);
+                    rate_amount *= f64::from(premium.spoil_amount);
+                }
                 rate_chance *= killer.bonus_spoil_rate;
             } else {
                 if let Some(by_id) = settings.rate_drop_chance_by_id.get(&d.item_id) {
@@ -345,6 +350,10 @@ impl World {
                     rate_amount *= f64::from(settings.rate_raid_drop_amount_multiplier);
                 } else {
                     rate_amount *= f64::from(settings.rate_death_drop_amount_multiplier);
+                }
+                if let Some(premium) = &killer.premium {
+                    rate_chance *= premium.drop_chance_factor(d.item_id, ex_immediate, d.is_raid);
+                    rate_amount *= premium.drop_amount_factor(d.item_id, ex_immediate, d.is_raid);
                 }
                 rate_amount *= killer.bonus_drop_amount;
                 if d.item_id == ADENA_ID {

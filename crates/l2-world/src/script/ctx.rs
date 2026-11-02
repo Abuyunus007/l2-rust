@@ -585,8 +585,10 @@ impl<'w> ScriptCtx<'w> {
     // ------------------------------------------------------------------ exp
 
     /// Java `addExpAndSp(player, exp, sp)`: times the quest reward rates and the player's
-    /// `EXPSP_RATE`; the PC cafe points of the exp. Premium rates are M9.
+    /// `EXPSP_RATE`; the PC cafe points of the exp. The premium quest rates come first.
     pub fn add_exp_and_sp(&mut self, player: ObjectId, exp: i64, sp: i32) {
+        // Premium rates (`PREMIUM_RATE_QUEST_XP`, M9-C02).
+        let (exp, sp) = self.world.premium_quest_exp_sp(player, exp, sp);
         let rates = &self.world.scripts.settings;
         // `addExp * RATE_QUEST_REWARD_XP`: a long times a float is a float.
         let exp_rated = exp as f32 * rates.rate_quest_reward_xp;

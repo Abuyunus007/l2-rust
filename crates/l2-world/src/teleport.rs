@@ -407,7 +407,8 @@ impl World {
         }
         // "Trained beast is lost after teleport." (S-API-05)
         self.tamed_beasts_on_owner_teleport(id);
-        // Not modelled: the movie holder and the auto play tasks (`AutoPlayConfig`, Custom).
+        // "Stop auto play." (`AutoPlayConfig`, M9-C02). The movie holder is not modelled.
+        self.auto_play_on_teleported(id);
         // "Modify the position of the pet if necessary."
         self.summon_follow_owner_teleport(id);
         // A dimensional rift member who arrives outside the waiting room is alive again
