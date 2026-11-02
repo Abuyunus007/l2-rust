@@ -379,6 +379,24 @@ pub enum WorldCommand {
         account: String,
         done: Box<dyn FnOnce(bool) + Send>,
     },
+    /// `CharSelectionInfo.loadCharacterSelectInfo`: an offline trader (`trader`,
+    /// `OfflineDisconnectSameAccount`) or an offline player (`play`,
+    /// `OfflinePlayDisconnectSameAccount`) of the account is stored and deleted; `done` hears
+    /// whether the character was released (M9-L01).
+    ReleaseOfflineSameAccount {
+        object_id: l2_util::ObjectId,
+        trader: bool,
+        play: bool,
+        done: Box<dyn FnOnce(bool) + Send>,
+    },
+    /// `CharacterSelect`: the `OFFLINE_PLAY` limit of the character that was just released
+    /// (`ReleaseOfflineTrader`); `done` gets the page to show, if any (M9-L01).
+    OfflinePlaySelectCheck {
+        object_id: l2_util::ObjectId,
+        ip: Option<std::net::IpAddr>,
+        access_level: i32,
+        done: Box<dyn FnOnce(Option<String>) + Send>,
+    },
     Admin(AdminQuery),
     /// A path worker finished a search (M3-GEO-03). `requester` and `request_id` are the ones
     /// of the `l2_geo::PathRequest`; the movement code (M3-MOVE-01) matches them against the
@@ -582,6 +600,10 @@ impl fmt::Debug for WorldCommand {
             Self::FactionBalanceCheck { faction, .. } => write!(f, "FactionBalanceCheck({faction})"),
             Self::ReleaseOfflineAccount { account, .. } => write!(f, "ReleaseOfflineAccount({account})"),
             Self::ReleaseOfflineTrader { object_id, .. } => write!(f, "ReleaseOfflineTrader({object_id})"),
+            Self::ReleaseOfflineSameAccount { object_id, .. } => {
+                write!(f, "ReleaseOfflineSameAccount({object_id})")
+            }
+            Self::OfflinePlaySelectCheck { object_id, .. } => write!(f, "OfflinePlaySelectCheck({object_id})"),
             Self::Admin(query) => write!(f, "Admin({query:?})"),
             Self::PathFound {
                 requester,

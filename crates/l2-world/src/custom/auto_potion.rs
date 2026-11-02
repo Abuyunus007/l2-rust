@@ -85,6 +85,11 @@ impl World {
         self.auto_potion.settings = settings;
     }
 
+    /// Java `AutoPotionsConfig.AUTO_POTIONS_ENABLED`.
+    pub(crate) fn auto_potion_enabled(&self) -> bool {
+        self.auto_potion.settings.enabled
+    }
+
     /// Java `AutoPotionTaskManager.hasPlayer(player)`.
     pub fn has_auto_potion(&self, id: ObjectId) -> bool {
         self.auto_potion.players.contains(&id)

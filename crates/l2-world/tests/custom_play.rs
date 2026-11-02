@@ -15,6 +15,7 @@ use l2_net::{Decode, PacketReader};
 use l2_protocol_game::server::{ConfirmDlg, NpcHtmlMessage, SystemMessage};
 use l2_protocol_game::{ServerOpcode, SystemMessageId};
 use l2_util::WorldRng;
+use l2_world::custom::dualbox::OFFLINE_PLAY;
 use l2_world::stats::{BaseStatBonus, StatData};
 use l2_world::*;
 
@@ -229,6 +230,9 @@ struct Switches {
     auto_play: Option<AutoPlayRules>,
     offline_play: Option<OfflinePlaySettings>,
     offline: Option<OfflineSettings>,
+    /// M9-L01: the dual-box limits and the client address of the player.
+    dualbox: Option<DualboxSettings>,
+    ip: Option<std::net::IpAddr>,
 }
 
 struct Scene {
@@ -311,12 +315,17 @@ impl Scene {
         if let Some(s) = switches.offline {
             world.set_offline_settings(s);
         }
+        if let Some(d) = switches.dualbox {
+            let mut settings = WorldSettings::default();
+            settings.custom_misc.dualbox = d;
+            world.set_settings(settings);
+        }
         let me = Log::default();
         world.handle(WorldCommand::EnterWorld {
             session: SessionId(u64::try_from(ME.0).unwrap()),
             player: Box::new(player_data(items, variables)),
             sink: Box::new(Sink(me.clone())),
-            ip: None,
+            ip: switches.ip,
         });
         let mut scene = Self {
             world,
@@ -990,4 +999,240 @@ fn offline_command_follows_the_trade_keys() {
             .iter()
             .any(|m| m.id == SystemMessageId::PrivateStoreAlreadyClosed)
     );
+}
+
+// ------------------------------------------------------------------ M9-L01: the offline play rows
+
+fn offline_writes_on() -> OfflineSettings {
+    OfflineSettings {
+        database_writes: true,
+        ..OfflineSettings::default()
+    }
+}
+
+fn offline_play_commands(out: &Commands) -> Vec<OfflinePlayWrite> {
+    out.take()
+        .into_iter()
+        .filter_map(|c| match c {
+            PersistCommand::OfflinePlay(w) => Some(w),
+            _ => None,
+        })
+        .collect()
+}
+
+/// A scene whose player auto plays with one supply item and one buff and goes offline.
+fn offline_player_scene(offline: Option<OfflineSettings>, op: OfflinePlaySettings) -> Scene {
+    let mut s = Scene::with(
+        Switches {
+            auto_play: Some(auto_play_on()),
+            offline_play: Some(op),
+            offline,
+            ..Switches::default()
+        },
+        vec![item(0x1000_0100, 1540, 1)],
+        &[],
+    );
+    s.say(".playitems 1 1540");
+    s.say(".playskills 1 9002");
+    s.say(".play start");
+    s.out.take();
+    s.say(".offlineplay");
+    s.dlg_answer(1);
+    s
+}
+
+/// `storeOfflinePlay` writes the settings of the character; without `OfflineTradeDatabaseWrites`
+/// (D-52) or without `RestoreAutoPlayOffliners` nothing is written. Stopping the auto play of an
+/// offline player removes the rows (`setAutoPlaying(false)`).
+#[test]
+fn offline_play_rows_follow_the_database_switch() {
+    let mut on = offline_player_scene(Some(offline_writes_on()), offline_play_on());
+    assert!(on.world.is_offline_play(ME));
+    assert_eq!(
+        offline_play_commands(&on.out),
+        vec![OfflinePlayWrite::Store {
+            char_id: ME,
+            rows: vec![(1, 1540), (2, 9002)],
+        }]
+    );
+    on.world.stop_auto_play(ME);
+    assert_eq!(
+        offline_play_commands(&on.out),
+        vec![OfflinePlayWrite::Remove { char_id: ME }]
+    );
+
+    // The default side by side switch (off): the character plays, no row is written.
+    let mut off = offline_player_scene(None, offline_play_on());
+    assert!(off.world.is_offline_play(ME));
+    off.world.stop_auto_play(ME);
+    assert!(offline_play_commands(&off.out).is_empty());
+
+    // `RestoreAutoPlayOffliners = False`.
+    let keyless = offline_player_scene(
+        Some(offline_writes_on()),
+        OfflinePlaySettings {
+            restore_auto_play_offliners: false,
+            ..offline_play_on()
+        },
+    );
+    assert!(keyless.world.is_offline_play(ME));
+    assert!(offline_play_commands(&keyless.out).is_empty());
+}
+
+/// `restoreOfflinePlayers`: the character comes back without a client, plays and uses its
+/// settings, a group is put together, and the group table is emptied.
+#[test]
+fn offline_players_are_restored_with_their_settings_and_groups() {
+    let mut s = Scene::new(Switches {
+        auto_play: Some(AutoPlayRules {
+            enable_auto_assist: true,
+            ..auto_play_on()
+        }),
+        offline_play: Some(offline_play_on()),
+        offline: Some(offline_writes_on()),
+        ..Switches::default()
+    });
+    s.out.take();
+    let restored = |id: i32, rows: Vec<(i32, i32)>| {
+        let mut data = player_data(vec![], &[]);
+        data.object_id = ObjectId(id);
+        data.name = format!("Bot{id}");
+        OfflinePlayRestore { data, rows }
+    };
+    s.world.restore_offline_players(
+        vec![restored(2, vec![(2, 9002)]), restored(3, vec![])],
+        vec![OfflinePlayGroup {
+            leader: ObjectId(2),
+            members: vec![(ObjectId(3), 1), (ObjectId(99), 1)],
+        }],
+    );
+    for id in [2, 3] {
+        assert!(s.world.is_offline_play(ObjectId(id)));
+        assert!(s.world.is_auto_playing(ObjectId(id)));
+    }
+    s.advance(3000);
+    assert!(s.world.is_affected_by_skill(ObjectId(2), 9002), "the auto buff was cast");
+    assert!(!s.world.is_affected_by_skill(ObjectId(3), 9002));
+    assert!(s.world.party_of(ObjectId(2)).is_some());
+    assert_eq!(s.world.party_of(ObjectId(2)), s.world.party_of(ObjectId(3)));
+    assert_eq!(offline_play_commands(&s.out), vec![OfflinePlayWrite::ClearGroups]);
+
+    // `Shutdown`: `storeOfflineGroups` writes the member whose leader auto plays too.
+    s.world.handle(WorldCommand::Shutdown { done: Box::new(|| {}) });
+    assert_eq!(
+        offline_play_commands(&s.out),
+        vec![OfflinePlayWrite::StoreGroups(vec![(ObjectId(2), ObjectId(3), 1)])]
+    );
+}
+
+/// `OfflinePlayDisconnectSameAccount`: the character list releases the offline player, and only
+/// with the key.
+#[test]
+fn the_character_list_releases_an_offline_player_with_the_key() {
+    let released = |disconnect: bool| {
+        let mut s = offline_player_scene(
+            None,
+            OfflinePlaySettings {
+                offline_play_disconnect_same_account: disconnect,
+                ..offline_play_on()
+            },
+        );
+        let done = Arc::new(Mutex::new(None));
+        let slot = Arc::clone(&done);
+        s.world.handle(WorldCommand::ReleaseOfflineSameAccount {
+            object_id: ME,
+            trader: false,
+            play: disconnect,
+            done: Box::new(move |released| *slot.lock().unwrap() = Some(released)),
+        });
+        let answer = done.lock().unwrap().unwrap();
+        assert_eq!(answer, s.world.player(ME).is_none());
+        answer
+    };
+    assert!(released(true));
+    assert!(!released(false));
+}
+
+/// `DualboxCheckMaxOfflinePlayPerIP`: a character over the limit of its address stays online, with
+/// Java's message; below the limit it leaves and is counted.
+#[test]
+fn offline_play_counts_the_connections_of_an_address() {
+    let ip: std::net::IpAddr = "10.1.2.3".parse().unwrap();
+    let mut s = Scene::new(Switches {
+        auto_play: Some(auto_play_on()),
+        offline_play: Some(offline_play_on()),
+        dualbox: Some(DualboxSettings {
+            max_offlineplay_per_ip: 1,
+            ..DualboxSettings::default()
+        }),
+        ip: Some(ip),
+        ..Switches::default()
+    });
+    // Another character of the address already plays offline.
+    assert!(s.world.anti_feed_try_add_client(OFFLINE_PLAY, Some(ip), 1));
+    s.say(".play start");
+    s.me.take();
+    s.say(".offlineplay");
+    s.dlg_answer(1);
+    assert!(!s.world.is_offline_play(ME));
+    assert!(said_contains(&s.me.take(), "Only 1 offline players allowed per IP."));
+    // The place is free again: the character goes.
+    s.world.anti_feed_remove_client(OFFLINE_PLAY, Some(ip));
+    s.say(".offlineplay");
+    s.dlg_answer(1);
+    assert!(s.world.is_offline_play(ME));
+}
+
+/// `CharacterSelect`: a premium offline character that was just released is counted against
+/// `DualboxCheckMaxOfflinePlayPremiumPerIP`.
+#[test]
+fn character_select_counts_a_released_premium_offline_player() {
+    let ip: std::net::IpAddr = "10.1.2.3".parse().unwrap();
+    let mut s = Scene::new(Switches {
+        auto_play: Some(auto_play_on()),
+        offline_play: Some(offline_play_on()),
+        premium: Some(premium_on()),
+        dualbox: Some(DualboxSettings {
+            max_offlineplay_premium_per_ip: 1,
+            ..DualboxSettings::default()
+        }),
+        ip: Some(ip),
+        ..Switches::default()
+    });
+    s.world.handle(WorldCommand::PremiumLoaded {
+        player: ME,
+        key: ACCOUNT.to_owned(),
+        result: Ok(Some(now_ms() + 600_000)),
+    });
+    s.say(".play start");
+    s.say(".offlineplay");
+    s.dlg_answer(1);
+    assert!(s.world.is_offline_play(ME));
+    s.world.handle(WorldCommand::ReleaseOfflineTrader {
+        object_id: ME,
+        done: Box::new(|_| {}),
+    });
+    // Another connection of the address holds the only place before the check.
+    assert!(s.world.anti_feed_try_add_client(OFFLINE_PLAY, Some(ip), 1));
+    let page = Arc::new(Mutex::new(None));
+    let slot = Arc::clone(&page);
+    s.world.handle(WorldCommand::OfflinePlaySelectCheck {
+        object_id: ME,
+        ip: Some(ip),
+        access_level: 0,
+        done: Box::new(move |p| *slot.lock().unwrap() = Some(p)),
+    });
+    let page = page.lock().unwrap().clone().unwrap();
+    // No IPRestriction page in this scene: the fallback text names the page.
+    assert!(page.unwrap().contains("IPRestriction.htm"));
+    // A second check without a release has nothing to count.
+    let again = Arc::new(Mutex::new(None));
+    let slot = Arc::clone(&again);
+    s.world.handle(WorldCommand::OfflinePlaySelectCheck {
+        object_id: ME,
+        ip: Some(ip),
+        access_level: 0,
+        done: Box::new(move |p| *slot.lock().unwrap() = Some(p)),
+    });
+    assert_eq!(again.lock().unwrap().clone(), Some(None));
 }

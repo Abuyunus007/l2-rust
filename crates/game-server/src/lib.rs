@@ -960,8 +960,18 @@ impl Server {
         } else {
             Vec::new()
         };
+        // Java: OfflinePlayTable.restoreOfflinePlayers (GameServer, with EnableOfflinePlayCommand and
+        // RestoreAutoPlayOffliners; here also with OfflineTradeDatabaseWrites, D-52), read only.
+        let restore_offline_play = custom_play
+            .offline_play
+            .restore_wanted(offline_settings.database_writes);
+        let (offline_players, offline_play_groups) = if restore_offline_play {
+            persist::load_offline_players(&pool).await
+        } else {
+            (Vec::new(), Vec::new())
+        };
         // Java: FloodProtectorConfig.load (FloodProtector.ini).
-        let flood_settings = world_data::flood_settings_from_config(&config);
+        let flood_settings =world_data::flood_settings_from_config(&config);
         // Java: GeneralConfig / CommunityBoardConfig (the community board, S-HAND-01).
         let community_board_settings = world_data::community_board_settings(&config);
         // Java: CommunityBoardConfig (the custom board), SchemeBufferConfig, SellBuffsConfig (M9-C03).
@@ -1367,6 +1377,10 @@ impl Server {
                     world.set_offline_settings(offline_settings);
                     if restore_traders {
                         world.restore_offline_traders(offline_traders);
+                    }
+                    // Java: GameServer, after the traders: OfflinePlayTable.restoreOfflinePlayers.
+                    if restore_offline_play {
+                        world.restore_offline_players(offline_players, offline_play_groups);
                     }
                 },
                 move |outbox| persist::spawn(store, outbox, notices_tx, RetryPolicy::default(), acks),

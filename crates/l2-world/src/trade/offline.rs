@@ -507,6 +507,10 @@ impl World {
         if !self.is_offline_trader(id) && !self.is_offline_play(id) {
             return false;
         }
+        // `RESTORE_AUTO_PLAY_OFFLINERS && player.isAutoPlaying()` -> `removeOfflinePlay`, and what
+        // the `OFFLINE_PLAY` limit of `CharacterSelect` needs from the player (M9-L01).
+        self.offline_play_release_rows(id);
+        self.offline_play_remember_release(id);
         self.offline.quiet_release = true;
         self.leave(id, LeaveReason::Disconnected);
         self.offline.quiet_release = false;
@@ -620,7 +624,7 @@ impl World {
     /// The state `World::enter` and `on_entered` build for a player, without the connection, the
     /// packets and the login server (a restored trader never told the login server it is in
     /// game: the account is free).
-    fn enter_without_client(&mut self, data: PlayerData) {
+    pub(crate) fn enter_without_client(&mut self, data: PlayerData) {
         let id = data.object_id;
         self.forget_status(id);
         let mut player = Player::from_data(data, self.tick);
