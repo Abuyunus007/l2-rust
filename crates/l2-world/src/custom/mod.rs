@@ -12,9 +12,9 @@
 
 pub mod boss_announcements;
 pub mod champion;
+pub mod community_board;
 pub mod pvp_rewards;
 pub mod rebirth;
-pub mod community_board;
 pub mod scheme_buffer;
 pub mod sell_buffs;
 

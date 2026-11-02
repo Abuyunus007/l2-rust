@@ -1232,3 +1232,27 @@ fn pvp_title_colour_is_off_by_default() {
     assert_eq!(s.data(ME).pvp_kills, 500);
     assert_eq!(s.data(ME).title, "");
 }
+
+/// `Npc.doDie` of a fake player: the reward item and the announcement for the killing player
+/// (the fake player card calls it; the object stands in for the fake player here).
+#[test]
+fn a_fake_player_kill_pays_and_announces() {
+    let mut settings = rewards_on();
+    settings.announce = announce_on(true).announce;
+    let mut s = Scene::with_pvp("fake-kill", settings);
+    s.three();
+    s.log.take();
+    s.world.custom_fake_player_killed_rewards(P2, ME, true);
+    assert_eq!(count_of(&s, ME, 57), 500);
+    s.world.custom_fake_player_killed_rewards(P2, ME, false);
+    assert_eq!(count_of(&s, ME, 9500), 1000);
+    let sent = s.log.take();
+    let (killer, victim) = (s.data(ME).name.clone(), s.data(P2).name.clone());
+    assert_eq!(
+        announcements(&sent, P3.0),
+        [
+            format!("{killer} has slaughtered {victim}"),
+            format!("{killer} has defeated {victim}")
+        ]
+    );
+}
