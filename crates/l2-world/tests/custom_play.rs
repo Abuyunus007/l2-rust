@@ -103,9 +103,14 @@ const NPCS: &str = r#"<?xml version="1.0"?><list>
 struct Data {
     items: Arc<ItemTemplates>,
     stats: StatData,
+    /// `OptionData`: one augmentation option (M9-L01).
+    option: Option<l2_data::AugmentationOption>,
 }
 
 impl StaticData for Data {
+    fn augmentation_option(&self, id: i32) -> Option<&l2_data::AugmentationOption> {
+        self.option.as_ref().filter(|o| o.id == id)
+    }
     fn item(&self, item_id: i32) -> Option<ItemStatic> {
         let t = self.items.get(item_id)?;
         Some(ItemStatic {
@@ -156,7 +161,11 @@ fn data() -> Data {
             &l2_data::SkillLoadOptions::default(),
         )),
     };
-    Data { items, stats }
+    Data {
+        items,
+        stats,
+        option: None,
+    }
 }
 
 const X: i32 = -71_338;
@@ -232,6 +241,8 @@ struct Switches {
     offline: Option<OfflineSettings>,
     /// M9-L01: the dual-box limits and the client address of the player.
     dualbox: Option<DualboxSettings>,
+    captcha: Option<CaptchaSettings>,
+    option: Option<l2_data::AugmentationOption>,
     ip: Option<std::net::IpAddr>,
 }
 
@@ -273,7 +284,8 @@ impl Scene {
         );
         let out = Commands::default();
         let mut world = World::new(WorldRng::from_seed(5), Box::new(RecordingOutbox(out.clone())));
-        let data = data();
+        let mut data = data();
+        data.option = switches.option.clone();
         world.set_static_data(Box::new(data));
         world.set_regen_settings(RegenSettings {
             mp_regen_multiplier: 0.0,
@@ -315,9 +327,14 @@ impl Scene {
         if let Some(s) = switches.offline {
             world.set_offline_settings(s);
         }
-        if let Some(d) = switches.dualbox {
+        if switches.dualbox.is_some() || switches.captcha.is_some() {
             let mut settings = WorldSettings::default();
-            settings.custom_misc.dualbox = d;
+            if let Some(d) = switches.dualbox {
+                settings.custom_misc.dualbox = d;
+            }
+            if let Some(c) = switches.captcha {
+                settings.custom_misc.captcha = c;
+            }
             world.set_settings(settings);
         }
         let me = Log::default();
@@ -1123,6 +1140,71 @@ fn offline_players_are_restored_with_their_settings_and_groups() {
         offline_play_commands(&s.out),
         vec![OfflinePlayWrite::StoreGroups(vec![(ObjectId(2), ObjectId(3), 1)])]
     );
+}
+
+/// `.playskills` leaves out the activation skills of the options of a worn augmented item. Java
+/// looks the augmentation up with its packed id, so only an augmentation whose high option is 0
+/// (the packed id is the option id) is found.
+#[test]
+fn playskills_leaves_out_augmentation_option_skills() {
+    let option = l2_data::AugmentationOption {
+        id: 77,
+        activation_skills: vec![l2_data::augmentation::OptionSkillHolder {
+            skill: l2_data::armor_set::SkillHolder { id: 9002, level: 1 },
+            chance: 10.0,
+            kind: l2_data::augmentation::OptionSkillType::Attack,
+        }],
+        ..Default::default()
+    };
+    let page = |augmentation: Option<i32>, option: Option<l2_data::AugmentationOption>| {
+        let worn = ItemData {
+            loc: "PAPERDOLL".to_owned(),
+            augmentation,
+            ..item(0x1000_0200, 1539, 1)
+        };
+        let mut s = Scene::with(
+            Switches {
+                auto_play: Some(auto_play_on()),
+                option,
+                ..Switches::default()
+            },
+            vec![worn],
+            &[],
+        );
+        s.say(".playskills");
+        html(&s.me.take()).pop().unwrap().html
+    };
+    assert!(page(None, Some(option.clone())).contains("Test Buff 9002"));
+    assert!(page(Some(77), None).contains("Test Buff 9002"));
+    assert!(!page(Some(77), Some(option.clone())).contains("Test Buff 9002"));
+    // NOTE(java-quirk): a packed id with a high option is not the option id: nothing is left out.
+    assert!(page(Some(77 + (5 << 16)), Some(option)).contains("Test Buff 9002"));
+}
+
+/// `CaptchaManager.updateCounter`: the kill of a player in auto play is not counted (with
+/// `EnableAutoPlay`), the kill of any other player is.
+#[test]
+fn the_captcha_counter_skips_a_player_in_auto_play() {
+    let kill_one = |auto_play: bool| {
+        let mut s = Scene::new(Switches {
+            auto_play: Some(auto_play_on()),
+            captcha: Some(CaptchaSettings {
+                enable: true,
+                kill_counter: 0,
+                kill_counter_randomization: 1,
+                ..CaptchaSettings::default()
+            }),
+            ..Switches::default()
+        });
+        if auto_play {
+            s.say(".play start");
+        }
+        let rat = s.world.spawn_npc_at(20001, X + 100, Y, Z, 0).unwrap();
+        s.world.do_die(rat, Some(ME));
+        s.world.captcha_is_in_report_mode(ME)
+    };
+    assert!(kill_one(false), "the first kill asks for the code (the counter is 0)");
+    assert!(!kill_one(true), "a kill in auto play is not counted");
 }
 
 /// `OfflinePlayDisconnectSameAccount`: the character list releases the offline player, and only

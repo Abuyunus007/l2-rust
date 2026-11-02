@@ -17,12 +17,11 @@
 // The settings of a player (`AutoPlaySettingsHolder`, `AutoUseSettingsHolder`) live in
 // [`AutoPlayer`], kept by object id and dropped when the player leaves.
 //
-// # Left out
-// - `PetSkillData.getKnownSkill(summon, id)`: a pet skill the pet does not know itself (the
-//   summon's own skills are used).
-// - The option skills of enchant options and augmentations in the skill list of `.playskills`
-//   (they are shown as ordinary skills).
-// - `AntiFeedManager` and the dual-box counters of `startOfflinePlay`.
+// # Pet skills and option skills (M9-L01)
+// A pet skill the pet does not know itself comes from `PetSkillData` (`pet_known_skill(s)`), in the
+// order of Java's `HashMap<Long, SkillHolder>` of the NPC. The skills of enchant options and of an
+// augmentation are left out of the `.playskills` list (`auto_play_ui.rs`), like the skills of the
+// worn items.
 
 use std::collections::{BTreeSet, HashMap};
 use std::sync::Arc;
@@ -1003,8 +1002,58 @@ impl World {
             return Some((id, key));
         }
         let summon = self.summon_of(id)?;
-        // NOTE: `PetSkillData.getKnownSkill` (a pet skill by the pet's level) is left out.
-        self.known_skill(summon, skill_id).map(|key| (summon, key))
+        // `skill = summon.getKnownSkill(skillId); if (skill == null) skill =
+        // PetSkillData.getKnownSkill(summon, skillId)`.
+        self.known_skill(summon, skill_id)
+            .or_else(|| self.pet_known_skill(summon, skill_id))
+            .map(|key| (summon, key))
+    }
+
+    /// `PetSkillData._skillTrees.get(pet.getId()).values()`: the holders `(skillId, skillLevel)` of
+    /// the pet's NPC in the order of Java's `HashMap<Long, SkillHolder>`. The key is
+    /// `getSkillHashCode(skillId, skillLevel + 1)`, i.e. `skillId * 1021 + skillLevel + 1`.
+    fn pet_skill_holders(&self, summon: ObjectId) -> Vec<(i32, i32)> {
+        let Some(npc_id) = self.summon_npc_id(summon) else {
+            return Vec::new();
+        };
+        let Some(skills) = self.summons.pet_skills.as_ref().and_then(|d| d.skills_of(npc_id)) else {
+            return Vec::new();
+        };
+        let keyed: Vec<(i32, (i32, i32))> = skills
+            .iter()
+            .map(|h| {
+                (
+                    h.skill_id.wrapping_mul(1021).wrapping_add(h.skill_level + 1),
+                    (h.skill_id, h.skill_level),
+                )
+            })
+            .collect();
+        let keys: Vec<i32> = keyed.iter().map(|(k, _)| *k).collect();
+        java_hash_map_order(&keys)
+            .into_iter()
+            .filter_map(|key| keyed.iter().find(|(k, _)| *k == key).map(|(_, holder)| *holder))
+            .collect()
+    }
+
+    /// Java `PetSkillData.getKnownSkills(summon)`: `holder.getSkill()` of each holder, once each
+    /// (`SkillHolder.getSkill` uses level `max(level, 1)`).
+    pub fn pet_known_skills(&self, summon: ObjectId) -> Vec<SkillKey> {
+        let mut out: Vec<SkillKey> = Vec::new();
+        for (skill_id, level) in self.pet_skill_holders(summon) {
+            let key = SkillKey::new(skill_id, level.max(1));
+            if !out.contains(&key) {
+                out.push(key);
+            }
+        }
+        out
+    }
+
+    /// Java `PetSkillData.getKnownSkill(summon, skillId)`: the first holder of that skill.
+    pub fn pet_known_skill(&self, summon: ObjectId, skill_id: i32) -> Option<SkillKey> {
+        self.pet_skill_holders(summon)
+            .into_iter()
+            .find(|(id, _)| *id == skill_id)
+            .map(|(id, level)| SkillKey::new(id, level.max(1)))
     }
 
     fn auto_use_buffs(&mut self, id: ObjectId, in_peace: bool) {
@@ -1233,6 +1282,30 @@ impl World {
                 SkillKey::new(skill.id, skill.level),
             )
     }
+}
+
+/// The order in which Java walks the values of a `HashMap` with these keys, inserted in this order
+/// (compare `java_hash_set_order`, a `ConcurrentHashMap`): by bucket, insertion order inside a
+/// bucket; the table starts at 16 and doubles when the size goes over three quarters. A repeated
+/// key keeps its first place.
+fn java_hash_map_order(keys: &[i32]) -> Vec<i32> {
+    let mut unique: Vec<i32> = Vec::with_capacity(keys.len());
+    for key in keys {
+        if !unique.contains(key) {
+            unique.push(*key);
+        }
+    }
+    let mut table: usize = 16;
+    while unique.len() > table / 4 * 3 {
+        table *= 2;
+    }
+    let mut buckets: std::collections::BTreeMap<usize, Vec<i32>> = std::collections::BTreeMap::new();
+    for key in &unique {
+        let hash = *key as u32;
+        let spread = ((hash ^ (hash >> 16)) & 0x7fff_ffff) as usize;
+        buckets.entry(spread & (table - 1)).or_default().push(*key);
+    }
+    buckets.into_values().flatten().collect()
 }
 
 /// `LocationUtil.calculateHeadingFrom(origin, target)`.

@@ -249,7 +249,8 @@ impl World {
                     let known = self.known_skill(player, skill_id);
                     if known.is_none()
                         && let Some(summon) = self.summon_of(player)
-                        && self.known_skill(summon, skill_id).is_some()
+                        && (self.known_skill(summon, skill_id).is_some()
+                            || self.pet_known_skill(summon, skill_id).is_some())
                     {
                         // NOTE(java-quirk): a skill only the summon knows `break`s out of the
                         // switch in Java: nothing is toggled and no page is sent.
@@ -427,32 +428,44 @@ impl World {
             }
         }
         if let Some(summon) = self.summon_of(player) {
-            // NOTE: `PetSkillData.getKnownSkills(summon)` is left out.
             for (id, level) in self.creature_skills_in_java_order(summon) {
                 if allowed(&skills, id, level) {
                     skills.push((id, level));
                 }
             }
+            // `PetSkillData.getKnownSkills(summon)`.
+            for key in self.pet_known_skills(summon) {
+                if allowed(&skills, key.id, key.level) {
+                    skills.push((key.id, key.level));
+                }
+            }
         }
-        // Remove item skills.
-        let worn: Vec<i32> = self
+        // Remove item skills, the activation skills of enchant options and of the augmentation.
+        let worn: Vec<crate::player::ItemData> = self
             .players
             .get(&player)
-            .map(|p| {
-                p.data
-                    .items
-                    .iter()
-                    .filter(|i| i.loc == "PAPERDOLL")
-                    .map(|i| i.item_id)
-                    .collect()
-            })
+            .map(|p| p.data.items.iter().filter(|i| i.loc == "PAPERDOLL").cloned().collect())
             .unwrap_or_default();
-        if let Some(templates) = self.item_templates() {
-            for item_id in worn {
-                if let Some(item_skills) = templates.get(item_id).and_then(|t| t.skills.item_skills.as_ref())
-                {
-                    for holder in item_skills {
-                        skills.retain(|s| *s != (holder.id, holder.level));
+        let templates = self.item_templates();
+        for item in worn {
+            let template = templates.as_ref().and_then(|t| t.get(item.item_id));
+            if let Some(item_skills) = template.and_then(|t| t.skills.item_skills.as_ref()) {
+                for holder in item_skills {
+                    skills.retain(|s| *s != (holder.id, holder.level));
+                }
+            }
+            let mut option_ids: Vec<i32> = Vec::new();
+            if let Some(template) = template {
+                option_ids.extend(template.enchant_options_at(item.enchant_level).into_iter().filter(|id| *id != 0));
+            }
+            // NOTE(java-quirk): Java looks the augmentation up with `getAugmentationId()`, the two
+            // option ids packed in one number, not with each option id: only an augmentation whose
+            // high option is 0 finds its option.
+            option_ids.extend(item.augmentation);
+            for option_id in option_ids {
+                if let Some(option) = self.data.augmentation_option(option_id) {
+                    for holder in &option.activation_skills {
+                        skills.retain(|s| *s != (holder.skill.id, holder.skill.level));
                     }
                 }
             }
