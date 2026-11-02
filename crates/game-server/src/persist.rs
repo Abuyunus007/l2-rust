@@ -698,6 +698,14 @@ pub trait PlayerStore: Send + 'static {
         }
     }
 
+    /// An `account_premium` write of the premium system (M9-C02).
+    fn store_premium(
+        &mut self,
+        _write: &l2_world::PremiumWrite,
+    ) -> impl Future<Output = Result<(), PersistError>> + Send {
+        async { Ok(()) }
+    }
+
     /// The `buffer_schemes` rows of one character replaced (M9-C03, the scheme buffer).
     fn store_buffer_schemes(
         &mut self,
@@ -705,6 +713,12 @@ pub trait PlayerStore: Send + 'static {
         _schemes: &[(String, String)],
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
+    }
+
+    /// The `account_premium` row of an account or character (M9-C02), `None` when there is none.
+    /// A store without a database has no rows.
+    fn load_premium(&mut self, _key: &str) -> impl Future<Output = Result<Option<i64>, PersistError>> + Send {
+        async { Ok(None) }
     }
 
     /// A `bbs_favorites` write of the community board (S-HAND-01).
@@ -1309,6 +1323,29 @@ async fn run<S: PlayerStore>(
                 };
                 if !acks.send_to_world(l2_world::WorldCommand::LotteryReread { result, then }) {
                     warn!("The lottery answer ({then:?}) could not be handed to the world.");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::Premium(write)) => {
+                // Java logs a failed premium statement and goes on (no retry).
+                if let Err(e) = store.store_premium(&write).await {
+                    error!("Premium row could NOT be stored ({write:?}): {e}");
+                }
+            }
+            OutboxMessage::Persist(PersistCommand::PremiumRequest { player, key }) => {
+                // Not a write: a read the world asked for, answered in order with the writes
+                // before it.
+                let result = match store.load_premium(&key).await {
+                    Ok(row) => Ok(row),
+                    Err(e) => {
+                        warn!("Could not read the premium row of character {}: {e}", player.0);
+                        Err(())
+                    }
+                };
+                if !acks.send_to_world(l2_world::WorldCommand::PremiumLoaded { player, key, result }) {
+                    warn!(
+                        "The premium row of character {} could not be handed to the world.",
+                        player.0
+                    );
                 }
             }
             OutboxMessage::Persist(PersistCommand::BufferSchemes { object_id, schemes }) => {
@@ -3949,6 +3986,7 @@ pub struct DbStore {
     /// `character_subclasses` (S-SUB-01).
     subclasses: SubclassRepository,
     bbs_favorites: BbsFavoriteRepository,
+    premium: l2_db::PremiumRepository,
     buffer_schemes: l2_db::BufferSchemeRepository,
     lottery: LotteryRepository,
     /// The ids the database gave the punishments this store inserted, by (key, affect, type).
@@ -4046,6 +4084,7 @@ impl DbStore {
             petition_feedback: PetitionFeedbackRepository::new(pool.clone()),
             subclasses: SubclassRepository::new(pool.clone()),
             bbs_favorites: BbsFavoriteRepository::new(pool.clone()),
+            premium: l2_db::PremiumRepository::new(pool.clone()),
             buffer_schemes: l2_db::BufferSchemeRepository::new(pool.clone()),
             lottery: LotteryRepository::new(pool.clone()),
             offline_trades: OfflineTradeRepository::new(pool),
@@ -5908,6 +5947,20 @@ impl PlayerStore for DbStore {
                     .collect(),
             ),
         })
+    }
+
+    async fn store_premium(&mut self, write: &l2_world::PremiumWrite) -> Result<(), PersistError> {
+        match write {
+            l2_world::PremiumWrite::Replace { account, end_date } => {
+                self.premium.replace(account, *end_date).await?
+            }
+            l2_world::PremiumWrite::Delete { account } => self.premium.delete(account).await?,
+        }
+        Ok(())
+    }
+
+    async fn load_premium(&mut self, key: &str) -> Result<Option<i64>, PersistError> {
+        Ok(self.premium.end_date_of(key).await?)
     }
 
     async fn store_buffer_schemes(

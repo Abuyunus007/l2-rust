@@ -23,8 +23,8 @@
 // - Spoil: the state (`Attackable._spoilerObjectId`, `_sweepItems`) and its checks are at the end
 //   of this file (M5-SPOIL-01); the `Spoil` / `Sweeper` effects are in `effects/handlers/`.
 //   `isInLooterParty` is `party/mod.rs` (M6-PARTY-01).
-// - The premium
-//   system (`PremiumSystem.ini`, off by default; there is no premium status). A seeded monster
+// - Champions (`ChampionMonsters.ini`, off by default; nobody is a champion). The premium
+//   rates are `DropKiller::premium` (`custom/premium.rs`, M9-C02). A seeded monster
 //   (`manor/farming.rs`, M7-MANOR-01) keeps only adena and the seal stones.
 // - `EventDropManager.doEventDrop` (event drops, no event runs), fake players that drop items.
 // - Parties: the leader of the party that did the most damage is the one the loot belongs to
@@ -220,13 +220,15 @@ pub struct DropVictim {
 
 /// The player side of a drop roll (Java `killer.asPlayer()`): its level and the multipliers of
 /// its bonus stats (`1 + calcStat(BONUS_DROP_RATE, 0) / 100` and so on).
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct DropKiller {
     pub level: i32,
     pub bonus_drop_rate: f64,
     pub bonus_drop_amount: f64,
     pub bonus_drop_adena: f64,
     pub bonus_spoil_rate: f64,
+    /// The premium multipliers of a killer with a premium status (`PremiumSystem.ini`, M9-C02).
+    pub premium: Option<std::sync::Arc<crate::custom::PremiumRates>>,
 }
 
 impl DropKiller {
@@ -238,6 +240,7 @@ impl DropKiller {
             bonus_drop_amount: 1.0,
             bonus_drop_adena: 1.0,
             bonus_spoil_rate: 1.0,
+            premium: None,
         }
     }
 }
@@ -375,7 +378,11 @@ fn rate_chance(
         let champion_chance = champion(victim, s).map_or(1.0, |c| c.rewards_chance);
         rate *= f64::from(s.rate_death_drop_chance_multiplier * champion_chance);
     }
-    // Premium chance: `PremiumSystem.ini` is off. Bonus drop rate effect:
+    // Premium chance: herb and raid drops get nothing ("TODO: Premium herb chance? :)").
+    if let Some(premium) = &killer.premium {
+        rate *= premium.drop_chance_factor(item_id, ex_immediate, victim.raid);
+    }
+    // Bonus drop rate effect:
     rate *= killer.bonus_drop_rate;
     rate
 }
@@ -404,6 +411,10 @@ fn rate_amount(
     } else {
         let champion_amount = champion(victim, s).map_or(1.0, |c| c.rewards_amount);
         rate *= f64::from(s.rate_death_drop_amount_multiplier * champion_amount);
+    }
+    // Premium amount.
+    if let Some(premium) = &killer.premium {
+        rate *= premium.drop_amount_factor(item_id, ex_immediate, victim.raid);
     }
     // Bonus drop amount effect.
     rate *= killer.bonus_drop_amount;
@@ -760,12 +771,20 @@ fn calculate_ungrouped_drop(
             None
         }
         DropType::Spoil => {
-            // Chance; bonus spoil rate effect.
-            let rate_chance = f64::from(s.rate_spoil_drop_chance_multiplier) * killer.bonus_spoil_rate;
+            // Chance; premium chance; bonus spoil rate effect.
+            let mut rate_chance = f64::from(s.rate_spoil_drop_chance_multiplier);
+            if let Some(premium) = &killer.premium {
+                rate_chance *= f64::from(premium.spoil_chance);
+            }
+            rate_chance *= killer.bonus_spoil_rate;
             // Calculate if item will be rewarded.
             if rng.next_double() * 100.0 < drop_item.chance * rate_chance {
                 // Amount is calculated after chance returned success.
-                let rate = f64::from(s.rate_spoil_drop_amount_multiplier);
+                let mut rate = f64::from(s.rate_spoil_drop_amount_multiplier);
+                // Premium amount.
+                if let Some(premium) = &killer.premium {
+                    rate *= f64::from(premium.spoil_amount);
+                }
                 return Some(ItemHolder {
                     id: drop_item.item_id,
                     count: amount(rng, drop_item, rate),
@@ -1089,6 +1108,7 @@ impl World {
                 bonus_drop_amount: 1.0 + view.calc(Stat::BonusDropAmount, 0.0) / 100.0,
                 bonus_drop_adena: 1.0 + view.calc(Stat::BonusDropAdena, 0.0) / 100.0,
                 bonus_spoil_rate: 1.0 + view.calc(Stat::BonusSpoilRate, 0.0) / 100.0,
+                premium: self.premium_drop_rates(dealer),
             },
             None => DropKiller::plain(player_level),
         };

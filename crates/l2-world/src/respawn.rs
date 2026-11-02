@@ -247,8 +247,10 @@ impl World {
             }
             delay
         } else if self.players.contains_key(&id) {
-            // Offline play: not ported.
-            if self.settings.death.disconnect_after_death {
+            // `OfflinePlayLogoutOnDeath`: an offline player is logged out after ten seconds.
+            if self.offline_play_logout_on_death(id) {
+                10
+            } else if self.settings.death.disconnect_after_death {
                 3600
             } else {
                 i64::from(self.settings.death.default_corpse_time)

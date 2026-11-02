@@ -370,6 +370,7 @@ fn replay(setup: &Setup, npc_templates: &NpcTemplates, items: &ItemTemplates, fi
             bonus_drop_amount: f(&killer["bonus_drop_amount"]),
             bonus_drop_adena: f(&killer["bonus_drop_adena"]),
             bonus_spoil_rate: f(&killer["bonus_spoil_rate"]),
+            premium: None,
         };
         assert_eq!(
             drop_killer.level - npc.level,

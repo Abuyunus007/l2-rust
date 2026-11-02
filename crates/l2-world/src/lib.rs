@@ -153,6 +153,10 @@ pub use custom::faction::{FACTION_EVIL, FACTION_GOOD, FactionLocation, FactionSe
 pub use custom::fake_players::{FakePlayerChatEntry, FakePlayerSettings};
 pub use custom::scheme_buffer::SchemeBufferSettings;
 pub use custom::sell_buffs::{SellBuffHolder, SellBuffsSettings};
+pub use custom::{
+    AutoPlayRules, AutoPotionSettings, OfflineCommandSettings, OfflinePlaySettings, PremiumRates,
+    PremiumSettings, PremiumWrite, ShownRates,
+};
 pub use data::{
     AccessLevelStatic, ChatBroadcast, DEFAULT_TITLE_COLOR, ItemStatic, NoData, RACE_DWARF, StaticData,
     WorldSettings,

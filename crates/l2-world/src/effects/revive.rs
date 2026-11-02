@@ -163,6 +163,10 @@ impl World {
         if message_id == SystemMessageId::S13.id() {
             // The offline and zone-builder questions share this id (not sent yet); the
             // engagement (`wedding.rs`) and the admin command confirmation (`admin/mod.rs`) are.
+            // `.offline` and `.offlineplay` (M9-C02, `custom/`).
+            if self.custom_play_dlg_answer(player, answer) {
+                return;
+            }
             if self.wedding_dlg_answer(player, answer) {
                 return;
             }

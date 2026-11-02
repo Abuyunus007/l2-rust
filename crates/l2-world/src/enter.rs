@@ -636,6 +636,8 @@ impl World {
         debug!("enter-world packets sent to {id}");
         // `PcCafePointsManager.run(player)` (M6-FU-11).
         self.pc_cafe_on_enter(id);
+        // `ON_PLAYER_LOGIN` of the custom features (premium, auto play, offline play; M9-C02).
+        self.custom_play_on_enter(id);
         // `ON_PLAYER_LOGIN`: `JailHandler.onPlayerLogin`.
         self.punishment_on_player_login(id);
         // EnterWorld's "Wedding checks" (M8-MISC-01).

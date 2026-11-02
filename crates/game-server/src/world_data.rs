@@ -698,6 +698,9 @@ pub fn custom_board_settings(config: &GameConfig, config_dir: &Path) -> l2_world
         cast_animations: c.communityboard_cast_animations,
         available_buffs: l2_world::CustomBoardSettings::parse_buffs(&buffs),
         available_teleports: l2_world::CustomBoardSettings::parse_teleports(&teleports),
+        premium_enabled: c.community_premium_system_enabled,
+        premium_coin_id: c.community_premium_coin_id,
+        premium_price_per_day: c.community_premium_price_per_day,
     }
 }
 

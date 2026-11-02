@@ -197,9 +197,10 @@ impl World {
                 .copied()
                 .unwrap_or(1.0)
         };
-        // Premium rates: `PremiumSystemEnabled` is off by default and nobody has a premium status.
         let add_exp = add_exp_value * f64::from(multiplier(&settings.exp_amount_multipliers));
         let add_sp = add_sp_value * f64::from(multiplier(&settings.sp_amount_multipliers));
+        // Premium rates (M9-C02, `custom/premium.rs`).
+        let (add_exp, add_sp) = self.premium_party_exp_sp(member, add_exp, add_sp);
 
         let mut xp = add_exp;
         if settings.xp_cutoff_method == PartyExpType::HighFive {

@@ -1115,6 +1115,7 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                 Out::Persist(PersistCommand::Olympiad(_) | PersistCommand::OlympiadRereadRequest { .. }) => {
                     "olympiad"
                 }
+                Out::Persist(PersistCommand::Premium(_) | PersistCommand::PremiumRequest { .. }) => "premium",
                 Out::Persist(PersistCommand::Minigame(_)) => "minigame",
                 Out::Persist(PersistCommand::Vehicle(_)) => "vehicle",
                 Out::Persist(

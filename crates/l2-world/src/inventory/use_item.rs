@@ -235,7 +235,9 @@ impl crate::world::World {
                     },
                 );
             } else {
-                self.use_equippable_item(id, object_id, true);
+                // `useEquippableItem(item, !player.isAutoPlaying())` (M9-C02).
+                let abort_attack = !self.is_auto_playing(id);
+                self.use_equippable_item(id, object_id, abort_attack);
             }
         } else {
             self.use_item_with_handler(id, &item, template, ctrl_pressed);

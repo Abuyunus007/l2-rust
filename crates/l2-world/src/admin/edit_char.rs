@@ -13,8 +13,7 @@
 //   the startup table). Java checks no name format there (`Player.setName` only updates the name
 //   table), so none is checked here either.
 // - `%protocol%` shows `N/A` for a connected client (the protocol version
-//   is not in the world), `%hwid%` shows `Unknown` (no hardware info exists), `%autoplay%` is empty
-//   (AutoPlay is not ported).
+//   is not in the world), `%hwid%` shows `Unknown` (no hardware info exists).
 // - `%inst%` links to `admin_instance_spawns` (`admin/instance.rs`, M8-INST-01).
 
 use std::collections::HashMap;
@@ -769,8 +768,21 @@ fn gather_character_info(world: &mut World, gm: ObjectId, player: ObjectId, file
     // No hardware info exists (HWID is not ported): Java shows `Unknown` for a client without it.
     html.replace("%hwid%", "Unknown");
     html.replace("%ai%", ai);
-    // AutoPlay is not ported: the line is empty as with `ENABLE_AUTO_PLAY = false`.
-    html.replace("%autoplay%", "");
+    // `AutoPlayConfig.ENABLE_AUTO_PLAY ? "<br1>AutoPlay: " + (isAutoPlaying() ? "Enabled" : "Disabled") : ""`
+    // (M9-C02).
+    let autoplay = if world.auto_play_enabled() {
+        format!(
+            "<br1>AutoPlay: {}",
+            if world.is_auto_playing(player) {
+                "Enabled"
+            } else {
+                "Disabled"
+            }
+        )
+    } else {
+        String::new()
+    };
+    html.replace("%autoplay%", &autoplay);
     // The link goes to `admin_instance_spawns` (`admin/instance.rs`).
     html.replace(
         "%inst%",

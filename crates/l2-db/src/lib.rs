@@ -14,6 +14,7 @@ mod schema;
 
 pub use error::{DbError, Result};
 pub use game::PetitionFeedbackRepository;
+pub use game::PremiumRepository;
 pub use game::{
     AccountDataRepository, AccountDataRow, VAR_PWD, VAR_WTE, crypt_secondary_password, sha1_digest,
 };

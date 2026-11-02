@@ -403,6 +403,7 @@ impl World {
                 bonus_drop_amount: 1.0 + view.calc(Stat::BonusDropAmount, 0.0) / 100.0,
                 bonus_drop_adena: 1.0 + view.calc(Stat::BonusDropAdena, 0.0) / 100.0,
                 bonus_spoil_rate: 1.0 + view.calc(Stat::BonusSpoilRate, 0.0) / 100.0,
+                premium: self.premium_drop_rates(player),
             },
             None => DropKiller::plain(level),
         }
@@ -491,7 +492,11 @@ impl World {
             if drop_type == DropType::Spoil {
                 rate_chance = f64::from(settings.rate_spoil_drop_chance_multiplier);
                 rate_amount = f64::from(settings.rate_spoil_drop_amount_multiplier);
-                // Premium rates: the premium system is off. Bonus spoil rate effect:
+                // Also check premium rates if available. Bonus spoil rate effect:
+                if let Some(premium) = &killer.premium {
+                    rate_chance *= f64::from(premium.spoil_chance);
+                    rate_amount *= f64::from(premium.spoil_amount);
+                }
                 rate_chance *= killer.bonus_spoil_rate;
             } else {
                 if let Some(by_id) = settings.rate_drop_chance_by_id.get(&drop_item.item_id) {
@@ -515,7 +520,11 @@ impl World {
                 } else {
                     rate_amount *= f64::from(settings.rate_death_drop_amount_multiplier);
                 }
-                // Premium rates: off. Bonus drop amount effect:
+                // Also check premium rates if available. Bonus drop amount effect:
+                if let Some(premium) = &killer.premium {
+                    rate_chance *= premium.drop_chance_factor(drop_item.item_id, ex_immediate, is_raid);
+                    rate_amount *= premium.drop_amount_factor(drop_item.item_id, ex_immediate, is_raid);
+                }
                 rate_amount *= killer.bonus_drop_amount;
                 if drop_item.item_id == ADENA_ID {
                     rate_amount *= killer.bonus_drop_adena;

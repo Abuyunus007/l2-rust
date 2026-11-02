@@ -13,9 +13,7 @@
 // words are taken only with `CustomCommunityBoard = True` ("every feature is off by default",
 // D-57).
 //
-// # Left out
-// - `_bbspremium` (needs `PremiumSystem.ini` and the premium manager, `CommunityPremiumSystem`
-//   is False by default); a `_bbspremium` command is "not handled".
+// `_bbspremium` (M9-C02) buys premium days with `CommunityPremiumSystem` and the premium system.
 
 use std::collections::{BTreeSet, HashMap};
 
@@ -61,6 +59,12 @@ pub struct CustomBoardSettings {
     pub available_buffs: BTreeSet<i32>,
     /// `COMMUNITY_AVAILABLE_TELEPORTS` (`CommunityTeleportList`): name to place.
     pub available_teleports: HashMap<String, (i32, i32, i32)>,
+    /// `COMMUNITY_PREMIUM_SYSTEM_ENABLED` (`CommunityPremiumSystem`).
+    pub premium_enabled: bool,
+    /// `COMMUNITY_PREMIUM_COIN_ID` (`CommunityPremiumBuyCoinId`).
+    pub premium_coin_id: i32,
+    /// `COMMUNITY_PREMIUM_PRICE_PER_DAY` (`CommunityPremiumPricePerDay`).
+    pub premium_price_per_day: i32,
 }
 
 impl Default for CustomBoardSettings {
@@ -80,6 +84,9 @@ impl Default for CustomBoardSettings {
             cast_animations: false,
             available_buffs: BTreeSet::new(),
             available_teleports: HashMap::new(),
+            premium_enabled: false,
+            premium_coin_id: 57,
+            premium_price_per_day: 1_000_000,
         }
     }
 }
@@ -174,6 +181,10 @@ impl World {
         if board.enable_delevel {
             words.push("_bbsdelevel");
         }
+        // `PREMIUM_SYSTEM_ENABLED && COMMUNITY_PREMIUM_SYSTEM_ENABLED ? "_bbspremium" : null`
+        if self.premium_system_enabled() && board.premium_enabled {
+            words.push("_bbspremium");
+        }
         words
     }
 
@@ -251,7 +262,33 @@ impl World {
         if command == "_bbsdelevel" {
             return self.board_delevel(id);
         }
+        if command.starts_with("_bbspremium") {
+            return self.board_premium(id, command);
+        }
         None
+    }
+
+    /// `HomeBoard`'s `_bbspremium;<days>`: 1 to 30 days for `CommunityPremiumPricePerDay` each.
+    /// A days part that is no number is Java's `NumberFormatException`: `None`.
+    fn board_premium(&mut self, id: ObjectId, command: &str) -> Option<String> {
+        let rest = command.replace("_bbspremium;", "");
+        let days: i64 = rest.split(',').next()?.parse::<i32>().ok()?.into();
+        let board = &self.custom_buffers.board;
+        let (coin, per_day) = (board.premium_coin_id, i64::from(board.premium_price_per_day));
+        let price = per_day.wrapping_mul(days);
+        if !(1..=30).contains(&days) || self.inventory_item_count(id, coin) < price {
+            self.send_message(id, "Not enough currency!");
+            return None;
+        }
+        let key = self.premium_key(id)?;
+        self.destroy_item_by_item_id(id, coin, price, true);
+        self.add_premium_time(&key, days);
+        let until = crate::custom::premium::premium_date(self.premium_expiration(&key));
+        self.send_message(id, &format!("You will now have premium status until {until}."));
+        if self.premium_pc_cafe_retail_like() {
+            self.pc_cafe_run(id);
+        }
+        self.board_custom_page(id, "premium/thankyou")
     }
 
     fn board_multisell(

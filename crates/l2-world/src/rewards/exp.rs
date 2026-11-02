@@ -28,7 +28,7 @@
 //   (M4-VIT-01); this file calls them where `PlayerStat.addExpAndSp` and
 //   `Attackable.calculateRewards` do.
 // - The over-hit bonus (a skill effect,
-//   M5), champions (not rolled), premium rates (`PremiumSystemEnabled` is off by default),
+//   M5), champions (not rolled), premium rates (`custom/premium.rs`, M9-C02, off by default),
 //   `DynamicExpRates.xml` (every shipped rate is 1, so Java reports it disabled), clans and the
 //   tutorial quest event, scripts (D-05). The subclass limits of `setExp`/`setLevel` are
 //   `subclass/` (S-SUB-01).
@@ -338,7 +338,8 @@ impl World {
             };
             let add_exp = java_round(view.calc_stat(Stat::ExpspRate, exp, None, None));
             let add_sp = view.calc_stat(Stat::ExpspRate, sp, None, None) as i32;
-            // Premium rates: `PremiumSystemEnabled` is off by default.
+            // Premium rates: `addExp *= PREMIUM_RATE_XP` (M9-C02, `custom/premium.rs`).
+            let (add_exp, add_sp) = self.premium_exp_sp(attacker, add_exp, add_sp);
             // NOTE(java-quirk): `useVitalityRate()` is the `useBonuses` flag, so a raid boss kill
             // (`RaidbossUseVitality = False` in the shipped config) gets no bonus of any kind,
             // not even the `BONUS_EXP` skills.

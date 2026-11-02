@@ -33,6 +33,7 @@
 pub mod admin;
 pub mod client;
 pub mod custom_monsters;
+pub mod custom_play;
 pub mod geo;
 pub mod hexid;
 pub mod item_auctions;
@@ -883,6 +884,12 @@ impl Server {
         let regen_settings = world_data::regen_settings(&config);
         let summon_settings = world_data::summon_settings(&config);
         let pc_cafe_settings = world_data::pc_cafe_settings(&config);
+        // Java: the Custom/*.ini of M9-C02 (premium system, auto potions, auto play, offline play).
+        let custom_play = custom_play::custom_play_settings(
+            &config,
+            &paths.config_dir,
+            cycle_database_writes(&paths.config_dir),
+        );
         let pet_settings = world_data::pet_settings(&config, &paths.config_dir);
         let instance_settings = world_data::instance_settings(&config, &paths.config_dir);
         // Java: PetNameTable (the names of the pets that exist), read only.
@@ -1152,6 +1159,7 @@ impl Server {
                     world.set_regen_settings(regen_settings);
                     world.set_summon_settings(summon_settings);
                     world.set_pc_cafe_settings(pc_cafe_settings);
+                    custom_play.install(world);
                     world.set_geo(geo_engine);
                     world.set_admin_path_options(path_options);
                     world.set_zone_build_dir(zone_build_dir);
