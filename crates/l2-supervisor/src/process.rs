@@ -27,7 +27,7 @@ use std::process::Stdio;
 use std::sync::{Arc, Mutex, MutexGuard, PoisonError};
 use std::time::{Duration, Instant};
 
-use l2_admin_api::{Event, LogLevel, ServerState, ServerStatus};
+use l2_admin_api::{Event, LogLevel, LogLine, ServerState, ServerStatus};
 use tokio::process::{Child, Command};
 use tokio::sync::{broadcast, mpsc, oneshot};
 
@@ -48,6 +48,7 @@ struct StatusInner {
     pid: Option<u32>,
     started_at: Option<Instant>,
     last_exit_code: Option<i32>,
+    last_error: Option<String>,
 }
 
 /// Handle to one server's actor. Cheap to clone.
@@ -115,7 +116,26 @@ fn snapshot(name: &str, inner: &StatusInner) -> ServerStatus {
             _ => None,
         },
         last_exit_code: inner.last_exit_code,
+        last_error: inner.last_error.clone(),
     }
+}
+
+/// How many of the newest log lines are searched for the reason of an exit (G-06).
+pub const ERROR_SCAN_LINES: usize = 30;
+
+/// Why a server ended, from its newest log lines (oldest first): the last ERROR or FATAL line,
+/// else the last line with text. Lines the supervisor wrote itself ("crashed, exit code 1") are
+/// skipped: they say that it ended, not why.
+pub fn pick_last_error(lines: &[LogLine]) -> Option<String> {
+    let own = |l: &&LogLine| l.target.as_deref() != Some("supervisor");
+    let text = |l: &LogLine| l.message.trim().to_string();
+    let candidates = || lines.iter().filter(own).filter(|l| !l.message.trim().is_empty());
+    // Java has no FATAL level in the console format, so a "FATAL" in the text counts as well.
+    candidates()
+        .rev()
+        .find(|l| l.level == Some(LogLevel::Error) || l.message.contains("FATAL"))
+        .or_else(|| candidates().next_back())
+        .map(text)
 }
 
 /// All supervised servers plus the shared log store and event stream.
@@ -138,6 +158,7 @@ impl Supervisor {
                     pid: None,
                     started_at: None,
                     last_exit_code: None,
+                    last_error: None,
                 }));
                 let (cmd_tx, cmd_rx) = mpsc::unbounded_channel();
                 let graceful: GracefulSlot = Arc::default();
@@ -255,6 +276,10 @@ impl Actor {
             let mut inner = lock(&self.status);
             inner.state = state;
             inner.pid = pid;
+            // A new run starts without the reason of the last one.
+            if matches!(state, ServerState::Starting | ServerState::Running) {
+                inner.last_error = None;
+            }
             match state {
                 ServerState::Running => inner.started_at = Some(Instant::now()),
                 ServerState::Stopping => {} // uptime keeps counting until the process is gone
@@ -267,6 +292,20 @@ impl Actor {
 
     fn set_exit_code(&self, code: Option<i32>) {
         lock(&self.status).last_exit_code = code;
+    }
+
+    /// Takes the reason of an exit from the newest [`ERROR_SCAN_LINES`] lines of the log buffer.
+    /// The pipes may still hold the last lines when the process is gone, so give the capture
+    /// tasks a moment to drain them.
+    async fn record_last_error(&self) {
+        tokio::time::sleep(Duration::from_millis(100)).await;
+        let (backlog, _) = self.logs.subscribe(Some(&self.cfg.name), None);
+        let from = backlog.len().saturating_sub(ERROR_SCAN_LINES);
+        self.set_last_error(pick_last_error(&backlog[from..]));
+    }
+
+    fn set_last_error(&self, error: Option<String>) {
+        lock(&self.status).last_error = error;
     }
 
     fn note(&self, level: LogLevel, message: String) {
@@ -285,6 +324,7 @@ impl Actor {
                     let message = format!("cannot start '{}': {e}", self.cfg.command);
                     tracing::error!("{name}: {message}");
                     self.note(LogLevel::Error, message.clone());
+                    self.set_last_error(Some(message.clone()));
                     self.set_state(ServerState::Crashed, None);
                     if let Some(reply) = reply.take() {
                         let _ = reply.send(Err(message));
@@ -324,7 +364,11 @@ impl Actor {
             match outcome {
                 Outcome::Exited(code) => {
                     self.set_exit_code(code);
-                    if code.is_some() && code == self.cfg.restart_on_exit_code {
+                    let restarting = code.is_some() && code == self.cfg.restart_on_exit_code;
+                    if !restarting {
+                        self.record_last_error().await;
+                    }
+                    if restarting {
                         let message = format!(
                             "exited with code {}, restarting in {} s",
                             code.unwrap_or_default(),
@@ -490,4 +534,52 @@ async fn run_quiet(command: &mut Command) -> bool {
         .status()
         .await
         .is_ok_and(|status| status.success())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn line(level: Option<LogLevel>, target: Option<&str>, message: &str) -> LogLine {
+        LogLine {
+            server: "s".into(),
+            seq: 1,
+            ts_ms: 0,
+            level,
+            target: target.map(String::from),
+            message: message.into(),
+        }
+    }
+
+    #[test]
+    fn picks_the_last_error_line() {
+        let lines = [
+            line(Some(LogLevel::Error), None, "first problem"),
+            line(Some(LogLevel::Error), None, "Access denied for user"),
+            line(Some(LogLevel::Info), None, "shutting down"),
+            line(None, None, "bye"),
+        ];
+        assert_eq!(pick_last_error(&lines).as_deref(), Some("Access denied for user"));
+    }
+
+    #[test]
+    fn fatal_in_the_text_counts() {
+        let lines = [
+            line(None, None, "FATAL: no datapack"),
+            line(Some(LogLevel::Info), None, "after"),
+        ];
+        assert_eq!(pick_last_error(&lines).as_deref(), Some("FATAL: no datapack"));
+    }
+
+    #[test]
+    fn falls_back_to_the_last_non_empty_line_and_skips_supervisor_notes() {
+        let lines = [
+            line(None, None, "loading"),
+            line(None, None, "  stopped here  "),
+            line(None, None, "   "),
+            line(Some(LogLevel::Error), Some("supervisor"), "crashed, exit code 1"),
+        ];
+        assert_eq!(pick_last_error(&lines).as_deref(), Some("stopped here"));
+        assert_eq!(pick_last_error(&[]), None);
+    }
 }

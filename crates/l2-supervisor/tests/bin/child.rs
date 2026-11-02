@@ -4,6 +4,7 @@
 //! * `exit <code>`            exit at once with that code
 //! * `print`                  write to stdout and stderr (tracing-style and plain lines), exit 0
 //! * `restart-once <file>`    exit 2 on the first run (creates `file`), "run again" and sleep on the second
+//! * `fail`                   print an ERROR line between two plain lines, exit 1
 //! * `sleep`                  print "ready", sleep until told to stop (exit 0 on SIGTERM on Unix)
 //! * `stubborn`               print "ready", ignore the stop request, sleep forever
 
@@ -28,6 +29,12 @@ async fn main() {
     let mut args = std::env::args().skip(1);
     match args.next().as_deref() {
         Some("exit") => exit(args.next().unwrap().parse().unwrap()),
+        Some("fail") => {
+            println!("loading");
+            println!("2026-01-02T03:04:05.123456Z ERROR child::db: Access denied for user");
+            println!("shutting down");
+            exit(1)
+        }
         Some("print") => {
             println!("plain stdout line");
             println!("2026-01-02T03:04:05.123456Z  WARN child::mod: tracing style line");
