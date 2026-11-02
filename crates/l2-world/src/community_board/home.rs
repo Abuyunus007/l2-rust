@@ -1,8 +1,8 @@
 //! `HomeBoard`: the top page of the board (`_bbshome`, `_bbstop`, `_bbstop;<page>.html`).
 // Java: dist/game/data/scripts/handlers/bypass/communityboard/HomeBoard.java
 //
-// The custom commands (`_bbsmultisell`, `_bbsteleport`, `_bbsbuff`, `_bbsheal`, ...) are left out,
-// see the module note of `mod.rs`.
+// The custom commands (`_bbsmultisell`, `_bbsteleport`, `_bbsbuff`, `_bbsheal`, ...) are
+// `custom/community_board.rs` (M9-C03); `_bbspremium` is left out, see the module note of `mod.rs`.
 
 use l2_util::ObjectId;
 
@@ -23,8 +23,11 @@ impl World {
             settings.karma_disabled,
             settings.peace_only,
         );
-        // The combat check of `COMBAT_CHECK` only applies to the custom commands, none of which
-        // is registered here.
+        // `COMBAT_CHECK` only applies to the custom commands (M9-C03).
+        if self.custom_board_combat_check(id, command) {
+            self.send_message(id, "You can't use the Community Board right now.");
+            return;
+        }
         if karma_disabled && self.karma_of_player(id) > 0 {
             self.send_message(id, "Players with Karma cannot use the Community Board.");
             return;
@@ -53,6 +56,10 @@ impl World {
                 let html = self.get_htm(id, &format!("data/html/CommunityBoard/{custom_path}{path}"));
                 self.finish_home_page(id, html);
             }
+        } else if self.is_custom_board_command(command) {
+            // The custom commands (`_bbsmultisell`, `_bbsteleport`, ...), M9-C03.
+            let html = self.custom_home_command(id, command);
+            self.finish_home_page(id, html);
         }
     }
 

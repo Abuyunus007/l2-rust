@@ -1,17 +1,29 @@
-//! The Java custom features of `config/Custom/*.ini` (D-57), one file per feature. Each is off by
-//! default, as in Java, and switched by the keys of its own ini file.
+//! Custom features of L2JMobius (`config/Custom/*.ini`), one module per feature (D-57).
 //!
-//! M9-C02: the premium system, the offline play, the auto play and the auto potions, and the
-//! `.offline` command of `OfflineTrade.ini`.
-
-use std::collections::BTreeMap;
+//! Every feature is off by default, as in Java; the settings below default to Java's *code*
+//! defaults. The game server fills them from the `.ini` files (`game-server/src/custom_monsters.rs`).
+//!
+//! Already in their own subsystems (switched by the same keys, not repeated here):
+//! - `MerchantZeroSellPrice.ini`: `shop/` (`ShopSettings::merchant_zero_sell_price`).
+//! - `PrivateStoreRange.ini`: `trade/store.rs` (`StoreSettings::shop_min_range_from_*`).
+//! - `WarehouseSorting.ini`: `warehouse/` (`WarehouseSettings::sorting_private` / `sorting_clan`).
+//! - `RandomSpawns.ini`: `npc.rs` (`NpcSettings::random_monster_spawns`) and `script/spawn.rs`.
+//! - `NpcStatMultipliers.ini`: applied while the NPC templates load (`l2_data::npc`).
 
 pub mod auto_play;
 mod auto_play_ui;
 pub mod auto_potion;
+pub mod boss_announcements;
+pub mod champion;
+pub mod community_board;
 pub mod offline_play;
 pub mod offline_trade;
 pub mod premium;
+pub mod scheme_buffer;
+pub mod sell_buffs;
+
+pub use boss_announcements::BossAnnouncementSettings;
+pub use champion::ChampionSettings;
 
 pub use auto_play::AutoPlayRules;
 pub use auto_potion::AutoPotionSettings;
@@ -19,7 +31,53 @@ pub use offline_play::OfflinePlaySettings;
 pub use offline_trade::OfflineCommandSettings;
 pub use premium::{PremiumRates, PremiumSettings, PremiumWrite, ShownRates};
 
+use std::collections::BTreeMap;
+
 use l2_util::ObjectId;
+
+use crate::world::World;
+
+/// The settings of the custom features this module owns.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct CustomSettings {
+    /// `ChampionMonsters.ini` (Java `ChampionMonstersConfig`).
+    pub champion: ChampionSettings,
+    /// `BossAnnouncements.ini` (Java `BossAnnouncementsConfig`).
+    pub boss_announcements: BossAnnouncementSettings,
+}
+
+/// What the custom features keep in the world.
+#[derive(Debug, Default)]
+pub(crate) struct CustomWorld {
+    pub(crate) settings: CustomSettings,
+}
+
+impl World {
+    /// Installs the settings of the custom features.
+    pub fn set_custom_settings(&mut self, settings: CustomSettings) {
+        self.custom.settings = settings;
+    }
+
+    /// The settings of the custom features.
+    pub fn custom_settings(&self) -> &CustomSettings {
+        &self.custom.settings
+    }
+}
+
+// Java: gameserver/config/custom/*.java, dist/game/data/scripts/custom/**
+//
+// # The buffer cards (M9-C03)
+// - `community_board.rs`: the custom home board (`CommunityBoard.ini`).
+// - `scheme_buffer.rs`: the scheme buffer NPC (`SchemeBuffer.ini`).
+// - `sell_buffs.rs`: the buff shop (`SellBuffs.ini`).
+
+/// The state of the M9-C03 features, owned by the world (D-10).
+#[derive(Debug, Default)]
+pub struct CustomBuffers {
+    pub(crate) board: community_board::CustomBoardSettings,
+    pub(crate) scheme: scheme_buffer::SchemeBufferState,
+    pub(crate) sell: sell_buffs::SellBuffsState,
+}
 
 /// The timers of the features of this card (`TimerKind::CustomPlay`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

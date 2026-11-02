@@ -2400,12 +2400,14 @@ dependencies = [
  "l2-admin-api",
  "l2-config",
  "l2-data",
+ "l2-db-installer",
  "l2-geo",
  "l2-proxy",
  "l2-supervisor",
  "serde",
  "serde_json",
  "tempfile",
+ "thiserror 2.0.21",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -2575,6 +2577,8 @@ name = "l2-supervisor"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
+ "flate2",
  "l2-admin-api",
  "l2-config",
  "rand 0.10.3",

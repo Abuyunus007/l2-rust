@@ -52,6 +52,8 @@ pub struct World {
     pub(crate) npcs: HashMap<ObjectId, Npc>,
     /// Spawn lists, NPC templates and settings (M3-NPC-01).
     pub(crate) npc_world: crate::npc::NpcWorld,
+    /// The custom features (`Custom/*.ini`, D-57; see `custom/`).
+    pub(crate) custom: crate::custom::CustomWorld,
     /// Html pages, gatekeeper lists and bypass handlers (M3-TALK-01).
     pub(crate) talk: crate::dialog::TalkWorld,
     /// The admin command handlers (M3-ADMIN-01).
@@ -151,6 +153,8 @@ pub struct World {
     pub(crate) bot_report: crate::bot_report::BotReportWorld,
     /// The community board settings and the last page of each player (S-HAND-01, `community_board/`).
     pub(crate) community_board: crate::community_board::CommunityBoardWorld,
+    /// The custom buffer features: custom board, scheme buffer, buff shop (M9-C03, `custom/`).
+    pub(crate) custom_buffers: crate::custom::CustomBuffers,
     /// `/time` and the other information user commands (S-HAND-01, `user_command_info.rs`).
     pub(crate) user_command_info: crate::user_command_info::UserCommandInfoWorld,
     /// The script handlers of S-HAND-02 (`script_handlers/`).
@@ -219,6 +223,7 @@ impl World {
             regions: RegionGrid::new(false),
             npcs: HashMap::new(),
             npc_world: crate::npc::NpcWorld::default(),
+            custom: crate::custom::CustomWorld::default(),
             talk: crate::dialog::TalkWorld::default(),
             admin: crate::admin::AdminWorld::default(),
             doors: HashMap::new(),
@@ -271,6 +276,7 @@ impl World {
             clanhall: crate::clanhall::ClanHallWorld::default(),
             bot_report: crate::bot_report::BotReportWorld::default(),
             community_board: crate::community_board::CommunityBoardWorld::default(),
+            custom_buffers: crate::custom::CustomBuffers::default(),
             user_command_info: crate::user_command_info::UserCommandInfoWorld::default(),
             script_handlers: crate::script_handlers::unstuck::ScriptHandlerWorld::default(),
             decoy_trap: crate::decoy_trap::DecoyTrapWorld::default(),

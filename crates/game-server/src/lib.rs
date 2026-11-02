@@ -32,6 +32,7 @@
 
 pub mod admin;
 pub mod client;
+pub mod custom_monsters;
 pub mod custom_play;
 pub mod geo;
 pub mod hexid;
@@ -915,6 +916,8 @@ impl Server {
         // Java: GlobalVariablesManager.getInstance (GameServer, section "World"): every row, read
         // here; the scripts write them only with `CycleDatabaseWrites` (D-54, S-API-01).
         let global_variables = persist::load_global_variables(&pool).await;
+        // Java: SchemeBufferTable.getInstance (GameServer): the saved schemes, read here (M9-C03).
+        let buffer_schemes = persist::load_buffer_schemes(&pool).await;
         let script_settings = script_settings(&config, &paths.config_dir);
         // Java: LotteryManager.getInstance (GameServer): the newest `lottery` row, read only here;
         // the world writes it only with `CycleDatabaseWrites` (D-53, S-HAND-03).
@@ -960,6 +963,10 @@ impl Server {
         let flood_settings = world_data::flood_settings_from_config(&config);
         // Java: GeneralConfig / CommunityBoardConfig (the community board, S-HAND-01).
         let community_board_settings = world_data::community_board_settings(&config);
+        // Java: CommunityBoardConfig (the custom board), SchemeBufferConfig, SellBuffsConfig (M9-C03).
+        let custom_board_settings = world_data::custom_board_settings(&config, &paths.config_dir);
+        let scheme_buffer_settings = world_data::scheme_buffer_settings(&config);
+        let sell_buffs_settings = world_data::sell_buffs_settings(&config);
         let user_command_info_settings = l2_world::UserCommandInfoSettings {
             display_server_time: config.server_time.display_server_time,
         };
@@ -1114,6 +1121,10 @@ impl Server {
                 Arc::clone(&datapack.skill_trees),
             );
             let skill_learn = Arc::clone(&datapack.skill_learn);
+            let (scheme_buffer_skills, sell_buff_data) = (
+                Arc::clone(&datapack.scheme_buffer_skills),
+                Arc::clone(&datapack.sell_buff_data),
+            );
             let pet_skills = Arc::clone(&datapack.pet_skills);
             let pets = Arc::clone(&datapack.pets);
             let cubics = Arc::clone(&datapack.cubics);
@@ -1313,6 +1324,11 @@ impl Server {
                     // Java: FloodProtectors (per client, the settings are shared).
                     world.set_flood_settings(flood_settings);
                     world.set_community_board_settings(community_board_settings);
+                    // Java: the custom board, SchemeBufferTable, SellBuffsManager (M9-C03).
+                    world.set_custom_board_settings(custom_board_settings);
+                    world.set_scheme_buffer(scheme_buffer_settings, scheme_buffer_skills);
+                    world.load_buffer_schemes(buffer_schemes);
+                    world.set_sell_buffs(sell_buffs_settings, sell_buff_data);
                     world.set_user_command_info_settings(user_command_info_settings);
                     world.set_script_handler_settings(script_handler_settings);
                     world.set_mail_settings(mail_settings);
@@ -1694,6 +1710,7 @@ fn options_from_config(config: &GameConfig, config_dir: &Path) -> DatapackOption
         no_spawns: config.development.no_spawns,
         max_aggro_range: config.npc.max_aggro_range,
         default_corpse_time: config.npc.default_corpse_time,
+        npc_stat_multipliers: custom_monsters::npc_stat_multipliers(config),
         htm_cache: config.general.htm_cache,
         check_html_encoding: config.general.check_html_encoding,
         custom_multisell_load: config.general.custom_multisell_load,
@@ -2026,6 +2043,7 @@ mod tests {
                 no_spawns: true,
                 max_aggro_range: 900,
                 default_corpse_time: 3,
+                npc_stat_multipliers: None,
                 htm_cache: false,
                 check_html_encoding: false,
                 custom_multisell_load: true,

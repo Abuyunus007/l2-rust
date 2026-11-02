@@ -1334,3 +1334,41 @@ fn a_death_in_a_clan_war_costs_a_quarter() {
     // Only the killer's clan declared it: `isAtWarWith` asks the victim's clan.
     assert_eq!(lost("clan-war-attacked", war("600", "500")), 14_329);
 }
+
+// ------------------------------------------------------------------ champions (M9-C01)
+
+fn champion_exp_scene(tag: &str, enable: bool, champion: bool) -> (i64, i64) {
+    let mut s = Scene::new(tag);
+    s.world.set_custom_settings(l2_world::custom::CustomSettings {
+        champion: l2_world::custom::ChampionSettings {
+            enable,
+            rewards_exp_sp: 3.0,
+            ..l2_world::custom::ChampionSettings::default()
+        },
+        ..l2_world::custom::CustomSettings::default()
+    });
+    s.enter(player_data(ME, "Hero", 10));
+    let npc = s.npc();
+    s.world.set_champion(npc, champion);
+    let start = s.me().data.exp;
+    s.hit(ME, 5);
+    s.kill(ME);
+    (s.me().data.exp - start, s.me().data.sp)
+}
+
+/// `ChampionRewardsExpSp` multiplies the exp and the SP of a champion kill, and only then.
+#[test]
+fn a_champion_kill_gives_the_champion_exp_and_sp() {
+    let (plain_exp, plain_sp) = champion_exp_scene("champ-plain", true, false);
+    assert!(plain_exp > 0 && plain_sp > 0);
+    // Off (`ChampionEnable = False`): a flagged monster pays like any other.
+    assert_eq!(
+        champion_exp_scene("champ-off", false, true),
+        (plain_exp, plain_sp)
+    );
+    // On: x3.
+    assert_eq!(
+        champion_exp_scene("champ-on", true, true),
+        (plain_exp * 3, plain_sp * 3)
+    );
+}

@@ -6,6 +6,7 @@
 use std::path::PathBuf;
 
 use anyhow::Context;
+use l2_supervisor::backup::BackupConfig;
 use l2_supervisor::config::SupervisorConfig;
 use l2_supervisor::{Running, pidfile, secret};
 use tracing_subscriber::EnvFilter;
@@ -47,7 +48,8 @@ async fn main() -> anyhow::Result<()> {
         );
     }
 
-    let running = Running::start(config.clone())
+    let backup = BackupConfig::load_next_to(&path).context("loading Backup.ini")?;
+    let running = Running::start_with_backup(config.clone(), backup)
         .await
         .with_context(|| format!("cannot listen on {}", config.listen))?;
     tracing::info!(

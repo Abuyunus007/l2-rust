@@ -319,7 +319,8 @@ impl World {
             // Calculate the difference of level between this attacker and the Attackable.
             let level = self.core_of(attacker).map_or(1, |c| c.level);
             let (exp, sp) = self.calculate_exp_and_sp(dying, level, damage, total_damage);
-            // Champions: see the module comment.
+            // `CHAMPION_ENABLE && _champion`: `exp *= CHAMPION_REWARDS_EXP_SP` (`custom/champion.rs`).
+            let (exp, sp) = self.champion_exp_sp(dying, exp, sp);
             // `exp *= penalty` (a float widened to double).
             let mut exp = exp * f64::from(penalty);
             // Check for an over-hit enabled strike.
@@ -416,8 +417,9 @@ impl World {
         // Calculate Exp and SP rewards.
         // NOTE(java-quirk): `calculateExpAndSp` already takes `partyDmg / totalDamage` of the
         // reward, and `partyMul` takes the same share once more.
-        let (mut exp, mut sp) = self.calculate_exp_and_sp(dying, party_level, party_damage, total_damage);
-        // Champions: see the module comment.
+        let (exp, sp) = self.calculate_exp_and_sp(dying, party_level, party_damage, total_damage);
+        // `CHAMPION_ENABLE && _champion` (`custom/champion.rs`).
+        let (mut exp, mut sp) = self.champion_exp_sp(dying, exp, sp);
         exp *= party_mul;
         sp *= party_mul;
         // Check for an over-hit enabled strike. (When in party, the over-hit exp bonus is given
@@ -750,7 +752,7 @@ impl World {
             .and_then(|m| i32::try_from(m + 1).ok())
     }
 
-    fn set_exp(&mut self, id: ObjectId, value: i64) {
+    pub(crate) fn set_exp(&mut self, id: ObjectId, value: i64) {
         // Java `PlayerStat.setExp`: an active subclass keeps it in its holder, which caps it at
         // the last exp of its maximum level (S-SUB-01).
         let value = if self.is_subclass_active(id) {
@@ -1059,6 +1061,14 @@ impl World {
             upserts: writes.upserts,
             removed: writes.removed,
         });
+    }
+
+    /// Java `Player.checkPlayerSkills()` with its rows written (the custom board's delevel,
+    /// M9-C03).
+    pub(crate) fn check_player_skills_and_store(&mut self, id: ObjectId) {
+        let mut writes = SkillWrites::default();
+        self.check_player_skills(id, &mut writes);
+        self.flush_skill_writes(id, writes);
     }
 
     /// Java `Player.checkPlayerSkills()`: a skill whose level needs more than the player has (9

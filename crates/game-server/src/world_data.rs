@@ -668,6 +668,65 @@ pub fn community_board_settings(config: &GameConfig) -> l2_world::CommunityBoard
     }
 }
 
+/// The rest of `Custom/CommunityBoard.ini`, with the two list keys the generated config does not
+/// read (`CommunityAvailableBuffs`, `CommunityTeleportList`), M9-C03.
+pub fn custom_board_settings(config: &GameConfig, config_dir: &Path) -> l2_world::CustomBoardSettings {
+    use l2_config::IniFile;
+
+    let c = &config.community_board;
+    let (buffs, teleports) =
+        match IniFile::load(config_dir.join(l2_config::generated::game::CommunityBoardConfig::FILE)) {
+            Ok(ini) => (
+                ini.get_string("CommunityAvailableBuffs", ""),
+                ini.get_string("CommunityTeleportList", ""),
+            ),
+            // A missing file is every key at its default.
+            Err(_) => (String::new(), String::new()),
+        };
+    l2_world::CustomBoardSettings {
+        currency: c.communityboard_currency,
+        enable_multisells: c.communityboard_enable_multisells,
+        enable_teleports: c.communityboard_enable_teleports,
+        enable_buffs: c.communityboard_enable_buffs,
+        enable_heal: c.communityboard_enable_heal,
+        enable_delevel: c.communityboard_enable_delevel,
+        teleport_price: c.communityboard_teleport_price,
+        buff_price: c.communityboard_buff_price,
+        heal_price: c.communityboard_heal_price,
+        delevel_price: c.communityboard_delevel_price,
+        combat_disabled: c.communityboard_combat_disabled,
+        cast_animations: c.communityboard_cast_animations,
+        available_buffs: l2_world::CustomBoardSettings::parse_buffs(&buffs),
+        available_teleports: l2_world::CustomBoardSettings::parse_teleports(&teleports),
+        premium_enabled: c.community_premium_system_enabled,
+        premium_coin_id: c.community_premium_coin_id,
+        premium_price_per_day: c.community_premium_price_per_day,
+    }
+}
+
+/// `Custom/SchemeBuffer.ini` (M9-C03).
+pub fn scheme_buffer_settings(config: &GameConfig) -> l2_world::SchemeBufferSettings {
+    let c = &config.scheme_buffer;
+    l2_world::SchemeBufferSettings {
+        max_schemes: c.buffer_max_schemes,
+        item_id: c.buffer_item_id,
+        static_buff_cost: c.buffer_static_buff_cost,
+    }
+}
+
+/// `Custom/SellBuffs.ini` (M9-C03).
+pub fn sell_buffs_settings(config: &GameConfig) -> l2_world::SellBuffsSettings {
+    let c = &config.sell_buffs;
+    l2_world::SellBuffsSettings {
+        enabled: c.sellbuff_enabled,
+        mp_multipler: c.sellbuff_mp_multipler,
+        payment_id: c.sellbuff_payment_id,
+        min_price: c.sellbuff_min_price,
+        max_price: c.sellbuff_max_price,
+        max_buffs: c.sellbuff_max_buffs,
+    }
+}
+
 /// The flood protectors of the loaded configuration (`config.manual.core.flood_protector`).
 pub fn flood_settings_from_config(config: &GameConfig) -> l2_world::FloodSettings {
     flood_settings_from_manual(&config.manual.core.flood_protector)
@@ -865,6 +924,7 @@ pub fn drop_settings(config: &GameConfig, _config_dir: &Path) -> DropSettings {
         boss_drop_min_level: r.boss_drop_min_level,
         boss_drop_max_level: r.boss_drop_max_level,
         alt_party_range: config.player.alt_party_range,
+        champion: None,
         event_item_max_level_difference: r.event_item_max_level_difference,
         player_drop_limit: r.player_drop_limit,
         player_rate_drop: r.player_rate_drop,

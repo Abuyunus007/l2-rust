@@ -661,7 +661,10 @@ impl World {
         {
             return false;
         }
-        // Champions are not rolled (`ChampionMonstersConfig`).
+        // `me.isChampion() && ChampionMonstersConfig.CHAMPION_PASSIVE`.
+        if self.champion_is_passive(me) {
+            return false;
+        }
         // Check if the actor is Aggressive.
         self.is_aggressive_npc(me) && self.can_see_target(me, target)
     }

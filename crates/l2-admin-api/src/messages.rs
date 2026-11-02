@@ -87,6 +87,13 @@ pub enum Request {
     /// Supervisor: stop all servers cleanly (reverse `Servers` order), then exit. Answered `Ok`
     /// at once; the connection closes when the supervisor is gone (G-01).
     StopSupervisor,
+    /// Supervisor: start a database backup in the background (M9-H01). Answered `Ok` at once, or
+    /// `Error` when one is already running; follow it with [`Request::BackupState`].
+    BackupNow,
+    /// Supervisor: the backup files in the backup folder, newest first.
+    ListBackups,
+    /// Supervisor: whether a backup runs, how the last one ended and when the next one is due.
+    BackupState,
 }
 
 /// What a GM can do through the game server's endpoint. Every action runs inside the world
@@ -186,6 +193,12 @@ pub enum Response {
     },
     Accounts {
         result: AccountsResult,
+    },
+    Backups {
+        backups: Vec<BackupInfo>,
+    },
+    BackupState {
+        state: Box<BackupStatus>,
     },
     Error {
         message: String,
@@ -306,6 +319,51 @@ pub struct GameInfo {
     pub tick_ms: u32,
     /// The countdown of a running shutdown, in seconds.
     pub shutdown_in_secs: Option<u32>,
+}
+
+/// One backup file (`<database>-YYYYMMDD-HHMMSS.sql.gz`) in the backup folder.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BackupInfo {
+    pub name: String,
+    pub size: u64,
+    /// Unix time in milliseconds of the last modification (= when the dump finished).
+    pub modified_ms: i64,
+}
+
+/// How the last backup ended.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BackupResult {
+    pub ok: bool,
+    /// The file name on success, the reason on failure. Never contains the password.
+    pub message: String,
+    /// Unix time in milliseconds.
+    pub finished_ms: i64,
+}
+
+/// Where a backup comes from; the Backups view builds the restore command out of it. No password.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BackupDatabase {
+    pub host: String,
+    pub port: u16,
+    pub user: String,
+    pub database: String,
+}
+
+/// Answer to [`Request::BackupState`].
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct BackupStatus {
+    /// `Enabled` in `Backup.ini`: the schedule. "Backup now" works either way.
+    pub enabled: bool,
+    pub running: bool,
+    pub interval_hours: u32,
+    pub keep: u32,
+    /// The backup folder as the supervisor sees it.
+    pub folder: String,
+    /// `None` when `Database.ini` cannot be read.
+    pub database: Option<BackupDatabase>,
+    pub last: Option<BackupResult>,
+    /// Unix time in milliseconds of the next scheduled run; `None` when the schedule is off.
+    pub next_run_ms: Option<i64>,
 }
 
 /// Accounts per page of [`AccountsAction::Search`].
@@ -752,6 +810,53 @@ mod tests {
                     },
                 },
                 r#"{"type":"response","id":10,"response":{"kind":"accounts","result":{"kind":"done","login":"alice","access_level":0}}}"#,
+            ),
+            (
+                Message::Request {
+                    id: 11,
+                    request: Request::BackupNow,
+                },
+                r#"{"type":"request","id":11,"request":{"kind":"backup_now"}}"#,
+            ),
+            (
+                Message::Response {
+                    id: 12,
+                    response: Response::Backups {
+                        backups: vec![BackupInfo {
+                            name: "l2jmobiush5-20261102-030000.sql.gz".into(),
+                            size: 1234,
+                            modified_ms: 1_700_000_000_000,
+                        }],
+                    },
+                },
+                r#"{"type":"response","id":12,"response":{"kind":"backups","backups":[{"name":"l2jmobiush5-20261102-030000.sql.gz","size":1234,"modified_ms":1700000000000}]}}"#,
+            ),
+            (
+                Message::Response {
+                    id: 13,
+                    response: Response::BackupState {
+                        state: Box::new(BackupStatus {
+                            enabled: true,
+                            running: false,
+                            interval_hours: 24,
+                            keep: 7,
+                            folder: "backups".into(),
+                            database: Some(BackupDatabase {
+                                host: "localhost".into(),
+                                port: 3306,
+                                user: "root".into(),
+                                database: "l2jmobiush5".into(),
+                            }),
+                            last: Some(BackupResult {
+                                ok: true,
+                                message: "x.sql.gz".into(),
+                                finished_ms: 5,
+                            }),
+                            next_run_ms: None,
+                        }),
+                    },
+                },
+                r#"{"type":"response","id":13,"response":{"kind":"backup_state","state":{"enabled":true,"running":false,"interval_hours":24,"keep":7,"folder":"backups","database":{"host":"localhost","port":3306,"user":"root","database":"l2jmobiush5"},"last":{"ok":true,"message":"x.sql.gz","finished_ms":5},"next_run_ms":null}}}"#,
             ),
             (
                 Message::Event {

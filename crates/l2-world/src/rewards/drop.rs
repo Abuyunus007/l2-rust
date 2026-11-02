@@ -55,6 +55,26 @@ pub struct ItemHolder {
     pub count: i64,
 }
 
+/// The `ChampionMonstersConfig` values `NpcTemplate.calculateDrops` reads for a champion victim
+/// (`Custom/ChampionMonsters.ini`, see `custom/champion.rs`).
+#[derive(Debug, Clone, PartialEq)]
+pub struct ChampionDrops {
+    /// `CHAMPION_REWARDS_CHANCE`, a Java `float`.
+    pub rewards_chance: f32,
+    /// `CHAMPION_REWARDS_AMOUNT`.
+    pub rewards_amount: f32,
+    /// `CHAMPION_ADENAS_REWARDS_CHANCE`.
+    pub adenas_rewards_chance: f32,
+    /// `CHAMPION_ADENAS_REWARDS_AMOUNT`.
+    pub adenas_rewards_amount: f32,
+    /// `CHAMPION_REWARD_LOWER_LEVEL_ITEM_CHANCE`: percent, for a champion lower than the killer.
+    pub lower_level_item_chance: i32,
+    /// `CHAMPION_REWARD_HIGHER_LEVEL_ITEM_CHANCE`.
+    pub higher_level_item_chance: i32,
+    /// `CHAMPION_REWARD_ITEMS`.
+    pub reward_items: Vec<ItemHolder>,
+}
+
 /// The values of `Rates.ini` that drops read, plus `AltPartyRange` (the damage dealer must be
 /// within it). `Default` is the Java default of each key (not the shipped `Rates.ini`: the two
 /// per-item maps are empty in the code).
@@ -107,6 +127,9 @@ pub struct DropSettings {
     /// `PlayerConfig.ALT_PARTY_RANGE` (`AltPartyRange`): a damage dealer farther from the monster
     /// than this gets no share of the loot.
     pub alt_party_range: i32,
+    /// The champion values, `None` (the default) while nobody can be a champion: a champion victim
+    /// then drops like any other monster.
+    pub champion: Option<ChampionDrops>,
     /// `RatesConfig.EVENT_ITEM_MAX_LEVEL_DIFFERENCE` (`EventItemMaxLevelDifference`): the event
     /// drops (`event_drop.rs`) go to a killer at most this many levels above the monster.
     pub event_item_max_level_difference: i32,
@@ -159,6 +182,7 @@ impl Default for DropSettings {
             boss_drop_max_level: 999,
             boss_drop_list: Vec::new(),
             alt_party_range: 1500,
+            champion: None,
             event_item_max_level_difference: 9,
             player_drop_limit: 3,
             player_rate_drop: 5,
@@ -187,7 +211,7 @@ pub struct DropVictim {
     pub level: i32,
     /// `isRaid()`.
     pub raid: bool,
-    /// `isChampion()`: nobody is one yet.
+    /// `isChampion()`.
     pub champion: bool,
     /// `isMonster() && isSeeded()`: a seeded monster only drops adena and seal stones (the manor,
     /// M7-MANOR-01).
@@ -286,6 +310,44 @@ impl Gaps {
     }
 }
 
+/// The champion values when the victim is a champion (and champions are configured).
+fn champion<'a>(victim: &DropVictim, s: &'a DropSettings) -> Option<&'a ChampionDrops> {
+    if victim.champion {
+        s.champion.as_ref()
+    } else {
+        None
+    }
+}
+
+/// Java's "champion extra drop" at the end of `calculateGroupDrops` and `calculateUngroupedDrops`.
+// NOTE(java-quirk): `calculatedDrops.containsAll(CHAMPION_REWARD_ITEMS)` compares `ItemHolder`s by
+// identity (the class has no `equals`), so the reward items are added every time the roll
+// succeeds, and `calculatedDrops` exists afterwards even when the list of reward items is empty.
+fn champion_extra_drop(
+    s: &DropSettings,
+    victim: &DropVictim,
+    killer: &DropKiller,
+    rng: &mut impl Rnd,
+    calculated: &mut Option<Vec<Rolled>>,
+) {
+    let Some(c) = champion(victim, s) else {
+        return;
+    };
+    let chance = if victim.level < killer.level {
+        c.lower_level_item_chance
+    } else {
+        c.higher_level_item_chance
+    };
+    if rng.get_int(100) < chance {
+        let list = calculated.get_or_insert_with(Vec::new);
+        // The sequence number is only for the `remove(Object)` calls that came before.
+        list.extend(c.reward_items.iter().map(|&holder| Rolled {
+            seq: usize::MAX,
+            holder,
+        }));
+    }
+}
+
 /// The chance multiplier of one `DROP` item (the first block of `calculateGroupDrops` and
 /// `calculateUngroupedDrop`).
 fn rate_chance(
@@ -299,7 +361,11 @@ fn rate_chance(
     let mut rate = 1.0_f64;
     if let Some(by_id) = s.rate_drop_chance_by_id.get(&item_id) {
         rate *= f64::from(*by_id);
-        // Champion adena chance: `ChampionMonsters.ini`, off.
+        if let Some(c) = champion(victim, s)
+            && item_id == ADENA_ID
+        {
+            rate *= f64::from(c.adenas_rewards_chance);
+        }
         if item_id == ADENA_ID && rate > 100.0 {
             rate = 100.0;
         }
@@ -308,8 +374,9 @@ fn rate_chance(
     } else if victim.raid {
         rate *= f64::from(s.rate_raid_drop_chance_multiplier);
     } else {
-        // Champion rewards chance: off.
-        rate *= f64::from(s.rate_death_drop_chance_multiplier);
+        // `RATE * (champion ? CHAMPION_REWARDS_CHANCE : 1)` is a float product.
+        let champion_chance = champion(victim, s).map_or(1.0, |c| c.rewards_chance);
+        rate *= f64::from(s.rate_death_drop_chance_multiplier * champion_chance);
     }
     // Premium chance: herb and raid drops get nothing ("TODO: Premium herb chance? :)").
     if let Some(premium) = &killer.premium {
@@ -332,12 +399,18 @@ fn rate_amount(
     let mut rate = 1.0_f64;
     if let Some(by_id) = s.rate_drop_amount_by_id.get(&item_id) {
         rate *= f64::from(*by_id);
+        if let Some(c) = champion(victim, s)
+            && item_id == ADENA_ID
+        {
+            rate *= f64::from(c.adenas_rewards_amount);
+        }
     } else if ex_immediate {
         rate *= f64::from(s.rate_herb_drop_amount_multiplier);
     } else if victim.raid {
         rate *= f64::from(s.rate_raid_drop_amount_multiplier);
     } else {
-        rate *= f64::from(s.rate_death_drop_amount_multiplier);
+        let champion_amount = champion(victim, s).map_or(1.0, |c| c.rewards_amount);
+        rate *= f64::from(s.rate_death_drop_amount_multiplier * champion_amount);
     }
     // Premium amount.
     if let Some(premium) = &killer.premium {
@@ -562,7 +635,7 @@ fn calculate_group_drops(
         {
             calculated.push(cached);
         }
-        // Champion extra drop: `ChampionMonsters.ini` is off.
+        champion_extra_drop(s, victim, killer, rng, &mut calculated);
     }
     calculated
         .unwrap_or_default()
@@ -665,7 +738,7 @@ fn calculate_ungrouped_drops(
     {
         calculated.push(cached);
     }
-    // Champion extra drop: `ChampionMonsters.ini` is off.
+    champion_extra_drop(s, victim, killer, rng, &mut calculated);
     calculated
         .unwrap_or_default()
         .into_iter()
@@ -1039,10 +1112,12 @@ impl World {
         let victim = DropVictim {
             level: victim_level,
             raid,
-            champion: false,
+            champion: self.is_champion(dying),
             seeded: self.is_seeded(dying),
         };
-        let settings = self.settings.drops.clone();
+        let mut settings = self.settings.drops.clone();
+        // `ChampionMonstersConfig`: the champion's rates and extra items (`custom/champion.rs`).
+        settings.champion = Some(self.champion_drops());
         let drop_template_id =
             template_override.unwrap_or_else(|| self.chest_drop_template_id(dying, npc_id));
         let spoil_template_id = template_override.unwrap_or(npc_id);

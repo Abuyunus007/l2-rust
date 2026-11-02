@@ -261,6 +261,16 @@ impl World {
         })
     }
 
+    /// `ACCOUNT_WIDE_PREMIUM ? getAccountName() : getName()`, for the community board.
+    pub(crate) fn premium_key(&self, id: ObjectId) -> Option<String> {
+        self.premium_key_of(id)
+    }
+
+    /// `PremiumSystemConfig.PC_CAFE_RETAIL_LIKE`.
+    pub(crate) fn premium_pc_cafe_retail_like(&self) -> bool {
+        self.premium.settings.pc_cafe_retail_like
+    }
+
     /// Java `PremiumManager.getPremiumExpiration(accountName)`: 0 when the cache has no row.
     pub fn premium_expiration(&self, key: &str) -> i64 {
         self.premium.data.get(&key.to_lowercase()).copied().unwrap_or(0)

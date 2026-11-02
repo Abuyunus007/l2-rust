@@ -78,6 +78,31 @@ cargo build --release -p login-server -p game-server -p l2-supervisor -p l2-admi
 The programs are in `target/release/`: `login-server`, `game-server`, `l2-supervisor`,
 `l2-admin-gui`, `l2-proxy` (with `.exe` on Windows).
 
+### Quick way: the setup wizard
+
+Start `target/release/l2-admin-gui` and open **Setup** in the left menu. The wizard does steps 2
+to 5 below without editing a file by hand:
+
+1. **Run folder**: copies `dist/login` and `dist/game/config` to `run/` (a release package
+   already has them). Files that exist are listed and are only replaced if you tick the box.
+2. **Database**: host, port, user, password and name are written into both `Database.ini` files
+   (the URL keeps the Java default parameters). "Test connection" checks the server, "Install
+   database" runs the installer in the window and asks the same questions (reset, keep or
+   cancel; continue or abort on an SQL error). Nothing connects before you press one of them.
+3. **Servers**: `LoginserverPort`, `LoginPort`, `GameserverPort`, `RequestServerID`,
+   `DatapackRoot` and the geodata folder (a warning when it has no `.l2j` files). Tick the Java
+   box when a Java game server shares the database: the wizard adds it to `supervisor.ini` and
+   shows the `SideBySide.ini` switches with their help text.
+4. **Admin endpoints and supervisor**: "Apply settings" changes only the values of the keys
+   (comments, order and line endings stay), sets `Enabled = True` in both `Admin.ini` files and
+   writes `supervisor.ini`. There is no token to set up: on this PC the GUI needs none and the
+   supervisor hands the servers theirs.
+5. **Check and start**: shows what is ready (programs built, geodata, database reachable after
+   you pressed "Test connection") and starts the servers.
+
+Open **Setup** again whenever you want to change something: it shows the values in the files.
+The steps below are the same thing done by hand.
+
 ### 2. Database
 
 Install the schema with the database installer (no Java needed). It creates the database when it
@@ -192,8 +217,7 @@ starts `l2-supervisor` (from the GUI's folder) detached, with its output in
 servers cleanly, then the supervisor exits). Address and token fields there are optional
 overrides. The status bar says why the supervisor is not running (missing `supervisor.ini`, empty
 `Token`, port used by another program, `l2-supervisor` missing). Without a `supervisor.ini` the
-GUI points here: the setup wizard (a later card) will create it; until then copy the example as
-shown above. A second supervisor is never started: the supervisor writes `run/supervisor.pid`
+GUI points to the Setup wizard, which creates it (or copy the example as shown above). A second supervisor is never started: the supervisor writes `run/supervisor.pid`
 and the GUI checks it and the port first.
 
 Start the servers from the **Servers** view (**Start all** in `Servers` order, **Stop all** in
