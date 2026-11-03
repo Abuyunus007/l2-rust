@@ -6,8 +6,9 @@
 //!
 //! Structure: `classMaster` (attributes `classChangeEnabled`, `spawnClassMasters`,
 //! `showPopupWindow`) holds `classChangeOption name=".."` elements, each with `appliesTo/category`
-//! (a class group), optional `rewards/item id count` (given on a change; `setNoble` and `setHero`
-//! stay as they are) and optional `conditions/item id count` (the price).
+//! (a class group), optional `rewards/item id count` (given on a change) and the empty elements
+//! `rewards/setNoble` and `rewards/setHero` (shown as two switches), and optional
+//! `conditions/item id count` (the price).
 
 use std::collections::HashSet;
 
@@ -19,6 +20,8 @@ use super::widgets::{attr_cell, flag_cell, issue_list, problem_mark, text_cell};
 
 pub const FILE: &str = "ClassMaster.xml";
 
+const REWARD_FLAG_NAMES: [&str; 2] = [REWARD_FLAGS[0].0, REWARD_FLAGS[1].0];
+
 /// Java `CategoryType` names, for the category drop-down.
 fn category_names() -> impl Iterator<Item = &'static str> {
     l2_data::stats::CategoryType::ALL.iter().map(|c| c.name())
@@ -28,6 +31,10 @@ fn is_category(name: &str) -> bool {
     l2_data::stats::CategoryType::from_name(name).is_some()
 }
 
+/// The empty reward elements (`<setNoble />`, `<setHero />`) Java's `parseDocument` looks for next
+/// to the reward items: the player becomes noblesse / hero on the class change.
+pub const REWARD_FLAGS: [(&str, &str); 2] = [("setNoble", "noblesse"), ("setHero", "hero")];
+
 /// A wrapper element (`appliesTo`, `rewards`, `conditions`) with its list of children.
 #[derive(Clone, Debug)]
 pub struct Part {
@@ -36,6 +43,9 @@ pub struct Part {
     /// The wrapper in the file, if it has one.
     parent: Option<usize>,
     pub list: RowList,
+    /// Empty marker elements next to the items, one list per name of [`REWARD_FLAGS`] (a list
+    /// with a row = the element is there). Only `rewards` has them.
+    flags: Vec<RowList>,
 }
 
 impl Part {
@@ -45,30 +55,75 @@ impl Part {
         wrapper: &'static str,
         element: &'static str,
         with_text: bool,
+        flag_names: &[&str],
     ) -> Self {
         let parent = doc.first_child_named(option, wrapper);
         let list = match parent {
             Some(p) => RowList::load(doc, p, element, with_text),
             None => RowList::empty(element),
         };
+        let flags = flag_names
+            .iter()
+            .map(|name| match parent {
+                Some(p) => RowList::load(doc, p, name, false),
+                None => RowList::empty(name),
+            })
+            .collect();
         Self {
             wrapper,
             element,
             parent,
             list,
+            flags,
         }
+    }
+
+    /// A part with nothing in it, for a new option.
+    fn blank(wrapper: &'static str, element: &'static str, flag_names: &[&str]) -> Self {
+        Self {
+            wrapper,
+            element,
+            parent: None,
+            list: RowList::empty(element),
+            flags: flag_names.iter().map(|name| RowList::empty(name)).collect(),
+        }
+    }
+
+    /// Is the marker element `name` (`setNoble`, ...) there?
+    pub fn has_flag(&self, name: &str) -> bool {
+        self.flags.iter().any(|f| f.element == name && !f.rows.is_empty())
+    }
+
+    /// Adds or removes the marker element `name`.
+    pub fn set_flag(&mut self, name: &str, on: bool) {
+        if let Some(list) = self.flags.iter_mut().find(|f| f.element == name) {
+            if on && list.rows.is_empty() {
+                list.restore_or_add(Row::new(&[]));
+            } else if !on {
+                list.rows.clear();
+            }
+        }
+    }
+
+    fn is_empty(&self) -> bool {
+        self.list.rows.is_empty() && self.flags.iter().all(|f| f.rows.is_empty())
     }
 
     fn duplicate(&self) -> Self {
         Self {
             parent: None,
             list: RowList::from_rows(self.element, self.list.rows.iter().map(Row::duplicate).collect()),
+            flags: self
+                .flags
+                .iter()
+                .map(|f| RowList::from_rows(&f.element, f.rows.iter().map(Row::duplicate).collect()))
+                .collect(),
             ..self.clone()
         }
     }
 
     fn is_dirty(&self) -> bool {
-        self.list.is_dirty()
+        self.list.is_dirty() || self.flags.iter().any(RowList::is_dirty)
     }
 
     /// The wrapper with its rows, one string per line, relative indentation by `unit`.
@@ -80,14 +135,27 @@ impl Part {
                 .iter()
                 .map(|r| format!("{unit}{}", r.snippet(self.element))),
         );
+        for flag in &self.flags {
+            lines.extend(
+                flag.rows
+                    .iter()
+                    .map(|r| format!("{unit}{}", r.snippet(&flag.element))),
+            );
+        }
         lines.push(format!("</{}>", self.wrapper));
         lines
     }
 
     fn edits(&self, doc: &XmlDoc, option: usize, unit: &str) -> Vec<Edit> {
         match self.parent {
-            Some(p) => self.list.edits(doc, p),
-            None if !self.list.rows.is_empty() => {
+            Some(p) => {
+                let mut edits = self.list.edits(doc, p);
+                for flag in &self.flags {
+                    edits.extend(flag.edits(doc, p));
+                }
+                edits
+            }
+            None if !self.is_empty() => {
                 vec![doc.append_child(option, &self.lines(unit).join("\n"))]
             }
             None => Vec::new(),
@@ -114,9 +182,9 @@ impl OptionModel {
             orig: Some(index),
             head_snapshot: head.clone(),
             head,
-            categories: Part::load(doc, index, "appliesTo", "category", true),
-            rewards: Part::load(doc, index, "rewards", "item", false),
-            conditions: Part::load(doc, index, "conditions", "item", false),
+            categories: Part::load(doc, index, "appliesTo", "category", true, &[]),
+            rewards: Part::load(doc, index, "rewards", "item", false, &REWARD_FLAG_NAMES),
+            conditions: Part::load(doc, index, "conditions", "item", false, &[]),
         }
     }
 
@@ -129,23 +197,11 @@ impl OptionModel {
             head: Row::new(&[("name", name)]),
             head_snapshot: Row::default(),
             categories: Part {
-                wrapper: "appliesTo",
-                element: "category",
-                parent: None,
                 list: RowList::from_rows("category", vec![cat]),
+                ..Part::blank("appliesTo", "category", &[])
             },
-            rewards: Part {
-                wrapper: "rewards",
-                element: "item",
-                parent: None,
-                list: RowList::empty("item"),
-            },
-            conditions: Part {
-                wrapper: "conditions",
-                element: "item",
-                parent: None,
-                list: RowList::empty("item"),
-            },
+            rewards: Part::blank("rewards", "item", &REWARD_FLAG_NAMES),
+            conditions: Part::blank("conditions", "item", &[]),
         }
     }
 
@@ -189,7 +245,7 @@ impl OptionModel {
             escape_attr(self.name(), '"')
         )];
         for part in [&self.categories, &self.rewards, &self.conditions] {
-            if !part.list.rows.is_empty() {
+            if !part.is_empty() {
                 lines.extend(part.lines(unit).into_iter().map(|l| format!("{unit}{l}")));
             }
         }
@@ -398,6 +454,7 @@ impl XmlForm for ClassMasterForm {
                                 "Rewards (given on the change)",
                                 &mut option.rewards.list,
                             );
+                            draw_reward_flags(ui, &mut option.rewards);
                             problem_mark(ui, &issues, Some(i), "reward");
                             draw_items(
                                 ui,
@@ -451,6 +508,22 @@ fn draw_categories(ui: &mut egui::Ui, option: usize, list: &mut RowList) {
         row.text = Some("FIRST_CLASS_GROUP".to_owned());
         list.rows.push(row);
     }
+}
+
+/// The switches for `<setNoble />` and `<setHero />` of the rewards.
+fn draw_reward_flags(ui: &mut egui::Ui, rewards: &mut Part) {
+    ui.horizontal(|ui| {
+        for (name, label) in REWARD_FLAGS {
+            let mut on = rewards.has_flag(name);
+            if ui
+                .checkbox(&mut on, format!("Makes the player {label}"))
+                .on_hover_text(format!("<{name} /> in the rewards"))
+                .changed()
+            {
+                rewards.set_flag(name, on);
+            }
+        }
+    });
 }
 
 fn draw_items(ui: &mut egui::Ui, id: (&str, usize), title: &str, list: &mut RowList) {
@@ -538,6 +611,76 @@ mod tests {
         let config = l2_data::ClassMasterConfig::from_xml(&enabled).unwrap();
         assert_eq!(config.class_change_data[0].items_rewarded.len(), 1);
         assert_eq!(config.class_change_data[0].items_rewarded[0].id, 6622);
+    }
+
+    #[test]
+    fn the_noblesse_and_hero_switches_create_the_rewards_wrapper() {
+        let mut f = ClassMasterForm::load(XML).unwrap();
+        assert!(!f.options[0].rewards.has_flag("setNoble") && !f.options[0].rewards.has_flag("setHero"));
+        f.options[0].rewards.set_flag("setNoble", true);
+        f.options[0].rewards.set_flag("setHero", true);
+        assert!(f.is_dirty());
+        let out = save(&f);
+        assert!(out.contains("\t\t\t</appliesTo>\r\n\t\t\t<rewards>\r\n\t\t\t\t<setNoble />\r\n\t\t\t\t<setHero />\r\n\t\t\t</rewards>\r\n\t\t</classChangeOption>"), "{out}");
+        assert!(!out.replace("\r\n", "").contains('\n'));
+        // The Rust loader reads both.
+        let enabled = out.replace("classChangeEnabled=\"false\"", "classChangeEnabled=\"true\"");
+        let config = l2_data::ClassMasterConfig::from_xml(&enabled).unwrap();
+        assert!(config.class_change_data[0].reward_noblesse && config.class_change_data[0].reward_hero);
+        assert!(!config.class_change_data[1].reward_noblesse);
+    }
+
+    const WITH_REWARDS: &str = "<list>\n\t<classMaster classChangeEnabled=\"true\">\n\t\t<classChangeOption name=\"A\">\n\t\t\t<appliesTo>\n\t\t\t\t<category>FIRST_CLASS_GROUP</category>\n\t\t\t</appliesTo>\n\t\t\t<rewards>\n\t\t\t\t<item id=\"6622\" count=\"1\" />\n\t\t\t\t<setNoble />\n\t\t\t</rewards>\n\t\t</classChangeOption>\n\t</classMaster>\n</list>\n";
+
+    fn save_rewards(f: &ClassMasterForm) -> String {
+        apply_edits(WITH_REWARDS, f.edits(&XmlDoc::parse(WITH_REWARDS).unwrap())).unwrap()
+    }
+
+    #[test]
+    fn the_switches_show_what_the_file_has_and_change_only_their_line() {
+        let mut f = ClassMasterForm::load(WITH_REWARDS).unwrap();
+        assert!(f.options[0].rewards.has_flag("setNoble") && !f.options[0].rewards.has_flag("setHero"));
+        assert!(!f.is_dirty());
+        assert_eq!(save_rewards(&f), WITH_REWARDS);
+
+        // Off: its line goes, the item stays.
+        f.options[0].rewards.set_flag("setNoble", false);
+        assert_eq!(
+            save_rewards(&f),
+            WITH_REWARDS.replace("\t\t\t\t<setNoble />\n", "")
+        );
+        // Switching an element on that is on already adds no second one.
+        f.options[0].rewards.set_flag("setNoble", true);
+        f.options[0].rewards.set_flag("setNoble", true);
+        assert_eq!(save_rewards(&f), WITH_REWARDS);
+
+        // The hero switch adds one element to the existing wrapper.
+        f.options[0].rewards.set_flag("setHero", true);
+        let out = save_rewards(&f);
+        assert_eq!(out.matches("<setHero />").count(), 1);
+        assert_eq!(out.matches("<setNoble />").count(), 1);
+        assert_eq!(out.matches("<item ").count(), 1);
+        let config = l2_data::ClassMasterConfig::from_xml(&out).unwrap();
+        assert!(config.class_change_data[0].reward_noblesse && config.class_change_data[0].reward_hero);
+        assert_eq!(config.class_change_data[0].items_rewarded.len(), 1);
+    }
+
+    #[test]
+    fn a_copy_and_a_new_option_carry_the_switches() {
+        let mut f = ClassMasterForm::load(WITH_REWARDS).unwrap();
+        let copy = f.options[0].duplicate();
+        assert!(copy.rewards.has_flag("setNoble"));
+        f.options.push(copy);
+        let mut fresh = OptionModel::new("Fresh", "SECOND_CLASS_GROUP");
+        fresh.rewards.set_flag("setHero", true);
+        f.options.push(fresh);
+        let config = l2_data::ClassMasterConfig::from_xml(&save_rewards(&f)).unwrap();
+        let flags: Vec<(bool, bool)> = config
+            .class_change_data
+            .iter()
+            .map(|d| (d.reward_noblesse, d.reward_hero))
+            .collect();
+        assert_eq!(flags, [(true, false), (true, false), (false, true)]);
     }
 
     #[test]

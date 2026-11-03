@@ -248,16 +248,14 @@ fn the_secondary_auth_and_bot_report_loaders_read_the_written_files() {
     form.enabled.value = "true".into();
     form.max_attempts.value = "3".into();
     form.ban_time.value = "10".into();
-    // NOTE: no `&` in the link: the game server's SecondaryAuthData::parse reads text only from
-    // `Event::Text` and drops an `&amp;` entity (quick-xml 0.42 reports it as `GeneralRef`). The
-    // form writes valid XML; fixing the reader is a follow-up (see the card report).
-    form.recovery_link.value = "https://example.test/recover?a=1".into();
+    // The `&` is written as `&amp;`; the game server's reader resolves it (G-09).
+    form.recovery_link.value = "https://example.test/recover?a=1&b=2".into();
     form.add_password("135790");
     let text = render(auth.form.as_form(), &auth.original).unwrap();
     let data = game_server::client::secondary::SecondaryAuthData::parse(&text);
     assert!(data.enabled);
     assert_eq!((data.max_attempts, data.ban_time), (3, 10));
-    assert_eq!(data.recovery_link, "https://example.test/recover?a=1");
+    assert_eq!(data.recovery_link, "https://example.test/recover?a=1&b=2");
     assert!(data.is_forbidden("135790") && data.is_forbidden("000000"));
     assert_eq!(
         data.forbidden.len(),
