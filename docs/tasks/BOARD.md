@@ -489,7 +489,7 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [G-03](G/G-03.md) | Game admin: players, punishments, announcements, console, shutdown | sonnet | full | — | merged |
 | [G-04](G/G-04.md) | Accounts: search, create, password, access level, ban | sonnet | full | — | merged |
 | [G-06](G/G-06.md) | GUI shows why a server stopped | sonnet | spot | — | merged |
-| [G-07](G/G-07.md) | Config editor 2: topics, sliders, switches | sonnet | full | G-05 | running |
+| [G-07](G/G-07.md) | Config editor 2: topics, sliders, switches | sonnet | full | G-05 | merged |
 | [G-08](G/G-08.md) | XML configs as forms | sonnet | full | G-05 | running |
 | [G-05](G/G-05.md) | Config editor | sonnet | spot | — | merged |
 
