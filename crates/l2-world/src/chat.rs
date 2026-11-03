@@ -283,7 +283,8 @@ impl World {
 
     /// Java `Player.sendMessage(String)`.
     pub fn send_message(&self, to: ObjectId, text: &str) {
-        self.send(to, &SystemMessage::text(text));
+        // `SendMessageLocalisationData.getLocalisation(this, message)` (M9-L02).
+        self.send(to, &SystemMessage::text(&self.send_message_text(to, text)));
     }
 
     fn say_packet(&self, from: ObjectId, chat_type: ChatType, sender_name: &str, text: &str) -> CreatureSay {

@@ -348,7 +348,8 @@ impl World {
                     chat_type: ChatType::General,
                     sender: SenderField::Name("SYS".to_owned()),
                     message_id: -1,
-                    body: SayBody::Text(text.to_owned()),
+                    // `SendMessageLocalisationData.getLocalisation(this, message)` (M9-L02).
+                    body: SayBody::Text(self.send_message_text(to, text)),
                 },
             );
         } else {

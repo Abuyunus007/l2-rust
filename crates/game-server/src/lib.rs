@@ -978,6 +978,14 @@ impl Server {
         let custom_board_settings = world_data::custom_board_settings(&config, &paths.config_dir);
         let scheme_buffer_settings = world_data::scheme_buffer_settings(&config);
         let sell_buffs_settings = world_data::sell_buffs_settings(&config);
+        // Java: GameServer `if (MULTILANG_ENABLE)`: SystemMessageId/NpcStringId.loadLocalisations,
+        // SendMessageLocalisationData, NpcNameLocalisationData (M9-L02). Nothing is read with the
+        // switch off.
+        let lang_data = if config.multilingual_support.multilang_enable {
+            l2_data::load_lang_data(&datapack.root, &config.custom_misc().multilang_allowed)
+        } else {
+            l2_data::LangData::default()
+        };
         let user_command_info_settings = l2_world::UserCommandInfoSettings {
             display_server_time: config.server_time.display_server_time,
         };
@@ -1342,6 +1350,7 @@ impl Server {
                     world.set_scheme_buffer(scheme_buffer_settings, scheme_buffer_skills);
                     world.load_buffer_schemes(buffer_schemes);
                     world.set_sell_buffs(sell_buffs_settings, sell_buff_data);
+                    world.set_lang_texts(&lang_data);
                     world.set_user_command_info_settings(user_command_info_settings);
                     world.set_script_handler_settings(script_handler_settings);
                     world.set_mail_settings(mail_settings);

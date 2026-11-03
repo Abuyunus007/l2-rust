@@ -11,7 +11,7 @@ mod admin_common;
 use std::net::IpAddr;
 use std::sync::{Arc, Mutex};
 
-use admin_common::{html_to, name_of, says_to, texts_to};
+use admin_common::{html_to, name_of, says_to, system_to, texts_to};
 use l2_data::{ArmorSets, EnchantHpBonus, Hennas, HtmCache, ItemTemplates, PlayerTemplates, SkillTemplates};
 use l2_protocol_game::server::ChatType;
 use l2_world::custom::dualbox::{GAME_ID, OLYMPIAD_ID, java_string_hash};
@@ -133,6 +133,8 @@ struct Scene {
     log: Log,
     outs: Outs,
     root: tempfile::TempDir,
+    /// `characters.language` of the next character that enters (M9-L02).
+    language: Option<String>,
 }
 
 const PAGES: &[(&str, &str)] = &[
@@ -197,6 +199,7 @@ impl Scene {
             log: Log::default(),
             outs,
             root,
+            language: None,
         }
     }
 
@@ -251,7 +254,10 @@ impl Scene {
             items,
             skills: vec![],
             shortcuts: vec![],
-            profile: Default::default(),
+            profile: PlayerProfile {
+                language: self.language.take(),
+                ..Default::default()
+            },
         };
         self.world.handle(WorldCommand::EnterWorld {
             session: SessionId(id as u64),
@@ -725,6 +731,184 @@ fn lang_command_needs_the_voice_switch() {
     s.sent();
     s.say(ALICE, ".lang");
     assert_eq!(says_to(&s.sent(), ALICE).len(), 1);
+}
+
+/// `data/lang/el/*.xml`: one system message with and without a parameter, one NPC string and one
+/// `sendMessage` text.
+fn greek() -> l2_data::LangData {
+    let tables = l2_data::lang::lang_tables_from_xml(
+        "",
+        r#"<list><localisation id="101" translation="Letters $s1"/></list>"#,
+        r#"<list><localisation id="34" translation="Welcome, traveller."/>
+                 <localisation id="35" translation="You hit for $s1 (again $s1)."/></list>"#,
+        r#"<list><localisation message="Hello there." translation="Greek hello."/></list>"#,
+    )
+    .unwrap();
+    l2_data::LangData {
+        languages: vec![("el".to_owned(), tables)],
+    }
+}
+
+fn lang_scene(enable: bool, language: Option<&str>) -> Scene {
+    let mut s = Scene::new(|c| {
+        c.multilang.enable = enable;
+        c.multilang.default_lang = "en".into();
+        c.multilang.allowed = vec!["en".into(), "el".into()];
+    });
+    s.world.set_lang_texts(&greek());
+    s.language = language.map(str::to_owned);
+    s.enter(ALICE, "Alice", 0, None);
+    s.sent();
+    s
+}
+
+/// Sends the packets that carry texts and returns what the player received.
+fn send_lang_packets(s: &mut Scene) -> Sent {
+    use l2_protocol_game::server::{ExShowScreenMessage, NpcSay, SystemMessage, SystemMessageParam};
+    use l2_protocol_game::{NpcStringId, SystemMessageId};
+    let to = ObjectId(ALICE);
+    s.world.send(
+        to,
+        &SystemMessage::new(SystemMessageId::WelcomeToTheWorldOfLineageIi),
+    );
+    s.world.send(
+        to,
+        &SystemMessage::new(SystemMessageId::YouHitForS1Damage).with(SystemMessageParam::IntNumber(77)),
+    );
+    s.world.send(
+        to,
+        &NpcSay {
+            object_id: 5,
+            text_type: 0,
+            npc_id: 30080,
+            npc_string: NpcStringId::LettersOfLove.id(),
+            text: String::new(),
+            parameters: vec!["a".to_owned(), "b".to_owned()],
+        },
+    );
+    s.world.send(
+        to,
+        &ExShowScreenMessage::npc_string(NpcStringId::LettersOfLove, 2, 3000, &["x"]),
+    );
+    s.world.send_message(to, "Hello there.");
+    s.sent()
+}
+
+#[test]
+fn texts_are_localised_for_a_player_who_chose_a_language() {
+    use l2_net::{Decode, PacketReader};
+    use l2_protocol_game::server::{ExShowScreenMessage, NpcSay};
+
+    let mut s = lang_scene(true, Some("el"));
+    assert_eq!(s.world.player_lang(ObjectId(ALICE)), Some("el"));
+    let sent = send_lang_packets(&mut s);
+    // The system messages arrive as `S1_2` with the translation.
+    assert_eq!(
+        texts(&sent, ALICE),
+        vec![
+            "Welcome, traveller.".to_owned(),
+            // `$s1` twice, both the first (and only) parameter, an int written as Java prints it.
+            "You hit for 77 (again 77).".to_owned(),
+            "Greek hello.".to_owned(),
+        ]
+    );
+    let say = sent
+        .iter()
+        .find(|(_, b)| name_of(b) == "NPC_SAY")
+        .map(|(_, b)| NpcSay::decode(&mut PacketReader::new(&b[1..])).unwrap())
+        .unwrap();
+    // Java writes -1 and the text; the list of parameters is one parameter.
+    assert_eq!((say.npc_string, say.text.as_str()), (-1, "Letters [a, b]"));
+    let screen = sent
+        .iter()
+        .find(|(_, b)| name_of(b) == "EX_SHOW_SCREEN_MESSAGE")
+        .map(|(_, b)| ExShowScreenMessage::decode(&mut PacketReader::new(&b[3..])).unwrap())
+        .unwrap();
+    assert_eq!(
+        (
+            screen.sys_message_id,
+            screen.npc_string_id,
+            screen.text.as_str(),
+            screen.time
+        ),
+        (-1, -1, "Letters [x]", 3000)
+    );
+}
+
+#[test]
+fn texts_stay_as_they_are_for_english_no_language_and_the_switch_off() {
+    // The switch off: nothing changes, even for a player whose column says `el`.
+    let mut s = lang_scene(false, Some("el"));
+    assert_eq!(s.world.player_lang(ObjectId(ALICE)), None);
+    let off = send_lang_packets(&mut s);
+    assert_eq!(texts(&off, ALICE), vec!["Hello there.".to_owned()]);
+    assert_eq!(system_to(&off, ALICE).len(), 2);
+
+    // The default language (a NULL column) and English are not translated.
+    for language in [None, Some("en")] {
+        let mut s = lang_scene(true, language);
+        let plain = send_lang_packets(&mut s);
+        assert_eq!(plain, off, "{language:?}");
+    }
+}
+
+#[test]
+fn the_language_survives_a_relog() {
+    let mut s = lang_scene(true, None);
+    s.say(ALICE, ".lang el");
+    assert_eq!(s.world.player_lang(ObjectId(ALICE)), Some("el"));
+    s.persists();
+    s.world.handle(WorldCommand::Input {
+        session: SessionId(ALICE as u64),
+        input: ClientInput::Logout,
+    });
+    // The store carries the language, which the session writes to `characters.language`.
+    let stored = s
+        .persists()
+        .into_iter()
+        .find_map(|c| match c {
+            PersistCommand::StorePlayer(data) => Some(data),
+            _ => None,
+        })
+        .unwrap();
+    assert_eq!(stored.profile.language.as_deref(), Some("el"));
+
+    // The next login reads the column back.
+    s.language = stored.profile.language.clone();
+    s.enter(ALICE, "Alice", 0, None);
+    assert_eq!(s.world.player_lang(ObjectId(ALICE)), Some("el"));
+    s.sent();
+    s.world.send_message(ObjectId(ALICE), "Hello there.");
+    assert_eq!(texts(&s.sent(), ALICE), vec!["Greek hello.".to_owned()]);
+
+    // A column the server no longer allows becomes the default language (Java `setLang`).
+    s.world.handle(WorldCommand::Input {
+        session: SessionId(ALICE as u64),
+        input: ClientInput::Logout,
+    });
+    s.persists();
+    s.language = Some("xx".to_owned());
+    s.enter(ALICE, "Alice", 0, None);
+    assert_eq!(s.world.player_lang(ObjectId(ALICE)), Some("en"));
+}
+
+#[test]
+fn the_store_writes_null_with_the_switch_off() {
+    // Java `ps.setString(49, _lang)` with `_lang` null.
+    let mut s = lang_scene(false, Some("el"));
+    s.world.handle(WorldCommand::Input {
+        session: SessionId(ALICE as u64),
+        input: ClientInput::Logout,
+    });
+    let stored = s
+        .persists()
+        .into_iter()
+        .find_map(|c| match c {
+            PersistCommand::StorePlayer(data) => Some(data),
+            _ => None,
+        })
+        .unwrap();
+    assert_eq!(stored.profile.language, None);
 }
 
 // --------------------------------------------------------------------------- CustomMailManager

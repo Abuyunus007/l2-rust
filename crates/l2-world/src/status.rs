@@ -557,7 +557,8 @@ impl World {
                     self.creature_name(id),
                 ))
                 .with(l2_protocol_game::server::SystemMessageParam::Text(
-                    self.creature_name(attacker),
+                    // An NPC attacker shows its translated name (M9-L02).
+                    self.creature_name_for(id, attacker),
                 ))
                 .with(l2_protocol_game::server::SystemMessageParam::IntNumber(
                     full_value,
