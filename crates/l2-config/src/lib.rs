@@ -17,8 +17,10 @@ mod interface;
 pub mod list_kinds;
 mod login;
 mod network;
+pub mod ranges;
 mod reader;
 mod threads;
+pub mod topics;
 
 pub use database::{DatabaseConfig, JdbcUrl};
 pub use error::ConfigError;
