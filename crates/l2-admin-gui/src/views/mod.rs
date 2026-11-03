@@ -26,6 +26,7 @@ pub mod setup;
 pub mod setup_core;
 pub mod switch;
 pub mod switch_core;
+pub mod xml_config;
 
 use crate::app::AppCtx;
 use crate::bridge::BridgeEvent;
@@ -54,10 +55,11 @@ pub enum ViewId {
     Data,
     Geodata,
     Config,
+    XmlConfig,
 }
 
 impl ViewId {
-    pub const ALL: [ViewId; 12] = [
+    pub const ALL: [ViewId; 13] = [
         ViewId::Connection,
         ViewId::Setup,
         ViewId::Servers,
@@ -70,6 +72,7 @@ impl ViewId {
         ViewId::Data,
         ViewId::Geodata,
         ViewId::Config,
+        ViewId::XmlConfig,
     ];
 
     pub fn label(self) -> &'static str {
@@ -86,6 +89,7 @@ impl ViewId {
             ViewId::Data => "Data",
             ViewId::Geodata => "Geodata",
             ViewId::Config => "Config",
+            ViewId::XmlConfig => "XML configs",
         }
     }
 
@@ -105,6 +109,7 @@ impl ViewId {
                 | ViewId::Data
                 | ViewId::Geodata
                 | ViewId::Config
+                | ViewId::XmlConfig
         )
     }
 
@@ -123,7 +128,8 @@ impl ViewId {
             | ViewId::Packets
             | ViewId::Data
             | ViewId::Geodata
-            | ViewId::Config => "",
+            | ViewId::Config
+            | ViewId::XmlConfig => "",
         }
     }
 }
@@ -143,6 +149,7 @@ pub struct Views {
     pub data: data_browser::DataBrowserView,
     pub geodata: geodata::GeodataView,
     pub config: config_editor::ConfigEditorView,
+    pub xml_config: xml_config::XmlConfigView,
 }
 
 impl Views {
@@ -161,6 +168,7 @@ impl Views {
             ViewId::Data => Some(&mut self.data),
             ViewId::Geodata => Some(&mut self.geodata),
             ViewId::Config => Some(&mut self.config),
+            ViewId::XmlConfig => Some(&mut self.xml_config),
         }
     }
 

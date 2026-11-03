@@ -21,6 +21,7 @@ pub mod ranges;
 mod reader;
 mod threads;
 pub mod topics;
+pub mod xml_edit;
 
 pub use database::{DatabaseConfig, JdbcUrl};
 pub use error::ConfigError;

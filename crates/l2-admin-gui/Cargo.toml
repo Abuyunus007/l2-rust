@@ -27,6 +27,7 @@ tracing-subscriber.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
+game-server = { path = "../game-server" } # the XML form tests check that the game server's loaders still read what the forms write (G-08)
 
 [lints]
 workspace = true

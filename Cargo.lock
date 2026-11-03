@@ -2397,6 +2397,7 @@ dependencies = [
  "anyhow",
  "eframe",
  "egui",
+ "game-server",
  "l2-admin-api",
  "l2-config",
  "l2-data",
@@ -2417,6 +2418,7 @@ dependencies = [
 name = "l2-config"
 version = "0.1.0"
 dependencies = [
+ "quick-xml 0.42.0",
  "regex",
  "tempfile",
  "thiserror 2.0.21",

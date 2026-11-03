@@ -8,6 +8,7 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+quick-xml.workspace = true # in-place editor of the XML configs (xml_edit, G-08)
 regex.workspace = true
 thiserror.workspace = true
 tracing.workspace = true
