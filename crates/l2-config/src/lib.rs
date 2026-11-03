@@ -18,6 +18,7 @@ mod login;
 mod network;
 mod reader;
 mod threads;
+pub mod xml_edit;
 
 pub use database::{DatabaseConfig, JdbcUrl};
 pub use error::ConfigError;
