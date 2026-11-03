@@ -16,8 +16,10 @@ pub mod ini_edit;
 mod interface;
 mod login;
 mod network;
+pub mod ranges;
 mod reader;
 mod threads;
+pub mod topics;
 
 pub use database::{DatabaseConfig, JdbcUrl};
 pub use error::ConfigError;

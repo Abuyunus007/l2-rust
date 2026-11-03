@@ -1,11 +1,19 @@
 //! Config editor: the `.ini` files of the run folder (`run/login/config`, `run/game/config`),
-//! one editor per key, with the comment lines as help, the Java default and a reset button
-//! (card G-05).
+//! one control per key, with the comment lines as help, the Java default and a reset button
+//! (cards G-05, G-07).
 //!
 //! Java: none (tooling). Keys, comments, defaults and the in-place writer are `l2_config`
 //! (`ini_edit`, `defaults`); only the changed lines are rewritten, so comments, order and line
 //! endings stay. [`FileState`] holds the rules and has no egui in it, so it is tested directly.
 //! The view only draws it.
+//!
+//! - `mod.rs`: the file state and the window (search, save, the "Changed settings" list, the
+//!   by-file layout of G-05).
+//! - `topic_view.rs`: the by-topic layout (G-07), built on `l2_config::topics`.
+//! - `controls.rs`: which control a key gets (switch, slider, drop-down, ...) and how it is drawn.
+
+mod controls;
+mod topic_view;
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -14,7 +22,10 @@ use l2_config::defaults::{Side, default_for, java_defaults};
 use l2_config::ini_edit::{
     GEO_OVERRIDE_TEMPLATE, IniDoc, IniEntry, apply_changes, is_secret, mask_value, write_atomic,
 };
+use l2_config::ranges::is_list_key;
 
+use self::controls::draw_entry;
+use self::topic_view::{Bucket, TopicIndex};
 use crate::app::AppCtx;
 use crate::views::View;
 
@@ -104,6 +115,41 @@ pub fn values_equal(a: &str, b: &str) -> bool {
     matches!((parse_float(a), parse_float(b)), (Some(x), Some(y)) if x == y)
 }
 
+/// One edited key, for the "Changed settings" list.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ChangeLine {
+    pub side: Side,
+    pub rel: String,
+    pub key: String,
+    pub old: String,
+    pub new: String,
+    pub secret: bool,
+}
+
+impl ChangeLine {
+    fn shown(&self, value: &str) -> String {
+        let text = if self.secret {
+            mask_value(value)
+        } else {
+            value.to_owned()
+        };
+        if text.is_empty() {
+            "(empty)".to_owned()
+        } else {
+            text
+        }
+    }
+
+    /// The old value as the list shows it: a secret is masked, an empty value says so.
+    pub fn old_shown(&self) -> String {
+        self.shown(&self.old)
+    }
+
+    pub fn new_shown(&self) -> String {
+        self.shown(&self.new)
+    }
+}
+
 /// One `.ini` file, loaded for editing.
 pub struct FileState {
     pub side: Side,
@@ -171,7 +217,29 @@ impl FileState {
     }
 
     pub fn kind_of(&self, entry: &IniEntry) -> ValueKind {
+        // `ServerRestartDays = 4` is a list that happens to hold one number; it must accept `4,5`.
+        if is_list_key(&entry.key) {
+            return ValueKind::Text;
+        }
         detect_kind(&entry.value, self.default_of(entry).as_deref())
+    }
+
+    /// Old and new value of every edited key, for the "Changed settings" list.
+    pub fn change_list(&self) -> Vec<ChangeLine> {
+        self.entries
+            .iter()
+            .filter(|e| self.is_dirty(e))
+            .filter_map(|e| {
+                Some(ChangeLine {
+                    side: self.side,
+                    rel: self.rel.clone(),
+                    key: e.key.clone(),
+                    old: e.value.clone(),
+                    new: self.buffers.get(&e.key)?.clone(),
+                    secret: self.is_secret(&e.key),
+                })
+            })
+            .collect()
     }
 
     /// Integers may use the whole `i64` when the file already holds such a value.
@@ -319,32 +387,56 @@ pub fn restart_notes(saved: &[(Side, String)]) -> Vec<String> {
     notes
 }
 
+/// How the settings are organised on screen.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Mode {
+    /// Left: topics (a topic groups settings of several files). The default.
+    Topics,
+    /// Left: the files, as in G-05.
+    Files,
+}
+
 pub struct ConfigEditorView {
     run_dir: String,
     files: Vec<FileState>,
+    index: TopicIndex,
+    mode: Mode,
+    /// The file shown in [`Mode::Files`].
     selected: usize,
+    /// The topic shown in [`Mode::Topics`]; `None` = the first one.
+    topic: Option<Bucket>,
     search: String,
     loaded: bool,
     errors: Vec<String>,
     /// Result of the last save: restart notes, or the error.
     notes: Vec<String>,
+    /// The "Changed settings" window is open (opened by the save button).
+    review: bool,
 }
 
 impl Default for ConfigEditorView {
     fn default() -> Self {
-        Self {
-            run_dir: DEFAULT_RUN_DIR.to_owned(),
-            files: Vec::new(),
-            selected: 0,
-            search: String::new(),
-            loaded: false,
-            errors: Vec::new(),
-            notes: Vec::new(),
-        }
+        Self::with_run_dir(DEFAULT_RUN_DIR)
     }
 }
 
 impl ConfigEditorView {
+    pub fn with_run_dir(run_dir: &str) -> Self {
+        Self {
+            run_dir: run_dir.to_owned(),
+            files: Vec::new(),
+            index: TopicIndex::default(),
+            mode: Mode::Topics,
+            selected: 0,
+            topic: None,
+            search: String::new(),
+            loaded: false,
+            errors: Vec::new(),
+            notes: Vec::new(),
+            review: false,
+        }
+    }
+
     fn reload(&mut self) {
         let keep = self.files.get(self.selected).map(|f| (f.side, f.rel.clone()));
         self.files.clear();
@@ -358,11 +450,19 @@ impl ConfigEditorView {
         self.selected = keep
             .and_then(|(s, r)| self.files.iter().position(|f| f.side == s && f.rel == r))
             .unwrap_or(0);
+        self.index = TopicIndex::build(&self.files);
+        if self.topic.as_ref().is_some_and(|t| !self.index.has(t)) {
+            self.topic = None;
+        }
         self.loaded = true;
     }
 
     fn dirty_files(&self) -> usize {
         self.files.iter().filter(|f| !f.changes().is_empty()).count()
+    }
+
+    fn all_changes(&self) -> Vec<ChangeLine> {
+        self.files.iter().flat_map(FileState::change_list).collect()
     }
 
     fn save_all(&mut self) {
@@ -387,12 +487,84 @@ impl ConfigEditorView {
         self.reload();
         self.notes = notes;
     }
+
+    /// The "Changed settings" window: old and new value of every edited key, before anything is
+    /// written. Nothing is saved until the button in here is pressed.
+    fn review_window(&mut self, ctx: &egui::Context) {
+        if !self.review {
+            return;
+        }
+        let lines = self.all_changes();
+        let problems: Vec<String> = self.files.iter().flat_map(FileState::problems).collect();
+        let mut open = true;
+        let (mut save, mut cancel) = (false, false);
+        egui::Window::new("Changed settings")
+            .id(egui::Id::unique("cfg_review"))
+            .collapsible(false)
+            .default_width(620.0)
+            .open(&mut open)
+            .show(ctx, |ui| {
+                if lines.is_empty() {
+                    ui.label("Nothing is changed.");
+                } else {
+                    egui::ScrollArea::vertical()
+                        .id_salt("cfg_review_scroll")
+                        .max_height(380.0)
+                        .show(ui, |ui| {
+                            egui::Grid::new("cfg_review_grid").striped(true).show(ui, |ui| {
+                                ui.strong("File");
+                                ui.strong("Setting");
+                                ui.strong("Before");
+                                ui.strong("After");
+                                ui.end_row();
+                                for line in &lines {
+                                    ui.weak(format!("{} / {}", server_word(line.side), line.rel));
+                                    ui.label(&line.key);
+                                    ui.label(line.old_shown());
+                                    ui.label(line.new_shown());
+                                    ui.end_row();
+                                }
+                            });
+                        });
+                }
+                for problem in &problems {
+                    ui.colored_label(ui.visuals().error_fg_color, problem.as_str());
+                }
+                ui.separator();
+                ui.horizontal(|ui| {
+                    let label = format!("Save {} change(s)", lines.len());
+                    if ui
+                        .add_enabled(!lines.is_empty() && problems.is_empty(), egui::Button::new(label))
+                        .clicked()
+                    {
+                        save = true;
+                    }
+                    if ui.button("Cancel").clicked() {
+                        cancel = true;
+                    }
+                });
+            });
+        if save {
+            self.save_all();
+        }
+        if save || cancel || !open {
+            self.review = false;
+        }
+    }
 }
 
-fn server_name(side: Side) -> &'static str {
+pub(super) fn server_name(side: Side) -> &'static str {
     match side {
         Side::Login => "Login server",
         Side::Game => "Game server",
+    }
+}
+
+/// `login` / `game`, for the small print next to a setting.
+pub(super) fn server_word(side: Side) -> &'static str {
+    match side {
+        Side::Login => "login",
+        Side::Game => "game",
     }
 }
 
@@ -401,8 +573,12 @@ impl View for ConfigEditorView {
         if !self.loaded {
             self.reload();
         }
+        // Ctrl+F (Cmd+F on a Mac) jumps to the search box.
+        let ctrl_f = ui
+            .ctx()
+            .input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::F));
         ui.heading("Config editor");
-        ui.horizontal(|ui| {
+        ui.horizontal_wrapped(|ui| {
             ui.label("Run folder:");
             ui.add(egui::TextEdit::singleline(&mut self.run_dir).desired_width(260.0));
             if ui
@@ -413,20 +589,34 @@ impl View for ConfigEditorView {
                 self.reload();
                 self.notes.clear();
             }
-            ui.label("Search:");
-            ui.add(
-                egui::TextEdit::singleline(&mut self.search)
-                    .hint_text("key or comment, in all files")
-                    .desired_width(240.0),
-            );
+            ui.separator();
+            ui.label("Show:");
+            ui.selectable_value(&mut self.mode, Mode::Topics, "By topic");
+            ui.selectable_value(&mut self.mode, Mode::Files, "By file");
         });
         let dirty = self.dirty_files();
-        ui.horizontal(|ui| {
+        ui.horizontal_wrapped(|ui| {
+            ui.label("Search:");
+            let search = ui.add(
+                egui::TextEdit::singleline(&mut self.search)
+                    .hint_text("key, comment, file or topic (Ctrl+F)")
+                    .desired_width(300.0),
+            );
+            if ctrl_f {
+                search.request_focus();
+            }
+            if !self.search.is_empty() && ui.small_button("Clear").clicked() {
+                self.search.clear();
+            }
+            ui.separator();
             if ui
-                .add_enabled(dirty > 0, egui::Button::new(format!("Save ({dirty} files)")))
+                .add_enabled(
+                    dirty > 0,
+                    egui::Button::new(format!("Review and save ({dirty} files)")),
+                )
                 .clicked()
             {
-                self.save_all();
+                self.review = true;
             }
             if ui
                 .add_enabled(dirty > 0, egui::Button::new("Discard edits"))
@@ -441,6 +631,8 @@ impl View for ConfigEditorView {
         for error in &self.errors {
             ui.colored_label(ui.visuals().error_fg_color, error.as_str());
         }
+        let ctx = ui.ctx().clone();
+        self.review_window(&ctx);
         ui.separator();
         if self.files.is_empty() {
             ui.label("No config files found. Set the run folder (it holds login/config and game/config).");
@@ -448,13 +640,24 @@ impl View for ConfigEditorView {
         }
 
         let query = self.search.trim().to_lowercase();
+        match self.mode {
+            Mode::Topics => self.topics_body(ui, &query),
+            Mode::Files => self.files_body(ui, &query),
+        }
+    }
+}
+
+impl ConfigEditorView {
+    /// The G-05 layout: files on the left, the keys of the selected file (or of all files that
+    /// match the search) on the right.
+    fn files_body(&mut self, ui: &mut egui::Ui, query: &str) {
         let height = ui.available_height();
         ui.horizontal_top(|ui| {
             ui.allocate_ui(egui::vec2(230.0, height), |ui| {
                 egui::ScrollArea::vertical()
                     .id_salt("cfg_files")
                     .auto_shrink([false, false])
-                    .show(ui, |ui| self.file_list(ui, &query));
+                    .show(ui, |ui| self.file_list(ui, query));
             });
             ui.separator();
             egui::ScrollArea::vertical()
@@ -463,19 +666,17 @@ impl View for ConfigEditorView {
                 .show(ui, |ui| {
                     if query.is_empty() {
                         if let Some(file) = self.files.get_mut(self.selected) {
-                            draw_file(ui, file, &query, false);
+                            draw_file(ui, file, query, false);
                         }
                     } else {
                         for file in &mut self.files {
-                            draw_file(ui, file, &query, true);
+                            draw_file(ui, file, query, true);
                         }
                     }
                 });
         });
     }
-}
 
-impl ConfigEditorView {
     fn file_list(&mut self, ui: &mut egui::Ui, query: &str) {
         let mut last_side = None;
         for (i, file) in self.files.iter().enumerate() {
@@ -525,92 +726,7 @@ fn draw_file(ui: &mut egui::Ui, file: &mut FileState, query: &str, with_title: b
             }
             group = Some(entry.group.as_str());
         }
-        draw_entry(ui, file, entry);
-    }
-}
-
-fn draw_entry(ui: &mut egui::Ui, file: &mut FileState, entry: &IniEntry) {
-    let default = file.default_of(entry);
-    let kind = file.kind_of(entry);
-    let secret = file.is_secret(&entry.key);
-    let differs = file.differs_from_default(entry);
-    let problem = file.problem(entry);
-    ui.add_space(4.0);
-    ui.horizontal(|ui| {
-        let mut name = egui::RichText::new(&entry.key).strong();
-        if file.is_dirty(entry) {
-            name = name.italics();
-        }
-        ui.label(name);
-        if file.is_dirty(entry) {
-            ui.label("*").on_hover_text("Changed, not saved yet");
-        }
-        if differs {
-            let shown = match (&default, secret) {
-                (Some(d), false) => format!("Differs from the default ({d})"),
-                _ => "Differs from the default".to_owned(),
-            };
-            ui.colored_label(egui::Color32::from_rgb(0xe0, 0xa0, 0x30), "\u{25cf}")
-                .on_hover_text(shown);
-        }
-        if default.is_some() && differs && ui.small_button("Reset to default").clicked() {
-            file.reset_to_default(entry);
-        }
-    });
-    let Some(buffer) = file.buffers.get_mut(&entry.key) else {
-        return;
-    };
-    ui.horizontal(|ui| {
-        let editable = entry.editable;
-        match kind {
-            _ if secret => {
-                ui.add_enabled(
-                    editable,
-                    egui::TextEdit::singleline(buffer)
-                        .password(true)
-                        .desired_width(320.0),
-                )
-                .on_hover_text(format!(
-                    "Hidden ({}). Only written when changed.",
-                    mask_value(&entry.value)
-                ));
-            }
-            ValueKind::Bool => {
-                let mut on = buffer.trim().eq_ignore_ascii_case("true");
-                if ui
-                    .add_enabled(editable, egui::Checkbox::without_text(&mut on))
-                    .changed()
-                {
-                    // Keep the file's spelling (`True` / `true`).
-                    let capital = entry.value.chars().next().is_none_or(char::is_uppercase);
-                    *buffer = match (on, capital) {
-                        (true, true) => "True",
-                        (true, false) => "true",
-                        (false, true) => "False",
-                        (false, false) => "false",
-                    }
-                    .to_owned();
-                }
-                ui.label(buffer.as_str());
-            }
-            _ => {
-                let width = if kind == ValueKind::Text { 420.0 } else { 140.0 };
-                let mut edit = egui::TextEdit::singleline(buffer).desired_width(width);
-                if problem.is_some() {
-                    edit = edit.text_color(egui::Color32::from_rgb(0xd9, 0x4f, 0x4f));
-                }
-                ui.add_enabled(editable, edit);
-            }
-        }
-        if let (Some(d), false) = (&default, secret) {
-            ui.weak(format!("default: {d}"));
-        }
-    });
-    if let Some(problem) = problem {
-        ui.colored_label(ui.visuals().error_fg_color, problem);
-    }
-    for line in &entry.help {
-        ui.add(egui::Label::new(egui::RichText::new(line).weak().small()).wrap());
+        draw_entry(ui, file, entry, false);
     }
 }
 
@@ -805,5 +921,238 @@ mod tests {
             }
         }
         assert!(keys > 1000, "{keys}");
+    }
+
+    #[test]
+    fn list_keys_stay_text_even_with_one_number_in_them() {
+        let f = FileState::from_text(
+            Side::Game,
+            "Server.ini",
+            Path::new("x.ini"),
+            "ServerRestartDays = 4\nLogItemsIdsList = 4356\nCharMaxNumber = 7\n".to_owned(),
+            false,
+        );
+        assert_eq!(f.kind_of(&f.entries[0]), ValueKind::Text);
+        assert_eq!(f.kind_of(&f.entries[1]), ValueKind::Text);
+        assert_eq!(f.kind_of(&f.entries[2]), ValueKind::Int);
+        // So `4,5` is accepted for the list but not for the number.
+        let mut f = f;
+        f.buffers.insert("ServerRestartDays".into(), "4,5".into());
+        f.buffers.insert("CharMaxNumber".into(), "7,8".into());
+        assert_eq!(f.problems().len(), 1);
+    }
+
+    #[test]
+    fn the_change_list_shows_old_and_new_and_masks_secrets() {
+        let mut f = FileState::from_text(
+            Side::Login,
+            "Database.ini",
+            Path::new("x.ini"),
+            TEXT.to_owned(),
+            false,
+        );
+        assert!(f.change_list().is_empty());
+        f.buffers.insert("RateXp".into(), "5".into());
+        f.buffers.insert("Password".into(), "swordfish".into());
+        f.buffers.insert("Token".into(), "abc".into());
+        f.buffers.insert("LoginserverPort".into(), "2107".into());
+        let list = f.change_list();
+        let by_key = |k: &str| list.iter().find(|l| l.key == k).unwrap();
+        assert_eq!(list.len(), 4);
+        let xp = by_key("RateXp");
+        assert_eq!((xp.old_shown().as_str(), xp.new_shown().as_str()), ("2", "5"));
+        assert_eq!(by_key("LoginserverPort").old_shown(), "2106");
+        // Secrets: never the value, and an empty value says so.
+        let pw = by_key("Password");
+        assert!(!pw.old_shown().contains("hunter2") && !pw.new_shown().contains("swordfish"));
+        let token = by_key("Token");
+        assert_eq!(token.old_shown(), "(empty)");
+        assert_ne!(token.new_shown(), "abc");
+        // Reset to the file's own values: nothing left to list.
+        f.discard();
+        assert!(f.change_list().is_empty());
+    }
+
+    // ---- against a copy of the repo's dist/ ----
+
+    fn copy_dir(from: &Path, to: &Path) {
+        std::fs::create_dir_all(to).unwrap();
+        for entry in std::fs::read_dir(from).unwrap().flatten() {
+            let (src, dst) = (entry.path(), to.join(entry.file_name()));
+            if src.is_dir() {
+                copy_dir(&src, &dst);
+            } else {
+                std::fs::copy(&src, &dst).unwrap();
+            }
+        }
+    }
+
+    /// A run folder made of the `.ini` files of `dist/` (never the real `run/` folder). `None`
+    /// when `dist/` is not there.
+    fn run_folder_copy() -> Option<tempfile::TempDir> {
+        let dist = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../dist");
+        if !dist.join("game/config").is_dir() {
+            eprintln!("skipped: no dist/");
+            return None;
+        }
+        let dir = tempfile::tempdir().unwrap();
+        for side in ["login", "game"] {
+            copy_dir(
+                &dist.join(side).join("config"),
+                &dir.path().join(side).join("config"),
+            );
+        }
+        Some(dir)
+    }
+
+    fn read_all(dir: &Path) -> BTreeMap<String, Vec<u8>> {
+        scan_run_folder(dir)
+            .into_iter()
+            .filter_map(|(side, rel, path)| {
+                Some((format!("{}/{rel}", server_word(side)), std::fs::read(path).ok()?))
+            })
+            .collect()
+    }
+
+    #[test]
+    fn saving_without_a_change_leaves_every_file_byte_identical() {
+        let Some(dir) = run_folder_copy() else { return };
+        let before = read_all(dir.path());
+        assert!(before.len() > 70);
+        let mut view = ConfigEditorView::with_run_dir(&dir.path().to_string_lossy());
+        view.reload();
+        assert!(view.errors.is_empty(), "{:?}", view.errors);
+        assert_eq!(view.dirty_files(), 0);
+        view.save_all();
+        assert_eq!(read_all(dir.path()), before);
+        // The list in the review window is empty too.
+        assert!(view.all_changes().is_empty());
+    }
+
+    #[test]
+    fn one_change_through_a_control_touches_one_line() {
+        let Some(dir) = run_folder_copy() else { return };
+        let path = dir.path().join("game/config/Rates.ini");
+        let before = std::fs::read_to_string(&path).unwrap();
+        let mut view = ConfigEditorView::with_run_dir(&dir.path().to_string_lossy());
+        view.reload();
+        let file = view
+            .files
+            .iter_mut()
+            .find(|f| f.side == Side::Game && f.rel == "Rates.ini")
+            .unwrap();
+        // What a slider writes for RateXp.
+        file.buffers.insert("RateXp".into(), "7.5".into());
+        assert_eq!(view.all_changes().len(), 1);
+        view.save_all();
+        let after = std::fs::read_to_string(&path).unwrap();
+        let changed: Vec<(&str, &str)> = before
+            .lines()
+            .zip(after.lines())
+            .filter(|(a, b)| a != b)
+            .collect();
+        assert_eq!(before.lines().count(), after.lines().count());
+        assert_eq!(changed, [("RateXp = 1", "RateXp = 7.5")]);
+        assert!(view.notes.iter().any(|n| n.contains("Restart the game server")));
+    }
+
+    fn draw(view: &mut ConfigEditorView, frames: usize, size: egui::Vec2) {
+        use crate::bridge::{Bridge, ConnState};
+        use crate::settings::Settings;
+
+        let mut settings = Settings::default();
+        let bridge = Bridge::spawn(None).unwrap();
+        let conn = ConnState::default();
+        let launch = crate::launch::LaunchHandle::detached();
+        let ctx = egui::Context::default();
+        for _ in 0..frames {
+            let input = egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, size)),
+                ..egui::RawInput::default()
+            };
+            let mut output = ctx.run_ui(input, |ui| {
+                let mut cx = AppCtx {
+                    settings: &mut settings,
+                    conn: &conn,
+                    bridge: &bridge,
+                    launch: &launch,
+                };
+                view.ui(ui, &mut cx);
+            });
+            output.textures_delta.clear();
+        }
+    }
+
+    #[test]
+    fn every_topic_draws_headless_on_a_narrow_and_a_wide_window() {
+        let Some(dir) = run_folder_copy() else { return };
+        let mut view = ConfigEditorView::with_run_dir(&dir.path().to_string_lossy());
+        view.reload();
+        let buckets: Vec<Bucket> = view.index.buckets().iter().map(|(b, _)| b.clone()).collect();
+        // 17 fixed topics + the Custom files; nothing falls into "Other" with dist/ alone.
+        assert!(buckets.len() >= 17 + 40, "{}", buckets.len());
+        assert!(!buckets.contains(&Bucket::Other));
+        for bucket in buckets {
+            view.topic = Some(bucket.clone());
+            draw(&mut view, 2, egui::vec2(900.0, 700.0));
+            draw(&mut view, 2, egui::vec2(1500.0, 800.0));
+            assert_eq!(view.current_topic(), Some(bucket));
+        }
+    }
+
+    #[test]
+    fn the_by_file_view_the_search_and_the_review_window_draw() {
+        let Some(dir) = run_folder_copy() else { return };
+        let mut view = ConfigEditorView::with_run_dir(&dir.path().to_string_lossy());
+        view.reload();
+        view.mode = Mode::Files;
+        draw(&mut view, 2, egui::vec2(1100.0, 800.0));
+        view.search = "pathfinding".into();
+        draw(&mut view, 2, egui::vec2(1100.0, 800.0));
+        view.mode = Mode::Topics;
+        view.search = "rate".into();
+        draw(&mut view, 2, egui::vec2(1100.0, 800.0));
+        view.search = "no such setting anywhere".into();
+        draw(&mut view, 2, egui::vec2(1100.0, 800.0));
+        // The review window with an edit, a secret and a bad value.
+        view.search.clear();
+        let file = view
+            .files
+            .iter_mut()
+            .find(|f| f.side == Side::Game && f.rel == "Database.ini")
+            .unwrap();
+        file.buffers.insert("Password".into(), "swordfish".into());
+        view.review = true;
+        draw(&mut view, 2, egui::vec2(1100.0, 800.0));
+        assert!(view.review);
+        assert_eq!(view.all_changes().len(), 1);
+    }
+
+    #[test]
+    fn the_controls_of_every_dist_key_draw_with_every_kind_of_edit() {
+        // One frame over a topic with switches, sliders, drop-downs and colours, with an edit in
+        // each so the "changed" and "differs" markers are drawn too.
+        let Some(dir) = run_folder_copy() else { return };
+        let mut view = ConfigEditorView::with_run_dir(&dir.path().to_string_lossy());
+        view.reload();
+        for file in &mut view.files {
+            let keys: Vec<String> = file.entries.iter().map(|e| e.key.clone()).collect();
+            for key in keys {
+                let Some(entry) = file.entries.iter().find(|e| e.key == key).cloned() else {
+                    continue;
+                };
+                let edited = match file.kind_of(&entry) {
+                    ValueKind::Bool => "True".to_owned(),
+                    ValueKind::Int | ValueKind::Float => "3".to_owned(),
+                    ValueKind::Text => format!("{}x", entry.value),
+                };
+                file.buffers.insert(key, edited);
+            }
+        }
+        let buckets: Vec<Bucket> = view.index.buckets().iter().map(|(b, _)| b.clone()).collect();
+        for bucket in buckets.into_iter().take(20) {
+            view.topic = Some(bucket);
+            draw(&mut view, 1, egui::vec2(1400.0, 900.0));
+        }
     }
 }
