@@ -29,15 +29,14 @@
 //   `Attackable.calculateRewards` do.
 // - The over-hit bonus (a skill effect,
 //   M5), champions (not rolled), premium rates (`custom/premium.rs`, M9-C02, off by default),
-//   `DynamicExpRates.xml` (every shipped rate is 1, so Java reports it disabled), clans and the
-//   tutorial quest event, scripts (D-05). The subclass limits of `setExp`/`setLevel` are
+//   clans and the tutorial quest event, scripts (D-05). The subclass limits of `setExp`/`setLevel` are
 //   `subclass/` (S-SUB-01).
 // - `AutoLearnSkills = True` is `skills/learn.rs` (`give_available_skills`), with the item
 //   requirements of the skill trees.
 
 use std::sync::Arc;
 
-use l2_data::{ClassId, ExperienceLoss, ExperienceTable, KarmaLoss, SkillTrees, Stat};
+use l2_data::{ClassId, DynamicExpRates, ExperienceLoss, ExperienceTable, KarmaLoss, SkillTrees, Stat};
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::visibility::status as attr;
 use l2_protocol_game::server::{SocialAction, StatusUpdate, SystemMessage, SystemMessageParam};
@@ -91,6 +90,9 @@ pub struct ExpSettings {
     pub enable_free_strider: bool,
     /// `FreeMountsConfig.ENABLE_FREE_WYVERN` (`EnableFreeWyvern`).
     pub enable_free_wyvern: bool,
+    /// `DynamicExpRateData` (`config/DynamicExpRates.xml`): when enabled, its rate of the
+    /// killer's level replaces `RateXp` and `RateSp` in the exp and SP of a kill.
+    pub dynamic_rates: DynamicExpRates,
 }
 
 impl Default for ExpSettings {
@@ -110,6 +112,7 @@ impl Default for ExpSettings {
             alt_party_range: 1500,
             enable_free_strider: false,
             enable_free_wyvern: false,
+            dynamic_rates: DynamicExpRates::default(),
         }
     }
 }
@@ -189,16 +192,30 @@ impl World {
         dealer
     }
 
-    /// Java `Npc.getExpReward(level)`: `(long) (template exp * RATE_XP)`.
-    pub(crate) fn npc_exp_reward(&self, npc: ObjectId) -> i64 {
+    /// Java `Npc.getExpReward(level)`: `(long) (template exp * RATE_XP)`, or the rate of `level`
+    /// from `DynamicExpRates.xml` when that is enabled.
+    pub(crate) fn npc_exp_reward(&self, npc: ObjectId, level: i32) -> i64 {
         let exp = self.npc_template_exp_sp(npc).0;
-        (exp * f64::from(self.settings.exp.rate_xp)) as i64
+        let rates = &self.settings.exp.dynamic_rates;
+        let rate = if rates.is_enabled() {
+            rates.dynamic_exp_rate(level)
+        } else {
+            self.settings.exp.rate_xp
+        };
+        (exp * f64::from(rate)) as i64
     }
 
-    /// Java `Npc.getSpReward(level)`: `(int) (template sp * RATE_SP)`.
-    fn npc_sp_reward(&self, npc: ObjectId) -> i32 {
+    /// Java `Npc.getSpReward(level)`: `(int) (template sp * RATE_SP)`, or the rate of `level`
+    /// from `DynamicExpRates.xml` when that is enabled.
+    fn npc_sp_reward(&self, npc: ObjectId, level: i32) -> i32 {
         let sp = self.npc_template_exp_sp(npc).1;
-        (sp * f64::from(self.settings.exp.rate_sp)) as i32
+        let rates = &self.settings.exp.dynamic_rates;
+        let rate = if rates.is_enabled() {
+            rates.dynamic_sp_rate(level)
+        } else {
+            self.settings.exp.rate_sp
+        };
+        (sp * f64::from(rate)) as i32
     }
 
     fn npc_template_exp_sp(&self, npc: ObjectId) -> (f64, f64) {
@@ -231,8 +248,8 @@ impl World {
                     .unwrap_or(0)
                     .max(0)
             };
-            xp = share(self.npc_exp_reward(npc)) as f64;
-            sp = share(i64::from(self.npc_sp_reward(npc))) as f64;
+            xp = share(self.npc_exp_reward(npc, char_level)) as f64;
+            sp = share(i64::from(self.npc_sp_reward(npc, char_level))) as f64;
 
             if char_level > 84 && level_diff <= -3 {
                 let mul = match level_diff {

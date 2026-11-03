@@ -22,11 +22,12 @@
 use std::fmt;
 
 use quick_xml::XmlVersion;
-use quick_xml::escape::resolve_predefined_entity;
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::reader::Reader;
 use serde::Deserialize;
 use serde::de::{self, MapAccess, Visitor};
+
+use crate::xml_text::push_general_ref;
 
 /// One XML element: its name, attributes, own text and element children.
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -230,13 +231,9 @@ pub fn parse_dom(xml: &str) -> Result<XmlNode, DomError> {
             Event::Text(t) => add_text(&mut stack, &t.xml_content(XmlVersion::Implicit1_0)),
             Event::CData(t) => add_text(&mut stack, &t.xml_content(XmlVersion::Implicit1_0)),
             Event::GeneralRef(r) => {
-                let mut buffer = [0u8; 4];
-                let text: &str = match r.resolve_char_ref().map_err(dom_error)? {
-                    Some(c) => c.encode_utf8(&mut buffer),
-                    None => resolve_predefined_entity(&r)
-                        .ok_or_else(|| dom_error(format!("unknown entity &{};", &*r)))?,
-                };
-                add_text(&mut stack, text);
+                let mut text = String::new();
+                push_general_ref(&mut text, &r).map_err(dom_error)?;
+                add_text(&mut stack, &text);
             }
             Event::Eof => break,
             _ => {}

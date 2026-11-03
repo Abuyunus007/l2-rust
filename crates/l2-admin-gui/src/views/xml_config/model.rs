@@ -164,6 +164,16 @@ impl RowList {
         self.rows != self.snapshot
     }
 
+    /// Puts the rows of the file back when it had any (so a switch turned off and on again is not
+    /// a change), else makes `fresh` the only row.
+    pub fn restore_or_add(&mut self, fresh: Row) {
+        self.rows = if self.snapshot.is_empty() {
+            vec![fresh]
+        } else {
+            self.snapshot.clone()
+        };
+    }
+
     #[cfg(test)]
     pub fn discard(&mut self) {
         self.rows = self.snapshot.clone();

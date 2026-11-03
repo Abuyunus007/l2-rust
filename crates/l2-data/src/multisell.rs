@@ -28,6 +28,7 @@ use quick_xml::events::{BytesStart, Event};
 use tracing::{info, warn};
 
 use crate::item::{ADENA_ID, ItemTemplate, ItemTemplates};
+use crate::xml_text::push_general_ref;
 
 /// Java `MultisellData.PAGE_SIZE`: entries per `MultiSellList` packet.
 pub const PAGE_SIZE: usize = 40;
@@ -553,6 +554,12 @@ fn parse_list(
                     npc_text.push_str(t.as_ref());
                 }
             }
+            // quick-xml reports `&amp;` and friends apart from the text (G-09).
+            Event::GeneralRef(r) => {
+                if path.len() == 3 && path[2] == "npc" {
+                    push_general_ref(&mut npc_text, &r).map_err(|e| e.to_string())?;
+                }
+            }
             Event::Eof => {
                 // The DOM parser rejects a document that ends inside an element.
                 if !path.is_empty() {
@@ -845,6 +852,25 @@ mod tests {
         );
         assert_eq!(custom.len(), 2);
         assert_eq!(custom.get(5).unwrap().entries.len(), 2);
+    }
+
+    /// quick-xml reports a character reference apart from the text (G-09): `<npc>&#49;0</npc>` is
+    /// npc 10, not npc 0.
+    #[test]
+    fn a_reference_in_an_npc_id_is_part_of_the_number() {
+        let xml = r#"<list><npcs><npc>&#49;0</npc></npcs></list>"#;
+        let data = MultisellData::from_xml(&[(7, xml)], &items(), &MultisellLoadOptions::default());
+        let list = data.get(7).unwrap();
+        assert!(list.is_npc_allowed(10));
+        assert!(!list.is_npc_allowed(0));
+    }
+
+    /// An entity that is not predefined is a parse error in Java: the file is dropped.
+    #[test]
+    fn an_unknown_entity_in_an_npc_id_drops_the_file() {
+        let xml = r#"<list><npcs><npc>&nbsp;</npc></npcs></list>"#;
+        let data = MultisellData::from_xml(&[(7, xml)], &items(), &MultisellLoadOptions::default());
+        assert!(data.get(7).is_none());
     }
 
     /// The shipped lists load, when the reference folder is there (CI has none).

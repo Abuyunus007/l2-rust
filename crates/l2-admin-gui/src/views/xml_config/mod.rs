@@ -5,6 +5,13 @@
 //! Java: none (tooling); the element and attribute names are those of the Java loaders, which
 //! each form names in its module comment.
 //!
+//! # Where it is shown
+//! Inside the config editor (G-09), as the "XML configs" group at the end of its topic list:
+//! [`XmlConfigView`] has no window of its own. The editor owns one, calls
+//! [`XmlConfigView::topic_list`] for the group, [`XmlConfigView::form_ui`] for the chosen form and
+//! [`XmlConfigView::actions_ui`] for the save and discard buttons, and passes its run folder on
+//! with [`XmlConfigView::set_run_dir`].
+//!
 //! # How it saves
 //! A form never writes XML. It compares what the user edited with the file and produces
 //! [`l2_config::xml_edit::Edit`]s ("replace this byte range"), applied to the text that was
@@ -38,12 +45,8 @@ use std::path::{Path, PathBuf};
 use l2_config::ini_edit::write_atomic;
 use l2_config::xml_edit::{Edit, XmlDoc, apply_edits};
 
-use crate::app::AppCtx;
-use crate::views::View;
 use model::{Issue, has_errors};
 
-/// Folder of the servers' own copy of `dist/` (D-55), relative to the working directory.
-pub const DEFAULT_RUN_DIR: &str = "run";
 /// The config folder inside the run folder.
 const CONFIG_SUBDIR: &str = "game/config";
 
@@ -64,6 +67,9 @@ pub fn render(form: &dyn XmlForm, original: &str) -> Result<String, String> {
     let doc = XmlDoc::parse(original).map_err(|e| e.to_string())?;
     apply_edits(original, form.edits(&doc)).map_err(|e| e.to_string())
 }
+
+/// The heading of the group in the topic list.
+pub const GROUP_TITLE: &str = "XML configs";
 
 /// The files that have a form.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -251,15 +257,8 @@ pub struct XmlConfigView {
     run_dir: String,
     files: Vec<XmlFile>,
     selected: usize,
-    loaded: bool,
     errors: Vec<String>,
     notes: Vec<String>,
-}
-
-impl Default for XmlConfigView {
-    fn default() -> Self {
-        Self::with_run_dir(DEFAULT_RUN_DIR)
-    }
 }
 
 impl XmlConfigView {
@@ -268,21 +267,26 @@ impl XmlConfigView {
             run_dir: run_dir.to_owned(),
             files: Vec::new(),
             selected: 0,
-            loaded: false,
             errors: Vec::new(),
             notes: Vec::new(),
         }
+    }
+
+    /// Follows the run folder of the config editor. The files are read again by [`Self::reload`].
+    pub fn set_run_dir(&mut self, run_dir: &str) {
+        self.run_dir = run_dir.to_owned();
     }
 
     fn config_dir(&self) -> PathBuf {
         Path::new(self.run_dir.trim()).join(CONFIG_SUBDIR)
     }
 
-    /// Reads every topic's file again. Unsaved edits are dropped.
+    /// Reads every topic's file again. Unsaved edits and the notes are dropped.
     pub fn reload(&mut self) {
         let keep = self.files.get(self.selected).map(|f| f.topic);
         self.files.clear();
         self.errors.clear();
+        self.notes.clear();
         let dir = self.config_dir();
         for topic in TopicId::ALL {
             let path = dir.join(topic.file());
@@ -301,7 +305,11 @@ impl XmlConfigView {
         self.selected = keep
             .and_then(|t| self.files.iter().position(|f| f.topic == t))
             .unwrap_or(0);
-        self.loaded = true;
+    }
+
+    /// Has any XML file been found (so the group has something to show)?
+    pub fn has_files(&self) -> bool {
+        !self.files.is_empty()
     }
 
     #[cfg(test)]
@@ -324,7 +332,25 @@ impl XmlConfigView {
         &self.notes
     }
 
-    fn dirty_files(&self) -> usize {
+    /// The topic whose form [`Self::form_ui`] shows.
+    #[cfg(test)]
+    pub fn selected_topic(&self) -> Option<TopicId> {
+        self.files.get(self.selected).map(|f| f.topic)
+    }
+
+    /// Chooses the topic whose form [`Self::form_ui`] shows; false when its file was not read.
+    #[cfg(test)]
+    pub fn select(&mut self, topic: TopicId) -> bool {
+        match self.files.iter().position(|f| f.topic == topic) {
+            Some(i) => {
+                self.selected = i;
+                true
+            }
+            None => false,
+        }
+    }
+
+    pub fn dirty_files(&self) -> usize {
         self.files.iter().filter(|f| f.is_dirty()).count()
     }
 
@@ -392,21 +418,48 @@ impl XmlConfigView {
     pub fn create_ipconfig(&mut self) {
         let dir = self.config_dir();
         let (from, to) = (dir.join(ipconfig::TEMPLATE_FILE), dir.join(ipconfig::FILE));
-        self.notes = vec![if to.exists() {
+        let note = if to.exists() {
             format!("{} exists already", ipconfig::FILE)
         } else {
             match std::fs::copy(&from, &to) {
                 Ok(_) => format!("Created {}. Restart the game server to use it.", ipconfig::FILE),
                 Err(e) => format!("Could not create {}: {e}", ipconfig::FILE),
             }
-        }];
+        };
         self.reload();
+        self.notes = vec![note];
     }
 
-    /// The topic list (left side). `selected` follows the click.
-    pub fn topic_list(&mut self, ui: &mut egui::Ui) {
-        ui.strong("XML configs");
+    /// Does the search (`query`, lower case) find the topic? By its title or its file name; an
+    /// empty query and the group's own name find every topic.
+    fn topic_matches(topic: TopicId, query: &str) -> bool {
+        query.is_empty()
+            || GROUP_TITLE.to_lowercase().contains(query)
+            || topic.title().to_lowercase().contains(query)
+            || topic.file().to_lowercase().contains(query)
+    }
+
+    /// How many topics the search finds.
+    pub fn hits(&self, query: &str) -> usize {
+        self.files
+            .iter()
+            .filter(|f| Self::topic_matches(f.topic, query))
+            .count()
+    }
+
+    /// The group in the topic list (left side), under the heading [`GROUP_TITLE`]: the topics that
+    /// match `query` (lower case). `active` = the form of this group is on screen, so the chosen
+    /// topic is drawn selected. Returns true when the user clicked a topic.
+    pub fn topic_list(&mut self, ui: &mut egui::Ui, active: bool, query: &str) -> bool {
+        if self.hits(query) == 0 {
+            return false;
+        }
+        ui.strong(GROUP_TITLE);
+        let mut clicked = false;
         for (i, file) in self.files.iter().enumerate() {
+            if !Self::topic_matches(file.topic, query) {
+                continue;
+            }
             let mut label = file.topic.title().to_owned();
             if file.is_dirty() {
                 label.push_str(" *");
@@ -414,13 +467,20 @@ impl XmlConfigView {
             if has_errors(&file.issues()) {
                 label.push_str(" !");
             }
-            ui.selectable_value(&mut self.selected, i, label)
+            let response = ui
+                .selectable_label(active && self.selected == i, label)
                 .on_hover_text(file.topic.file());
+            if response.clicked() {
+                self.selected = i;
+                clicked = true;
+            }
         }
+        clicked
     }
 
     /// The form of the selected topic (right side).
     pub fn form_ui(&mut self, ui: &mut egui::Ui) {
+        self.sync_levels();
         let mut create = false;
         let ipconfig_exists = self.files.iter().any(|f| f.topic == TopicId::IpConfig);
         if let Some(file) = self.files.get_mut(self.selected) {
@@ -448,35 +508,26 @@ impl XmlConfigView {
         }
     }
 
-    /// The whole view, without the application context (so tests can draw it).
-    pub fn show(&mut self, ui: &mut egui::Ui) {
-        if !self.loaded {
-            self.reload();
+    /// The save and discard buttons of the XML files, the notes of the last save and the files that
+    /// could not be read. Draws nothing when no XML file was found.
+    pub fn actions_ui(&mut self, ui: &mut egui::Ui) {
+        if !self.has_files() && self.errors.is_empty() {
+            return;
         }
-        self.sync_levels();
-        ui.heading("XML configs");
-        ui.horizontal(|ui| {
-            ui.label("Run folder:");
-            ui.add(egui::TextEdit::singleline(&mut self.run_dir).desired_width(260.0));
-            if ui
-                .button("Reload")
-                .on_hover_text("Discards unsaved edits")
-                .clicked()
-            {
-                self.reload();
-                self.notes.clear();
-            }
-        });
         let dirty = self.dirty_files();
-        ui.horizontal(|ui| {
+        ui.horizontal_wrapped(|ui| {
+            ui.label(GROUP_TITLE);
             if ui
-                .add_enabled(dirty > 0, egui::Button::new(format!("Save ({dirty} files)")))
+                .add_enabled(
+                    dirty > 0,
+                    egui::Button::new(format!("Save XML configs ({dirty} files)")),
+                )
                 .clicked()
             {
                 self.save_all();
             }
             if ui
-                .add_enabled(dirty > 0, egui::Button::new("Discard edits"))
+                .add_enabled(dirty > 0, egui::Button::new("Discard XML edits"))
                 .clicked()
             {
                 self.files.iter_mut().for_each(XmlFile::discard);
@@ -488,9 +539,17 @@ impl XmlConfigView {
         for error in &self.errors {
             ui.colored_label(ui.visuals().error_fg_color, error.as_str());
         }
+    }
+
+    /// The old stand-alone page, for the tests: the buttons, the list and the form side by side.
+    #[cfg(test)]
+    pub fn show(&mut self, ui: &mut egui::Ui) {
+        if self.files.is_empty() && self.errors.is_empty() {
+            self.reload();
+        }
+        self.actions_ui(ui);
         ui.separator();
         if self.files.is_empty() {
-            ui.label("No XML configs found. Set the run folder (it holds game/config).");
             return;
         }
         let height = ui.available_height();
@@ -499,7 +558,9 @@ impl XmlConfigView {
                 egui::ScrollArea::vertical()
                     .id_salt("xml_topics")
                     .auto_shrink([false, false])
-                    .show(ui, |ui| self.topic_list(ui));
+                    .show(ui, |ui| {
+                        self.topic_list(ui, true, "");
+                    });
             });
             ui.separator();
             ui.allocate_ui(egui::vec2(ui.available_width(), height), |ui| self.form_ui(ui));
@@ -510,12 +571,6 @@ impl XmlConfigView {
 /// "Restart the game server to apply: ..." for the saved files.
 pub fn restart_note(saved: &[&str]) -> String {
     format!("Restart the game server to apply: {}", saved.join(", "))
-}
-
-impl View for XmlConfigView {
-    fn ui(&mut self, ui: &mut egui::Ui, _cx: &mut AppCtx<'_>) {
-        self.show(ui);
-    }
 }
 
 #[cfg(test)]

@@ -309,13 +309,13 @@ impl World {
 
     /// Java `Attackable.getVitalityPoints(level, damage)`: "vitality points decrease (if
     /// positive) or increase (if negative) based on damage. Maximum for damage = maxHp".
-    // `level` only goes to `getExpReward(level)`, which ignores it without `DynamicExpRates.xml`.
-    fn attackable_vitality_points(&self, npc: ObjectId, _level: i32, damage: i64) -> f32 {
+    // `level` (the attacker's) only goes to `getExpReward(level)`: `DynamicExpRates.xml` reads it.
+    fn attackable_vitality_points(&self, npc: ObjectId, level: i32, damage: i64) -> f32 {
         // Sanity check.
         if damage <= 0 {
             return 0.0;
         }
-        let exp_reward = self.npc_exp_reward(npc);
+        let exp_reward = self.npc_exp_reward(npc, level);
         let Some(view) = self.stats(npc) else {
             return 0.0;
         };

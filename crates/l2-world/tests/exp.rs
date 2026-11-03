@@ -663,6 +663,48 @@ fn a_kill_is_shared_by_damage_with_java_integer_arithmetic() {
     assert_eq!(msgs[0].params, vec![long(428), long(57)]);
 }
 
+/// `DynamicExpRates.xml` replaces `RateXp` and `RateSp` with the rates of the killer's level
+/// (`Npc.getExpReward(charLevel)`), once any level has a rate other than 1.
+#[test]
+fn dynamic_rates_replace_the_server_rates_by_the_level_of_the_killer() {
+    let rates = |xml: &str| l2_data::DynamicExpRates::from_xml(xml, 86).unwrap();
+    // (the file, the exp and sp of a kill by a level 10 player of a level 20 monster that gives
+    // 1000 exp and 100 sp; RateXp 1.5 and RateSp 2 would give 1500 and 200).
+    let cases = [
+        // Enabled: the rate of level 10 (the killer), not of level 20 (the monster).
+        (
+            r#"<list><dynamic level="10" exp="3" sp="0.5"/><dynamic level="20" exp="9" sp="9"/></list>"#,
+            3000,
+            50,
+        ),
+        // Enabled by another level: level 10 keeps the fill value 1, `RateXp` is not used.
+        (r#"<list><dynamic level="11" exp="3" sp="3"/></list>"#, 1000, 100),
+        // Disabled (all rates 1, like the shipped file): `RateXp` and `RateSp`.
+        (r#"<list><dynamic level="10" exp="1" sp="1"/></list>"#, 1500, 200),
+    ];
+    for (xml, expected_exp, expected_sp) in cases {
+        let mut s = Scene::with(
+            "dynamic",
+            Config {
+                npc_level: 20,
+                exp: ExpSettings {
+                    rate_xp: 1.5,
+                    rate_sp: 2.0,
+                    dynamic_rates: rates(xml),
+                    ..ExpSettings::default()
+                },
+                ..Config::default()
+            },
+        );
+        s.enter(player_data(ME, "Hero", 10));
+        let start = s.me().data.exp;
+        s.hit(ME, 100);
+        s.kill(ME);
+        assert_eq!(s.me().data.exp - start, expected_exp, "{xml}");
+        assert_eq!(s.me().data.sp, expected_sp, "{xml}");
+    }
+}
+
 /// Exp and SP follow the level difference: nothing from `MonsterExpMaxLevelDifference` (11) up,
 /// and from level 85 on the table of `calculateExpAndSp` (levelDiff -3 and below).
 #[test]

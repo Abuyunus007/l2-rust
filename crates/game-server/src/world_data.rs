@@ -425,7 +425,7 @@ impl StaticData for DatapackData {
 
 /// The values exp, SP and levels read (Java `RatesConfig`, `PlayerConfig`). `MaxSp` is a `long`
 /// the generated config keeps as a placeholder; `config.manual.player.max_sp` holds it.
-pub fn exp_settings(config: &GameConfig, _config_dir: &Path) -> ExpSettings {
+pub fn exp_settings(config: &GameConfig, config_dir: &Path) -> ExpSettings {
     let r = &config.rates;
     let p = &config.player;
     ExpSettings {
@@ -445,6 +445,11 @@ pub fn exp_settings(config: &GameConfig, _config_dir: &Path) -> ExpSettings {
         alt_party_range: p.alt_party_range,
         enable_free_strider: config.free_mounts.enable_free_strider,
         enable_free_wyvern: config.free_mounts.enable_free_wyvern,
+        // Java: `DynamicExpRateData.getInstance()` in `GameServer` (the `Data` section).
+        dynamic_rates: l2_data::DynamicExpRates::load(
+            config_dir,
+            i32::from(config.effective_player_maximum_level()),
+        ),
     }
 }
 
@@ -2017,6 +2022,33 @@ BotReportPointsResetHour = noon
         assert!(!settings.enable);
         assert!(settings.punishments.is_empty());
         assert_eq!(settings.reset_hour_minute, Some((0, 0)));
+    }
+
+    /// `DynamicExpRates.xml` reaches the exp settings from the config folder (Java: `GameServer`
+    /// loads `DynamicExpRateData`). The shipped file is all 1s, so it is disabled.
+    #[test]
+    fn the_dynamic_exp_rates_are_read_from_the_config_folder() {
+        let dir = tempfile::tempdir().unwrap();
+        let config = GameConfig::load(dir.path()).unwrap();
+        // No file: disabled.
+        assert!(!exp_settings(&config, dir.path()).dynamic_rates.is_enabled());
+
+        let shipped =
+            PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../dist/game/config/DynamicExpRates.xml");
+        std::fs::copy(&shipped, dir.path().join(l2_data::dynamic_exp_rate::FILE)).unwrap();
+        assert!(!exp_settings(&config, dir.path()).dynamic_rates.is_enabled());
+
+        std::fs::write(
+            dir.path().join(l2_data::dynamic_exp_rate::FILE),
+            r#"<list><dynamic level="85" exp="0.5" sp="2"/></list>"#,
+        )
+        .unwrap();
+        let rates = exp_settings(&config, dir.path()).dynamic_rates;
+        assert!(rates.is_enabled());
+        assert_eq!(
+            (rates.dynamic_exp_rate(85), rates.dynamic_sp_rate(85)),
+            (0.5, 2.0)
+        );
     }
 
     #[test]

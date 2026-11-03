@@ -17,6 +17,7 @@ pub mod cubic;
 pub mod cursed_weapon;
 pub mod dimensional_rift;
 pub mod door;
+pub mod dynamic_exp_rate;
 pub mod enchant;
 pub mod enchant_hp_bonus;
 pub mod enchant_options;
@@ -59,6 +60,7 @@ pub mod static_object;
 pub mod stats;
 pub mod teleporter;
 pub mod transform;
+pub mod xml_text;
 pub mod zone;
 
 use std::path::{Path, PathBuf};
@@ -80,6 +82,7 @@ pub use cubic::{
 pub use cursed_weapon::{CursedWeaponDef, CursedWeaponDefs};
 pub use dimensional_rift::{RiftSpawnDef, RiftSpawns};
 pub use door::{DoorTemplate, DoorTemplates};
+pub use dynamic_exp_rate::DynamicExpRates;
 pub use enchant::{
     ElementalAttributeData, ElementalItemHolder, ElementalItemType, EnchantItemData, EnchantItemGroups,
     EnchantScroll, EnchantSupportItem, EnchantTarget,
@@ -134,6 +137,7 @@ pub use static_object::{StaticObjectTemplate, StaticObjectTemplates};
 pub use stats::{Condition, FuncKind, FuncTemplate, Stat};
 pub use teleporter::{TeleportHolder, TeleportLocation, TeleportType, TeleporterData};
 pub use transform::{Transform, TransformTemplate, Transforms};
+pub use xml_text::{UnknownEntity, push_general_ref};
 pub use zone::{SpawnTerritory, Zone, ZoneForm, Zones};
 
 /// Everything loaded from a datapack folder.

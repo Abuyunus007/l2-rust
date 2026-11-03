@@ -23,7 +23,8 @@ use std::path::Path;
 use l2_config::GameConfig;
 use l2_data::item::{ADENA_ID, BodyPart, EtcItemType, WeaponType};
 use l2_data::{
-    ClassId, Datapack, ItemTemplate, MacroCommand, MacroPreset, MacroType, PlayerTemplate, Race, ShortcutType,
+    ClassId, Datapack, ItemTemplate, MacroCommand, MacroPreset, MacroType, PlayerTemplate, Race,
+    ShortcutType, push_general_ref,
 };
 use l2_db::{
     CalendarDate, CharacterUpdate, ItemLocation, NewCharacter, NewItem, NewMacro, NewShortcut, SkillLevel,
@@ -185,6 +186,7 @@ impl ItemMaxMp {
         let mut current: Option<i32> = None;
         let mut in_stats = false;
         let mut max_mp_stat = false;
+        let mut stat_text = String::new();
         loop {
             match reader.read_event() {
                 Ok(Event::Start(e)) => match e.name().as_ref() {
@@ -197,14 +199,17 @@ impl ItemMaxMp {
                         }
                     }
                     "stats" => in_stats = true,
-                    "stat" if in_stats => max_mp_stat = attribute(&e, "type").as_deref() == Some("maxMp"),
+                    "stat" if in_stats => {
+                        max_mp_stat = attribute(&e, "type").as_deref() == Some("maxMp");
+                        stat_text.clear();
+                    }
                     _ => {}
                 },
-                Ok(Event::Text(t)) if max_mp_stat => {
-                    if let Some(id) = current
-                        && let Ok(value) = t.xml10_content().trim().parse::<f64>()
-                    {
-                        *self.add.entry(id).or_insert(0.0) += value;
+                // The value text arrives in pieces: a character reference is an event of its own.
+                Ok(Event::Text(t)) if max_mp_stat => stat_text.push_str(&t.xml10_content()),
+                Ok(Event::GeneralRef(r)) if max_mp_stat => {
+                    if push_general_ref(&mut stat_text, &r).is_err() {
+                        break;
                     }
                 }
                 Ok(Event::End(e)) => match e.name().as_ref() {
@@ -214,7 +219,16 @@ impl ItemMaxMp {
                         max_mp_stat = false;
                     }
                     "stats" => in_stats = false,
-                    "stat" => max_mp_stat = false,
+                    "stat" => {
+                        if max_mp_stat
+                            && let Some(id) = current
+                            && let Ok(value) = stat_text.trim().parse::<f64>()
+                        {
+                            *self.add.entry(id).or_insert(0.0) += value;
+                        }
+                        stat_text.clear();
+                        max_mp_stat = false;
+                    }
                     _ => {}
                 },
                 Ok(Event::Eof) | Err(_) => break,
@@ -1194,5 +1208,29 @@ pub fn race_allowed(config: &GameConfig, race: Race) -> bool {
         Race::Orc => allowed.allow_orc,
         Race::Dwarf => allowed.allow_dwarf,
         Race::Kamael => allowed.allow_kamael,
+    }
+}
+
+#[cfg(test)]
+mod entity_tests {
+    use super::*;
+
+    #[test]
+    fn a_character_reference_in_a_max_mp_value_is_part_of_the_number() {
+        // quick-xml reports `&#53;` apart from the text; the value is "5" + "5" + "0".
+        let xml = r#"<list><item id="7">
+            <stats><stat type="maxMp">&#53;5&#x30;</stat><stat type="pAtk">9</stat></stats>
+        </item></list>"#;
+        let mut table = ItemMaxMp::default();
+        table.scan(xml, &HashSet::from([7]));
+        assert_eq!(table.max_mp_of(7), 550.0);
+    }
+
+    #[test]
+    fn plain_values_still_add_up() {
+        let xml = r#"<list><item id="7"><stats><stat type="maxMp">20</stat></stats></item></list>"#;
+        let mut table = ItemMaxMp::default();
+        table.scan(xml, &HashSet::from([7]));
+        assert_eq!(table.max_mp_of(7), 20.0);
     }
 }

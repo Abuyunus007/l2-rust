@@ -18,6 +18,7 @@ use std::collections::HashSet;
 use std::path::Path;
 use std::sync::Arc;
 
+use l2_data::push_general_ref;
 use l2_db::{AccountDataRepository, VAR_PWD, VAR_WTE, crypt_secondary_password};
 use l2_net::{Control, Encode};
 use l2_protocol_game::client::{RequestEx2ndPasswordReq, RequestEx2ndPasswordVerify};
@@ -104,6 +105,13 @@ impl SecondaryAuthData {
                 }
                 Ok(Event::Text(t)) if open.is_some() => {
                     text.push_str(&t.xml10_content());
+                }
+                // `&amp;` in a recovery link is a reference event of its own in quick-xml.
+                Ok(Event::GeneralRef(r)) if open.is_some() => {
+                    if let Err(e) = push_general_ref(&mut text, &r) {
+                        warn!("Could not parse {SECONDARY_AUTH_FILE}: {e}");
+                        break;
+                    }
                 }
                 Ok(Event::End(_)) => {
                     let Some(name) = open.take() else {
@@ -604,6 +612,15 @@ mod tests {
         assert_eq!(data.recovery_link, "http://example.invalid/recover");
         assert_eq!(data.forbidden.len(), 2);
         assert!(data.is_forbidden("123456") && !data.is_forbidden("123457"));
+    }
+
+    #[test]
+    fn entities_in_the_recovery_link_and_a_password_resolve() {
+        // quick-xml reports `&amp;` apart from the text; dropping it would cut the link.
+        let xml = "<list><recoveryLink>http://example.invalid/r?a=1&amp;b=2&#38;c=&lt;3&gt;</recoveryLink><forbiddenPasswords><password>1&#50;3456</password></forbiddenPasswords></list>";
+        let data = SecondaryAuthData::parse(xml);
+        assert_eq!(data.recovery_link, "http://example.invalid/r?a=1&b=2&c=<3>");
+        assert!(data.is_forbidden("123456"));
     }
 
     #[test]
