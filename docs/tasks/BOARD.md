@@ -513,6 +513,14 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 | [M9-L04](M9/M9-L04.md) | Missing custom tests and a flaky test | sonnet | spot | M9-L01 | merged |
 | [M9-S01](M9/M9-S01.md) | Switch from Java to Rust | sonnet | full | M9-H01, G-02 | merged |
 
+## Rust only (D-58, 2026-11-05)
+
+| Card | Title | Model | Review | Depends | Status |
+|---|---|---|---|---|---|
+| [T-RM-01](T/T-RM-01.md) | Remove the Java tools | sonnet | spot | — | running |
+| [T-RM-02](T/T-RM-02.md) | Remove the side-by-side mode | sonnet | full | — | running |
+| T-RM-03 | Remove the Java comments | opus | spot | T-RM-01, T-RM-02 | ready |
+
 ## Milestone test results
 
 ### M1 (2026-10-18)
