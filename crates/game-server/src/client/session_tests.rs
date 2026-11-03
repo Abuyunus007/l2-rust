@@ -89,6 +89,7 @@ impl CharacterSource for FakeCharacters {
                     delete_time_ms: 0,
                     access_level: if *name == "Middle" { -1 } else { 0 },
                     title: format!("title of {name}"),
+                    html_prefix: String::new(),
                 })
                 .collect()
         } else {

@@ -263,6 +263,26 @@ impl Decode for ConfirmDlg {
     }
 }
 
+impl SystemMessage {
+    /// Like [`Decode::decode`], but reads only the parameters that are there: the count Java (and
+    /// [`Encode`]) writes is the declared one when a caller added fewer parameters, and the
+    /// multilingual texts (`custom/multilingual.rs`) are built from the parameters added.
+    pub fn decode_added(r: &mut PacketReader) -> Result<Self, PacketError> {
+        let raw_id = r.i32()?;
+        let id = SystemMessageId::from_id(raw_id)
+            .ok_or_else(|| PacketError::invalid("system message id", format!("unknown: {raw_id}")))?;
+        let count = r.i32()?;
+        let count = usize::try_from(count).map_err(|_| {
+            PacketError::invalid("system message parameter count", format!("negative: {count}"))
+        })?;
+        let mut params = Vec::new();
+        while params.len() < count && r.remaining() > 0 {
+            params.push(SystemMessageParam::read(r)?);
+        }
+        Ok(Self { id, params })
+    }
+}
+
 impl Decode for SystemMessage {
     fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
         let raw_id = r.i32()?;

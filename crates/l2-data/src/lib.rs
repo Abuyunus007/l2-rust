@@ -32,6 +32,7 @@ pub mod initial_equipment;
 pub mod initial_shortcuts;
 pub mod instance;
 pub mod item;
+pub mod lang;
 pub mod level_tables;
 pub mod level_up_crystal;
 pub mod loader;
@@ -102,6 +103,7 @@ pub use instance::{
     InstanceTemplates,
 };
 pub use item::{ItemKind, ItemTemplate, ItemTemplates};
+pub use lang::{LangData, LangTables, load_lang_data};
 pub use level_tables::{ExperienceLoss, KarmaLoss};
 pub use level_up_crystal::{AbsorbCrystalType, LevelUpCrystalData, LevelingSoulCrystalInfo, SoulCrystal};
 pub use loader::DataError;

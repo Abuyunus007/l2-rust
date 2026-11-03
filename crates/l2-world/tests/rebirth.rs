@@ -361,8 +361,12 @@ struct Scene {
 
 impl Scene {
     fn new(tag: &str, rebirth: RebirthSettings) -> Self {
-        let dir = std::env::temp_dir().join(format!("l2-world-rebirth-{tag}-{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&dir);
+        // Unique per call: a shared name let parallel tests delete each other's directory.
+        let dir = tempfile::Builder::new()
+            .prefix(&format!("l2-world-rebirth-{tag}-"))
+            .tempdir()
+            .unwrap()
+            .keep();
         for sub in ["data/html/default", "data/zones", "data/mapregion"] {
             std::fs::create_dir_all(dir.join(sub)).unwrap();
         }

@@ -301,10 +301,10 @@ impl World {
                 .with(SystemMessageParam::IntNumber(damage));
             self.send(id, &message);
         } else if id != target {
-            // `MultilingualSupport` NPC name localisation is not ported.
+            // An NPC target shows its translated name (`MultilingualSupport.ini`, M9-L02).
             let message = SystemMessage::new(SystemMessageId::C1HasDoneS3PointsOfDamageToC2)
                 .with(SystemMessageParam::PlayerName(attacker_name))
-                .with(SystemMessageParam::Text(self.creature_name(target)))
+                .with(SystemMessageParam::Text(self.creature_name_for(id, target)))
                 .with(SystemMessageParam::IntNumber(damage));
             self.send(id, &message);
         }
