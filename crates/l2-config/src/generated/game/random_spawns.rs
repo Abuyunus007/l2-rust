@@ -15,10 +15,9 @@ pub struct RandomSpawnsConfig {
     /// TODO(M2-CFG-01): not generated, hand-port it. Java type `int`; the unit type makes any use fail to compile until then.
     /// Java (line 48): `MOB_MIN_SPAWN_RANGE = MOB_MAX_SPAWN_RANGE * -1;`
     pub mob_min_spawn_range: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Set<Integer>`; the unit type makes any use fail to compile until then.
+    /// Key: `MobsSpawnNotRandom`, default `18812,18813,18814,22138` (Java type `Set<Integer>`).
     /// Java (line 49): `if (ENABLE_RANDOM_MONSTER_SPAWNS) { final String[] mobsIds = config.getString("MobsSpawnNotRandom", "18812,18813,18814,22138").split(","); MOBS_LIST_NOT_RANDOM = new HashSet<>(mobsIds.length); for (St ...`
-    /// Key: `MobsSpawnNotRandom`, Java default `"18812,18813,18814,22138"` (before the Java post-processing).
-    pub mobs_list_not_random: (),
+    pub mobs_list_not_random: std::collections::BTreeSet<i32>,
 }
 impl RandomSpawnsConfig {
     /// File name inside the config directory.
@@ -30,7 +29,8 @@ impl RandomSpawnsConfig {
                 .get_bool("EnableRandomMonsterSpawns", false),
             mob_max_spawn_range: ini.get_int("MaxSpawnMobRange", 150),
             mob_min_spawn_range: (),
-            mobs_list_not_random: (),
+            mobs_list_not_random: ini
+                .get_int_set("MobsSpawnNotRandom", "18812,18813,18814,22138"),
         }
     }
 }

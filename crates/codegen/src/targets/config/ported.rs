@@ -279,11 +279,6 @@ pub const HAND_PORTED: &[(&str, &str, &str)] = &[
     ),
     (
         "NpcConfig",
-        "LIST_PET_RENT_NPC",
-        "manual.core.npc.list_pet_rent_npc",
-    ),
-    (
-        "NpcConfig",
         "RAID_HP_REGEN_MULTIPLIER",
         "manual.npc.raid_hp_regen_multiplier",
     ),
@@ -311,11 +306,6 @@ pub const HAND_PORTED: &[(&str, &str, &str)] = &[
         "NpcConfig",
         "RAID_MATTACK_MULTIPLIER",
         "manual.core.npc.raid_mattack_multiplier",
-    ),
-    (
-        "NpcConfig",
-        "MINIONS_RESPAWN_TIME",
-        "manual.npc.minions_respawn_time",
     ),
     (
         "NpcConfig",

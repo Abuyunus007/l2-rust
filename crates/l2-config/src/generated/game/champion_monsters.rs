@@ -42,11 +42,9 @@ pub struct ChampionMonstersConfig {
     pub champion_reward_lower_level_item_chance: i32,
     /// Key: `ChampionRewardHigherLvlItemChance`, default 0.
     pub champion_reward_higher_level_item_chance: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `List<ItemHolder>`; the unit type makes any use fail to compile until then.
+    /// Key: `ChampionRewardItems`, default `4356,10` (Java type `List<ItemHolder>`).
     /// Java (line 83): `CHAMPION_REWARD_ITEMS.clear();`
-    /// ... and 1 more statement(s), see docs/analysis/config-manual-fields.md.
-    /// Key: `ChampionRewardItems`, Java default `"4356,10"` (before the Java post-processing).
-    pub champion_reward_items: (),
+    pub champion_reward_items: Vec<crate::ItemHolder>,
     /// Key: `ChampionEnableVitality`, default false.
     pub champion_enable_vitality: bool,
     /// Key: `ChampionEnableInInstances`, default false.
@@ -80,7 +78,8 @@ impl ChampionMonstersConfig {
                 .get_int("ChampionRewardLowerLvlItemChance", 0),
             champion_reward_higher_level_item_chance: ini
                 .get_int("ChampionRewardHigherLvlItemChance", 0),
-            champion_reward_items: (),
+            champion_reward_items: ini
+                .get_item_holder_list("ChampionRewardItems", "4356,10"),
             champion_enable_vitality: ini.get_bool("ChampionEnableVitality", false),
             champion_enable_in_instances: ini
                 .get_bool("ChampionEnableInInstances", false),

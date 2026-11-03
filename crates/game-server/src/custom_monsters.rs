@@ -1,63 +1,18 @@
 //! The settings of the custom monster features (M9-C01): `Custom/ChampionMonsters.ini`,
-//! `Custom/BossAnnouncements.ini` and `Custom/NpcStatMultipliers.ini`, read where the generated
-//! config has no list type.
+//! `Custom/BossAnnouncements.ini` and `Custom/NpcStatMultipliers.ini`, from the generated config.
 // Java: config/custom/{ChampionMonstersConfig,BossAnnouncementsConfig,NpcStatMultipliersConfig}.java
 
-use std::collections::BTreeSet;
 use std::path::Path;
 
-use l2_config::{GameConfig, IniFile};
+use l2_config::GameConfig;
 use l2_data::{NpcStatMultipliers, StatMultipliers};
 use l2_world::custom::{BossAnnouncementSettings, ChampionSettings, CustomSettings};
 use l2_world::rewards::drop::ItemHolder;
-use tracing::warn;
-
-fn load_ini(config_dir: &Path, file: &str) -> IniFile {
-    IniFile::load(config_dir.join(file)).unwrap_or_else(|_| IniFile::empty(file))
-}
-
-/// Java `ChampionMonstersConfig.CHAMPION_REWARD_ITEMS`: `ChampionRewardItems = 4356,10;4357,5`.
-/// A broken entry is skipped with a warning (Java's `Integer.parseInt` would abort the load).
-pub fn parse_champion_reward_items(value: &str) -> Vec<ItemHolder> {
-    let mut items = Vec::new();
-    for entry in value.split(';') {
-        if entry.is_empty() {
-            continue;
-        }
-        let mut parts = entry.split(',');
-        let id = parts.next().and_then(|p| p.parse::<i32>().ok());
-        let count = parts.next().and_then(|p| p.parse::<i64>().ok());
-        match (id, count) {
-            (Some(id), Some(count)) => items.push(ItemHolder { id, count }),
-            _ => warn!("ChampionMonsters.ini: ChampionRewardItems has an invalid entry: {entry:?}"),
-        }
-    }
-    items
-}
-
-/// Java `BossAnnouncementsConfig`: `Raidboss...Announcements = 29001, 29006`.
-pub fn parse_id_list(value: &str, key: &str) -> BTreeSet<i32> {
-    let mut ids = BTreeSet::new();
-    for id in value.split(',') {
-        if id.is_empty() {
-            continue;
-        }
-        match id.trim().parse::<i32>() {
-            Ok(id) => {
-                ids.insert(id);
-            }
-            Err(_) => warn!("BossAnnouncements.ini: {key} has an invalid id: {id:?}"),
-        }
-    }
-    ids
-}
 
 /// The champion and boss announcement settings the world reads.
-pub fn custom_settings(config: &GameConfig, config_dir: &Path) -> CustomSettings {
+pub fn custom_settings(config: &GameConfig, _config_dir: &Path) -> CustomSettings {
     let c = &config.champion_monsters;
-    let champion_ini = load_ini(config_dir, "Custom/ChampionMonsters.ini");
     let b = &config.boss_announcements;
-    let boss_ini = load_ini(config_dir, "Custom/BossAnnouncements.ini");
     CustomSettings {
         champion: ChampionSettings {
             enable: c.champion_enable,
@@ -76,9 +31,14 @@ pub fn custom_settings(config: &GameConfig, config_dir: &Path) -> CustomSettings
             adenas_rewards_amount: c.champion_adenas_rewards_amount,
             reward_lower_level_item_chance: c.champion_reward_lower_level_item_chance,
             reward_higher_level_item_chance: c.champion_reward_higher_level_item_chance,
-            reward_items: parse_champion_reward_items(
-                &champion_ini.get_string("ChampionRewardItems", "4356,10"),
-            ),
+            reward_items: c
+                .champion_reward_items
+                .iter()
+                .map(|item| ItemHolder {
+                    id: item.id,
+                    count: item.count,
+                })
+                .collect(),
             enable_vitality: c.champion_enable_vitality,
             enable_in_instances: c.champion_enable_in_instances,
         },
@@ -89,14 +49,12 @@ pub fn custom_settings(config: &GameConfig, config_dir: &Path) -> CustomSettings
             grandboss_spawn_announcements: b.grandboss_spawn_announcements,
             grandboss_defeat_announcements: b.grandboss_defeat_announcements,
             grandboss_instance_announcements: b.grandboss_instance_announcements,
-            raidbosses_excluded_from_spawn_announcements: parse_id_list(
-                &boss_ini.get_string("RaidbossExcludedFromSpawnAnnouncements", ""),
-                "RaidbossExcludedFromSpawnAnnouncements",
-            ),
-            raidbosses_excluded_from_defeat_announcements: parse_id_list(
-                &boss_ini.get_string("RaidbossExcludedFromDefeatAnnouncements", ""),
-                "RaidbossExcludedFromDefeatAnnouncements",
-            ),
+            raidbosses_excluded_from_spawn_announcements: b
+                .raidbosses_excluded_from_spawn_announcements
+                .clone(),
+            raidbosses_excluded_from_defeat_announcements: b
+                .raidbosses_excluded_from_defeat_announcements
+                .clone(),
         },
     }
 }
@@ -154,28 +112,6 @@ pub fn npc_stat_multipliers(config: &GameConfig) -> Option<NpcStatMultipliers> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn reward_items_follow_java_syntax() {
-        assert_eq!(
-            parse_champion_reward_items("4356,10;4357,5;"),
-            vec![
-                ItemHolder { id: 4356, count: 10 },
-                ItemHolder { id: 4357, count: 5 }
-            ]
-        );
-        assert!(parse_champion_reward_items("").is_empty());
-        assert!(parse_champion_reward_items("abc").is_empty());
-    }
-
-    #[test]
-    fn id_lists_skip_empty_entries_and_trim() {
-        assert!(parse_id_list("", "k").is_empty());
-        assert_eq!(
-            parse_id_list("29001, 29006,", "k"),
-            BTreeSet::from([29001, 29006])
-        );
-    }
 
     #[test]
     fn everything_is_off_with_no_config_files() {

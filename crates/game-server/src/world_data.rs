@@ -668,21 +668,10 @@ pub fn community_board_settings(config: &GameConfig) -> l2_world::CommunityBoard
     }
 }
 
-/// The rest of `Custom/CommunityBoard.ini`, with the two list keys the generated config does not
-/// read (`CommunityAvailableBuffs`, `CommunityTeleportList`), M9-C03.
-pub fn custom_board_settings(config: &GameConfig, config_dir: &Path) -> l2_world::CustomBoardSettings {
-    use l2_config::IniFile;
-
+/// The rest of `Custom/CommunityBoard.ini` (M9-C03), including the two list keys
+/// (`CommunityAvailableBuffs`, `CommunityTeleportList`).
+pub fn custom_board_settings(config: &GameConfig, _config_dir: &Path) -> l2_world::CustomBoardSettings {
     let c = &config.community_board;
-    let (buffs, teleports) =
-        match IniFile::load(config_dir.join(l2_config::generated::game::CommunityBoardConfig::FILE)) {
-            Ok(ini) => (
-                ini.get_string("CommunityAvailableBuffs", ""),
-                ini.get_string("CommunityTeleportList", ""),
-            ),
-            // A missing file is every key at its default.
-            Err(_) => (String::new(), String::new()),
-        };
     l2_world::CustomBoardSettings {
         currency: c.communityboard_currency,
         enable_multisells: c.communityboard_enable_multisells,
@@ -696,8 +685,12 @@ pub fn custom_board_settings(config: &GameConfig, config_dir: &Path) -> l2_world
         delevel_price: c.communityboard_delevel_price,
         combat_disabled: c.communityboard_combat_disabled,
         cast_animations: c.communityboard_cast_animations,
-        available_buffs: l2_world::CustomBoardSettings::parse_buffs(&buffs),
-        available_teleports: l2_world::CustomBoardSettings::parse_teleports(&teleports),
+        available_buffs: c.community_available_buffs.clone(),
+        available_teleports: c
+            .community_available_teleports
+            .iter()
+            .map(|(name, l)| (name.clone(), (l.x, l.y, l.z)))
+            .collect(),
         premium_enabled: c.community_premium_system_enabled,
         premium_coin_id: c.community_premium_coin_id,
         premium_price_per_day: c.community_premium_price_per_day,
@@ -889,12 +882,12 @@ pub fn pvp_settings(config: &GameConfig, config_dir: &Path) -> l2_world::PvpSett
     s
 }
 
-/// `Custom/Rebirth.ini` (Java `RebirthConfig`, M9-C05). The lists, the refund mode and the
-/// screen position are post-processed in Java (placeholders in the generated config), so they are
-/// read from the file here.
+/// `Custom/Rebirth.ini` (Java `RebirthConfig`, M9-C05). The protected skill groups (validated
+/// against a fixed list), the refund mode and the screen position are post-processed in Java
+/// (placeholders in the generated config), so they are read from the file here.
 pub fn rebirth_settings(config: &GameConfig, config_dir: &Path) -> l2_world::RebirthSettings {
     use l2_config::IniFile;
-    use l2_world::custom::rebirth::{parse_integer_set, parse_protected_skill_groups, parse_skill_list};
+    use l2_world::custom::rebirth::parse_protected_skill_groups;
 
     let r = &config.rebirth;
     let mut s = l2_world::RebirthSettings {
@@ -921,18 +914,18 @@ pub fn rebirth_settings(config: &GameConfig, config_dir: &Path) -> l2_world::Reb
         global_announcement_enabled: r.rebirth_global_announcement_enabled,
         global_announcement: r.rebirth_global_announcement.clone(),
         global_announcement_critical: r.rebirth_global_announcement_critical,
+        skill_delete_whitelist: r.rebirth_skill_delete_whitelist.clone(),
+        mage_skills: r.rebirth_mage_skills.clone(),
+        fighter_skills: r.rebirth_fighter_skills.clone(),
         ..l2_world::RebirthSettings::default()
     };
     if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::RebirthConfig::FILE)) {
-        s.skill_delete_whitelist = parse_integer_set(&ini.get_string("RebirthSkillDeleteWhitelist", ""));
         s.delete_protected_skill_groups =
             parse_protected_skill_groups(&ini.get_string("RebirthDeleteProtectedSkillGroups", ""));
         s.skill_refund_mode = ini
             .get_string("RebirthSkillRefundMode", "MID")
             .trim()
             .to_uppercase();
-        s.mage_skills = parse_skill_list(&ini.get_string("RebirthMageSkills", ""));
-        s.fighter_skills = parse_skill_list(&ini.get_string("RebirthFighterSkills", ""));
         s.screen_message_position = ini
             .get_string("RebirthScreenMessagePosition", "TOP_CENTER")
             .trim()
@@ -1410,7 +1403,7 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
     }
     // `ListPetRentNpc` is a post-processed list in the generated config (`manual.core.npc`;
     // Java: `Integer.parseInt` of each comma separated id).
-    settings.talk.list_pet_rent_npc = config.manual.core.npc.list_pet_rent_npc.iter().copied().collect();
+    settings.talk.list_pet_rent_npc = config.npc.list_pet_rent_npc.iter().copied().collect();
     // `TimeToReturn` (seconds, Java keeps ms) is a hand-port placeholder in the generated config.
     if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::CancelReturnConfig::FILE)) {
         settings.effects.cancel_return_time_ms = ini.get_int("TimeToReturn", 10).saturating_mul(1000);

@@ -18,16 +18,12 @@ pub struct BossAnnouncementsConfig {
     pub grandboss_defeat_announcements: bool,
     /// Key: `GrandBossInstanceAnnouncements`, default false.
     pub grandboss_instance_announcements: bool,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Set<Integer>`; the unit type makes any use fail to compile until then.
+    /// Key: `RaidbossExcludedFromSpawnAnnouncements`, default empty (Java type `Set<Integer>`).
     /// Java (line 57): `RAIDBOSSES_EXCLUDED_FROM_SPAWN_ANNOUNCEMENTS.clear();`
-    /// ... and 1 more statement(s), see docs/analysis/config-manual-fields.md.
-    /// Key: `RaidbossExcludedFromSpawnAnnouncements`, Java default `""` (before the Java post-processing).
-    pub raidbosses_excluded_from_spawn_announcements: (),
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Set<Integer>`; the unit type makes any use fail to compile until then.
+    pub raidbosses_excluded_from_spawn_announcements: std::collections::BTreeSet<i32>,
+    /// Key: `RaidbossExcludedFromDefeatAnnouncements`, default empty (Java type `Set<Integer>`).
     /// Java (line 66): `RAIDBOSSES_EXCLUDED_FROM_DEFEAT_ANNOUNCEMENTS.clear();`
-    /// ... and 1 more statement(s), see docs/analysis/config-manual-fields.md.
-    /// Key: `RaidbossExcludedFromDefeatAnnouncements`, Java default `""` (before the Java post-processing).
-    pub raidbosses_excluded_from_defeat_announcements: (),
+    pub raidbosses_excluded_from_defeat_announcements: std::collections::BTreeSet<i32>,
 }
 impl BossAnnouncementsConfig {
     /// File name inside the config directory.
@@ -47,8 +43,10 @@ impl BossAnnouncementsConfig {
                 .get_bool("GrandBossDefeatAnnouncements", false),
             grandboss_instance_announcements: ini
                 .get_bool("GrandBossInstanceAnnouncements", false),
-            raidbosses_excluded_from_spawn_announcements: (),
-            raidbosses_excluded_from_defeat_announcements: (),
+            raidbosses_excluded_from_spawn_announcements: ini
+                .get_int_set("RaidbossExcludedFromSpawnAnnouncements", ""),
+            raidbosses_excluded_from_defeat_announcements: ini
+                .get_int_set("RaidbossExcludedFromDefeatAnnouncements", ""),
         }
     }
 }

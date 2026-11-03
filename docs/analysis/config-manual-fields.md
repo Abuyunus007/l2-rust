@@ -8,7 +8,7 @@ non-generated fields are `()` placeholders. The doc comment of a placeholder sta
 `TODO(M2-CFG-01)` (not ported yet) or `Hand-ported` (ported by hand: the doc comment and
 this report say where the value is).
 
-60 classes, 1024 generated fields, 185 placeholder fields: 113 ported by hand, 72 still to hand-port.
+60 classes, 1036 generated fields, 173 placeholder fields: 111 ported by hand, 62 still to hand-port.
 
 | Java class | .ini file | generated | placeholders | ported by hand | orphan statements |
 |---|---|---:|---:|---:|---:|
@@ -22,7 +22,7 @@ this report say where the value is).
 | `GraciaSeedsConfig` | `GraciaSeeds.ini` | 13 | 1 | 1 | 0 |
 | `GrandBossConfig` | `GrandBoss.ini` | 22 | 0 | 0 | 0 |
 | `IdManagerConfig` | `IdManager.ini` | 5 | 1 | 1 | 0 |
-| `NpcConfig` | `NPC.ini` | 34 | 14 | 14 | 0 |
+| `NpcConfig` | `NPC.ini` | 36 | 12 | 12 | 0 |
 | `OlympiadConfig` | `Olympiad.ini` | 39 | 5 | 5 | 0 |
 | `PlayerConfig` | `Player.ini` | 176 | 26 | 26 | 0 |
 | `PvpConfig` | `PVP.ini` | 13 | 3 | 3 | 0 |
@@ -32,13 +32,13 @@ this report say where the value is).
 | `AutoPlayConfig` | `Custom/AutoPlay.ini` | 10 | 3 | 0 | 0 |
 | `AutoPotionsConfig` | `Custom/AutoPotions.ini` | 9 | 3 | 0 | 0 |
 | `BankingConfig` | `Custom/Banking.ini` | 5 | 0 | 0 | 0 |
-| `BossAnnouncementsConfig` | `Custom/BossAnnouncements.ini` | 6 | 2 | 0 | 0 |
+| `BossAnnouncementsConfig` | `Custom/BossAnnouncements.ini` | 8 | 0 | 0 | 0 |
 | `CancelReturnConfig` | `Custom/CancelReturn.ini` | 4 | 1 | 0 | 0 |
 | `CaptchaConfig` | `Custom/Captcha.ini` | 9 | 1 | 1 | 0 |
-| `ChampionMonstersConfig` | `Custom/ChampionMonsters.ini` | 20 | 1 | 0 | 0 |
+| `ChampionMonstersConfig` | `Custom/ChampionMonsters.ini` | 21 | 0 | 0 | 0 |
 | `ChatModerationConfig` | `Custom/ChatModeration.ini` | 1 | 0 | 0 | 0 |
 | `ClassBalanceConfig` | `Custom/ClassBalance.ini` | 0 | 37 | 0 | 0 |
-| `CommunityBoardConfig` | `Custom/CommunityBoard.ini` | 18 | 2 | 0 | 0 |
+| `CommunityBoardConfig` | `Custom/CommunityBoard.ini` | 20 | 0 | 0 | 0 |
 | `CustomMailManagerConfig` | `Custom/CustomMailManager.ini` | 1 | 1 | 1 | 0 |
 | `DelevelManagerConfig` | `Custom/DelevelManager.ini` | 5 | 0 | 0 | 0 |
 | `DualboxCheckConfig` | `Custom/DualboxCheck.ini` | 6 | 1 | 1 | 0 |
@@ -60,15 +60,15 @@ this report say where the value is).
 | `PvpAnnounceConfig` | `Custom/PvpAnnounce.ini` | 4 | 0 | 0 | 0 |
 | `PvpRewardItemConfig` | `Custom/PvpRewardItem.ini` | 10 | 0 | 0 | 0 |
 | `PvpTitleColorConfig` | `Custom/PvpTitleColor.ini` | 11 | 5 | 0 | 0 |
-| `RandomSpawnsConfig` | `Custom/RandomSpawns.ini` | 2 | 2 | 0 | 0 |
-| `RebirthConfig` | `Custom/Rebirth.ini` | 23 | 6 | 0 | 0 |
+| `RandomSpawnsConfig` | `Custom/RandomSpawns.ini` | 3 | 1 | 0 | 0 |
+| `RebirthConfig` | `Custom/Rebirth.ini` | 26 | 3 | 0 | 0 |
 | `SchemeBufferConfig` | `Custom/SchemeBuffer.ini` | 3 | 0 | 0 | 0 |
 | `ScreenWelcomeMessageConfig` | `Custom/ScreenWelcomeMessage.ini` | 2 | 1 | 1 | 0 |
 | `SellBuffsConfig` | `Custom/SellBuffs.ini` | 6 | 0 | 0 | 0 |
 | `ServerTimeConfig` | `Custom/ServerTime.ini` | 1 | 0 | 0 | 0 |
 | `StartingLocationConfig` | `Custom/StartingLocation.ini` | 4 | 0 | 0 | 0 |
 | `StartingTitleConfig` | `Custom/StartingTitle.ini` | 2 | 0 | 0 | 0 |
-| `TransmogConfig` | `Custom/Transmog.ini` | 4 | 1 | 0 | 0 |
+| `TransmogConfig` | `Custom/Transmog.ini` | 5 | 0 | 0 | 0 |
 | `WalkerBotProtectionConfig` | `Custom/WalkerBotProtection.ini` | 1 | 0 | 0 | 0 |
 | `WarehouseSortingConfig` | `Custom/WarehouseSorting.ini` | 2 | 0 | 0 | 0 |
 | `WeddingConfig` | `Custom/Wedding.ini` | 9 | 0 | 0 | 0 |
@@ -364,11 +364,6 @@ Java: `gameserver/config/NpcConfig.java`, file `NPC.ini`.
   - line 134: `NPC_SKILL_CHANCE_PENALTY = new float[split.length];`
   - line 135: `i = 0;`
   - line 136: `for (String value : split) { NPC_SKILL_CHANCE_PENALTY[i++] = Float.parseFloat(value); }`
-- `LIST_PET_RENT_NPC` (`List<Integer>`, line 73) **ported by hand: `GameConfig::manual.core.npc.list_pet_rent_npc`**
-  - keys: `ListPetRentNpc` (default `"30827"`)
-  - line 156: `split = config.getString("ListPetRentNpc", "30827").split(",");`
-  - line 157: `LIST_PET_RENT_NPC = new ArrayList<>(split.length);`
-  - line 158: `for (String id : split) { LIST_PET_RENT_NPC.add(Integer.parseInt(id)); }`
 - `RAID_HP_REGEN_MULTIPLIER` (`double`, line 74) **ported by hand: `GameConfig::manual.npc.raid_hp_regen_multiplier`**
   - keys: `RaidHpRegenMultiplier` (default `100`)
   - line 163: `RAID_HP_REGEN_MULTIPLIER = config.getDouble("RaidHpRegenMultiplier", 100) / 100;`
@@ -387,11 +382,6 @@ Java: `gameserver/config/NpcConfig.java`, file `NPC.ini`.
 - `RAID_MATTACK_MULTIPLIER` (`double`, line 79) **ported by hand: `GameConfig::manual.core.npc.raid_mattack_multiplier`**
   - keys: `RaidMAttackMultiplier` (default `100`)
   - line 168: `RAID_MATTACK_MULTIPLIER = config.getDouble("RaidMAttackMultiplier", 100) / 100;`
-- `MINIONS_RESPAWN_TIME` (`Map<Integer, Integer>`, line 83) **ported by hand: `GameConfig::manual.npc.minions_respawn_time`**
-  - keys: `CustomMinionsRespawnTime` (default `""`)
-  - line 173: `split = config.getString("CustomMinionsRespawnTime", "").split(";");`
-  - line 174: `MINIONS_RESPAWN_TIME = new HashMap<>(split.length);`
-  - line 175: `for (String prop : split) { final String[] propSplit = prop.split(","); if (propSplit.length != 2) { LOGGER.warning(StringUtil.concat("[CustomMinionsRespawnTime]: invalid config property -> CustomMinionsRespawnTime \"", prop, "\"")); } try { MINIONS_RESPAWN_TIME.put(Integer.parseInt(propSplit[0]), Integer.parseInt(propSplit[1])); } catch (NumberFormatException nfe) { if (!prop.isEmpty()) { LOGGER. ...`
 - `PET_HP_REGEN_MULTIPLIER` (`double`, line 90) **ported by hand: `GameConfig::manual.core.npc.pet_hp_regen_multiplier`**
   - keys: `PetHpRegenMultiplier` (default `100`)
   - line 201: `PET_HP_REGEN_MULTIPLIER = config.getDouble("PetHpRegenMultiplier", 100) / 100;`
@@ -666,23 +656,6 @@ Java: `gameserver/config/custom/AutoPotionsConfig.java`, file `Custom/AutoPotion
   - line 76: `AUTO_MP_ITEM_IDS.clear();`
   - line 77: `for (String s : config.getString("AutoMpItemIds", "0").split(",")) { AUTO_MP_ITEM_IDS.add(Integer.parseInt(s)); }`
 
-## BossAnnouncementsConfig
-
-Java: `gameserver/config/custom/BossAnnouncementsConfig.java`, file `Custom/BossAnnouncements.ini`.
-
-### Fields to hand-port
-
-- `RAIDBOSSES_EXCLUDED_FROM_SPAWN_ANNOUNCEMENTS` (`Set<Integer>`, line 44)
-  - keys: `RaidbossExcludedFromSpawnAnnouncements` (default `""`)
-  - initializer: `new HashSet<>()`
-  - line 57: `RAIDBOSSES_EXCLUDED_FROM_SPAWN_ANNOUNCEMENTS.clear();`
-  - line 58: `for (String raidbossId : config.getString("RaidbossExcludedFromSpawnAnnouncements", "").split(",")) { if (!raidbossId.isEmpty()) { RAIDBOSSES_EXCLUDED_FROM_SPAWN_ANNOUNCEMENTS.add(Integer.parseInt(raidbossId.trim())); } }`
-- `RAIDBOSSES_EXCLUDED_FROM_DEFEAT_ANNOUNCEMENTS` (`Set<Integer>`, line 45)
-  - keys: `RaidbossExcludedFromDefeatAnnouncements` (default `""`)
-  - initializer: `new HashSet<>()`
-  - line 66: `RAIDBOSSES_EXCLUDED_FROM_DEFEAT_ANNOUNCEMENTS.clear();`
-  - line 67: `for (String raidbossId : config.getString("RaidbossExcludedFromDefeatAnnouncements", "").split(",")) { if (!raidbossId.isEmpty()) { RAIDBOSSES_EXCLUDED_FROM_DEFEAT_ANNOUNCEMENTS.add(Integer.parseInt(raidbossId.trim())); } }`
-
 ## CancelReturnConfig
 
 Java: `gameserver/config/custom/CancelReturnConfig.java`, file `Custom/CancelReturn.ini`.
@@ -702,18 +675,6 @@ Java: `gameserver/config/custom/CaptchaConfig.java`, file `Custom/Captcha.ini`.
 - `KILL_COUNTER_RESET_TIME` (`int`, line 39) **ported by hand: `GameConfig::manual.custom_misc.kill_counter_reset_time`**
   - keys: `KillCounterResetTime` (default `20`)
   - line 53: `KILL_COUNTER_RESET_TIME = config.getInt("KillCounterResetTime", 20) * 60000;`
-
-## ChampionMonstersConfig
-
-Java: `gameserver/config/custom/ChampionMonstersConfig.java`, file `Custom/ChampionMonsters.ini`.
-
-### Fields to hand-port
-
-- `CHAMPION_REWARD_ITEMS` (`List<ItemHolder>`, line 57)
-  - keys: `ChampionRewardItems` (default `"4356,10"`)
-  - initializer: `new ArrayList<>()`
-  - line 83: `CHAMPION_REWARD_ITEMS.clear();`
-  - line 84: `for (String s : config.getString("ChampionRewardItems", "4356,10").split(";")) { if (s.isEmpty()) { continue; } CHAMPION_REWARD_ITEMS.add(new ItemHolder(Integer.parseInt(s.split(",")[0]), Integer.parseInt(s.split(",")[1]))); }`
 
 ## ClassBalanceConfig
 
@@ -1020,19 +981,6 @@ Java: `gameserver/config/custom/ClassBalanceConfig.java`, file `Custom/ClassBala
 
 Java: `gameserver/config/custom/CommunityBoardConfig.java`, file `Custom/CommunityBoard.ini`.
 
-### Fields to hand-port
-
-- `COMMUNITY_AVAILABLE_BUFFS` (`Set<Integer>`, line 59)
-  - keys: `CommunityAvailableBuffs` (default `""`)
-  - line 83: `final String[] allowedBuffs = config.getString("CommunityAvailableBuffs", "").split(",");`
-  - line 84: `COMMUNITY_AVAILABLE_BUFFS = new HashSet<>(allowedBuffs.length);`
-  - line 85: `for (String s : allowedBuffs) { COMMUNITY_AVAILABLE_BUFFS.add(Integer.parseInt(s)); }`
-- `COMMUNITY_AVAILABLE_TELEPORTS` (`Map<String, Location>`, line 60)
-  - keys: `CommunityTeleportList` (default `""`)
-  - line 89: `final String[] availableTeleports = config.getString("CommunityTeleportList", "").split(";");`
-  - line 90: `COMMUNITY_AVAILABLE_TELEPORTS = new HashMap<>(availableTeleports.length);`
-  - line 91: `for (String s : availableTeleports) { final String[] splitInfo = s.split(","); COMMUNITY_AVAILABLE_TELEPORTS.put(splitInfo[0], new Location(Integer.parseInt(splitInfo[1]), Integer.parseInt(splitInfo[2]), Integer.parseInt(splitInfo[3]))); }`
-
 ### Keys in the dist `.ini` that no getter with a literal key reads
 
 Read through a computed key (see the helper methods in the Java class), or unused.
@@ -1212,9 +1160,6 @@ Java: `gameserver/config/custom/RandomSpawnsConfig.java`, file `Custom/RandomSpa
 
 - `MOB_MIN_SPAWN_RANGE` (`int`, line 40)
   - line 48: `MOB_MIN_SPAWN_RANGE = MOB_MAX_SPAWN_RANGE * -1;`
-- `MOBS_LIST_NOT_RANDOM` (`Set<Integer>`, line 41)
-  - keys: `MobsSpawnNotRandom` (default `"18812,18813,18814,22138"`)
-  - line 49: `if (ENABLE_RANDOM_MONSTER_SPAWNS) { final String[] mobsIds = config.getString("MobsSpawnNotRandom", "18812,18813,18814,22138").split(","); MOBS_LIST_NOT_RANDOM = new HashSet<>(mobsIds.length); for (String id : mobsIds) { MOBS_LIST_NOT_RANDOM.add(Integer.parseInt(id)); } }`
 
 ### Generated fields that other statements also use
 
@@ -1236,10 +1181,6 @@ Java: `gameserver/config/custom/RebirthConfig.java`, file `Custom/Rebirth.ini`.
 
 ### Fields to hand-port
 
-- `REBIRTH_SKILL_DELETE_WHITELIST` (`Set<Integer>`, line 61)
-  - keys: `RebirthSkillDeleteWhitelist` (default `""`)
-  - initializer: `new HashSet<>()`
-  - line 109: `REBIRTH_SKILL_DELETE_WHITELIST = parseIntegerSet(config.getString("RebirthSkillDeleteWhitelist", ""));`
 - `REBIRTH_DELETE_PROTECTED_SKILL_GROUPS` (`Set<String>`, line 62)
   - keys: `RebirthDeleteProtectedSkillGroups` (default `""`)
   - initializer: `new HashSet<>()`
@@ -1247,14 +1188,6 @@ Java: `gameserver/config/custom/RebirthConfig.java`, file `Custom/Rebirth.ini`.
 - `REBIRTH_SKILL_REFUND_MODE` (`String`, line 71)
   - keys: `RebirthSkillRefundMode` (default `"MID"`)
   - line 117: `REBIRTH_SKILL_REFUND_MODE = config.getString("RebirthSkillRefundMode", "MID").trim().toUpperCase();`
-- `REBIRTH_MAGE_SKILLS` (`List<String>`, line 74)
-  - keys: `RebirthMageSkills` (default `""`)
-  - initializer: `new ArrayList<>()`
-  - line 118: `REBIRTH_MAGE_SKILLS = parseSkillList(config.getString("RebirthMageSkills", ""));`
-- `REBIRTH_FIGHTER_SKILLS` (`List<String>`, line 75)
-  - keys: `RebirthFighterSkills` (default `""`)
-  - initializer: `new ArrayList<>()`
-  - line 119: `REBIRTH_FIGHTER_SKILLS = parseSkillList(config.getString("RebirthFighterSkills", ""));`
 - `REBIRTH_SCREEN_MESSAGE_POSITION` (`String`, line 90)
   - keys: `RebirthScreenMessagePosition` (default `"TOP_CENTER"`)
   - line 128: `REBIRTH_SCREEN_MESSAGE_POSITION = config.getString("RebirthScreenMessagePosition", "TOP_CENTER").trim().toUpperCase();`
@@ -1268,17 +1201,4 @@ Java: `gameserver/config/custom/ScreenWelcomeMessageConfig.java`, file `Custom/S
 - `WELCOME_MESSAGE_TIME` (`int`, line 37) **ported by hand: `GameConfig::manual.custom_misc.welcome_message_time`**
   - keys: `ScreenWelcomeMessageTime` (default `10`)
   - line 44: `WELCOME_MESSAGE_TIME = config.getInt("ScreenWelcomeMessageTime", 10) * 1000;`
-
-## TransmogConfig
-
-Java: `gameserver/config/custom/TransmogConfig.java`, file `Custom/Transmog.ini`.
-
-### Fields to hand-port
-
-- `TRANSMOG_BANNED_ITEM_IDS` (`Set<Integer>`, line 42)
-  - keys: `TransmogBannedItemIds` (default `""`)
-  - initializer: `new HashSet<>()`
-  - line 51: `TRANSMOG_BANNED_ITEM_IDS.clear();`
-  - line 52: `final String transmogBannedItemIds = config.getString("TransmogBannedItemIds", "");`
-  - line 53: `if (!transmogBannedItemIds.isEmpty()) { for (String s : transmogBannedItemIds.split(",")) { TRANSMOG_BANNED_ITEM_IDS.add(Integer.parseInt(s.trim())); } }`
 

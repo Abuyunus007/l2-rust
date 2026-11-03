@@ -645,8 +645,6 @@ pub struct NpcRest {
     /// Java `NPC_SKILL_CHANCE_PENALTY`: `SkillChancePenaltyForLvLDifferences`, default
     /// `2.5, 3.0, 3.25, 3.5`.
     pub npc_skill_chance_penalty: Vec<f32>,
-    /// Java `LIST_PET_RENT_NPC`: `ListPetRentNpc`, default `30827`.
-    pub list_pet_rent_npc: Vec<i32>,
     /// Java `RAID_PDEFENCE_MULTIPLIER`: `RaidPDefenceMultiplier` / 100 (default 100).
     pub raid_pdefence_multiplier: f64,
     /// Java `RAID_MDEFENCE_MULTIPLIER`: `RaidMDefenceMultiplier` / 100 (default 100).
@@ -673,7 +671,6 @@ impl NpcRest {
             npc_crit_dmg_penalty: list("CritDmgPenaltyForLvLDifferences", "0.75, 0.65, 0.6, 0.58"),
             npc_skill_dmg_penalty: list("SkillDmgPenaltyForLvLDifferences", "0.8, 0.7, 0.65, 0.62"),
             npc_skill_chance_penalty: list("SkillChancePenaltyForLvLDifferences", "2.5, 3.0, 3.25, 3.5"),
-            list_pet_rent_npc: int_list("ListPetRentNpc", &ini.get_string("ListPetRentNpc", "30827"), ','),
             raid_pdefence_multiplier: percent("RaidPDefenceMultiplier"),
             raid_mdefence_multiplier: percent("RaidMDefenceMultiplier"),
             raid_pattack_multiplier: percent("RaidPAttackMultiplier"),
@@ -1328,7 +1325,6 @@ mod tests {
         assert_eq!(d.npc_crit_dmg_penalty, [0.75, 0.65, 0.6, 0.58]);
         assert_eq!(d.npc_skill_dmg_penalty, [0.8, 0.7, 0.65, 0.62]);
         assert_eq!(d.npc_skill_chance_penalty, [2.5, 3.0, 3.25, 3.5]);
-        assert_eq!(d.list_pet_rent_npc, [30827]);
         assert_eq!(d.raid_pdefence_multiplier, 1.0);
         assert_eq!(d.pet_hp_regen_multiplier, 1.0);
 
@@ -1341,7 +1337,6 @@ mod tests {
         assert_eq!(n.npc_dmg_penalty, [0.5, 0.4]);
         // A bad number fails Java's load: the default list stays.
         assert_eq!(n.npc_skill_dmg_penalty, d.npc_skill_dmg_penalty);
-        assert_eq!(n.list_pet_rent_npc, [1, 2, 3]);
         assert_eq!(n.raid_pdefence_multiplier, 1.5);
         assert_eq!(n.raid_mdefence_multiplier, 0.5);
         assert_eq!(n.raid_pattack_multiplier, 2.0);

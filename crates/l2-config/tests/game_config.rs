@@ -179,7 +179,7 @@ fn dist_config_core_manual_fields() {
     assert_eq!(core.player.party_xp_cutoff_gaps, [[0, 9], [10, 14], [15, 99]]);
     assert!(core.player.alt_game_cancel_cast && !core.player.alt_game_cancel_bow);
 
-    assert_eq!(core.npc.list_pet_rent_npc, [30827]);
+    assert_eq!(config.npc.list_pet_rent_npc, [30827]);
     assert_eq!(core.olympiad.olympiad_classed_reward, [[13722, 50]]);
     assert_eq!(core.olympiad.olympiad_competition_days.len(), 7);
     assert_eq!(core.flood_protector.use_item.protection_interval, 0); // the shipped file; default 4
