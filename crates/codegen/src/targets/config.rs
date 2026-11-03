@@ -1439,7 +1439,12 @@ final ConfigReader config = new ConfigReader(F);
         };
         let class = list_class(
             "ChampionMonstersConfig",
-            &body("CHAMPION_REWARD_ITEMS", "List<ItemHolder>", "ChampionRewardItems", "4356,10"),
+            &body(
+                "CHAMPION_REWARD_ITEMS",
+                "List<ItemHolder>",
+                "ChampionRewardItems",
+                "4356,10",
+            ),
         )
         .unwrap();
         assert_eq!(class.list_count(), 1);
@@ -1449,7 +1454,12 @@ final ConfigReader config = new ConfigReader(F);
             &format!(
                 "{}
 {}",
-                body("MINIONS_RESPAWN_TIME", "Map<Integer, Integer>", "CustomMinionsRespawnTime", ""),
+                body(
+                    "MINIONS_RESPAWN_TIME",
+                    "Map<Integer, Integer>",
+                    "CustomMinionsRespawnTime",
+                    ""
+                ),
                 "public static Set<Integer> UNLISTED;"
             ),
         )
@@ -1459,7 +1469,12 @@ final ConfigReader config = new ConfigReader(F);
         let sources = Sources {
             classes: vec![class_source(
                 "ChampionMonstersConfig",
-                &body("CHAMPION_REWARD_ITEMS", "List<ItemHolder>", "ChampionRewardItems", "4356,10"),
+                &body(
+                    "CHAMPION_REWARD_ITEMS",
+                    "List<ItemHolder>",
+                    "ChampionRewardItems",
+                    "4356,10",
+                ),
             )],
             dist_ini: BTreeMap::new(),
         };
@@ -1469,8 +1484,11 @@ final ConfigReader config = new ConfigReader(F);
             "pub champion_reward_items: Vec<crate::ItemHolder>,",
             ".get_item_holder_list(\"ChampionRewardItems\", \"4356,10\")",
         ] {
-            assert!(rs.contains(expected), "missing `{expected}` in:
-{rs}");
+            assert!(
+                rs.contains(expected),
+                "missing `{expected}` in:
+{rs}"
+            );
         }
         syn::parse_file(rs).unwrap();
     }
@@ -1494,7 +1512,10 @@ final ConfigReader config = new ConfigReader(F);
 CHAMPION_REWARD_ITEMS = new ArrayList<>();
 }";
         let err = list_class("ChampionMonstersConfig", body).err().unwrap();
-        assert!(format!("{err:#}").contains("exactly one getString key"), "{err:#}");
+        assert!(
+            format!("{err:#}").contains("exactly one getString key"),
+            "{err:#}"
+        );
         // The sample class has fields the table does not know: they stay placeholders.
         let class = list_class("FooConfig", LIST_BODY).unwrap();
         assert_eq!(class.list_count(), 0);
@@ -1527,7 +1548,11 @@ CHAMPION_REWARD_ITEMS = new ArrayList<>();
                 .unwrap_or_else(|| panic!("{class}.{field} is not a list field"));
             assert_eq!(found.1.kind, *kind);
             // The key is in the dist file (or the field simply keeps its default).
-            let ini = sources.dist_ini.get(&found.0.ini_file).map(String::as_str).unwrap_or("");
+            let ini = sources
+                .dist_ini
+                .get(&found.0.ini_file)
+                .map(String::as_str)
+                .unwrap_or("");
             assert!(
                 ini_keys(ini).contains(&found.1.key) || found.1.key == "CustomMinionsRespawnTime",
                 "{class}.{field}: key {} is not in {}",

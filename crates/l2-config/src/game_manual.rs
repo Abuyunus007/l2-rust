@@ -7,7 +7,6 @@
 // `manual`. The `effective_*` accessors on `GameConfig` are the Java values after the
 // post-processing statements of `load()` (the generated fields hold the raw getter result).
 
-
 use regex::Regex;
 use tracing::warn;
 

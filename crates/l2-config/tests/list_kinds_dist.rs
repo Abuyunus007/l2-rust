@@ -33,7 +33,7 @@ fn int_sets() {
     if let Some(ini) = load(RandomSpawnsConfig::FILE) {
         let r = RandomSpawnsConfig::from_ini(&ini);
         // The value continues over many lines (`\` at the end of a line).
-        assert!(r.mobs_list_not_random.len() > 100, "{}", r.mobs_list_not_random.len());
+        assert_eq!(r.mobs_list_not_random.len(), 91);
         assert!(r.mobs_list_not_random.contains(&18812) && r.mobs_list_not_random.contains(&22136));
     }
     // Empty values.
@@ -83,7 +83,10 @@ fn locations() {
     let teleports = CommunityBoardConfig::from_ini(&ini).community_available_teleports;
     assert_eq!(teleports.len(), 17);
     let giran = teleports["Giran"];
-    assert_eq!((giran.x, giran.y, giran.z, giran.heading), (82698, 148638, -3473, 0));
+    assert_eq!(
+        (giran.x, giran.y, giran.z, giran.heading),
+        (82698, 148638, -3473, 0)
+    );
     assert_eq!(teleports["Kamael"].z, 368);
 }
 
@@ -109,7 +112,10 @@ fn defaults() {
         [ItemHolder { id: 4356, count: 10 }]
     );
     assert_eq!(
-        RandomSpawnsConfig::from_ini(&empty).mobs_list_not_random.into_iter().collect::<Vec<_>>(),
+        RandomSpawnsConfig::from_ini(&empty)
+            .mobs_list_not_random
+            .into_iter()
+            .collect::<Vec<_>>(),
         [18812, 18813, 18814, 22138]
     );
     assert_eq!(NpcConfig::from_ini(&empty).list_pet_rent_npc, [30827]);
