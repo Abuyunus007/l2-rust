@@ -22,7 +22,7 @@
 //!   with the base computed inside the formula) is passed as a [`CalcStat`] closure. Stats asked
 //!   with a fixed base (`calcStat(Stat.CRITICAL_DAMAGE, 1, ...)`) are passed as the plain number.
 //! - Every random draw goes through the [`Rnd`] trait in Java's order, so a recorded sequence
-//!   of draws (the `rnd` lists of `java-vectors/out/formulas_*.json`) replays exactly.
+//!   of draws (the `rnd` lists of `crates/l2-testkit/vectors/formulas_*.json`) replays exactly.
 //!   The world's seedable RNG ([`WorldRng`](crate::WorldRng)) implements [`Rnd`].
 //! - Quirks stay: marked `// NOTE(java-quirk):`.
 //!

@@ -1,8 +1,7 @@
 //! Facts read from the Java source text, committed as JSON (T-VEC-01).
 //!
-//! `cargo run -p codegen -- java-facts` reads the `.java` files of the L2JMobius checkout and
-//! writes `java-vectors/out/java_facts/*.json`. Tests that compare the port with those sources
-//! load the JSON here, so they run without the checkout. A missing file is a test failure: the
+//! The facts live in `crates/l2-testkit/vectors/java_facts/*.json`. Tests that compare the port
+//! with them load the JSON here. A missing file is a test failure: the
 //! files are committed.
 
 use std::collections::BTreeMap;
@@ -13,16 +12,17 @@ use serde::de::DeserializeOwned;
 
 use crate::vectors::workspace_root;
 
-/// Path of a fact file: `java-vectors/out/java_facts/<name>.json`.
+/// Path of a fact file: `crates/l2-testkit/vectors/java_facts/<name>.json`.
 pub fn fact_path(name: &str) -> PathBuf {
     workspace_root()
-        .join("java-vectors")
-        .join("out")
+        .join("crates")
+        .join("l2-testkit")
+        .join("vectors")
         .join("java_facts")
         .join(format!("{name}.json"))
 }
 
-/// Loads and deserializes `java-vectors/out/java_facts/<name>.json`.
+/// Loads and deserializes `crates/l2-testkit/vectors/java_facts/<name>.json`.
 ///
 /// Panics with the file path when the file is missing or doesn't match `T`.
 pub fn load_fact<T: DeserializeOwned>(name: &str) -> T {

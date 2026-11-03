@@ -1,6 +1,6 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
-//! The stat engine against the Java vectors of M4-JV-01 (`java-vectors/out/stats_*.json`): every
+//! The stat engine against the Java vectors of M4-JV-01 (`crates/l2-testkit/vectors/stats_*.json`): every
 //! `UserInfo` / `NpcInfo` number, the raw doubles behind them, the 31 `calcStat` probes, the base
 //! stat bonus tables and the function lists of `stats_func_trace.json`.
 //!

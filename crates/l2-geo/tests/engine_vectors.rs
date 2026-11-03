@@ -1,4 +1,4 @@
-//! Checks the `GeoEngine` port against the Java vectors `java-vectors/out/geo_engine_*.json`
+//! Checks the `GeoEngine` port against the Java vectors `crates/l2-testkit/vectors/geo_engine_*.json`
 //! (M3-GEO-01), produced by the real `GeoEngine`, `GridLineIterator2D` and `GridLineIterator3D`.
 //!
 //! * `geo_engine_coords.json` needs no geodata: coordinate conversion and both line iterators run

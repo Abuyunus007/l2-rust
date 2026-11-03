@@ -1,4 +1,4 @@
-//! Link packets against the real Java output (`java-vectors/out/login_packets.json`).
+//! Link packets against the real Java output (`crates/l2-testkit/vectors/login_packets.json`).
 //!
 //! Two directions: `login_server_to_game_server` (LS writes, GS reads) and
 //! `game_server_to_login_server` (GS writes, LS reads). For each variant the struct must encode

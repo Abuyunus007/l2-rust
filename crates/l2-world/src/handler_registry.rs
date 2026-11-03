@@ -1,7 +1,7 @@
 //! Audit of the Java handler folders (S-HAND-01): every class under
 //! `dist/game/data/scripts/handlers/{actions,bypass,chat,items,punishments}` is either ported or
 //! left with its reason. The tests check the lists against the Java folders (the class and word
-//! lists in `java-vectors/out/java_facts/handlers.json`, written by `codegen java-facts`) and the
+//! lists in `crates/l2-testkit/vectors/java_facts/handlers.json`) and the
 //! "ported" bypass and item words against the real registries.
 
 #[cfg(test)]

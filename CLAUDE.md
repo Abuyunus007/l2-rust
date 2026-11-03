@@ -1,7 +1,7 @@
 # l2-rust: port of L2JMobius High Five 2.6 to Rust
 
 A Lineage 2 H5 private server (login + game server + admin tools) ported from Java to Rust.
-**The Java source is the spec.** When unsure how something behaves, read the Java code. Never guess.
+**Existing behaviour is the spec (D-58):** the Rust code, `dist/` and the tests in `crates/l2-testkit/vectors/` define what the server does.
 
 ## Read first (every agent, every session)
 1. `docs/DECISIONS.md`: binding rules. Never break them. If a card seems to require it, stop and report.
@@ -15,19 +15,11 @@ A Lineage 2 H5 private server (login + game server + admin tools) ported from Ja
 - Never kill processes by name (`Stop-Process -Name java`, `taskkill /IM java.exe`, `pkill java`, ...): the owner's Java game server is a `java.exe`. Stop only processes you started, by their PID, after checking the command line.
 - Never put credentials, account names or IPs into committed files or captures.
 
-## Reference material (read-only, never modify, never copy into the repo wholesale)
-- Java core: `C:\l2-rust\l2jmobius\java\org\l2jmobius\`
-- Datapack, configs, scripts, SQL: `C:\l2-rust\l2jmobius\dist\` (the repo's own snapshot of the data and configs is `dist/`, D-55: changed only by `tools/sync-dist.py`, never by hand)
-- Geodata: `C:\l2-rust\geodata-download\`, `C:\l2-rust\geodata-converted\`
-- Packet index (generated from the Java sources by the owner): `C:\l2-rust\PACKET_DOCS\` (`README.md` = opcode index; layouts per packet with offsets, connection states, users). A quick map only: when it and the Java code disagree, the Java code wins (its "Server handling"/"Used in" parts are regex summaries).
-Use these absolute paths. They work from any git worktree.
-
 ## Commands
 ```
 cargo fmt --all
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
-cargo run -p codegen -- <target>      # regenerate generated code
 ```
 A task is done only when all three of fmt, clippy and test pass locally. CI runs them on Windows and Linux.
 
@@ -39,7 +31,7 @@ A task is done only when all three of fmt, clippy and test pass locally. CI runs
 - Randomness only via the world's RNG (seedable). Never `rand::thread_rng()` in game logic.
 - Don't recreate the Java class hierarchy. Shared data structs + kind enums + small traits.
 - Same DB schema, same `.ini` keys and defaults as Java. Don't rename or "improve" them.
-- Files in `src/generated/` are produced by `codegen`. Never edit them by hand. Change the generator instead.
+- `src/generated/` folders are normal code now (D-58): edit them by hand. `dist/` is our own data too.
 
 ## Code conventions
 - Rust 2024 edition, stable toolchain. Little-endian everywhere in the protocol.
@@ -52,7 +44,7 @@ A task is done only when all three of fmt, clippy and test pass locally. CI runs
 - New dependencies: only ones the card allows or `docs/DECISIONS.md` names. Ask the orchestrator otherwise.
 
 ## Tests
-- Byte-level code (crypto, packets, geodata, formulas) must be checked against Java vectors in `java-vectors/out/` through `l2-testkit`.
+- Byte-level code (crypto, packets, geodata, formulas) must be checked against the test values in `crates/l2-testkit/vectors/` through `l2-testkit`.
 - Every packet struct gets a round-trip test (decode(encode(x)) == x) plus a vector/capture test when one exists.
 - Don't weaken, skip or delete a failing test to make a card pass. Report it instead.
 - Integration test files (`tests/*.rs`) start with `#![allow(clippy::unwrap_used, clippy::expect_used)]`. Clippy's test exemption only covers `#[test]` functions, not helpers.

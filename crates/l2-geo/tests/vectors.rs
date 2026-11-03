@@ -1,4 +1,4 @@
-//! Checks `l2-geo` against the Java vectors `java-vectors/out/geo_*.json` (M1-JV-03).
+//! Checks `l2-geo` against the Java vectors `crates/l2-testkit/vectors/geo_*.json` (M1-JV-03).
 //!
 //! The vectors were produced by the real `Region` class on the real `.l2j` files, so the tests need
 //! the geodata folders. They skip with a printed message when a folder or file is missing (CI has

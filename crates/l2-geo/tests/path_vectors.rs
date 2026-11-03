@@ -1,4 +1,4 @@
-//! Checks the pathfinding port against the Java vectors `java-vectors/out/geo_path_*.json`
+//! Checks the pathfinding port against the Java vectors `crates/l2-testkit/vectors/geo_path_*.json`
 //! (M3-GEO-02), produced by the real `PathFinding.findPath` (real `NodeBuffer` and `GeoLocation`)
 //! on the whole-world `GeoEngine` of each geodata set.
 //!

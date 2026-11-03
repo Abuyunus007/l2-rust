@@ -6,7 +6,7 @@
 //! Expected behaviour comes from the Java code named in each test (`Player.updatePvPStatus`,
 //! `PvpFlagTaskManager`, `Player.onKillUpdatePvPKarma`, `Player.setKarma`, `Player.getRelation`,
 //! `Player.isAutoAttackable`, `Creature.callSkill`), the karma numbers from the Java vector file
-//! `java-vectors/out/formulas_karma_gain.json`.
+//! `crates/l2-testkit/vectors/formulas_karma_gain.json`.
 //! Java: entity/actor/{Player,Playable,Creature}.java, taskmanagers/PvpFlagTaskManager.java
 
 use std::path::PathBuf;
@@ -482,8 +482,8 @@ impl Scene {
 /// `Formulas.calculateKarmaGain` against the real class (`FormulaVectors.writeKarmaGain`).
 #[test]
 fn karma_gain_matches_the_java_vectors() {
-    let path =
-        PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../java-vectors/out/formulas_karma_gain.json");
+    let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("../../crates/l2-testkit/vectors/formulas_karma_gain.json");
     let Ok(text) = std::fs::read_to_string(&path) else {
         eprintln!("skipped: {} is missing", path.display());
         return;

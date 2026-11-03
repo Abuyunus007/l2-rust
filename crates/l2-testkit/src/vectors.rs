@@ -1,7 +1,7 @@
-//! Loading Java-generated test vectors.
+//! Loading the committed test vectors.
 //!
-//! The Java harness in `java-vectors/` calls the real L2JMobius classes and writes JSON files to
-//! `java-vectors/out/<name>.json`. Byte values in those files are lowercase hex strings
+//! The JSON files in
+//! `crates/l2-testkit/vectors/<name>.json` hold the test values. Byte values in those files are lowercase hex strings
 //! (convert with [`crate::from_hex`]). The files are committed, so tests run without Java.
 
 use std::path::PathBuf;
@@ -18,15 +18,16 @@ pub fn workspace_root() -> PathBuf {
         .expect("l2-testkit must live in <root>/crates/l2-testkit")
 }
 
-/// Path of a vector file: `java-vectors/out/<name>.json`.
+/// Path of a vector file: `crates/l2-testkit/vectors/<name>.json`.
 pub fn vector_path(name: &str) -> PathBuf {
     workspace_root()
-        .join("java-vectors")
-        .join("out")
+        .join("crates")
+        .join("l2-testkit")
+        .join("vectors")
         .join(format!("{name}.json"))
 }
 
-/// Loads and deserializes `java-vectors/out/<name>.json`.
+/// Loads and deserializes `crates/l2-testkit/vectors/<name>.json`.
 ///
 /// Panics with the file path when the file is missing or doesn't match `T`.
 pub fn load<T: DeserializeOwned>(name: &str) -> T {

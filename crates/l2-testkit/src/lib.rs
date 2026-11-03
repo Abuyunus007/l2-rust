@@ -1,7 +1,7 @@
 //! Test support shared by all crates. Use it as a **dev-dependency only**.
 //!
-//! - [`vectors`]: load the JSON test vectors the Java harness writes to `java-vectors/out/` (D-41).
-//! - [`java_facts`]: facts from the Java source text, committed as JSON by `codegen java-facts`.
+//! - [`vectors`]: load the committed JSON test vectors in `crates/l2-testkit/vectors/`.
+//! - [`java_facts`]: facts from the Java source text, committed as JSON.
 //! - [`bytes`]: hex conversion and byte-slice assertions with readable diffs.
 //! - [`fake_login_client`], [`fake_game_server`]: a fake H5 login client and a fake game server
 //!   that speak the real wire protocols with the real ciphers (login server integration tests).

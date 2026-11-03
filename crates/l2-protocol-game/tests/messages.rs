@@ -1,5 +1,5 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
-//! Checks of the generated `SystemMessageId` / `NpcStringId` tables (codegen target `messages`).
+//! Checks of the generated `SystemMessageId` / `NpcStringId` tables.
 //! Expected values come from the Java sources (`SystemMessageId.java`, `NpcStringId.java`).
 
 use l2_protocol_game::generated::npc_string_id::NpcStringId;

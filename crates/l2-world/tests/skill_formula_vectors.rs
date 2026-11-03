@@ -1,7 +1,7 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
 //! The skill formulas of `l2_world::formulas` against the vectors the real L2JMobius `Formulas`
-//! class (and the real `Heal` effect) wrote (`java-vectors/out/skill_formulas_*.json`, M5-JV-03).
+//! class (and the real `Heal` effect) wrote (`crates/l2-testkit/vectors/skill_formulas_*.json`, M5-JV-03).
 //!
 //! How a case is replayed:
 //! - The creatures come from `skill_formulas_creatures.json` (flags, stat probes, base stat
@@ -43,7 +43,7 @@ use serde_json::Value;
 
 fn vector(name: &str) -> Option<Value> {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../java-vectors/out")
+        .join("../../crates/l2-testkit/vectors")
         .join(format!("skill_formulas_{name}.json"));
     match std::fs::read_to_string(&path) {
         Ok(text) => Some(serde_json::from_str(&text).unwrap_or_else(|e| panic!("{}: {e}", path.display()))),
