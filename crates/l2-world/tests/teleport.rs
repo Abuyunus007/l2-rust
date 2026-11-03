@@ -159,7 +159,11 @@ struct TempRoot(PathBuf);
 
 impl TempRoot {
     fn new(tag: &str, zone_xml: &str) -> Self {
-        let dir = std::env::temp_dir().join(format!("l2-world-tele-{tag}-{}", std::process::id()));
+        let dir = tempfile::Builder::new()
+            .prefix(&format!("l2-world-tele-{tag}-"))
+            .tempdir()
+            .unwrap()
+            .keep();
         let zones = dir.join("data").join("zones");
         std::fs::create_dir_all(&zones).unwrap();
         std::fs::write(

@@ -436,6 +436,105 @@ fn friendly_mobs_are_attackable_for_players_with_karma_only() {
     assert!(decode_npc_info(&world.npc_info_bytes(id, ObjectId(10)).unwrap()).attackable);
 }
 
+// ------------------------------------------------------------------ MultilingualSupport (M9-L02)
+
+/// `data/lang/el/NpcNameLocalisation.xml` with one NPC.
+fn greek_names() -> l2_data::LangData {
+    let tables = l2_data::lang::lang_tables_from_xml(
+        r#"<list><localisation id="1000" name="Greek name" title="Greek title"/></list>"#,
+        "",
+        "",
+        "",
+    )
+    .unwrap();
+    l2_data::LangData {
+        languages: vec![("el".to_owned(), tables)],
+    }
+}
+
+fn multilang_world(enable: bool) -> (World, Log, tempfile::TempDir) {
+    let (mut world, log, dir) = world_with(&[("a.xml", spawn_file(""))]);
+    let mut settings = WorldSettings::default();
+    settings.custom_misc.multilang.enable = enable;
+    settings.custom_misc.multilang.allowed = vec!["en".to_owned(), "el".to_owned()];
+    world.set_settings(settings);
+    world.set_lang_texts(&greek_names());
+    (world, log, dir)
+}
+
+#[test]
+fn an_npc_name_arrives_in_the_language_of_the_viewer() {
+    let (mut world, log, _dir) = multilang_world(true);
+    enter(&mut world, &log, 10, X, Y, Z);
+    enter(&mut world, &log, 11, X, Y, Z);
+    let id = world.spawn_npc_at(1000, X + 5, Y, Z, 0).unwrap();
+    let info =
+        |world: &World, viewer: i32| decode_npc_info(&world.npc_info_bytes(id, ObjectId(viewer)).unwrap());
+    // No language chosen: the template's name.
+    assert_eq!(info(&world, 10).name, "Gatekeeper");
+    world.player_mut(ObjectId(10)).unwrap().data.profile.language = Some("el".to_owned());
+    world.player_mut(ObjectId(11)).unwrap().data.profile.language = Some("en".to_owned());
+    let greek = info(&world, 10);
+    assert_eq!(
+        (greek.name.as_str(), greek.title.as_str()),
+        ("Greek name", "Greek title")
+    );
+    // English is left alone, and the other viewer is not affected.
+    assert_eq!(info(&world, 11).name, "Gatekeeper");
+}
+
+#[test]
+fn an_npc_name_is_not_translated_with_the_switch_off() {
+    let (mut world, log, _dir) = multilang_world(false);
+    enter(&mut world, &log, 10, X, Y, Z);
+    let id = world.spawn_npc_at(1000, X + 5, Y, Z, 0).unwrap();
+    world.player_mut(ObjectId(10)).unwrap().data.profile.language = Some("el".to_owned());
+    let info = decode_npc_info(&world.npc_info_bytes(id, ObjectId(10)).unwrap());
+    assert_eq!(info.name, "Gatekeeper");
+}
+
+#[test]
+fn the_lang_command_shows_the_npcs_again_in_the_new_language() {
+    let (mut world, log, _dir) = multilang_world(true);
+    enter(&mut world, &log, 10, X, Y, Z);
+    let id = world.spawn_npc_at(1000, X + 5, Y, Z, 0).unwrap();
+    world.spawn_npc_at(2000, X + 6, Y, Z, 0).unwrap();
+    log.take();
+    world.handle(WorldCommand::Input {
+        session: SessionId(10),
+        input: ClientInput::Say {
+            chat_type: l2_protocol_game::server::ChatType::General.client_id(),
+            text: ".lang el".to_owned(),
+            target: None,
+        },
+    });
+    let out = log.take();
+    // Only the NPC with a translation is deleted from the client.
+    let deleted: Vec<i32> = out
+        .iter()
+        .filter(|(_, b)| name_of(b) == "DELETE_OBJECT")
+        .map(|(_, b)| {
+            DeleteObject::decode(&mut PacketReader::new(&b[1..]))
+                .unwrap()
+                .object_id
+        })
+        .collect();
+    assert_eq!(deleted, [id.0]);
+    assert!(!out.iter().any(|(_, b)| name_of(b) == "NPC_INFO"));
+    // A second later (20 ticks of 50 ms) it comes back with the Greek name.
+    for _ in 0..21 {
+        world.tick();
+    }
+    let infos: Vec<NpcInfo> = log
+        .take()
+        .iter()
+        .filter(|(_, b)| name_of(b) == "NPC_INFO")
+        .map(|(_, b)| decode_npc_info(b))
+        .collect();
+    assert_eq!(infos.len(), 1);
+    assert_eq!((infos[0].object_id, infos[0].name.as_str()), (id.0, "Greek name"));
+}
+
 // ------------------------------------------------------------------ the reference folders
 
 const REFERENCE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game");

@@ -724,6 +724,9 @@ pub fn player_from_row(row: &CharacterRow) -> PlayerData {
             } else {
                 0
             },
+            // Java `player.setLang(rset.getString("language"))`; the world normalises it at enter
+            // world (M9-L02).
+            language: row.language.clone(),
             // Java `setIn7sDungeon(rset.getInt("isin7sdungeon") == 1)` (M8-SS-01).
             in_7s_dungeon: row.isin7sdungeon == 1,
             bookmark_slot: i32::from(row.bookmarkslot),
@@ -1998,6 +2001,28 @@ mod tests {
         let p = player_from_row(&r);
         assert_eq!(p.profile.faction, 0);
         assert_eq!(crate::persist::build_character_update(&p, &r).faction, 0);
+    }
+
+    #[test]
+    fn the_language_is_loaded_and_stored_back() {
+        // Java `setLang(rset.getString("language"))` and `ps.setString(49, _lang)` (M9-L02).
+        let mut r = row();
+        r.language = Some("el".to_owned());
+        let mut p = player_from_row(&r);
+        assert_eq!(p.profile.language.as_deref(), Some("el"));
+        assert_eq!(
+            crate::persist::build_character_update(&p, &r).language.as_deref(),
+            Some("el")
+        );
+        // The player changes it: the next store writes the new one, not the row's.
+        p.profile.language = Some("en".to_owned());
+        assert_eq!(
+            crate::persist::build_character_update(&p, &r).language.as_deref(),
+            Some("en")
+        );
+        // A character that never chose one stores NULL.
+        p.profile.language = None;
+        assert_eq!(crate::persist::build_character_update(&p, &r).language, None);
     }
 
     #[test]

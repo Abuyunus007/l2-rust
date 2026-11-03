@@ -8,7 +8,7 @@
 // switches on by default). `CustomMiscSettings::default()` is the Java default of each key, so a
 // world built without the config behaves like a server with the shipped `.ini` files.
 
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 
 use l2_util::ObjectId;
 
@@ -199,8 +199,9 @@ impl Default for CustomMiscSettings {
 /// What the features keep between two calls.
 #[derive(Debug, Default)]
 pub struct CustomMiscState {
-    /// `Player._lang` of the players who chose one with `.lang`.
-    pub(crate) lang: HashMap<ObjectId, String>,
+    /// The translated texts of `data/lang/` (M9-L02, `multilingual.rs`). `Player._lang` is
+    /// `PlayerProfile::language`.
+    pub(crate) texts: super::multilingual::LangTexts,
     /// `AntiFeedManager`'s `_eventIPs`.
     pub(crate) anti_feed: AntiFeed,
     /// `CaptchaManager`'s maps.
@@ -220,6 +221,9 @@ pub enum CustomMiscTimer {
     CaptchaCountdown(ObjectId, i32),
     /// Java `applyJailPunishment`'s `schedule(..., 2000)` warning.
     CaptchaJailWarning(ObjectId),
+    /// Java `Lang.onCommand`'s `schedule(..., 1000)`: the `NpcInfo` of an NPC with a name
+    /// translation (the player, the NPC).
+    LangNpcInfo(ObjectId, ObjectId),
 }
 
 /// `new StringTokenizer(text)`: whitespace set `" \t\n\r\f"`.
@@ -294,7 +298,6 @@ impl World {
     /// is still in the tables. (Java's captcha maps keep the player's entries.)
     pub(crate) fn custom_misc_on_leave(&mut self, id: ObjectId) {
         self.dualbox_on_leave(id);
-        self.custom_misc.lang.remove(&id);
     }
 
     /// The timers of [`CustomMiscTimer`].
@@ -306,6 +309,7 @@ impl World {
             CustomMiscTimer::CaptchaJailWarning(id) => {
                 self.send_message(id, "Warning: Your next jail time will be increased.");
             }
+            CustomMiscTimer::LangNpcInfo(player, npc) => self.on_lang_npc_info(player, npc),
         }
     }
 

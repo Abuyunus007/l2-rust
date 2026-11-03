@@ -14,11 +14,9 @@ pub struct TransmogConfig {
     pub transmog_apply_cost: i32,
     /// Key: `TransmogRemoveCost`, default 0.
     pub transmog_remove_cost: i32,
-    /// TODO(M2-CFG-01): not generated, hand-port it. Java type `Set<Integer>`; the unit type makes any use fail to compile until then.
+    /// Key: `TransmogBannedItemIds`, default empty (Java type `Set<Integer>`).
     /// Java (line 51): `TRANSMOG_BANNED_ITEM_IDS.clear();`
-    /// ... and 2 more statement(s), see docs/analysis/config-manual-fields.md.
-    /// Key: `TransmogBannedItemIds`, Java default `""` (before the Java post-processing).
-    pub transmog_banned_item_ids: (),
+    pub transmog_banned_item_ids: std::collections::BTreeSet<i32>,
 }
 impl TransmogConfig {
     /// File name inside the config directory.
@@ -30,7 +28,7 @@ impl TransmogConfig {
             transmog_share_account: ini.get_bool("TransmogShareAccount", false),
             transmog_apply_cost: ini.get_int("TransmogApplyCost", 0),
             transmog_remove_cost: ini.get_int("TransmogRemoveCost", 0),
-            transmog_banned_item_ids: (),
+            transmog_banned_item_ids: ini.get_int_set("TransmogBannedItemIds", ""),
         }
     }
 }
