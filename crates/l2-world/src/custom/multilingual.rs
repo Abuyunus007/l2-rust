@@ -114,6 +114,9 @@ impl Template {
     }
 }
 
+/// One `SendMessageLocalisation.xml` entry: the parts of the message and of its translation.
+type SendMessagePair = (Vec<String>, Vec<String>);
+
 /// Everything read from `data/lang/`, ready to use. Empty (and `active` false) with the switch
 /// off.
 #[derive(Debug, Default)]
@@ -127,7 +130,7 @@ pub struct LangTexts {
     /// `NpcNameLocalisationData`: language -> NPC id -> (name, title).
     npc_names: HashMap<String, HashMap<i32, (String, String)>>,
     /// `SendMessageLocalisationData`: language -> (message parts, translation parts).
-    send_messages: HashMap<String, Vec<(Vec<String>, Vec<String>)>>,
+    send_messages: HashMap<String, Vec<SendMessagePair>>,
 }
 
 impl LangTexts {
