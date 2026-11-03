@@ -619,8 +619,7 @@ fn board_the_gludio_gracia_air_ship() {
 
 // ---------------------------------------------------------------------------------- the data
 
-/// Every path of the boat scripts, as the Java sources have it (`boat_routes.json`, written by
-/// `codegen java-facts`).
+/// Every path of the boat scripts, as the Java sources have it (`boat_routes.json`).
 #[test]
 fn the_boat_paths_are_the_ones_of_the_java_scripts() {
     use l2_world::vehicle::boat_routes as r;

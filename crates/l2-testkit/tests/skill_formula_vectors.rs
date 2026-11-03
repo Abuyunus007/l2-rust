@@ -1,4 +1,4 @@
-//! Shape and consistency checks for the committed `java-vectors/out/skill_formulas_*.json` files
+//! Shape and consistency checks for the committed `crates/l2-testkit/vectors/skill_formulas_*.json` files
 //! (M5-JV-03).
 //!
 //! These tests prove that the files parse, that the case lists have the promised coverage, and that
@@ -18,9 +18,7 @@ use serde_json::Value;
 fn load_or_skip(name: &str) -> Option<Value> {
     let file = format!("skill_formulas_{name}");
     if !vector_path(&file).exists() {
-        eprintln!(
-            "skipping: java-vectors/out/{file}.json is missing (run java-vectors/build.ps1 skill-formulas)"
-        );
+        eprintln!("skipping: crates/l2-testkit/vectors/{file}.json is missing");
         return None;
     }
     Some(load(&file))

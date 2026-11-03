@@ -1,5 +1,5 @@
 //! Server packets against the real `writeImpl` output of the Java classes
-//! (`java-vectors/out/login_packets.json`, direction `login_server_to_client`).
+//! (`crates/l2-testkit/vectors/login_packets.json`, direction `login_server_to_client`).
 //!
 //! The file has no client packets: Java only reads those, so they are tested with hand-written
 //! bytes next to the code (`src/client.rs`).

@@ -2,7 +2,7 @@
 // Java: gameserver/config/**/*Config.java (the `split(..)` loops in `load()`)
 //
 // The Java config classes have no list getter: each one splits a `getString` by hand. The
-// generator (`codegen -- config`, `lists.rs`) knows six shapes and emits a call to one of the
+// generator (since removed) knew six shapes and emits a call to one of the
 // `IniFile` methods below instead of a `()` placeholder:
 //
 // | Java type              | method                | separators                       |

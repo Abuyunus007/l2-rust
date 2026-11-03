@@ -4,7 +4,7 @@
 //! wheel, the status listeners and the `StatusUpdate` packets.
 //!
 //! Most tests use synthetic templates written inline, so they run in CI. The vector test reads the
-//! datapack (`dist/game`) and `java-vectors/out/formulas_regen.json` and skips
+//! datapack (`dist/game`) and `crates/l2-testkit/vectors/formulas_regen.json` and skips
 //! with a message when either is missing.
 // Java: entity/actor/status/{CreatureStatus,PlayerStatus}.java, mechanics/stats/Formulas.java
 //       (calcHpRegen, calcMpRegen, calcCpRegen, getRegeneratePeriod)

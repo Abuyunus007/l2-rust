@@ -1,4 +1,4 @@
-//! L2 crypto primitives, byte-exact against the Java server (checked with `java-vectors/out/`).
+//! L2 crypto primitives, byte-exact against the Java server (checked with `crates/l2-testkit/vectors/`).
 //!
 //! - [`blowfish`]: Blowfish with L2's little-endian word order (`L2Blowfish`).
 //! - [`checksum`]: the XOR checksum `NewCrypt.appendChecksum` / `verifyChecksum`.

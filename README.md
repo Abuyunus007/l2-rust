@@ -296,10 +296,9 @@ crates/
   l2-admin-gui       egui admin app (bin)
   l2-proxy           decrypting recording proxy (bin)
   l2-geotool         geodata tool (bin)
-  l2-testkit         test helpers, Java vectors, captures
-  codegen            code generators (writes src/generated/)
+  l2-testkit         test helpers, test vectors (crates/l2-testkit/vectors/), captures
 dist/                the server folders: datapack, default configs, SQL schema (L2JMobius snapshot)
-tools/               helper scripts (sync-dist.py, merge scripts, analysis)
+tools/               helper scripts (merge scripts, analysis)
 docs/
   PLAN.md            milestones
   DECISIONS.md       binding design decisions (D-01 ...)
@@ -307,7 +306,6 @@ docs/
   design/            design notes (e.g. scripts.md)
   runbooks/          in-game test guides
   tasks/             task cards and the board
-java-vectors/        byte-level test vectors produced by the Java code
 fixtures/            scrubbed packet captures used as tests
 ```
 
@@ -327,7 +325,6 @@ fixtures/            scrubbed packet captures used as tests
 cargo fmt --all
 cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace
-cargo run -p codegen -- <target>     # regenerate generated code (needs the Java sources)
 ```
 
 - A change is done only when fmt, clippy and the tests pass. CI runs them on Windows and Linux,
@@ -335,11 +332,9 @@ cargo run -p codegen -- <target>     # regenerate generated code (needs the Java
 - Database tests only run when `L2_TEST_DATABASE_URL` is set. **Never point it at a real
   database.**
 - Tests that need the L2JMobius datapack or geodata skip with a message when those are missing.
-- Byte-level code (crypto, packets, geodata, formulas) is checked against vectors from the Java
-  code in `java-vectors/out/`.
-- Files in `src/generated/` are produced by `codegen`. Never edit them by hand.
-- `dist/` is changed only by `python tools/sync-dist.py <L2JMobius release dist folder>`, which
-  refreshes it from a newer L2JMobius release and keeps the Rust-only files.
+- Byte-level code (crypto, packets, geodata, formulas) is checked against the test values in
+  `crates/l2-testkit/vectors/`.
+- `dist/` is our own data: edit the files there directly.
 - Code style: Rust 2024, `thiserror` in libraries, `tracing` for logs, no `unwrap()` on network,
   file or database data. Ported types carry a `// Java: path/To/Class.java` comment.
 

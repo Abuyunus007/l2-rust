@@ -1,4 +1,4 @@
-//! Runtime geodata edits against the Java vector `java-vectors/out/geo_edit.json` (L-07).
+//! Runtime geodata edits against the Java vector `crates/l2-testkit/vectors/geo_edit.json` (L-07).
 //!
 //! The vector was made by the real `Region` class on a synthetic region (generator
 //! `GeoEditVectors`), so this test needs no geodata folder and runs in CI: load, save untouched,
