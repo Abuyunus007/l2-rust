@@ -11,7 +11,6 @@
 //! Java: mechanics/fishing/Fishing.java
 
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::{Arc, Mutex};
 
 use l2_data::skill::EnchantSkillGroups;
@@ -315,8 +314,6 @@ const OTHER_OBJECT: i32 = 0x1000_0004;
 
 // ---- the fixture -------------------------------------------------------------------------------
 
-static COUNTER: AtomicU32 = AtomicU32::new(0);
-
 /// A datapack folder with the zones, the map region and the pages of the championship.
 struct Root(PathBuf);
 
@@ -345,12 +342,11 @@ struct Fixture {
 
 impl Fixture {
     fn new() -> Self {
-        let dir = std::env::temp_dir().join(format!(
-            "l2-world-fishing-{}-{}",
-            std::process::id(),
-            COUNTER.fetch_add(1, Ordering::Relaxed)
-        ));
-        let _ = std::fs::remove_dir_all(&dir);
+        let dir = tempfile::Builder::new()
+            .prefix("l2-world-fishing-")
+            .tempdir()
+            .unwrap()
+            .keep();
         let zone = |id: i32, kind: &str, max_z: i32| {
             format!(
                 "<zone id=\"{id}\" name=\"z{id}\" type=\"{kind}\" shape=\"Cuboid\" minZ=\"-5000\" maxZ=\"{max_z}\">\

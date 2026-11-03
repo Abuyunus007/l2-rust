@@ -314,8 +314,12 @@ struct Root(PathBuf);
 
 impl Root {
     fn new(tag: &str, zone_xml: &str) -> Self {
-        let dir = std::env::temp_dir().join(format!("l2-world-pvp-{tag}-{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&dir);
+        // Unique per call: a shared name let parallel tests delete each other's directory.
+        let dir = tempfile::Builder::new()
+            .prefix(&format!("l2-world-pvp-{tag}-"))
+            .tempdir()
+            .unwrap()
+            .keep();
         for sub in ["zones", "mapregion"] {
             std::fs::create_dir_all(dir.join("data").join(sub)).unwrap();
         }

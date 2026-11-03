@@ -338,8 +338,12 @@ struct Root(PathBuf);
 
 impl Root {
     fn new(tag: &str, zones: &str) -> Self {
-        let dir = std::env::temp_dir().join(format!("l2-world-vit-{tag}-{}", std::process::id()));
-        let _ = std::fs::remove_dir_all(&dir);
+        // Unique per call: a shared name let parallel tests delete each other's directory.
+        let dir = tempfile::Builder::new()
+            .prefix(&format!("l2-world-vit-{tag}-"))
+            .tempdir()
+            .unwrap()
+            .keep();
         for sub in ["spawns", "zones", "mapregion"] {
             std::fs::create_dir_all(dir.join("data").join(sub)).unwrap();
         }

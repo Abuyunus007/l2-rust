@@ -271,7 +271,11 @@ struct Root(PathBuf);
 
 impl Root {
     fn new(tag: &str) -> Self {
-        let dir = std::env::temp_dir().join(format!("l2-world-leftover-{tag}-{}", std::process::id()));
+        let dir = tempfile::Builder::new()
+            .prefix(&format!("l2-world-leftover-{tag}-"))
+            .tempdir()
+            .unwrap()
+            .keep();
         let write = |path: &str, text: &str| {
             let file = dir.join(path);
             std::fs::create_dir_all(file.parent().unwrap()).unwrap();
