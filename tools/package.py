@@ -118,8 +118,8 @@ First start
                                 then press "Start all" in the Servers view (login first, then game).
   4. Client                     point the client's l2.ini / hosts entry at 127.0.0.1, port 2106.
 
-Ports: login 2106 (clients), 9014 (game servers); game 7777. Never run a Java
-L2J login or game server with the same ports at the same time.
+Ports: login 2106 (clients), 9014 (game servers); game 7777. This server runs all global
+jobs itself: never run a Java game server on the same database.
 
 Closing the admin GUI keeps the servers running. Open it again to reconnect; "Stop all" stops
 them cleanly. Logs: login\\log, game\\log, bin\\log.
