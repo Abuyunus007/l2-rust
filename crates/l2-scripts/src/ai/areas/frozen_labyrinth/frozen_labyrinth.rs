@@ -1,5 +1,4 @@
 //! Pronghorns and Frost Buffalos split into six spirits when hit with a physical skill.
-// Java: dist/game/data/scripts/ai/areas/FrozenLabyrinth/FrozenLabyrinth.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};

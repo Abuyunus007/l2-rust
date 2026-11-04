@@ -8,7 +8,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ClientOpcode;
 
-// Java: gameserver/network/clientpackets/MultiSellChoose.java
 /// The player picks an entry of the open multisell list (`MULTI_SELL_CHOOSE`).
 ///
 /// Java reads the fields below `amount` and ignores them (`_unk1` to `_unk11`; the last eight

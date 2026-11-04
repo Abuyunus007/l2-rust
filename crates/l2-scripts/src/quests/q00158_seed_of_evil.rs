@@ -1,6 +1,4 @@
 //! Quest 158: Seed of Evil (Biotin in Gludio, the monster Nerkas).
-// Java: dist/game/data/scripts/quests/Q00158_SeedOfEvil/Q00158_SeedOfEvil.java
-//
 // Pattern: a one-time quest with an item, exp and adena reward (`docs/design/scripts.md`,
 // "Quest patterns"): `exit_quest(ctx, false, true)` deletes the variables and keeps the state
 // row as `Completed`, so the start NPC shows the "already completed" page afterwards. Also an

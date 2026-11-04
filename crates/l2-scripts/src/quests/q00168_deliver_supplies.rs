@@ -1,6 +1,4 @@
 //! Quest 168: Deliver Supplies (Jenna sends a Dark Elf to Harant for three sentry blades).
-// Java: dist/game/data/scripts/quests/Q00168_DeliverSupplies/Q00168_DeliverSupplies.java
-//
 // Pattern: a delivery chain over several NPCs. Harant swaps Jenna's letter for three sentry
 // blades; Jenna takes one blade (cond 3); Kristin and Roselyn each take their blade for an old
 // bronze sword (cond 4 with two swords); Jenna pays and ends the quest (one-time). Dark Elves

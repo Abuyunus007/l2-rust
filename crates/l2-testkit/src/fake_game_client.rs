@@ -12,9 +12,6 @@
 //! pick a button of the death window (`RequestRestartPoint`) and answer a teleport (`Appearing`); the
 //! `skip_until`, `expect_later` and `read_quiet` helpers collect what the world sends on its own.
 //!
-//! Every packet that is sent or received is also written to a log of `(direction, packet name)`
-//! ([`FakeGameClient::log`]), so a test can compare the whole conversation with a capture of the
-//! Java game server by name and order (see `crates/game-server/tests/e2e.rs`).
 //!
 //! ```ignore
 //! let mut client = FakeGameClient::connect(game_server.client_addr().unwrap()).await;

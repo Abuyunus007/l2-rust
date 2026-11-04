@@ -1,5 +1,4 @@
 //! Rignos, the host of the Grand Isle of Prayer Race.
-// Java: dist/game/data/scripts/ai/areas/IsleOfPrayer/Rignos/Rignos.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};

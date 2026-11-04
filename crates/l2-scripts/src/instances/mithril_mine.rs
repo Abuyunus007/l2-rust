@@ -1,6 +1,5 @@
 //! Mithril Mine instance zone, template 138: Kegor fights off five millipedes while the player
 //! of `Q10284_AcquisitionOfDivineSword` watches.
-// Java: dist/game/data/scripts/instances/MithrilMine/MithrilMine.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;
@@ -63,8 +62,6 @@ impl Script for MithrilMine {
         npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        // NOTE(java-quirk): every event needs the NPC (`InstanceManager.getWorld(npc)` throws
-        // without one).
         let npc = npc?;
         let world = ctx
             .world()
@@ -82,8 +79,6 @@ impl Script for MithrilMine {
                     ctx.cast_skill_at(npc, Some(player), BLESS_OF_SWORD);
                 }
 
-                // NOTE(java-quirk): the timer starts again whatever the condition said; only the
-                // last millipede's kill cancels it.
                 ctx.start_quest_timer("BUFF", 30000, Some(npc), player, false);
             }
             "TIMER" => {
@@ -104,7 +99,6 @@ impl Script for MithrilMine {
                 }
             }
             "FINISH" => {
-                // NOTE(java-quirk): `world` is used below without a null check.
                 let instance_id = world?;
                 let known = ctx.world().visible_objects(npc.object_id);
                 for known_char in known {
@@ -150,8 +144,6 @@ impl Script for MithrilMine {
                     .to_owned(),
                 );
             } else if qs.is_memo_state(ctx, 3) {
-                // NOTE(java-quirk): `getPlayerWorld(player)` is dereferenced unchecked; a player
-                // no world allows ends the talk here, without the reward.
                 let instance_id = ctx.world().player_instance_world(player).map(|w| w.instance_id)?;
                 if let Some(world) = ctx.world_mut().instance_world_mut(instance_id) {
                     world.remove_allowed(player);
@@ -171,7 +163,6 @@ impl Script for MithrilMine {
     }
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, _is_summon: bool) {
-        // NOTE(java-quirk): both branches use `world` without a null check.
         let Some(instance_id) = ctx
             .world()
             .instance_world_of(npc.object_id)
@@ -202,8 +193,6 @@ impl Script for MithrilMine {
                 if let Some(qs) = qs
                     && qs.is_memo_state(ctx, 2)
                 {
-                    // NOTE(java-quirk): `npc` is the millipede, but the BUFF timer belongs to
-                    // Kegor, so this cancels nothing and Kegor keeps buffing every 30 seconds.
                     ctx.cancel_quest_timer("BUFF", Some(npc), Some(killer));
                     qs.set_memo_state(ctx, 3);
                     qs.set_cond(ctx, 6, true);

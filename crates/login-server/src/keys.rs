@@ -1,9 +1,5 @@
 //! The key pools: RSA pairs for clients (1024 bit) and game server links (512 bit), and the
 //! Blowfish keys handed to clients.
-// Java: org/l2jmobius/loginserver/controller/LoginController.java (constructor, `generateBlowFishKeys`)
-// Java: org/l2jmobius/loginserver/controller/ScrambledKeyPair.java
-// Java: org/l2jmobius/loginserver/data/GameServerTable.java (`initRSAKeys`)
-//
 // All pools are created once at startup and only read afterwards, so they need no locking.
 // Generating an RSA key takes long, so [`generate_client_keys`] and friends run on a blocking
 // thread and keep the runtime responsive.

@@ -1,6 +1,4 @@
 //! Quest 171: Acts of Evil (Guard Alvah and five NPCs, blade molds, reports and Ol Mahum heads).
-// Java: dist/game/data/scripts/quests/Q00171_ActsOfEvil/Q00171_ActsOfEvil.java
-//
 // Pattern: a long chain driven by the memo state (set together with the cond), kills that give
 // items by memo state, and a quest monster that is spawned at the killer and despawns by timer.
 

@@ -1,5 +1,4 @@
 //! Etis van Etina's Phantom AI (Seven Signs SSQ2 boss decoy).
-// Java: dist/game/data/scripts/ai/areas/MonasteryOfSilence/EtisVanEtinaPhantom.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};

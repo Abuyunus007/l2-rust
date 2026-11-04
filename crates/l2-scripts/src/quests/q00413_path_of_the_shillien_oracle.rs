@@ -1,6 +1,4 @@
 //! Quest 413: Path of the Shillien Oracle (Magister Sidra, Priest Adonius and Magister Talbot).
-// Java: dist/game/data/scripts/quests/Q00413_PathOfTheShillienOracle/Q00413_PathOfTheShillienOracle.java
-//
 // Pattern: a kill chain where each kill swaps one item for another (`docs/design/scripts.md`,
 // "Quest patterns"): dark succubi turn blank sheets into bloody runes, the undead drop ashen
 // bones for the penitent's mark, then the reward from Sidra.

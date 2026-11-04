@@ -1,10 +1,5 @@
 //! Guards and siege defenders: what `Guard`, `QuestGuard`, `Defender` and `FortCommander` add to
 //! an `Attackable`, and who attacks whom once NPCs can fight NPCs.
-// Java: entity/actor/instance/{Guard,QuestGuard,Defender,FortCommander}.java
-// Java: entity/actor/instance/Monster.java (isAutoAttackable: the NPC attacker side)
-// Java: entity/actor/instance/{FriendlyMob,Block}.java (isAutoAttackable)
-// Java: entity/actor/Player.java (isAutoAttackable: the `Guard` and `FriendlyMob` attackers)
-//
 // # Which AI runs
 // A `Guard` (and `QuestGuard`) uses the `AttackableAI` of every attackable (`Attackable.initAI`);
 // what is different is the `Guard` branches inside it (`attackable.rs`: `isAggressiveTowards`,
@@ -55,18 +50,6 @@ impl World {
     /// Java `Guard.onSpawn()` after `Attackable.onSpawn()`: "getAI().setIntentionActive()". The
     /// commented-out region check of Java is not there either, so a guard thinks from its spawn
     /// whether a player is near or not (its think returns at once while its region sleeps).
-    // NOTE(java-quirk): `Guard.onSpawn` calls `setRandomWalking(false)` *before* `super.onSpawn()`,
-    // and `Npc.onSpawn` sets the flag from the template again, so a guard whose template walks
-    // does walk.
-    // NOTE(java-quirk): `World.addVisibleObject` wakes only `isMonster()` NPCs. A guard whose
-    // region switched off was sent idle with its AI detached (`WorldRegion.switchAI`), and nothing
-    // wakes it again until something hits it (or it respawns).
-    // DEVIATION(performance): Java puts the guard in the think set at once, where its think returns
-    // at the first line while no player is near. With ~42,000 NPCs only those near players may
-    // cost anything (`the_real_world_thinks_only_near_players`), so a guard that spawns where no
-    // neighbouring region is active stays out of the set, with its AI and its ACTIVE intention,
-    // and joins when a region around it turns on ([`World::wake_guards_around`]). The behaviour
-    // is the same: it thinks exactly from the moment Java's think would get past that check.
     pub(crate) fn guard_on_spawn(&mut self, id: ObjectId) {
         if !self.is_guard(id) {
             return;
@@ -174,8 +157,6 @@ impl World {
                 }
                 // "Anything considers monsters friendly except Players, Attackables (Guards,
                 // Friendly NPC), Traps and EffectPoints."
-                // NOTE(java-quirk): then `Npc.isAutoAttackable` answers `_isAutoAttackable`, which
-                // `Monster`'s constructor set: every attackable that is no monster may fight one.
                 self.is_attackable_npc(attacker)
             }
             // `Guard.isAutoAttackable`: "attacker.isMonster() && !attacker.isFakePlayer()", then

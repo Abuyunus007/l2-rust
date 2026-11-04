@@ -1,8 +1,4 @@
 //! Slot and weight limits of a player's inventory.
-// Java: entity/itemcontainer/PlayerInventory.java (validateCapacity, validateWeight,
-//       validateCapacityByItemId, getQuestSize)
-// Java: entity/itemcontainer/ItemContainer.java (validateWeightByItemId)
-//
 // Equipping and destroying never check these (Java checks them when something is *added*: loot,
 // buying, trading, mail). They are here because the inventory owns the numbers and the cards
 // that add items (M4-DROP-01's pickup, shops in M5) call them.
@@ -29,9 +25,6 @@ impl World {
     }
 
     /// Java `PlayerInventory.validateCapacity(slots, questItem)`: `slots` more items fit.
-    // NOTE(java-quirk): the condition is `((slots == 0) && !AUTO_LOOT_SLOT_LIMIT) || questItem ?
-    // quest : normal`, so asking for 0 slots with `AutoLootSlotLimit = False` is checked against
-    // the quest item limit.
     pub fn validate_capacity(&self, player: ObjectId, slots: i64, quest_item: bool) -> bool {
         let Some(view) = self.stats(player) else {
             return false;

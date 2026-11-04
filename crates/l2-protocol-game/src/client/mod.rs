@@ -1,7 +1,6 @@
 //! Packets the game client sends to the game server.
 //!
 //! One struct per packet, copied from the login crate's pattern (see `l2_net::packet`):
-//! - a `// Java: path/To/Class.java` line,
 //! - `OPCODE` (and `EX_OPCODE` for `0xD0` packets) taken from the generated tables, never typed
 //!   by hand,
 //! - `impl Decode`: the fields **after** the opcode(s), exactly what Java `readImpl` reads. A
@@ -53,8 +52,7 @@ impl WireField for String {
 /// Declares a client packet that is nothing but a list of ints, longs and strings in a row, which
 /// is most of the clan, alliance and summon requests. Same result as writing the struct, the
 /// `OPCODE` const and the `Encode`/`Decode` impls by hand (see `skills.rs`): `plain` packets use
-/// `OPCODE`, `ex` packets (`0xD0` + `u16`) use `EX_OPCODE`. Put the `// Java:` line above the
-/// invocation.
+/// `OPCODE`, `ex` packets (`0xD0` + `u16`) use `EX_OPCODE`.
 macro_rules! client_packet {
     ($(#[$meta:meta])* $name:ident, plain $op:ident { $($(#[$fmeta:meta])* $field:ident: $ty:ty),* $(,)? }) => {
         $(#[$meta])*

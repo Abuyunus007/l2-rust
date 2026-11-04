@@ -1,18 +1,5 @@
 //! Mounts (M6-FU-07): a player rides a strider, a wyvern or a great wolf (`Player.mount`,
 //! `dismount`, `mountPlayer`), the mount's food, the no-landing zones and the rented pet.
-// Java: entity/actor/Player.java (mount, mountPlayer, dismount, setMount, isMounted, getMountType,
-//       startFeed, stopFeed, setCurrentFeed, isHungry, getFeedConsume, storePetFood,
-//       enteredNoLanding, exitedNoLanding, checkLandingState, startRentPet, stopRentPet,
-//       disarmWeapons, disarmShield)
-// Java: entity/actor/enums/player/MountType.java
-// Java: entity/actor/tasks/player/{PetFeedTask,DismountTask,RentPetTask}.java
-// Java: network/serverpackets/Ride.java
-// Java: network/clientpackets/RequestActionUse.java (case 38)
-// Java: dist/game/data/scripts/handlers/chat/commands/user/{Mount,Dismount}.java
-// Java: dist/game/data/scripts/handlers/skill/effects/Ride.java
-// Java: dist/game/data/scripts/handlers/items/PetFood.java (the player branch)
-// Java: entity/zone/type/NoLandingZone.java
-//
 // # How it fits together
 // - The state of a mounted player is [`MountState`] in `Player::mount` (Java `_mountType`,
 //   `_mountNpcId`, `_mountLevel`, `_mountObjectID`, `_canFeed`, `_curFeed`, `_controlItemId` and
@@ -68,7 +55,6 @@ const MAX_DISMOUNT_HEIGHT: i32 = 300;
 /// `Player.teleToLocation`: a flying mount does not go below this.
 pub const FLYING_MIN_Z: i32 = -1005;
 
-// Java: data/categoryData.xml, the categories `STRIDER`, `WYVERN_GROUP` and `WOLF_GROUP`.
 const STRIDER: [i32; 7] = [12526, 12527, 12528, 16038, 16039, 16040, 16068];
 const WYVERN_GROUP: [i32; 1] = [12621];
 const WOLF_GROUP: [i32; 4] = [16030, 16037, 16041, 16042];
@@ -149,8 +135,6 @@ pub struct MountState {
     /// Java `_controlItemId`: the collar whose `pets.fed` `storePetFood` writes.
     pub control_item_id: ObjectId,
     /// Java `_leveldata`: the `(npc id, level)` of the first level data `getPetLevelData` read.
-    // NOTE(java-quirk): Java caches it and never clears it, so the food bar of every later mount
-    // of the same session uses the numbers of the first mount that fed.
     pub feed_level: Option<(i32, i32)>,
     /// Java `_mountFeedTask`.
     pub feed_timer: Option<TimerId>,

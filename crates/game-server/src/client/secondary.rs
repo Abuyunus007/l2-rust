@@ -1,16 +1,4 @@
 //! The secondary password: the lock on the character screen (L-04).
-// Java: security/SecondaryPasswordAuth.java
-// Java: data/xml/SecondaryAuthData.java (config/SecondaryAuth.xml)
-// Java: network/clientpackets/{RequestEx2ndPasswordCheck,RequestEx2ndPasswordReq,
-// Java: RequestEx2ndPasswordVerify}.java
-// Java: network/clientpackets/CharacterSelect.java (the lock)
-// Java: network/GameClient.java (setAccountName creates the `SecondaryPasswordAuth`)
-//
-// Everything here runs in the connection task before the world (like the character screen), so it
-// may use the database (design: `docs/design/world-loop.md`). The rows are `account_gsdata`
-// (`secauth_pwd` the hashed password, `secauth_wte` the wrong attempts in a row), shared with the
-// Java game server (D-39).
-//
 // Left out: the `SendMail` to the login server after a temporary ban. Its opcode (0x09) is known
 // to Java's login server and answered with nothing ("not implemented"), and so it is by ours.
 
@@ -64,7 +52,6 @@ impl Default for SecondaryAuthData {
 impl SecondaryAuthData {
     /// Reads `SecondaryAuth.xml` from the config directory; without it the defaults stay
     /// (the feature is off).
-    // Java: SecondaryAuthData.load
     pub fn load(config_dir: &Path) -> Self {
         let path = config_dir.join(SECONDARY_AUTH_FILE);
         let data = match std::fs::read(&path) {
@@ -85,7 +72,6 @@ impl SecondaryAuthData {
     /// (with `password` children) of the `list` element. A number that does not parse ends the
     /// reading, like the `NumberFormatException` of Java's `parseDocument` (what was read
     /// before stays).
-    // Java: SecondaryAuthData.parseDocument
     pub fn parse(xml: &str) -> Self {
         let mut data = Self::default();
         let mut reader = Reader::from_str(xml);
@@ -565,8 +551,6 @@ impl ClientSession {
         }
         if !skip_auth {
             auth.authed = true;
-            // NOTE(java-quirk): the count sent is the one before the reset below, and the
-            // in-memory count is never reset (only the row is).
             ctl.send(
                 Ex2ndPasswordVerify {
                     mode: Ex2ndPasswordVerify::PASSWORD_OK,

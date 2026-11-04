@@ -1,7 +1,5 @@
 //! Quest 632: Necromancer's Request (the Mysterious Wizard in the Gludin area; the vampires drop
 //! the vampire hearts, the undead drop the zombie brains; 200 hearts buy 120000 adena).
-// Java: dist/game/data/scripts/quests/Q00632_NecromancersRequest/Q00632_NecromancersRequest.java
-//
 // Pattern: two kill drops (a brain without a limit, a heart that sets cond 2 and a memo state
 // at 200 hearts, on every later kill too), the memo states that the talk reads, and the reward
 // that takes the hearts and sets the memo back.
@@ -138,7 +136,6 @@ impl Script for Q00632NecromancersRequest {
         } else if let Some(&(_, chance)) = HEART_MONSTERS.iter().find(|(id, _)| *id == npc.id) {
             ctx.give_item_randomly(killer, Some(npc), VAMPIRES_HEART, 1, 1, 0, chance, true);
             if ctx.get_quest_items_count(killer, VAMPIRES_HEART) >= REQUIRED_ITEM_COUNT {
-                // NOTE(java-quirk): every kill from 200 hearts on sets cond 2 and the memo again.
                 qs.set_cond(ctx, 2, false);
                 qs.set_memo_state(ctx, MEMO_HEARTS_READY);
             }

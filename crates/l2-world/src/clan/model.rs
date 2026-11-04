@@ -1,10 +1,5 @@
 //! The clan data: a clan, its members, sub pledges and rank privileges, and the clan part of a
 //! player. Plain data with the small rules that only read it.
-// Java: entity/clan/Clan.java (fields, getMaxNrOfMembers, getAvailablePledgeTypes,
-//       getLeaderSubPledge, getSubPledgeMembersCount, SubPledge, RankPrivs)
-// Java: entity/clan/ClanMember.java (fields, calculatePledgeClass)
-// Java: entity/clan/ClanAccess.java, entity/clan/ClanPrivileges.java
-//
 // # Ids, not references (D-11)
 // Java's `ClanMember` holds the `Player` while the member is online and reads the live values
 // from it. Here a member keeps its stored values and `has_player` (Java `_player != null`); the
@@ -98,12 +93,6 @@ pub const fn has_access(mask: i32, access: ClanAccess) -> bool {
 }
 
 /// Which `ClanPrivileges` object a player holds.
-///
-/// NOTE(java-quirk): Java hands a member the clan's own `ClanPrivileges` object of its rank
-/// (`setClanPrivileges(clan.getRankPrivs(grade))` at login and when joining), not a copy. Whatever
-/// changes the player's privileges then changes the rank for everybody: `setNewLeader` calls
-/// `enableAll()` on the new leader's object, so the rank the new leader had gets every privilege
-/// (in memory, until the next restart). `Rank` keeps that sharing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ClanPrivilegesRef {
     /// An object of the player's own (`new ClanPrivileges()`, `clone()`, `enableAll()` on a new
@@ -149,10 +138,6 @@ pub struct PlayerClanState {
     pub clan_create_expiry_time: i64,
     /// Java `_pledgeClass` (the title above the CP bar). Not stored.
     pub pledge_class: i32,
-    /// The row names a clan (or a membership) this server could not find, not even in the
-    /// database at login: the player is clanless here, and the store keeps the row's clan columns
-    /// (D-39: never `clanid = 0` for a clan the Java game server owns). Cleared when the player
-    /// gets a clan here.
     pub keep_stored: bool,
 }
 
@@ -291,7 +276,6 @@ impl Clan {
             at_war_attackers: Vec::new(),
             skills: Vec::new(),
             sub_pledge_skills: Vec::new(),
-            // Java: initializePrivs, ranks 1 to 9 with no privileges.
             privs: (1..10)
                 .map(|rank| RankPrivs {
                     rank,
@@ -603,8 +587,6 @@ pub fn calculate_pledge_class(
                     2
                 }
             }
-            // NOTE(java-quirk): at level 6 a knight (no knights below level 7) is class 0, and the
-            // captain of a knight order counts as a plain member (3).
             6 => table(1, 2, 0, 3, 4, 3, 5),
             7 => table(1, 3, 2, 4, 6, 5, 7),
             8 => table(1, 4, 3, 5, 7, 6, 8),
@@ -626,7 +608,6 @@ pub fn calculate_pledge_class(
 /// The iteration order of a `ConcurrentHashMap<Integer, _>` whose keys are `keys` (insertion
 /// order, no duplicates) and that once held `peak` entries: by bucket `spread(h) & (n - 1)`,
 /// then insertion order. Returns indices into `keys`.
-// Java: the table starts at 16 and doubles when the count reaches `n - n/4`; it never shrinks.
 // A resize can reorder the entries of one bucket (`lastRun`); ignored, like in `skills/reuse.rs`.
 pub fn java_map_order(keys: &[i32], peak: usize) -> Vec<usize> {
     let mut capacity: usize = 16;

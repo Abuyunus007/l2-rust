@@ -1,10 +1,4 @@
 //! `RegionBoard`: the castles and their owners (`_bbsloc`, `_bbsloc;<region>`).
-// Java: dist/game/data/scripts/handlers/bypass/communityboard/RegionBoard.java
-//
-// Java reads the clan halls of a region with `SELECT id, name, ownerId, location FROM clanhall
-// WHERE location = ?`; the world already holds the same rows (the auctionable halls, loaded at the
-// start and re-read with the residences, D-50), so the page is built from them. Conquerable halls
-// (`siegable_clanhall`) are not rows of that table and are left out.
 
 use l2_util::ObjectId;
 use tracing::warn;

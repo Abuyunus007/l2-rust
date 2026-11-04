@@ -1,5 +1,4 @@
 //! The Black Marketeer of Mammon: 2,000,000 adena for 500,000 ancient adena, daily, 20:00-24:00.
-// Java: dist/game/data/scripts/ai/others/BlackMarketeerOfMammon/BlackMarketeerOfMammon.java
 
 use l2_util::ObjectId;
 use l2_world::script::STARTED;

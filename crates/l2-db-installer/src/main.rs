@@ -1,6 +1,4 @@
 //! `l2-db-installer`: installs the login and/or game schema from `dist/db_installer/sql`.
-// Java: org/l2jmobius/tools/DatabaseInstaller.java
-//
 // No database is contacted before the user presses Install (GUI) or confirms the questions
 // (console). The password is never logged or written to a file.
 

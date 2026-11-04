@@ -1,5 +1,4 @@
 //! Java `QuestSound`: the named sounds of the quest scripts.
-// Java: mechanics/script/QuestSound.java
 
 use l2_protocol_game::server::PlaySound;
 

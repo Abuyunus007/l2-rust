@@ -8,7 +8,6 @@ use super::ChatType;
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/Snoop.java
 /// A line of the chat of a snooped player (`SNOOP`), sent to the GM who snoops it after the
 /// `CreatureSay` itself.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -32,7 +31,6 @@ impl Encode for Snoop {
     fn encode(&self, w: &mut PacketWriter) {
         write_opcode(w, Self::OPCODE);
         w.i32(self.convo_id).string(&self.name);
-        // Java: `buffer.writeInt(0); // ??`
         w.i32(0);
         w.i32(self.chat_type.client_id())
             .string(&self.speaker)
@@ -61,12 +59,10 @@ impl Decode for Snoop {
 server_unit_packet!(
     /// The petition evaluation button (`PETITION_VOTE`), sent to the petitioner when the
     /// consultation ends.
-    // Java: gameserver/network/serverpackets/PetitionVotePacket.java
     PetitionVotePacket,
     PetitionVote
 );
 
-// Java: gameserver/network/serverpackets/AdminForgePacket.java
 /// A packet of any layout, built by `//forge_send`. Unlike every other server packet it writes
 /// no opcode of its own: the first part is the opcode.
 #[derive(Debug, Clone, PartialEq, Default)]

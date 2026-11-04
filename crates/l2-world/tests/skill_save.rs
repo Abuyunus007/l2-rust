@@ -341,7 +341,6 @@ fn unknown_skills_and_reuse_only_rows_restore_no_buff() {
 
 /// Java `skill.applyEffects(this, this, false, 0)`: a row with no time left restores the skill's
 /// own abnormal time (`abnormalTime` of the skill, here 60 s), since a zero custom time is ignored.
-// NOTE(java-quirk): a buff that had no time left at logout comes back with its full time.
 #[test]
 fn a_row_without_time_left_restores_the_skill_time() {
     let mut data = player();

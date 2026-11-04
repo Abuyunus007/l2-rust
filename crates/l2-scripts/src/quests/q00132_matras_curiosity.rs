@@ -1,6 +1,4 @@
 //! Quest 132: Matras' Curiosity (Matras sends a level 76 character after the two blueprint bosses).
-// Java: dist/game/data/scripts/quests/Q00132_MatrasCuriosity/Q00132_MatrasCuriosity.java
-//
 // Pattern: a party kill quest with a random member. Each boss (Ranku, Demon Prince) gives its
 // blueprint to a random party member whose `rewarded_*` variable is still "1" (the variables are
 // set at the start); that member's variable goes to "2". With both blueprints in hand the quest
@@ -91,9 +89,7 @@ impl Script for Q00132MatrasCuriosity {
     }
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, _is_summon: bool) {
-        // Java: the blueprint goes to the killer (`player`) while the variable and the cond go to
         // the random member `pl`.
-        // NOTE(java-quirk): Java gives the blueprint to the killer, not to the member drawn.
         let (var, blueprint, other_blueprint) = match npc.id {
             DEMON_PRINCE => ("rewarded_prince", BLUEPRINT_PRINCE, BLUEPRINT_RANKU),
             RANKU => ("rewarded_ranku", BLUEPRINT_RANKU, BLUEPRINT_PRINCE),

@@ -1,5 +1,4 @@
 //! Quest 733: Protect the Economic Association Leader.
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/Q00733_ProtectTheEconomicAssociationLeader.java
 
 use super::territory_war_super_class::{TerritoryWarData, territory_war_quest};
 

@@ -1,6 +1,4 @@
 //! Quest 347: Go Get the Calculator (Brunon in Gludin, the gemstone beasts, Silvera and Balanki).
-// Java: dist/game/data/scripts/quests/Q00347_GoGetTheCalculator/Q00347_GoGetTheCalculator.java
-//
 // Pattern: a delivery chain with a party kill step (`getRandomPartyMemberState(killer, 4, 3, npc)`
 // at cond 4 gives the gemstones); the conditions are set by talks and by the kill, the reward is a
 // choice on the last page (item or adena).

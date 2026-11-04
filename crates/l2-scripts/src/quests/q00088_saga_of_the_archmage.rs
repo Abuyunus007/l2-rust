@@ -1,6 +1,4 @@
 //! Quest 88: Saga of the Archmage.
-// Java: dist/game/data/scripts/quests/Q00088_SagaOfTheArchmage/Q00088_SagaOfTheArchmage.java
-//
 // Pattern: a saga (`docs/design/scripts.md`, "Quest patterns"): the Java class only fills the
 // fields of `AbstractSagaQuest`; here that is a `SagaData` constant and one `saga_quest!` line.
 // The hooks are the shared ones of `abstract_saga_quest.rs`.

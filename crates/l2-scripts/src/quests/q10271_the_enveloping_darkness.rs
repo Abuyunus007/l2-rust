@@ -1,5 +1,4 @@
 //! Quest 10271: The Enveloping Darkness (Orbyu sends the adventurer to El and the medibal corpse for a document).
-// Java: dist/game/data/scripts/quests/Q10271_TheEnvelopingDarkness/Q10271_TheEnvelopingDarkness.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED};
@@ -82,7 +81,6 @@ impl Script for Q10271TheEnvelopingDarkness {
                     .to_owned();
                 }
                 STARTED => match qs.get_cond(ctx) {
-                    // NOTE(java-quirk): Java's own TODO says this page should most probably differ.
                     1 => htmltext = "32560-05.html".to_owned(),
                     2 => htmltext = "32560-06.html".to_owned(),
                     3 => htmltext = "32560-07.html".to_owned(),

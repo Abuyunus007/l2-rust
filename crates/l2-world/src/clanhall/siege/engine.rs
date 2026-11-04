@@ -1,8 +1,5 @@
 //! `ClanHallSiegeEngine`: the attackers, the guards, the tasks and the three steps of a siege
 //! (`prepareOwner`, `startSiege`, `endSiege`), and the hooks the six scripts override.
-// Java: mechanics/siege/clanhalls/ClanHallSiegeEngine.java
-// Java: mechanics/siege/clanhalls/SiegableHall.java (spawnDoor, addAttacker, removeAttacker,
-//       updateNextSiege, updateSiegeZone)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
@@ -180,8 +177,6 @@ impl World {
             .any(|hall| self.hall_siege_is_attacker(*hall, clan_id))
     }
 
-    /// `ClanHallSiegeEngine.saveAttackers` for every hall (`CHSiegeManager.onServerShutDown`): the
-    /// rows go out only with `SiegeDatabaseWrites` (D-51).
     pub(crate) fn hall_sieges_shutdown(&mut self) {
         let halls: Vec<ClanHallId> = self.clanhall.siege.halls.keys().copied().collect();
         for hall in halls {
@@ -193,8 +188,6 @@ impl World {
     }
 
     /// Java `ClanHallSiegeEngine.saveAttackers()`.
-    // NOTE(java-quirk): the three flag war and Rainbow Springs scripts keep their own tables and
-    // still write this one at shutdown.
     pub(crate) fn hall_save_attackers(&mut self, id: ClanHallId) {
         let clans = self.hall_siege_attacker_clans(id);
         self.residence_write(crate::residence::ResidenceWrite::HallSiege(
@@ -267,9 +260,6 @@ impl World {
     }
 
     /// Java `updateSiege()`: the task is armed again for the new date.
-    // NOTE(java-quirk): the delay lacks the `- System.currentTimeMillis()` of the constructor's, so
-    // it is the date itself, decades away: after a GM changed the date, nothing starts the
-    // registration's end by itself.
     pub fn hall_update_siege(&mut self, id: ClanHallId) {
         self.hall_cancel_siege_task(id);
         let delay = self.hall_next_siege_time(id) - PREPARE_BEFORE_MS;
@@ -482,9 +472,6 @@ impl World {
             self.hall_on_siege_ends(id)?;
             self.hall_clear_attackers(id);
             self.hall_update_next_siege(id);
-            // NOTE(java-quirk): Java schedules the next `PrepareOwner` with the siege date itself as
-            // the delay (no `- currentTimeMillis`), so it never runs, and the status stays
-            // WAITING_BATTLE: the hall is stuck until the server restarts.
             let delay = self.hall_next_siege_time(id);
             self.hall_set_task(id, HallSiegeTimer::PrepareOwner(id), delay);
             self.hall_set_status(id, SiegeStatus::WaitingBattle);

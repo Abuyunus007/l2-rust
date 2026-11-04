@@ -1,6 +1,5 @@
 //! The spawn tables of the Festival of Darkness, copied from `SevenSignsFestival.java` by a script
 //! (a row is `[x, y, z, heading, npcId]`, the player tables have no npc id).
-// Java: mechanics/sevensigns/SevenSignsFestival.java (FESTIVAL_*_SPAWNS)
 
 pub const FESTIVAL_DAWN_PLAYER_SPAWNS: [[i32; 4]; 5] = [
     [-79187, 113186, -4895, 0],

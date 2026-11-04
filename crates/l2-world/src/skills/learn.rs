@@ -1,24 +1,5 @@
 //! Learning skills at a class trainer: the `SkillList` bypass, `AcquireSkillList`,
 //! `RequestAcquireSkillInfo`, `RequestAcquireSkill`, the SP and item costs, `AutoLearnSkills`.
-// Java: network/clientpackets/{RequestAcquireSkill,RequestAcquireSkillInfo}.java
-// Java: network/serverpackets/{AcquireSkillList,AcquireSkillInfo,AcquireSkillDone}.java
-// Java: data/xml/SkillTreeData.java (getAvailableSkills, getAllAvailableSkills, getMinLevelForNewSkill,
-//       isSkillAllowed, getSkillLearn)
-// Java: mechanics/skill/holders/SkillLearn.java (getCalculatedLevelUpSp)
-// Java: entity/actor/instance/Folk.java (showSkillList), entity/actor/Npc.java (showNoTeachHtml)
-// Java: entity/actor/templates/NpcTemplate.java (canTeach)
-// Java: dist/game/data/scripts/handlers/bypass/npc/SkillList.java
-// Java: entity/actor/Player.java (giveAvailableSkills, getLearningClass)
-// Java: entity/actor/holders/player/ShortCuts.java (updateShortcuts)
-//
-// # The flow
-// The trainer's page has `bypass -h npc_%objectId%_SkillList`; [`skill_list_handler`] (registered as
-// `SkillList` in [`crate::bypass::BypassHandlers::default`]) shows `AcquireSkillList`. The client then
-// asks for the details of a skill (`RequestAcquireSkillInfo`, answered with `AcquireSkillInfo`) and
-// for the skill itself (`RequestAcquireSkill`). Learning checks the level, the SP, the books and
-// takes them, adds the skill (a `character_skills` row, D-39: the same row Java writes), sends the
-// new `SkillList` and shows the list again.
-//
 // # What is left out, with the system that brings it
 // - The class tree (`AcquireSkillType.CLASS`) is learned here, the clan trees at the clan
 //   trainer (`PLEDGE` and `SUBPLEDGE`, `clan/skills.rs`, M6-CLAN-03), the fishing tree at the
@@ -375,7 +356,6 @@ fn trees_allow(trees: &l2_data::SkillTrees, class: ClassId, race: i32, skill_id:
     {
         return true;
     }
-    // Java: "Exclude Transfer Skills from this check."
     trees.transfer_skill(skill_id, level, class).is_some()
 }
 
@@ -419,8 +399,6 @@ impl World {
                 break;
             }
             for skill in &learnable {
-                // NOTE(java-quirk): a tree line whose skill does not exist makes Java throw a
-                // NullPointerException out of `rewardSkills`; here the line is skipped.
                 if self.skill_template_exists(skill.skill_id, skill.skill_level) {
                     result.insert(skill.skill_id, skill.skill_level);
                 } else {
@@ -528,8 +506,6 @@ impl World {
             return;
         };
         let npc_type = self.npc_type_of(npc).unwrap_or_default();
-        // NOTE(java-quirk): Java starts with an empty page, so an NPC that is neither a warehouse
-        // keeper nor a trainer answers with an empty page.
         let mut html = Some(String::new());
         if npc_type == "Warehouse" {
             html = self.get_htm(player, &format!("data/html/warehouse/{npc_id}-noteach.htm"));
@@ -746,8 +722,6 @@ impl World {
             self.on_pledge_acquire_skill_info(player, skill_id, level, skill_type);
             return;
         }
-        // NOTE(java-quirk): the fishing line is looked up whatever NPC the player talked to last;
-        // Java does not check that it is a fisherman.
         if skill_type == AcquireSkillType::Fishing {
             let Some(learn) = self.rewards.skill_trees.fishing_skill(skill_id, level).cloned() else {
                 return;
@@ -940,8 +914,6 @@ impl World {
             }
             _ => {}
         }
-        // The fishing skills are bought with SP and items like the class ones. NOTE(java-quirk):
-        // Java does not check that the trainer is a fisherman, nor the race of the line.
         if skill_type == AcquireSkillType::Fishing {
             let Some(learn) = self.rewards.skill_trees.fishing_skill(skill_id, level).cloned() else {
                 return;
@@ -1057,8 +1029,6 @@ impl World {
         }
 
         // Certification Skills - Exploit fix
-        // NOTE(java-quirk): `getSkillLevel` is 0 (never -1) for an unknown skill, so this check
-        // never fires.
         if prev_skill_level == -1 && level > 1 {
             // The previous level skill has not been learned.
             self.send(
@@ -1138,7 +1108,6 @@ impl World {
 
     /// Java `SkillTreeData.getAvailableSubClassSkills(player)`: the certification skills of the
     /// tree the subclasses qualify for (slot and level), at the next level the player lacks.
-    // NOTE(java-quirk): a line is added once per subclass that qualifies, so it can be listed twice.
     pub fn available_sub_class_skills(&self, player: ObjectId) -> Vec<SkillLearn> {
         let Some(p) = self.players.get(&player) else {
             return Vec::new();
@@ -1403,8 +1372,6 @@ impl World {
             return false;
         }
 
-        // NOTE(java-quirk): without `DivineInspirationSpBookNeeded` the skill is free: Java returns
-        // here, before it takes the SP, the prerequisites and the items.
         if !self.settings.learn.divine_sp_book_needed && learn.skill_id == DIVINE_INSPIRATION_ID {
             return true;
         }

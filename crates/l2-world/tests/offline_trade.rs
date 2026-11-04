@@ -1,7 +1,4 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
-//! Offline trade (M6-FU-14): a player who logs out with a store open stays in the world without a
-//! client, the store keeps selling, and the shop rows follow `OfflineTradeDatabaseWrites` (D-52).
-//! Expected values come from `OfflineTraderTable.java` and the classes named in each test.
 
 use std::sync::{Arc, Mutex};
 
@@ -571,8 +568,6 @@ fn a_trader_cannot_be_invited_to_a_party() {
     assert_eq!(packets_named(&out, B, "SYSTEM_MESSAGE").len(), 1, "{out:?}");
     assert!(s.world.party_of(B).is_none());
 }
-
-// ---- the rows (D-52) ---------------------------------------------------------------------------
 
 /// `STORE_OFFLINE_TRADE_IN_REALTIME` with the switch on: `onTransaction(player, false, true)` at
 /// the logout (the sell list by object id, the title and the type of the row), then after each

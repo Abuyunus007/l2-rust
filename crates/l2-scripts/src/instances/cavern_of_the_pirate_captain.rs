@@ -1,7 +1,5 @@
 //! Cavern Of The Pirate Captain (Day Dream) instance zone: the party lights the candles to find
 //! the room Zaken sleeps in. Templates 133 (day, level 60), 114 (night) and 135 (level 83).
-// Java: dist/game/data/scripts/instances/CavernOfThePirateCaptain/CavernOfThePirateCaptain.java
-//
 // Java keeps the state of a run in the parameters of the `InstanceWorld` (`is83`, `isNight`,
 // `storeTime`, `playersInside`, `zakenRoom`, `zaken`, `blueFounded`); so does this port, as
 // strings, because `onEnterInstance` runs inside `World::enter_instance` without a `ScriptCtx`.
@@ -217,7 +215,6 @@ impl Script for CavernOfThePirateCaptain {
                             manage_screen_msg(ctx, instance_id, NpcStringId::WhoDaresAwakenTheMightyZaken);
                         }
 
-                        // NOTE(java-quirk): the Zaken of the world is used without a null check.
                         let zaken = parameter_int(ctx.world(), instance_id, "zaken");
                         ctx.world_mut().set_invisible(ObjectId(zaken), false);
                         ctx.world_mut().set_creature_paralyzed(ObjectId(zaken), false);
@@ -556,7 +553,6 @@ fn spawn_npc(
     player: Option<ObjectId>,
     instance_id: i32,
 ) -> Option<ObjectId> {
-    // NOTE(java-quirk): a room of 0 (a candle no room knows) throws in Java.
     let room = ROOM_DATA.get(usize::try_from(room_id - 1).ok()?)?;
     if player.is_some() && npc_id != ZAKEN_60 && npc_id != ZAKEN_83 {
         let x = room[0] + world.rng().below(350);

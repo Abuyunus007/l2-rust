@@ -5,7 +5,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ClientOpcode;
 
-// Java: gameserver/network/clientpackets/ProtocolVersion.java
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ProtocolVersion {
     /// `-2` is the "ping" of the new C2 client, which Java answers by disconnecting.
@@ -25,16 +24,12 @@ impl Encode for ProtocolVersion {
 
 impl Decode for ProtocolVersion {
     fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
-        // NOTE(java-quirk): Java wraps `readInt()` in a try/catch and uses version 0 when the
-        // packet is too short, so this packet never fails to decode. Version 0 is then rejected
-        // by the protocol list like any other wrong version.
         Ok(Self {
             version: r.i32().unwrap_or(0),
         })
     }
 }
 
-// Java: gameserver/network/clientpackets/AuthLogin.java
 /// Session keys from the login server. The game server compares them with what the login server
 /// reported for this account.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -65,7 +60,6 @@ impl Encode for AuthLogin {
 
 impl Decode for AuthLogin {
     fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
-        // Java: `readString().toLowerCase()`.
         let login_name = r.string().to_lowercase();
         Ok(Self {
             login_name,

@@ -1,6 +1,4 @@
 //! Quest 385: Yoke of the Past (the Ziggurats of the Ancient Ruins, Scroll of Ancient Magic).
-// Java: dist/game/data/scripts/quests/Q00385_YokeOfThePast/Q00385_YokeOfThePast.java
-//
 // Pattern: a kill-count quest with a drop chance per monster and no limit (`docs/design/scripts.md`,
 // "Quest patterns"): the scrolls drop to a random started party member; the NPC exchanges every
 // scroll for a blank scroll. Twenty-eight ziggurats start the quest.

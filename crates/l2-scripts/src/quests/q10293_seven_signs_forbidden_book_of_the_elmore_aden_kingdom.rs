@@ -1,6 +1,4 @@
 //! Quest 10293: Seven Signs, Forbidden Book of the Elmore-Aden Kingdom (Elcadia, Sophia and the piles of books in the Library of Sages).
-// Java: dist/game/data/scripts/quests/Q10293_SevenSignsForbiddenBookOfTheElmoreAdenKingdom/Q10293_SevenSignsForbiddenBookOfTheElmoreAdenKingdom.java
-//
 // Pattern: a delivery chain by condition (`docs/design/scripts.md`): the conditions 1 to 8 are
 // the steps in Sophia's and Elcadia's rooms (the Library of Sages is another script), the
 // Solinas' biography is the item of the piles of books (cond 6), and Elcadia pays the

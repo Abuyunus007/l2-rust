@@ -4,7 +4,6 @@
 //! fishing tree (`fishingSkillTree`, M6-FU-10) and the certification tree (`subClassSkillTree`,
 //! S-VM-01).
 //!
-//! Java: `gameserver/data/xml/SkillTreeData.java` (`classSkillTree` parsing, the parent class chain,
 //! `getCompleteClassSkillTree`, `getAvailableSkills`) and `network/clientpackets/CharacterCreate.java`
 //! (which skills a new character gets).
 //! Data: `data/stats/players/skillTrees/**/*.xml` (`xsd/skillTrees.xsd`).
@@ -604,7 +603,6 @@ fn class_chain(parents: &BTreeMap<ClassId, Option<ClassId>>, class: ClassId) -> 
     let mut current = Some(class);
     while let Some(c) = current {
         if chain.contains(&c) {
-            // NOTE(java-quirk): Java loops forever on a parent cycle. The data has none; stop instead.
             warn!("SkillTreeData: parent class cycle at class {}.", c.0);
             break;
         }

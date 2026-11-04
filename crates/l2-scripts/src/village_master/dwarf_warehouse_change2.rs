@@ -1,5 +1,4 @@
 //! The 2nd class transfer of scavengers to bounty hunters (Gesto, Croop, Baxt, Klump, Natools, Mona, Donal, Yasheni).
-// Java: dist/game/data/scripts/village_master/DwarfWarehouseChange2/DwarfWarehouseChange2.java
 
 use l2_util::ObjectId;
 use l2_world::subclass::CategoryType;

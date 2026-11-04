@@ -1,6 +1,4 @@
 //! Quest 64: Certified Berserker (Master Orkurus, Entiens, Tenain, Caravaner Gort, Harkilgamed).
-// Java: dist/game/data/scripts/quests/Q00064_CertifiedBerserker/Q00064_CertifiedBerserker.java
-//
 // Pattern: a kill and delivery chain with the memo state as the step counter
 // (`docs/design/scripts.md`, "Quest patterns"), sibling of `q00062_path_of_the_trooper.rs`; the
 // diamond reward is paid once per character (`2ND_CLASS_DIAMOND_REWARD`, like Q00222).

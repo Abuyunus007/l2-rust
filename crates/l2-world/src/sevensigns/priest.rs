@@ -1,11 +1,5 @@
 //! The priests of the Seven Signs: `SignsPriest` (the Mammon NPCs are of this type too),
 //! `DawnPriest` and `DuskPriest`. Joining a cabal, the seal stones, Ancient Adena, the record.
-// Java: entity/actor/instance/SignsPriest.java (onBypassFeedback, showChatWindow(player, value,
-//       suffix, isDescription))
-// Java: entity/actor/instance/{DawnPriest,DuskPriest}.java (onBypassFeedback, showChatWindow)
-// Java: mechanics/sevensigns/SevenSigns.java (setPlayerInfo, getAncientAdenaReward,
-//       addPlayerStoneContrib)
-// Java: entity/actor/Player.java (addAncientAdena, reduceAncientAdena)
 
 use l2_data::ClassId;
 use l2_protocol_game::SystemMessageId;
@@ -266,8 +260,6 @@ impl World {
                     self.send(player, &SystemMessage::new(SystemMessageId::YourInventoryIsFull));
                     return;
                 }
-                // NOTE(java-quirk): `reduceAdena(.., true)` already says "not enough adena", so
-                // a poor player is told twice.
                 if !self.reduce_adena(player, RECORD_SEVEN_SIGNS_COST, true) {
                     self.send(
                         player,
@@ -364,8 +356,6 @@ impl World {
                 let winning = self.ss_cabal_highest_score();
                 if self.ss_is_seal_validation_period() && player_cabal == winning {
                     if !self.seven_signs.players.contains_key(&player.0) {
-                        // NOTE(java-quirk): a tie and a player who never joined: Java's
-                        // `getAncientAdenaReward` throws a NullPointerException; nothing happens.
                         warn!("SevenSigns: {player} has no Seven Signs data to collect a reward from.");
                         return;
                     }
@@ -652,8 +642,6 @@ impl World {
                 }
                 return;
             }
-            // NOTE(java-quirk): another stone type replaces `%contribStoneColor%` with null,
-            // which throws in `String.replace`; nothing is shown.
             _ => return,
         };
         let path = format!("{SEVEN_SIGNS_HTML_PATH}signs_6_{side}_contribute.htm");
@@ -706,7 +694,6 @@ impl World {
                 self.ss_show_signs(npc, player, 18, Some(side), false);
                 return;
             }
-            // NOTE(java-quirk): another type replaces `%stoneColor%` with null, which throws.
             _ => return,
         };
         let stone_count = self.inventory_item_count(player, stone_id);
@@ -792,8 +779,6 @@ impl World {
             }
         };
         // Increasing Seal total score for the player chosen Seal.
-        // NOTE(java-quirk): an unknown seal makes Java's `get(seal) + 1` throw; here it counts
-        // nowhere.
         let status = &mut self.seven_signs.status;
         let totals = if is_dawn {
             &mut status.dawn_seal_totals
@@ -811,10 +796,8 @@ impl World {
 
     /// Java `getAncientAdenaReward(objectId, removeReward)`: what the member may collect; the
     /// stones and the Ancient Adena of its row go back to 0.
-    // NOTE(java-quirk): the row is emptied even with `removeReward` false.
     pub fn ss_get_ancient_adena_reward(&mut self, char_id: i32, remove_reward: bool) -> i32 {
         let Some(p) = self.seven_signs.players.get_mut(&char_id) else {
-            // Java: NullPointerException.
             return 0;
         };
         let reward = p.ancient_adena_amount as i32;
@@ -835,7 +818,6 @@ impl World {
         let max = i64::from(self.seven_signs.settings.max_player_contrib);
         let contrib = calc_contribution_score(blue, green, red);
         let Some(p) = self.seven_signs.players.get_mut(&char_id) else {
-            // Java: NullPointerException.
             return -1;
         };
         let total = p.contribution_score.wrapping_add(contrib);
@@ -877,8 +859,6 @@ impl World {
         if count <= 0 {
             return;
         }
-        // NOTE(java-quirk): `PlayerInventory.addItem` already sends the update; Java sends the
-        // Ancient Adena again.
         if let Some(added) = self.inventory_add_item_by_id(player, ANCIENT_ADENA_ID, count) {
             let entry = self.update_entry(&added.item, added.change);
             self.send_inventory_update(player, entry);

@@ -1,5 +1,4 @@
 //! The Quarry slaves: a player leads one to the dolmen zone for a small gift and Hellbound's trust.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/NPC/Quarry/Quarry.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

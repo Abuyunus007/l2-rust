@@ -1,9 +1,4 @@
 //! The client packets of the party: invite, answer, leave, expel and the leader change.
-// Java: network/clientpackets/RequestJoinParty.java
-// Java: network/clientpackets/RequestAnswerJoinParty.java
-// Java: network/clientpackets/RequestWithDrawalParty.java
-// Java: network/clientpackets/RequestOustPartyMember.java
-// Java: network/clientpackets/RequestChangePartyLeader.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{
@@ -206,8 +201,6 @@ impl World {
         requestor: ObjectId,
         distribution_type_id: i32,
     ) {
-        // NOTE(java-quirk): "C1 has been invited" went out before this, so an unknown loot rule
-        // ends the invitation without a word.
         let Some(distribution_type) = PartyDistributionType::from_id(distribution_type_id) else {
             return;
         };
@@ -267,8 +260,6 @@ impl World {
                         let full = SystemMessage::new(SystemMessageId::ThePartyIsFull);
                         self.send(player, &full);
                         self.send(requestor, &full);
-                        // NOTE(java-quirk): returns without ending the request, which then runs
-                        // out by itself.
                         return;
                     }
                     self.join_party(player, party);

@@ -12,7 +12,6 @@ use crate::generated::opcodes::ServerOpcode;
 /// Java adds this to a summon's template id so the client shows the right icon.
 const SUMMON_ID_OFFSET: i32 = 1_000_000;
 
-// Java: gameserver/entity/groups/PartyDistributionType.java
 /// How the party shares loot. The id goes on the wire; the string ids are the client's
 /// `SystemString` ids for the loot setting text.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -66,7 +65,6 @@ fn read_distribution(r: &mut PacketReader) -> Result<PartyDistributionType, Pack
         .ok_or_else(|| PacketError::invalid("party distribution type", format!("unknown type {id}")))
 }
 
-// Java: gameserver/network/serverpackets/AskJoinParty.java
 /// The invited player is asked to join a party (`ASK_JOIN_PARTY`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AskJoinParty {
@@ -94,7 +92,6 @@ impl Decode for AskJoinParty {
     }
 }
 
-// Java: gameserver/network/serverpackets/JoinParty.java
 /// The answer of the invited player, passed on to the inviter (`JOIN_PARTY`): 1 accepted,
 /// 0 declined, -1 refuses party requests.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -204,7 +201,6 @@ pub struct PartyWindowMember {
     pub summon: Option<PartySummon>,
 }
 
-// Java: gameserver/network/serverpackets/PartySmallWindowAll.java
 /// The whole party window, sent to a player who just joined (`PARTY_SMALL_WINDOW_ALL`). `members`
 /// is the party without the receiver (Java's `_exclude`).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -228,7 +224,7 @@ impl Encode for PartySmallWindowAll {
             .i32(self.members.len() as i32);
         for member in &self.members {
             member.vitals.write(w);
-            w.i32(0) // Java: `writeInt(0); // writeInt(1); ??`
+            w.i32(0)
                 .i32(member.race)
                 .i32(0) // T2.3
                 .i32(0); // T2.3
@@ -286,7 +282,6 @@ impl Decode for PartySmallWindowAll {
     }
 }
 
-// Java: gameserver/network/serverpackets/PartySmallWindowAdd.java
 /// A member joined the party (`PARTY_SMALL_WINDOW_ADD`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PartySmallWindowAdd {
@@ -304,7 +299,7 @@ impl Encode for PartySmallWindowAdd {
         write_opcode(w, Self::OPCODE);
         w.i32(self.leader_object_id).i32(self.distribution_type.id());
         self.member.write(w);
-        w.i32(0).i32(0); // Java: `writeInt(0); // ?` twice
+        w.i32(0).i32(0);
     }
 }
 
@@ -322,7 +317,6 @@ impl Decode for PartySmallWindowAdd {
     }
 }
 
-// Java: gameserver/network/serverpackets/PartySmallWindowDelete.java
 /// A member left the party (`PARTY_SMALL_WINDOW_DELETE`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PartySmallWindowDelete {
@@ -350,7 +344,6 @@ impl Decode for PartySmallWindowDelete {
     }
 }
 
-// Java: gameserver/network/serverpackets/PartySmallWindowDeleteAll.java
 /// The party window is closed (`PARTY_SMALL_WINDOW_DELETE_ALL`). No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PartySmallWindowDeleteAll;
@@ -371,7 +364,6 @@ impl Decode for PartySmallWindowDeleteAll {
     }
 }
 
-// Java: gameserver/network/serverpackets/PartySmallWindowUpdate.java
 /// The vitals of one member changed (`PARTY_SMALL_WINDOW_UPDATE`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PartySmallWindowUpdate {
@@ -406,12 +398,7 @@ pub struct PartyMemberLocation {
     pub z: i32,
 }
 
-// Java: gameserver/network/serverpackets/PartyMemberPosition.java
 /// The positions of the party members for the minimap (`PARTY_MEMBER_POSITION`).
-///
-/// NOTE(java-quirk): Java keeps the positions in a `HashMap` keyed by object id, so the order on
-/// the wire is the map's iteration order. The client does not care about the order; the caller
-/// picks one.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct PartyMemberPosition {
     pub locations: Vec<PartyMemberLocation>,
@@ -488,7 +475,6 @@ impl PartyPetWindow {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExPartyPetWindowAdd.java
 /// A party member's summon appears in the party window (`EX_PARTY_PET_WINDOW_ADD`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExPartyPetWindowAdd {
@@ -514,7 +500,6 @@ impl Decode for ExPartyPetWindowAdd {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExPartyPetWindowUpdate.java
 /// A party member's summon changed (`EX_PARTY_PET_WINDOW_UPDATE`); the layout of
 /// [`ExPartyPetWindowAdd`].
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -541,7 +526,6 @@ impl Decode for ExPartyPetWindowUpdate {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExPartyPetWindowDelete.java
 /// A party member's summon is gone (`EX_PARTY_PET_WINDOW_DELETE`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExPartyPetWindowDelete {

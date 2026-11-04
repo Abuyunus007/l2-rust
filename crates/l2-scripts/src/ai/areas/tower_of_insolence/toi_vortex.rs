@@ -1,6 +1,5 @@
 //! The Dimension Vortexes and the gatekeepers of the Tower of Insolence: dimension stones for a
 //! trip to a floor.
-// Java: dist/game/data/scripts/ai/areas/TowerOfInsolence/ToIVortex/ToIVortex.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

@@ -1,12 +1,5 @@
 //! The intention machine: Java's `AbstractAI` / `CreatureAI` events and intentions, shared by
 //! players and NPCs, as far as auto attack needs them.
-// Java: ai/{AbstractAI,CreatureAI,PlayerAI,PlayableAI,Intention,NextAction}.java (the attack
-//       parts: setIntentionAttack/Active/Idle, notifyActionReadyToAct, notifyActionAttacked,
-//       notifyActionEvaded, notifyActionCancel, notifyActionDeath, clientStartAutoAttack,
-//       clientStopAutoAttack, setAutoAttacking, checkTargetLostOrDead; the cast parts of
-//       M5-CAST-01: setIntentionCast, changeIntentionToCast, notifyActionFinishCasting and
-//       PlayerAI's saved intention)
-//
 // # Where the state lives
 // - A player's intention is `Player::movement.intention` (the move code of M3 already keeps it
 //   there), its move and follow fields `movement.pawn`.

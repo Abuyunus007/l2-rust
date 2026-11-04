@@ -2,7 +2,6 @@
 
 //! The residence admin words (M7-ADMIN-06): `//clanhall` and its `set`, `del`, doors and
 //! `teleportself` words, `//manor`, and the residence names of `//clan_info`.
-//! Java: scripts/handlers/chat/commands/admin/{AdminSiege,AdminManor,AdminClan}.java. The expected
 //! values come from the Java code named in each test; the pages are small files in a temporary
 //! datapack root that print the placeholders the Java code replaces.
 
@@ -557,7 +556,6 @@ fn clanhallset_gives_a_free_hall_to_the_targets_clan() {
     assert_eq!(s.world.clan_hall(ClanHallId(36)).unwrap().owner_id, WOLVES);
 }
 
-/// Java: a clan that has a hall already (`getHideoutId() > 0`) is refused for a free hall too.
 #[test]
 fn a_clan_with_a_hall_cannot_take_another() {
     let mut s = Scene::new();

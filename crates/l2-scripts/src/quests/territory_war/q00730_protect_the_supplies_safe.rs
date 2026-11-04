@@ -1,5 +1,4 @@
 //! Quest 730: Protect the Supplies Safe.
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/Q00730_ProtectTheSuppliesSafe.java
 
 use super::territory_war_super_class::{TerritoryWarData, territory_war_quest};
 

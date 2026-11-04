@@ -1,7 +1,5 @@
 //! Inside the trade window: `AddTradeItem`, `TradeDone` and the lock/confirm logic of
 //! `TradeList`.
-// Java: network/clientpackets/{AddTradeItem,TradeDone}.java
-// Java: network/holders/TradeList.java (addItem, confirm, validate, invalidateConfirmation)
 
 use l2_data::item::ItemTemplate;
 use l2_protocol_game::SystemMessageId;
@@ -282,8 +280,6 @@ impl World {
             if let Some(l) = self.players.get_mut(&owner).and_then(|p| p.trade.active.as_mut()) {
                 l.lock();
             }
-            // NOTE(java-quirk): when the validation fails both lists stay confirmed and locked and
-            // nobody is told; the players have to close the window.
             let partner_list = self.players.get(&partner).and_then(|p| p.trade.active.clone());
             let own_list = self.players.get(&owner).and_then(|p| p.trade.active.clone());
             let valid = match (&partner_list, &own_list) {

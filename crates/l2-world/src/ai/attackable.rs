@@ -1,13 +1,5 @@
 //! `AttackableAI`: the brain of monsters (and the other attackable NPCs): aggro, chase, attack,
 //! return home, minions and the faction call.
-// Java: ai/AttackableAI.java (the parts that need no skills)
-// Java: ai/CreatureAI.java (the NPC side: setIntention*, notifyAction*), ai/AbstractAI.java
-// Java: entity/actor/Attackable.java (aggro list: getMostHated, getHating, stopHating,
-//       clearAggroList, returnHome, onSpawn), entity/actor/holders/npc/{AggroInfo,MinionList}.java
-// Java: taskmanagers/AttackableThinkTaskManager.java
-// Java: entity/WorldRegion.java (switchAI), entity/World.java (the AI calls of addVisibleObject
-//       and switchRegion)
-//
 // # When does an NPC think
 // - An NPC gets an AI the way Java's `getAI()` makes one: when something asks for it (a player
 //   comes into view, the NPC is hit, it arrives somewhere...), see `World::wake_ai`.
@@ -648,8 +640,6 @@ impl World {
                 return self.can_see_target(me, target); // Los Check
             }
             // Check if the Monster target is aggressive.
-            // NOTE(java-quirk): the aggro range was only checked for playables above, so a
-            // monster anywhere in the guard's surrounding regions counts.
             if kind == ObjectKind::Npc
                 && self.is_monster(target)
                 && self.ai.attackable.settings.guard_attack_aggro_mob
@@ -659,7 +649,6 @@ impl World {
             return false;
         }
         if kind == ObjectKind::Npc {
-            // Java: `if (target.isAttackable()) { if (!target.isAutoAttackable(me)) return false;
             // if (me.isChaos() && me.isInsideRadius2D(target, aggroRange)) { if
             // (target.isInMyClan(me)) return false; return canSeeTarget } }` and then
             // `if (target.isAttackable() || target instanceof Npc) return false`. An attackable
@@ -917,9 +906,6 @@ impl World {
     }
 
     /// The end of `thinkActive`: a step around the spawn point.
-    // NOTE(java-quirk): Java's `int` products wrap, and the sqrt of a negative value is NaN, which
-    // `(int)` makes 0. `wrapping_*` gives the same value; a plain `*` would panic in a debug build
-    // once MaxDriftRange is above ~23000.
     fn random_walk(&mut self, id: ObjectId, settings: &AiSettings) {
         let drift = settings.max_drift_range;
         let Some((x, y, z)) = self.position_of(id) else {
@@ -1421,9 +1407,6 @@ impl World {
                 return found;
             }
         }
-        // NOTE(java-quirk): Java ends with `return null;`, not `return creature;`: the
-        // hate-ordered pick above is computed and dropped, only the aggressive-range match is
-        // ever returned.
         None
     }
 
@@ -1705,10 +1688,10 @@ impl World {
         // (`!me.isCoreAIDisabled()`: a territory ward never fights back, M7-TW-01)
         // Set the Intention to ATTACK.
         let core_ai_disabled = self.is_core_ai_disabled(id);
-        if !core_ai_disabled && self.intention_of(id) != Intention::Attack {
-            self.set_intention_attack(id, attacker);
-        } else if !core_ai_disabled && self.aggro_most_hated(id) != self.attack_target_of(id) {
-            // NOTE(java-quirk): the attacker becomes the target, not the most hated.
+        if !core_ai_disabled
+            && (self.intention_of(id) != Intention::Attack
+                || self.aggro_most_hated(id) != self.attack_target_of(id))
+        {
             self.set_intention_attack(id, attacker);
         }
 
@@ -2106,13 +2089,11 @@ impl World {
         if on {
             // Start HP/MP/CP regeneration task.
             self.start_regeneration_in_region(region);
-            // Java: RandomAnimationTaskManager.add for each NPC of the region (`ai/idle.rs`).
             self.start_random_animation_in_region(region);
             // The guards that were waiting for a region around them to turn on (`guards.rs`).
             self.wake_guards_around(region);
             return;
         }
-        // Java: RandomAnimationTaskManager.remove for each NPC of the region (`ai/idle.rs`).
         self.stop_random_animation_in_region(region);
         let max_drift = f64::from(self.ai.attackable.settings.max_drift_range);
         let mobs: Vec<ObjectId> = self

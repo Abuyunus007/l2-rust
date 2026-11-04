@@ -1,8 +1,6 @@
 //! Antharas, the Earth Dragon: the nest entry through the Heart of Warding, the waiting time,
 //! the wake-up movie, the minion waves, the fear phase with its bombers, the skill rotation and the
 //! respawn cycle on the `GrandBossManager` state.
-// Java: dist/game/data/scripts/ai/bosses/Antharas/Antharas.java
-//
 // The Java fields (static and not) are `AntharasState` (`ctx.state`). The constructor is
 // `on_load`. Statuses: 0 alive (idle in the nest), 1 waiting (players entered), 2 in fight, 3 dead.
 //
@@ -27,9 +25,6 @@ const ANTHARAS_TELEPORT_CUBE_ID: i32 = 31859; // Teleportation Cubic.
 
 /// Invisible NPC spawn locations (fear phase), in the order Java's `HashMap<Integer, Location>`
 /// walks them.
-// NOTE(java-quirk): `INVISIBLE_NPC_SPAWN_LOCATIONS.entrySet().forEach(..)` runs in the hash order
-// of the map (32 buckets, `key & 31`): 29088..29094 first, then 29077..29087. The order decides
-// which bombers take which random numbers.
 const INVISIBLE_NPC_SPAWN_LOCATIONS: [(i32, (i32, i32, i32)); 18] = [
     (29088, (179208, 115452, -7735)), // antaras_clear_npc_12.
     (29089, (179191, 115079, -7735)), // antaras_clear_npc_13.
@@ -189,7 +184,6 @@ impl Script for Antharas {
     /// The constructor's second half: restores the persisted state from `GrandBossManager`.
     fn on_load(&self, ctx: &mut ScriptCtx<'_>) {
         let Some(antharas_info) = ctx.world().grand_boss_info(ANTHARAS_NPC_ID).cloned() else {
-            // Java: `getStatSet` answers null and the constructor throws.
             warn!("Antharas: no grandboss_data row for {ANTHARAS_NPC_ID}, the script does not start.");
             return;
         };
@@ -669,8 +663,6 @@ impl Script for Antharas {
                         EVENT_TID_FEAR_MOVE_TIMEOVER,
                         EVENT_TID_FEAR_COOLTIME,
                     ] {
-                        // NOTE(java-quirk): with `_antharasBoss` null Java cancels the timers
-                        // started without an NPC, so the boss's timers would keep running.
                         ctx.cancel_quest_timer(timer, boss, None);
                     }
 

@@ -1,6 +1,4 @@
 //! Quest 381: Let's Become a Royal Member (Sorint and Sandra in the Town of Aden, the coin collecting club).
-// Java: dist/game/data/scripts/quests/Q00381_LetsBecomeARoyalMember/Q00381_LetsBecomeARoyalMember.java
-//
 // Pattern: a collection quest over two NPCs (`docs/design/scripts.md`, "Quest patterns"): the memo
 // state marks the stage (1 = to be introduced to Sandra, 2 = collecting the four-leaf coin for
 // the album). The Ancient Gargoyle drops Kail's coin (5%, one); Sorint trades the coin and the
@@ -97,8 +95,6 @@ impl Script for Q00381LetsBecomeARoyalMember {
                     } else if !ctx.has_quest_items(talker, ROYAL_MEMBERSHIP) {
                         htmltext = "30232-01.htm".to_owned();
                     }
-                    // NOTE(java-quirk): with neither branch true the quest is not in the quest list
-                    // (Java's TODO); the page stays the "no quest" one.
                 } else if qs.is_started(ctx) {
                     let has_album = ctx.has_quest_items(talker, COIN_ALBUM);
                     let has_coin = ctx.has_quest_items(talker, KAILS_COIN);

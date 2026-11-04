@@ -1,10 +1,4 @@
 //! The voiced commands `.expoff` and `.expon`, and the rule they switch.
-// Java: dist/game/data/scripts/handlers/chat/commands/voiced/ExperienceGain.java
-// Java: entity/actor/Player.java (disableExpGain, enableExpGain, onExperienceReceived)
-// Java: entity/actor/stat/PlayableStat.java (addExp: the `ON_PLAYABLE_EXP_CHANGED` listener)
-// Java: network/clientpackets/EnterWorld.java (the `EXPOFF` block)
-// Java: dist/game/data/scripts/handlers/chat/channels/ChatGeneral.java (the voiced dispatch)
-//
 // Java adds a listener that terminates `addExp` while the player is alive. The listener exists
 // exactly while the player variable `EXPOFF` is true (set by the command, restored at login), so
 // the world reads the variable instead of keeping a listener.
@@ -107,8 +101,6 @@ impl World {
         if !matches!(word, "expoff" | "expon") {
             return false;
         }
-        // NOTE(java-quirk): the handler compares the whole command, so `.expoff ` (a trailing
-        // space, one token) does nothing but still counts as used.
         if command == "expoff" {
             if !self.expoff_variable(player) {
                 self.set_player_variable_text(player, EXPOFF, "true".to_owned());

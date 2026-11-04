@@ -1,6 +1,4 @@
 //! Quest 144: Pailaka - Injured Dragon (the Ketra Orc shaman sends a hero into the Varka barracks).
-// Java: dist/game/data/scripts/quests/Q00144_PailakaInjuredDragon/Q00144_PailakaInjuredDragon.java
-//
 // Pattern: events are numbers sent by the pages of three NPCs ("1" means a different thing for
 // each, the NPC decides). The instance is entered through the instance script's `enter` event
 // (`instances/pailaka_injured_dragon.rs`), the officer casts buffs on the player, the last NPC

@@ -1,10 +1,5 @@
 //! Quest 625: The Finest Ingredients - Part 2 (Jeremy in the Town of Gludin area; the Yeti's Table
 //! summons the Icicle Emperor Bumbalump, whose meat finishes the dish for a random dye).
-// Java: dist/game/data/scripts/quests/Q00625_TheFinestIngredientsPart2/Q00625_TheFinestIngredientsPart2.java
-//
-// Pattern: a boss that a quest summons with a spawn location, a respawn time kept in a global
-// variable (D-54), the "is it alive" check over the world (`World.getVisibleObjects`), the boss
-// timer that makes it talk (`NPC_TALK`), and the kill that gives the meat to the players in range.
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

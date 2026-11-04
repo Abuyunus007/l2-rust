@@ -1,5 +1,4 @@
 //! The Fairy Trees: killed from nearby they call twenty Soul Guardians.
-// Java: dist/game/data/scripts/ai/others/FairyTrees.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};
@@ -44,8 +43,6 @@ impl Script for FairyTrees {
         {
             for _ in 0..20 {
                 let guardian = ctx.add_spawn_at(SOUL_GUARDIAN, npc.object_id, false, 30000);
-                // NOTE(java-quirk): a summon's kill with the summon gone gives Java a null attacker
-                // and a NullPointerException that ends the loop.
                 let attacker = if is_summon {
                     ctx.summon_of(killer)
                 } else {

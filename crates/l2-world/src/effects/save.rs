@@ -1,15 +1,6 @@
 //! The buffs of a character kept over a logout: what the snapshot stores (Java
 //! `Player.storeEffect`) and what comes back at enter world (Java `Player.restoreEffects`).
 //! Design: `docs/design/m5-skills.md`.
-// Java: entity/actor/Player.java (storeEffect, restoreEffects, STORE_SKILL_SAVE,
-//       RESTORE_SKILL_SAVE, DELETE_SKILL_SAVE, onPlayerEnter)
-// Java: config/PlayerConfig.java (STORE_SKILL_COOLTIME, ALT_STORE_TOGGLES, ALT_STORE_DANCES)
-//
-// The rows are `character_skills_save` (D-39: the Java game server reads the same rows). The
-// world turns its effect lists into [`SavedEffect`]s when a snapshot is taken; the persistence
-// task writes them (`PlayerProfile::effects_to_store`) and the database loader hands the rows of
-// the last logout back in `PlayerProfile::effects_to_restore`, which the world applies once, when
-// the character enters.
 
 use std::collections::HashSet;
 
@@ -149,7 +140,6 @@ impl World {
     /// Java `Player.restoreEffects`: the rows the character had at its last logout are applied
     /// with the time they had left (`restore_type` 0). Called once when the character enters;
     /// the rows are taken from the profile.
-    // Java: `if (PlayerConfig.STORE_SKILL_COOLTIME) restoreEffects();` in `onPlayerEnter`.
     pub(crate) fn restore_saved_effects(&mut self, id: ObjectId) {
         let Some(player) = self.players.get_mut(&id) else {
             return;
@@ -186,8 +176,6 @@ impl World {
                 continue;
             }
             // Java `skill.applyEffects(this, this, false, rs.getInt("remaining_time"))`.
-            // NOTE(java-quirk): a buff with no time left at logout (remaining 0) comes back with the
-            // skill's full time, because Java ignores a custom abnormal time of 0 or less.
             self.apply_effects_timed(
                 id,
                 id,

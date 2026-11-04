@@ -1,7 +1,5 @@
 //! The behaviour of a cursed weapon: Java `CursedWeapon` and the entry points of
 //! `CursedWeaponsManager`.
-// Java: entity/actor/holders/player/CursedWeapon.java
-// Java: managers/CursedWeaponsManager.java
 
 use l2_data::CursedWeaponDefs;
 use l2_data::item::types::BodyPart;
@@ -44,9 +42,6 @@ impl World {
     /// Java `CursedWeaponsManager.init()` without `controlPlayers` (the game server runs that
     /// against the database before the world starts): the weapons of `CursedWeapons.xml`, then
     /// `restore()` re-activates the ones the table says a character holds.
-    ///
-    /// With `AllowCursedWeapons` off nothing loads. The rows are only read with
-    /// `CycleDatabaseWrites` (D-53): without it the table is Sieghardt's.
     pub fn load_cursed_weapons(&mut self, defs: &CursedWeaponDefs, load: CursedLoad) {
         let old: Vec<_> = self.cursed.weapons.iter().filter_map(|w| w.remove_task).collect();
         for timer in old {
@@ -66,8 +61,6 @@ impl World {
         // restore()
         for row in load.rows {
             let Some(index) = self.cursed.index_of(row.item_id) else {
-                // NOTE(java-quirk): `_cursedWeapons.get(itemId)` is null for an item the XML
-                // does not list; the NullPointerException ends the whole `restore()`.
                 warn!(
                     "Could not restore CursedWeapons data: unknown item {}.",
                     row.item_id
@@ -132,7 +125,6 @@ impl World {
         if item_id == 0 {
             return 0;
         }
-        // Java: `_cursedWeapons.get(itemId).getLevel()`; a missing weapon is a null pointer.
         self.cursed.weapon(item_id).map_or(0, CursedWeapon::level)
     }
 
@@ -661,8 +653,6 @@ impl World {
         if self.cursed.weapons[index].end_time - self.cursed_now_ms() <= 0 {
             self.cursed_end_of_life(index);
         } else {
-            // NOTE(java-quirk): Java overwrites `_removeTask` without cancelling the old one,
-            // which would then keep ending the weapon every period. The old task is cancelled.
             self.cursed_cancel_task(index);
             self.cursed_schedule_remove_task(index);
         }

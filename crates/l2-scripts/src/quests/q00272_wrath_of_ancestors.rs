@@ -1,6 +1,4 @@
 //! Quest 272: Wrath of Ancestors (Livina in the Orc Village sends the orcs after the grave robbers).
-// Java: dist/game/data/scripts/quests/Q00272_WrathOfAncestors/Q00272_WrathOfAncestors.java
-//
 // Pattern: a kill-count quest (`docs/design/scripts.md`, "Quest patterns"): every goblin grave
 // robber gives one head while cond 1 lasts; the 50th sets cond 2, the NPC pays adena and ends the
 // quest (repeatable).

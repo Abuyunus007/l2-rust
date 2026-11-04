@@ -1,14 +1,5 @@
 //! `//gracia_seeds` and its words (S-API-05): the Seed of Destruction and Seed of Infinity states
 //! for a GM, and the switches of the two seed managers.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminGraciaSeeds.java
-//
-// Java's seed managers are core singletons; here they are the scripts `SeedOfDestructionManager`
-// and `SeedOfInfinityManager` (`l2-scripts`, `ai/areas/gracia/seeds.rs`), which keep their state
-// in the global variables. The words hand the change to the manager as its event
-// (`increaseSoDTiatKilled`, `setSoDState <n>`, `setCurrentStage <n>`); the manager re-reads its
-// rows first (D-54) and decides after the command, so the menu shown at once has the values of
-// before the change (Java's has the new ones). Without the manager scripts (`NoQuests`) the
-// words change nothing.
 
 use l2_util::ObjectId;
 

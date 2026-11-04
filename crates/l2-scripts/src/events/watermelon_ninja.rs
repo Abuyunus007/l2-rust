@@ -1,6 +1,4 @@
 //! Watermelon Ninja: feed nectar to a watermelon seed, then hit the grown watermelon for prizes.
-// Java: dist/game/data/scripts/events/WatermelonNinja/WatermelonNinja.java
-// Java: dist/game/data/scripts/events/WatermelonNinja/config.xml
 
 use l2_protocol_game::server::ChatType;
 use l2_util::ObjectId;

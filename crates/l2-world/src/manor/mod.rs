@@ -1,17 +1,6 @@
 //! The castle manor (M7-MANOR-01): the seeds and crops of every castle, the manor periods, the
 //! seed purchase and the crop sale, the `ManorManager` NPC, and the seeds and harvester a player
 //! uses on monsters.
-// Java: managers/CastleManorManager.java
-// Java: mechanics/siege/manor/{Seed,SeedProduction,CropProcure,ManorMode}.java
-// Java: network/clientpackets/{RequestManorList,RequestSetSeed,RequestSetCrop,RequestBuySeed,
-//       RequestProcureCropList}.java
-// Java: network/serverpackets/{BuyListSeed,ExShowManorDefaultInfo,ExShowSeedInfo,ExShowCropInfo,
-//       ExShowSeedSetting,ExShowCropSetting,ExShowProcureCropDetail,ExShowSellCropList}.java
-// Java: dist/game/data/scripts/ai/others/ManorManager/ManorManager.java (and its pages)
-// Java: dist/game/data/scripts/handlers/items/{Seed,Harvester}.java
-// Java: dist/game/data/scripts/handlers/skill/effects/{Sow,Harvesting}.java
-// Java: entity/actor/Attackable.java (the seeded state: setSeeded, takeHarvest)
-//
 // # Shape
 // - `period.rs`: the manor mode (modifiable, maintenance, approved) and the daily change on the
 //   timer wheel; the change at 20:00 hands the crops to the clan warehouses, the unspent adena to
@@ -26,24 +15,6 @@
 // - `farming.rs`: the seeded state of a monster, the `Seed` and `Harvester` item handlers and the
 //   `Sow` and `Harvesting` effects.
 //
-// # Side by side with the Java game server (D-39, D-49, D-50, D-51)
-// Sieghardt (the Java GS) runs the real manor while both servers share the database: it keeps its
-// own copy of both tables in memory, rewrites them whole (`storeMe`) at 20:00, every
-// `AltManorSavePeriodRate` hours and at shutdown, and at the same 20:00 it hands the harvested
-// crops to the clan warehouses and moves the adena of the treasuries. So here:
-// - What the manor does on its own (the 20:00 change: warehouse items, treasuries; `storeMe`; the
-//   reset of a castle that lost its owner) changes this world and writes its rows only with
-//   `SiegeDatabaseWrites` (`World::manor_write` with [`Writes::Job`]). Without it the clan
-//   warehouse is not touched at all: this server reads the clan warehouse again at every window
-//   (M6-SYNC-01), so an item added in memory would only be gone at the next one.
-// - What a player does (the castle lord sets the next period; with `AltManorSaveAllActions` the
-//   rows of it and of every sale) is written as usual ([`Writes::Player`]), like the tax rate of a
-//   chamberlain page. The treasury of a seed purchase is the castle's own row and follows the tax
-//   income (Job).
-// - The lists are read once at startup, like Java does; Java never reads them again either, so a
-//   purchase here and one on Sieghardt do not see each other until a restart. The owner of the
-//   castle (who may set the manor) is `Clan::castle_id`, which the session reads again at
-//   `CharacterSelect` (D-51).
 //
 // # Quirks kept (marked where they are)
 // - `CastleManorManager` sets the mode at start with `min >= maintenanceMin` for every hour after

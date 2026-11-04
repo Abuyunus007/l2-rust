@@ -1,14 +1,5 @@
 //! The game server side of the login server: the listener on `LoginPort` and one connection
 //! task per game server.
-// Java: org/l2jmobius/loginserver/GameServerListener.java
-// Java: org/l2jmobius/loginserver/util/FloodProtectorListener.java
-// Java: org/l2jmobius/loginserver/GameServerThread.java
-// Java: org/l2jmobius/loginserver/network/GameServerPacketHandler.java
-// Java: org/l2jmobius/loginserver/network/gameserverpackets/receive/BlowFishKey.java
-// Java: org/l2jmobius/loginserver/network/gameserverpackets/receive/GameServerAuth.java
-//
-// Handshake, as the Java game server (`LoginServerThread`) drives it:
-//
 //   LS -> InitLS(protocol 0x0106, RSA-512 modulus)            default Blowfish key
 //   GS -> BlowFishKey(RSA no-padding block with a 40-byte key) default key; both switch keys now
 //   GS -> GameServerAuth(...)                                  new key
@@ -55,7 +46,6 @@ static NEXT_LINK_ID: AtomicU64 = AtomicU64::new(1);
 
 /// Opens the game server listener on `LoginHostname:LoginPort` and runs it until shutdown.
 /// Java exits with a fatal error when the port cannot be bound; the error here does the same.
-// Java: LoginServer.startGameServerListener
 pub(crate) async fn start(server: &mut Server) -> Result<(), StartupError> {
     let store = Arc::new(server.state().repository.clone());
     start_with_store(server, store).await
@@ -95,7 +85,6 @@ fn listen_error(state: &LoginState, source: std::io::Error) -> StartupError {
 }
 
 /// Binds `LoginHostname` (`*` = all interfaces) and `LoginPort`.
-// Java: FloodProtectorListener constructor
 async fn bind(login: &LoginConfig) -> Result<TcpListener, StartupError> {
     let describe = |source| StartupError::Listen {
         what: "Game server",
@@ -129,7 +118,6 @@ async fn bind(login: &LoginConfig) -> Result<TcpListener, StartupError> {
 }
 
 /// Accepts game server connections until the token is cancelled.
-// Java: FloodProtectorListener.run, GameServerListener.addClient
 async fn serve<S: GameServerStore + AccountStore>(
     listener: TcpListener,
     state: Arc<LoginState>,
@@ -165,8 +153,6 @@ async fn serve<S: GameServerStore + AccountStore>(
 }
 
 /// Java `isBannedGameserverIP`.
-// NOTE(java-quirk): this is a TODO stub in Java that always answers false, so no game server
-// address is ever refused.
 pub fn is_banned_game_server_ip(_address: IpAddr) -> bool {
     false
 }
@@ -179,7 +165,6 @@ struct Visitor {
 }
 
 /// Refuses addresses that connect too often or with too many connections at once.
-// Java: FloodProtectorListener (`run`, `removeFloodProtection`)
 pub struct FloodProtector {
     enabled: bool,
     fast_connection_limit: i32,
@@ -265,7 +250,6 @@ impl FloodProtector {
 }
 
 /// The login server's side of one game server connection.
-// Java: GameServerThread + GameServerPacketHandler
 struct GsConnection<S: GameServerStore + AccountStore> {
     state: Arc<LoginState>,
     store: Arc<S>,
@@ -294,15 +278,11 @@ impl<S: GameServerStore + AccountStore> GsConnection<S> {
     }
 
     /// Sends the reason, then closes the link.
-    // Java: GameServerThread.forceClose
     fn force_close(ctl: &mut Control<'_>, reason: u8) {
         ctl.send_and_close(LoginServerFail { reason }.to_bytes());
     }
 
-    // Java: BlowFishKey (constructor)
     fn handle_blowfish_key(&mut self, encrypted_key: &[u8], ctl: &mut Control<'_>) {
-        // NOTE(java-quirk): all four problems below only log and leave the link in the CONNECTED
-        // state. The game server is not told, and it can send another BlowFishKey.
         if encrypted_key.is_empty() {
             warn!("Invalid RSA block size for Blowfish key: 0");
             return;
@@ -320,8 +300,6 @@ impl<S: GameServerStore + AccountStore> GsConnection<S> {
                 return;
             }
         };
-        // NOTE(java-quirk): leading zero bytes are dropped from the decrypted block. A random
-        // key that starts with 0x00 therefore ends up shorter (and wrong) on this side.
         let key = strip_leading_zeros(&decrypted);
         if key.is_empty() {
             warn!("Decrypted Blowfish key is empty.");
@@ -336,7 +314,6 @@ impl<S: GameServerStore + AccountStore> GsConnection<S> {
         }
     }
 
-    // Java: GameServerAuth (constructor, then `handleRegProcess`)
     async fn handle_auth(&mut self, request: &GameServerAuth, ctl: &mut Control<'_>) {
         let Some(link) = self.link.clone() else {
             return;
@@ -447,7 +424,6 @@ impl<S: GameServerStore + AccountStore> FrameHandler for GsConnection<S> {
     }
 
     async fn on_disconnect(&mut self) {
-        // Java: the `finally` block of `GameServerThread.run`.
         if let (Some(server_id), Some(link)) = (self.server_id, &self.link) {
             self.state
                 .game_servers
@@ -1291,7 +1267,6 @@ mod tests {
         assert_eq!(table.registered(1).unwrap().status, ServerStatus::Down);
         assert!(!list_entry(&state).up);
 
-        // What the Java game server sends after AuthResponse (age as attribute 5, see below).
         gs.send(&StatusPacket {
             attributes: vec![
                 (StatusPacket::SERVER_LIST_SQUARE_BRACKET, StatusPacket::ON),
@@ -1498,7 +1473,6 @@ mod tests {
         );
         until(|| state.bans.is_banned("10.7.7.8")).await;
         assert!(state.bans.is_banned("10.7.7.7"));
-        // NOTE(java-quirk) in the handler: the "end time" is used as a duration.
         let expiry = state.bans.expiry("10.7.7.7").unwrap();
         assert!(expiry > l2_util::time::now_millis() + 123_000_000);
 

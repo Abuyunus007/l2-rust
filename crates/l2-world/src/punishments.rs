@@ -1,22 +1,5 @@
 //! Punishments: bans, chat bans, party bans and jail (`punishments` table), and the penalty of an
 //! illegal player action.
-// Java: managers/PunishmentManager.java
-// Java: mechanics/punishment/{PunishmentTask,PunishmentAffect,PunishmentType}.java
-// Java: data/holders/PunishmentHolder.java
-// Java: entity/actor/tasks/player/IllegalPlayerActionTask.java, TeleportTask.java
-// Java: entity/actor/enums/player/IllegalActionPunishmentType.java
-// Java: dist/game/data/scripts/handlers/punishments/{BanHandler,ChatBanHandler,JailHandler}.java
-// Java: entity/zone/type/JailZone.java (the two locations), commons/time/TimeUtil.formatDuration
-//
-// # How it fits (D-39)
-// The world owns the live punishments (Java's `PunishmentHolder`s). The rows of the `punishments`
-// table are loaded before the world starts (`World::load_punishments`), a new punishment goes
-// out as `PersistCommand::StorePunishment` (Java's `INSERT`), an ended one as
-// `PersistCommand::EndPunishment` (the `UPDATE` of `expiration` to the time it ended). The Java
-// game server reads and writes the same rows. A ban of an account tells the login server
-// (`LsEvent::AccessLevel`, Java `sendAccessLevel`), a ban of a character writes
-// `characters.accessLevel` (`PersistCommand::CharAccessLevel`, Java `changeCharAccessLevel`).
-//
 // The expiry of a punishment is a timer of the wheel (Java `ThreadPool.schedule`), like the five
 // second delay of an illegal action.
 //
@@ -164,8 +147,6 @@ impl Default for PunishmentSettings {
             default_punish: IllegalActionPunishment::Kick,
             default_punish_param: 3_155_695_200,
             jail_disable_chat: true,
-            // The shipped `General.ini` value. NOTE(java-quirk): Java's own default names `WORLD`,
-            // which is not a chat type of High Five: `Enum.valueOf` would throw while loading.
             ban_chat_channels: vec![
                 ChatType::General,
                 ChatType::Shout,
@@ -540,8 +521,6 @@ impl World {
             }
         }
         // `PunishmentHolder.addPunishment`: an expired task is not kept.
-        // NOTE(java-quirk): a second punishment of the same key and type replaces the first, whose
-        // end timer stays and ends the new one (the admin commands check `hasPunishment` first).
         if !task.is_expired(now) {
             self.punishments
                 .tasks
@@ -580,8 +559,6 @@ impl World {
             });
         }
         self.punishment_handler_end(&task);
-        // NOTE(java-quirk): the holder forgets the task only after its handler ran, so the
-        // `EtcStatusUpdate` the chat ban handler sends still shows the chat as banned.
         self.punishments.tasks.remove(&tasks_key);
     }
 
@@ -697,7 +674,6 @@ impl World {
             let minutes = (delay % 3600) / 60;
             let mut message = String::from("You've been chat banned for ");
             if hours > 0 {
-                // NOTE(java-quirk): the plural is "'s" ("2 hour's.").
                 message.push_str(&format!("{hours} hour{}", if hours > 1 { "'s." } else { "." }));
                 if minutes > 0 {
                     message.push_str(" and ");
@@ -714,7 +690,6 @@ impl World {
         } else {
             self.send_message(player, "You've been chat banned forever.");
         }
-        // NOTE(java-quirk): sent before the holder has the task, so the icon is not lit yet.
         self.send_etc_status_update(player);
     }
 

@@ -1,6 +1,4 @@
 //! Quest 10295: Seven Signs, Solina's Tomb (Eris Evil Thoughts in the Monastery of Silence, Solina's Tomb).
-// Java: dist/game/data/scripts/quests/Q10295_SevenSignsSolinasTomb/Q10295_SevenSignsSolinasTomb.java
-//
 // Pattern: a memo-state quest (`docs/design/scripts.md`): the memo state is the step of the tomb,
 // moved by Eris and Solinas here and by the tomb's instance script (not ported: memo 2 comes
 // from there). The four holy items (scroll, shield, sword, staff) are taken from the altars and

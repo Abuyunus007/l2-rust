@@ -1,7 +1,5 @@
 //! Siege guards: castle and fortress guards and mercenaries that look for targets themselves
 //! every 3 seconds, ignore the attackers of other sieges and leave when their siege is over.
-// Java: dist/game/data/scripts/ai/others/SiegeGuards.java
-//
 // The native `SiegeGuardAI` / `FortSiegeGuardAI` (`l2-world/src/ai/siege_guard.rs`) already make
 // a guard attack the enemies of its siege within its attack range, heal friends and call its
 // clan. This script is Mobius's addition on top: the 3 s aggro task over the *aggro range*, the
@@ -158,8 +156,6 @@ fn distance_2d(ctx: &ScriptCtx<'_>, a: ObjectId, b: ObjectId) -> f64 {
 
 /// Java `onCastleSiegeFinish` / `onFortSiegeFinish`: the guards of the residence go.
 fn siege_finished(ctx: &mut ScriptCtx<'_>, residence_id: i32) {
-    // NOTE(java-quirk): Java looks the list up in a 122 slot array; a residence without a list
-    // (no task was made for it) does nothing.
     let Some(guards) = ctx
         .state::<SiegeGuardsState>()
         .guards

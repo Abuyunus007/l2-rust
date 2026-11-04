@@ -11,7 +11,6 @@ use super::items::{ItemInfo, read_item, write_item};
 use super::{read_count, write_opcode};
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/GMViewCharacterInfo.java
 /// The status window a GM sees of another character (`GM_VIEW_CHARACTER_INFO`). The values are
 /// the ones of that character's `UserInfo`; the fields are in wire order.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -143,7 +142,6 @@ impl Encode for GmViewCharacterInfo {
         w.i32(self.p_atk).i32(self.p_atk_spd).i32(self.p_def);
         w.i32(self.evasion).i32(self.accuracy).i32(self.critical);
         w.i32(self.m_atk).i32(self.m_atk_spd);
-        // NOTE(java-quirk): the physical attack speed is written a second time, like in UserInfo.
         w.i32(self.p_atk_spd).i32(self.m_def);
         w.i32(self.pvp_flag).i32(self.karma);
         w.i32(self.run_speed)
@@ -172,7 +170,6 @@ impl Encode for GmViewCharacterInfo {
         w.i32(0);
         w.i32(self.max_cp).i32(self.current_cp);
         w.bool(self.running);
-        // NOTE(java-quirk): `writeByte(321)` writes the low byte, 65.
         w.u8(65);
         w.i32(self.pledge_class);
         w.bool(self.noble).bool(self.hero);
@@ -288,7 +285,6 @@ impl Decode for GmViewCharacterInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/GMHennaInfo.java
 /// The dyes a GM sees of another character (`GM_HENNA_INFO`): the layout of `HennaInfo`.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct GmHennaInfo {
@@ -359,7 +355,6 @@ pub struct GmSkillEntry {
     pub enchantable: bool,
 }
 
-// Java: gameserver/network/serverpackets/GMViewSkillInfo.java
 /// The skills a GM sees of another character (`GM_VIEW_SKILL_INFO`).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct GmViewSkillInfo {
@@ -403,7 +398,6 @@ impl Decode for GmViewSkillInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/GmViewQuestInfo.java
 /// The active quests a GM sees of another character (`GM_VIEW_QUEST_INFO`): `(quest id, cond)`.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct GmViewQuestInfo {
@@ -420,7 +414,6 @@ impl Encode for GmViewQuestInfo {
         write_opcode(w, Self::OPCODE);
         w.string(&self.player_name);
         if self.quests.is_empty() {
-            // NOTE(java-quirk): the empty list is a byte and two shorts, all 0.
             w.u8(0).u16(0).u16(0);
             return;
         }
@@ -451,7 +444,6 @@ impl Decode for GmViewQuestInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/GMViewWarehouseWithdrawList.java
 /// The warehouse a GM sees (`GM_VIEW_WAREHOUSE_WITHDRAW_LIST`): of a player, or of a clan under
 /// the name of its leader.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]

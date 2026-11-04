@@ -1,7 +1,5 @@
 //! Quest 40: A Special Order (Helvetia in the Gludin Village, Ofulle the fisherman and Gesto
 //! the seed merchant, who fill the two boxes).
-// Java: dist/game/data/scripts/quests/Q00040_ASpecialOrder/Q00040_ASpecialOrder.java
-//
 // Pattern: a delivery chain with a random branch (`docs/design/scripts.md`, "Quest patterns"):
 // the accept picks one of two chains at random (cond 2 for the fish, cond 5 for the seeds), and
 // Helvetia's reward ends both.

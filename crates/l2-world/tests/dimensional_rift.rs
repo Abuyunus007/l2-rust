@@ -725,8 +725,6 @@ fn losing_a_member_below_the_minimum_ends_the_rift() {
     s.input(BOB, ClientInput::Logout);
     assert!(s.world.party_rift(party).is_none());
     assert!(s.rooms_inside().is_empty());
-    // NOTE(java-quirk): `partyMemberExited` only brings the members that are left in the party
-    // back, and the leader was the first to be removed: he stays in the room.
     assert!(
         !s.world
             .rift_check_in_peace_zone(s.position(ALICE).0, s.position(ALICE).1, s.position(ALICE).2)

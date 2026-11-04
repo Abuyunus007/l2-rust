@@ -2,7 +2,6 @@
 
 //! `//search <text> [page]` (`admin/search.rs`): the item search of the GM panel, with its pages,
 //! its "no items" line and the exceptions of Java's `subList`.
-//! Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminSearch.java
 
 use std::path::Path;
 use std::sync::{Arc, Mutex};

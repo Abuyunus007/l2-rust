@@ -1,5 +1,4 @@
 //! Muscle Bomber (raid boss 25724): Enhance at 80% and 50% HP, and Drakos Assassins every minute.
-// Java: dist/game/data/scripts/ai/others/MuscleBomber.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};

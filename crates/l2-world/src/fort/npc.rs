@@ -1,7 +1,5 @@
 //! The fortress NPC classes: `FortDoorman`, `FortLogistics`, `FortCommander` (the foreman,
 //! `FortManager`, is `manager.rs`).
-// Java: entity/actor/instance/{FortDoorman,Doorman,FortLogistics,FortCommander}.java
-// Java: entity/actor/Npc.java (isMyLord)
 
 use l2_protocol_game::server::{ActionFailed, ChatType, NpcSay};
 use l2_util::ObjectId;
@@ -39,9 +37,6 @@ impl World {
     }
 
     /// Java `Npc.isMyLord(player)`.
-    // NOTE(java-quirk): the castle and fortress ids of the NPC are -1 when it has none, and the
-    // comparison is `||`: a clan leader whose clan owns the castle nearest to the NPC passes at a
-    // fortress that is not his.
     pub(crate) fn fort_is_my_lord(&self, npc: ObjectId, player: ObjectId) -> bool {
         if !self.is_clan_leader(player) {
             return false;
@@ -206,9 +201,6 @@ impl World {
         self.fort_page(npc, player, &filename, &[("%clanname%", clan_name)]);
     }
 
-    /// Java `FortLogistics.onBypassFeedback(player, command)`: the commands that hand out
-    /// something (the blood oath reward, the supply box) read the fortress and the clan again
-    /// first (D-50).
     fn fort_logistics_bypass_feedback(&mut self, npc: ObjectId, player: ObjectId, command: &str) {
         if self.players.get(&player).and_then(|p| p.talk.last_folk_npc) != Some(npc) {
             return;

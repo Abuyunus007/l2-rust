@@ -1,11 +1,8 @@
 //! Quest 640: The Zero Hour (Kahman in the Gludio area; the spiked stakato monsters drop fangs,
 //! 6 to 150 of them buy one of nine crafting materials).
-// Java: dist/game/data/scripts/quests/Q00640_TheZeroHour/Q00640_TheZeroHour.java
-//
 // Pattern: a repeatable kill that drops one fang to a random started party member
 // (`getRandomPartyMemberState(killer, State.STARTED)`, the state overload), a menu of rewards
 // (events "1".."9") that each take a fixed number of fangs, and a start gate of Q00109.
-// NOTE(java-quirk): the start and the quit events answer null (no page), as Java returns nothing.
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, QuestSound, STARTED};
@@ -115,7 +112,6 @@ impl Script for Q00640TheZeroHour {
         let Some(member) = ctx.get_random_party_member_state(killer, STARTED) else {
             return;
         };
-        // NOTE(java-quirk): the member needs a quest state of its own (any state).
         if ctx.get_quest_state(member, false).is_none() {
             return;
         }

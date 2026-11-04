@@ -6,7 +6,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/MoveToLocation.java
 /// An object starts walking to a point (`MOVE_TO_LOCATION`).
 ///
 /// Java's `canBeDropped` is true: under load the network layer may drop it.
@@ -56,7 +55,6 @@ impl Decode for MoveToLocation {
     }
 }
 
-// Java: gameserver/network/serverpackets/StopMove.java
 /// An object stops where it is (`STOP_MOVE`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct StopMove {
@@ -97,7 +95,6 @@ impl Decode for StopMove {
     }
 }
 
-// Java: gameserver/network/serverpackets/MoveToPawn.java
 /// An object starts following another one (`MOVE_TO_PAWN`).
 ///
 /// Java's `canBeDropped` is true, like `MoveToLocation`.
@@ -154,7 +151,6 @@ impl Decode for MoveToPawn {
     }
 }
 
-// Java: gameserver/network/serverpackets/TeleportToLocation.java
 /// An object is teleported (`TELEPORT_TO_LOCATION`). The receiving player answers with
 /// `Appearing` when its client has loaded the target.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]

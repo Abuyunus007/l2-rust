@@ -2,7 +2,6 @@
 
 //! The fence admin commands (`admin/fence.rs`): `//addfence`, `//setfencestate`, `//removefence`,
 //! `//listfence` and `//gofence`, with a GM at a known place.
-//! Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminFence.java
 
 use std::path::Path;
 use std::sync::{Arc, Mutex};

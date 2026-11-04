@@ -1,6 +1,5 @@
 //! Bresenham line iterators over the geo grid.
 //!
-//! Java: `gameserver/geoengine/util/GridLineIterator2D.java` and `GridLineIterator3D.java`.
 //!
 //! Both visit the start point first and the end point last. Java's `next()` is [`advance`](GridLineIterator2D::advance)
 //! here (it returns `true` while there is a point to read through `x()`, `y()`, `z()`), so a
@@ -117,8 +116,6 @@ impl GridLineIterator3D {
         let delta_x = end_x.wrapping_sub(start_x).wrapping_abs();
         let delta_y = end_y.wrapping_sub(start_y).wrapping_abs();
         let delta_z = end_z.wrapping_sub(start_z).wrapping_abs();
-        // NOTE(java-quirk): the step is -1 (never 0) on an axis that does not change; the error
-        // terms keep that axis from moving.
         let initial_error = if delta_x >= delta_y && delta_x >= delta_z {
             delta_x / 2
         } else if delta_y >= delta_x && delta_y >= delta_z {

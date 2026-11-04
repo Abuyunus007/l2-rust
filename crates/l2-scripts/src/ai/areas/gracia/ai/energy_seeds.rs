@@ -1,7 +1,5 @@
 //! The Energy Seeds of the Seeds of Destruction and Annihilation: their spawns, the collection
 //! skill and the doors, exits and zone checks of the Seed of Destruction.
-// Java: dist/game/data/scripts/ai/areas/Gracia/AI/EnergySeeds.java
-//
 // NOT PORTED: the `soi*Spawn()` / `soi*Stop()` functions for the Seed of Infinity. Java's
 // `SeedOfInfinityManager` calls them only in comments (`// EnergySeeds.SoiSeedSpawn();`), and
 // `isSeedActive(INFINITY)` is false, so nothing ever runs them. Their tables are not copied.
@@ -702,8 +700,6 @@ impl Script for EnergySeeds {
                     }
                 }
                 SOI_ZONE => {
-                    // NOTE(java-quirk): outside stage 3 the seed counts as closed only when it is
-                    // not open either; `getOpenedTime()` is 0 outside stage 3, so both say the same.
                     if soi_current_stage(ctx) != 3 && soi_opened_time(ctx, ctx.now_ms()) <= 0 {
                         ctx.teleport_player(
                             creature,

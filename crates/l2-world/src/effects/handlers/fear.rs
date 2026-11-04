@@ -1,6 +1,4 @@
 //! Fear and its instant sibling: the creature runs away from the effector.
-// Java: dist/game/data/scripts/handlers/skill/effects/Fear.java
-// Java: dist/game/data/scripts/handlers/skill/effects/RunAway.java
 
 use l2_data::npc::NpcRace;
 use l2_data::skill::EffectTemplate;

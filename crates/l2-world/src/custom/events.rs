@@ -1,7 +1,5 @@
 //! What the custom event scripts (Elpies, Rabbits, Race, Deathmatch, TvT, CtF) need from the
 //! world (M9-C07).
-// Java: entity/actor/instance/EventMonster.java
-// Java: mechanics/script/Event.java
 
 use l2_data::stats::AbnormalType;
 use l2_protocol_game::server::{ChatType, CreatureSay, NpcHtmlMessage, SayBody, SenderField};

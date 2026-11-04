@@ -10,7 +10,6 @@ use super::{write_ex_opcode, write_opcode};
 use crate::generated::opcodes::{ClientOpcode, ExClientOpcode};
 use crate::server::skills::AcquireSkillType;
 
-// Java: gameserver/network/clientpackets/RequestMagicSkillUse.java
 /// The player uses a skill (`REQUEST_MAGIC_SKILL_USE`). The id is the skill the player knows, or
 /// the display id of a transformed or custom skill; the world decides which.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -38,7 +37,6 @@ impl Encode for RequestMagicSkillUse {
 impl Decode for RequestMagicSkillUse {
     fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
         let magic_id = r.i32()?;
-        // Java: any non-zero value counts as pressed.
         let ctrl_pressed = r.i32()? != 0;
         let shift_pressed = r.u8()? != 0;
         Ok(Self {
@@ -49,7 +47,6 @@ impl Decode for RequestMagicSkillUse {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestAutoSoulShot.java
 /// The player switches the automatic use of a soulshot or spiritshot on or off. Ex packet
 /// `0xD0 0x000D`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -84,7 +81,6 @@ impl Decode for RequestAutoSoulShot {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestAcquireSkill.java
 /// The player asks to learn a skill from a trainer (`REQUEST_ACQUIRE_SKILL`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestAcquireSkill {
@@ -129,7 +125,6 @@ impl Decode for RequestAcquireSkill {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestAcquireSkillInfo.java
 /// The player asks for the details of a skill to learn (`REQUEST_ACQUIRE_SKILL_INFO`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestAcquireSkillInfo {
@@ -159,7 +154,6 @@ impl Decode for RequestAcquireSkillInfo {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestDispel.java
 /// The player removes a buff from itself or from its summon (`REQUEST_DISPEL`). Ex packet
 /// `0xD0 0x004B`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,5 +1,4 @@
 //! The 1st class transfer of dwarven fighters to scavengers (Moke, Rikadio, Ranspo, Alder).
-// Java: dist/game/data/scripts/village_master/DwarfWarehouseChange1/DwarfWarehouseChange1.java
 
 use l2_util::ObjectId;
 use l2_world::subclass::CategoryType;

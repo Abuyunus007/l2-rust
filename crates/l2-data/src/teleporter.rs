@@ -1,6 +1,5 @@
 //! Teleporter (gatekeeper) lists: which NPC offers which destinations, at what fee, for whom.
 //!
-//! Java: `gameserver/data/xml/TeleporterData.java`, `gameserver/entity/teleporter/TeleportHolder.java`,
 //! `gameserver/entity/teleporter/TeleportLocation.java`, `gameserver/entity/actor/enums/player/TeleportType.java`.
 //! Data: `data/teleporters/**/*.xml` (`xsd/teleporterData.xsd`).
 //!
@@ -25,13 +24,6 @@
 //! * An NPC with an empty `<npc>` element still counts as an NPC (Java's `computeIfAbsent`).
 //! * Like Java's `parseDatapackFile`, a bad value (no `id`, an unknown `type`, a non-number) stops the
 //!   rest of that file, while entries parsed before it stay.
-//!
-//! NOTE(java-quirk): Java's `getLocation(index)` is `List.get`, so an index out of range throws
-//! instead of returning `null`; the `null` check in `TeleportHolder.doTeleport` is never reached.
-//! [`TeleportHolder::location`] returns `None`; the caller logs what Java logs for an unknown location.
-//!
-//! NOTE(java-quirk): element names are matched exactly as written. Java matches `list`, `npc` and
-//! `location` without regard to case, but the shipped files use the lower-case names only.
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -245,7 +237,6 @@ impl TeleporterData {
 
 /// Java `parseDocument` for one `<teleport>`: type, name (default: the type's name) and locations.
 fn build_holder(raw: RawTeleport) -> Result<TeleportHolder, DataError> {
-    // Java: `parseEnum` gives `null` for a bad or missing type and the next line calls `type.name()`,
     // so the file stops there.
     let kind = raw
         .kind

@@ -1,6 +1,4 @@
 //! Quest 73: Saga of the Duelist.
-// Java: dist/game/data/scripts/quests/Q00073_SagaOfTheDuelist/Q00073_SagaOfTheDuelist.java
-//
 // Pattern: a saga (`docs/design/scripts.md`, "Quest patterns"): the Java class only fills the
 // fields of `AbstractSagaQuest`; here that is a `SagaData` constant and one `saga_quest!` line.
 // The hooks are the shared ones of `abstract_saga_quest.rs`.
@@ -70,7 +68,6 @@ impl l2_world::Script for Q00073SagaOfTheDuelist {
 
     fn setup(&self, s: &mut l2_world::ScriptSetup) {
         register_npcs(&DATA, s);
-        // Java: addTalkId(TUNATUN) after registerNPCs()
         s.add_talk_id(&[TUNATUN]);
     }
 

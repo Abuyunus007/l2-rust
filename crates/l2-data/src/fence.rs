@@ -1,13 +1,9 @@
 //! Fences: the walls `data/FenceData.xml` puts into the world (arena fences).
 //!
-//! Java: `gameserver/data/xml/FenceData.java` (`parseDocument`, `spawnFence`),
 //! `entity/actor/enums/creature/FenceState.java`. Data: `data/FenceData.xml`, `xsd/FenceData.xsd`.
 //!
 //! `x`, `y`, `z`, `name`, `width`, `length` and `height` are required (Java's `getInt` /
 //! `getString` throw without them), `state` defaults to `CLOSED` and must be an exact enum name.
-//!
-//! NOTE(java-quirk): as in `door.rs`, Java aborts the rest of the file at the first bad fence;
-//! here only the broken fence is skipped, with a warning.
 
 use std::path::Path;
 
@@ -169,7 +165,6 @@ fn req_int(key: &str, value: &Option<String>) -> Result<i32, String> {
     }
 }
 
-// Java: FenceData.spawnFence(Node)
 fn build_fence(raw: &RawFence) -> Result<FenceTemplate, String> {
     let x = req_int("x", &raw.x)?;
     let y = req_int("y", &raw.y)?;

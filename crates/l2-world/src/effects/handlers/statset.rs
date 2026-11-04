@@ -1,6 +1,5 @@
 //! The parameter reads of the handler constructors: Java `StatSet.getInt/getDouble/getBoolean/
 //! getEnum(key, default)` over an effect's raw `<param>` texts.
-// Java: util/StatSet.java
 
 use l2_data::skill::EffectTemplate;
 use l2_data::stats::jnum::{parse_boolean, parse_double, parse_int};

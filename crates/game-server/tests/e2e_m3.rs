@@ -20,12 +20,6 @@
 //! zones, a map region and a one-tile geodata region with a wall) write them into a temporary
 //! folder. `PathFinding` is 2, so the wall is real; the target of the walk is chosen so that
 //! Java corrects the destination and does not start a path search (see `m3_data.rs`).
-//!
-//! Where the Java game server was recorded doing the same (`fixtures/captures/java-gs-*.jsonl`:
-//! the first click on something, walking, entering the world) the names and the order of the
-//! packets are compared with the recording. Java has no recording of a gatekeeper dialog, a
-//! teleport, `CharInfo` or `Appearing`; those packets are checked against the Java sources by
-//! the unit tests of the packets and the world.
 
 #[path = "e2e/datapack.rs"]
 mod datapack;
@@ -1205,7 +1199,6 @@ impl Rig {
             "the creation point of the datapack"
         );
         let char_id = created.object_id;
-        // Java: Logout at the character screen disconnects.
         assert!(game.logout().await.is_empty());
         self.wait_until_out_of_game(account).await;
         char_id

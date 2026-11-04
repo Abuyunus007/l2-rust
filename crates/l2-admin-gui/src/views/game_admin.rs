@@ -3,7 +3,6 @@
 //! game server through the supervisor (`Request::GameAdmin`), where it runs as the matching `//`
 //! command of a virtual GM.
 //!
-//! Java: `AdminAnnouncements`, `AdminShutdown`, `AdminServerInfo` (chat commands). The request
 //! building and the answer parsing are plain functions so they are tested without egui.
 
 use std::time::{Duration, Instant};

@@ -1,7 +1,3 @@
-//! The rows of the scripts tests: what Sieghardt (the Java game server) keeps in the shared
-//! database before Kain starts (`Seed`), a model of the tables the persistence task reads for
-//! the world (`Rows`, D-50), and the replay of the world's writes into a throwaway MariaDB.
-//!
 //! Included by `e2e_scripts.rs` (`#[path]`).
 
 use std::collections::BTreeMap;
@@ -21,7 +17,6 @@ use l2_world::{
 /// The state row of a quest in `character_quests` (`var = '<state>'`, Java `Quest.STATE_VAR`).
 pub const STATE_VAR: &str = "<state>";
 
-/// A row Sieghardt wrote to `character_quests`.
 #[derive(Clone, Debug)]
 pub struct QuestRow {
     /// The name of the character the row belongs to.
@@ -31,7 +26,6 @@ pub struct QuestRow {
     pub value: &'static str,
 }
 
-/// The rows of the Java game server (D-39), before Kain starts.
 #[derive(Clone, Debug, Default)]
 pub struct Seed {
     /// `grandboss_data`.
@@ -76,7 +70,6 @@ impl Seed {
     }
 }
 
-/// A grand boss row as Sieghardt would have written it.
 pub fn grand_boss_row(boss_id: i32, status: i32, respawn_time: i64, at: (i32, i32, i32)) -> GrandBossData {
     GrandBossData {
         boss_id,
@@ -249,7 +242,6 @@ impl Rows {
             .map(String::as_str)
     }
 
-    /// What the persistence task answers to a command that asks a question (D-50).
     pub fn answer(&self, world: &mut World, command: &PersistCommand) {
         match command {
             PersistCommand::BossRereadRequest { kind, then } => {
@@ -292,10 +284,6 @@ impl Rows {
     }
 }
 
-/// Replays the quest and `global_variables` writes the world sent into a throwaway MariaDB (the
-/// persistence task's own `DbStore`), after the rows of `seed` (what Sieghardt left), and checks
-/// the tables against the model `Rows`. `hero_ids` are `(name, character id)`. Does nothing, with
-/// a printed note, without `L2_TEST_DATABASE_URL`.
 pub fn replay_in_database(
     tag: &str,
     seed: &Seed,
@@ -332,7 +320,6 @@ pub fn replay_in_database(
         }
         let pool = connect_with(options, 4).await.unwrap();
 
-        // Sieghardt's rows first.
         for row in &seed.quests {
             let char_id = hero_ids.iter().find(|(n, _)| *n == row.hero).unwrap().1;
             sqlx::query("INSERT INTO character_quests (charId, name, var, value) VALUES (?, ?, ?, ?)")

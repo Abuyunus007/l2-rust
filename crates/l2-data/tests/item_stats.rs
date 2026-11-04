@@ -131,7 +131,6 @@ fn enchant_functions_by_item_kind() {
 
 #[test]
 fn a_second_stats_block_repeats_the_enchant_functions() {
-    // NOTE(java-quirk): `hasFunction(FuncEnchant.class)` is always false in Java.
     let t = load(
         r#"<item id="1" type="Weapon" name="w"><stats><stat type="pAtk">8</stat></stats><stats><stat type="mAtk">5</stat></stats></item>"#,
     );

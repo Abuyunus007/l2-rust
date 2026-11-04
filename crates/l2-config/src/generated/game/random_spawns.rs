@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/RandomSpawnsConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/RandomSpawns.ini` (Java: `RandomSpawnsConfig`).

@@ -1,5 +1,4 @@
 //! Quest 187: Nikola's Heart (Lorain, Maestro Nikola and Head Blacksmith Kusto).
-// Java: dist/game/data/scripts/quests/Q00187_NikolasHeart/Q00187_NikolasHeart.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED};

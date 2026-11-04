@@ -1,12 +1,7 @@
 //! Quest 27: Chest Caught with a Bait of Wind (Lanosco in the Fishing Village, the bait quest of the wind).
-// Java: dist/game/data/scripts/quests/Q00027_ChestCaughtWithABaitOfWind/Q00027_ChestCaughtWithABaitOfWind.java
-//
 // Pattern: a fishing chest hand-over (`docs/design/scripts.md`, "Quest patterns"): Lanosco
 // starts the quest once Lanosco's Special Bait (Q00050) is done, takes the blue treasure box
 // for the blueprint, and Shaling pays the black pearl ring. One-time: `exit_quest(ctx, false, true)`.
-//
-// NOTE(java-quirk): an event that is not handled is still shown back as its page (the Java
-// `htmltext = event` default), so the quest answers every event it gets.
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED};
@@ -55,7 +50,6 @@ impl Script for Q00027ChestCaughtWithABaitOfWind {
         _npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        // Java: `htmltext = event` for every case, also when there is no quest state.
         let Some(player) = player else {
             return Some(event.to_owned());
         };
@@ -92,7 +86,6 @@ impl Script for Q00027ChestCaughtWithABaitOfWind {
         match qs.state(ctx) {
             COMPLETED => htmltext = ctx.get_already_completed_msg(player),
             CREATED => {
-                // Java: `player.getQuestState(Q00050...)` completed and level 27 (on Lanosco only).
                 if npc.id == LANOSCO {
                     htmltext = "31570-02.htm".to_owned();
                     let bait_done = ctx

@@ -3,8 +3,6 @@
 //! `//find_ip`, `//find_account`, `//find_dualbox`, `//edit_character`, `//current_player`) and
 //! the target edits (`//setfame`, `//rec`, `//setclass`, `//settitle`, `//changename`,
 //! `//setsex`, `//settcolor`, `//fullfood`, `//setnoble`, `//set_hp`, `//set_mp`, `//set_cp`).
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminEditChar.java
-//
 // # Left out, with the system that brings it
 // - `//setclass`: `getInventory().applyItemSkills()` is not ported. `setClassTemplate` is the
 //   class id: the stats read the class of the player. The henna loop of `setPlayerClass` is
@@ -397,8 +395,6 @@ fn find_characters_per_account(world: &mut World, gm: ObjectId, player: ObjectId
 /// Java `HashMap` iteration order for `String` keys: the table index is the spread hash of the
 /// key (`String.hashCode`), buckets in index order, the keys of one bucket in insertion order.
 /// The table grows from 16 while the key count is above three quarters of it.
-// NOTE(java-quirk): a bucket that Java turns into a tree (eight keys in one bucket of a table of
-// at least 64) iterates differently; a dualbox list never gets that big.
 fn java_hashmap_order(keys: &[String]) -> Vec<String> {
     let hashed: Vec<(u32, String)> = keys
         .iter()
@@ -911,8 +907,6 @@ fn decode_hex_color(text: &str) -> Option<i32> {
 
 /// Java `admin_settitle <text>`: the title of the target (cut to 20 characters when it is longer
 /// than 21, Java's `Creature.setTitle`), then its title is broadcast.
-// NOTE(java-quirk): `Creature.setTitle` cuts a player's title to `substring(0, 20)` when it is
-// longer than 21 characters, so a title of 22 characters keeps 20 of them.
 fn admin_settitle(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     let Some(text) = command.get(15..) else {
         world.send_sys_message(gm, "You need to specify the new title.");

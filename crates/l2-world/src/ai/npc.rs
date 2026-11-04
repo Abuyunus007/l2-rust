@@ -1,6 +1,5 @@
 //! The NPC side of the intention machine: `CreatureAI` as the NPCs use it, and the hooks that lead
 //! to `AttackableAI` ([`super::attackable`]).
-// Java: ai/CreatureAI.java (setIntentionIdle, setIntentionActive, notifyActionThink)
 
 use l2_util::ObjectId;
 

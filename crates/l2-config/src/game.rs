@@ -1,6 +1,4 @@
 //! The game server's configuration: every `.ini` file of `config/` and `config/Custom/`.
-// Java: org/l2jmobius/gameserver/config/ConfigLoader.java (+ the 60 classes it loads)
-//
 // One struct per Java config class lives in `generated/game/`:
 // every `NAME = config.getX("Key", default);` line of the Java `load()` is a typed field. Fields
 // the generator cannot port are `()` placeholders, listed in `docs/analysis/config-manual-fields.md`

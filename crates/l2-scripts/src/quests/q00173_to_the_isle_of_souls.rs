@@ -1,5 +1,4 @@
 //! Quest 173: To the Isle of Souls (Galladucci and Gentler in the Kamael village).
-// Java: dist/game/data/scripts/quests/Q00173_ToTheIsleOfSouls/Q00173_ToTheIsleOfSouls.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED, race};

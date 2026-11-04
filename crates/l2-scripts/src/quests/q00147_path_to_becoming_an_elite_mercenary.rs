@@ -1,6 +1,4 @@
 //! Quest 147: Path to Becoming an Elite Mercenary (the mercenary captains of the castles).
-// Java: dist/game/data/scripts/quests/Q00147_PathtoBecominganEliteMercenary/Q00147_PathtoBecominganEliteMercenary.java
-//
 // Pattern: a one-time chain of mercenary captain pages. The first talk hands out the ordinary
 // certificate; the quest is started on the last page; the reward swaps the certificate. A clan
 // that owns a castle is sent to the castle page instead (`castle.htm`).
@@ -47,7 +45,6 @@ impl Script for Q00147PathToBecomingAnEliteMercenary {
         let player = player?;
         let htmltext = event.to_owned();
         let Some(qs) = ctx.get_quest_state(player, false) else {
-            // NOTE(java-quirk): without a quest state Java returns the event as the page too.
             return Some(htmltext);
         };
         if event.eq_ignore_ascii_case("elite-02.htm") {

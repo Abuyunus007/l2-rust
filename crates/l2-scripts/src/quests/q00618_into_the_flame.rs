@@ -1,7 +1,5 @@
 //! Quest 618: Into the Flame (Klein in the Town of Gludin area, Hilda in the Hot Springs area; the
 //! lava monsters drop vacualite ore, 50 of them make the vacualite that Hilda forges).
-// Java: dist/game/data/scripts/quests/Q00618_IntoTheFlame/Q00618_IntoTheFlame.java
-//
 // Pattern: a three-NPC chain (the start NPC, a second NPC that moves the cond, and the reward),
 // the ore drop goes to a random member at cond 2 (`getRandomPartyMember(player, 2)`), and the
 // Java quirk that the limit check reads the killer's count.
@@ -115,7 +113,6 @@ impl Script for Q00618IntoTheFlame {
         let Some(&(_, chance)) = MONSTERS.iter().find(|(id, _)| *id == npc.id) else {
             return;
         };
-        // NOTE(java-quirk): the limit is read from the killer, not from the member who gets it.
         if ctx.get_quest_items_count(killer, VACUALITE_ORE) < REQUIRED_COUNT && ctx.get_random(1000) < chance
         {
             ctx.give_items(member, VACUALITE_ORE, 1);

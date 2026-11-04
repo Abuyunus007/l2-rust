@@ -1,12 +1,10 @@
 //! The `dimensional_rift` table: the rooms of the Dimensional Rift (M8-FEST-01). Read only.
-// Java: managers/DimensionalRiftManager.java (loadRooms: `SELECT * FROM dimensional_rift`)
 
 use sqlx::FromRow;
 
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: DimensionalRiftManager.loadRooms
 const LOAD_ROOMS: &str = "SELECT * FROM dimensional_rift";
 
 /// One room: `type` 0 holds the waiting room (`room_id` 0, the peace zone) and the rift zone

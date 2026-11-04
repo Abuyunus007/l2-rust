@@ -1,5 +1,4 @@
 //! Keltas, the Keymaster, Typhoon and the Mutated Elpy appear at one of several places.
-// Java: dist/game/data/scripts/ai/others/RandomSpawn.java
 
 use std::collections::HashMap;
 

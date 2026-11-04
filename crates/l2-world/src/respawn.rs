@@ -1,12 +1,5 @@
 //! What happens to an NPC after it died: the corpse decays, its spawn counts one NPC less and,
 //! after the respawn delay, the same NPC comes back at its spawn.
-// Java: entity/spawns/Spawn.java (decreaseCount, respawnNpc, stopRespawn, startRespawn,
-//       isRespawnEnabled, getLastSpawn, the `_currentCount` / `_scheduledCount` bookkeeping of
-//       `initializeNpc`)
-// Java: entity/spawns/SpawnGroup.java (onUnitDeath, spawnUnits)
-// Java: taskmanagers/{DecayTaskManager,RespawnTaskManager,SpawnGroupTaskManager}.java
-// Java: entity/actor/Npc.java (onDecay, deleteMe), entity/actor/Creature.java (onDecay, decayMe)
-//
 // # How the three Java task managers map to the timer wheel
 // Each Java manager polls a map once a second (`scheduleAtFixedRate(this, 0, 1000)`) and runs an
 // entry when `currentTime > dueTime`, so an entry fires between 0 and 1 s after its due time.
@@ -28,10 +21,6 @@
 //
 // A minion that is not part of a spawn comes back through `MinionList.MinionRespawnTask`
 // instead (`ai/minions.rs`, `TimerKind::MinionRespawn`).
-//
-// NOTE(java-quirk): Java keeps the `Npc` object between its death and its respawn. Here the
-// entry in `World::npcs` is removed when the corpse decays and a new one is made at the respawn;
-// what lives on is the object id (and the weapon enchant effect the constructor rolled).
 
 use std::collections::VecDeque;
 

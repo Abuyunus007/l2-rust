@@ -4,7 +4,6 @@
 //! These only read the packet. Who may do what (castle owner leader, clan access, dissolving
 //! clan, registration period) is the world's job (M7 siege cards).
 
-// Java: gameserver/network/clientpackets/RequestSiegeInfo.java
 client_unit_packet!(
     /// Asks for the siege window. The packet has no fields; Java answers nothing in `runImpl`
     /// (`REQUEST_SIEGE_INFO`).
@@ -12,14 +11,12 @@ client_unit_packet!(
     plain RequestSiegeInfo
 );
 
-// Java: gameserver/network/clientpackets/RequestAllCastleInfo.java
 client_unit_packet!(
     /// Asks for the castle list of the map window (`0xD0` 0x003C, `REQUEST_ALL_CASTLE_INFO`).
     RequestAllCastleInfo,
     ex RequestAllCastleInfo
 );
 
-// Java: gameserver/network/clientpackets/RequestSiegeAttackerList.java
 client_packet!(
     /// Asks for the attacker list of a castle or clan hall (`REQUEST_SIEGE_ATTACKER_LIST`).
     RequestSiegeAttackerList,
@@ -29,7 +26,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestSiegeDefenderList.java
 client_packet!(
     /// Asks for the defender list of a castle (`REQUEST_SIEGE_DEFENDER_LIST`).
     RequestSiegeDefenderList,
@@ -39,7 +35,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestJoinSiege.java
 client_packet!(
     /// The clan registers as attacker or defender, or takes its registration back
     /// (`REQUEST_JOIN_SIEGE`).
@@ -54,7 +49,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestConfirmSiegeWaitingList.java
 client_packet!(
     /// The castle lord approves or refuses a waiting defender clan
     /// (`REQUEST_CONFIRM_SIEGE_WAITING_LIST`). Java reads the castle id, then the clan id, then the
@@ -70,7 +64,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestSetCastleSiegeTime.java
 client_packet!(
     /// The castle lord picks the hour of the next siege (`REQUEST_SET_CASTLE_SIEGE_TIME`).
     RequestSetCastleSiegeTime,

@@ -1,15 +1,5 @@
 //! Boats and air ships (M8-VEHICLE-01): `BoatManager`, `AirShipManager`, `Vehicle`, `Boat`,
 //! `AirShip`, `ControllableAirShip`, the five ferry routes and the air ship docks.
-// Java: managers/{BoatManager,AirShipManager}.java
-// Java: entity/actor/Vehicle.java, entity/actor/instance/{Boat,AirShip,ControllableAirShip}.java
-// Java: entity/actor/stat/{VehicleStat,ControllableAirShipStat}.java, ai/{BoatAI,AirShipAI}.java
-// Java: network/clientpackets/{RequestGetOnVehicle,RequestGetOffVehicle,
-//       RequestMoveToLocationInVehicle,CannotMoveAnymoreInVehicle,MoveToLocationAirShip,
-//       MoveToLocationInAirShip}.java
-// Java: dist/game/data/scripts/vehicles/*.java (the ferries, `boat.rs`, `boat_routes.rs`)
-// Java: dist/game/data/scripts/ai/areas/Gracia/vehicles/** (the docks and the Gludio-Gracia ship,
-//       `controller.rs`)
-//
 // # How it fits in
 // - A vehicle is an object of the world ([`ObjectKind::Vehicle`](crate::objects::ObjectKind)) with
 //   its state in [`VehicleWorld`]: it is seen through the region grid like any creature, moves on
@@ -25,10 +15,6 @@
 //   Gludio and Gracia are built in (`controller.rs`): their NPC dialogs go through the `Script`
 //   bypass like the other built-in scripts.
 //
-// # Database (D-39)
-// `airships` (owner_id, fuel) is read at start (`AirShipManager.load`), a license is a new row
-// (`registerLicense`) and a ship that is deleted stores its fuel (`removeAirShip`), as Java does;
-// the rows belong to a clan or a player and are not one of the global cycles of D-53.
 //
 // # What is left out
 // - The cell based zone bookkeeping of non-player creatures (a vehicle leaving a zone cell is

@@ -1,6 +1,4 @@
 //! Quest 326: Vanquish Remnants (Leopold in the Rune town, the Ol Mahum mobs).
-// Java: dist/game/data/scripts/quests/Q00326_VanquishRemnants/Q00326_VanquishRemnants.java
-//
 // Pattern: a kill-count quest with a drop chance per monster (`docs/design/scripts.md`, "Quest
 // patterns"): each monster drops one of three badge kinds with its own chance and its own
 // adena per badge; the NPC pays for all the badges at once, and the Black Lion Mark at 100.

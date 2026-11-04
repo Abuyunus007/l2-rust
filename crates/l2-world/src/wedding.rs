@@ -1,17 +1,5 @@
 //! The wedding system (`AllowWedding`): engagement, marriage, divorce and `.gotolove`
 //! (M8-MISC-01).
-// Java: managers/CoupleManager.java
-// Java: entity/actor/holders/player/Couple.java
-// Java: entity/actor/Player.java (`_married`, `_partnerId`, `_coupleId`, `_engagerequest`,
-//       `_marryrequest`, `_marryaccepted`, `engageAnswer`)
-// Java: network/clientpackets/{EnterWorld,DlgAnswer}.java (the wedding branches)
-// Java: dist/game/data/scripts/handlers/chat/commands/voiced/Wedding.java (`.engage`, `.divorce`,
-//       `.gotolove`)
-// Java: dist/game/data/scripts/custom/events/Wedding/Wedding.java (the priest, NPC 50007, and its
-//       pages)
-// Java: dist/game/data/scripts/handlers/chat/channels/ChatGeneral.java (the voiced command
-//       dispatch)
-//
 // # How it fits in
 // - [`World::load_couples`] is `CoupleManager.load` (only with `AllowWedding`, like Java's
 //   `GameServer`). Every change of a couple is a [`WeddingWrite`] for the persistence task
@@ -224,7 +212,6 @@ impl World {
         {
             return;
         }
-        // `IdManager.getNextId()` (D-39: the Rust range).
         let id = match self.npc_world.ids.as_ref().map(|ids| ids.allocate()) {
             Some(Ok(id)) => id.0,
             Some(Err(e)) => {
@@ -261,7 +248,6 @@ impl World {
     /// Java `CoupleManager.deleteCouple(coupleId)`.
     pub(crate) fn delete_couple(&mut self, couple_id: i32) {
         let Some(index) = self.wedding.couples.iter().position(|c| c.id == couple_id) else {
-            // NOTE(java-quirk): Java reads `_couples.get(-1)` and throws.
             warn!("CoupleManager: no couple {couple_id} to delete.");
             return;
         };
@@ -609,7 +595,6 @@ impl World {
         }
         if self.is_in_dimensional_rift(player) {
             self.send_message(player, "You are in the dimensional rift.");
-            // NOTE(java-quirk): the second line is the duel message of the partner.
             self.send_message(player, "Your partner is in a duel.");
             return false;
         }

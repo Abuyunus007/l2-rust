@@ -1,7 +1,5 @@
 //! Quest 712: Path to Becoming a Lord - Oren (Chamberlain Brasseur, Croop, Marty and Valleria,
 //! the Oren castle lord).
-// Java: dist/game/data/scripts/quests/Q00712_PathToBecomingALordOren/Q00712_PathToBecomingALordOren.java
-//
 // Pattern: a lord quest with a helper (`isLordAvailable`: the lord is online, is not the
 // talker, the talker is in the lord's clan and the lord's cond is the expected one). A clan
 // member starts it with Marty (lord cond 3 to 4) and ends its own part with Valleria (lord
@@ -95,7 +93,6 @@ impl Script for Q00712PathToBecomingALordOren {
         player: Option<ObjectId>,
     ) -> Option<String> {
         let player = player?;
-        // Java: "Castle has no lord." is returned as a chat line, before anything else.
         if oren_lord_clan(ctx).is_none() {
             return Some("Castle has no lord.".to_owned());
         }

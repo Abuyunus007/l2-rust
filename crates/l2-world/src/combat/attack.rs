@@ -1,9 +1,4 @@
 //! `Creature.doAttack` and the four ways a weapon attacks (simple, bow/crossbow, dual, pole).
-// Java: entity/actor/Creature.java (doAttack, canUseRangeWeapon, doAttackHitByBow,
-//       doAttackHitByCrossBow, doAttackHitByDual, doAttackHitByPole, doAttackHitSimple,
-//       abortAttack, breakAttack, calculateTimeBetweenAttacks, calculateReuseTime)
-// Java: entity/actor/Player.java (doAttack, checkAndEquipArrows, reduceArrowCount)
-//
 // # Time
 // Java keeps `_attackEndTime` in `System.nanoTime()` and schedules the hit and the "ready to
 // act" notification on its thread pool. Here the end time is in world milliseconds
@@ -161,9 +156,6 @@ impl World {
             if self.is_siege_friend(id, target) {
                 // During Territory War: `YOU_CANNOT_FORCE_ATTACK_A_MEMBER_OF_THE_SAME_TERRITORY`
                 // (M7-TW-01).
-                // NOTE(java-quirk): a territory side (81..89) is no castle id, so `isSiegeFriend`
-                // is false between players of one territory; the message only shows for a castle
-                // siege that runs during the war.
                 let message = if self.is_tw_in_progress() {
                     SystemMessageId::YouCannotForceAttackAMemberOfTheSameTerritory
                 } else {
@@ -246,8 +238,6 @@ impl World {
                 self.set_attack_end(id, now + i64::from(time_atk));
                 self.do_attack_hit_simple(&mut attack, id, target, 100.0, time_to_hit, true)
             }
-            // NOTE(java-quirk): a player's FIST falls through to the dual attack, so bare hands
-            // (and fist weapons) hit twice.
             Some(WeaponType::Fist | WeaponType::Dual | WeaponType::DualFist | WeaponType::DualDagger) => {
                 self.set_attack_end(id, now + i64::from(time_atk));
                 self.do_attack_hit_by_dual(&mut attack, id, target, time_to_hit)
@@ -291,8 +281,6 @@ impl World {
             && self.summon_of(owner) != Some(target)
             && flag_on_raid_or_champion
         {
-            // NOTE(java-quirk): `asPlayer()` of a summon is its owner, so the branch above takes
-            // every case this one could see; it is kept as Java has it.
             self.add_attack_stance_task(owner);
             self.update_pvp_status(owner);
         }
@@ -669,8 +657,6 @@ impl World {
             }
             // Equip arrows needed in left hand and send a Server->Client packet ItemList to the
             // Player then return True.
-            // NOTE(java-quirk): crossbows also go through `checkAndEquipArrows`, so they pick up
-            // arrows (not bolts) when the left hand is empty.
             if !self.check_and_equip_arrows(id, weapon.crystal_type_plus()) {
                 // Cancel the action because the Player have no arrow.
                 self.set_intention_idle(id);

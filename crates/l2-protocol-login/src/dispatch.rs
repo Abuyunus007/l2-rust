@@ -1,6 +1,4 @@
 //! Maps `(opcode, connection state)` to a client packet.
-//!
-//! Java: `loginserver/network/{LoginClientPackets,ConnectionState,LoginPacketHandler}.java`.
 
 use l2_net::{Decode, PacketError, PacketReader};
 

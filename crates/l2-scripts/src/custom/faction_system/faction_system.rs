@@ -1,6 +1,4 @@
 //! The faction manager (NPC 500): a player picks the good or the evil side.
-// Java: dist/game/data/scripts/custom/FactionSystem/FactionSystem.java
-//
 // The system is `config/Custom/FactionSystem.ini` (`EnableFactionSystem`, off by default); the
 // rules it adds to the world (chat, pvp, guards, respawn, the balance of the online players) are
 // `l2_world::custom::faction`. Like Java, the script is always installed and only the manager's

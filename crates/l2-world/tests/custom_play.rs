@@ -2,7 +2,6 @@
 //! The custom features of M9-C02: the premium system, the auto potions, the auto play, the offline
 //! play and the `.offline` command. Each has one test with its switch off (nothing changes) and
 //! tests with it on (the Java behaviour named in each test).
-//! Java: managers/PremiumManager.java, taskmanagers/{AutoPotionTaskManager,AutoPlayTaskManager,
 //! AutoUseTaskManager}.java, dist/game/data/scripts/handlers/chat/commands/voiced/*.java.
 
 use std::sync::{Arc, Mutex};
@@ -565,8 +564,6 @@ fn premium_on_a_row_in_the_future_is_the_status() {
     );
 }
 
-/// A row in the past is no status; `removePremiumStatus(account, false)` deletes it, but only with
-/// `CycleDatabaseWrites` (D-53).
 #[test]
 fn premium_on_an_expired_row_is_removed_only_with_cycle_writes() {
     let mut s = Scene::new(Switches {
@@ -1111,9 +1108,6 @@ fn offline_player_scene(offline: Option<OfflineSettings>, op: OfflinePlaySetting
     s
 }
 
-/// `storeOfflinePlay` writes the settings of the character; without `OfflineTradeDatabaseWrites`
-/// (D-52) or without `RestoreAutoPlayOffliners` nothing is written. Stopping the auto play of an
-/// offline player removes the rows (`setAutoPlaying(false)`).
 #[test]
 fn offline_play_rows_follow_the_database_switch() {
     let mut on = offline_player_scene(Some(offline_writes_on()), offline_play_on());
@@ -1229,7 +1223,6 @@ fn playskills_leaves_out_augmentation_option_skills() {
     assert!(page(None, Some(option.clone())).contains("Test Buff 9002"));
     assert!(page(Some(77), None).contains("Test Buff 9002"));
     assert!(!page(Some(77), Some(option.clone())).contains("Test Buff 9002"));
-    // NOTE(java-quirk): a packed id with a high option is not the option id: nothing is left out.
     assert!(page(Some(77 + (5 << 16)), Some(option)).contains("Test Buff 9002"));
 }
 

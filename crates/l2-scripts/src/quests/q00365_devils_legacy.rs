@@ -1,6 +1,4 @@
 //! Quest 365: Devil's Legacy (Randolf and Collob in the Town of Gludin).
-// Java: dist/game/data/scripts/quests/Q00365_DevilsLegacy/Q00365_DevilsLegacy.java
-//
 // Pattern: a repeatable kill-and-sell quest. Pirate zombies drop treasure chests, Randolf buys
 // them, Collob opens one for 600 adena: most of the time a small prize, sometimes a big prize
 // and a poison cast (memo state 2 then locks Collob's chest service).

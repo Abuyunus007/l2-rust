@@ -3,7 +3,6 @@
 //! The server control and GM tool commands of M7-ADMIN-10: kick, disconnect, `//gm`, GM chat,
 //! snooping, `//online`, `//serverinfo`, the login server switches, the shutdown countdown and
 //! the reload panel.
-//! Java: dist/game/data/scripts/handlers/chat/commands/admin/{AdminKick,AdminDisconnect,AdminGm,
 //! AdminGmChat,AdminOnline,AdminServerInfo,AdminLogin,AdminShutdown,AdminReload}.java,
 //! gameserver/Shutdown.java.
 
@@ -334,7 +333,6 @@ fn the_login_page_needs_the_registered_name() {
     let mut s = Scene::new();
     s.enter(GM);
     s.log.take();
-    // NOTE(java-quirk): `replace("%server_name%", null)` throws before the login server answered.
     s.cmd(GM, "server_login");
     let texts = texts_to(&s.log.take(), GM);
     assert!(
@@ -448,7 +446,6 @@ fn the_server_age_quirk_writes_the_type() {
     // The age attribute is the game server's own number 5.
     assert_eq!(s.ls_events(), [LsEvent::ServerStatus { id: 5, value: 18 }]);
     assert_eq!(texts_to(&out, GM), ["Server Age changed to 18"]);
-    // NOTE(java-quirk): the age went into the list type: 18 = Relax + Restricted.
     assert!(html_to(&out, GM)[0].contains("|Relax+Restricted|"));
 
     // The age itself was never stored, so the same age is "changed" again; 0 is the stored one.
@@ -581,7 +578,6 @@ fn abort_stops_the_countdown_and_frees_the_login() {
 
     s.cmd(GM, "server_abort");
     let out = s.log.take();
-    // NOTE(java-quirk): the mode is already ABORT when the text is made.
     let expected = vec![(
         ChatType::Announcement.client_id(),
         0,

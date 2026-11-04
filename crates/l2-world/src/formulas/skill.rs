@@ -1,14 +1,12 @@
 //! Physical skill formulas: skill damage, blow and backstab, skill crit, blow success, evasion,
 //! cast and reuse time, resurrection restore.
 //!
-//! Java: `mechanics/stats/Formulas.java` `calcPhysDam(.., skill, ..)`, `calcBlowDamage`,
 //! `calcBackstabDamage`, `calcCrit(attacker, target, skill)`, `calcBlowSuccess`,
 //! `calcPhysicalSkillEvasion`, `calculateSkillResurrectRestorePercent`;
 //! `entity/actor/Creature.java` `beginCast` (the pure-number lines);
 //! `mechanics/skill/Skill.java` `getPower(creature, target, isPvP, isPvE)`.
 //!
 //! Same pattern as [`damage`](super::damage): plain inputs named after the Java getters, the
-//! [`Rnd`] trait for the draws, quirks marked `NOTE(java-quirk)`.
 
 use super::damage::{level_penalty, random_damage_multiplier};
 use super::hit::{CritInput, calc_crit};
@@ -309,8 +307,6 @@ pub fn calc_skill_phys_dam(
         );
     }
 
-    // NOTE(java-quirk): the multiplier is applied a second time, whatever the config says, so a
-    // skill varies by up to twice the weapon's random damage (and draws twice).
     damage *= random_damage_multiplier(
         input.attacker_has_active_weapon,
         input.random_damage,
@@ -582,7 +578,6 @@ pub fn calc_backstab_damage(input: &BlowInput<'_>, shld: u8, ss: bool, rng: &mut
         _ => {}
     }
 
-    // NOTE(java-quirk): a backstab tests `target.isPlayer()` where a blow tests `isPlayable()`.
     let is_pvp = input.attacker_is_playable && input.target_is_player;
     let is_pve = input.attacker_is_playable && input.target_is_attackable;
     let proximity_bonus = proximity_bonus(input.position);

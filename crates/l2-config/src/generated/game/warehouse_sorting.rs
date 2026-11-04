@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/WarehouseSortingConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/WarehouseSorting.ini` (Java: `WarehouseSortingConfig`).

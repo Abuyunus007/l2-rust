@@ -1,6 +1,5 @@
 //! Shortcut bar presets for new characters, and the macro presets they can refer to.
 //!
-//! Java: `gameserver/data/xml/InitialShortcutData.java`, `entity/actor/holders/player/{Shortcut,
 //! Macro,MacroCmd}.java` and the `ShortcutType` / `MacroType` enums.
 //! Data: `data/stats/players/initialShortcuts.xml` (`xsd/initialShortcuts.xsd`).
 //!

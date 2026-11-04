@@ -1,7 +1,6 @@
 //! `default-ipconfig.xml` / `ipconfig.xml`: which address the login server shows to clients of
 //! which network.
 //!
-//! Java: `config/ServerConfig.java` (`IPConfigData.parseDocument`): `<gameserver address>` is
 //! the address for everybody else, each `<define subnet address>` is a network with its own
 //! address. The first matching subnet wins, so the order of the rows matters. Rust loader:
 //! `game-server/src/ls_link/ipconfig.rs`.

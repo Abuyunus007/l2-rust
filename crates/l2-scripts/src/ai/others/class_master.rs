@@ -1,7 +1,5 @@
 //! The class master (Mr. Cat and Miss Queen) of `config/ClassMaster.xml`: class changes for a
 //! price, noblesse, the third class, clan levels.
-// Java: dist/game/data/scripts/ai/others/ClassMaster/ClassMaster.java
-//
 // # The configuration
 // Java reads `config/ClassMaster.xml` in the constructor and keeps it in fields. Here the parsed
 // file is a [`ClassMasterConfig`] (loaded by `l2-data`, S-DATA-01) the script is built with
@@ -481,8 +479,6 @@ impl ClassMaster {
         if !self.any_option_applies(ctx, player) {
             return None;
         }
-        // NOTE(java-quirk): a class id or option index that is no number throws in Java; the
-        // error page goes to a GM only.
         let class_id: i32 = args.next()?.parse().ok()?;
         let level = level_of(ctx, player);
         let first = in_category(ctx, player, CategoryType::FirstClassGroup);
@@ -584,12 +580,10 @@ impl Script for ClassMaster {
         }
         let player = player?;
         let mut st = event_value.split_whitespace();
-        // NOTE(java-quirk): `StringTokenizer.nextToken()` of an empty event throws.
         let event = st.next()?;
         let mut htmltext = None;
         match event {
             "buyitems" => {
-                // NOTE(java-quirk): Java's `npc.getId()` throws without an NPC.
                 let npc = npc?;
                 htmltext = Some(if npc.id == CLASS_MASTERS[0] {
                     "test_server_helper001a.html"
@@ -656,7 +650,6 @@ impl Script for ClassMaster {
                 }
             }
             "test_server_helper001.html" => {
-                // NOTE(java-quirk): Java's `npc.getId()` throws without an NPC.
                 if CLASS_MASTERS.contains(&npc?.id) {
                     htmltext = Some("test_server_helper001.html");
                 }

@@ -1,7 +1,4 @@
 //! What the party buffs do to the party: `RebalanceHP` and the damage `TransferDamage` passes on.
-// Java: dist/game/data/scripts/handlers/skill/effects/RebalanceHP.java
-// Java: dist/game/data/scripts/handlers/skill/effects/TransferDamage.java
-// Java: entity/actor/status/PlayerStatus.java (reduceHp: the damage transferred to a party member)
 
 use l2_data::SkillTemplate;
 use l2_data::Stat;
@@ -124,8 +121,6 @@ impl World {
             v.calc_stat(Stat::TransferDamageToPlayer, 0.0, None, None)
         }) as i32;
         let caster_hp = self.core_of(caster).map_or(0.0, |c| c.cur_hp) as i32;
-        // NOTE(java-quirk): `(int) amount * (int) percent` truncates the damage before it is
-        // multiplied.
         let mut transfer_damage = (caster_hp - 1).min((amount as i32).wrapping_mul(percent) / 100);
         if transfer_damage <= 0 {
             return None;

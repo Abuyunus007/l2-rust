@@ -1,5 +1,4 @@
 //! Quest 553: Olympiad Undefeated (ten Olympiad wins in a row, daily).
-// Java: dist/game/data/scripts/quests/Q00553_OlympiadUndefeated/Q00553_OlympiadUndefeated.java
 
 use l2_util::ObjectId;
 use l2_world::script::{CREATED, QuestType};
@@ -75,7 +74,6 @@ impl Script for Q00553OlympiadUndefeated {
         loser: i32,
         _competition_type: i32,
     ) {
-        // NOTE(java-quirk): an offline winner ends the method, so the loser is not handled then.
         if let Some(winner) = winner {
             let player = ObjectId(winner);
             if ctx.world().player(player).is_none() {

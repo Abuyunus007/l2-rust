@@ -1,7 +1,5 @@
 //! `l2-geotool diff`: the columns of `tools/analysis/geocmp.py` plus the surface-containment
 //! percentages of `tools/analysis/geolayers.py`.
-//!
-//! Java: none. "Within 16" is the Z tolerance the Python prototypes use; heights are world Z.
 
 use std::path::Path;
 use std::sync::atomic::{AtomicUsize, Ordering};

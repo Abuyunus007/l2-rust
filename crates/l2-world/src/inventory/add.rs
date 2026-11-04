@@ -1,12 +1,6 @@
 //! Putting items into an inventory: `Inventory.addItem` (stack merge, the `ADDED` / `MODIFIED`
 //! flag), `Player.addItem`, `Player.addAdena`, auto loot, and the drop of what does not fit
 //! (`Player.dropItem`).
-// Java: entity/itemcontainer/{ItemContainer,PlayerInventory}.java (addItem, addAdena,
-//       validateCapacity(Item), getInventoryItemCount)
-// Java: entity/actor/Player.java (addItem, addAdena, dropItem, doAutoLoot)
-// Java: entity/item/instance/Item.java (changeCount, setOwnerId, setItemLocation)
-// Java: managers/ItemManager.java (createItem, destroyItem)
-//
 // # Rows and the database
 // An added item is a row of `PlayerData::items` with `loc` `INVENTORY`. Java does not write it at
 // once (`setOwnerId` and `addItem` only mark it dirty); the next store compares the item list and
@@ -415,8 +409,6 @@ impl World {
 
         if count > 0 {
             // `PlayerInventory.addAdena`.
-            // NOTE(java-quirk): that already sends an `InventoryUpdate` and the load; the code below
-            // sends the adena item again (or the whole item list for the first adena).
             self.inventory_add_item_by_id(player, ADENA_ID, count);
             // Send update packet.
             if count == self.adena_of(player) {

@@ -1,7 +1,5 @@
 //! Quest 251: No Secrets (Pinaps in the Dark Elven village collects diaries and tables from the
 //! monsters of the Ant and Shilen areas).
-// Java: dist/game/data/scripts/quests/Q00251_NoSecrets/Q00251_NoSecrets.java
-//
 // Pattern: a kill count with two drop chances and two item limits (`docs/design/scripts.md`,
 // "Kills, drops and parties"). The drops are rolled by hand as Java does, not by
 // `giveItemRandomly`, so the order of the rolls is Java's.

@@ -8,7 +8,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_ex_opcode;
 use crate::generated::opcodes::ExClientOpcode;
 
-// Java: gameserver/network/clientpackets/RequestVoteNew.java
 /// The player recommends the player it has selected. Ex packet `0xD0 0x007E`
 /// (`REQUEST_NEW_VOTE_SYSTEM`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

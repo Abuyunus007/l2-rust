@@ -1,6 +1,4 @@
 //! Quest 266: Pleas of Pixies (Pixy Murika in the Elven Forest collects predator fangs for elves).
-// Java: dist/game/data/scripts/quests/Q00266_PleasOfPixies/Q00266_PleasOfPixies.java
-//
 // Pattern: a kill-count quest with a graded drop (`docs/design/scripts.md`, "Quest patterns"): the
 // keltirs and wolves drop predator fangs by a roll of ten (1 to 3 fangs per kill, up to 100); the
 // 100th sets cond 2. Murika gives one of four reward packs by a roll of 100 and ends the quest.

@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/OnlineInfoConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/OnlineInfo.ini` (Java: `OnlineInfoConfig`).

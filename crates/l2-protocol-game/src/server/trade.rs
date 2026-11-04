@@ -9,7 +9,6 @@ use super::items::{ItemInfo, read_item, write_item};
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/AbstractItemPacket.java (`writeTradeItem`) and
 // gameserver/entity/item/holders/TradeItem.java
 /// One item in a trade window as `writeTradeItem` sends it. The trade layout leaves out the
 /// location and the equipped flag of [`ItemInfo`] and starts with the item's `type1`.
@@ -50,7 +49,7 @@ impl TradeItemInfo {
             .i16(self.custom_type1)
             .i32(self.body_part)
             .i16(self.enchant)
-            .i16(0) // Java: "Equipped : 00-No, 01-yes", always 0 here
+            .i16(0)
             .i16(self.custom_type2)
             .i16(self.attack_element_type)
             .i16(self.attack_element_power);
@@ -102,7 +101,6 @@ impl TradeItemInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/SendTradeRequest.java
 /// Another player wants to trade with you (`TRADE_REQUEST`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SendTradeRequest {
@@ -126,7 +124,6 @@ impl Decode for SendTradeRequest {
     }
 }
 
-// Java: gameserver/network/serverpackets/TradeStart.java
 /// The trade window opens (`TRADE_START`): the partner and your tradable items.
 ///
 /// Java sends nothing when the player has no active trade list or the list has no partner; that
@@ -167,7 +164,6 @@ impl Decode for TradeStart {
     }
 }
 
-// Java: gameserver/network/serverpackets/TradeOwnAdd.java
 /// You added an item to the trade (`TRADE_OWN_ADD`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TradeOwnAdd {
@@ -195,7 +191,6 @@ impl Decode for TradeOwnAdd {
     }
 }
 
-// Java: gameserver/network/serverpackets/TradeOtherAdd.java
 /// The partner added an item to the trade (`TRADE_OTHER_ADD`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TradeOtherAdd {
@@ -223,7 +218,6 @@ impl Decode for TradeOtherAdd {
     }
 }
 
-// Java: gameserver/network/serverpackets/TradeUpdate.java
 /// The count of an item in your inventory window changed because of the trade (`TRADE_UPDATE`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct TradeUpdate {
@@ -262,7 +256,6 @@ impl Decode for TradeUpdate {
     }
 }
 
-// Java: gameserver/network/serverpackets/TradeOtherDone.java
 /// The partner pressed OK (`TRADE_PRESS_OTHER_OK`). No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TradeOtherDone;
@@ -283,7 +276,6 @@ impl Decode for TradeOtherDone {
     }
 }
 
-// Java: gameserver/network/serverpackets/TradeDone.java
 /// The trade ended (`TRADE_DONE`): `1` completed, `0` canceled.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TradeDone {

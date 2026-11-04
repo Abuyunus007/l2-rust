@@ -1,10 +1,5 @@
 //! Moving an item between a player's inventory and a container: `ItemContainer.transferItem`
 //! with the warehouse, clan warehouse and freight as one side.
-// Java: entity/itemcontainer/ItemContainer.java (transferItem, addItem, destroyItem)
-// Java: entity/itemcontainer/PlayerInventory.java (addItem, transferItem)
-// Java: entity/item/instance/Item.java (setOwnerId, setItemLocation, updateDatabase, changeCount)
-// Java: managers/ItemManager.java (createItem, destroyItem)
-//
 // The move between two players' inventories is `World::transfer_item` (trade); this is the same
 // algorithm with a container on either side, and it queues its rows as `ItemRowOp`s (see the
 // module notes in `mod.rs`). The packet handlers collect the ops of one packet and send them as
@@ -153,8 +148,6 @@ impl World {
         }
     }
 
-    /// `addItem(process, itemId, count, actor, reference)` for an item the place does not hold
-    /// yet: a new item with a new object id (D-39: the Rust range).
     fn place_create(&mut self, place: Place, item_id: i32, count: i64, actor: ObjectId) -> Option<ItemData> {
         match place {
             Place::Inventory(player) => self.create_transferred_item(player, item_id, count, actor),
@@ -198,10 +191,6 @@ impl World {
         // Check if requested quantity is available.
         let count = count.min(source.count);
 
-        // NOTE(java-quirk): the withdraw packet accepts a count of 0. Nothing is moved; Java
-        // returns the item `addItem(itemId, 0)` finds in the target, which is the stack of a
-        // stackable item, or any item with the same template id, or `null` (the handler then
-        // stops the whole withdraw).
         if count == 0 {
             let existing = self.place_item_by_item_id(to, source.item_id)?;
             return Some(Moved {

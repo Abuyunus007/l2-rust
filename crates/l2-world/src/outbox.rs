@@ -77,10 +77,6 @@ pub enum PersistCommand {
         rec_have: i32,
         rec_left: i32,
     },
-    /// Java `DailyResetManager.resetRecommends()`, the database half: the two `UPDATE`s of
-    /// `character_reco_bonus` for every character (`rec_left` 20, `time_left` one hour,
-    /// `rec_have` lowered by 20, not below 0). D-39: the Java game server runs the same
-    /// statements on its own daily reset.
     ResetRecommends,
     /// Java `PlayerVariables.storeMe()`: the `character_variables` rows of one online character
     /// that changed, written now instead of with the next store (the daily reset does this for
@@ -105,10 +101,15 @@ pub enum PersistCommand {
     },
     /// Java `PunishmentManager.changeCharAccessLevel`: `UPDATE characters SET accessLevel=? WHERE
     /// charId=?`.
-    CharAccessLevel { char_id: i32, level: i32 },
+    CharAccessLevel {
+        char_id: i32,
+        level: i32,
+    },
     /// Java `AdminRepairChar.handleRepair` (`//repair`, `//restore`): the character `name` is moved
     /// to Talking Island, its shortcuts are deleted and its items go back to the inventory.
-    RepairChar { name: String },
+    RepairChar {
+        name: String,
+    },
     /// The summon tables (`character_summons`, `character_summon_skills_save`), see
     /// `summon/servitor.rs`. Applied in order with the character's other commands.
     Summon(crate::summon::servitor::SummonWrite),
@@ -142,17 +143,15 @@ pub enum PersistCommand {
     /// Asks the persistence task to read the `characters` rows (name, online, class, level) of
     /// friends who are not in the world for `FriendListExtended` (L-04). The answer comes back
     /// as `WorldCommand::FriendSummariesLoaded`.
-    FriendSummariesRequest { requester: ObjectId, friends: Vec<i32> },
+    FriendSummariesRequest {
+        requester: ObjectId,
+        friends: Vec<i32>,
+    },
     /// A `character_friends` row change of the friend list or the block list (M6-FRIEND-01, see
     /// `friends.rs`). Applied in order with the other commands.
     Friend(crate::friends::FriendWrite),
     /// A write of the `messages` table with Java's statement, see `mail/`.
     Mail(crate::mail::MailWrite),
-    /// Asks the persistence task to read the attachment rows of one mail (`items` with `owner_id`
-    /// = the sender, `loc = 'MAIL'`, `loc_data` = the message id, Java `Mail.restore`) before
-    /// `RequestPostAttachment` hands them out (M6-SYNC-01, D-39: the Java game server shares the
-    /// rows). The answer comes back as `WorldCommand::MailAttachmentsLoaded`. Read in order with
-    /// the other commands, so the answer includes every write sent before it.
     MailAttachmentsRequest {
         player: ObjectId,
         message_id: i32,
@@ -160,13 +159,15 @@ pub enum PersistCommand {
     },
     /// Asks the persistence task for the used crest ids (`SELECT crest_id FROM crests`) before a
     /// crest is created (M7-FU-03). The answer comes back as `WorldCommand::CrestIdsLoaded`.
-    CrestIdsRequest { ticket: u32 },
+    CrestIdsRequest {
+        ticket: u32,
+    },
     /// Asks the persistence task to read the `CLANWH` rows of a clan before a clan warehouse
     /// window opens (M6-SYNC-01). The answer comes back as `WorldCommand::ClanWarehouseLoaded`.
-    ClanWarehouseRequest { player: ObjectId, clan_id: i32 },
-    /// Java `FishingChampionshipManager.shutdown()`: `fishChampionshipEnd` (a `global_variables`
-    /// row) and the `fishing_championship` rows (`DELETE`, then one `INSERT` per row), see
-    /// `fishing/championship.rs`. Only sent with `FishingChampionshipDatabaseWrites` (D-49).
+    ClanWarehouseRequest {
+        player: ObjectId,
+        clan_id: i32,
+    },
     FishingChampionship(Box<crate::fishing::ChampionshipData>),
     /// A residence row write with Java's statement (`castle`, `fort`, `clanhall`, the function
     /// tables, `hasCastle`), see `residence/` (M7-RES-01). Applied in order with the other commands.
@@ -181,9 +182,6 @@ pub enum PersistCommand {
     /// `olympiad_nobles_eom`, `olympiad_fights`, the unclaimed points), see `olympiad/`
     /// (M8-OLY-01).
     Olympiad(crate::olympiad::OlympiadWrite),
-    /// Asks the persistence task for an Olympiad read (the rankings, the last points, the
-    /// unclaimed passes, D-50); the answer comes back as `WorldCommand::OlympiadReread` carrying
-    /// `then` (M8-OLY-01).
     OlympiadRereadRequest {
         request: crate::olympiad::OlympiadRereadRequest,
         then: crate::olympiad::OlympiadRereadThen,
@@ -193,8 +191,6 @@ pub enum PersistCommand {
     Minigame(crate::minigame::MinigameWrite),
     /// A write of the `airships` table with Java's statements, see `vehicle/` (M8-VEHICLE-01).
     Vehicle(crate::vehicle::VehicleWrite),
-    /// Asks the persistence task to read one residence again (D-50, D-51); the answer comes back
-    /// as `WorldCommand::ResidenceReread` carrying `then` (M7-RES-01).
     ResidenceRereadRequest {
         residence_id: i32,
         kind: crate::residence::ResidenceReadKind,
@@ -208,7 +204,10 @@ pub enum PersistCommand {
     /// (`character_friends` with `relation = 1`, Java `BlockList.loadList`) before
     /// `RequestSendPost` sends a mail to it (M6-FU-09). The answer comes back as
     /// `WorldCommand::BlockListLoaded`.
-    BlockListRequest { sender: ObjectId, owner: i32 },
+    BlockListRequest {
+        sender: ObjectId,
+        owner: i32,
+    },
     /// Asks the persistence task to read the `PET`, `PET_EQUIP`, `INVENTORY` and `PAPERDOLL` rows
     /// of a character that is offline while its dead pet's corpse decays (`Pet.deleteMe`, M6-FU-09).
     /// The answer comes back as `WorldCommand::OfflinePetRowsLoaded`.
@@ -216,37 +215,27 @@ pub enum PersistCommand {
         owner: ObjectId,
         control_object_id: ObjectId,
     },
-    /// A write of the offline trade tables with Java's statements (`OfflineTraderTable`, M6-FU-14,
-    /// see `trade/offline.rs`). Only sent with `OfflineTradeDatabaseWrites` (D-52).
     OfflineTrade(crate::trade::OfflineTradeWrite),
-    /// A write of the offline play tables with Java's statements (`OfflinePlayTable`, M9-L01, see
-    /// `custom/offline_play.rs`). Only sent with `OfflineTradeDatabaseWrites` (D-52).
     OfflinePlay(crate::custom::offline_play::OfflinePlayWrite),
     /// A row write of the item auctions with Java's statement (`item_auction`,
     /// `item_auction_bid`), see `item_auction/` (L-05). The
     ItemAuction(crate::item_auction::ItemAuctionWrite),
-    /// A `lottery` write with Java's statement (`LotteryManager`, S-HAND-03, see `lottery/`). Sent
-    /// only while this server runs the lottery (`CycleDatabaseWrites`, D-53).
     Lottery(crate::lottery::LotteryWrite),
-    /// Asks the persistence task to read the tickets of a draw (`items`) or the rows of `lottery`
-    /// (D-50). The answer comes back as `WorldCommand::LotteryReread`; it includes every write sent
-    /// before it.
-    LotteryRequest { then: crate::lottery::LotteryThen },
+    LotteryRequest {
+        then: crate::lottery::LotteryThen,
+    },
     /// A write of `account_premium` with Java's statement (`PremiumManager`, M9-C02).
     Premium(crate::custom::PremiumWrite),
-    /// Asks the persistence task for the `account_premium` row of `key` (`SELECT account_name,enddate
-    /// FROM account_premium WHERE account_name = ?`) when a player enters the world (D-50). The
-    /// answer comes back as `WorldCommand::PremiumLoaded`; it includes every write sent before it.
-    PremiumRequest { player: ObjectId, key: String },
+    PremiumRequest {
+        player: ObjectId,
+        key: String,
+    },
     /// A write of the `announcements` table with Java's statement (`//announces`), see
     /// `admin/announce.rs`. An `Insert` is answered with `WorldCommand::AnnouncementStored`.
     Announcement(crate::admin::announce::AnnouncementWrite),
     /// A boss row write with Java's statement (`grandboss_data`, `raidboss_spawnlist`,
     /// `character_raid_points`), see `boss/` (M8-BOSS-01). Applied in order with the other commands.
     Boss(crate::boss::BossWrite),
-    /// Asks the persistence task to read boss rows again (D-50, D-53): a grand boss row for the
-    /// admin page, the raid point rows of a character entering the world. The answer comes back as
-    /// `WorldCommand::BossReread` carrying `then`.
     BossRereadRequest {
         kind: crate::boss::BossReadKind,
         then: crate::boss::BossReadThen,
@@ -261,7 +250,10 @@ pub enum PersistCommand {
     },
     /// Transmog: `REPLACE INTO character_transmogs (owner,itemId)` for each item (Java's
     /// `onPlayerLogout`).
-    TransmogSaveCollection { owner: String, item_ids: Vec<i32> },
+    TransmogSaveCollection {
+        owner: String,
+        item_ids: Vec<i32>,
+    },
     /// Transmog: the `transmogId` row of an item, written (`Some`) or deleted (`None`).
     ItemTransmog {
         object_id: i32,
@@ -286,8 +278,6 @@ pub enum PersistCommand {
     SevenSigns(crate::sevensigns::SevenSignsWrite),
     /// A `character_quests` statement of Java's `Quest` (S-API-01, `script/`).
     Quest(crate::script::QuestWrite),
-    /// The `global_variables` writes of the scripts, only with `CycleDatabaseWrites` (D-54,
-    /// `script/globals.rs`).
     GlobalVariables(crate::script::GlobalVariablesWrite),
     /// A write of `character_subclasses` and the class index rows with Java's statements
     /// (`addSubClass`, `modifySubClass`, S-SUB-01, see `subclass/`). Applied in order with the
@@ -298,19 +288,24 @@ pub enum PersistCommand {
     /// dwarven recipes and the servitor buffs). Read in order with the other commands, so the rows
     /// include the store sent before it. The answer comes back as `WorldCommand::ClassIndexLoaded`
     /// (S-SUB-01).
-    ClassIndexRequest { owner: ObjectId, class_index: i32 },
-    /// Java `LongTimeEvent.destroyItemsOnEnd`: `DELETE FROM items WHERE item_id=?`. A global write,
-    /// only sent with `CycleDatabaseWrites` (D-53, `script/birthday.rs`, S-LEFT-01).
-    DeleteItemsOfItemId { item_id: i32 },
-    /// Asks the persistence task for the characters whose birthday came since `since_ms`
-    /// (`CharacterBirthday.onDailyReset`, only sent with `DailyResetDatabaseWrites`, D-49). The
-    /// answer comes back as `WorldCommand::BirthdayGiftsLoaded` (S-LEFT-01).
-    BirthdayGiftsRequest { since_ms: i64 },
+    ClassIndexRequest {
+        owner: ObjectId,
+        class_index: i32,
+    },
+    DeleteItemsOfItemId {
+        item_id: i32,
+    },
+    BirthdayGiftsRequest {
+        since_ms: i64,
+    },
     /// Asks the persistence task to read `custom_mail` (`CustomMailManager`, M9-C06). The answer
     /// comes back as `WorldCommand::CustomMailLoaded`.
     CustomMailRequest,
     /// `DELETE FROM custom_mail WHERE date=? AND receiver=?` of a mail that was sent (M9-C06).
-    CustomMailDelete { date: String, receiver: i32 },
+    CustomMailDelete {
+        date: String,
+        receiver: i32,
+    },
     /// A write of `bbs_favorites` with Java's statement (S-HAND-01, see `community_board/`).
     /// Applied in order with the other commands.
     BbsFavorite(crate::community_board::FavoriteWrite),

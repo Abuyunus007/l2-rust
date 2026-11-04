@@ -1,7 +1,5 @@
 //! The Urban Area of Hellbound: free the downtown natives and find the key while Amaskari hunts
 //! the party.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/Instances/UrbanArea/UrbanArea.java
-//
 // # Java's scheduled tasks
 // `CallAmaskari` and `ExitInstance` (`ThreadPool.schedule`) are quest timers: `call_amaskari <instance>`
 // with the caller as NPC, and `exit_instance <instance> <player ids>` (the party as it was when the

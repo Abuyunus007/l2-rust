@@ -470,7 +470,6 @@ async fn login_succeeds_through_the_proxy_and_the_capture_is_clean() {
     assert_eq!(field(3), &serde_json::json!({ "credentials": "<redacted>" }));
     assert_eq!(records[3].raw, "00", "no RSA blocks in the capture");
     assert_eq!(field(4)["login_ok1"], LOGIN_OK.0);
-    // ServerList: original and rewritten addresses side by side.
     let server = &field(6)["servers"][0];
     assert_eq!(server["ip"], "127.0.0.1");
     assert_eq!(server["port"], gs.port());

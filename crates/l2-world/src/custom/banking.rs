@@ -1,8 +1,5 @@
 //! `config/Custom/Banking.ini`: the voiced commands `.bank`, `.deposit` and `.withdraw` that
 //! trade Adena for Gold Bars, and the automatic conversion of a big purse.
-// Java: dist/game/data/scripts/handlers/chat/commands/voiced/Banking.java
-// Java: dist/game/data/scripts/custom/BankingAutoConvert.java (the script is in l2-scripts, it
-//       calls `banking_auto_convert`)
 
 use l2_util::ObjectId;
 
@@ -40,8 +37,6 @@ impl World {
                     return false;
                 }
                 self.add_item(player, GOLD_BAR_ID, goldbar_count, false);
-                // NOTE(java-quirk): the text names the Gold Bars first and "into" the Adena, the
-                // other way round from what happened.
                 self.send_message(
                     player,
                     &format!(
@@ -68,7 +63,6 @@ impl World {
                     return false;
                 }
                 self.add_adena(player, adena_count, false);
-                // NOTE(java-quirk): the text is the one of `.deposit` read backwards.
                 self.send_message(
                     player,
                     &format!(

@@ -1,12 +1,6 @@
 //! What must hold before a skill is cast: `Player.checkUseMagicConditions` (the player's click)
 //! and `Creature.checkDoCastConditions` (every caster, again when the cast begins), plus the
 //! skill numbers casting reads (MP cost, magic range) and the target list as the caster sees it.
-// Java: entity/actor/Player.java (checkUseMagicConditions)
-// Java: entity/actor/Creature.java (checkDoCastConditions)
-// Java: entity/actor/stat/CreatureStat.java (getMpConsume, getMpInitialConsume,
-//       getMagicalAttackRange)
-// Java: mechanics/skill/Skill.java (isContinuous, getTargetList: the messages the handlers send)
-//
 // # Not modelled (each refuses a cast in Java; none of these states exists yet)
 // Observer mode, duels, siege friends and territory wars, event
 // monsters, castle and fort sieges of doors (a door in a siege zone has no castle or fort yet),
@@ -174,8 +168,6 @@ impl World {
     /// Java `ZoneRegion.checkEffectRangeInsidePeaceZone(skill, x, y, z)` for the region of
     /// `(region_x, region_y)`: no peace zone of the region contains the point or one of the four
     /// points a skill's effect range away.
-    // NOTE(java-quirk): `left` is `x + range` and `right` is `x - range`; the order does not matter
-    // for the result.
     pub(crate) fn check_effect_range_inside_peace_zone(
         &self,
         skill: &SkillTemplate,
@@ -437,7 +429,6 @@ impl World {
             && !self.skill_has_effect_type(skill, &[EffectType::Fishing, EffectType::FishingStart])
         {
             // Only fishing skills are available.
-            // NOTE(java-quirk): this refusal sends no `ActionFailed`.
             self.send(
                 id,
                 &SystemMessage::new(SystemMessageId::OnlyFishingSkillsMayBeUsedAtThisTime),

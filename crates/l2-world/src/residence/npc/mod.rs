@@ -2,16 +2,6 @@
 //! mercenary captain, the vault keeper, the mass gatekeeper, the blacksmith, the court magician,
 //! the special envoys of the fortresses (`CastleAmbassador`) and the castle doormen
 //! (M7-NPC-01).
-// Java: dist/game/data/scripts/ai/others/{CastleChamberlain,CastleSiegeManager,
-//       CastleMercenaryManager,CastleWarehouse,CastleTeleporter,CastleBlacksmith,
-//       CastleCourtMagician,CastleAmbassador,MercenaryCaptain}/*.java (and their html pages)
-// Java: entity/actor/instance/{CastleDoorman,Doorman}.java
-// Java: mechanics/script/Quest.java (notifyFirstTalk, notifyEvent, showResult, showHtmlFile,
-//       getHtm, startQuestTimer)
-// Java: entity/actor/Player.java (processScriptEvent)
-// Java: dist/game/data/scripts/handlers/actions/click/NpcClick.java, handlers/bypass/npc/
-//       {ChatLink,ScriptLink}.java
-//
 // # Shape
 // D-05: the script API comes last, so these scripts are built in like `ClanMaster`
 // (`clan/master_script.rs`) and `ManorManager` (`manor/npc.rs`): a [`CastleScript`] names the
@@ -28,16 +18,6 @@
 // - the script builds an `NpcHtmlMessage` itself (`getHtmlPacket`, `html.replace(..)`,
 //   `player.sendPacket(html)`): only the `replace` calls happen, no `ActionFailed`.
 //
-// # Side by side (D-39, D-50, D-51)
-// The chamberlain acts on the castle row (owner, tax rate, treasury, functions), which Sieghardt
-// changes while Kain runs: every chamberlain command that is not a static page asks for the
-// castle to be read again first (`ResidenceReadThen::Npc`) and goes on with the fresh rows; a
-// failed read refuses the command. The vault keeper's "Receive" and count page read the castle
-// with its owner's `blood_alliance_count` (`CastleRecord::owner_blood_alliance_count`), which the
-// Java game server adds to at the end of its sieges. What a player does himself (a tax rate, a deposit or a
-// withdrawal, a function, a door or trap upgrade, the dawn tickets) is written; the fee tasks of
-// the functions are RES-01's. The envoys' timer-driven decision (`DESPAWN`) is a fortress job
-// (`Writes::Job`), the owner's choice at the envoy a player's action.
 //
 // # Left to other cards (each has its marker where it belongs)
 // - Seven Signs (`seven_signs.rs`): the questions go to `sevensigns/` (M8-SS-01).
@@ -290,8 +270,6 @@ pub enum ResidenceNpcTimer {
     EnvoyRemove(ObjectId),
 }
 
-/// What the world does once a castle was read again for one of the NPCs (D-50), in
-/// `ResidenceReadThen::Npc`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum NpcThen {
     /// A chamberlain command (`Script CastleChamberlain <event>`).
@@ -529,9 +507,6 @@ impl World {
         npc: ObjectId,
         player: ObjectId,
     ) {
-        // The chamberlain acts on the castle row: it is read again first (D-50).
-        // The vault keeper hands out the proofs of alliance the Java game server adds to: the
-        // castle (with its owner's count) is read again before it shows or gives them (D-50).
         let reread = match script {
             CastleScript::Chamberlain if chamberlain::needs_reread(event) => true,
             CastleScript::Warehouse => matches!(event, "Receive" | "warehouse-04.html"),
@@ -583,7 +558,6 @@ impl World {
         }
     }
 
-    /// The answer of a castle read again for a script (D-50).
     pub(crate) fn residence_npc_after_reread(&mut self, then: NpcThen) {
         match then {
             NpcThen::Chamberlain { player, npc, event } => {

@@ -1,5 +1,4 @@
 //! Selina, the Golden Ram Mercenary buffer: buffs for Golden Ram Coins, paid when the cast ends.
-// Java: dist/game/data/scripts/ai/others/Selina/Selina.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};

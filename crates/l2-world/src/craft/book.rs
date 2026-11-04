@@ -1,13 +1,5 @@
 //! The recipe books of a player: registering and forgetting recipes, the book window, the
 //! `Recipes` item handler and the effects that open the book.
-// Java: entity/actor/Player.java (registerCommonRecipeList, registerDwarvenRecipeList,
-//       hasRecipeList, unregisterRecipeList, insertNewRecipeData, deleteRecipeData,
-//       restoreRecipeBook, hasDwarvenCraft, getDwarfRecipeLimit, ...)
-// Java: managers/RecipeManager.java (requestBookOpen)
-// Java: network/clientpackets/{RequestRecipeBookOpen,RequestRecipeBookDestroy,
-//       RequestRecipeItemMakeInfo}.java
-// Java: dist/game/data/scripts/handlers/items/Recipes.java
-// Java: dist/game/data/scripts/handlers/skill/effects/{OpenDwarfRecipeBook,OpenCommonRecipeBook}.java
 
 use l2_data::stats::Stat;
 use l2_protocol_game::SystemMessageId;
@@ -185,9 +177,6 @@ impl World {
             return;
         };
         for row in &load.book {
-            // NOTE(java-quirk): `getRecipeList(id)` gives null for an unknown recipe and
-            // `registerDwarvenRecipeList(null)` throws; the `catch` ends the whole read, so the
-            // recipes after it never join the book.
             if data.get(row.recipe_id).is_none() {
                 warn!(
                     "Could not restore recipe book data: unknown recipe {}.",

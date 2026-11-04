@@ -1,5 +1,4 @@
 //! Etis van Etina (Head of the Embryo) AI: below half HP he calls his two phantoms.
-// Java: dist/game/data/scripts/ai/areas/MonasteryOfSilence/EtisVanEtina.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

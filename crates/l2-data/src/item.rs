@@ -1,7 +1,6 @@
 //! Item templates: weapons, armor and etc items with the fields inventories, the character screen,
 //! `UserInfo` and `ItemList` need.
 //!
-//! Java: `gameserver/data/xml/ItemData.java`, `util/DocumentItem.java` (+ `DocumentBase.java`),
 //! `entity/item/{ItemTemplate,Weapon,Armor,EtcItem}.java` and the enums in [`types`].
 //! Data: `data/stats/items/*.xml` (and `custom/` when enabled), `xsd/items.xsd`.
 //!
@@ -27,10 +26,6 @@
 //! The plain `<set>`s only some handlers read (`equip_condition`, `use_condition`, ...). The Java order rule
 //! is kept: a `<set>` or `<table>` after `<stats>`, `<conditions>` or `<capsuled_items>` fails the
 //! item (Java: "Item created but set node found!"); `<skills>` does not create the item.
-//!
-//! NOTE(java-quirk): Java also treats an attribute-less text-only element such as
-//! `<weight>5</weight>` as a `<set>`. No shipped item file uses that form, so it is not supported
-//! here (the element is ignored).
 
 mod capsule;
 mod funcs;
@@ -846,8 +841,6 @@ fn build_weapon(item: &mut ItemTemplate, set: &ItemSet) -> Result<(), DataError>
     // "0?;0?;fan sector;base attack angle"
     let damage_range = java_split(set.string("damage_range").unwrap_or(""), ';');
     let (base_attack_radius, base_attack_angle) = if damage_range.len() > 1 {
-        // NOTE(java-quirk): Java indexes [2] (and [3] only if [2] is numeric) as soon as there are
-        // two parts, so a value with too few parts throws and the item is skipped.
         let part = |index: usize| {
             damage_range
                 .get(index)
@@ -1257,7 +1250,6 @@ mod tests {
         assert_eq!((r.reduced_soulshot_chance, r.reduced_soulshot), (59, 7));
         assert_eq!((r.reduced_mp_consume_chance, r.reduced_mp_consume), (42, 2));
         assert_eq!((r.base_attack_radius, r.base_attack_angle), (10, 0));
-        // NOTE(java-quirk): two parts, but Java reads index 2: the item fails.
         assert!(t.get(4).is_none());
         let odd = t.get(5).unwrap().weapon().unwrap();
         assert_eq!(

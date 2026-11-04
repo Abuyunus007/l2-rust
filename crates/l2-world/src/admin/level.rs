@@ -1,5 +1,4 @@
 //! The level admin commands: `//add_level <level>` and `//set_level <level>`.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminLevel.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;

@@ -1,6 +1,5 @@
 //! `ClanBoard`: the clan community (`_bbsclan`, `_bbsclan_clanlist`, `_bbsclan_clanhome`, the clan
 //! notice pages) and its `Write Notice` button.
-// Java: dist/game/data/scripts/handlers/bypass/communityboard/ClanBoard.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;
@@ -31,8 +30,6 @@ struct ListRow {
 
 /// The `_bbsclan_clanlist` page for `index` (1 and up) over `clans` (Java iterates
 /// `ClanTable.getClans()`), for a player of clan `own_clan_id` (0 without a clan).
-// NOTE(java-quirk): the loop stops at `i > (index + 1) * 7` and shows from `(index - 1) * 7` on, so a
-// page holds up to 15 clans while the pager counts pages of 8; both are kept.
 fn clan_list_html(rows: &[ListRow], index: i32, own_clan_id: i32) -> String {
     let index = index.max(1);
     let mut html = String::with_capacity(2048);
@@ -55,7 +52,6 @@ fn clan_list_html(rows: &[ListRow], index: i32, own_clan_id: i32) -> String {
     if index == 1 {
         html.push_str("<td><button action=\"\" back=\"l2ui_ch3.prev1_down\" fore=\"l2ui_ch3.prev1\" width=16 height=16 ></td>");
     } else {
-        // NOTE(java-quirk): this action has no `bypass ` prefix, so the client sends it as typed.
         html.push_str(&format!(
             "<td><button action=\"_bbsclan_clanlist;{}\" back=\"l2ui_ch3.prev1_down\" fore=\"l2ui_ch3.prev1\" width=16 height=16 ></td>",
             index - 1

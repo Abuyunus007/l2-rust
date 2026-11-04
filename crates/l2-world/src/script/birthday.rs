@@ -1,14 +1,5 @@
 //! The database parts of the event scripts: the birthday gifts of `CharacterBirthday` and the
 //! event items `LongTimeEvent` removes when an event ends (S-LEFT-01).
-// Java: dist/game/data/scripts/events/CharacterBirthday/CharacterBirthday.java (onDailyReset),
-//       gameserver/mechanics/script/LongTimeEvent.java (destroyItemsOnEnd)
-//
-// Both are global writes of the Java GS too (D-39), so they follow the side-by-side rules:
-// - the birthday query and the mails are a job of the daily reset: only with
-//   `DailyResetDatabaseWrites = True` (D-49), else nothing is read and nothing is sent;
-// - the `DELETE FROM items WHERE item_id=?` only with `CycleDatabaseWrites = True` (D-53).
-// Neither awaits in the tick: the query goes out through the outbox and the answer comes back as
-// `WorldCommand::BirthdayGiftsLoaded` (D-15).
 
 use tracing::{info, warn};
 
@@ -47,7 +38,6 @@ impl World {
                     }
                 }
             }
-            // Java: "Error checking birthdays." and the count so far (0).
             Err(()) => warn!("CharacterBirthday: Error checking birthdays."),
         }
         info!("CharacterBirthday {gifts} gifts sent.");
@@ -55,9 +45,6 @@ impl World {
 
     /// The loop body of `onDailyReset`: the mail from Alegria with `AltBirthdayGift` attached.
     fn send_birthday_gift(&mut self, char_id: i32) -> bool {
-        // NOTE(java-quirk): Java replaces "$c1" and "$s1" with `replaceAll`, which takes a regular
-        // expression: `$` is the end of the input there, so neither pattern matches anything and
-        // the text goes out as the setting has it (with `$c1`/`$s1` in it, if it has them).
         let text = self.scripts.settings.alt_birthday_mail_text.clone();
         let subject = self.scripts.settings.alt_birthday_mail_subject.clone();
         let gift = self.scripts.settings.alt_birthday_gift;

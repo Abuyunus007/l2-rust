@@ -1,7 +1,5 @@
 //! Quest 330: Adept of Taste (Jonas wants five ingredients from the NPCs of the area, cooks a
 //! dish of them, Mirien reviews it and Jonas pays by the review).
-// Java: dist/game/data/scripts/quests/Q00330_AdeptOfTaste/Q00330_AdeptOfTaste.java
-//
 // Pattern: a repeatable quest with intermediate items, kills that fill the intermediate items
 // (`docs/design/scripts.md`, "Quest patterns": kill count with a drop chance).
 
@@ -388,7 +386,6 @@ impl Script for Q00330AdeptOfTaste {
                             ctx.play_sound(killer, QuestSound::ItemsoundQuestItemget);
                         }
                     } else if i0 < 97 {
-                        // NOTE(java-quirk): Java tests the Brown Marsh Moss count here, not the body count.
                         let brown = ctx.get_quest_items_count(killer, BROWN_MARSH_MOSS);
                         if brown == 28 {
                             ctx.give_items(killer, BODY_OF_MONSTER_EYE, 2);
@@ -412,7 +409,6 @@ impl Script for Q00330AdeptOfTaste {
                     if i0 < 7 {
                         give_one(ctx, killer, BODY_OF_MONSTER_EYE, 30);
                     } else if ctx.get_quest_items_count(killer, BROWN_MARSH_MOSS) == 29 {
-                        // NOTE(java-quirk): the Brown Marsh Moss count again.
                         ctx.give_items(killer, BODY_OF_MONSTER_EYE, 1);
                         ctx.play_sound(killer, QuestSound::ItemsoundQuestMiddle);
                     } else {

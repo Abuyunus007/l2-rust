@@ -1,5 +1,4 @@
 //! Quest 10278: Mutated Kaneus - Heine (Gosta sends the party after Blade Otis and Weird Bunei).
-// Java: dist/game/data/scripts/quests/Q10278_MutatedKaneusHeine/Q10278_MutatedKaneusHeine.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, QuestSound, STARTED};

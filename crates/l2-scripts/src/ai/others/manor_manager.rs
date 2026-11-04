@@ -1,7 +1,5 @@
 //! The manor managers of the castle towns: the menu page, the help pages and the
 //! `manor_menu_select` buttons (`ON_NPC_MANOR_BYPASS`).
-// Java: dist/game/data/scripts/ai/others/ManorManager/ManorManager.java
-//
 // The buttons' packets are `World::manor_manager_bypass` (`manor/npc.rs`, the manor logic).
 
 use l2_util::ObjectId;

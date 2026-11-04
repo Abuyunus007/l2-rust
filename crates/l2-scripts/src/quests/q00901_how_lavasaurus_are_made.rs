@@ -1,5 +1,4 @@
 //! Quest 901: How Lavasaurus Are Made (Rooney collects the four lavasaurus fragments for a daily totem).
-// Java: dist/game/data/scripts/quests/Q00901_HowLavasaurusesAreMade/Q00901_HowLavasaurusesAreMade.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, QuestSound, QuestType, STARTED};

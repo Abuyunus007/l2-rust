@@ -1,7 +1,5 @@
 //! `RequestPreviewItem`: the wear shop. The player pays `WearPrice` per item, sees the items on
 //! its character (`ShopPreviewInfo`) and after `WearDelay` seconds hears the try-on is over.
-// Java: network/clientpackets/RequestPreviewItem.java
-// Java: network/serverpackets/ShopPreviewInfo.java
 
 use l2_data::item::types::{ArmorType, WeaponType};
 use l2_protocol_game::SystemMessageId;

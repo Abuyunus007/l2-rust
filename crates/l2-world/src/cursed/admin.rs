@@ -1,7 +1,5 @@
 //! The cursed weapon admin commands: `//cw_info`, `//cw_info_menu`, `//cw_reload`, `//cw_remove`,
 //! `//cw_goto` and `//cw_add`.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminCursedWeapons.java
-//
 // # Left out
 // - `//cw_reload` (Java `CursedWeaponsManager.reload()`) reads `CursedWeapons.xml` and the
 //   `cursed_weapons` table again; the world never reads files or the database (D-15). The GM is

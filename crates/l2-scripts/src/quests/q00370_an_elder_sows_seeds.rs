@@ -1,6 +1,4 @@
 //! Quest 370: An Elder Sows Seeds (Casian in the Town of Gludio, the ant monsters, spellbook pages).
-// Java: dist/game/data/scripts/quests/Q00370_AnElderSowsSeeds/Q00370_AnElderSowsSeeds.java
-//
 // Pattern: a repeatable party quest with drops (`docs/design/scripts.md`, "Quest patterns"): the
 // spellbook pages drop from the ants (a random started member is picked for the ones with a
 // per-kill roll, the killer's party for the others), and the four chapters are exchanged for adena

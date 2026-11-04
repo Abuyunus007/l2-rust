@@ -1,5 +1,4 @@
 //! Quest 10274: Collecting in the Air (Lekon sends the adventurer to pop the star stones).
-// Java: dist/game/data/scripts/quests/Q10274_CollectingInTheAir/Q10274_CollectingInTheAir.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, QuestSound, STARTED};

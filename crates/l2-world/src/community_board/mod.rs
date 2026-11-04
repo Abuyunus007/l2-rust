@@ -1,9 +1,5 @@
 //! The community board: `RequestShowBoard`, `RequestBBSwrite`, and the pages of the board
 //! handlers.
-// Java: handler/CommunityBoardHandler.java, handler/IParseBoardHandler.java
-// Java: network/clientpackets/{RequestShowBoard,RequestBBSwrite}.java, util/HtmlUtil.java (sendCBHtml)
-// Java: dist/game/data/scripts/handlers/bypass/communityboard/*.java
-//
 // # How a command finds its board
 // Java keeps every board's command words and picks the board whose word the command starts with
 // (`cmd.toLowerCase().startsWith(word)`, over a `HashMap`, so which board wins an overlap is
@@ -122,9 +118,6 @@ impl Board {
     ];
 
     /// Java `CommunityBoardHandler.getHandler(cmd)`.
-    // NOTE(java-quirk): Java's `HashMap` iteration decides which board a command that several
-    // words are a prefix of belongs to (`_bbstopics` is both `_bbstop` and `_bbstopics`). The
-    // longest word wins here, so `_bbstopics` is the memo board's.
     pub(crate) fn find(command: &str) -> Option<Board> {
         let lower = command.to_lowercase();
         Self::COMMANDS

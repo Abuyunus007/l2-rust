@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/AutoPotionsConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/AutoPotions.ini` (Java: `AutoPotionsConfig`).

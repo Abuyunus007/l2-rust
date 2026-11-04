@@ -1,8 +1,4 @@
 //! The `Fishing`, `Pumping` and `Reeling` effects: casting the line and fighting the fish.
-// Java: dist/game/data/scripts/handlers/skill/effects/Fishing.java
-// Java: dist/game/data/scripts/handlers/skill/effects/Pumping.java
-// Java: dist/game/data/scripts/handlers/skill/effects/Reeling.java
-//
 // The work is in `fishing/` (`cast.rs`, `combat.rs`); these only read the parameters and call it.
 
 use l2_data::skill::EffectTemplate;

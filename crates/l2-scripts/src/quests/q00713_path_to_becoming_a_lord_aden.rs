@@ -1,6 +1,4 @@
 //! Quest 713: Path to Becoming a Lord - Aden (Chamberlain Logan and High Priest Orven, the Aden castle lord).
-// Java: dist/game/data/scripts/quests/Q00713_PathToBecomingALordAden/Q00713_PathToBecomingALordAden.java
-//
 // Pattern: a lord quest for the owner of Aden castle (`castle.owner_id`, the clan whose leader
 // is online). Logan opens it to the lord only, Orven grants the support, and the coronation is
 // a shout of the lord's name when the clan leader is online.
@@ -71,7 +69,6 @@ impl Script for Q00713PathToBecomingALordAden {
         player: Option<ObjectId>,
     ) -> Option<String> {
         let player = player?;
-        // Java: "Castle has no lord." is returned as a chat line, before anything else.
         if aden_lord_clan(ctx).is_none() {
             return Some("Castle has no lord.".to_owned());
         }

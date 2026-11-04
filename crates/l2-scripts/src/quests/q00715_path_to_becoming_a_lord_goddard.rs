@@ -1,5 +1,4 @@
 //! Quest 715: Path to Becoming a Lord - Goddard (Alfred sends the castle's lord to two spirits).
-// Java: dist/game/data/scripts/quests/Q00715_PathToBecomingALordGoddard/Q00715_PathToBecomingALordGoddard.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

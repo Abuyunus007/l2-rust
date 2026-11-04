@@ -1,6 +1,5 @@
 //! `SecondaryAuth.xml`: the second password at character selection.
 //!
-//! Java: `data/xml/SecondaryAuthData.java`: the elements `enabled`, `maxAttempts`, `banTime`
 //! (minutes), `recoveryLink` and `forbiddenPasswords/password`, all as element text.
 //! Rust loader: `game-server/src/client/secondary.rs` (`SecondaryAuthData::parse`).
 //!
@@ -136,8 +135,6 @@ impl XmlForm for SecondaryAuthForm {
         if !["true", "false"].contains(&self.enabled.value.to_ascii_lowercase().as_str()) {
             issues.push(Issue::error(None, "enabled", "must be true or false"));
         }
-        // NOTE(java-quirk): `Integer.parseInt` fails on a bad number and the rest of the file is
-        // not read.
         for (scalar, field) in [(&self.max_attempts, "maxAttempts"), (&self.ban_time, "banTime")] {
             match parse_int(&scalar.value) {
                 Some(v) if v >= 0 => {}

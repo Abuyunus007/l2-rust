@@ -1,6 +1,5 @@
 //! The gatekeepers of the catacombs and necropolises (`DungeonGatekeeper`): who may go in, and
 //! the Seven Signs dungeon flag of the player.
-// Java: entity/actor/instance/DungeonGatekeeper.java (onBypassFeedback, doTeleport)
 
 use l2_data::TeleportType;
 use l2_protocol_game::SystemMessageId;
@@ -97,7 +96,6 @@ impl World {
                     return true;
                 };
                 self.ss_dungeon_teleport(npc, player, value);
-                // NOTE(java-quirk): set even when the teleport did not happen (no fee, dead).
                 self.set_in_7s_dungeon(player, true);
             }
         } else if actual.starts_with("exit") {

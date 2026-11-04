@@ -1,6 +1,4 @@
 //! Quest 140: Shadow Fox - 2 (Kluck and Xenovia, dark crystals for the goddess sword cryptogram).
-// Java: dist/game/data/scripts/quests/Q00140_ShadowFoxPart2/Q00140_ShadowFoxPart2.java
-//
 // Pattern: a party kill count at cond 3 (`getRandomPartyMember(player, 3)`), an item roll at the
 // NPC (`30912-14.html`) and a `talk` flag that picks the page.
 

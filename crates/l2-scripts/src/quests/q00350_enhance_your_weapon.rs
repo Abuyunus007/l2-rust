@@ -1,7 +1,5 @@
 //! Quest 350: Enhance Your Weapon (Trader Kakai, Gatekeeper Tamil and Blacksmith Kiyou; the soul
 //! crystals of the level-up table).
-// Java: dist/game/data/scripts/quests/Q00350_EnhanceYourWeapon/Q00350_EnhanceYourWeapon.java
-//
 // Pattern: a repeatable quest that hands out the soul crystal stages (red, green, blue) and
 // leaves at `exit.htm`. The monsters of `LevelUpCrystalData` level the crystals: the crystal
 // skill (2096) on a monster adds the caster to its absorb list (`onSkillSee`), the kill levels
@@ -129,7 +127,6 @@ impl Script for Q00350EnhanceYourWeapon {
                 qs.exit_quest(ctx, true, true);
             }
 
-            // Java: `NpcHtmlMessage` (not the quest window) with the page's `%npcname%` replaced.
             if let Some(npc) = npc
                 && let Some(html) = ctx.get_htm(player, "exit.htm")
             {
@@ -141,7 +138,6 @@ impl Script for Q00350EnhanceYourWeapon {
             }
             return None;
         }
-        // NOTE(java-quirk): every other event is echoed back as the page to show (`htmltext = event`).
         Some(event.to_owned())
     }
 
@@ -664,8 +660,6 @@ mod tests {
             [SystemMessageId::TheSoulCrystalIsRefusingToAbsorbTheSoul as i32]
         );
 
-        // NOTE(java-quirk): on a monster without a level-0 entry a too low crystal says nothing:
-        // `maxSCLevel` 0 has no info, so `levelSoulCrystals` returns before `levelCrystal`.
         let mut t = leveling_setup(TABLE, 100.0);
         enter_started(&mut t, 1, vec![item(200, 4629, 1)]);
         let boss = t.spawn(PARTY_BOSS, 40);

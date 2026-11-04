@@ -1,12 +1,5 @@
 //! Auto attack: `Creature.doAttack`, the hit tasks, damage and the combat stance.
 //! Design: `docs/design/m4-combat.md` ("Combat and AI rules").
-// Java: entity/actor/Creature.java (doAttack, doAttackHitByBow/CrossBow/Dual/Pole/Simple,
-//       canUseRangeWeapon, onHitTimer, abortAttack, breakAttack, isAttackingNow, reduceCurrentHp,
-//       sendDamageMessage, doDie)
-// Java: entity/actor/tasks/creature/HitTask.java
-// Java: taskmanagers/AttackStanceTaskManager.java
-// Java: network/clientpackets/AttackRequest.java
-//
 // # How an attack runs (no thread, no sleep)
 // - `do_attack` ([`attack`]) does Java's checks, rolls every hit at once with the formulas
 //   ([`hit`], the order of `doAttackHitSimple`), broadcasts `Attack` and schedules on the timer

@@ -1,12 +1,4 @@
 //! Quest 311: Expulsion of Evil Spirits (Chairen, the Ragna Orcs and the Varangka altar).
-// Java: dist/game/data/scripts/quests/Q00311_ExpulsionOfEvilSpirits/Q00311_ExpulsionOfEvilSpirits.java
-//
-// Two things in one script: the quest (a soul core every so often from Ragna Orcs, the amulets
-// as the second item, the pendant for ten cores) and the altar of the Ragna Orcs' zone (the
-// altar spawns on a global timer, Varangka and two minions come when a player with the pendant
-// hits the altar, and players without the pendant are hurt by it). The NPCs of the altar are
-// kept in `ExpulsionState` (Java's statics). The respawn time is the global variable
-// `VarangkaRespawn` (D-54).
 
 use l2_util::ObjectId;
 use l2_world::script::QuestSound;
@@ -158,8 +150,6 @@ fn zone_check(ctx: &mut ScriptCtx<'_>, player: ObjectId) {
     let no_state = ctx.player_quest_state(player, QUEST_NAME).is_none();
     if no_state || !ctx.has_quest_items(player, PROTECTION_SOULS_PENDANT) {
         cast_debuff(ctx, altar, player);
-        // NOTE(java-quirk): Java schedules a new runnable each time (and one for every entry
-        // and attack), so several checks can run side by side (`schedule_event` does not merge).
         ctx.schedule_event("zoneCheck", 3000, None, Some(player));
     }
 }
@@ -229,8 +219,6 @@ impl Script for Q00311ExpulsionOfEvilSpirits {
                 ctx.state::<ExpulsionState>().minion1 = minion;
                 if let Some(minion) = minion {
                     ctx.set_running(minion);
-                    // NOTE(java-quirk): Java reads `_varangka.getTarget().asPlayer()` without a null
-                    // check; with no target the minion stays without hate and attack.
                     if let Some(target) = ctx.world().target_of(varangka.object_id) {
                         ctx.world_mut()
                             .add_damage_hate(minion.object_id, target, 1, 99_999);

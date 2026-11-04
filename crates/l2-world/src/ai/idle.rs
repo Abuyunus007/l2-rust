@@ -1,10 +1,5 @@
 //! Random animation of NPCs while they idle: the `SocialAction` a monster or an NPC plays now and
 //! then, for the players who see it.
-// Java: taskmanagers/RandomAnimationTaskManager.java (run, add, remove)
-// Java: entity/actor/Npc.java (onRandomAnimation, hasRandomAnimation, isRandomAnimationEnabled,
-//       broadcastSocialAction of Creature.java)
-// Java: entity/actor/Attackable.java (hasRandomAnimation), entity/WorldRegion.java (switchAI)
-//
 // # Which NPCs animate
 // - Java adds an NPC to the animation registry only when its region switches on
 //   (`WorldRegion.switchAI(true)`), and removes it when the region switches off. An NPC that
@@ -70,8 +65,6 @@ impl World {
         if self.is_attackable_npc(id) {
             // Java `Attackable.hasRandomAnimation()`: no grand boss, and the subclasses that
             // override it to false (Chest and FestivalMonster here; the siege NPCs are M5).
-            // NOTE(java-quirk): Chest and FestivalMonster are `NpcClass::Monster` here, so the
-            // template type is what tells them apart.
             settings.max_monster_animation > 0
                 && npc.class != NpcClass::GrandBoss
                 && !matches!(
@@ -208,7 +201,6 @@ impl World {
         if !active {
             return;
         }
-        // Java: `!isDead() && !isInCombat() && !isMoving() && !isStunned() && !isSleeping() &&
         // !isParalyzed()`.
         if !self.is_dead(id)
             && !self.is_in_combat(id)

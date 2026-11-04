@@ -1,7 +1,5 @@
 //! Quest 649: A Looter and a Railroad Man (Railman Obi in the Rune Town station; the bandits of
 //! Gludio's and Rune's thieves' guild drop the thieves' guild marks).
-// Java: dist/game/data/scripts/quests/Q00649_ALooterAndARailroadMan/Q00649_ALooterAndARailroadMan.java
-//
 // Pattern: a kill count with a drop chance per monster (per mille, the world RNG) up to a limit
 // of 200 marks, the party range check of `ALT_PARTY_RANGE`, and a reward of adena and exit.
 

@@ -1,7 +1,4 @@
 //! `ExtractableItems`: opening a box or pack (`<capsuled_items>` of the item).
-// Java: dist/game/data/scripts/handlers/items/ExtractableItems.java
-// Java: entity/item/holders/ExtractableProduct.java
-//
 // # How the roll works
 // Every product has a chance in thousandths of a percent (`(int) (chance * 1000)`), compared with
 // `Rnd.get(100000)`. The box gives the products that hit, at most `extractableCountMax` different
@@ -175,8 +172,6 @@ impl World {
                 self.inventory_item(id, *object_id)
                     .is_some_and(|created| created.item_id == product.id)
             });
-            // NOTE(java-quirk): with `extractableCountMax` 0 this is always true, so the second
-            // product of the same item is always refused.
             if already_extracted && i64::try_from(product_count).unwrap_or(i64::MAX) >= i64::from(count_max) {
                 return;
             }

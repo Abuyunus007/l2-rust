@@ -1,6 +1,4 @@
 //! The login server: startup, background tasks and shutdown.
-// Java: org/l2jmobius/loginserver/LoginServer.java
-//
 // REFERENCE LAYOUT for server binaries (the game server copies it):
 // - `main.rs`   command line, logging, signals, exit code. Nothing else.
 // - `lib.rs`    `Server::start` runs the startup steps in Java's order and returns a running
@@ -47,7 +45,6 @@ use crate::state::{ExitReason, GameServerTable, LoginState, ShutdownHandle};
 /// Time before a client that did not finish logging in is kicked, and the period of the purge
 /// task. Java: `LoginController.LOGIN_TIMEOUT`.
 pub const LOGIN_TIMEOUT: Duration = Duration::from_secs(5 * 60);
-/// Java: `MILLISECONDS_PER_HOUR`.
 const MILLIS_PER_HOUR: i64 = 3_600_000;
 /// Name of the ban file in the root folder. Java: `BANNED_IPS_CONFIGURATION_PATH`.
 pub const BANNED_IP_FILE: &str = "banned_ip.cfg";
@@ -127,16 +124,13 @@ impl Server {
 
     /// Everything after the database connection.
     async fn start_with(config: LoginConfigSet, pool: Pool, paths: &Paths) -> Result<Self, StartupError> {
-        // Java: LoginController.load
         let client_keys = generate_client_keys().await?;
 
-        // Java: GameServerTable constructor
         let names = load_server_names(&paths.data_dir.join(SERVER_NAMES_FILE));
         let registered = GameServerTable::load_registered(&LoginRepository::new(pool.clone())).await;
         let game_server_keys = generate_game_server_keys().await?;
         let game_servers = GameServerTable::new(names, registered, game_server_keys);
 
-        // Java: LoginServer.loadBanFile
         let bans = BanList::new();
         load_ban_file(&paths.banned_ip_file, &bans);
 
@@ -222,7 +216,6 @@ impl Server {
     }
 
     /// Stops right away. `restart` gives exit code 2 instead of 0.
-    // Java: LoginServer.shutdown(restart)
     pub async fn shutdown(self, restart: bool) -> ExitReason {
         let reason = if restart {
             ExitReason::Restart
@@ -253,14 +246,11 @@ impl Server {
 
 /// The delay of the scheduled restart, or `None` when it is off or the configured time is not
 /// positive.
-// Java: LoginServer.configureScheduledRestart
 pub fn restart_delay(config: &LoginConfig) -> Option<Duration> {
     if !config.login_server_schedule_restart {
         return None;
     }
     let hours = config.login_server_schedule_restart_time;
-    // NOTE(java-quirk): `hours * MILLISECONDS_PER_HOUR` is a long multiplication in Java and
-    // wraps on overflow; the wrapped value is used as is.
     let millis = hours.wrapping_mul(MILLIS_PER_HOUR);
     let Some(delay_ms) = u64::try_from(millis).ok().filter(|ms| *ms > 0) else {
         warn!(
@@ -282,7 +272,6 @@ fn spawn_restart_timer(tasks: &mut JoinSet<()>, delay: Duration, shutdown: Shutd
 }
 
 /// Calls [`LoginState::purge`] every [`LOGIN_TIMEOUT`], first after one full period.
-// Java: ThreadPool.scheduleAtFixedRate(this::purge, LOGIN_TIMEOUT, LOGIN_TIMEOUT)
 fn spawn_purge_task(tasks: &mut JoinSet<()>, state: Arc<LoginState>) {
     tasks.spawn(async move {
         let mut ticker = interval_at(Instant::now() + LOGIN_TIMEOUT, LOGIN_TIMEOUT);

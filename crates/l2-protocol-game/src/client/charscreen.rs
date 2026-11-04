@@ -5,7 +5,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::{write_ex_opcode, write_opcode};
 use crate::generated::opcodes::{ClientOpcode, ExClientOpcode};
 
-// Java: gameserver/network/clientpackets/NewCharacter.java
 /// "Create character" button. No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct NewCharacter;
@@ -26,7 +25,6 @@ impl Decode for NewCharacter {
     }
 }
 
-// Java: gameserver/network/clientpackets/CharacterCreate.java
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CharacterCreate {
     pub name: String,
@@ -41,8 +39,6 @@ pub struct CharacterCreate {
     pub men: i32,
     pub dex: i32,
     pub wit: i32,
-    // NOTE(java-quirk): Java reads these with `(byte) readInt()`, so only the low 8 bits count
-    // and the range checks (hair style 0..=4/6, colour 0..=3, face 0..=2) see a signed byte.
     pub hair_style: i8,
     pub hair_color: i8,
     pub face: i8,
@@ -76,7 +72,6 @@ impl Decode for CharacterCreate {
         Ok(Self {
             name: r.string(),
             race: r.i32()?,
-            // Java: `readInt() != 0`.
             is_female: r.i32()? != 0,
             class_id: r.i32()?,
             int: r.i32()?,
@@ -92,7 +87,6 @@ impl Decode for CharacterCreate {
     }
 }
 
-// Java: gameserver/network/clientpackets/CharacterDelete.java
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CharacterDelete {
     /// Index in the character list the server last sent.
@@ -116,7 +110,6 @@ impl Decode for CharacterDelete {
     }
 }
 
-// Java: gameserver/network/clientpackets/CharacterRestore.java
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CharacterRestore {
     pub char_slot: i32,
@@ -139,7 +132,6 @@ impl Decode for CharacterRestore {
     }
 }
 
-// Java: gameserver/network/clientpackets/CharacterSelect.java
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CharacterSelect {
     pub char_slot: i32,
@@ -178,7 +170,6 @@ impl Decode for CharacterSelect {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestGotoLobby.java
 /// Ex packet `0xD0 0x0036`: back to the character list. No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestGotoLobby;

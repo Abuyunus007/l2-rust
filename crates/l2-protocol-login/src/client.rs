@@ -7,7 +7,6 @@
 
 use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 
-// Java: loginserver/network/clientpackets/AuthGameGuard.java
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuthGameGuard {
     pub session_id: i32,
@@ -26,14 +25,12 @@ impl Encode for AuthGameGuard {
 
 impl Decode for AuthGameGuard {
     fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
-        // Java: `remaining() >= 20` (session id + 4 reserved ints).
         let session_id = r.i32()?;
         r.skip(16)?;
         Ok(Self { session_id })
     }
 }
 
-// Java: loginserver/network/clientpackets/RequestAuthLogin.java
 /// The credentials are in RSA blocks of 128 bytes. Decrypting them and reading the account name
 /// and password is the login server's job: see [`credentials_from_decrypted`].
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -64,7 +61,6 @@ impl Encode for RequestAuthLogin {
 
 impl Decode for RequestAuthLogin {
     fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
-        // Java: `remaining() >= 256` is the new method, `>= 128` the old one, else the read fails.
         if r.remaining() >= 256 {
             Ok(Self::Rsa256 {
                 block1: r.byte_array()?,
@@ -97,10 +93,6 @@ pub fn credentials_from_decrypted(decrypted: &[u8]) -> (String, String) {
 }
 
 /// Java `new String(bytes, offset, len).trim()`.
-///
-/// NOTE(java-quirk): `String.trim()` strips every char `<= ' '` (control characters and the
-/// RSA zero padding included), unlike Rust's `str::trim`, which only strips whitespace.
-/// Bytes are read as UTF-8, Java's default charset on current JDKs; invalid bytes become U+FFFD.
 fn field(buf: &[u8], offset: usize, len: usize) -> String {
     let end = buf.len().min(offset + len);
     let start = offset.min(end);
@@ -109,7 +101,6 @@ fn field(buf: &[u8], offset: usize, len: usize) -> String {
         .to_owned()
 }
 
-// Java: loginserver/network/clientpackets/RequestServerList.java
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestServerList {
     pub login_ok1: i32,
@@ -128,7 +119,6 @@ impl Encode for RequestServerList {
 
 impl Decode for RequestServerList {
     fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
-        // Java: `remaining() >= 8`. The javadoc mentions a third byte, but Java never reads it.
         Ok(Self {
             login_ok1: r.i32()?,
             login_ok2: r.i32()?,
@@ -136,14 +126,10 @@ impl Decode for RequestServerList {
     }
 }
 
-// Java: loginserver/network/clientpackets/RequestServerLogin.java
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestServerLogin {
     pub login_ok1: i32,
     pub login_ok2: i32,
-    /// NOTE(java-quirk): Java reads this with the signed `readByte()`, so ids above 127 become
-    /// negative there and match no game server. We keep the raw byte; callers that mirror the
-    /// lookup should treat ids above 127 as unknown.
     pub server_id: u8,
 }
 
@@ -162,7 +148,6 @@ impl Encode for RequestServerLogin {
 
 impl Decode for RequestServerLogin {
     fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
-        // Java: `remaining() >= 9`.
         Ok(Self {
             login_ok1: r.i32()?,
             login_ok2: r.i32()?,

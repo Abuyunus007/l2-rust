@@ -1,7 +1,6 @@
 //! `ClassMaster.xml`: the class change offers of the class master NPCs, with what a change costs
 //! and rewards.
 //!
-//! Java: `dist/game/data/scripts/ai/others/ClassMaster/ClassMaster.java` (`parseDocument`).
 //! Rust loader: `l2_data::ClassMasterConfig`.
 //!
 //! Structure: `classMaster` (attributes `classChangeEnabled`, `spawnClassMasters`,

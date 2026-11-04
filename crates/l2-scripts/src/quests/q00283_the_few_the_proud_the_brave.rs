@@ -1,6 +1,4 @@
 //! Quest 283: The Few, The Proud, The Brave (Perwan in the Hunters Village buys the crimson spider claws).
-// Java: dist/game/data/scripts/quests/Q00283_TheFewTheProudTheBrave/Q00283_TheFewTheProudTheBrave.java
-//
 // Pattern: a party drop quest without a condition (`docs/design/scripts.md`, "Quest patterns"): a
 // random started party member gets a crimson spider claw from the crimson spiders with a drop
 // chance; Perwan pays per claw, with a bonus from 10 claws, moves the Newbie Guide's mission on

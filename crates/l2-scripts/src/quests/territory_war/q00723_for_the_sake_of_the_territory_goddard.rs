@@ -1,5 +1,4 @@
 //! Quest 723: For the Sake of the Territory - Goddard.
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/Q00723_ForTheSakeOfTheTerritoryGoddard.java
 
 use l2_protocol_game::NpcStringId;
 

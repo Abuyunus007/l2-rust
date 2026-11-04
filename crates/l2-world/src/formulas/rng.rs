@@ -1,6 +1,5 @@
 //! The random draws the formulas make, as a trait that mirrors Java `Rnd`.
 //!
-//! Java: `commons/util/Rnd.java`. Formulas take `&mut impl Rnd` (or `&mut dyn Rnd`) and call the
 //! same method Java calls, with the same bounds, in the same order. The world's seedable RNG
 //! implements it by forwarding to the matching [`WorldRng`] method; tests implement it with the
 //! draws recorded in the Java vectors, which also lets them check the order and the bounds.

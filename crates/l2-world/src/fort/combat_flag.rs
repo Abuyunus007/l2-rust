@@ -1,13 +1,6 @@
 //! The combat flag of a fortress siege: it lies in the command post, the clan leader of an
 //! attacker picks it up (and is forced to wear it), and hangs it on the flag pole with the flag
 //! skills to take the fortress.
-// Java: mechanics/siege/CombatFlag.java
-// Java: managers/FortSiegeManager.java (isCombat, activateCombatFlag, checkIfCanPickup,
-//       dropCombatFlag, getFlagList)
-// Java: entity/actor/Player.java (addItem: the combat flag branch, doPickupItem, doDie, deleteMe)
-// Java: network/clientpackets/EnterWorld.java ("Remove combat flag before teleporting")
-// Java: dist/game/data/scripts/handlers/skill/effects/{TakeFort,TakeFortStart}.java
-//
 // # Model
 // A [`CombatFlag`] is one of the up to three flags a fortress has (`FortSiege.ini`
 // `NameFlagN`). It knows the item on the ground (`_itemInstance`, an object id of the ground
@@ -349,7 +342,6 @@ impl World {
 }
 
 /// Java `TakeFort`: the flag is hung on the pole, the fortress changes hands.
-// Java: dist/game/data/scripts/handlers/skill/effects/TakeFort.java
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct TakeFort;
 
@@ -381,7 +373,6 @@ impl EffectHandler for TakeFort {
 }
 
 /// Java `TakeFortStart`: the siege is told a clan is displaying the flag.
-// Java: dist/game/data/scripts/handlers/skill/effects/TakeFortStart.java
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct TakeFortStart;
 

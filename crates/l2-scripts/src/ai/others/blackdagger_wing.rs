@@ -1,5 +1,4 @@
 //! Blackdagger Wing (raid boss 25721): a ranged magic attack and a 30 s lunge below half HP.
-// Java: dist/game/data/scripts/ai/others/BlackdaggerWing.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};
@@ -87,8 +86,6 @@ impl Script for BlackdaggerWing {
             let count = ctx.npc_int(npc, POWER_STRIKE_CAST_COUNT) + 1;
             ctx.set_npc_int(npc, POWER_STRIKE_CAST_COUNT, count);
             if count > 3 {
-                // NOTE(java-quirk): `player` is the target of the finished skill; Java passes it on
-                // without a null check.
                 if let Some(player) = player {
                     ctx.add_skill_cast_desire(npc, player, RANGE_MAGIC_ATTACK, 99999);
                 }

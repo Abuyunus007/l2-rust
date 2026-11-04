@@ -1,6 +1,4 @@
 //! Quest 454: Completely Lost (the injured soldier follows a party to Ermian in the Seed of Infinity).
-// Java: dist/game/data/scripts/quests/Q00454_CompletelyLost/Q00454_CompletelyLost.java
-//
 // Pattern: a daily escort. The NPC keeps the leader, the escort state and the whisper step in its
 // own variables (`npc_variables_mut`); the quest timers watch the distance and the time limit, the
 // NPC-to-NPC script events (`SCE_A_SEED_ESCORT_QUEST_*`) move the members' memo states, and
@@ -31,10 +29,6 @@ const RECIPES_2: [i32; 9] = [15800, 15803, 15806, 15807, 15797, 15794, 15809, 15
 const PIECES_2: [i32; 9] = [15673, 15674, 15675, 15691, 15665, 15662, 15769, 15770, 15771];
 
 /// Java's `if (chance < step) ... else if ((chance <= step) && (chance < 2 * step)) ... else last`.
-// NOTE(java-quirk): after the first branch every test is `(chance <= n * step) && (chance < (n + 1)
-// * step)`, so the second item only comes for `chance == step` and every later item holds the
-// rolls up to its own multiple of `step`: the items are shifted one slot (the item of
-// `chance < step` is the first, the next one only for exactly `step`). Ported as written.
 fn pick(chance: i32, step: i32, items: &[i32]) -> i32 {
     if chance < step {
         return items[0];

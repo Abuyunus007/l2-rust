@@ -1,8 +1,4 @@
 //! Banned IP addresses: the in-memory ban list and the `banned_ip.cfg` loader.
-// Java: org/l2jmobius/loginserver/LoginServer.java (`loadBanFile`, `processBanLine`)
-// Java: org/l2jmobius/loginserver/controller/LoginController.java
-//       (`addBanForAddress`, `isBannedAddress`, `removeBanForAddress`, `_bannedIps`)
-//
 // File format, one entry per line: `ip [durationMillis]  # comment`. The ip is any text; a
 // subnet is written with trailing zero groups (`123.45.0.0`) and matched by `is_banned`.
 
@@ -30,7 +26,6 @@ impl BanList {
 
     /// Bans `address` for `duration_ms`, or permanently when `duration_ms <= 0`. An address that
     /// is already banned keeps its old expiry (Java `putIfAbsent`).
-    // Java: LoginController.addBanForAddress
     pub fn add(&self, address: &str, duration_ms: i64) {
         self.add_at(address, duration_ms, now_millis());
     }
@@ -38,8 +33,6 @@ impl BanList {
     /// [`Self::add`] with an explicit clock, for tests.
     pub fn add_at(&self, address: &str, duration_ms: i64, now_ms: i64) {
         let expires = if duration_ms > 0 {
-            // NOTE(java-quirk): `System.currentTimeMillis() + duration` wraps on overflow. A
-            // wrapped (negative) expiry is never treated as expired, so it acts as permanent.
             now_ms.wrapping_add(duration_ms)
         } else {
             PERMANENT_BAN
@@ -49,7 +42,6 @@ impl BanList {
 
     /// True while `address` or one of its subnets (`a.b.c.0`, `a.b.0.0`, `a.0.0.0`) is banned.
     /// An expired exact ban is removed and reported as not banned.
-    // Java: LoginController.isBannedAddress
     pub fn is_banned(&self, address: &str) -> bool {
         self.is_banned_at(address, now_millis())
     }
@@ -63,9 +55,6 @@ impl BanList {
         let mut found = lookup(address);
         if found.is_none() {
             let parts = split_address(address);
-            // NOTE(java-quirk): Java indexes `parts[2]` unguarded, so an address with fewer than
-            // three dot-separated groups (an IPv6 literal) that is not banned exactly throws
-            // there. The Rust version reports "not banned" instead of failing.
             if parts.len() < 3 {
                 return false;
             }
@@ -82,9 +71,6 @@ impl BanList {
             return false;
         };
         if expiry > 0 && expiry < now_ms {
-            // NOTE(java-quirk): Java removes `address` (the one asked about), not the key that
-            // matched. For an expired subnet ban nothing is removed, the entry stays in the
-            // list, and every lookup keeps answering "not banned" until the server restarts.
             self.bans.remove(address);
             info!("Removed expired ip address ban {address}.");
             return false;
@@ -93,7 +79,6 @@ impl BanList {
     }
 
     /// Removes the ban of exactly this address. True when there was one.
-    // Java: LoginController.removeBanForAddress
     pub fn remove(&self, address: &str) -> bool {
         self.bans.remove(address).is_some()
     }
@@ -133,7 +118,6 @@ pub enum BanLine<'a> {
 }
 
 /// Parses one line of `banned_ip.cfg`.
-// Java: LoginServer.processBanLine
 pub fn parse_ban_line(raw: &str) -> BanLine<'_> {
     let line = raw.trim();
     if line.is_empty() || line.starts_with('#') {
@@ -160,7 +144,6 @@ pub fn parse_ban_line(raw: &str) -> BanLine<'_> {
 
 /// Registers every entry of the ban file `path` in `bans`. A missing file only logs a warning.
 /// Returns the number of bans in the list afterwards.
-// Java: LoginServer.loadBanFile
 pub fn load_ban_file(path: &Path, bans: &BanList) -> usize {
     if !path.is_file() {
         warn!(

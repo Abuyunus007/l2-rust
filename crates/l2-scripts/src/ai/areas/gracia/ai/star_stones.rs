@@ -1,6 +1,5 @@
 //! The Star Stones of the Seed of Annihilation: the collection skill (932) gathers a red, blue or
 //! green Energy Star Stone.
-// Java: dist/game/data/scripts/ai/areas/Gracia/AI/StarStones.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;

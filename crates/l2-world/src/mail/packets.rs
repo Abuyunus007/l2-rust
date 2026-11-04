@@ -1,7 +1,4 @@
 //! The packets that show the post box: the lists, a mail opened, the items that can be attached.
-// Java: network/serverpackets/{ExShowReceivedPostList,ExShowSentPostList,ExReplyReceivedPost,
-// Java: ExReplySentPost,ExReplyPostItemList}.java, network/holders/MailMessage.java
-// Java: (getSenderName, getReceiverName)
 
 use l2_protocol_game::server::{
     ExReplyPostItemList, ExReplyReceivedPost, ExReplySentPost, ExShowReceivedPostList, ExShowSentPostList,

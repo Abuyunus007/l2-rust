@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/BossAnnouncementsConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/BossAnnouncements.ini` (Java: `BossAnnouncementsConfig`).

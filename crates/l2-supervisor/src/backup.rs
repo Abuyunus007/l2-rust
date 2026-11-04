@@ -1,7 +1,6 @@
 //! Database backups (M9-H01): `mysqldump` on a schedule and on request, gzip-compressed into a
 //! folder, the newest `Keep` files kept.
 //!
-//! Java: `dist/db_installer` (the dump before a reset) and `DatabaseConfig` (`MySqlBinLocation`,
 //! the connection settings). Java's own `BackupDatabase`/`BackupDays` keys are not used: this is
 //! Rust-only and lives in `Backup.ini` next to `supervisor.ini` (D-36).
 //!

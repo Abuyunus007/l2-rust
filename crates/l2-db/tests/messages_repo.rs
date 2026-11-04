@@ -170,7 +170,6 @@ async fn the_mails_of_one_character_are_read_as_sender_and_receiver() {
     assert_eq!(repo.messages_of_character(carol).await.unwrap().len(), 1);
     assert!(repo.messages_of_character(1).await.unwrap().is_empty());
 
-    // A mail the Java game server deleted is gone from the next read.
     repo.delete(1_610_612_801).await.unwrap();
     assert_eq!(repo.messages_of_character(alice).await.unwrap().len(), 2);
 

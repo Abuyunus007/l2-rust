@@ -1,16 +1,5 @@
 //! The minigames: Handy's Block Checker, Kratei's Cube and the Underground Coliseum
 //! (M8-GAMES-01).
-// Java: org/l2jmobius/gameserver/managers/HandysBlockCheckerManager.java
-// Java: org/l2jmobius/gameserver/managers/games/{BlockCheckerManager,KrateisCubeManager,
-//       UndergroundColiseumManager}.java
-// Java: org/l2jmobius/gameserver/mechanics/{krateisCube,undergroundColiseum}/*.java
-// Java: org/l2jmobius/gameserver/entity/actor/holders/player/ArenaParticipantsHolder.java
-// Java: org/l2jmobius/gameserver/entity/actor/instance/{Block,KrateisCubeManager,
-//       KrateisMatchManager,UCManager,UCHelper,UCTower}.java
-// Java: network/clientpackets/{RequestExCubeGameChangeTeam,RequestExCubeGameReadyAnswer}.java
-// Java: entity/actor/Player.java (the event fields: `_isRegisteredOnEvent`, `_krateiArena`,
-//       `_ucState`, `_handysBlockCheckerEventArena`, `_canRevive`)
-//
 // # Ownership (D-10, D-11)
 // [`MinigameWorld`] is the world's. The players of an arena, the teams of the coliseum, the
 // waiting parties and the NPCs a match made (blocks, towers, watchers) are ids; the objects stay
@@ -23,12 +12,6 @@
 // wheel; `execute` is the next tick. The coliseum's `Thread.sleep` countdown is one timer step
 // per message. The countdown messages of Kratei's Cube are one timer per second like Java's.
 //
-// # Persistence (D-15, D-39, D-49..D-53)
-// The only rows these games write are the coliseum's: `underground_coliseum` (the best team of
-// an arena) and the `UC_START_TIME` / `UC_STOP_TIME` rows of `global_variables`. Both are global
-// rows the Java game server writes too, so they go out only with `CycleDatabaseWrites`
-// ([`MinigameSettings::cycle_database_writes`], D-53); without it they live in memory and are read
-// at start ([`MinigameLoad`]).
 //
 // # Files
 // - `block_checker.rs`: `HandysBlockCheckerManager`, `ArenaParticipantsHolder` and the event
@@ -74,8 +57,6 @@ pub(crate) const TEAM_NONE: u8 = 0;
 pub(crate) const TEAM_BLUE: u8 = 1;
 pub(crate) const TEAM_RED: u8 = 2;
 
-/// The values the minigames read: `General.ini` (Block Checker), `UndergroundColiseum.ini` and the
-/// D-53 switch.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MinigameSettings {
     /// `EnableBlockCheckerEvent` (`GeneralConfig.ENABLE_BLOCK_CHECKER_EVENT`).
@@ -141,8 +122,6 @@ pub enum MinigameWrite {
         wins: i32,
     },
     /// `UPDATE underground_coliseum SET leader = ?, wins = ?  WHERE arenaId = ?`.
-    // NOTE(java-quirk): `saveBestTeam` binds `team.getArenaId()` as the *leader* (`setInt(1, ...)`),
-    // so the leader column of an updated row holds the arena id, not a name. Ported as is.
     BestTeamUpdate { arena_id: i32, wins: i32 },
     /// `REPLACE INTO global_variables (var, value)` for `UC_START_TIME` / `UC_STOP_TIME`.
     GlobalVariable { name: String, value: i64 },
@@ -219,7 +198,6 @@ pub struct MinigameWorld {
 }
 
 impl World {
-    /// Installs the `General.ini` and `UndergroundColiseum.ini` values and the D-53 switch.
     pub fn set_minigame_settings(&mut self, settings: MinigameSettings) {
         self.minigames.settings = settings;
     }

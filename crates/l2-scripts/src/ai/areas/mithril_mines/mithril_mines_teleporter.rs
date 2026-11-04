@@ -1,5 +1,4 @@
 //! The Teleport Crystals of the Mithril Mines.
-// Java: dist/game/data/scripts/ai/areas/MithrilMines/MithrilMinesTeleporter/MithrilMinesTeleporter.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

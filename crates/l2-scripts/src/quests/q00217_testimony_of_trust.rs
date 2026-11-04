@@ -1,5 +1,4 @@
 //! Quest 217: Testimony of Trust (High Priest Hollint's letters to the elves, dark elves, dwarves and orcs; the human's mark).
-// Java: dist/game/data/scripts/quests/Q00217_TestimonyOfTrust/Q00217_TestimonyOfTrust.java
 
 use l2_util::ObjectId;
 use l2_world::script::{QuestSound, race};
@@ -307,8 +306,6 @@ impl Script for Q00217TestimonyOfTrust {
         match npc.id {
             DRYAD | DRYAD_ELDER => {
                 if qs.is_memo_state(ctx, 2) {
-                    // NOTE(java-quirk): nothing ever sets the player variable "flag", so it is 1
-                    // and the quest monster appears with a chance of 33%.
                     let flag = ctx.player_variable_int(killer, "flag", 1);
                     if ctx.get_random(100) < flag * 33 {
                         ctx.add_spawn_at(ACTEA_OF_VERDANT_WILDS, npc.object_id, true, 200_000);

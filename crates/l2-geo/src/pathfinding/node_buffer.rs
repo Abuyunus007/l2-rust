@@ -1,6 +1,5 @@
 //! The A* search on the geodata cells.
 //!
-//! Java: `gameserver/geoengine/pathfinding/NodeBuffer.java`.
 //!
 //! Cell state lives in parallel arrays indexed by `(aY * mapSize) + aX`; the open list is an
 //! indexed binary min-heap with decrease-key; the closed / open sets are bit flags. `free` only
@@ -24,10 +23,6 @@ const FLAG_OPEN: u8 = 0x2;
 const FLAG_CLOSED: u8 = 0x4;
 
 /// The weights of `NodeBuffer`'s constructor: `(int) (WEIGHT * COST_SCALE)`.
-///
-/// NOTE(java-quirk): the product is a `float`, so `0.6f * 1000` is `600.0` only by luck of the
-/// rounding; the cast truncates (`0.707f * 1000` gives 707 but a value just below an integer
-/// would lose one). Rust's `f32` multiply and `as i32` behave the same way.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) struct NodeWeights {
     pub(super) low: i32,
@@ -213,7 +208,6 @@ impl NodeBuffer {
         }
 
         self.nswe[i] = nswe;
-        // NOTE(java-quirk): `(short) getNearestZ(...)` truncates to 16 bits.
         self.z[i] = engine.nearest_z(gx, gy, ref_z) as i16;
         self.flags[i] = FLAG_TOUCHED;
         self.parent[i] = -1;

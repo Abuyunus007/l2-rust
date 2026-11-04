@@ -1,10 +1,5 @@
 //! `config/hexid.txt`: the id and secret this game server uses to authenticate at the login
 //! server.
-// Java: org/l2jmobius/gameserver/config/ServerConfig.java (loadHexid, saveHexid)
-// Java: org/l2jmobius/gameserver/LoginServerThread.java (constructor, AuthResponse)
-//
-// The Rust game server runs with its own config folder (D-39), so this file is never the Java
-// game server's `hexid.txt`.
 
 use std::fs::OpenOptions;
 use std::io::Write;
@@ -39,7 +34,6 @@ impl std::fmt::Debug for HexId {
 /// Reads `hexid.txt` from `config_dir`. `None` when the file is missing or unusable: the game
 /// server then asks the login server for a registration (`RequestServerID`) and hopes it is
 /// given one, like Java ("Hopefully login will give us one").
-// Java: ServerConfig.loadHexid
 pub fn load(config_dir: &Path) -> Option<HexId> {
     let path = config_dir.join(HEXID_FILE);
     if !path.exists() {
@@ -73,10 +67,8 @@ fn parse(ini: &IniFile) -> Option<HexId> {
     if !(ini.contains_key("ServerID") && ini.contains_key("HexID")) {
         return None;
     }
-    // Java: `SERVER_ID = getInt("ServerID", 1)`. NOTE(java-quirk): it is assigned before the
     // HexID is parsed, but it only matters together with a valid HexID.
     let server_id = ini.get_int("ServerID", 1);
-    // Java: `new BigInteger(hexId.getString("HexID", null), 16).toByteArray()`; any failure
     // (not hex, empty) leaves `HEX_ID` null.
     let text = ini.get_string("HexID", "");
     let hex_id = l2_db::string_to_hex(&text).ok()?;
@@ -85,10 +77,6 @@ fn parse(ini: &IniFile) -> Option<HexId> {
 
 /// Writes `hexid.txt` after the login server accepted the registration. `hex_id` is the text
 /// form of Java's `hexToString` ([`l2_db::hex_to_string`]).
-///
-/// NOTE(java-quirk): Java only writes when the file does not exist yet. A registration under a
-/// different id never overwrites an existing file; the old content keeps being used.
-// Java: ServerConfig.saveHexid
 pub fn save(config_dir: &Path, server_id: i32, hex_id: &str) {
     let path = config_dir.join(HEXID_FILE);
     // `create_new` makes "only if absent" atomic.
@@ -101,7 +89,6 @@ pub fn save(config_dir: &Path, server_id: i32, hex_id: &str) {
             return;
         }
     };
-    // Java: `Properties.store(out, "The HexId to Auth into LoginServer")` (the date line it
     // adds is only a comment).
     let text = format!("#The HexId to Auth into LoginServer\nHexID={hex_id}\nServerID={server_id}\n");
     match file.write_all(text.as_bytes()) {

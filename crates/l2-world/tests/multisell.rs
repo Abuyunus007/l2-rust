@@ -603,7 +603,6 @@ fn exc_multisell_lists_what_the_inventory_can_start() {
     s.bypass("exc_multisell 2");
     let sent = lists_sent(&s.log.take());
     assert_eq!(sent.len(), 1);
-    // NOTE(java-quirk): one entry, not one per enchant level: the loop stops at the first match.
     assert_eq!(sent[0].entries.len(), 1);
     let entry = &sent[0].entries[0];
     assert_eq!(entry.entry_id, 100_003);
@@ -895,7 +894,6 @@ fn without_enchantment_the_lowest_item_is_taken() {
             SystemMessageId::YouHaveEarnedS1
         ]
     );
-    // The row of the used sword is deleted (D-39).
     assert!(item_changes(&out).contains(&(vec![], vec![12])));
 
     // Again: now the +3 is the lowest.

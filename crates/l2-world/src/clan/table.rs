@@ -1,8 +1,5 @@
 //! The clan table: loading the clans, creating and destroying one, the delayed dissolution, the
 //! clan ranks, the start-up alliance check, the shutdown save and the weekly leader change.
-// Java: data/sql/ClanTable.java
-// Java: entity/clan/Clan.java (restore*, store)
-// Java: managers/DailyResetManager.java (clanLeaderApply)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
@@ -126,8 +123,6 @@ impl World {
             match clan.rank_privs_mut(rank) {
                 Some(rp) => rp.privs = privs,
                 None => {
-                    // NOTE(java-quirk): `_privs.get(rank)` is null for a rank outside 1 to 9: the
-                    // NullPointerException ends the restore of the privileges.
                     warn!(
                         "Clan: Error restoring clan privs by rank: rank {rank} of clan {}",
                         clan.id
@@ -141,8 +136,6 @@ impl World {
         let table = self.skill_table();
         for (id, level, sub_type) in record.skills {
             if table.as_deref().is_some_and(|t| t.get(id, level).is_none()) {
-                // NOTE(java-quirk): `SkillData.getSkill` is null: `skill.getId()` throws and the
-                // remaining skills are not restored.
                 warn!(
                     "Clan: Error restoring clan skills: skill {id} level {level} of clan {} does not exist",
                     clan.id
@@ -410,7 +403,6 @@ impl World {
         Some(clan_id)
     }
 
-    /// Java `IdManager.getNextId()` for a clan (D-39: the Rust range).
     fn allocate_clan_id(&self) -> Option<i32> {
         let Some(ids) = self.npc_world.ids.as_ref() else {
             warn!("No id factory installed: a new clan cannot be created.");
@@ -464,9 +456,6 @@ impl World {
 
     /// Java `ClanTable.scheduleRemoveClan(clanId)`: the clan goes when its dissolving time ran
     /// out, five minutes at the soonest.
-    ///
-    /// NOTE(java-quirk): a timer is never cancelled. A clan that recovered and asked again is
-    /// destroyed when the first timer fires (the time is set again by then).
     pub(crate) fn schedule_remove_clan(&mut self, clan_id: i32) {
         let Some(clan) = self.clan(clan_id) else {
             return;
@@ -545,7 +534,6 @@ impl World {
         }
         self.clan_write(ClanWrite::Delete { clan_id, castle_id });
         // The fortress and the conquerable hall of the clan (M7-RES-01), written with the clan's
-        // rows. NOTE(java-quirk): Java leaves an auctionable hall and the castle owner alone.
         let fort = crate::residence::FortId(fort_id);
         if fort_id != 0 && self.fort(fort).is_some_and(|f| f.owner_id == clan_id) {
             self.fort_remove_owner(fort, true);

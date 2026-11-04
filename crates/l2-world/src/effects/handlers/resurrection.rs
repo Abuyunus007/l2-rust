@@ -1,7 +1,5 @@
 //! The resurrection effects: `Resurrection` (a spell that brings a dead creature back) and
 //! `ResurrectionSpecial` (a buff that asks its owner to come back when it ends, at death).
-// Java: dist/game/data/scripts/handlers/skill/effects/Resurrection.java
-// Java: dist/game/data/scripts/handlers/skill/effects/ResurrectionSpecial.java
 
 use l2_data::skill::EffectTemplate;
 use tracing::debug;
@@ -93,8 +91,6 @@ impl EffectHandler for ResurrectionSpecial {
         if world.is_in_olympiad_mode(cx.effected) {
             return;
         }
-        // NOTE(java-quirk): `effector.asPlayer()` is null when the buff came from an NPC and
-        // `reviveRequest` then fails with a NullPointerException; the request is dropped here.
         if !world.is_player(cx.effector) {
             debug!("ResurrectionSpecial: the caster is not a player, no resurrection request");
             return;

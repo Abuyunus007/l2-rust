@@ -1,6 +1,4 @@
 //! Quest 60: Good Work's Reward (Blueprint Seller Daeger, Grocer Helveria, Black Marketeer of Mammon, Mark).
-// Java: dist/game/data/scripts/quests/Q00060_GoodWorksReward/Q00060_GoodWorksReward.java
-//
 // Pattern: a memo-state chain with a class-change choice at the end (`docs/design/scripts.md`,
 // "Quest patterns"). Java's thirty `REPLY_6`..`REPLY_36` branches differ only in the class they
 // need and the three marks they hand out, so they are one table here (`MARK_REPLIES`), checked in

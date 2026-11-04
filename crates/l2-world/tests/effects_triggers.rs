@@ -947,8 +947,6 @@ fn target_me_locks_the_target_of_a_player() {
     assert_eq!(s.world.target_of(ME), Some(hare));
 }
 
-/// NOTE(java-quirk): an NPC caster has no `asPlayer()`, so Java's `setTarget(player)` clears the
-/// playable's target instead of setting it.
 #[test]
 fn target_me_of_an_npc_clears_the_target() {
     let mut s = Scene::new();

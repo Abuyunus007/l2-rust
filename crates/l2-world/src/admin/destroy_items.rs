@@ -1,7 +1,5 @@
 //! `//destroy_items` and `//destroy_all_items` (and the `destroyitems`/`destroyallitems` spellings):
 //! the GM's inventory items are destroyed, the worn ones only with the word `all`.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminDestroyItems.java
-//
 // The destroy is `PlayerInventory.destroyItem` of the whole item, which takes a worn item off
 // first (`remove_inventory_item`). The removed entries go out in one `InventoryUpdate`.
 

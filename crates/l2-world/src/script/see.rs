@@ -1,9 +1,5 @@
 //! `CreatureSeeTaskManager`: the NPCs of `add_creature_see_id` look around once a second and tell
 //! their scripts about every creature they did not see before (S-API-03).
-// Java: taskmanagers/CreatureSeeTaskManager.java
-// Java: entity/actor/Creature.java (initSeenCreatures, updateSeenCreatures, removeSeenCreature,
-//       deleteMe), entity/actor/Npc.java (onSpawn: CREATURE_SEE_IDS), ai/CreatureAI.java
-//       (notifyActionForgetObject)
 
 use std::collections::{BTreeMap, HashSet};
 

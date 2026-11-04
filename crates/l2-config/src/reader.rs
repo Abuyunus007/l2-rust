@@ -1,6 +1,4 @@
 //! `.ini` reader with the semantics of Java's `ConfigReader`.
-// Java: org/l2jmobius/commons/util/ConfigReader.java (+ java.util.Properties, commons/time/TimeUtil.parseDuration)
-//!
 //! Despite the name, L2JMobius `.ini` files are plain `java.util.Properties` files, so this is
 //! a port of `Properties.load(Reader)` plus the typed getters of `ConfigReader`.
 //!
@@ -179,10 +177,6 @@ impl IniFile {
     // ---- typed getters ----
 
     /// `getBoolean`.
-    ///
-    /// NOTE(java-quirk): `Boolean.parseBoolean` never fails. Only `true` (any case, no
-    /// surrounding blanks) is true; `yes`, `1`, `True ` and typos are silently `false`, and the
-    /// default is used for a *missing* key only.
     pub fn get_bool(&self, key: &str, default: bool) -> bool {
         self.get_with(key, "boolean", default, |v| Some(v.eq_ignore_ascii_case("true")))
     }
@@ -258,12 +252,6 @@ impl IniFile {
     }
 
     /// `getIntArray`: splits the value at `delimiter`, trims every piece, parses them as `i32`.
-    ///
-    /// NOTE(java-quirk): Java passes `delimiter` to `String.split`, i.e. it is a *regex*. Here it
-    /// is a literal string (no ini file uses a regex delimiter). The rest is Java's `split`:
-    /// trailing empty pieces are dropped (`"1,2,"` is `[1, 2]`, `","` is `[]`), an empty piece in
-    /// the middle is a parse error. A bad value falls back to the default; a bad *default*
-    /// gives an empty array.
     pub fn get_int_array(&self, key: &str, delimiter: &str, default: &str) -> Vec<i32> {
         match self.get_value(key) {
             Some(value) => match parse_int_array(value, delimiter) {
@@ -399,8 +387,6 @@ impl LineReader<'_> {
                     continue;
                 }
                 if self.pos >= self.chars.len() {
-                    // NOTE(java-quirk): a file ending in "\\\n" yields an empty key with an
-                    // empty value, because the backslash is dropped after the empty-line check.
                     if preceding_backslash {
                         buf.pop();
                     }
@@ -514,7 +500,6 @@ fn java_trim(s: &str) -> &str {
 /// Rust's parser differs from Java's in what it accepts, so the text is checked against Java's
 /// grammar first: trim, optional sign, `NaN`/`Infinity` (exact case), or
 /// `digits[.digits][e[sign]digits]` with at least one mantissa digit, then an optional `f/F/d/D`.
-/// NOTE(java-quirk): hexadecimal floats (`0x1p3`) are valid in Java; not supported here.
 pub(crate) fn parse_java_float<T: FromStr>(s: &str) -> Option<T> {
     let trimmed = java_trim(s);
     let unsigned = trimmed.strip_prefix(['+', '-']).unwrap_or(trimmed);
@@ -568,7 +553,6 @@ pub(crate) fn parse_java_float<T: FromStr>(s: &str) -> Option<T> {
 ///
 /// Units (case-insensitive, no blanks): `sec(s)`, `min(s)`, `hour(s)`, `day(s)`, `week(s)` (7 days),
 /// `month(s)` (30 days), `year(s)` (365 days). The number is a non-negative `i32`.
-/// NOTE(java-quirk): Java's `Character.isDigit` also accepts non-ASCII digits; here ASCII only.
 pub fn parse_duration(text: &str) -> Result<Duration, ConfigError> {
     let split = text.bytes().take_while(u8::is_ascii_digit).count();
     if split == 0 || split == text.len() {
@@ -780,9 +764,7 @@ mod tests {
 
     #[test]
     fn properties_file_ending_in_backslash() {
-        // Java: lone trailing backslash is dropped
         assert_eq!(ini("A=b\\").get_value("A"), Some("b"));
-        // NOTE(java-quirk): "\\\n" at EOF is an entry with empty key and value
         assert_eq!(ini("A=1\n\\\n").get_value(""), Some(""));
     }
 
@@ -903,7 +885,6 @@ mod tests {
         let f = ini("A=1;2;3\nB=1;x\nC=;\nD=1;;2\nE=\nF=1 2  3\nG=1,2\n");
         assert_eq!(f.get_int_array("A", ";", "0"), [1, 2, 3]);
         assert_eq!(f.get_int_array("B", ";", "7;8"), [7, 8]);
-        // NOTE(java-quirk): only separators gives an empty array, not the default
         assert_eq!(f.get_int_array("C", ";", "7"), Vec::<i32>::new());
         assert_eq!(f.get_int_array("D", ";", "7"), [7]);
         // "" splits to [""], parseInt("") fails

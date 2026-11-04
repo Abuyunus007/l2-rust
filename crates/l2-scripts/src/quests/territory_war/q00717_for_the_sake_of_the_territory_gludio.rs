@@ -1,5 +1,4 @@
 //! Quest 717: For the Sake of the Territory - Gludio.
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/Q00717_ForTheSakeOfTheTerritoryGludio.java
 
 use l2_protocol_game::NpcStringId;
 

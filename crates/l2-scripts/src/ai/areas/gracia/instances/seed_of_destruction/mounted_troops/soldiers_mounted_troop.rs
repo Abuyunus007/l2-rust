@@ -1,5 +1,4 @@
 //! Gracia SoD Soldiers Mounted Troop instance (template 124).
-// Java: dist/game/data/scripts/ai/areas/Gracia/instances/SeedOfDestruction/MountedTroops/SoldiersMountedTroop.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

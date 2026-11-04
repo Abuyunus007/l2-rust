@@ -1,10 +1,5 @@
 //! Instance zones: copies of a place (doors, NPCs) that only the objects of the same instance id
 //! see (M8-INST-01).
-// Java: org/l2jmobius/gameserver/managers/InstanceManager.java
-// Java: org/l2jmobius/gameserver/entity/instancezone/{Instance,InstanceWorld,InstanceReenterType,
-//       InstanceRemoveBuffType}.java
-// Java: org/l2jmobius/gameserver/entity/WorldObject.java (setInstanceId, sendInstanceUpdate)
-//
 // # The instance id on every object
 // Every object carries its instance id in its table entry ([`crate::objects::ObjectEntry::
 // instance_id`], Java `_location.getInstanceId()`); 0 is the normal world. Everything that asks
@@ -354,7 +349,6 @@ impl World {
     }
 
     /// Java `InstanceManager.getPlayerWorld(player)`: the first world that allows the player.
-    // NOTE(java-quirk): Java walks a ConcurrentHashMap (no defined order); this walks by id.
     pub fn player_instance_world(&self, player: ObjectId) -> Option<&InstanceWorld> {
         self.instances.worlds.values().find(|w| w.is_allowed(player))
     }

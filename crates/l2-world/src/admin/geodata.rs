@@ -1,9 +1,5 @@
 //! The geodata, world region and path admin commands: `//geo_pos`, `//geocell`, `//geoedit`,
 //! `//geogrid`, `//region`, `//path_find` and friends.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/{AdminGeodata,AdminRegions,
-// Java: AdminPathNode}.java
-// Java: util/GeoUtils.java (debugGrid, hideDebugGrid), util/HtmlUtil.java (sendCBHtml)
-//
 // The geodata edits (L-07): `geoenablenorth`/`en`, `geodisablenorth`/`dn` (and south, east,
 // west), `geosave`, `geosaveall`, `geomap_reload`. The world's engine is shared with the path
 // workers (D-14), so it is edited copy-on-write ([`World::edit_geo`]): a search that is running
@@ -209,7 +205,6 @@ fn admin_geodata(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     let mut st = Tokens::spaces(command);
     let actual = st.next_token().ok_or_else(no_such_element)?;
     match actual.to_lowercase().as_str() {
-        // NOTE(java-quirk): `admin_geo_spawn_pos` has the very same body as `admin_geo_pos`.
         "admin_geo_pos" | "admin_geo_spawn_pos" => {
             let (world_x, world_y, world_z) = world.gm_position(gm)?;
             let (gx, gy) = (geo_x(world_x), geo_y(world_y));
@@ -224,8 +219,6 @@ fn admin_geodata(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
             };
             world.send_sys_message(gm, &text);
         }
-        // NOTE(java-quirk): `geo_can_move` checks the line of sight, like `geo_can_see`, but
-        // answers with other texts.
         "admin_geo_can_move" => match world.target_of(gm) {
             Some(target) => {
                 let text = if world.can_see_target(gm, target) {
@@ -353,8 +346,6 @@ fn edit_cell(
     let (px, py, pz) = world.gm_position(gm)?;
     let gx = match st.next_token() {
         Some(token) => parse_int(token)?,
-        // NOTE(java-quirk): `admin_geodisablenorth` / `admin_dn` take the default X from
-        // `GeoEngine.getGeoY(activeChar.getX())`, so without coordinates they edit another cell.
         None if nswe == NSWE_NORTH && !enable => geo_y(px),
         None => geo_x(px),
     };
@@ -848,7 +839,6 @@ mod tests {
         assert_eq!(player_direction(24575), 1);
         assert_eq!(player_direction(24576), 2);
         assert_eq!(player_direction(40960), 3);
-        // NOTE(java-quirk): 57344 itself is still north (`heading > 57344` is the west test).
         assert_eq!(player_direction(57344), 3);
         assert_eq!(player_direction(57345), 0);
     }

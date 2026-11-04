@@ -1,7 +1,5 @@
 //! Quest 34: In Search of Cloth (Radia in the Talking Island, Ralford and Varan in the Gludio
 //! and Talking Island spiders' hunt).
-// Java: dist/game/data/scripts/quests/Q00034_InSearchOfCloth/Q00034_InSearchOfCloth.java
-//
 // Pattern: a kill-count chain with a party-member check (`docs/design/scripts.md`, "Quest
 // patterns"): the spiders give spinnerets to a player at cond 4 with a 50% roll, then the
 // delivery chain moves on through Ralford and Radia.
@@ -109,14 +107,11 @@ impl Script for Q00034InSearchOfCloth {
     }
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, _npc: ScriptNpc, player: ObjectId, _is_summon: bool) {
-        // Java: `getRandomPartyMember(player, 4)` is a member at cond 4; the roll is taken only
         // when there is one.
         if let Some(member) = ctx.get_random_party_member_cond(player, 4)
             && ctx.get_random_boolean()
         {
             let qs = ctx.get_quest_state(member, false);
-            // NOTE(java-quirk): the spinneret goes to the killer, not to the member drawn, and
-            // the cond 5 check reads the member's state.
             ctx.give_items(player, SPINNERET, 1);
             if ctx.get_quest_items_count(player, SPINNERET) >= SPINNERET_COUNT {
                 if let Some(qs) = qs {

@@ -1,8 +1,4 @@
 //! `EventDropManager`: the extra drops an event adds to every kill (M8-MISC-01).
-// Java: managers/EventDropManager.java
-// Java: entity/actor/holders/npc/EventDropHolder.java (and `DropHolder`)
-// Java: entity/actor/Attackable.java (calculateRewards: the two `doEventDrop` calls)
-//
 // The events themselves are scripts (`LongTimeEvent`, D-05): they register their list with
 // [`World::add_event_drops`] when they start and take it back with [`World::remove_event_drops`]
 // when they end. Until the script milestone nothing registers a list, so a kill rolls nothing

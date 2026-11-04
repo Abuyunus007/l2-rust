@@ -1,5 +1,4 @@
 //! Quest 197: Seven Signs, The Sacred Book of Seal (Wood, Orven, Leopard, Lawrence and Sophia; Shilen's Evil Thoughts).
-// Java: dist/game/data/scripts/quests/Q00197_SevenSignsTheSacredBookOfSeal/Q00197_SevenSignsTheSacredBookOfSeal.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;
@@ -213,8 +212,6 @@ impl Script for Q00197SevenSignsTheSacredBookOfSeal {
             None => false,
         };
         if in_range {
-            // NOTE(java-quirk): Java gives the sculpture and plays the sound to the killer, not to
-            // the party member drawn; the member's cond is set (`setCond(4)`, no sound).
             ctx.give_items(killer, SCULPTURE_OF_DOUBT, 1);
             ctx.play_sound(killer, QuestSound::ItemsoundQuestFinish);
             if let Some(qs) = ctx.get_quest_state(member, false) {

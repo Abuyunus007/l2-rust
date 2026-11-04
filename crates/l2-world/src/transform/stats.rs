@@ -1,10 +1,5 @@
 //! What the stat engine asks a transformed player: the transformation, its template, the
 //! base values it replaces.
-// Java: entity/actor/transform/Transform.java (getStat, getBaseDefBySlot, getLevelMod,
-//       getBaseAttackRange, getCollisionRadius/Height), entity/actor/transform/TransformTemplate.java
-// Java: entity/actor/Player.java (isTransformed, isInStance, getTransformationId,
-//       getTransformationDisplayId, isFlying, isFlyingMounted)
-//
 // The calls sit where Java calls them (`creature_stat.rs`, `std_funcs.rs`, `conditions.rs`); this
 // file only answers.
 
@@ -104,9 +99,6 @@ impl<'w> StatView<'w> {
 
     /// The key `FuncPDefMod` / `FuncMDefMod` hand to `getBaseDefBySlot`:
     /// `p.getTemplate().getBaseDefBySlot(p.isTransformed() ? transform.getBaseDefBySlot(p, slot) : slot)`.
-    // NOTE(java-quirk): while transformed, the *transformation's defence value* is used as the
-    // slot number of the class template (a value of 25 or more finds nothing and subtracts 0).
-    // Only the chest is subtracted as a value (see `p_def_mod`).
     pub(crate) fn def_mod_slot_key(&self, slot: usize) -> usize {
         if self.is_transformed() {
             usize::try_from(self.transform_def_by_slot(slot)).unwrap_or(usize::MAX)

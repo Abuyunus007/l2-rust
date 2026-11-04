@@ -1,7 +1,5 @@
 //! `//skill_test <skillId>`: the caster (the target creature, or the GM) shows the cast of a level 1
 //! skill toward the GM, as the client draws it. The skill is not used.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminTest.java
-//
 // # Left out
 // - `doCast` (the other branch of `adminTestSkill`): Java only reaches it with `msu` false, which
 //   `admin_skill_test` never passes, so it is not ported.

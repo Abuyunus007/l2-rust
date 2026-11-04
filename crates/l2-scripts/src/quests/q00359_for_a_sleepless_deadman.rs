@@ -1,6 +1,4 @@
 //! Quest 359: For a Sleepless Deadman (High Priest Orven, the doom monsters of the Devastated Castle).
-// Java: dist/game/data/scripts/quests/Q00359_ForASleeplessDeadman/Q00359_ForASleeplessDeadman.java
-//
 // Pattern: a kill-count quest with a drop chance up to a limit and a party check at cond 1
 // (`random_party_member_state`, like Q00295), then a memo state marks the stages: 1 = collecting,
 // 2 = purified (`set_memo_state`). The reward is four random pieces.

@@ -1,13 +1,6 @@
 //! The boss tables: `grandboss_data` (the state of each grand boss), `grandboss_list` (the players
 //! a boss zone lets in), `raidboss_spawnlist` (the raid bosses with their respawn time) and
 //! `character_raid_points` (the raid points of each player).
-// Java: managers/GrandBossManager.java (init, initZones, storeMe, updateDb)
-// Java: managers/RaidBossSpawnManager.java (load, addNewSpawn, deleteSpawn, updateDb)
-// Java: managers/RaidBossPointsManager.java (init, updatePointsInDB, cleanUp)
-//
-// D-39: the Java game server reads and rewrites the same rows. Which of the writes below the
-// server really sends is decided in the world (D-53: the boss states and the respawn times only
-// with `CycleDatabaseWrites`; the raid points of a player as Java writes them).
 
 use sqlx::FromRow;
 
@@ -15,33 +8,23 @@ use super::sql_number::SqlNumber;
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: GrandBossManager.init. The decimals are read as text (`SqlNumber`), like `getDouble`.
 const SELECT_GRAND_BOSSES: &str = "SELECT * from grandboss_data ORDER BY boss_id";
-// Rust-only (D-50): one boss again, for the page `//grandboss <id>` shows.
 const SELECT_GRAND_BOSS: &str = "SELECT * from grandboss_data WHERE boss_id = ?";
-// Java: GrandBossManager.initZones
 const SELECT_GRAND_BOSS_LIST: &str = "SELECT * from grandboss_list ORDER BY player_id";
-// Java: GrandBossManager.DELETE_GRAND_BOSS_LIST, INSERT_GRAND_BOSS_LIST, UPDATE_GRAND_BOSS_DATA,
-//       UPDATE_GRAND_BOSS_DATA2
 const DELETE_GRAND_BOSS_LIST: &str = "DELETE FROM grandboss_list";
 const INSERT_GRAND_BOSS_LIST: &str = "INSERT INTO grandboss_list (player_id,zone) VALUES (?,?)";
 const UPDATE_GRAND_BOSS_DATA: &str = "UPDATE grandboss_data set loc_x = ?, loc_y = ?, loc_z = ?, heading = ?, respawn_time = ?, currentHP = ?, currentMP = ?, status = ? where boss_id = ?";
 const UPDATE_GRAND_BOSS_DATA2: &str = "UPDATE grandboss_data set status = ? where boss_id = ?";
 
-// Java: RaidBossSpawnManager.load
 const SELECT_RAID_BOSSES: &str = "SELECT * FROM raidboss_spawnlist ORDER BY boss_id";
-// Java: RaidBossSpawnManager.addNewSpawn, deleteSpawn, updateDb
 const INSERT_RAID_BOSS: &str = "INSERT INTO raidboss_spawnlist (boss_id,amount,loc_x,loc_y,loc_z,heading,respawn_time,currentHp,currentMp) VALUES(?,?,?,?,?,?,?,?,?)";
 const DELETE_RAID_BOSS: &str = "DELETE FROM raidboss_spawnlist WHERE boss_id=?";
 const UPDATE_RAID_BOSS: &str =
     "UPDATE raidboss_spawnlist SET respawn_time = ?, currentHP = ?, currentMP = ? WHERE boss_id = ?";
 
-// Java: RaidBossPointsManager.init
 const SELECT_RAID_POINTS: &str = "SELECT `charId`,`boss_id`,`points` FROM `character_raid_points`";
-// Rust-only (D-50): the rows of one character, read again when it comes from the Java server.
 const SELECT_RAID_POINTS_OF: &str =
     "SELECT `charId`,`boss_id`,`points` FROM `character_raid_points` WHERE `charId` = ?";
-// Java: RaidBossPointsManager.updatePointsInDB, cleanUp
 const REPLACE_RAID_POINTS: &str =
     "REPLACE INTO character_raid_points (`charId`,`boss_id`,`points`) VALUES (?,?,?)";
 const DELETE_RAID_POINTS: &str = "DELETE from character_raid_points WHERE charId > 0";
@@ -225,7 +208,6 @@ impl BossRepository {
         Ok(rows.into_iter().map(GrandBossRow::from).collect())
     }
 
-    /// One state row again (D-50), `None` when the table has no such boss.
     pub async fn grand_boss(&self, boss_id: i32) -> Result<Option<GrandBossRow>> {
         let row: Option<GrandBossDbRow> = sqlx::query_as(SELECT_GRAND_BOSS)
             .bind(boss_id)
@@ -375,7 +357,6 @@ impl BossRepository {
         Ok(rows.into_iter().map(RaidPointsRow::from).collect())
     }
 
-    /// The rows of one character (D-50).
     pub async fn raid_points_of(&self, char_id: i32) -> Result<Vec<RaidPointsRow>> {
         let rows: Vec<RaidPointsDbRow> = sqlx::query_as(SELECT_RAID_POINTS_OF)
             .bind(char_id)

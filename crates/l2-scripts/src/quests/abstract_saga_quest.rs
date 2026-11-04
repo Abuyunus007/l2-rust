@@ -1,7 +1,5 @@
 //! The base of the 34 sagas (the third class change quests, Q00067..Q00100): the whole quest
 //! is here, each saga only brings its NPCs, items, monsters, classes, places and texts.
-// Java: dist/game/data/scripts/quests/AbstractSagaQuest.java
-//
 // Java's `abstract class AbstractSagaQuest extends Quest` with protected array fields becomes a
 // [`SagaData`] constant per saga plus free functions that take it; [`saga_quest!`] writes the
 // `impl Script` of a saga (the hooks the base overrides, each calling the function here). A
@@ -226,8 +224,6 @@ pub fn on_event(
             if ctx.player_level(player) < 76 {
                 htmltext = page("0-02.htm");
                 if st.is_created(ctx) {
-                    // NOTE(java-quirk): `exitQuest` of a state that was never started returns
-                    // at once, so this does nothing.
                     st.exit_quest(ctx, true, false);
                 }
             } else {
@@ -362,8 +358,6 @@ pub fn on_event(
                 let mob2 = ctx.add_spawn(d.npc[4], x, y, z, 0, false, 0, 0);
                 add_spawn(ctx, st, mob3);
                 add_spawn(ctx, st, mob2);
-                // NOTE(java-quirk): Java would throw here when a spawn failed; this server
-                // goes on without it.
                 let mob2_id = mob2.map_or(0, |m| m.object_id.0);
                 st.set(ctx, "Mob_2", &mob2_id.to_string());
                 st.set(ctx, "Quest0", "1");
@@ -535,8 +529,6 @@ pub fn on_first_talk(
         if cond == 17 {
             if let Some(st2) = find_right_state(ctx, npc) {
                 ctx.set_last_quest_npc_object(player, npc);
-                // NOTE(java-quirk): "Tab" and "Quest0" are read from the talker's state, also
-                // when the NPC was spawned for someone else.
                 let tab = st.get_int(ctx, "Tab");
                 let quest0 = st.get_int(ctx, "Quest0");
                 if st == st2 {
@@ -689,8 +681,6 @@ pub fn on_kill(d: &SagaData, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: Ob
             st.set_cond(ctx, 18, true);
             say(ctx, d, Some(npc), 13, player);
             st.set(ctx, "Quest0", "0");
-            // NOTE(java-quirk): the timer runs on the NPC `npc[4]`, not on this monster, so
-            // this cancels nothing.
             ctx.cancel_quest_timer("Mob_2 has despawned", Some(npc), Some(player));
             delete_spawn(ctx, Some(npc));
         }
@@ -986,8 +976,6 @@ fn find_right_state(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) -> Option<Qs> {
 /// Java `getPlayerClass(player)`: the class the saga makes.
 fn get_player_class(d: &SagaData, ctx: &ScriptCtx<'_>, player: ObjectId) -> i32 {
     if ctx.player_class_id(player) == 0x81 {
-        // NOTE(java-quirk): only saga 68 has a second class; Java would throw for the others,
-        // which `on_talk` never reaches (their `getPrevClass` is -1 for this class).
         return d.class_id.get(1).copied().unwrap_or(-1);
     }
     d.class_id[0]

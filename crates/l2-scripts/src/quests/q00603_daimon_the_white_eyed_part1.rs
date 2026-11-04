@@ -1,6 +1,4 @@
 //! Quest 603: Daimon the White-Eyed, Part 1 (Eye of Argos, the five tablets, the Spirit of Darkness).
-// Java: dist/game/data/scripts/quests/Q00603_DaimonTheWhiteEyedPart1/Q00603_DaimonTheWhiteEyedPart1.java
-//
 // Pattern: a tablet chain. Each tablet gives a broken crystal once (its variable says so), the
 // eye sends the player through five of them, then the monsters drop spirits of darkness for a
 // random party member at cond 7 (`getRandomPartyMemberState`).
@@ -67,9 +65,6 @@ impl Script for Q00603DaimonTheWhiteEyedPart1 {
         match event {
             "31683-03.htm" => {
                 if qs.is_created(ctx) {
-                    // NOTE(java-quirk): the tablet variables are written in lower case here and
-                    // read/set in upper case below (`"TABLET_" + id`), so the start's zeros are
-                    // not the ones the tablets read. Both spellings are kept as Java has them.
                     qs.set_int(ctx, "tablet_31548", 0);
                     qs.set_int(ctx, "tablet_31549", 0);
                     qs.set_int(ctx, "tablet_31550", 0);

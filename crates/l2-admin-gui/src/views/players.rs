@@ -2,9 +2,6 @@
 //! (`GetGameStatus`, relayed to the game server's admin endpoint). Sortable by column, with a
 //! text filter. G-03 adds the actions on the selected player (kick, jail, bans, teleport to a
 //! town, private message), which run as the matching `//` commands on the game server.
-//!
-//! Java: `gameserver/ui/Gui.java` has no player list; the columns follow the M2-GUI-01 card.
-//! Java: `AdminKick`, `AdminPunishment` for the actions.
 
 use std::cmp::Ordering;
 use std::net::IpAddr;

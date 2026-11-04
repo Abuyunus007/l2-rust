@@ -1,10 +1,5 @@
 //! The physical damage effects: `PhysicalDamage`, `PhysicalDamageHpLink`, `PhysicalSoulDamage`
 //! and `EnergyDamage`.
-// Java: dist/game/data/scripts/handlers/skill/effects/PhysicalDamage.java
-// Java: dist/game/data/scripts/handlers/skill/effects/PhysicalDamageHpLink.java
-// Java: dist/game/data/scripts/handlers/skill/effects/PhysicalSoulDamage.java
-// Java: dist/game/data/scripts/handlers/skill/effects/EnergyDamage.java
-//
 // The damage, crit, shield and evasion numbers come from `skill_calc.rs` (M5-FORM-02's formulas).
 // M5-SHOT-01: every soulshot charge is read as "not charged".
 
@@ -149,8 +144,6 @@ impl EffectHandler for PhysicalDamageHpLink {
         if world.is_alike_dead(effector) {
             return;
         }
-        // NOTE(java-quirk): unlike `PhysicalDamage`, any skill of this effect needs a free mover
-        // (no fly check), and it neither stands a fake dead target up nor handles suicide skills.
         if world.is_movement_disabled(effector) {
             send_unsuitable_terms(world, effector, skill);
             return;
@@ -217,8 +210,6 @@ impl EffectHandler for PhysicalSoulDamage {
         if skill.base_crit_rate > 0 {
             crit = world.calc_skill_crit_for(effector, effected, skill);
         }
-        // NOTE(java-quirk): the formula gets `crit = false`; a critical hit doubles the damage
-        // after the souls, not inside the formula.
         let mut damage = world.calc_skill_phys_dam_for(effector, effected, skill, shld, false, ss) as i32;
         damage = soul_boosted(world, effector, skill, damage);
         if crit {

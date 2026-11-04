@@ -1,6 +1,4 @@
 //! Quest 124: Meeting the Elroki (Marquez, Mushika, Asamah, Karakawei and Mantarasa on Primeval Isle).
-// Java: dist/game/data/scripts/quests/Q00124_MeetingTheElroki/Q00124_MeetingTheElroki.java
-//
 // Pattern: a chain of five NPCs, one cond step each. `on_event` moves the cond when the page's
 // link is clicked and echoes every event (Java `return event`). The reward is paid by the
 // start-side NPC's `on_talk` (Asamah at cond 6, when the player holds the egg).

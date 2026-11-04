@@ -1,7 +1,5 @@
 //! Which topic of the config editor a key belongs to (GUI card G-07).
-// Java: none (tooling). The topics are the owner's grouping of the `.ini` settings; the headers
 // of the files (`# ---- Title ----`) are used because they already split the big files by theme.
-//!
 //! Every key of every `.ini` in `dist/` lands in exactly one [`Topic`]: [`topic_of`] walks
 //! [`RULES`] from the top and takes the first rule that matches the file, the header group and
 //! the key. `Custom/*.ini` files are not in the table: each one is a topic of its own, named

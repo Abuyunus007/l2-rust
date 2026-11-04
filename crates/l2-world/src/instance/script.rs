@@ -2,8 +2,6 @@
 //! it, restrict the re-entry and take buffs away. The scripts themselves come with the script
 //! milestone (D-05); the hooks a script implements (`onEnterInstance`, `checkConditions`) are the
 //! closures of [`World::enter_instance`].
-// Java: mechanics/script/InstanceScript.java
-// Java: mechanics/script/Quest.java (teleportPlayer)
 
 use l2_data::instance::{DayOfWeek, InstanceReenterTime};
 use l2_data::{InstanceReenterType, InstanceRemoveBuffType};
@@ -59,8 +57,6 @@ impl World {
                     );
                     return EnterOutcome::OtherInstanceBusy;
                 }
-                // NOTE(java-quirk): the old world is destroyed (in a second), and the player is
-                // still put into it below.
                 self.destroy_instance_world(instance_id);
             }
             on_enter(self, player, instance_id, false);
@@ -247,10 +243,6 @@ impl World {
 /// `hour:minute:00` local time (the milliseconds of now are kept, `Calendar.set` does not clear
 /// them), a day later when that is not after now, then the next `day` of the week. `offset_ms` is
 /// the local zone's offset (D-48), taken at now for the whole computation.
-///
-/// NOTE(java-quirk): Java compares `Calendar.DAY_OF_WEEK` (Sunday 1 .. Saturday 7) with
-/// `DayOfWeek.getValue() + 1` (Monday 2 .. Sunday 8): Monday to Saturday match, a Sunday reset
-/// never does and Java's loop does not end. `None` here for that case.
 pub(crate) fn next_reset_time(
     now_utc: i64,
     offset_ms: i64,

@@ -1,6 +1,4 @@
 //! Quest 401: Path of the Warrior (Master Auron and Trader Simplon).
-// Java: dist/game/data/scripts/quests/Q00401_PathOfTheWarrior/Q00401_PathOfTheWarrior.java
-//
 // Pattern: a kill chain with the monsters' state kept on the NPC (`onAttack` sets the NPC's
 // script value to 1 when the attacker holds the rusted bronze sword 3 and keeps hitting it, see
 // `docs/design/scripts.md`, "Quest patterns"): tracker skeletons drop the swords, the spiders

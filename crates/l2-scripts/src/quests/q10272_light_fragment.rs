@@ -1,5 +1,4 @@
 //! Quest 10272: Light Fragment (Orbyu sends the adventurer to Artius, who wants 100 Fragment Powder).
-// Java: dist/game/data/scripts/quests/Q10272_LightFragment/Q10272_LightFragment.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, QuestSound, STARTED};
@@ -166,9 +165,7 @@ impl Script for Q10272LightFragment {
                                 qs.set_cond(ctx, 7, true);
                             }
                         }
-                        7 => {
-                            // NOTE(java-quirk): Java has "TODO Nothing here?": the no-quest page stays.
-                        }
+                        7 => {}
                         8 => {
                             htmltext = "32559-18.html".to_owned();
                             ctx.give_adena(player, 556_980, true);

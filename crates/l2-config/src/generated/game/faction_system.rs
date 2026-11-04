@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/FactionSystemConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/FactionSystem.ini` (Java: `FactionSystemConfig`).

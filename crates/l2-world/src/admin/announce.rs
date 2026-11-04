@@ -1,24 +1,6 @@
 //! Announcements: `//announce`, `//announce_crit`, `//announce_screen` and the table of stored
 //! ones (`//announces list|add|edit|remove|show|restart`), with the automatic ones on the timer
 //! wheel and the announcements a player sees when it enters the world.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminAnnouncements.java
-// Java: data/sql/AnnouncementsTable.java, mechanics/announce/{Announcement,AutoAnnouncement,
-// Java: AnnouncementType,IAnnouncement}.java, entity/World.java (broadcastToAllOnlinePlayers)
-// Java: mechanics/html/{PageBuilder,pagehandlers/NextPrevPageHandler,formatters/
-// Java: BypassParserFormatter,styles/ButtonsStyle}.java, util/HtmlUtil.java (sendCBHtml)
-//
-// # The table
-// The `announcements` rows are read at the start (`World::load_announcements`) and written as Java
-// writes them. The id of a new row is the database's auto increment, so adding one is a
-// request/answer through the outbox (`PersistCommand::Announcement`, then
-// `WorldCommand::AnnouncementStored`, D-15); the GM hears "successfully added" when the answer is
-// in. The Java game server reads the table only at its own start, so what Kain adds shows there
-// after Sieghardt's next restart (D-39).
-//
-// NOTE(java-quirk): `AutoAnnouncement` starts its timer in the constructor, before the row is
-// stored. If the INSERT fails Java keeps a running announcement that is in no table (it cannot be
-// removed). Here the timer starts when the row is stored, so a failed INSERT starts nothing.
-//
 // `EventAnnouncement` (made by the event scripts, S-EVENT-01) has no row: see `add_event_announcement`.
 
 use std::collections::BTreeMap;

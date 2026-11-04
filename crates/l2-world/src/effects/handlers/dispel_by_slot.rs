@@ -1,7 +1,6 @@
 //! The `DispelBySlot` effect: takes the buff of each listed abnormal type off the creature when its
 //! level is at most the level the `dispel` parameter gives (`type,level;type,level`; a level of -1
 //! takes it whatever its level).
-// Java: dist/game/data/scripts/handlers/skill/effects/DispelBySlot.java
 
 use std::collections::BTreeMap;
 
@@ -71,10 +70,6 @@ impl EffectHandler for DispelBySlot {
         for (&abnormal, &value) in &self.dispel {
             // Dispel transformations (buff and by GM): Java stops the transformation and skips
             // the entry.
-            // NOTE(java-quirk): the condition is `isTransformed() || (isPlayer() || (value ==
-            // asPlayer().getTransformationId()) || value < 0)`, true for every player; for a
-            // creature that is no player Java's `asPlayer()` is null and the call throws, so the
-            // entry is skipped here.
             if abnormal == AbnormalType::Transform {
                 if world.is_player(cx.effected) {
                     world.stop_transformation(cx.effected, true);

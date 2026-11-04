@@ -1,5 +1,4 @@
 //! Logging: console plus rolling files in `./log/`.
-// Java: dist/login/log.cfg and LoginServer.initializeLoggingLayer (`log/java%g.log`,
 // `log/error%g.log`, 20 files kept)
 //
 // REFERENCE PATTERN for the game server: `init(log_dir)` once at the top of `main`, keep the
@@ -55,7 +54,6 @@ pub fn init(log_dir: &Path) -> Result<LogGuard, LoggingError> {
 
 /// The subscriber `init` installs, without installing it (tests use it with `with_default`).
 pub fn build(log_dir: &Path) -> Result<(impl Subscriber + Send + Sync + 'static, LogGuard), LoggingError> {
-    // Java: mkdir the log folder, only warn when it fails. Here the file appender needs it.
     std::fs::create_dir_all(log_dir).map_err(|source| LoggingError::CreateDir {
         path: log_dir.display().to_string(),
         source,

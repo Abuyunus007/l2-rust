@@ -1,7 +1,5 @@
 //! Quest 224: Test of Sagittarius (Guild President Bernard in Gludio: the Rogue, Elven Scout and
 //! Assassin second class change, a crescent moon bow at the end).
-// Java: dist/game/data/scripts/quests/Q00224_TestOfSagittarius/Q00224_TestOfSagittarius.java
-//
 // Pattern: the test chain of the "Test of ..." quests (see Q00222), with letters handed from NPC
 // to NPC on the memo state and a kill step that moves the condition on its ninth and tenth kill.
 // The last step needs the killing blow from the crescent moon bow (`npc.getKillingBlowWeapon()`).

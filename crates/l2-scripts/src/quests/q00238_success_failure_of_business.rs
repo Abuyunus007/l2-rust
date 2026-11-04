@@ -1,8 +1,6 @@
 //! Quest 238: Success / Failure of Business (Helvetica in the Hot Springs Village breaks the
 //! Brazier of Purity and the Evil and Guardian Spirits of the Ruins of Agony for the Fos
 //! vicinity).
-// Java: dist/game/data/scripts/quests/Q00238_SuccessFailureOfBusiness/Q00238_SuccessFailureOfBusiness.java
-//
 // Pattern: two kill counts in a row with a party draw at a different cond each (`docs/design/
 // scripts.md`, "Kills, drops and parties"). The items of both counts go to the killer, the cond
 // to the member the draw picked: Java's, kept as it is.
@@ -83,8 +81,6 @@ impl Script for Q00238SuccessFailureOfBusiness {
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, _is_summon: bool) {
         if npc.id == BRAZIER_OF_PURITY {
-            // NOTE(java-quirk): the piece goes to the killer, the cond change to the party member
-            // at cond 1 that the draw picked (the same for the fragments below).
             if let Some(member) = ctx.get_random_party_member_cond(killer, 1) {
                 let Some(qs) = ctx.get_quest_state(member, false) else {
                     return;

@@ -1,13 +1,6 @@
 //! The recommendation system: the votes (`RequestVoteNew`), the recommendations a player earns by
 //! staying online (`RecoGiveTask`) and the daily reset at 6:30 (`DailyResetManager`: Nevit's
 //! advent time and the recommendations).
-// Java: network/clientpackets/RequestVoteNew.java
-// Java: entity/actor/tasks/player/RecoGiveTask.java
-// Java: entity/actor/Player.java (giveRecom, incRecomHave, decRecomLeft, setRecomHave,
-//       setRecomLeft, storeRecommendationValues, checkRecoBonusTask, stopRecoGiveTask)
-// Java: managers/DailyResetManager.java (the schedule, onReset, resetNevit, resetRecommends)
-// Java: commons/time/TimeUtil.java (getNextTime)
-//
 // # State
 // | Java | Here |
 // |---|---|
@@ -15,24 +8,6 @@
 // | the row of `character_reco_bonus` | `PlayerProfile::recom_have` / `recom_left` / `recom_time_left_ms`, which mirror what the database holds |
 // | `Player._recoGiveTask`, `_recoTwoHoursGiven` | [`RecoWorld::give`], `TimerKind::RecoGive` |
 // | the daily `scheduleAtFixedRate` | [`RecoWorld::daily`], `TimerKind::DailyReset` |
-//
-// # Database (D-39)
-// The world never waits for the database. Java writes `character_reco_bonus` itself, so the
-// world hands the same statements to the persistence task as commands, in the order Java runs
-// them: `PersistCommand::RecoValues` (a vote, `RecoGiveTask`), `PersistCommand::ResetRecommends`
-// (the two `UPDATE`s of the daily reset) and `PersistCommand::PlayerVariables` (`storeMe`).
-// `ResetRecommends` is only sent with the Rust-only setting `DailyResetDatabaseWrites`
-// (`SideBySide.ini`, default False): the Java game server on the same database runs it itself.
-// The mirror in the profile is updated with each of them, because Java reads the row back
-// (`loadRecommendations` at `startNevitHourglassTask`).
-//
-// # What is left out
-// - `DailyResetManager`'s start-up decision "run now when the last reset (the global variable
-//   `DAILY_TASK_RESET`) is older than today's 6:30": the world has no global variables, and
-//   writing that variable from here would be wiped by the Java game server's `storeMe`
-//   (`DELETE FROM global_variables`). The Rust server only resets at the next 6:30.
-// - `clanLeaderApply` on Wednesdays (clans), `resetDailySkills` (the Wondrous Cubic reuse), the
-//   `ON_DAILY_RESET` event and `getAccountVariables().storeMe()`.
 
 use std::collections::HashMap;
 
@@ -139,10 +114,6 @@ impl World {
 
     /// Java `Player.storeRecommendationValues()`: the counters now, "without tapping into Nevit
     /// Hourglass task".
-    // NOTE(java-quirk): the statement is a `REPLACE` of `(charId,rec_have,rec_left)`, which drops
-    // the row, so `time_left` is the column default 0 until the next `storeRecommendations`
-    // writes the hourglass time again. The mirror says so too (a paused hourglass writes back
-    // what the database holds).
     pub(crate) fn store_recommendation_values(&mut self, id: ObjectId) {
         let Some(player) = self.players.get_mut(&id) else {
             return;
@@ -324,8 +295,6 @@ impl World {
                 .with(SystemMessageParam::PlayerName(player_name)),
         );
 
-        // NOTE(java-quirk): only the target's `UserInfo` is refreshed; the player keeps seeing the
-        // old number of recommendations left in it until the next `UserInfo`.
         self.broadcast_user_info(target);
 
         if self.settings.nevit_enabled {
@@ -429,8 +398,6 @@ impl World {
         }
 
         for &id in &ids {
-            // NOTE(java-quirk): the players in the world get 0 to give, not 20 like their row.
-            // Without Nevit nothing reads the row back, so they must log in again to recommend.
             self.set_recom_left(id, 0);
             let have = self.players.get(&id).map_or(0, |p| p.recom_have);
             self.set_recom_have(id, have - RESET_REC_HAVE);

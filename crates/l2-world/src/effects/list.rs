@@ -1,13 +1,5 @@
 //! A creature's effect list: the queues of buff infos, the abnormal type stack, the slot limits,
 //! the effect flags, the icon updates and the buff finish task.
-// Java: entity/actor/holders/creature/EffectList.java (all of it)
-// Java: mechanics/skill/BuffFinishTask.java
-// Java: entity/actor/Creature.java (stopAllEffects*, stopSkillEffects, stopEffects*,
-//       isAffected*, addInvulAgainst/removeInvulAgainst/isInvulAgainst, the abnormal visual
-//       effect masks, addBuffInfoTime/removeBuffInfoTime)
-// Java: entity/actor/Player.java (stopAllEffects*, updateAndBroadcastStatus)
-// Java: entity/actor/stat/CreatureStat.java (getMaxBuffCount, setMaxBuffCount)
-//
 // Java's queues are `ConcurrentLinkedQueue`s iterated while entries are removed (weakly
 // consistent): a loop that removes visits every entry that was there when it started and is
 // still there when it is reached. The loops here take the ids first and skip the ones that are
@@ -391,8 +383,6 @@ impl EffectList {
     }
 
     /// Java `updateEffectFlags()`.
-    // NOTE(java-quirk): the three flags are only ever set, never cleared, so a creature that once
-    // had a "removed on damage" buff keeps scanning its list on every hit.
     fn update_effect_flags(&mut self) {
         let (mut on_action, mut on_damage) = (false, false);
         for kind in [ListKind::Buffs, ListKind::Triggered, ListKind::Toggles] {
@@ -616,9 +606,6 @@ impl World {
                     }
                 } else {
                     // Remove the buff that stacks with the abnormal type.
-                    // NOTE(java-quirk): when the stacked one is an herb, the first call removes
-                    // the herb (which puts the buff it hid back in use) and the second removes
-                    // that buff too.
                     if stacked_facts.abnormal_instant {
                         self.stop_skill_effects_by_abnormal(
                             owner,
@@ -1020,8 +1007,6 @@ impl World {
     }
 
     /// Java `EffectList.stopEffects(type)` (`Creature.stopEffects`).
-    // NOTE(java-quirk): Java calls `stopAndRemove(info)` once per matching effect of an info;
-    // the second call finds the info gone and does nothing.
     pub fn stop_effects(&mut self, owner: ObjectId, effect_type: EffectType) {
         let mut update = false;
         for kind in ListKind::ACTIVE {

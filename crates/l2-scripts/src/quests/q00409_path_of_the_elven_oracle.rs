@@ -1,6 +1,4 @@
 //! Quest 409: Path of the Elven Oracle (Priest Manuel, Allana and Perrin).
-// Java: dist/game/data/scripts/quests/Q00409_PathOfTheElvenOracle/Q00409_PathOfTheElvenOracle.java
-//
 // Pattern: the memo state as the step counter, and monsters that are summoned by an event
 // ("replay_1", "replay_2"): three lizardmen at Allana, then Tamil at Perrin, spawned at the NPC's
 // place with an attack desire to the player. The lizardmen count only for the player who hit

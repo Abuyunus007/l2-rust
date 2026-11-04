@@ -1,11 +1,7 @@
 //! `//search <text> [page]`: the item templates whose name contains the text, 15 a page in
 //! `search.htm`, each with an "Add" button for `//create_item`. `//search` alone shows the empty
 //! search page.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminSearch.java
-//
 // The rows keep Java's markup as it is, including its literal backslashes in the `src` of the
-// icon and in the grade font of the crystal grades (`NOTE(java-quirk)` below): the client shows
-// them the way Java sends them.
 
 use l2_data::item::{CrystalType, ItemTemplate};
 use l2_util::ObjectId;
@@ -48,8 +44,6 @@ fn admin_search(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
 }
 
 /// Java `AdminSearch.getItemGrade`: the grade of a crystal type, as the markup Java writes.
-// NOTE(java-quirk): the grades other than NG are written with backslash-escaped quotes
-// (`name=\"hs8\"`), and NG with plain quotes. Kept as they are.
 fn item_grade(crystal: CrystalType) -> String {
     match crystal {
         CrystalType::None => "<font name=\"hs8\" color=ae9977 size=-1>NG</font>".to_owned(),

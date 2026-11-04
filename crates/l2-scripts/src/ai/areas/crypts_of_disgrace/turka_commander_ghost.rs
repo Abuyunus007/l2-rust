@@ -1,5 +1,4 @@
 //! The ghost of the Turka Commander shouts when it wakes, five seconds later, and when it dies.
-// Java: dist/game/data/scripts/ai/areas/CryptsOfDisgrace/TurkaCommanderGhost.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

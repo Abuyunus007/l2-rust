@@ -1,7 +1,5 @@
 //! The Tower of Naia: the Lock and its controller, the twelve rooms of the climb, and the spore
 //! challenge before Mutated Elpy's chamber.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/Zones/TowerOfNaia/TowerOfNaia.java
-//
 // The two effect zones of the core (200100 `18_25_core_naia`, 200101 `18_25_naia_pillar_green`)
 // are switched with `set_effect_zone_enabled` (Java `ZoneType.setEnabled`).
 
@@ -805,7 +803,6 @@ impl Script for TowerOfNaia {
         if npc_id == MUTATED_ELPY {
             ctx.open_door(18250025, 0);
             ctx.world_mut().set_effect_zone_enabled(200_100, false);
-            // NOTE(java-quirk): 200101 is switched on and at once off again.
             ctx.world_mut().set_effect_zone_enabled(200_101, true);
             ctx.world_mut().set_effect_zone_enabled(200_101, false);
         } else if (npc_id == SPORE_BASIC || (SPORE_FIRE..=SPORE_EARTH).contains(&npc_id))

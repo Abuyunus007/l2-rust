@@ -1,5 +1,4 @@
 //! Quest 174: Supply Check (Marcela, Benis and Nika in the Talking Island warehouses).
-// Java: dist/game/data/scripts/quests/Q00174_SupplyCheck/Q00174_SupplyCheck.java
 
 use l2_protocol_game::NpcStringId;
 use l2_util::ObjectId;

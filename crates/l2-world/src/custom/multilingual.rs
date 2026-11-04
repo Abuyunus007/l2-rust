@@ -1,13 +1,5 @@
 //! `config/Custom/MultilingualSupport.ini`: the player's language, the `.lang` voiced command, the
 //! html pages in the language of the player and the translated texts of `data/lang/<lang>/`.
-// Java: dist/game/data/scripts/handlers/chat/commands/voiced/Lang.java
-// Java: entity/actor/Player.java (getLang, setLang, getHtmlPrefix, sendMessage, sendDamageMessage)
-// Java: data/xml/{NpcNameLocalisationData,SendMessageLocalisationData}.java
-// Java: network/{SystemMessageId,NpcStringId}.java (loadLocalisations, getLocalisation)
-// Java: mechanics/clientstrings/{Builder,BuilderContainer,BuilderObject,BuilderText}.java
-// Java: network/serverpackets/{SystemMessage,NpcSay,ExShowScreenMessage,AbstractNpcInfo,
-// Java: CharSelectionInfo}.java, entity/actor/status/PlayerStatus.java
-//
 // # Where the language is
 // `Player._lang` is `PlayerProfile::language` (`characters.language`): read at the login by the
 // session, normalised by [`World::set_player_lang`] when the player enters the world, written back
@@ -94,8 +86,6 @@ impl Template {
         if let [only] = self.parts.as_slice() {
             return match only {
                 Part::Text(text) => text.clone(),
-                // NOTE(java-quirk): `BuilderObject.toString(Object...)` takes the first parameter
-                // whatever its own index is.
                 Part::Param(_) => params.first().cloned().unwrap_or_else(|| "null".to_owned()),
             };
         }
@@ -194,8 +184,6 @@ impl LangTexts {
             return message.to_owned();
         };
         let mut localisation = message.to_owned();
-        // NOTE(java-quirk): Java keeps the entries in a `ConcurrentHashMap` keyed by array
-        // identity, so the order they are tried in is arbitrary; they are tried in file order.
         for (search, replacement) in list {
             if let [only] = search.as_slice() {
                 // Exact match.
@@ -205,8 +193,6 @@ impl LangTexts {
             } else if search.iter().all(|part| localisation.contains(part.as_str())) {
                 // Split match: every part is replaced by its own translation.
                 for (i, part) in search.iter().enumerate() {
-                    // NOTE(java-quirk): Java throws `ArrayIndexOutOfBoundsException` when the
-                    // translation has fewer parts; here the replacing stops.
                     let Some(with) = replacement.get(i) else { break };
                     localisation = localisation.replace(part.as_str(), with);
                 }
@@ -232,16 +218,12 @@ fn param_text(param: &SystemMessageParam) -> String {
         // `addNpcName(int)` stores `1000000 + id`.
         SystemMessageParam::NpcName(id) => id.wrapping_add(1_000_000).to_string(),
         SystemMessageParam::LongNumber(v) => v.to_string(),
-        // NOTE(java-quirk): these values are `int[]`; Java prints the array identity
-        // (`[I@1b6d3586`), which cannot be reproduced.
         SystemMessageParam::SkillName { .. } | SystemMessageParam::ZoneName { .. } => "[I@0".to_owned(),
     }
 }
 
 /// `List<String>.toString()`: how `NpcSay` and `ExShowScreenMessage` hand their parameters to a
 /// translation.
-// NOTE(java-quirk): `nsl.getLocalisation(_parameters)` passes the whole list as ONE parameter, so a
-// `$s1` reads `[a, b]` and a `$s2` reads `[PARAM-2]`.
 fn list_params(params: &[String]) -> Vec<String> {
     vec![format!("[{}]", params.join(", "))]
 }
@@ -477,8 +459,6 @@ impl World {
 
     /// The loop of `Lang.onCommand`: every NPC of the world that has a name translation is deleted
     /// from the client and shown again a second later, so the client takes the new name.
-    // NOTE(java-quirk): Java walks `World.getVisibleObjects()`, every object of the world and not
-    // only the ones near the player.
     fn lang_resend_npcs(&mut self, player: ObjectId) {
         let mut npcs: Vec<ObjectId> = self
             .npcs

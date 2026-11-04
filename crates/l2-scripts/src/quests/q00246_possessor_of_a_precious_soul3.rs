@@ -1,8 +1,6 @@
 //! Quest 246: Possessor of a Precious Soul 3 (Caradine sends a sub-class character to Ossian, who
 //! needs the Waterbinder and the Evergreen from the Splendor monsters, the Rain Song from
 //! Barakiel and the fragments for the relic box, which Ladd takes back to Caradine).
-// Java: dist/game/data/scripts/quests/Q00246_PossessorOfAPreciousSoul3/Q00246_PossessorOfAPreciousSoul3.java
-//
 // Pattern: a sub-class quest (`no_sub.html`), per-quest variables that pick a random party member
 // (`awaitsWaterbinder`, `awaitsEvergreen`), a party kill with a distance check, and a long chain of
 // conds (`docs/design/scripts.md`, "Quest patterns").
@@ -195,7 +193,6 @@ impl Script for Q00246PossessorOfAPreciousSoul3 {
         npc: ScriptNpc,
         _is_summon: bool,
     ) {
-        // Java: a party member farther than `AltPartyRange` from Barakiel gets nothing (the solo
         // killer is not checked).
         if ctx.is_in_party(player)
             && ctx

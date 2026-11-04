@@ -1,6 +1,4 @@
 //! Quest 63: Path of the Warder (Master Sione, Master Gobie, Master Tobias, Captain Bathis, the Kamael female soldiers' masters).
-// Java: dist/game/data/scripts/quests/Q00063_PathOfTheWarder/Q00063_PathOfTheWarder.java
-//
 // Pattern: a delivery and kill chain with the memo state as the step counter
 // (`docs/design/scripts.md`, "Quest patterns"), sibling of `q00062_path_of_the_trooper.rs`. A
 // quest monster (Ol Mahum Officer Tak) appears after five lizardmen and is sent at the killer.

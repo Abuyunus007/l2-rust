@@ -1,6 +1,4 @@
 //! The `RentPet` NPC bypass: a wyvern or a strider for adena.
-// Java: dist/game/data/scripts/handlers/bypass/npc/RentPet.java
-// Java: entity/actor/Player.java (mount, startRentPet): `mount.rs`
 
 use l2_protocol_game::server::{NpcHtmlMessage, SetupGauge};
 use l2_util::ObjectId;

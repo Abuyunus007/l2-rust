@@ -1,5 +1,4 @@
 //! `Network.ini`.
-// Java: org/l2jmobius/commons/network/ConnectionConfig.java
 
 use crate::IniFile;
 

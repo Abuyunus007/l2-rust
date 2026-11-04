@@ -1,9 +1,4 @@
 //! Castles: the castle table, the owner, the tax and the treasury, the circlets.
-// Java: managers/CastleManager.java
-// Java: mechanics/siege/Castle.java (setOwner, removeOwner, updateOwnerInDB, addToTreasury,
-//       addToTreasuryNoTax, setTaxPercent, setShowNpcCrest, setTicketBuyCount,
-//       updateClansReputation, checkIfInZone, getDistance)
-// Java: entity/actor/Npc.java (getCastle, isInTown)
 
 use std::collections::BTreeMap;
 
@@ -236,11 +231,6 @@ impl World {
         });
     }
 
-    /// Java `Castle.addToTreasury(amount)`: the tax income of a shop or a multisell. Schuttgart
-    /// and Goddard pay Rune's tax rate of it to Rune, every castle but Aden, Rune, Schuttgart and
-    /// Goddard pays Aden's; the rest goes to the castle. Nothing for a castle without an owner.
-    /// The treasury rows are written only with `SiegeDatabaseWrites` (D-51: the Java game server
-    /// collects the real tax).
     pub fn castle_add_to_treasury(&mut self, id: CastleId, amount: i64) {
         let Some(castle) = self.castle(id) else {
             return;
@@ -337,10 +327,6 @@ impl World {
 
     // ------------------------------------------------------------------ owner
 
-    /// Java `Castle.setOwner(clan)`: the castle goes to `clan` (`None`: to nobody). The old owner
-    /// (when another clan) loses the castle, its circlets (`RemoveCastleCirclets`) and the
-    /// residential skills; the new owner gets them, with `PledgeShowInfoUpdate` and the victory
-    /// sound. The rows only with `SiegeDatabaseWrites` (D-51).
     pub fn castle_set_owner(&mut self, id: CastleId, clan: Option<i32>) {
         let Some(owner_id) = self.castle(id).map(|c| c.owner_id) else {
             return;
@@ -385,7 +371,6 @@ impl World {
         {
             self.fort_remove_owner(fort, true);
         }
-        // Java: `if (getSiege().isInProgress()) getSiege().midVictory()` (M7-SIEGE-01).
         if self.is_castle_siege_in_progress(id) {
             self.siege_mid_victory(id);
         }
@@ -424,7 +409,6 @@ impl World {
             self.broadcast_clan_info_update(clan_id);
         }
         self.castle_update_owner_in_db(id, None);
-        // Java: `if (getSiege().isInProgress()) getSiege().midVictory()` (M7-SIEGE-01).
         if self.is_castle_siege_in_progress(id) {
             self.siege_mid_victory(id);
         }

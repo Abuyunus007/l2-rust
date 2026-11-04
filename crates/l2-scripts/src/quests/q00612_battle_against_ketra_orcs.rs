@@ -1,6 +1,4 @@
 //! Quest 612: Battle against Ketra Orcs (Ashas in the Varka Silenos Village, Ketra monsters).
-// Java: dist/game/data/scripts/quests/Q00612_BattleAgainstKetraOrcs/Q00612_BattleAgainstKetraOrcs.java
-//
 // Pattern: a repeatable collect quest, the same shape as Q00606 (a mane-like drop per monster
 // with a chance, a random member at cond 1 gets it; 100 molars for 20 seeds).
 
@@ -93,8 +91,6 @@ impl Script for Q00612BattleAgainstKetraOrcs {
     }
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, _is_summon: bool) {
-        // NOTE(java-quirk): the molar goes to a random member at cond 1; `getRandom` is only rolled
-        // when a member was found (`member != null && getRandom(1000) < chance`).
         let Some(member) = ctx.get_random_party_member_cond(killer, 1) else {
             return;
         };

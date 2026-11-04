@@ -10,7 +10,6 @@
 //! - Everything else is forwarded as plaintext payloads, re-encrypted per connection, and
 //!   recorded. A `ServerList` gets its addresses rewritten (see `rewrite`).
 //!
-//! Java: loginserver/network/LoginEncryption.java (both ciphers), serverpackets/Init.java,
 //! clientpackets/RequestAuthLogin.java. Not in Java: the Java server has no proxy.
 //!
 //! Both connections are `l2-net` connection tasks with their own cipher, so a packet moves

@@ -1,5 +1,4 @@
 //! Quest 211: Trial of the Challenger (Kash, Martian, Raldo, Filaur and the Chest of Shyslassys; the warrior's mark).
-// Java: dist/game/data/scripts/quests/Q00211_TrialOfTheChallenger/Q00211_TrialOfTheChallenger.java
 
 use l2_protocol_game::server::RadarControl;
 use l2_util::ObjectId;

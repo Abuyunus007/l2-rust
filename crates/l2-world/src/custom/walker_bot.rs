@@ -1,6 +1,5 @@
 //! `config/Custom/WalkerBotProtection.ini`: a whisper that starts with a L2Walker script command
 //! is an illegal action.
-// Java: network/clientpackets/Say2.java (`WALKER_COMMAND_LIST`, `checkBot`)
 
 use l2_util::ObjectId;
 

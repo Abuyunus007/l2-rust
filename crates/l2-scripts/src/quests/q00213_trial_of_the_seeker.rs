@@ -1,5 +1,4 @@
 //! Quest 213: Trial of the Seeker (Master Dufner, Master Terry, Brunon, Viktor and Marina; the rogue's mark).
-// Java: dist/game/data/scripts/quests/Q00213_TrialOfTheSeeker/Q00213_TrialOfTheSeeker.java
 
 use l2_util::ObjectId;
 use l2_world::script::{QuestSound, player_class};

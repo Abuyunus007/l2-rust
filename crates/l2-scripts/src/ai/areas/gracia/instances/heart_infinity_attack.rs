@@ -1,9 +1,5 @@
 //! The Heart of Infinity (attack): a command channel cuts Ekimus off his six Tumors of Death and
 //! kills him for the Seed of Infinity.
-// Java: dist/game/data/scripts/ai/areas/Gracia/instances/HeartInfinityAttack/HeartInfinityAttack.java
-//
-// NOTE(java-quirk): `handleEkimusStats` is a `TODO FIXME` in Java (its body is commented out);
-// Ekimus' stats do not follow the tumors.
 
 use l2_protocol_game::server::ChatType;
 use l2_protocol_game::{NpcStringId, SystemMessageId};
@@ -153,9 +149,6 @@ struct HiaWorld {
 }
 
 /// The script's fields and its worlds.
-// NOTE(java-quirk): `tumorRespawnTime`, `conquestBegun`, `conquestEnded` and `houndBlocked` are
-// fields of the script, shared by every instance: once one channel reached Ekimus, the opening
-// of no other instance runs again until the server restarts.
 struct State {
     worlds: Worlds<HiaWorld>,
     tumor_respawn_time: i64,
@@ -372,7 +365,6 @@ impl HeartInfinityAttack {
                 }
             }
         }
-        // NOTE(java-quirk): the task runs on after the failure until the instance is gone.
         if hia(ctx, instance_id).timer_task && ctx.world().instance(instance_id).is_some() {
             ctx.start_quest_timer(
                 &format!("TimerTask {instance_id}"),
@@ -409,7 +401,6 @@ impl HeartInfinityAttack {
     }
 
     /// Java `notifyEkimusRoomEntrance(world)`.
-    // NOTE(java-quirk): the players of the zone in every instance are expelled.
     fn notify_ekimus_room_entrance(ctx: &mut ScriptCtx<'_>, instance_id: i32) {
         if let Some(zone) = ctx.world().zone_id_by_name(ZONE) {
             for player in players_in_zone(ctx, zone) {

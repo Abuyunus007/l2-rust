@@ -1,12 +1,5 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
-//! Conquerable clan hall sieges (M7-CHSIEGE-01): loading the engines, the schedule, the
-//! registration (D-50), a GM test siege end to end for the base scripts (D-51), the flag war and
-//! Rainbow Springs scripts with Java's quirks, and `//chsiege`.
-//! Java: managers/CHSiegeManager.java, mechanics/siege/clanhalls/{ClanHallSiegeEngine,SiegableHall}.java,
-//! dist/game/data/scripts/conquerablehalls/*, handlers/chat/commands/admin/AdminCHSiege.java. The
-//! expected values come from the Java code named in each test.
-
 use std::sync::{Arc, Mutex};
 
 use l2_data::skill::EnchantSkillGroups;
@@ -1037,8 +1030,6 @@ fn join_ids(s: &mut Scene, player: i32, hall: i32) -> Vec<SystemMessageId> {
     message_ids(&out, player)
 }
 
-/// `CHSiegeManager.registerClan`: the checks in Java's order, then the clan is an attacker; the
-/// player gets `SiegeInfo` of the hall (`RequestJoinSiege`). The hall is read again first (D-50).
 #[test]
 fn a_clan_registers_in_javas_order_of_checks() {
     let mut s = Scene::new(vec![hall_row(21, LIONS, NOW + 3 * DAY)], hall_load(vec![]));
@@ -1200,8 +1191,6 @@ fn a_destroyed_clan_leaves_the_lists() {
     assert!(!s.world.hall_siege_is_attacker(H21, WOLVES));
 }
 
-/// `CHSiegeManager.onServerShutDown`: the attackers are saved (`DELETE`, then one `INSERT` per
-/// clan), only with the switch (D-51).
 #[test]
 fn the_shutdown_saves_the_attackers_with_the_switch() {
     let mut s = Scene::new(all_halls(0), hall_load(vec![]));
@@ -1245,9 +1234,6 @@ fn the_attackers_are_loaded_at_startup() {
 
 // ---------------------------------------------------------------------------------- Resistance
 
-/// A siege of the Fortress of Resistance from the start to the end, driven by a GM (D-51): the
-/// owner is freed in `prepareOwner`, `startSiege` moves the attackers into the siege and spawns
-/// Nurka, the clan with the most damage wins the hall when Nurka dies (2.5 s after the kill).
 fn resistance_siege() -> (Scene, Vec<Out>) {
     let mut s = Scene::new(
         vec![hall_row(21, LIONS, NOW + 3 * DAY)],
@@ -1374,7 +1360,6 @@ fn a_siege_without_attackers_is_cancelled_except_at_the_fortress_of_resistance()
         SystemMessageId::TheSiegeOfS1HasBeenCanceledDueToLackOfInterest
     );
     assert_eq!(text_param(m, 0), "Devastated Castle");
-    // NOTE(java-quirk): the status stays WAITING_BATTLE.
     assert_eq!(s.world.hall_siege_status(H34), Some(SiegeStatus::WaitingBattle));
     // The date moved on (written).
     assert_eq!(siegable_writes(&out).len(), 1);
@@ -1782,9 +1767,6 @@ fn bandit_stronghold_attackers_page_quirk() {
     );
 }
 
-/// NOTE(java-quirk): `startSiege()` of Bandit Stronghold calls itself again, so the battle never
-/// starts. With two attackers the outer doors open, the owner's members go to the spawn point,
-/// and five minutes later the doors close and it all begins again.
 #[test]
 fn bandit_stronghold_never_leaves_the_waiting_phase() {
     let mut s = bandit_scene();
@@ -1844,8 +1826,6 @@ fn the_flag_war_teleport_npc_moves_the_zone_after_30_seconds() {
     assert_eq!((at.0, at.1), (x + 50, y + 50));
 }
 
-/// The registered clans come back from the tables at startup (`loadAttackers`), a clan that is
-/// gone is skipped, and a re-read replaces the rows that were written (D-50).
 #[test]
 fn flag_war_rows_load_and_reread() {
     let load = HallSiegeHallLoad {
@@ -1867,7 +1847,6 @@ fn flag_war_rows_load_and_reread() {
     assert_eq!(clans.len(), 1);
     assert_eq!(clans[0].1.players, [P3, P4]);
     assert_eq!(clans[0].1.npc, BANDIT_ALLY_1);
-    // A re-read: Sieghardt registered the Tigers and the Wolves cancelled.
     s.enter(P7, TIGERS, 35);
     let messenger = s.spawn_at_hall(BANDIT_MESSENGER, 35);
     s.talk(P7, messenger);
@@ -1885,7 +1864,6 @@ fn rainbow_scene() -> Scene {
 }
 
 /// The Rainbow Springs messenger: war decrees register the clan (the item is taken, the row
-/// written); NOTE(java-quirk): the first clan fills all four arenas.
 #[test]
 fn rainbow_springs_registration() {
     let mut s = rainbow_scene();
@@ -2113,7 +2091,6 @@ fn rainbow_springs_prepare_owner() {
 fn rainbow_springs_battle() {
     let mut s = rainbow_siege_scene();
     s.world.hall_start_siege(H62);
-    // NOTE(java-quirk): the status never becomes running.
     assert_eq!(s.world.hall_siege_status(H62), Some(SiegeStatus::Registering));
     assert_eq!(s.npcs_of(GOURD_1).len(), 1);
     assert_eq!(s.npcs_of(GOURD_1 + 1).len(), 1);

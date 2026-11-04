@@ -1,10 +1,5 @@
 //! What a form allows and forbids: the action list, the inventory block, and the conditions
 //! `canTransform` / `canUntransform` of the transformation skills.
-// Java: network/serverpackets/ExBasicActionList.java (ACTIONS_ON_TRANSFORM),
-//       network/clientpackets/RequestActionUse.java (the transformed check),
-//       entity/itemcontainer/PlayerInventory.java (setInventoryBlock, unblock, hasInventoryBlock,
-//       canManipulateWithItemId), network/serverpackets/AbstractItemPacket.java (writeInventoryBlock)
-// Java: mechanics/conditions/ConditionPlayerCanTransform.java, ConditionPlayerCanUntransform.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{InventoryBlock as BlockPacket, SystemMessage};

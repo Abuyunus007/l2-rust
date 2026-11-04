@@ -4,12 +4,6 @@
 //! `//getbuffs [name [page]]`, `//getbuffs_ps`, `//stopbuff <objectId> <skillId>`,
 //! `//stopallbuffs <objectId>`, `//viewskilleffects`, `//viewblockedeffects` and
 //! `//areacancel <radius>`, with the admin pages they show.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminSkill.java
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminBuffs.java
-// Java: gameserver/data/xml/ClassListData.java (the class names of the pages)
-// Java: dist/game/data/html/admin/{charskills,charskills_add,charskills_race,charskills_class,
-// Java: charskills_add_list,getbuff_skills,getbuff_effects}.htm
-//
 // The command words are the ones `AdminCommands.xml` and the handlers register (`admin_add_skill`
 // is `//add_skill`).
 //
@@ -513,8 +507,6 @@ fn first_level_skill(world: &World, skill_id: i32) -> Result<&SkillTemplate, Jav
 /// Java `AdminSkill.adminAddClassSkills(player, playerClass, page)`: `charskills_class.htm` with the
 /// skills of the class tree (each skill once), seven per page.
 fn admin_add_class_skills(world: &mut World, gm: ObjectId, class: ClassId, page: i32) -> Outcome {
-    // NOTE(java-quirk): Java collects the skills in a `HashSet<Skill>` (identity hash), so the
-    // order is arbitrary; here it is the skill id.
     let mut ids: Vec<i32> = world
         .rewards
         .skill_trees
@@ -535,7 +527,6 @@ fn admin_add_class_skills(world: &mut World, gm: ObjectId, class: ClassId, page:
         &format!("bypass admin_skill_class {class_enum}"),
         page,
         |skill, sb| {
-            // NOTE(java-quirk): `row` is never incremented, every row has the black background.
             let _ = write!(
                 sb,
                 "<table width=\"295\" bgcolor=\"000000\"><tr><td height=40 width=40><img src=\"{}\" width=32 height=32></td><td width=190><font color=\"B09878\"><a action=\"bypass admin_skill_add_list {class_enum} {}\">{} ({})</a></font></td></tr></table><img src=\"L2UI.SquareGray\" width=295 height=1>",
@@ -641,7 +632,6 @@ fn admin_add_skill(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
 
 fn add_skill(world: &mut World, gm: ObjectId, value: &str) -> Outcome {
     let Some(player) = target_player(world, gm) else {
-        // Java: `INVALID_TARGET`, then `showMainPage` says it again.
         return show_main_page(world, gm);
     };
     let words = split_words(value);
@@ -770,7 +760,6 @@ fn show_buffs(world: &mut World, gm: ObjectId, target: ObjectId, page: i32, pass
     let now = world.tick;
     // `Map<Skill, Integer>`: the first info of a skill puts its remaining time, a later one of the
     // same skill the larger of its abnormal time and what is there.
-    // NOTE(java-quirk): the later infos are compared by abnormal time, not by remaining time.
     let mut skills: Vec<(SkillKey, i32)> = Vec::new();
     if let Some(list) = world.effect_list(target) {
         let infos: Vec<&BuffInfo> = if passive {
@@ -797,7 +786,6 @@ fn show_buffs(world: &mut World, gm: ObjectId, target: ObjectId, page: i32, pass
         if passive { "_ps" } else { "" }
     );
     let result = build_page(&elements, PAGE_LIMIT, &link, page, |(skill, time), sb| {
-        // NOTE(java-quirk): `row` is never incremented, every row has the black background.
         sb.push_str("<table width=\"295\" bgcolor=\"000000\">");
         let passive_skill = skill.is_passive();
         let _ = write!(
@@ -1088,7 +1076,6 @@ fn view_skill_effects(
         page,
         |(skill, in_use, time, names), sb| {
             for effect in names {
-                // NOTE(java-quirk): `row` is never incremented, every row has the black background.
                 sb.push_str("<table width=\"295\" bgcolor=\"000000\"><tr><td width=750>");
                 if !in_use {
                     sb.push_str("<font color=\"FF0000\">");

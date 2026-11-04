@@ -1,9 +1,5 @@
 //! Everything after a mail was sent: the lists, opening a mail, deleting, taking the attachments
 //! (with the payment of a cash on delivery mail), returning them and cancelling a sent mail.
-// Java: network/clientpackets/{RequestReceivedPost,RequestReceivedPostList,RequestSentPost,
-// Java: RequestSentPostList,RequestPostAttachment,RequestRejectPostAttachment,
-// Java: RequestCancelPostAttachment,RequestDeleteReceivedPost,RequestDeleteSentPost,
-// Java: RequestPostItemList}.java
 
 use l2_data::item::ADENA_ID;
 use l2_protocol_game::SystemMessageId;
@@ -173,8 +169,6 @@ impl World {
                 self.mail_illegal_action(id, "tried to delete not own post!");
                 return;
             }
-            // NOTE(java-quirk): this `return` ends the whole request without an answer, the mails
-            // before it are already deleted.
             if msg.has_attachments || gone {
                 return;
             }
@@ -196,7 +190,6 @@ impl World {
 
     /// The slots and the weight the attachments need in the inventory of `player`
     /// (`RequestPostAttachment` and `RequestCancelPostAttachment`).
-    // NOTE(java-quirk): `int weight` and `int slots` take `long * int` and `long` sums, which wrap.
     fn mail_slots_and_weight(&self, player: ObjectId, items: &[ItemData]) -> (i64, i64) {
         let templates = self.item_templates();
         let (mut weight, mut slots) = (0i32, 0i32);
@@ -330,7 +323,6 @@ impl World {
         // "wrong item"). The container is built from exactly those rows, so nothing can fail.
         let items = msg.attachments.clone();
         if !refreshed {
-            // The Java GS may have given the attachments out already (D-39): ask for the rows.
             self.mail_request_attachments(id, msg_id, sender_id, AttachmentAction::Take);
             return;
         }
@@ -402,8 +394,6 @@ impl World {
 
     /// The payment of a cash on delivery mail when the sender is offline: a new adena item in the
     /// sender's inventory (`ItemManager.createItem`, `setOwnerId`, `updateDatabase(true)`).
-    // NOTE(java-quirk): it is a new stack, not added to the adena the sender already has; the
-    // inventory shows two stacks until something merges them.
     fn mail_pay_offline_sender(&mut self, receiver: ObjectId, sender: ObjectId, adena: i64) {
         let Some(templates) = self.item_templates() else {
             return;

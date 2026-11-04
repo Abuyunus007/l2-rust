@@ -1,8 +1,6 @@
 //! Quest 230: Test of the Summoner (High Summoner Galatea in Talking Island: the Wizard, Elven
 //! Wizard and Dark Wizard second class change, through Lara and six summoners whose duel
 //! monsters fight the player's servitor).
-// Java: dist/game/data/scripts/quests/Q00230_TestOfTheSummoner/Q00230_TestOfTheSummoner.java
-//
 // Pattern: the test chain of the "Test of ..." quests (see Q00222), with duel monsters that
 // react to the player's summon (`onAttack` with `isSummon`, the `ATTACKER` NPC variable, the
 // `DESPAWN` and `KILLED_ATTACKER` NPC timers) and the six summoners who hand out the duels.

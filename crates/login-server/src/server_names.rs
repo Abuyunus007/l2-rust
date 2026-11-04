@@ -1,6 +1,4 @@
 //! Game server names from `data/servername.xml` (server id -> display name).
-// Java: org/l2jmobius/loginserver/data/GameServerTable.java (`load`, `parseDocument`)
-// Java: org/l2jmobius/commons/util/IXmlReader.java (`parseFile`, `parseInteger`)
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -30,7 +28,6 @@ pub enum ServerNamesError {
 
 /// Reads `path` and returns its names. Never fails: a missing or broken file is logged and gives
 /// the names parsed so far, like Java.
-// Java: GameServerTable.load
 pub fn load_server_names(path: &Path) -> ServerNames {
     let mut names = ServerNames::new();
     if !path.is_file() {
@@ -57,7 +54,6 @@ pub fn load_server_names(path: &Path) -> ServerNames {
 
 /// Adds every `<server id=".." name=".."/>` of `xml` to `names`. A later entry with the same id
 /// replaces the earlier one (Java `HashMap.put`).
-// Java: GameServerTable.parseDocument
 pub fn parse_server_names(xml: &str, names: &mut ServerNames) -> Result<(), ServerNamesError> {
     let mut reader = Reader::from_str(xml);
     loop {

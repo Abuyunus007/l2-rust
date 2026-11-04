@@ -1,5 +1,4 @@
 //! The Black Judge: lifts the death penalty for adena.
-// Java: dist/game/data/scripts/ai/others/BlackJudge/BlackJudge.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_util::ObjectId;
@@ -52,8 +51,6 @@ impl Script for BlackJudge {
                     let cost = COSTS[usize::try_from(level).unwrap_or(0).min(5)];
                     if ctx.adena_of(player) >= cost {
                         ctx.take_items(player, ADENA_ID, cost);
-                        // NOTE(java-quirk): only the field changes; the death penalty skill stays
-                        // until the next relog.
                         let now = ctx.death_penalty_buff_level(player);
                         ctx.set_death_penalty_buff_level(player, now - 1);
                         ctx.send_system_message(player, SystemMessageId::YourDeathPenaltyHasBeenLifted);

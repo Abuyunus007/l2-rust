@@ -1,6 +1,4 @@
 //! Quest 10502: Freya Embroidered Soul Cloak (Olf Adams in the Gludin Harbor area, Freya).
-// Java: dist/game/data/scripts/quests/Q10502_FreyaEmbroideredSoulCloak/Q10502_FreyaEmbroideredSoulCloak.java
-//
 // Pattern: a kill-count quest with a party (`docs/design/scripts.md`, "Kills, drops and
 // parties"): `on_kill` runs `actionForEachPlayer` for the killer's party and command channel;
 // each member gets 1..3 fragments (the last ones up to 20) and the NPC gives the cloak.

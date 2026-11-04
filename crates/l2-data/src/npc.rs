@@ -1,7 +1,6 @@
 //! NPC templates: everything an NPC is made of except what the M4/M5 cards need (skills, AI
 //! skill lists, drops are kept raw).
 //!
-//! Java: `gameserver/data/xml/NpcData.java`, `entity/actor/templates/{NpcTemplate,CreatureTemplate}.java`,
 //! `entity/actor/holders/npc/{MinionHolder,DropHolder,DropGroupHolder}.java`.
 //! Data: `data/stats/npcs/*.xml` (and `custom/` when enabled), `xsd/npcs.xsd`.
 //!
@@ -42,14 +41,6 @@
 //! * The custom `NpcStatMultipliersConfig` (default off) that scales hp/mp/atk/def/aggro per type.
 //! * `hitTime`, `exCrtEffect`, `sNpcPropHpRate` (Java marks them `TODO: Implement me` and nothing
 //!   reads them), `accuracy`, `evasion`, `reuseDelay` and `distance` of the stats are parsed and dropped.
-//!
-//! NOTE(java-quirk): element names are matched exactly as written in the XSD (`skillList`,
-//! `corpseTime`, ...). Java lower-cases them, so it also accepts `<SKILLLIST>`; no shipped file
-//! relies on that.
-//!
-//! NOTE(java-quirk): in Java any exception (a missing `ground` speed, a non-numeric attribute, an
-//! unknown enum value) aborts the *rest of the file*, silently losing every later NPC in it. Here
-//! only the broken NPC is skipped, with a warning. The shipped data has no such NPC.
 
 mod raw;
 mod stat_set;
@@ -886,7 +877,6 @@ impl NpcTemplates {
             let label = raw.id.clone().unwrap_or_default();
             match self.build(raw, options) {
                 Ok(Some(template)) => {
-                    // Java: a later definition of the same id is applied to the existing template.
                     self.npcs.insert(template.id, template);
                 }
                 Ok(None) => {}

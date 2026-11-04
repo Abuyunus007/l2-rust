@@ -1,6 +1,4 @@
 //! Quest 281: Head for the Hills! (Mercela in the Town of Dion buys the claws of the mountain monsters).
-// Java: dist/game/data/scripts/quests/Q00281_HeadForTheHills/Q00281_HeadForTheHills.java
-//
 // Pattern: a repeatable collect quest with a drop chance (`docs/design/scripts.md`, "Quest
 // patterns"): the mountain and muertos monsters drop a claw with a chance; Mercela pays 23 adena a
 // claw (400 more from 10 claws), or for 50 claws one reward: 361 times in a thousand one of nine

@@ -5,7 +5,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/TutorialCloseHtml.java
 /// Closes the tutorial window (`TUTORIAL_CLOSE_HTML`, 0xA9). No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TutorialCloseHtml;
@@ -26,7 +25,6 @@ impl Decode for TutorialCloseHtml {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExShowQuestInfo.java
 /// Opens the quest list window (`EX_SHOW_QUEST_INFO`, 0xFE 0x0020). No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExShowQuestInfo;
@@ -47,7 +45,6 @@ impl Decode for ExShowQuestInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/ShowXMasSeal.java
 /// Shows the Christmas seal window of an item (`SHOW_XMAS_SEAL`, 0xF8).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ShowXMasSeal {
@@ -72,7 +69,6 @@ impl Decode for ShowXMasSeal {
     }
 }
 
-// Java: gameserver/network/serverpackets/ShopPreviewList.java
 /// One entry of a [`ShopPreviewList`] (the items the player may try on).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ShopPreviewProduct {
@@ -103,7 +99,6 @@ impl ShopPreviewList {
 impl Encode for ShopPreviewList {
     fn encode(&self, w: &mut PacketWriter) {
         write_opcode(w, Self::OPCODE);
-        // Java: four bytes of unknown meaning (`0xC0, 0x13, 0, 0`).
         w.u8(0xC0).u8(0x13).u8(0).u8(0);
         w.i64(self.money).i32(self.list_id);
         w.u16(u16::try_from(self.products.len()).unwrap_or(u16::MAX));
@@ -136,7 +131,6 @@ impl Decode for ShopPreviewList {
     }
 }
 
-// Java: gameserver/network/serverpackets/Dice.java
 /// A thrown dice (`DICE`, 0xDA): the player, the dice item, the number and where it lands.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Dice {

@@ -1,19 +1,3 @@
-//! Fresh mail rows for a database two servers share (M6-SYNC-01, D-39).
-// Java: managers/MailManager.java (the map the mails live in), entity/itemcontainer/Mail.java
-// Java: (restore: `WHERE owner_id=? AND loc='MAIL' AND loc_data=?`)
-//
-// The Java GS and this server each load `messages` and the MAIL rows of `items` once at their
-// start. A mail the Java GS received after that, or an attachment one of its players took, is
-// unknown here, and handing the same attachment out again would duplicate the items. Two reads
-// close the gap without a database wait inside a tick (D-15):
-// - the session reads the character's mails at `CharacterSelect` ([`MailRefresh`]) and
-//   [`World::mail_refresh_player`] replaces this server's copies of exactly those messages;
-// - `RequestPostAttachment` asks for the attachment rows of the message
-//   ([`PersistCommand::MailAttachmentsRequest`], answered by `WorldCommand::MailAttachmentsLoaded`)
-//   and goes on with them.
-// The persistence task reads in the order it writes, so an answer includes every write this server
-// queued before the request.
-
 use std::collections::BTreeSet;
 
 use l2_protocol_game::SystemMessageId;
@@ -48,13 +32,6 @@ pub struct MailRefresh {
 }
 
 impl World {
-    /// The mail part of entering the world: the copies of the character's messages are replaced by
-    /// what the session read. A message the database no longer has is dropped (the Java GS
-    /// deleted or expired it), a new one is added and the attachments of the others are replaced.
-    ///
-    /// Messages this server made itself since it started are left alone: the Java GS cannot have
-    /// changed them, and their rows may not be written yet. The ids of dropped messages are not
-    /// given back to the id factory, they were never this server's.
     pub(crate) fn mail_refresh_player(&mut self, id: ObjectId) {
         let Some(refresh) = self
             .players
@@ -106,7 +83,6 @@ impl World {
                 stale.len()
             );
         }
-        // The deletion task has to know the mails the Java GS made, too.
         self.mail_start_deletion_task();
     }
 
@@ -151,8 +127,6 @@ impl World {
             self.send(player, &ActionFailed);
             return;
         };
-        // Only the rows the message still owns: `loc = 'MAIL'` and `loc_data` = the message id.
-        // Anything else moved away (the Java GS gave it out, or returned it in a new message).
         rows.retain(|i| i.loc == LOC_MAIL && i.loc_data == message_id);
         self.drop_unknown_items(&mut rows);
         let Some(message) = self.mail.messages.get_mut(&message_id) else {
@@ -160,7 +134,6 @@ impl World {
         };
         message.attachments = rows;
         if message.attachments.is_empty() {
-            // Taken elsewhere already: the Java GS wrote the flag, nothing to write here.
             message.has_attachments = false;
             if action == AttachmentAction::Cancel {
                 // Java's answer to a sent mail without attachments.

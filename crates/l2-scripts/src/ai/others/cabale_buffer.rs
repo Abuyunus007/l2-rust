@@ -1,7 +1,5 @@
 //! Preacher of Doom and Orator of Revelations: the Seven Signs NPCs that bless the winning cabal
 //! and curse the losing one around them, and preach now and then.
-// Java: dist/game/data/scripts/ai/others/NpcBuffers/impl/CabaleBuffer.java
-//
 // Java schedules two `Runnable`s on the thread pool when the NPC spawns (`CabaleAI` every 3 s,
 // `Talk` every 60 s). Here they are two scheduled script events of that NPC (`schedule_event`, the
 // `ThreadPool.schedule` of a script), each one scheduling itself again as in Java.

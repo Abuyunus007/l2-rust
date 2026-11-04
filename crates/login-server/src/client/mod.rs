@@ -1,6 +1,5 @@
 //! Client connections on `LoginserverPort`: Init, GameGuard, login, server list.
 //!
-//! Java: `loginserver/network/LoginClient.java`, `LoginPacketHandler.java` and the client
 //! packets in `network/clientpackets/`.
 
 pub mod auth;
@@ -31,7 +30,6 @@ use crate::state::{LoginState, ServerStatus};
 use crate::{Server, StartupError};
 
 /// Binds `LoginserverHostname:LoginserverPort` and accepts clients until shutdown.
-// Java: LoginServer.startLoginClientListener
 pub async fn start_listener(server: &mut Server) -> Result<(), StartupError> {
     let state = Arc::clone(server.state());
     let login = &state.config.login;
@@ -142,12 +140,10 @@ impl ClientSession {
     }
 
     /// Java `close(LoginFailReason)`: sends `LoginFail` but does **not** close the connection.
-    /// NOTE(java-quirk): the real client disconnects by itself; the purge catches the rest.
     fn login_fail(ctl: &mut Control<'_>, reason: LoginFailReason) {
         ctl.send(LoginFail { reason }.to_bytes());
     }
 
-    // Java: AuthGameGuard.run
     fn on_auth_game_guard(&mut self, session_id: i32, ctl: &mut Control<'_>) {
         if session_id != self.session_id {
             debug!("AuthGameGuard: session mismatch from {}", self.ip);
@@ -182,7 +178,6 @@ impl ClientSession {
         decrypted.ok().flatten()
     }
 
-    // Java: RequestAuthLogin.run
     async fn on_request_auth_login(&mut self, request: RequestAuthLogin, ctl: &mut Control<'_>) {
         let Some(decrypted) = self.decrypt_credentials(request).await else {
             // Java logs the GeneralSecurityException and drops the packet.
@@ -246,13 +241,11 @@ impl ClientSession {
             }
             LoginResult::AlreadyOnGs => {
                 Self::login_fail(ctl, LoginFailReason::AccountInUse);
-                // Java: gsi.getGameServerThread().kickPlayer(login)
                 self.state.game_servers.kick_player(&info.login);
             }
         }
     }
 
-    // Java: LoginController.tryCheckinAccount
     async fn try_check_in(&mut self, info: &AccountInfo, ctl: &mut Control<'_>) -> LoginResult {
         if info.access_level < 0 {
             return LoginResult::AccountBanned;
@@ -263,7 +256,6 @@ impl ClientSession {
         // canCheckin sets these on the client.
         self.access_level = info.access_level;
         self.last_server = info.last_server;
-        // Java: isAccountInAnyGameServer
         if self.state.game_servers.is_account_on_any_gs(&info.login) {
             return LoginResult::AlreadyOnGs;
         }
@@ -299,7 +291,6 @@ impl ClientSession {
 
     /// Builds the `ServerList` (waiting up to [`CHARACTER_WAIT`] for the character counts) and
     /// sends it.
-    // Java: new ServerList(client)
     async fn send_server_list(&self, ctl: &mut Control<'_>) {
         let client = ClientView {
             ip: self.ip_addr,
@@ -316,7 +307,6 @@ impl ClientSession {
         ctl.send(list.to_bytes());
     }
 
-    // Java: RequestServerList.run
     async fn on_request_server_list(&mut self, login_ok1: i32, login_ok2: i32, ctl: &mut Control<'_>) {
         let valid = self
             .session_key
@@ -328,7 +318,6 @@ impl ClientSession {
         }
     }
 
-    // Java: RequestServerLogin.run
     async fn on_request_server_login(&mut self, request: RequestServerLogin, ctl: &mut Control<'_>) {
         let Some(key) = self.session_key else {
             return;
@@ -344,8 +333,6 @@ impl ClientSession {
             Self::login_fail(ctl, LoginFailReason::AccessFailed);
             return;
         }
-        // NOTE(java-quirk): Java reads the id with the signed `readByte()`, so ids above 127 are
-        // negative and match no game server.
         let server_id = i32::from(request.server_id as i8);
         let possible = is_login_possible(
             &self.state,
@@ -379,7 +366,6 @@ impl ClientSession {
 }
 
 impl FrameHandler for ClientSession {
-    // Java: LoginClient constructor (ban check) + onConnected (Init)
     async fn on_connect(&mut self, ctl: &mut Control<'_>) {
         if self.state.bans.is_banned(&self.ip) {
             // Deliberate deviation: Java only sends LoginFail(NOT_AUTHED) and keeps the
@@ -401,7 +387,6 @@ impl FrameHandler for ClientSession {
         ctl.send(init.to_bytes());
     }
 
-    // Java: LoginPacketHandler.handle + LoginClientPacket.read/run
     async fn on_frame(&mut self, body: Vec<u8>, ctl: &mut Control<'_>) {
         let mut reader = PacketReader::new(&body);
         let Ok(opcode) = reader.u8() else {
@@ -412,7 +397,6 @@ impl FrameHandler for ClientSession {
             Ok(Some(packet)) => packet,
             Ok(None) => return, // unknown opcode or wrong state: ignored, like Java
             Err(e) => {
-                // Java: read() fails → the packet is not run.
                 debug!("Bad login packet 0x{opcode:02X} from {}: {e}", self.ip);
                 return;
             }
@@ -427,7 +411,6 @@ impl FrameHandler for ClientSession {
         }
     }
 
-    // Java: LoginClient.onDisconnection
     async fn on_disconnect(&mut self) {
         if !self.joined_gs.load(Ordering::Relaxed)
             && let Some(account) = &self.account

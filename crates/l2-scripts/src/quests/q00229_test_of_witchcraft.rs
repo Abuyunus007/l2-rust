@@ -1,8 +1,6 @@
 //! Quest 229: Test of Witchcraft (Shadow Orim in Dark Elf Village / Gludin: the Wizard, Knight
 //! and Palus Knight second class change, through Alexandria, Iker, Kaira, Nestle, Vadin, Sir
 //! Klaus Vasper, Leopold and Evert).
-// Java: dist/game/data/scripts/quests/Q00229_TestOfWitchcraft/Q00229_TestOfWitchcraft.java
-//
 // Pattern: the test chain of the "Test of ..." quests (see Q00222) with a boss that is called by
 // a quest NPC (`addSpawn(summoner, ..)`, counted by `getSummonedNpcCount`), `onAttack` talk on the
 // script value and a kill that counts only with the Sword of Binding (`getKillingBlowWeapon`).
@@ -339,8 +337,6 @@ impl Script for Q00229TestOfWitchcraft {
                 }
             }
             SKELETAL_MERCENARY => {
-                // NOTE(java-quirk): `!hasQuestItems(.., 4th, 5th, 6th)` is "not all three gems",
-                // so the monster also talks for a player that has one or two of them.
                 if ctx.is_script_value(npc, 0)
                     && ctx.has_quest_items(attacker, LEOPOLDS_JOURNAL)
                     && !ctx.has_all_quest_items(

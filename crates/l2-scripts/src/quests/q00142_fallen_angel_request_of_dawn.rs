@@ -1,6 +1,4 @@
 //! Quest 142: Fallen Angel - Request of Dawn (started by Q00998_FallenAngelSelect).
-// Java: dist/game/data/scripts/quests/Q00142_FallenAngelRequestOfDawn/Q00142_FallenAngelRequestOfDawn.java
-//
 // Pattern: no start NPC (the select quest notifies "30894-01.html"), a `talk` memo, ant kills
 // for fragments at cond 4, a monster spawned from a rock and the `isAngelSpawned` field.
 
@@ -113,8 +111,6 @@ impl Script for Q00142FallenAngelRequestOfDawn {
                 ctx.start_quest_timer("despawn", 120_000, None, Some(player), false);
             }
             "despawn" => {
-                // NOTE(java-quirk): the answer of a timer event is the event name; the world does
-                // not show a timer's answer.
                 if ctx.state::<Fields>().is_angel_spawned {
                     ctx.state::<Fields>().is_angel_spawned = false;
                 }
@@ -126,8 +122,6 @@ impl Script for Q00142FallenAngelRequestOfDawn {
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, _is_summon: bool) {
         if npc.id == FALLEN_ANGEL {
-            // NOTE(java-quirk): Java does not null-check this state (a killer without the quest
-            // throws); here nothing happens.
             if let Some(qs) = ctx.get_quest_state(player, false)
                 && qs.is_cond(ctx, 5)
             {
@@ -139,7 +133,6 @@ impl Script for Q00142FallenAngelRequestOfDawn {
             let qs = ctx.get_quest_state(member, false);
             let chance = MOBS.iter().find(|&&(id, _)| id == npc.id).map_or(0, |&(_, c)| c);
             if ctx.get_random(1000) < chance {
-                // NOTE(java-quirk): the fragment goes to the killer, not to the member drawn.
                 ctx.give_items(player, PROPHECY_FRAGMENT, 1);
                 if ctx.get_quest_items_count(player, PROPHECY_FRAGMENT) >= FRAGMENT_COUNT {
                     ctx.take_items(player, PROPHECY_FRAGMENT, -1);

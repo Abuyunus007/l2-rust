@@ -1,15 +1,5 @@
 //! The PvP flag, karma, PK and PvP kill counts, the relation masks of `RelationChanged` and
 //! `isAutoAttackable` between players (M6-PVP-01).
-// Java: entity/actor/Player.java (updatePvPStatus (both), updatePvPFlag, startPvPFlag,
-//       stopPvPFlag, stopPvpRegTask, onKillUpdatePvPKarma, increasePvpKills,
-//       increasePkKillsAndKarma, updatePvpTitleAndColor, setKarma, setKarmaFlag, broadcastKarma,
-//       broadcastTitleInfo, getRelation, isAutoAttackable)
-// Java: entity/actor/Playable.java (checkIfPvP)
-// Java: taskmanagers/PvpFlagTaskManager.java
-// Java: managers/AntiFeedManager.java (check, setLastDeathTime)
-// Java: mechanics/stats/Formulas.java (calculateKarmaGain)
-// Java: network/serverpackets/{RelationChanged,NicknameChanged}.java
-//
 // # State
 // The flag (`Player._pvpFlag`), the time it lasts to (`_pvpFlagLasts`) and the timer standing in
 // for `PvpFlagTaskManager`'s set are one [`PvpState`] per player in `World::pvp`. Karma, PK and
@@ -150,9 +140,6 @@ pub(crate) struct PvpWorld {
 // ------------------------------------------------------------------ formulas
 
 /// Java `Formulas.calculateKarmaGain(pkCount, isSummon)`: the karma a killer gets for a kill.
-// NOTE(java-quirk): for a summon the first result is overwritten by the `pkCount` branches below
-// it, so only the cap of 10800 (before them) and `pkCount >= 180` (43200) are ever reached
-// through the summon formula.
 pub fn calculate_karma_gain(pk_count: i32, is_summon: bool) -> i32 {
     let pk = f64::from(pk_count);
     let mut result = 43_200;
@@ -450,9 +437,6 @@ impl World {
             // all Player to inform (broadcast).
             self.set_karma_flag(id);
         }
-        // NOTE(java-quirk): `setKarmaFlag()` runs before `super.setKarma(karma)`, so its packets
-        // still carry the old karma (the `UserInfo` and the `RelationChanged` of the last
-        // karma point); `broadcastKarma()` below follows with the new one.
         if let Some(player) = self.players.get_mut(&id) {
             player.data.karma = karma;
         }
@@ -537,7 +521,6 @@ impl World {
             return;
         }
         // Duel support.
-        // NOTE(java-quirk): both only have to be in *a* duel, not the same one.
         if self.is_in_duel(killer) && self.is_in_duel(killed) {
             return;
         }
@@ -908,7 +891,6 @@ impl World {
             }
         }
         // `attacker instanceof Defender && _clan != null`: a siege guard attacks the attackers of
-        // the castle siege the player stands in (a fortress commander too, NOTE(java-quirk)).
         if attacker_class.is_some_and(NpcClass::is_defender) && self.clan_of(subject).is_some() {
             let clan = self.clan_of(subject).map(|c| c.id);
             return self

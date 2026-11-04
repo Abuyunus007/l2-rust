@@ -1,6 +1,4 @@
 //! Quest 324: Sweetest Venom (Astaron in the Dark Elven village, Ratmen-type venom monsters).
-// Java: dist/game/data/scripts/quests/Q00324_SweetestVenom/Q00324_SweetestVenom.java
-//
 // Pattern: a kill-count quest with a drop chance per monster (`docs/design/scripts.md`,
 // "Quest patterns"): the chance is a percentage per monster id, the sac is given with `giveItems`
 // and the sound until the tenth one.
@@ -89,8 +87,6 @@ impl Script for Q00324SweetestVenom {
     }
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, _is_summon: bool) {
-        // NOTE(java-quirk): no `checkIfInRange` here (unlike most kill quests): the killer gets the
-        // sac wherever the monster died.
         let qs = ctx.get_quest_state(player, false);
         if let Some(qs) = qs
             && qs.is_cond(ctx, 1)

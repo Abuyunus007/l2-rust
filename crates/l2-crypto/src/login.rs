@@ -1,6 +1,5 @@
 //! The login server's client packet cipher: static-key first packet, then the session Blowfish.
 //!
-//! Java: loginserver/network/LoginEncryption.java (plus `NewCrypt`, see [`crate::checksum`] and
 //! [`crate::xor_pass`]).
 //!
 //! Both types here work on the packet **body**, i.e. without the 2-byte length header; framing
@@ -36,11 +35,6 @@ const TRAILER_SIZE: usize = 8;
 
 /// Size of an encrypted server packet body for a payload of `payload_len` bytes
 /// (Java `LoginEncryption.encryptedSize`). `first` selects the static first packet.
-///
-/// NOTE(java-quirk): the padding is `BLOCK - remainder`, not `remainder == 0 ? 0 : ...`, so an
-/// already aligned size still gets a full extra block of 8 bytes (for example a 4-byte session
-/// payload: 4 + 4 = 8, +8 padding, +8 trailer = 24, not 16). The client does not care, but the
-/// sizes must match Java for byte-exact replays.
 pub fn encrypted_size(payload_len: usize, first: bool) -> usize {
     let header = if first {
         STATIC_HEADER_SIZE

@@ -1,10 +1,5 @@
 //! Residence functions: the paid services of a castle, fortress or clan hall (teleport, HP / MP /
 //! exp regeneration, support magic, item creation, decorations) and their fee task.
-// Java: mechanics/siege/Castle.java (CastleFunction, FunctionTask, loadFunctions, removeFunction,
-//       updateFunctions)
-// Java: mechanics/siege/Fort.java (FortFunction, the same)
-// Java: entity/residences/ClanHall.java (ClanHallFunction, the same)
-//
 // The three Java classes are the same code with other constants and tables, so one
 // [`ResidenceFunction`] serves all of them.
 //
@@ -13,16 +8,6 @@
 // cancels such a task. A function that `updateFunctions` replaces (a higher lease) or removes
 // keeps its task: it goes on charging the clan warehouse and writing its row (`dbSave` is a
 // `REPLACE`), and when the warehouse is short it removes *the current* function of its type.
-// NOTE(java-quirk): this is ported as is. The objects live in `ResidenceWorld::function_objects`
-// by key; a residence's map (`Castle::functions`, ...) holds the keys of its current functions,
-// and a timer names the object it belongs to. An object goes when neither the map nor a pending
-// task holds it.
-//
-// # Side by side (D-51)
-// A fee the clan warehouse pays is a scheduled job of both servers: without
-// `SiegeDatabaseWrites` the task only moves the paid time on (no charge, no row, no removal); the
-// Java game server charges the real warehouse. The first run after a player bought a function
-// (`cwh` false, nothing is charged) writes its row like any player action.
 
 use l2_data::item::ADENA_ID;
 use tracing::{error, warn};
@@ -372,9 +357,6 @@ impl World {
     /// Java `ClanWarehouse.destroyItemByItemId(FEE, ADENA_ID, count, null, null)`: the first
     /// adena item of the clan warehouse loses `count`, or goes when that is all of it. `false`
     /// when it has less (Java returns null and the caller ignores it).
-    // NOTE: Java writes a partly used adena row only with the item's next `updateDatabase`; here
-    // the row is written at once, because this server reads the clan warehouse again at every
-    // window (D-50) and would otherwise give the fee back.
     pub(crate) fn clan_warehouse_destroy_adena(&mut self, clan_id: i32, count: i64) -> bool {
         let Some(clan) = self.clan_mut(clan_id) else {
             return false;
@@ -448,8 +430,6 @@ impl World {
                 .and_then(|keys| keys.get(&function_type))
                 .copied()
             else {
-                // NOTE(java-quirk): `_function.get(type).getLease()` throws for a type the
-                // residence does not have; the adena is gone and nothing else happens.
                 warn!("{residence}: updateFunctions of function {function_type} that does not exist.");
                 return false;
             };

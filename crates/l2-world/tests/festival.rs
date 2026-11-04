@@ -1,12 +1,5 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
-//! The Festival of Darkness (M8-FEST-01): signing a party up at a guide, a whole round of the
-//! manager (the arena, the witch, the monsters, the second spawn, the chests, the end), the blood
-//! offerings, the score registration and the rows it writes with `CycleDatabaseWrites` on and
-//! off (D-53), and the score tables read again (D-50). The expected values are read off the Java
-//! sources (`SevenSignsFestival.java`, `FestivalGuide.java`, `FestivalMonster.java`,
-//! `Festival.java`), not off the code.
-
 use std::sync::{Arc, Mutex};
 
 use l2_data::{
@@ -746,7 +739,6 @@ fn the_leader_registers_the_score_and_the_rows_are_written_with_the_switch_on() 
     )));
 
     // Dusk cannot beat what already counts: a better score of the leading cabal is refused.
-    // NOTE(java-quirk): the leader of the second party of the same cabal gets the same answer.
     assert!(!s.world.festival_set_final_score(CABAL_DAWN, 0, 500));
 }
 
@@ -798,7 +790,6 @@ fn the_winning_cabal_collects_its_share_of_the_bonus_in_the_validation_period() 
     s.bypass(P[0], "Festival 0");
     assert!(pages(&s.take(), P[0]).pop().unwrap().contains("festival_0a"));
     assert_eq!(s.world.festival_accumulated_bonus(0), 1_350);
-    // NOTE(java-quirk): nothing stops him asking again; each time takes half of the rest.
     s.bypass(P[0], "Festival 0");
     assert_eq!(s.world.festival_accumulated_bonus(0), 675);
     // Bravo is in the same party but belongs to no cabal (the winner is Dawn): nothing.

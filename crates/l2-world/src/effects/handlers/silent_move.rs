@@ -1,5 +1,4 @@
 //! `SilentMove`: the toggle that hides the creature from monsters while it drains MP.
-// Java: dist/game/data/scripts/handlers/skill/effects/SilentMove.java
 
 use l2_data::skill::EffectTemplate;
 

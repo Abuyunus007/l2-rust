@@ -1,5 +1,4 @@
 //! The 1st class transfer of human and elven mystics (Levian, Sylvain, Raymond, Marie, Celes).
-// Java: dist/game/data/scripts/village_master/ElfHumanWizardChange1/ElfHumanWizardChange1.java
 
 use l2_util::ObjectId;
 use l2_world::subclass::{CategoryType, Race};

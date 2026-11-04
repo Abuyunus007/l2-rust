@@ -1,10 +1,5 @@
 //! The hate effects with a chance: `DeleteHate`, `DeleteHateOfMe`, `RandomizeHate`,
 //! `TransferHate` and `TargetMeProbability`. Their landing roll is `Formulas.calcProbability`.
-// Java: dist/game/data/scripts/handlers/skill/effects/DeleteHate.java
-// Java: dist/game/data/scripts/handlers/skill/effects/DeleteHateOfMe.java
-// Java: dist/game/data/scripts/handlers/skill/effects/RandomizeHate.java
-// Java: dist/game/data/scripts/handlers/skill/effects/TransferHate.java
-// Java: dist/game/data/scripts/handlers/skill/effects/TargetMeProbability.java
 
 use l2_data::skill::EffectTemplate;
 use l2_util::ObjectId;
@@ -131,8 +126,6 @@ impl EffectHandler for RandomizeHate {
         if effected == effector || !world.is_attackable_npc(effected) {
             return;
         }
-        // NOTE(java-quirk): Java walks a `ConcurrentHashMap` keyed by creature, whose order is
-        // unrelated to the order the attackers were added; the aggro list order stands in.
         let others: Vec<ObjectId> = world
             .aggro_list(effected)
             .iter()
@@ -237,7 +230,6 @@ impl EffectHandler for TargetMeProbability {
         };
         if allowed {
             // Target is different.
-            // NOTE(java-quirk): an NPC caster passes `null`, which clears the target.
             world.set_creature_target(effected, player);
         }
     }

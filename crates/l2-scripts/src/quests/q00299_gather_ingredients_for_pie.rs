@@ -1,6 +1,4 @@
 //! Quest 299: Gather Ingredients for Pie (Emilly in the Town of Gludio sends the player for honey, spice and fruit).
-// Java: dist/game/data/scripts/quests/Q00299_GatherIngredientsForPie/Q00299_GatherIngredientsForPie.java
-//
 // Pattern: a delivery chain over three NPCs with a party drop in the middle (`docs/design/scripts.md`,
 // "Quest patterns"): the wasps drop honey pouches for a random party member in cond 1, the 100th
 // pouch sets cond 2; Emilly takes them (cond 3), Lars gives the avellan spice (cond 4), Emilly

@@ -1,6 +1,4 @@
 //! Quest 319: Scent of Death (Minaless in the Dwarven village, Marsh Zombies).
-// Java: dist/game/data/scripts/quests/Q00319_ScentOfDeath/Q00319_ScentOfDeath.java
-//
 // Pattern: a kill-count quest with a drop chance up to a limit (`docs/design/scripts.md`,
 // "Quest patterns"). Unlike Q00295 the drop is rolled by hand (`getRandom(10) > 7`) and each
 // skin is given with `giveItems`, with the item sound until the fifth one.

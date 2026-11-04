@@ -9,7 +9,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/ExDuelAskStart.java
 server_packet!(
     /// The challenged player is asked to accept (`EX_DUEL_ASK_START`).
     ExDuelAskStart,
@@ -51,28 +50,24 @@ macro_rules! party_duel_packet {
     };
 }
 
-// Java: gameserver/network/serverpackets/ExDuelReady.java
 party_duel_packet!(
     /// The duel is about to start (`EX_DUEL_READY`).
     ExDuelReady,
     ExDuelReady
 );
 
-// Java: gameserver/network/serverpackets/ExDuelStart.java
 party_duel_packet!(
     /// The duel has started (`EX_DUEL_START`).
     ExDuelStart,
     ExDuelStart
 );
 
-// Java: gameserver/network/serverpackets/ExDuelEnd.java
 party_duel_packet!(
     /// The duel is over (`EX_DUEL_END`).
     ExDuelEnd,
     ExDuelEnd
 );
 
-// Java: gameserver/network/serverpackets/ExDuelUpdateUserInfo.java
 server_packet!(
     /// The vitals of an opponent, for the duel window (`EX_DUEL_UPDATE_USER_INFO`).
     ExDuelUpdateUserInfo,

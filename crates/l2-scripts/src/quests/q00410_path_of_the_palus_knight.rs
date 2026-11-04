@@ -1,6 +1,4 @@
 //! Quest 410: Path of the Palus Knight (Master Virgil and Kalinta).
-// Java: dist/game/data/scripts/quests/Q00410_PathOfThePalusKnight/Q00410_PathOfThePalusKnight.java
-//
 // Pattern: a kill chain with the items taken at each step (`docs/design/scripts.md`, "Quest
 // patterns"): thirteen lycanthrope skulls, one venomous spider carapace and five tracker silks,
 // then Kalinta's coffin and Virgil's reward.
@@ -235,8 +233,6 @@ impl Script for Q00410PathOfThePalusKnight {
                         } else if !ctx.has_quest_items(player, ARACHNID_TRACKER_SILK)
                             && ctx.has_quest_items(player, VENOMOUS_SPIDERS_CARAPACE)
                         {
-                            // NOTE(java-quirk): unreachable, the branch above already took
-                            // "not both" (carapace without silk); Java has it too.
                             htmltext = "30422-04.html".to_owned();
                         } else if ctx.get_quest_items_count(player, ARACHNID_TRACKER_SILK) >= 5
                             && ctx.has_quest_items(player, VENOMOUS_SPIDERS_CARAPACE)

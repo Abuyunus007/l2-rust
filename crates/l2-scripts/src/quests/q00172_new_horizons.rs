@@ -1,5 +1,4 @@
 //! Quest 172: New Horizons (Zenya in the Kamael village, Ragara in Gludio's Kamael boat area).
-// Java: dist/game/data/scripts/quests/Q00172_NewHorizons/Q00172_NewHorizons.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED, race};

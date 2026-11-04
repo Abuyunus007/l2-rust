@@ -1,13 +1,5 @@
 //! Private trade between two players: the request, the trade window, lock/confirm and the item
 //! exchange (M6-TRADE-01).
-// Java: network/clientpackets/{TradeRequest,AnswerTradeRequest,AddTradeItem,TradeDone}.java
-// Java: network/holders/{TradeList,TradeItem}.java
-// Java: network/serverpackets/{TradeStart,TradeOwnAdd,TradeOtherAdd,TradeUpdate,TradeOtherDone,
-//       TradeDone,SendTradeRequest}.java
-// Java: entity/actor/Player.java (the transaction state: getActiveRequester, isProcessingRequest,
-//       isProcessingTransaction, onTransactionRequest, onTransactionResponse, startTrade,
-//       onTradeStart, onTradeConfirm, onTradeCancel, onTradeFinish, cancelActiveTrade)
-//
 // # Model
 // `Player._activeTradeList`, `_activeRequester`, `_requestExpireTime` and `_tradeRefusal` are one
 // [`TradeState`] on the [`Player`](crate::Player). A [`TradeList`] holds ids only (the owner, the

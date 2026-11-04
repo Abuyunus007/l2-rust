@@ -1,12 +1,5 @@
 //! `teleToLocation`: taking a player out of the world, telling the client where it goes, and
 //! putting it back once the client answers with `Appearing`.
-// Java: entity/actor/Creature.java (teleToLocation, onTeleported, setTeleporting, stopMove)
-// Java: entity/actor/Player.java (teleToLocation, onTeleported, setTeleporting, broadcastPacket,
-//       TeleportWatchdogTask)
-// Java: network/clientpackets/Appearing.java
-// Java: entity/WorldObject.java (decayMe, spawnMe, broadcastInfo, setInstanceId)
-// Java: data/xml/MapRegionData.java (getTeleToLocation)
-//
 // # The sequence
 // `tele_to_location` is Java's `Creature.teleToLocation`: `StopMove` to the player and to those
 // who see it, `setTeleporting(true)`, `decayMe` (everybody around gets `DeleteObject`, the
@@ -327,8 +320,6 @@ impl World {
         self.set_position(id, x, y, z);
 
         // "Also adjust heading."
-        // NOTE(java-quirk): a spawn's heading of -1 (random) is set as it is by an NPC that
-        // teleports to its spawn.
         if heading != 0 {
             self.set_heading(id, heading);
         }

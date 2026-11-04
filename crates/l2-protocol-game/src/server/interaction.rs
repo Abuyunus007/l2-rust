@@ -10,7 +10,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/MyTargetSelected.java
 /// Sent to the player who selected a target: the target id and the colour of its name.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MyTargetSelected {
@@ -23,9 +22,6 @@ impl MyTargetSelected {
     pub const OPCODE: ServerOpcode = ServerOpcode::MyTargetSelected;
 
     /// Java constructor: the colour is the level difference only for auto-attackable targets.
-    ///
-    /// NOTE(java-quirk): Java passes the int difference to `writeShort(int)`, which keeps the low
-    /// 16 bits. `as i16` does the same, so a huge difference wraps like Java does.
     pub fn new(object_id: i32, player_level: i32, target_level: i32, auto_attackable: bool) -> Self {
         let color = if auto_attackable {
             (player_level - target_level) as i16
@@ -39,7 +35,6 @@ impl MyTargetSelected {
 impl Encode for MyTargetSelected {
     fn encode(&self, w: &mut PacketWriter) {
         write_opcode(w, Self::OPCODE);
-        // Java: object id, colour, then a constant int 0.
         w.i32(self.object_id).i16(self.color).i32(0);
     }
 }
@@ -53,7 +48,6 @@ impl Decode for MyTargetSelected {
     }
 }
 
-// Java: gameserver/network/serverpackets/TargetSelected.java
 /// Tells the nearby players that `object_id` selected `target_id` at the given position.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TargetSelected {
@@ -71,7 +65,6 @@ impl TargetSelected {
 impl Encode for TargetSelected {
     fn encode(&self, w: &mut PacketWriter) {
         write_opcode(w, Self::OPCODE);
-        // Java: the trailing int is written as a constant 0 (`// ?` in the source).
         w.i32(self.object_id)
             .i32(self.target_id)
             .i32(self.x)
@@ -99,7 +92,6 @@ impl Decode for TargetSelected {
     }
 }
 
-// Java: gameserver/network/serverpackets/TargetUnselected.java
 /// Tells the nearby players that a target was dropped. Position is the target's own.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TargetUnselected {
@@ -116,7 +108,6 @@ impl TargetUnselected {
 impl Encode for TargetUnselected {
     fn encode(&self, w: &mut PacketWriter) {
         write_opcode(w, Self::OPCODE);
-        // Java: the trailing int is written as a constant 0 (`// ?` in the source).
         w.i32(self.target_id).i32(self.x).i32(self.y).i32(self.z).i32(0);
     }
 }
@@ -132,7 +123,6 @@ impl Decode for TargetUnselected {
     }
 }
 
-// Java: gameserver/network/serverpackets/ActionFailed.java
 /// "The action did not happen": sent for every rejected click or bypass. No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ActionFailed;
@@ -153,11 +143,9 @@ impl Decode for ActionFailed {
     }
 }
 
-// Java: gameserver/network/serverpackets/AbstractHtmlPacket.java (setHtml)
 /// Java `setHtml` limit, counted in UTF-16 units (Java `String.length()`).
 const MAX_HTML_UNITS: usize = 17_200;
 
-// Java: gameserver/network/serverpackets/NpcHtmlMessage.java
 /// A dialog window with html. `html` is what goes on the wire; use [`NpcHtmlMessage::new`] or
 /// [`NpcHtmlMessage::new_item`] to get Java's `setHtml` rules applied to the raw page.
 ///
@@ -195,16 +183,11 @@ impl NpcHtmlMessage {
 
 /// Java `AbstractHtmlPacket.setHtml`: cut a page that is too long, wrap a bare fragment in
 /// `<html><body>`, keep a full page or a `..\L2` file reference as it is.
-///
-/// NOTE(java-quirk): Java only warns about a page that is too long and cuts it without wrapping
-/// it. Cutting may split a surrogate pair; Java then sends the lone half, which we cannot hold in
-/// a `String`, so it becomes U+FFFD.
 pub(crate) fn prepare_html(html: &str) -> String {
     if html.encode_utf16().count() > MAX_HTML_UNITS {
         let units: Vec<u16> = html.encode_utf16().take(MAX_HTML_UNITS).collect();
         return String::from_utf16_lossy(&units);
     }
-    // NOTE(java-quirk): the check is case sensitive, `<HTML>` gets wrapped again.
     if !html.contains("<html") && !html.starts_with("..\\L2") {
         format!("<html><body>{html}</body></html>")
     } else {
@@ -232,7 +215,6 @@ impl Decode for NpcHtmlMessage {
     }
 }
 
-// Java: gameserver/network/serverpackets/SocialAction.java
 /// An object plays an animation (`SOCIAL_ACTION`): the greeting of a talked-to NPC, a player's
 /// social emote. Java marks it droppable under load.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -261,7 +243,6 @@ impl Decode for SocialAction {
     }
 }
 
-// Java: gameserver/network/serverpackets/ChairSit.java
 /// A player sits on a throne, bench or chair (`CHAIR_SIT`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ChairSit {
@@ -291,7 +272,6 @@ impl Decode for ChairSit {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExAskCoupleAction.java
 /// Asks a player to join a couple social action (`EX_ASK_COUPLE_ACTION`, `0xFE 0x00BB`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExAskCoupleAction {
@@ -321,7 +301,6 @@ impl Decode for ExAskCoupleAction {
     }
 }
 
-// Java: gameserver/network/serverpackets/ShowTownMap.java
 /// Opens the town map window (`SHOW_TOWN_MAP`); a clicked map sign sends it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ShowTownMap {
@@ -353,7 +332,6 @@ impl Decode for ShowTownMap {
     }
 }
 
-// Java: gameserver/network/serverpackets/DoorInfo.java
 /// Tells a player that a door exists (sent when the door enters the player's view).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DoorInfo {
@@ -381,7 +359,6 @@ impl Decode for DoorInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/DoorStatusUpdate.java
 /// A door's state and hp, sent after it opens, closes or takes damage.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct DoorStatusUpdate {
@@ -434,7 +411,6 @@ impl Decode for DoorStatusUpdate {
     }
 }
 
-// Java: gameserver/network/serverpackets/StaticObjectInfo.java
 /// Info about a static object (a signboard, a banner...) or a door, in the client's
 /// "static object" form. Java sends doors with this packet too.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

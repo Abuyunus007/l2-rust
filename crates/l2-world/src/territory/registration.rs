@@ -1,11 +1,3 @@
-//! The registrations of the war: who is registered where (`getRegisteredTerritoryId`,
-//! `checkIsRegistered`, `isAllyField`), `RequestJoinDominionWar` (after a re-read of the rows,
-//! D-50), `RequestDominionInfo` and the registration window (`ExShowDominionRegistry`).
-// Java: managers/TerritoryWarManager.java (getRegisteredTerritoryId, isAllyField,
-//       checkIsRegistered, registerClan, registerMerc, removeClan, removeMerc, changeRegistration)
-// Java: network/clientpackets/{RequestJoinDominionWar,RequestDominionInfo}.java
-// Java: network/serverpackets/{ExShowDominionRegistry,ExReplyDominionInfo,ExShowOwnthingPos}.java
-
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;
 use l2_protocol_game::server::territory::{
@@ -87,8 +79,6 @@ impl World {
                 .values()
                 .any(|list| list.iter().any(|r| r.id == id));
         }
-        // NOTE(java-quirk): `_registeredClans.get(castleId).contains(clan)` throws for a castle
-        // without a list; here that is "not registered".
         self.territory
             .registered_clans
             .get(&castle_id)
@@ -198,7 +188,6 @@ impl World {
 
     /// Java `Disguise.onItemUse`: the disguise scroll of the player's own territory (`regId ==
     /// itemId - 13596`), not for a member of a castle owning clan.
-    // Java: dist/game/data/scripts/handlers/items/Disguise.java
     pub(crate) fn disguise_on_use(&mut self, id: ObjectId, item: &crate::player::ItemData) -> bool {
         if !self.is_player(id) {
             self.send(
@@ -250,8 +239,6 @@ impl World {
                 if !self.players.contains_key(&player) {
                     return;
                 }
-                // D-50: the registrations change on the Java game server too; they are read
-                // again before the request acts on them.
                 self.territory_request_reread(TerritoryThen::Join {
                     player,
                     territory_id,

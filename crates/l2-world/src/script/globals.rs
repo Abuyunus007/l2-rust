@@ -1,13 +1,3 @@
-//! Java `GlobalVariablesManager` for the scripts, with the side by side switch (D-54).
-// Java: managers/GlobalVariablesManager.java, mechanics/variables/AbstractVariables.java,
-//       util/StatSet.java (getInt, getLong, getBoolean, getString)
-//
-// # Side by side (D-54)
-// The rows are global: the Java GS reads and rewrites the same table. The world loads every
-// row at startup ([`World::set_global_variables`]); scripts read and change the copy in memory.
-// The changes reach the database only with `CycleDatabaseWrites = True`, at shutdown (Java's
-// `Shutdown` -> `storeMe`).
-//
 // NOTE: Java's `storeMe` deletes the whole table and writes its map back. Here other systems of
 // this server write their own rows of the table directly (`nextTWStartDate`, the coliseum
 // times, the fishing championship), so a whole-table rewrite would put back stale copies of

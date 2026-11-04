@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/IdManagerConfig.java
 
 use crate::IniFile;
 /// Settings of `config/IdManager.ini` (Java: `IdManagerConfig`).

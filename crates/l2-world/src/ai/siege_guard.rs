@@ -1,10 +1,6 @@
 //! `SiegeGuardAI`: the brain of a castle's siege defenders (and, with the allied list of
 //! `World::hall_siege_allies_of`, of a siegable hall's `SpecialSiegeGuardAI`). It attacks the
 //! enemies of the siege only, never the defenders, heals its friends, calls its clan, and goes home when nobody is left.
-// Java: ai/SiegeGuardAI.java, ai/SpecialSiegeGuardAI.java
-// Java: ai/CreatureAI.java (SelfAnalysis)
-// Java: entity/actor/instance/Defender.java (initAI, returnHome)
-//
 // # How it plugs in
 // A `Defender` (and a `FortCommander`, which extends it) is an attackable, so it uses the think
 // set, the aggro list and the intention machine of `attackable.rs`; the entry points there hand
@@ -22,13 +18,6 @@
 // never takes a player of its `_allied` list (a flag war warrior's clan) for a target.
 //
 // # Java behaviour kept as is
-// - NOTE(java-quirk): a guard only looks for enemies within its *physical attack range*
-//   (`_attackRange`, taken when the AI is made): a sword guard notices a player 40 away, an
-//   archer one 500+ away. Otherwise it waits to be hit, called by its clan or by a hit door.
-// - NOTE(java-quirk): `World.addVisibleObject` runs before `onSpawn`, so a guard spawned in view of
-//   a player has its AI when `Attackable.onSpawn` sets it `ACTIVE`; a guard spawned where nobody
-//   is gets its AI later from a player coming into view, which only activates monsters, so it
-//   stays `IDLE` until something wakes it as above.
 
 use l2_data::SkillTemplate;
 use l2_data::npc::AiType;
@@ -446,8 +435,6 @@ impl World {
 
     /// `_actor.getCastle().getSiege().checkIsDefender(player.getClan())` (castle guards) or
     /// `_actor.getFort().getSiege().checkIsDefender(...)` (fortress guards).
-    // NOTE(java-quirk): Java throws when the guard has no castle (fortress); that reads as "no
-    // defender" here.
     pub(crate) fn siege_guard_is_defender(&self, id: ObjectId, player: ObjectId) -> bool {
         let clan = self.clan_of(player).map(|c| c.id);
         if self.siege_guard_kind_of(id) == SiegeGuardAiKind::Fort {
@@ -838,8 +825,6 @@ impl World {
             if !self.is_running(id) {
                 self.set_running(id, true);
             }
-            // NOTE(java-quirk): Java reads `getSpawn()` without a check; a guard without a spawn
-            // throws there and does nothing here.
             let Some(spawn) = self
                 .npcs
                 .get(&id)

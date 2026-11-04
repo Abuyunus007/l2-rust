@@ -1,6 +1,4 @@
 //! Quest 327: Recover the Farmland (Leikan and Piotur in the Dion area, the Turek Orcs, Iris, Asha and Nestle).
-// Java: dist/game/data/scripts/quests/Q00327_RecoverTheFarmland/Q00327_RecoverTheFarmland.java
-//
 // Pattern: a collection quest over several NPCs (`docs/design/scripts.md`, "Quest patterns"):
 // dog tags and medallions from the Turek Orcs (a fragment with a chance), Piotur pays for the
 // tags and medallions, Iris, Asha and Nestle turn the fragments into ancient relics and the

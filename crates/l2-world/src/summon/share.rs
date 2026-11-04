@@ -1,13 +1,6 @@
 //! Servitor Share: part of the owner's stats added to its servitor's.
-// Java: entity/actor/instance/Servitor.java (getPAtk, getPDef, getMAtk, getMDef, getMAtkSpd,
-//       getMaxHp, getMaxMp, getCriticalHit, getPAtkSpd)
-// Java: entity/actor/Player.java (setServitorShare, getServitorShareBonus)
-//
 // `ServitorShare` (the effect, `effects/handlers/servitor_share.rs`) gives the owner a map of
 // stat -> multiplier; every getter above of a servitor adds `owner value * (multiplier - 1)`.
-// NOTE(java-quirk): Java overrides the `Creature` getters, so a caller that asks the stat object
-// (`getStat().getMaxHp()`) gets the value without the share. Here the share is part of the stat
-// view's getter, which every caller uses.
 
 use l2_data::Stat;
 use l2_util::ObjectId;

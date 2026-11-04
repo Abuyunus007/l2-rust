@@ -1,10 +1,5 @@
 //! The html side of the admin pages: Java's `NpcHtmlMessage.setFile` + `replace`, and the pager
 //! of the lists (`PageBuilder` with the default page handler and the `ButtonsStyle`).
-// Java: network/serverpackets/AbstractHtmlPacket.java (setFile, replace, setHtml)
-// Java: mechanics/html/{PageBuilder,PageResult,IBodyHandler}.java
-// Java: mechanics/html/pagehandlers/DefaultPageHandler.java, mechanics/html/styles/ButtonsStyle.java
-// Java: mechanics/html/formatters/DefaultFormatter.java
-//
 // Only the combination the admin handlers use exists: the default formatter (`<bypass> <page>`),
 // the default page handler (offset 2) and the buttons style. The handlers of other panels can add
 // the other styles next to them.
@@ -111,8 +106,6 @@ const SEPARATOR: &str = "<td align=center> | </td>";
 /// `DefaultPageHandler.apply(bypass, currentPage, pages, ...)` with the `DefaultFormatter`
 /// (`bypass + " " + page`) and the buttons style. `pages` is what `PageBuilder.build` passes: the
 /// page count minus one.
-// NOTE(java-quirk): `build` hands over `pages - 1`, so the last page gets no button when the
-// current page is within two of it (three pages show only the first two buttons).
 fn apply_pager(bypass: &str, current: i32, pages: i32, out: &mut String) {
     let link = |page: i32| button(&format!("{bypass} {page}"), page + 1, current == page);
     let start = (current - PAGES_OFFSET).max(0);
@@ -156,9 +149,6 @@ pub(crate) fn build_page<T>(
     if pages > 1 {
         apply_pager(bypass, current, pages - 1, &mut pager);
     }
-    // NOTE(java-quirk): the clamp compares with `pages`, not `pages - 1`, and comes after the
-    // pager was built: a page number past `pages` shows the last page, but `pages` itself shows an
-    // empty list.
     let current = if current > pages { pages - 1 } else { current };
     // Java's int product wraps for a huge page number.
     let start = usize::try_from(per_page.wrapping_mul(current).max(0)).unwrap_or(0);

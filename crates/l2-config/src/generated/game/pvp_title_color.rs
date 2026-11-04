@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/PvpTitleColorConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/PvpTitleColor.ini` (Java: `PvpTitleColorConfig`).

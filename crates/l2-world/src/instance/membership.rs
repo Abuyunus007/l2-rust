@@ -1,13 +1,5 @@
 //! Who is in which instance: Java `WorldObject.setInstanceId` and the places that move a player
 //! in or out (enter world, logout, a death inside, the restart point).
-// Java: entity/WorldObject.java (setInstanceId, sendInstanceUpdate)
-// Java: entity/instancezone/Instance.java (addPlayer, addNpc, removeNpc, notifyDeath,
-//       cancelEjectDeadPlayer)
-// Java: entity/spawns/Spawn.java (doSpawn: `npc.setInstanceId(getInstanceId())`, the
-//       `broadcastInfo` of `initializeNpc`), entity/actor/holders/npc/MinionList.java
-//       (`minion.setInstanceId(master.getInstanceId())`)
-// Java: network/clientpackets/{EnterWorld,Logout,RequestRestart}.java (the instance blocks)
-// Java: entity/actor/Player.java (deleteMe's instance block, doRevive), Playable.java (doDie)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{ExSendUiEvent, SystemMessage, SystemMessageParam};
@@ -185,7 +177,6 @@ impl World {
             Some(location) => Some(location),
             None => self.get_tele_to_location(id, TeleportWhereType::Town),
         };
-        // Java: `location.getX() + ";" + ...` (a missing town is a NullPointerException there).
         if let Some((x, y, z)) = location
             && let Some(player) = self.players.get_mut(&id)
         {
@@ -196,8 +187,6 @@ impl World {
             profile.variables_removed.remove(RESTORE_LOCATION);
             profile.variables_changed.insert(RESTORE_LOCATION.to_owned());
         }
-        // NOTE(java-quirk): `setInstanceId(0)` already took the player off the list; Java calls
-        // `removePlayer` a second time, which starts the empty countdown again.
         self.instance_remove_player(instance_id, id);
     }
 
@@ -272,8 +261,6 @@ impl World {
             InstanceTask::EjectDead { player: id, exit },
             i64::from(eject_time),
         );
-        // NOTE(java-quirk): `_ejectDeadTasks.put` replaces an older task of the player without
-        // cancelling it; that one still runs.
         if let Some(instance) = self.instances.instances.get_mut(&instance_id) {
             instance.eject_dead.insert(id, timer);
         }

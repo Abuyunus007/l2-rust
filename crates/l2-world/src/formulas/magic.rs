@@ -1,6 +1,5 @@
 //! Magic skill formulas: magic damage, mana damage, magic success, magic affected, magic crit.
 //!
-//! Java: `mechanics/stats/Formulas.java` `calcMagicDam`, `calcManaDam`, `calcMagicSuccess`,
 //! `calcMagicAffected`, `calcMCrit`; `entity/actor/stat/CreatureStat.getMCriticalHit`.
 //!
 //! The "You resisted ..." messages of Java are not sent here: the results say which one applies
@@ -32,7 +31,6 @@ pub struct MCriticalHitInput {
 
 /// Java `CreatureStat.getMCriticalHit(target, skill)`: the rate [`calc_mcrit`] compares.
 pub fn calc_m_critical_hit(input: &MCriticalHitInput) -> i32 {
-    // NOTE(java-quirk): `(int) calcStat(..) * 10`: the cast comes before the `* 10`.
     let mut val = (input.mcritical_rate as i32).wrapping_mul(10);
 
     if let Some(multiplier) = input.class_balance_multiplier {
@@ -298,9 +296,6 @@ pub fn calc_magic_dam(
     if input.alt_game_magicfailures && !calc_magic_success(&input.magic_success, rng) {
         failed = true;
         if input.attacker_is_player {
-            // NOTE(java-quirk): the check is rolled a second time to decide between "half
-            // damage" and "fully resisted", so a failure that was a 1-in-N event turns into the
-            // half damage case with the chance of a success.
             if calc_magic_success(&input.magic_success, rng)
                 && input.target_level.wrapping_sub(input.attacker_level) <= 9
             {
@@ -730,7 +725,6 @@ mod tests {
         i.attacker_is_player = false;
         i.attacker_is_playable = false;
         i.attacker_player_level = None;
-        // NOTE(java-quirk): the magic crit is skipped after a failed check as well (else-if).
         let r = run(&i, (false, false, true), &[98]);
         assert_eq!((r.damage, r.failed, r.failure), (910.0, true, MagicFailure::None));
     }

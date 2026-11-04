@@ -1,6 +1,5 @@
 //! The position change of the instant movement effects (`Blink`, `ThrowUp`, `TeleportToTarget`):
 //! the creature is set down at the destination and everybody who sees it gets `ValidateLocation`.
-// Java: Creature.setXYZ, and the `ValidateLocation` broadcast of Blink.java, ThrowUp.java and
 // TeleportToTarget.java. The `FlyToLocation` before it is `World::fly_to_location`
 // (`effects/control.rs`), called by the three handlers.
 

@@ -1,5 +1,4 @@
 //! Quest 737: Deny Blessings.
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/Q00737_DenyBlessings.java
 
 use l2_protocol_game::NpcStringId;
 

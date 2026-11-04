@@ -1,7 +1,4 @@
 //! The `character_hennas` table: the dyes (hennas) a character wears, per class index.
-// Java: org/l2jmobius/gameserver/entity/actor/Player.java (RESTORE_CHAR_HENNAS in restoreHenna,
-// Java: ADD_CHAR_HENNA in addHenna, DELETE_CHAR_HENNA in removeHenna)
-//
 // Same layout as skills.rs: verbatim SQL, one method per statement.
 
 use sqlx::FromRow;
@@ -9,13 +6,10 @@ use sqlx::FromRow;
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: Player.RESTORE_CHAR_HENNAS
 const SELECT_HENNAS: &str = "SELECT slot,symbol_id FROM character_hennas WHERE charId=? AND class_index=?";
 
-// Java: Player.ADD_CHAR_HENNA
 const INSERT_HENNA: &str =
     "INSERT INTO character_hennas (charId,symbol_id,slot,class_index) VALUES (?,?,?,?)";
-// Java: Player.DELETE_CHAR_HENNA
 const DELETE_HENNA: &str = "DELETE FROM character_hennas WHERE charId=? AND slot=? AND class_index=?";
 
 /// One row of `character_hennas`: a dye slot and the dye (symbol) id in it.
@@ -40,7 +34,6 @@ impl HennaRepository {
     }
 
     /// The dye rows of one class index, as Java reads them (no ordering).
-    // Java: Player.restoreHenna
     pub async fn hennas_of(&self, char_id: i32, class_index: i32) -> Result<Vec<HennaRow>> {
         let rows = sqlx::query_as::<_, HennaRow>(SELECT_HENNAS)
             .bind(char_id)
@@ -51,7 +44,6 @@ impl HennaRepository {
     }
 
     /// One dye drawn into a slot (1 to 3) of a class index.
-    // Java: Player.addHenna
     pub async fn add_henna(&self, char_id: i32, symbol_id: i32, slot: i32, class_index: i32) -> Result<()> {
         sqlx::query(INSERT_HENNA)
             .bind(char_id)
@@ -64,7 +56,6 @@ impl HennaRepository {
     }
 
     /// The dye of one slot removed.
-    // Java: Player.removeHenna
     pub async fn delete_henna(&self, char_id: i32, slot: i32, class_index: i32) -> Result<()> {
         sqlx::query(DELETE_HENNA)
             .bind(char_id)

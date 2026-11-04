@@ -1,7 +1,5 @@
 //! Quest 10270: Birth of the Seed (Plenos, Artius, Ginby and Lelrikia at the Keucereus Alliance
 //! Base; the Seed of Infinity bosses).
-// Java: dist/game/data/scripts/quests/Q10270_BirthOfTheSeed/Q10270_BirthOfTheSeed.java
-//
 // Pattern: a one-time story quest on the memo state. The kills of Yehan Klodekus, Yehan Klanikus
 // and Cohemenes give each party member in range one proof (`executeForEachPlayer`); the way on
 // depends on the player's "Light Fragment" (Q10272) state.

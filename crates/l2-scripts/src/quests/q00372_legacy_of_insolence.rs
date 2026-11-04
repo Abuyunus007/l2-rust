@@ -1,6 +1,4 @@
 //! Quest 372: Legacy of Insolence (Walderal in Giran, the Tower of Insolence papyri and books).
-// Java: dist/game/data/scripts/quests/Q00372_LegacyOfInsolence/Q00372_LegacyOfInsolence.java
-//
 // Pattern: a kill quest whose items are traded for a random reward; the rolls are tables of
 // `(upper limit, reward)` read from the lowest limit up (`if chance < 10 ... else if chance < 20`).
 
@@ -433,7 +431,6 @@ impl Script for Q00372LegacyOfInsolence {
                         ctx.take_items_many(player, 1, &ANCIENT_EPIC_CHAPTERS);
                         give_reward(ctx, player, chance, &PATRIN_REWARD);
                     }
-                    // NOTE(java-quirk): both branches show 30929-02, also without the books.
                     htmltext = "30929-02.html".to_owned();
                 }
                 CLAUDIA_ATHEBALDT => {

@@ -1,7 +1,5 @@
 //! Quest 258: Bring Wolf Pelts (Lector in the Talking Island village gives the quest to the
 //! characters of level 3 and up; 40 wolf pelts earn a random piece of cheap armour).
-// Java: dist/game/data/scripts/quests/Q00258_BringWolfPelts/Q00258_BringWolfPelts.java
-//
 // Pattern: a kill count with a random reward and a repeatable quest (`docs/design/scripts.md`,
 // "Quest patterns"): `exit_quest(ctx, true, true)` at the reward, so the quest can be taken again.
 
@@ -20,9 +18,6 @@ const MONSTERS: [i32; 2] = [20120, 20442];
 
 /// Java `REWARDS` (item, the chance roll below which it is given) in the order Java's `HashMap`
 /// iterates it: buckets 6 (390, 22), 10 (426), 13 (29), 15 (1119) of 16.
-// NOTE(java-quirk): the loop stops at the first entry whose limit is above the roll, so Tunic
-// (limit 16) takes every roll from 9 up and Leather Pants (29) and Short Leather Gloves (1119)
-// are never given.
 const REWARDS: [(i32, i32); 5] = [
     (390, 1),   // Cotton Shirt
     (22, 9),    // Leather Shirt
@@ -218,7 +213,6 @@ mod tests {
         for chance in 1..=8 {
             assert_eq!(reward_item(chance), Some(22), "{chance}");
         }
-        // NOTE(java-quirk): Tunic takes every roll from 9, so 29 and 1119 never come out.
         for chance in 9..16 {
             assert_eq!(reward_item(chance), Some(426), "{chance}");
         }

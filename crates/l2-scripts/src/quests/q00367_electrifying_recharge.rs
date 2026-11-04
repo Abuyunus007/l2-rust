@@ -1,6 +1,4 @@
 //! Quest 367: Electrifying Recharge! (Lorain, Catherok's thunder storm charges the lamp).
-// Java: dist/game/data/scripts/quests/Q00367_ElectrifyingRecharge/Q00367_ElectrifyingRecharge.java
-//
 // Pattern: an `on_attack` quest: the first hit on a Catherok (once per life, script value 367)
 // makes it cast the thunder storm and gives a random party member a chance to upgrade the lamp.
 

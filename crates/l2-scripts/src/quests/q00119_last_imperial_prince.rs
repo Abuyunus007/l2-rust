@@ -1,6 +1,4 @@
 //! Quest 119: Last Imperial Prince (the Nameless Spirit, Nurse Devorin in Rune Township).
-// Java: dist/game/data/scripts/quests/Q00119_LastImperialPrince/Q00119_LastImperialPrince.java
-//
 // Pattern: a quest that asks for an item the player already has (the Antique Brooch of "Four
 // Goblets") and answers with a page in both states; `onEvent` returns null for the events it
 // does not know (no echo), and a player without the state gets null too. The `brooch` event is

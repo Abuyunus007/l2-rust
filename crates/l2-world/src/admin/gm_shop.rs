@@ -1,7 +1,5 @@
 //! The GM shop admin commands: `//gmshop` (the page of the shops) and `//buy <listId>` (the buy
 //! list of a shop, opened for the GM).
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminShop.java
-//
 // The buy list is built like the NPC shops build it (`shop/packets.rs`), with no tax. An id that
 // is not a number, or a list that does not exist, sends only the `ActionFailed` (Java logs it).
 

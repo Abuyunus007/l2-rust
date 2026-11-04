@@ -1,6 +1,4 @@
 //! Quest 32: An Obvious Lie (Maximilian in the Town of Gludin sends a character to Gentler, Miki the Cat and the alligators).
-// Java: dist/game/data/scripts/quests/Q00032_AnObviousLie/Q00032_AnObviousLie.java
-//
 // Pattern: a long chain of hand-overs, one kill count, and a reward choice (`docs/design/scripts.md`,
 // "Quest patterns"): Gentler and Miki move the quest along, twenty medicinal herbs drop from the
 // alligators of a random party member at cond 3 (`give_item_randomly`, limit 20), and the three
@@ -157,7 +155,6 @@ impl Script for Q00032AnObviousLie {
     }
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, _is_summon: bool) {
-        // Java: `getRandomPartyMemberState(killer, 3, 3, npc)`: the member at cond 3, the killer
         // three times as likely. The herb goes to that member, up to 20 herbs.
         if let Some(qs) = ctx.random_party_member_state(killer, 3, 3, Some(npc))
             && ctx.give_item_randomly(
@@ -193,7 +190,6 @@ impl Script for Q00032AnObviousLie {
                         htmltext = "30120-04.html".to_owned();
                     }
                 }
-                // Java: every other state (completed) gets the "already completed" message.
                 _ => htmltext = ctx.get_already_completed_msg(player),
             },
             GENTLER => match qs.get_cond(ctx) {

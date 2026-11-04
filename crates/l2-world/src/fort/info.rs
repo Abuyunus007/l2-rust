@@ -1,7 +1,4 @@
 //! The fortress windows: the list of all fortresses, the siege window and the barracks map.
-// Java: network/clientpackets/{RequestAllFortressInfo,RequestFortressSiegeInfo,
-//       RequestFortressMapInfo}.java
-// Java: network/serverpackets/{ExShowFortressInfo,ExShowFortressSiegeInfo,ExShowFortressMapInfo}.java
 
 use l2_protocol_game::server::{
     ActionFailed, ExShowFortressInfo, ExShowFortressMapInfo, ExShowFortressSiegeInfo, FortressInfo,

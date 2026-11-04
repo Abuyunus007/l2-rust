@@ -3,8 +3,6 @@
 //! The coordinates, speeds, messages, ticket items and delays are the scripts' numbers; the engine
 //! that plays them is `boat.rs`. A test (`tests/vehicle.rs`) compares every path with the Java
 //! source when the reference folder is there.
-// Java: dist/game/data/scripts/vehicles/{BoatTalkingGludin,BoatGiranTalking,BoatGludinRune,
-//       BoatRunePrimeval,BoatInnadrilTour}.java
 
 use l2_protocol_game::SystemMessageId;
 

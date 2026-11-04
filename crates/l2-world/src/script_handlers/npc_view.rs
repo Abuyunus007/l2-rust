@@ -1,10 +1,5 @@
 //! The `NpcViewMod` NPC bypass: the info, drop, spoil, skill and aggro pages of an NPC
 //! (`AltGameViewNpc`).
-// Java: dist/game/data/scripts/handlers/bypass/npc/NpcViewMod.java
-// Java: dist/game/data/scripts/handlers/actions/shiftclick/NpcShiftClick.java (the `ALT_GAME_VIEWNPC`
-//       branch), network/clientpackets/Action.java (who may shift click)
-// Java: util/HtmlUtil.java (`getHpGauge`, `getMpGauge`)
-//
 // The drop rates shown are the ones a kill of this player would roll (`rewards/drop.rs`): the
 // server rates and the player's bonus stats. The premium rates are left out because the premium
 // system is off (`PremiumSystem.ini`, "premium answers as off").

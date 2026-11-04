@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/WeddingConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/Wedding.ini` (Java: `WeddingConfig`).

@@ -1,8 +1,5 @@
 //! `GameState`: everything the game server's tasks share (network, LS link, persistence,
 //! admin), plus the exit codes and the shutdown request channel.
-// Java: org/l2jmobius/gameserver/GameServer.java (EXIT codes are in Shutdown.java)
-// Java: org/l2jmobius/gameserver/Shutdown.java (`System.exit(0)` / `System.exit(2)`)
-//
 // Same pattern as `login-server/src/state.rs`: one struct behind an `Arc`, built once at
 // startup. This is the server process, not the game world: the world's own state lives in the
 // world thread and is only reachable through [`WorldHandle`] (D-10).
@@ -21,7 +18,6 @@ use crate::hexid::HexId;
 
 /// Why and how the process should end. The exit code is what the start scripts and the
 /// supervisor look at.
-// Java: Shutdown.java (`System.exit(0)` shutdown, `System.exit(2)` restart); a fatal startup
 // error ends the Java process through an uncaught exception, here it is code 1.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ExitReason {
@@ -94,7 +90,6 @@ pub struct GameState {
     /// The game database (same schema as Java, D-21). Persistence (M2-PERSIST-01) and the
     /// character screen (M2-GS-03) use it; the world never does (D-15).
     pub pool: Pool,
-    /// Object ids from the Rust range (D-39).
     pub ids: Arc<IdFactory>,
     pub datapack: Arc<Datapack>,
     /// The datapack as the packets need it: shared by the world and the client sessions.

@@ -1,6 +1,5 @@
 //! `config/Custom/ChatModeration.ini`: the voiced commands `.banchat` and `.unbanchat` of the
 //! moderators (`ChatAdmin`, on by default in Java).
-// Java: dist/game/data/scripts/handlers/chat/commands/voiced/ChatAdmin.java
 
 use l2_util::ObjectId;
 
@@ -58,8 +57,6 @@ impl World {
         if let Some(token) = parts.get(1)
             && is_numeric(token)
         {
-            // NOTE(java-quirk): `Integer.parseInt` throws for a number above `Integer.MAX_VALUE`;
-            // the exception leaves the handler without a word to the moderator.
             match token.parse::<i32>() {
                 Ok(minutes) => expiration_minutes = i64::from(minutes),
                 Err(_) => return true,
@@ -97,9 +94,6 @@ impl World {
         }
 
         let moderator = self.chat_admin_name(player);
-        // NOTE(java-quirk): without minutes the expiration is "now", not 0 (forever): the task
-        // is made with `currentTimeMillis() + 0`, which the punishment manager treats as a
-        // time that has just passed.
         let expiration = unix_ms_now().wrapping_add(expiration_minutes.wrapping_mul(1000 * 60));
         self.start_punishment(NewPunishment::new(
             obj_id,

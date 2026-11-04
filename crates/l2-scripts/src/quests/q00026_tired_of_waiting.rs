@@ -1,6 +1,4 @@
 //! Quest 26: Tired of Waiting (Isael Silvershadow in the Town of Giran sends an 80th level character to Kitzka).
-// Java: dist/game/data/scripts/quests/Q00026_TiredOfWaiting/Q00026_TiredOfWaiting.java
-//
 // Pattern: a delivery to one NPC with a choice of rewards (`docs/design/scripts.md`, "Quest
 // patterns"): Isael gives the delivery box on the start, Kitzka takes it on the page that names
 // the reward, and the reward item comes with `exit_quest(ctx, false, true)`.
@@ -105,8 +103,6 @@ impl Script for Q00026TiredOfWaiting {
                 } else if state == STARTED {
                     htmltext = "30655-07.html".to_owned();
                 } else {
-                    // NOTE(java-quirk): a completed quest gets this page, not the "already
-                    // completed" message (the Java `else` covers every other state).
                     htmltext = "30655-08.html".to_owned();
                 }
             }
@@ -248,7 +244,6 @@ mod tests {
             ]
         );
 
-        // NOTE(java-quirk): a completed quest sees page 08 from Isael, not the completed message.
         assert!(t.quest_page(1, npcs.isael).contains("30655-08.html"));
     }
 }

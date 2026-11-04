@@ -11,7 +11,6 @@ use crate::generated::opcodes::ServerOpcode;
 /// Java `Inventory.ADENA_ID`, the first of the two items `ExEnchantSkillInfoDetail` lists.
 const ADENA_ID: i32 = 57;
 
-// Java: gameserver/network/serverpackets/ExEnchantSkillInfo.java
 /// The routes a skill can take from its level (`EX_ENCHANT_SKILL_INFO`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExEnchantSkillInfo {
@@ -62,7 +61,6 @@ impl Decode for ExEnchantSkillInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExEnchantSkillInfoDetail.java
 /// The cost and chance of one step (`EX_ENCHANT_SKILL_INFO_DETAIL`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExEnchantSkillInfoDetail {
@@ -125,7 +123,6 @@ impl Decode for ExEnchantSkillInfoDetail {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExEnchantSkillList.java, mechanics/skill/enums/EnchantSkillType.java
 /// A list of skills for one kind of enchant (`EX_ENCHANT_SKILL_LIST`). Java defines it and never
 /// sends it.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -163,7 +160,6 @@ impl Decode for ExEnchantSkillList {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExEnchantSkillResult.java
 /// Whether the skill changed (`EX_ENCHANT_SKILL_RESULT`): the client plays the success or the
 /// failure effect.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

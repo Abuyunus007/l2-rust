@@ -1,11 +1,5 @@
 //! The spectators: Java `Player.enterOlympiadObserverMode`, `leaveOlympiadObserverMode`,
 //! `leaveObserverMode` and the client packets of the observer.
-// Java: entity/actor/Player.java (enterOlympiadObserverMode, leaveOlympiadObserverMode,
-//       leaveObserverMode, inObserverMode)
-// Java: network/clientpackets/{ObserverReturn,RequestOlympiadObserverEnd,RequestOlympiadMatchList,
-//       RequestExOlympiadMatchListRefresh}.java
-// Java: network/serverpackets/ExOlympiadMatchList.java
-//
 // `Player.enterObserverMode(loc)` (the castle observation of the broadcasting towers, started by
 // `tower.rs`) is here too; `ObserverReturn` ends it the way Java does.
 
@@ -52,10 +46,7 @@ impl World {
                     self.leave_olympiad_observer_mode(id);
                 }
             }
-            OlympiadInput::MatchList => {
-                // NOTE(java-quirk): Java hands the request to the bypass handler "arenalist",
-                // which does not exist, so an observer gets nothing.
-            }
+            OlympiadInput::MatchList => {}
             OlympiadInput::MatchListRefresh => {
                 let list = self.olympiad_match_list();
                 self.send(id, &list);
@@ -207,7 +198,6 @@ impl World {
         let (x, y, z) = state.last_loc;
         // `teleToLocation(_lastLoc, false)`: the `Location` keeps its instance id 0, so an
         // olympiad observer leaves the stadium's instance too.
-        // NOTE(java-quirk): `_olympiadGameId` stays set after this way out.
         self.tele_to_location(id, TeleportTarget::at(x, y, z).with_instance(0));
         if let Some(state) = self.player_olympiad_mut(id) {
             state.last_loc = (0, 0, 0);

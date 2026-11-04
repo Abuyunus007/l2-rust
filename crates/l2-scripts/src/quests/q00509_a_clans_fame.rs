@@ -1,6 +1,4 @@
 //! Quest 509: A Clan's Fame (Valdis in the Town of Aden, the raid bosses of the clan).
-// Java: dist/game/data/scripts/quests/Q00509_AClansFame/Q00509_AClansFame.java
-//
 // Pattern: a clan quest like Q00510. The leader picks one of four raid bosses (the quest variable
 // `raid`), a radar points to it, and the boss's item (taken to the NPC) gives the clan reputation.
 

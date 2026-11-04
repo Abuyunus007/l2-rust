@@ -1,7 +1,5 @@
 //! Kamaloka (the Hall of the Abyss and the Labyrinth of the Abyss): the party instances of the
 //! Kamaloka captains, 19 of them, each with a first room, a second room, a miniboss and a boss.
-// Java: dist/game/data/scripts/instances/Kamaloka/Kamaloka.java
-//
 // Java keeps the progress of an instance in a `KamaWorld extends InstanceWorld`; here the
 // `InstanceWorld` is the engine's and the progress is the script's state, by instance id
 // ([`KamaWorld`]).
@@ -616,7 +614,6 @@ fn enter_kamaloka_instance(ctx: &mut ScriptCtx<'_>, player: ObjectId, index: i32
         .ok()
         .and_then(|i| TEMPLATE_IDS.get(i).map(|t| (i, *t)))
     else {
-        // Java: "Problem with Kamaloka" (an `ArrayIndexOutOfBoundsException`).
         return;
     };
 

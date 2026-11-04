@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/FreeMountsConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/FreeMounts.ini` (Java: `FreeMountsConfig`).

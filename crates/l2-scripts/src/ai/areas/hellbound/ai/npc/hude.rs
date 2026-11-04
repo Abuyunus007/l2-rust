@@ -1,5 +1,4 @@
 //! Hude, the caravan trader who upgrades the certificates.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/NPC/Hude/Hude.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

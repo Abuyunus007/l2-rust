@@ -1,6 +1,5 @@
 //! Generated from `hellboundSpawns.xml` and `hellboundTrustPoints.xml` (Java `HellboundSpawns`,
 //! `HellboundPointData`). The rows are the XML's, in file order.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/hellboundSpawns.xml, hellboundTrustPoints.xml
 
 /// One `<npc>` of `hellboundSpawns.xml`: `(npc id, x, y, z, heading, respawn delay, random interval, min level, max level)`.
 pub type SpawnRow = (i32, i32, i32, i32, i32, i32, i32, i32, i32);

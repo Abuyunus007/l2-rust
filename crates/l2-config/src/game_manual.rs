@@ -1,5 +1,4 @@
 //! Hand-ported game config fields (M2-CFG-01): the `()` placeholders of the generated structs.
-// Java: org/l2jmobius/gameserver/config/{ServerConfig,PlayerConfig,GeneralConfig}.java and
 // config/custom/FactionSystemConfig.java
 //
 // The generator (M2-GEN-02) cannot port these, so each class gets a `*Manual` struct that reads
@@ -48,7 +47,6 @@ pub struct Location {
 /// match, so the regex is anchored as `\A(?:...)\z`. The `regex` crate has no look-around and no
 /// backreferences: a setting that uses them is invalid here, so it falls back to `.*` (wider than
 /// Java, which would enforce it; the alphanumeric check on character names still applies).
-// Java: ServerConfig.java:150-185 (the three patterns and their `.*` fallback)
 #[derive(Debug, Clone)]
 pub struct NamePattern {
     /// The setting as written (or `.*` after a fallback). Equality compares this text.
@@ -132,7 +130,6 @@ pub struct ServerManual {
 impl ServerManual {
     /// Reads the keys like `ServerConfig.load()`.
     pub fn from_ini(ini: &IniFile) -> Self {
-        // Java: ServerConfig.java:198-209
         let protocol_list = java_split(
             &ini.get_string("AllowedProtocolRevisions", "267;268;271;273"),
             ';',
@@ -147,11 +144,8 @@ impl ServerManual {
         })
         .collect();
 
-        // Java: ServerConfig.java:150-160 (CnameTemplate)
         let charname_template_pattern = ini.get_string("CnameTemplate", ANY_PATTERN);
-        // Java: ServerConfig.java:162-172 (PetNameTemplate)
         let pet_name_template_pattern = ini.get_string("PetNameTemplate", ANY_PATTERN);
-        // Java: ServerConfig.java:174-185 (ClanNameTemplate)
         let clan_name_template_pattern = ini.get_string("ClanNameTemplate", ANY_PATTERN);
 
         Self {
@@ -174,7 +168,6 @@ impl Default for ServerManual {
 }
 
 /// `PlayerConfig` fields that the generator could not port (`config/Player.ini`).
-// Java: PlayerConfig.java:261-263 (the regeneration multipliers, `getDouble(key, 100) / 100`)
 #[derive(Debug, Clone, PartialEq)]
 pub struct PlayerManual {
     /// Java `FORBIDDEN_NAMES`: `ForbiddenNames`, default `""`.
@@ -195,13 +188,11 @@ pub struct PlayerManual {
 impl PlayerManual {
     /// Reads the keys like `PlayerConfig.load()`.
     pub fn from_ini(ini: &IniFile) -> Self {
-        // Java: PlayerConfig.java:564
         let forbidden_names = java_split(&ini.get_string("ForbiddenNames", ""), ',')
             .into_iter()
             .map(str::to_owned)
             .collect();
 
-        // Java: PlayerConfig.java:374
         let max_sp = ini.get_long("MaxSp", 50_000_000_000);
         Self {
             forbidden_names,
@@ -221,7 +212,6 @@ impl Default for PlayerManual {
 }
 
 /// `NpcConfig` fields that the generator could not port (`config/NPC.ini`).
-// Java: NpcConfig.java:163-164 (`getDouble(key, 100) / 100`)
 #[derive(Debug, Clone, PartialEq)]
 pub struct NpcManual {
     /// Java `RAID_HP_REGEN_MULTIPLIER`: `RaidHpRegenMultiplier` / 100, default 100 (so 1.0).
@@ -267,18 +257,14 @@ impl FactionSystemManual {
     /// does not start. That is returned as [`ConfigError::InvalidLocation`].
     pub fn from_ini(ini: &IniFile) -> Result<Self, ConfigError> {
         Ok(Self {
-            // Java: FactionSystemConfig.java:57-58 (three values, heading 0)
             faction_starting_location: parse_location(ini, "StartingLocation", "85332,16199,-1252", false)?,
-            // Java: FactionSystemConfig.java:59-61 (four values, the fourth is the heading)
             faction_manager_location: parse_location(
                 ini,
                 "ManagerSpawnLocation",
                 "85712,15974,-1260,26808",
                 true,
             )?,
-            // Java: FactionSystemConfig.java:62-63
             faction_good_base_location: parse_location(ini, "GoodBaseLocation", "45306,48878,-3058", false)?,
-            // Java: FactionSystemConfig.java:64-65
             faction_evil_base_location: parse_location(
                 ini,
                 "EvilBaseLocation",
@@ -385,13 +371,11 @@ impl GameManual {
 impl GameConfig {
     /// `PLAYER_MAXIMUM_LEVEL`: `MaximumPlayerLevel` (default 85) plus one, like Java's `++`
     /// on a `byte` (so 127 wraps to -128).
-    // Java: PlayerConfig.java:375-376
     pub fn effective_player_maximum_level(&self) -> i8 {
         self.player.player_maximum_level.wrapping_add(1)
     }
 
     /// `MAX_ADENA`: a negative `MaxAdena` means no limit (`Long.MAX_VALUE`).
-    // Java: PlayerConfig.java:497-501
     pub fn effective_max_adena(&self) -> i64 {
         if self.player.max_adena < 0 {
             i64::MAX
@@ -401,7 +385,6 @@ impl GameConfig {
     }
 
     /// `MAX_ITEM_IN_PACKET`: the largest of the three inventory limits.
-    // Java: PlayerConfig.java:388
     pub fn effective_max_item_in_packet(&self) -> i32 {
         let player = &self.player;
         player
@@ -410,13 +393,11 @@ impl GameConfig {
     }
 
     /// `KICK_MISSING_HWID`: true also when `MaxPlayersPerHWID` is above zero.
-    // Java: ServerConfig.java:189-192
     pub fn effective_kick_missing_hwid(&self) -> bool {
         self.server.kick_missing_hwid || self.server.max_players_per_hwid > 0
     }
 
     /// `DEFAULT_PUNISH_PARAM`: a zero `DefaultPunishParam` means one hundred years in seconds.
-    // Java: GeneralConfig.java:346-350
     pub fn effective_default_punish_param(&self) -> i64 {
         if self.general.default_punish_param == 0 {
             // One hundred years in seconds.

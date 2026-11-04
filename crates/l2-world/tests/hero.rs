@@ -1,9 +1,5 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
-//! Heroes (M8-HERO-01): the status at login, the hero skills, the hero voice, the diary and the
-//! choice at the period end with `CycleDatabaseWrites` on and off. Expected behaviour is read off
-//! `mechanics/olympiad/Hero.java`, `Player.setHero` and `ChatHeroVoice.java`.
-
 mod party_scene;
 
 use std::sync::Arc;
@@ -180,7 +176,6 @@ fn the_diary_rows_are_written_and_the_words_are_kept() {
     assert_eq!(s.world.hero_state().message(P1), Some("hi"));
     s.world.hero_set_rb_killed(P1, 9001);
     s.world.hero_set_hero_gained(P1);
-    // The rows are the hero's own deeds: written whatever the switch says (D-53).
     let writes = hero_writes(&s);
     assert!(matches!(writes[0], HeroWrite::Diary { char_id, action: 1, param: 9001, .. } if char_id == P1));
     assert!(matches!(writes[1], HeroWrite::Diary { action: 2, .. }));

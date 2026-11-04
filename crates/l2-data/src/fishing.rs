@@ -1,6 +1,5 @@
 //! Fishing data: the fish, the fishing rods and the fishing monsters.
 //!
-//! Java: `gameserver/data/xml/{FishData,FishingRodsData,FishingMonstersData}.java` and
 //! `gameserver/mechanics/fishing/{Fish,FishingRod,FishingMonster}.java`.
 //! Data: `data/stats/fishing/{fishes,fishingRods,fishingMonsters}.xml`.
 
@@ -52,14 +51,11 @@ pub struct Fish {
     /// `Fish.getGroupId` of the `fishGroup` attribute.
     pub fish_group: i32,
     pub fish_level: i32,
-    /// Java: "TODO: Support needed", never read.
     pub fish_bite_rate: f64,
     /// The percent chance, per check, that the fish takes the bait (`LookingForFishTask`).
     pub fish_guts: f64,
     pub fish_hp: i32,
-    /// Java: "TODO: Support needed", never read.
     pub fish_max_length: i32,
-    /// Java: "TODO: Support needed", never read.
     pub fish_length_rate: f64,
     pub hp_regen: f64,
     /// Seconds before the bait is lost when no fish bites.
@@ -68,9 +64,7 @@ pub struct Fish {
     pub combat_duration: i32,
     /// Base of the delay between two bite checks.
     pub guts_check_time: i32,
-    /// Java: "TODO: Support needed", never read.
     pub guts_check_probability: f64,
-    /// Java: "TODO: Support needed", never read.
     pub cheating_prob: f64,
     /// `Fish.getGradeId` of the `fishGrade` attribute.
     pub fish_grade: i32,

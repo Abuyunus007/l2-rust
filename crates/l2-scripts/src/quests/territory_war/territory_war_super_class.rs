@@ -1,7 +1,5 @@
 //! The base of the Territory War quests ("For the Sake of the Territory ...", "Protect the ...",
 //! "Kill the ...") and the script "TerritoryWarSuperClass" (quest id -1) the war talks to.
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/TerritoryWarSuperClass.java
-//
 // Java's `class TerritoryWarSuperClass extends Quest` with public array fields becomes a
 // [`TerritoryWarData`] static per quest plus the free functions here that take it;
 // [`territory_war_quest!`] writes the `impl Script` of a quest (the same shape as the sagas'
@@ -159,7 +157,6 @@ fn on_enter_world(ctx: &mut ScriptCtx<'_>, player: ObjectId) {
     let territory_id = ctx.world().territory_registered_id(player);
     if territory_id > 0 {
         // register Territory Quest
-        // NOTE(java-quirk): a territory without a quest is a NullPointerException in Java.
         let Some(territory_quest) = loader::for_the_sake(territory_id) else {
             return;
         };
@@ -195,8 +192,6 @@ fn set_on_enter_world(ctx: &mut ScriptCtx<'_>, value: bool) {
                     }
                 }
                 // unregister player on Death
-                // NOTE(java-quirk): the map is keyed by class id but asked for the class index
-                // (0 to 3), which is the id of a few classes of the warrior quest (2 and 3).
                 let class_index = ctx
                     .world()
                     .player(player)

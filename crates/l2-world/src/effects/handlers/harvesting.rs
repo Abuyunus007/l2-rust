@@ -1,5 +1,4 @@
 //! The `Harvesting` effect: the seeder takes the crop from the dead monster.
-// Java: dist/game/data/scripts/handlers/skill/effects/Harvesting.java
 // The rules are `manor/farming.rs`.
 
 use l2_data::skill::EffectTemplate;

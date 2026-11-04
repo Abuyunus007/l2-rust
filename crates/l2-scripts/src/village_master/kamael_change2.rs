@@ -1,6 +1,5 @@
 //! The 2nd class transfer of the Kamael: the male masters teach troopers, the female masters
 //! warders; the certification quests stand in for the proofs.
-// Java: dist/game/data/scripts/village_master/KamaelChange2/KamaelChange2.java
 
 use l2_util::ObjectId;
 use l2_world::subclass::{CategoryType, Race};

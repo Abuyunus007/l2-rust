@@ -1,5 +1,4 @@
 //! Paddies sends the player to the Fantasy Isle and back, from the town teleporters.
-// Java: dist/game/data/scripts/ai/others/TeleportToFantasy/TeleportToFantasy.java
 
 use l2_protocol_game::server::ChatType;
 use l2_util::ObjectId;
@@ -73,8 +72,6 @@ impl Script for TeleportToFantasy {
             if npc.id == PADDIES {
                 let return_id = ctx.player_variable_int(player, FANTASY_RETURN, -1);
                 if return_id > 30000 {
-                    // NOTE(java-quirk): `TELEPORTER_LOCATIONS.get(returnId)` is null for an id that
-                    // is not a teleporter and `teleToLocation(null)` throws; the player stays.
                     let (x, y, z) = teleporter_location(return_id)?;
                     ctx.teleport_player(player, x, y, z, 0, false);
                     ctx.remove_player_variable(player, FANTASY_RETURN);

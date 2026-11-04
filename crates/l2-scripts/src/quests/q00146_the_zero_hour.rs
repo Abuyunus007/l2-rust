@@ -1,6 +1,4 @@
 //! Quest 146: The Zero Hour (Kahman at the Hot Springs sends the player after Queen Shyeed).
-// Java: dist/game/data/scripts/quests/Q00146_TheZeroHour/Q00146_TheZeroHour.java
-//
 // Pattern: a one-time kill quest. A random party member of the killer gets the Fang at cond 2
 // (`get_random_party_member_cond`); the start NPC hands out the supply box and the reward when
 // the Fang is in. The level gate and the prerequisite quest are read from the other quest's
@@ -42,8 +40,6 @@ impl Script for Q00146TheZeroHour {
         146
     }
 
-    /// NOTE(java-quirk): Java's `getNpcStringId()` returns 640 (the quest's name in the quest
-    /// list), not the quest id.
     fn npc_string_id(&self) -> i32 {
         640
     }
@@ -69,8 +65,6 @@ impl Script for Q00146TheZeroHour {
         if event.eq_ignore_ascii_case("31554-03.htm") {
             qs.start_quest(ctx);
         }
-        // NOTE(java-quirk): Java returns the event for every event, so any link of this
-        // script is shown as a page (`showResult`).
         Some(event.to_owned())
     }
 

@@ -1,9 +1,7 @@
 //! The party admin commands: `//partyinfo [name]` (the party of a character with its loot rule
 //! and a recall button), and the recall menus `//recall_party_menu <name>` and
 //! `//recall_clan_menu <name>` that bring a whole party or clan to the GM.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminEditChar.java (admin_partyinfo,
 // gatherPartyInfo)
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminMenu.java (recall_party_menu,
 // recall_clan_menu, teleportCharacter)
 //
 // # The recall teleport

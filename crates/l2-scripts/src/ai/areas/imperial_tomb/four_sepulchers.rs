@@ -1,7 +1,5 @@
 //! Four Sepulchers: the four chapels of the Imperial Tomb. A party of four enters from a manager,
 //! fights through the rooms (doors, chests, keys) and kills the boss for a goblet (quest 620).
-// Java: dist/game/data/scripts/ai/areas/ImperialTomb/FourSepulchers/FourSepulchers.java
-//
 // Java's `static` maps (`STORED_PROGRESS`, `STORED_MONSTER_SPAWNS`) are the script's state
 // (`ctx.state`). `ThreadPool.schedule` is a quest timer: the delayed door closing is the timer
 // `CLOSE_DOOR_<id>`, the oust at the end of the event the timer `OUST` of the manager. The entry
@@ -388,7 +386,6 @@ fn try_enter(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, current_
             return;
         }
 
-        // NOTE(java-quirk): the weight penalty checked is the leader's, for every member.
         if ctx.world().player(player).is_some_and(|p| p.weight_penalty >= 3) {
             ctx.send_system_message(
                 mem,
@@ -557,7 +554,6 @@ impl Script for FourSepulchers {
                         ctx.set_script_value(npc, 1);
                         ctx.take_items(player, CHAPEL_KEY, -1);
                         let sepulcher_id = get_sepulcher_id(ctx, player);
-                        // NOTE(java-quirk): a player in no sepulcher throws here in Java.
                         let current_wave = progress(ctx, sepulcher_id)? + 1;
                         set_progress(ctx, sepulcher_id, current_wave); // update progress
                         for (sepulcher, wave, door) in DOORS {
@@ -608,7 +604,6 @@ impl Script for FourSepulchers {
                 if let Some(npc) = npc
                     && !ctx.is_dead(npc.object_id)
                 {
-                    // NOTE(java-quirk): `npc.getSpawn()` throws for a victim without a spawn.
                     let (sx, sy, _) = ctx.npc_spawn_point(npc)?;
                     let dx = ctx.get_random_range(-400, 400);
                     let dy = ctx.get_random_range(-400, 400);
@@ -771,7 +766,6 @@ impl Script for FourSepulchers {
             }
             CONQUEROR_BOSS | EMPEROR_BOSS | GREAT_SAGES_BOSS | JUDGE_BOSS => {
                 let sepulcher_id = get_sepulcher_id(ctx, killer);
-                // NOTE(java-quirk): a killer in no sepulcher throws in Java before anything else.
                 let Some(current_wave) = progress(ctx, sepulcher_id) else {
                     return;
                 };

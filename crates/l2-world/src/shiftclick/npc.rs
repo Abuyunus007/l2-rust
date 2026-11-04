@@ -1,8 +1,4 @@
 //! `NpcShiftClick`: the GM window of an NPC (`npcinfo.htm`).
-// Java: dist/game/data/scripts/handlers/actions/shiftclick/NpcShiftClick.java
-// Java: entity/spawns/Spawn.java (isTerritoryBased, hasRespawnRandom)
-// Java: managers/WalkingManager.java (getRouteName)
-//
 // Numbers are written like Java's `String.valueOf`: an `int` as is, a `double` or `float` through
 // `{:?}` (`300.0`), which is Java's `Double.toString` for the values these stats take.
 
@@ -66,8 +62,6 @@ fn respawn_text(min_ms: i32, max_ms: i32) -> String {
 
 /// `spawnFile.substring(spawnFile.lastIndexOf('\\') + 1)`: Java stores the file with the separators
 /// of the machine, so on Windows this is the file name and on Linux (no backslash) the whole path.
-// NOTE(java-quirk): the Rust spawn file path uses `/` on every system; the part after the last
-// separator is shown, as Java does on Windows.
 fn spawn_file_name(path: &str) -> &str {
     path.rsplit(['\\', '/']).next().unwrap_or(path)
 }

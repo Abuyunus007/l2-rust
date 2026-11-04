@@ -1,10 +1,5 @@
 //! The configuration the fortresses read: the fortress values of `Feature.ini` and `Player.ini`,
 //! and `FortSiege.ini` (commander and flag positions included).
-// Java: config/FeatureConfig.java (FS_*)
-// Java: config/PlayerConfig.java (FAME_SYSTEM_ENABLED, FAME_FOR_DEAD_PLAYERS,
-//       FORTRESS_ZONE_FAME_TASK_FREQUENCY, FORTRESS_ZONE_FAME_AQUIRE_POINTS)
-// Java: config/custom/OfflineTradeConfig.java (OFFLINE_FAME)
-// Java: managers/FortSiegeManager.java (load)
 
 use std::collections::BTreeMap;
 

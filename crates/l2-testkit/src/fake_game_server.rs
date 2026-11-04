@@ -1,6 +1,5 @@
 //! A fake game server on the LS<->GS link, behaving like the Java `LoginServerThread`.
 //!
-//! Java: `gameserver/LoginServerThread.java`. Order of a real game server: connect, read
 //! `InitLS`, send `BlowFishKey` (the 40 byte session key under the login server's RSA key),
 //! switch to that key, send `AuthRequest` (here [`GameServerAuth`]), read `AuthResponse`, then
 //! send `ServerStatus` (see [`FakeGameServer::send_java_status`]) and `PlayerInGame` for the
@@ -196,9 +195,6 @@ impl FakeGameServer {
         self.send_raw(&packet.to_bytes()).await;
     }
 
-    /// What the Java game server sends right after `AuthResponse`: no brackets, type normal,
-    /// status auto (or GM only), age for all. Without it the server shows as down.
-    // Java: LoginServerThread case 0x02
     pub async fn send_java_status(&mut self, gm_only: bool) {
         let status = if gm_only {
             ServerStatus::STATUS_GM_ONLY
@@ -217,7 +213,6 @@ impl FakeGameServer {
     }
 
     /// Changes only the list status (`ServerStatus::STATUS_*`).
-    // Java: LoginServerThread.setServerStatus
     pub async fn send_status(&mut self, status: i32) {
         self.send(&ServerStatus {
             attributes: vec![(ServerStatus::SERVER_LIST_STATUS, status)],
@@ -238,7 +233,6 @@ impl FakeGameServer {
 
     /// Waits for the `RequestCharacters` the login server sends when `account` logs in, and
     /// answers it with `chars` characters (none of them being deleted).
-    // Java: LoginServerThread case 0x05
     pub async fn answer_characters(&mut self, account: &str, chars: u8) {
         match self.recv().await {
             LsPacket::RequestCharacters(request) => assert_eq!(request.account, account),
@@ -248,7 +242,6 @@ impl FakeGameServer {
     }
 
     /// `PlayerAuthRequest`; returns whether the login server accepted the keys.
-    // Java: LoginServerThread.addWaitingClientAndSendRequest
     pub async fn auth_player(&mut self, account: &str, keys: &SessionKeys) -> bool {
         self.send(&PlayerAuthRequest {
             account: account.to_owned(),

@@ -1,12 +1,6 @@
 //! Offline play (`config/Custom/OfflinePlay.ini`, `EnableOfflinePlayCommand`, off by default): a
 //! player who is auto playing types `.offlineplay`, the client goes and the character keeps
 //! hunting.
-// Java: dist/game/data/scripts/handlers/chat/commands/voiced/OfflinePlay.java
-// Java: network/clientpackets/DlgAnswer.java (the `OFFLINE_PLAY` branch)
-// Java: entity/actor/Player.java (startOfflinePlay, isOfflinePlay, setOfflinePlay)
-// Java: taskmanagers/DecayTaskManager.java (`OfflinePlayLogoutOnDeath`)
-// Java: config/custom/OfflinePlayConfig.java
-//
 // # The character stays without a client
 // Like an offline trader (`trade/offline.rs`): the player is in `World::players` without an entry
 // in `World::sinks`; the login server hears `PlayerLogout` at once.
@@ -223,8 +217,6 @@ impl World {
         self.offline_play.restored_color.remove(&id);
     }
 
-    /// Whether the player was an offline player (it is not any more); used by `leave` for the
-    /// account hold of D-52.
     pub(crate) fn offline_play_on_delete(&mut self, id: ObjectId) -> bool {
         self.offline_play.players.remove(&id)
     }
@@ -325,9 +317,6 @@ impl World {
             return;
         }
         // The dual-box limits of the offline play (`DualboxCheckMaxOfflinePlay(Premium)PerIP`).
-        // NOTE(java-quirk): `if (A) {..} else if (B) {..}`: a premium player who passes the premium
-        // limit is counted again against the general one, and the message names the general limit
-        // even for the premium one.
         let dualbox = self.settings.custom_misc.dualbox.clone();
         let ip = self.players.get(&id).and_then(|p| p.client_ip);
         let refused = (self.has_premium_status(id)
@@ -475,8 +464,6 @@ impl World {
             self.offline_play.players.insert(id);
             self.restore_saved_effects(id);
             self.set_running_effect(id, true);
-            // NOTE(java-quirk): the restore reads `OfflineTradeConfig.OFFLINE_SET_NAME_COLOR` (the
-            // trade key) for the colour of `OfflinePlayConfig.OFFLINE_PLAY_NAME_COLOR`.
             if self.offline.settings.offline_set_name_color {
                 self.offline_play.restored_color.insert(id);
             }
@@ -526,9 +513,6 @@ impl World {
     /// (`OfflinePlayDisconnectSameAccount`). The account is in use by the new session, so the
     /// login server is not told. `true` when the character was released.
     pub(crate) fn release_offline_same_account(&mut self, id: ObjectId, trader: bool, play: bool) -> bool {
-        // NOTE(java-quirk): Java tests `isInStoreMode()` of any player found; a character with a
-        // client cannot be on the list of an account that is logging in, so only the characters
-        // without one are looked at.
         let offline = !self.sinks.contains_key(&id);
         let release = (trader && offline && self.players.contains_key(&id) && self.is_in_store_mode(id))
             || (play && self.is_offline_play(id));
@@ -552,8 +536,6 @@ impl World {
         if access_level >= 100 || !premium || max <= 0 {
             return None;
         }
-        // NOTE(java-quirk): `tryAddPlayer` uses the client of the released player (none after a
-        // restore, which refuses), `getLimit` the one of the new connection.
         if self.anti_feed_try_add_client(OFFLINE_PLAY, player_ip, max) {
             return None;
         }

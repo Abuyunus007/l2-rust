@@ -1,7 +1,5 @@
 //! Quest 694: Break Through the Hall of Suffering (Tepios at the Seed of Infinity entrance, and
 //! the Tepios inside the Hall of Suffering who pays the party at the end of the attack).
-// Java: dist/game/data/scripts/quests/Q00694_BreakThroughTheHallOfSuffering/Q00694_BreakThroughTheHallOfSuffering.java
-//
 // Pattern: the reward tag (13777..13786, by the time the run took) is stored by the instance
 // (`ai/areas/gracia/instances/hall_of_suffering_attack.rs`) in the world parameter `tag`.
 
@@ -52,8 +50,6 @@ impl Script for Q00694BreakThroughTheHallOfSuffering {
         player: Option<ObjectId>,
     ) -> Option<String> {
         let player = player?;
-        // NOTE(java-quirk): every event is echoed back as a page, also for a player without a
-        // quest state.
         let Some(qs) = ctx.get_quest_state(player, false) else {
             return Some(event.to_owned());
         };

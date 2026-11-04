@@ -1,7 +1,4 @@
 //! The skill trap: a hidden NPC that casts its skill at the first creature that comes within 150.
-// Java: entity/actor/instance/Trap.java, entity/actor/tasks/npc/trap/*.java
-// Java: dist/game/data/scripts/handlers/skill/effects/{SummonTrap,TrapDetect,TrapRemove}.java
-// Java: mechanics/script/Quest.java (`addTrap`), network/serverpackets/AbstractNpcInfo.java (`TrapInfo`)
 
 use std::collections::BTreeSet;
 

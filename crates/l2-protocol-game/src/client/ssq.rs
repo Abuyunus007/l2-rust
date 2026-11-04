@@ -5,7 +5,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ClientOpcode;
 
-// Java: gameserver/network/clientpackets/RequestSSQStatus.java
 /// The player asks for one page of the Seven Signs status (`0xC8`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestSsqStatus {
@@ -30,7 +29,6 @@ impl Decode for RequestSsqStatus {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestSeedPhase.java
 client_unit_packet!(
     /// The player asks for the Seed map (`0xD0` 0x0063). Java answers with `ExShowSeedMapInfo`.
     RequestSeedPhase,

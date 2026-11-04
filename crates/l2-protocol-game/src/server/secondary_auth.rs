@@ -6,7 +6,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/Ex2ndPasswordCheck.java
 /// Which password window the client shows (`EX_2ND_PASSWORD_CHECK`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Ex2ndPasswordCheck {
@@ -39,7 +38,6 @@ impl Decode for Ex2ndPasswordCheck {
     }
 }
 
-// Java: gameserver/network/serverpackets/Ex2ndPasswordVerify.java
 /// The verdict on a typed password (`EX_2ND_PASSWORD_VERIFY`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Ex2ndPasswordVerify {
@@ -72,7 +70,6 @@ impl Decode for Ex2ndPasswordVerify {
     }
 }
 
-// Java: gameserver/network/serverpackets/Ex2ndPasswordAck.java
 /// The answer to creating or changing the password (`EX_2ND_PASSWORD_ACK`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Ex2ndPasswordAck {
@@ -89,7 +86,6 @@ impl Ex2ndPasswordAck {
 impl Encode for Ex2ndPasswordAck {
     fn encode(&self, w: &mut PacketWriter) {
         write_opcode(w, Self::OPCODE);
-        // Java: a byte 0, then `writeInt(_response == WRONG_PATTERN)`, then an int 0.
         w.u8(0)
             .i32(i32::from(self.response == Self::WRONG_PATTERN))
             .i32(0);

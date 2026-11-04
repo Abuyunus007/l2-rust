@@ -1,12 +1,6 @@
 //! Where a dead player may come back during and outside a siege: the clan buttons of `Die`, the
 //! restart points of the residences and the headquarters (`MapRegionData.getTeleToLocation`), and
 //! the respawn delay of a siege's attackers.
-// Java: data/xml/MapRegionData.java (getTeleToLocation: the clan hall, castle, fortress and siege
-//       flag branches, the Seven Signs branch)
-// Java: network/serverpackets/Die.java (the clan buttons)
-// Java: network/clientpackets/RequestRestartPoint.java (the attacker's DeathTask, portPlayer's
-//       cases 1 to 4)
-// Java: entity/zone/ZoneRespawn.java (getSpawnLoc, getChaoticSpawnLoc, getOtherSpawnLoc)
 
 use l2_util::ObjectId;
 
@@ -106,8 +100,6 @@ impl World {
             }
             // Fortress teleportation: the clan's fortress, or the fortress it owns in a siege.
             TeleportWhereType::Fortress => {
-                // NOTE(java-quirk): the second test (the fortress here, in a siege, owned by the
-                // clan) only finds what `getFortByOwner` found already.
                 let fort = self.fort_by_owner(clan_id).or_else(|| {
                     self.fort_at(x, y, z).filter(|f| {
                         self.fort_siege_in_progress(*f)
@@ -292,7 +284,6 @@ impl World {
     /// `portPlayer`'s case 3 (to the fortress). `None` refuses the restart.
     pub(crate) fn restart_to_fortress(&mut self, id: ObjectId) -> Option<Option<(i32, i32, i32)>> {
         let clan = self.clan_of(id).map(|c| (c.id, c.fort_id));
-        // NOTE(java-quirk): `isInDefense` is always false in Java.
         let (clan_id, fort_id) = clan.filter(|(_, fort)| *fort != 0)?;
         let _ = fort_id;
         let loc = self.get_tele_to_location(id, TeleportWhereType::Fortress);

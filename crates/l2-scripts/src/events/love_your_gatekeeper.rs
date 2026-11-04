@@ -1,6 +1,4 @@
 //! Love Your Gatekeeper: 10,000 Adena buy the gatekeeper transformation stick once a day.
-// Java: dist/game/data/scripts/events/LoveYourGatekeeper/LoveYourGatekeeper.java
-// Java: dist/game/data/scripts/events/LoveYourGatekeeper/config.xml
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};

@@ -1,6 +1,5 @@
 //! The `DispelBySlotProbability` effect: each listed abnormal type's buff goes with the chance
 //! `rate` (rolled once per type), whatever its level.
-// Java: dist/game/data/scripts/handlers/skill/effects/DispelBySlotProbability.java
 
 use std::collections::BTreeSet;
 
@@ -63,9 +62,6 @@ impl EffectHandler for DispelBySlotProbability {
             }
             // Dispel transformations (buff and by GM): Java stops the transformation before the
             // buff of the type is taken.
-            // NOTE(java-quirk): the condition is `isTransformed() || (isPlayer() || (value ==
-            // asPlayer().getTransformationId()) || value < 0)`, true for every player; for a
-            // creature that is no player Java's `asPlayer()` is null and the call throws.
             if abnormal == AbnormalType::Transform && world.is_player(cx.effected) {
                 world.stop_transformation(cx.effected, true);
             }

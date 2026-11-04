@@ -1,7 +1,6 @@
 //! The pets: what a pet collar summons, its food and skills and the numbers of each level, from
 //! `data/stats/pets/*.xml`.
 //!
-//! Java: `gameserver/data/xml/PetDataTable.java`, `gameserver/data/holders/{PetData,PetLevelData}.java`.
 //! Data: `data/stats/pets/*.xml`, `xsd/PetData.xsd`.
 //!
 //! One `<pet id="NPC" itemId="COLLAR">` per pet. Its `<set>`s give the food, the carrying `load`,
@@ -143,8 +142,6 @@ impl PetData {
     /// Java `getFood()` in the order a `HashSet<Integer>` iterates (the feed task takes the first
     /// food it finds in the pet's inventory): by bucket of the default table, which grows as the
     /// set does, and by insertion inside a bucket.
-    // NOTE(java-quirk): the order of a Java `HashSet` is an implementation detail; it is
-    // reproduced here so the same food is eaten first.
     pub fn food(&self) -> Vec<i32> {
         let mut capacity: usize = 16;
         while self.food.len() * 4 > capacity * 3 {
@@ -250,7 +247,6 @@ impl PetDataTable {
         Ok(table)
     }
 
-    // Java: PetDataTable.parseDocument
     fn add_document(&mut self, doc: RawFile) -> Result<(), DataError> {
         for child in doc.children {
             let RawChild::Pet(raw) = child else { continue };
@@ -297,8 +293,6 @@ impl PetDataTable {
     }
 
     /// Java `getPetDataByItemId(itemId)`: the first pet (in npc id order) whose collar this is.
-    // NOTE(java-quirk): Java walks a `ConcurrentHashMap`, so the pet it finds first for a collar
-    // two pets share is not defined; no shipped collar is shared.
     pub fn pet_data_by_item_id(&self, item_id: i32) -> Option<&PetData> {
         self.pets.values().find(|d| d.item_id == item_id)
     }
@@ -335,7 +329,6 @@ impl PetDataTable {
 
 /// Java `PetDataTable.isMountable(npcId)`: `MountType.findByNpcId(npcId) != NONE`, i.e. the NPC is
 /// in the `STRIDER`, `WYVERN_GROUP` or `WOLF_GROUP` category.
-// Java: data/categoryData.xml (CategoryData is not loaded as a table yet, so the three categories
 // are listed here).
 pub fn is_mountable(npc_id: i32) -> bool {
     /// `STRIDER`.

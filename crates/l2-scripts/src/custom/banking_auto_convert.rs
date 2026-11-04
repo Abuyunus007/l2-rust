@@ -1,7 +1,5 @@
 //! `config/Custom/Banking.ini` `BankingAutoConvert`: a player whose purse goes over
 //! `BankingAutoConvertAdenaLimit` Adena gives `BankingAdenaCount` Adena for the Gold Bars.
-// Java: dist/game/data/scripts/custom/BankingAutoConvert.java
-//
 // Java registers the listener only with `BankingAutoConvert = True`; the registry here is built
 // before the config is known to a script, so the script is always registered and the world
 // checks the switch (`World::banking_auto_convert`) when the event comes.

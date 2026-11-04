@@ -1,11 +1,6 @@
 //! GM tools: `//kick`, `//kick_non_gm`, `//character_disconnect`, `//gm`, `//gmchat`, `//snoop`,
 //! `//online` and `//serverinfo`, with the GM list (Java `AdminData._gmList`) and the snoop
 //! tables of `Player`.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/{AdminKick,AdminDisconnect,AdminGm,
-// Java: AdminGmChat,AdminOnline,AdminServerInfo}.java
-// Java: data/xml/AdminData.java (the GM list), entity/actor/Player.java (broadcastSnoop,
-// Java: addSnooper, addSnooped), network/clientpackets/SnoopQuit.java, serverpackets/Snoop.java
-//
 // # The GM list
 // `EnterWorld` puts every GM into the list, hidden unless `GMStartupAutoList` is on and the GM
 // has the right for `//gmliston`. The list is what `broadcastToGMs` and the petition system
@@ -17,8 +12,6 @@
 // each snooper, followed by a `Snoop` packet. Here `World::send_bytes` recognises the encoded
 // `CreatureSay` of a player with snoopers.
 //
-// NOTE(java-quirk): a GM who snoops itself, or two GMs who snoop each other, make Java forward
-// the same line forever (a `StackOverflowError`). The forwarding stops after a few levels.
 //
 // Left out, with the reason:
 // - the memory and the JVM thread and garbage collector numbers of `//serverinfo` have no Rust

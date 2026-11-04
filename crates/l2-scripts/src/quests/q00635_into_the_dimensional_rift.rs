@@ -1,6 +1,4 @@
 //! Quest 635: Into the Dimensional Rift (a dummy quest, shown in the journal inside the rift).
-// Java: dist/game/data/scripts/quests/Q00635_IntoTheDimensionalRift/Q00635_IntoTheDimensionalRift.java
-//
 // Java's constructor is `super(635)` and nothing else: no NPC, no item, no hook. The quest only
 // exists so that its name and id are known; the rift code is what puts it in the journal.
 

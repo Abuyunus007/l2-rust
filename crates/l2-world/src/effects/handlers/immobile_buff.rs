@@ -1,5 +1,4 @@
 //! `ImmobileBuff`: a buff under which the creature cannot move.
-// Java: dist/game/data/scripts/handlers/skill/effects/ImmobileBuff.java
 
 use l2_data::skill::EffectTemplate;
 
@@ -35,7 +34,6 @@ impl EffectHandler for ImmobileBuff {
     }
 }
 
-// Java: dist/game/data/scripts/handlers/skill/effects/ImmobilePetBuff.java
 /// Java `ImmobilePetBuff`: the owner's skill that keeps its own summon in place.
 #[derive(Debug, Clone, Copy, Default)]
 pub(crate) struct ImmobilePetBuff;

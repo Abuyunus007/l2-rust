@@ -1,9 +1,5 @@
 //! The force charges and the souls of a player (`FocusEnergy`, `FocusMaxEnergy`, `FocusSouls`,
 //! `SoulEating`), with the ten minute reset task and the `EtcStatusUpdate` they show.
-// Java: entity/actor/Player.java (getCharges, increaseCharges, decreaseCharges, clearCharges,
-//       restartChargeTask, stopChargeTask, getChargedSouls, increaseSouls, decreaseSouls,
-//       clearSouls, restartSoulTask, stopSoulTask)
-// Java: entity/actor/tasks/player/{ResetChargesTask,ResetSoulsTask}.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};

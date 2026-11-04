@@ -1,5 +1,4 @@
 //! Monsters that turn into a stronger form when hurt.
-// Java: dist/game/data/scripts/ai/others/PolymorphingOnAttack.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;
@@ -80,8 +79,6 @@ impl Script for PolymorphingOnAttack {
                 if tmp[3] >= 0 {
                     let texts = &MOBTEXTS[tmp[3] as usize];
                     let index = ctx.get_random(texts.len() as i32) as usize;
-                    // NOTE(java-quirk): Java sends a `CreatureSay` (the chat window packet) built
-                    // from the NPC; it is shown here as the NPC's speech (`NpcSay`).
                     ctx.broadcast_npc_say(npc, ChatType::NpcGeneral, texts[index], &[]);
                 }
 

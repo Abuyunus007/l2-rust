@@ -1,6 +1,4 @@
 //! Quest 380: Bring Out the Flavor of Ingredients (Rolland in the Town of Oren, the Ritron Dessert).
-// Java: dist/game/data/scripts/quests/Q00380_BringOutTheFlavorOfIngredients/Q00380_BringOutTheFlavorOfIngredients.java
-//
 // Pattern: a cond chain over drops (`docs/design/scripts.md`, "Quest patterns"): the three
 // ingredients drop with a limit to a random started party member (`random_party_member_state`,
 // state -1); when all are in, the cond moves on (1 -> 5); the NPC walks the cond 5 -> 8 and gives

@@ -1,8 +1,6 @@
 //! The exchange of a trade: weight and slot checks, the item moves and what the two players are
 //! told. The item moves (`transfer_items`, `trade_items_weight`, `trade_items_slots`) are what the
 //! private stores (STORE-01) use as well.
-// Java: network/holders/TradeList.java (doExchange, TransferItems, countItemsSlots,
-//       calcItemsWeight)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{InventoryUpdate, ItemUpdate, SystemMessage};

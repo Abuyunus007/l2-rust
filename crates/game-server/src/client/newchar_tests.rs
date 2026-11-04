@@ -386,7 +386,6 @@ fn stored_access_level(env: &Env, config: &GameConfig, master: i32) -> i32 {
 fn a_new_character_gets_the_master_level_only_with_everybody_has_admin_rights() {
     let env = env();
     let mut config = GameConfig::default();
-    // Java: `Player.getAccessLevel()` is 0 for a new Player unless EverybodyHasAdminRights is on.
     assert_eq!(stored_access_level(&env, &config, 100), 0);
     config.general.everybody_has_admin_rights = true;
     assert_eq!(stored_access_level(&env, &config, 100), 100);

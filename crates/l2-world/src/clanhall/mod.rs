@@ -1,11 +1,6 @@
 //! Clan halls (M7-CH-01): the weekly rent of an auctionable hall, the auctions and their board,
 //! the hall manager (the functions a clan buys, the hall's buffs, teleport and item creation), the
 //! hall doorman and the effect of the functions (regeneration, the exp a resurrection gives back).
-// Java: entity/residences/{ClanHall,AuctionableHall,ClanHallAuction}.java
-// Java: managers/ClanHallAuctionManager.java
-// Java: data/sql/ClanHallTable.java (initNPC at the load, `loaded()`)
-// Java: entity/actor/instance/{Auctioneer,ClanHallManager,ClanHallDoorman,Doorman}.java
-// Java: mechanics/stats/Formulas.java (calcHpRegen, calcMpRegen: the hall functions)
 // Design: docs/design/m7-residences.md
 //
 // # What is where
@@ -19,19 +14,6 @@
 // - `doorman.rs`: the `ClanHallDoorman` NPC.
 // - `functions.rs`: the regeneration factors of the hall functions and the exp of a resurrection.
 // - this file: the settings, the timers and the list of the halls (`RequestAllAgitInfo`).
-//
-// # Side by side with the Java game server (D-39, D-49, D-50, D-51)
-// - Global writes of a scheduled job go out only with `SiegeDatabaseWrites` ([`World::siege_write`]):
-//   the rent (the adena taken from the clan warehouse, the `clanhall` row, losing the hall), the end
-//   of an auction (the refunds, the `auction` and `auction_bid` rows, the new owner) and the creation
-//   of the NPC auctions (`initNPC`). Without the switch those jobs only move this world on: the rent
-//   charges nothing and writes nothing (the Java game server collects the real rent), an auction
-//   that ends changes the owner in this world only.
-// - What a clan does itself is written like any player action: bidding, cancelling a bid or an
-//   auction, putting the hall up for sale, buying a function.
-// - The rows an action reads are read again first (D-50): the auction (its bids change on the Java
-//   game server) before a bid, a cancel or the end, and the clan warehouse before adena is taken
-//   from it or given back to it. The follow-up is refused when a read fails.
 
 mod auction;
 mod auctioneer;

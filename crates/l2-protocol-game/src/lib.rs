@@ -8,15 +8,11 @@
 //! Plaintext packets only: no framing, no encryption, no game logic.
 //!
 //! ## The packet pattern (copy it for every new packet)
-//! One struct per packet with public fields, a `// Java: path/To/Class.java` line, an `OPCODE`
+//! One struct per packet with public fields, an `OPCODE`
 //! const (client: [`ClientOpcode`], server: [`ServerOpcode`], ex client packets: `EX_OPCODE`)
 //! taken from the generated tables, `impl Encode` (opcode + fields, Java `writeImpl`) and
 //! `impl Decode` (the fields after the opcode, Java `readImpl`). Server packets write their id
 //! with [`server::write_opcode`], which knows the ex-id rules. Java quirks get a
-//! `// NOTE(java-quirk):` comment. Values Java computes from game objects or the database are
-//! plain fields: the caller prepares them. Packets that are only constants are unit structs.
-//! A packet is done when it has a round-trip test and a hand-computed byte-layout test; see
-//! `tests/charscreen.rs` for the capture-driven check.
 
 pub mod client;
 pub mod dispatch;

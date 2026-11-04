@@ -1,6 +1,5 @@
 //! Multisell lists: the exchange windows of NPCs (`data/multisell/*.xml`).
 //!
-//! Java: `gameserver/data/xml/MultisellData.java` (the loader) and
 //! `gameserver/mechanics/multisell/{Entry,Ingredient,ItemInfo,ListContainer}.java`.
 //! Data: `data/multisell/<listId>.xml` (`xsd/multisell.xsd`), and `data/multisell/custom` when
 //! `General.ini` `CustomMultisellLoad` is on.
@@ -167,7 +166,6 @@ impl Ingredient {
         }
     }
 
-    /// Java `getCopy()`. NOTE(java-quirk): the copy has no `ItemInfo`, even when this one has.
     pub fn copy(&self) -> Self {
         Self {
             item_info: None,
@@ -606,9 +604,6 @@ fn close_element(
 }
 
 /// Java `Double.parseDouble(useRate)`; a value of 0 or less, or one that is not a number, would
-/// look the name up as a `ConfigLoader` field. NOTE(java-quirk): that lookup needs reflection on
-/// the config class and is not ported; its failure path (a warning and the rate 1.0) is what
-/// every such value gets. Java never reads the rate afterwards.
 fn parse_use_rate(value: &str) -> f64 {
     match value.trim().parse::<f64>() {
         Ok(rate) if rate > 1e-6 => rate,

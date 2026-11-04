@@ -1,5 +1,4 @@
 //! The nobless master NPC (`NoblessMaster.ini`): noblesse for a level and an item.
-// Java: dist/game/data/scripts/custom/NoblessMaster/NoblessMaster.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};

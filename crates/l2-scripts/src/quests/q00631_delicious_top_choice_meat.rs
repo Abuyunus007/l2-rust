@@ -1,8 +1,6 @@
 //! Quest 631: Delicious Top Choice Meat (Tunatun in the Hot Springs area; the full grown
 //! kookaburras, cougars, buffaloes and grendels drop the prime meat, 120 of them buy one of the
 //! icarus recipes, pieces or spice crates).
-// Java: dist/game/data/scripts/quests/Q00631_DeliciousTopChoiceMeat/Q00631_DeliciousTopChoiceMeat.java
-//
 // Pattern: a kill that sets cond 2 at a limit (120 prime meat, `giveItemRandomly` with its limit),
 // a random reward from a switch over `getRandom(10)` (the RNG order matters: the switch first, then
 // the entries and the counts), and the quit that ends the quest whatever the roll.
@@ -157,8 +155,6 @@ impl Script for Q00631DeliciousTopChoiceMeat {
             htmltext = "31537-01.htm".to_owned();
         } else if state == STARTED {
             if qs.is_cond(ctx, 1) {
-                // NOTE(java-quirk): at cond 1 with the meat already at 120 Java shows the default
-                // "no quest" page here.
                 if ctx.get_quest_items_count(player, PRIME_MEAT) < PRIME_MEAT_COUNT {
                     htmltext = "31537-04.html".to_owned();
                 }

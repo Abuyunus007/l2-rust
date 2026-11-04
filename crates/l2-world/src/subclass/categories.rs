@@ -1,8 +1,6 @@
 //! The categories of `data/CategoryData.xml` (`player.isInCategory(type)`,
 //! `CategoryData.isInCategory(type, id)`): the world keeps the loaded [`CategoryData`] and answers
 //! for players and for plain ids.
-// Java: data/xml/CategoryData.java, entity/actor/Creature.java (isInCategory), Player.getId()
-//
 // The table is loaded by `l2-data` (`CategoryData`, every `CategoryType`) and installed with
 // [`World::set_category_data`]. Without it every category answers `false`, like Java for a
 // category the file does not list.

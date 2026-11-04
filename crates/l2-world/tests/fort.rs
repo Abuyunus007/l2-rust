@@ -1,17 +1,5 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
-//! Fortresses and fortress sieges (M7-FORT-01): loading the fort spawns and the sieges, the
-//! registration of a clan, the countdown, the start and the end of a siege, the commanders and the
-//! barracks, the combat flag, the change of owner, `FortUpdater`, the fortress NPCs and scripts,
-//! the fortress windows and `//fortsiege`, with the `SiegeDatabaseWrites` switch (D-51) and the
-//! re-read of the registrations (D-50).
-//! Java: managers/{FortManager,FortSiegeManager,FortSiegeGuardManager}.java,
-//! mechanics/siege/{Fort,FortSiege,CombatFlag,FortUpdater}.java,
-//! entity/actor/instance/{FortCommander,FortDoorman,FortLogistics,FortManager}.java,
-//! dist/game/data/scripts/ai/others/{FortressSiegeManager,FortressArcherCaptain},
-//! dist/game/data/scripts/handlers/chat/commands/admin/AdminFortSiege.java. The expected values
-//! come from the Java code named in each test.
-
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
@@ -1077,8 +1065,6 @@ fn loading_spawns_the_peace_time_npcs_like_java() {
     assert!(!s.world.fort_is_border_fortress(SHANTY));
 }
 
-/// `FortSiege.checkAutoTask`: a siege time in the past clears the registrations and the date
-/// (`saveFortSiege`, `clearSiegeClan`); the rows go out with the switch only (D-51).
 #[test]
 fn a_siege_time_in_the_past_clears_the_registrations_and_writes() {
     let on = Scene::new(LIONS, vec![WOLVES], 0);
@@ -1275,9 +1261,6 @@ fn run_ticks(s: &mut Scene, ticks: u32) {
     }
 }
 
-/// `ScheduleStartSiegeTask`: an hour, 10, 5 and 1 minute and 30, 10, 5 and 1 second before the
-/// start the attackers and the owner hear it, the merchant goes away 10 minutes before, and at
-/// 0 the siege starts. The chain runs with `SiegeDatabaseWrites` only (D-51).
 #[test]
 fn the_countdown_announces_and_starts_the_siege() {
     let mut s = Scene::new(LIONS, vec![], 0);
@@ -1822,9 +1805,6 @@ fn the_flag_returns_when_the_bearer_dies_or_leaves() {
     s.run_ms(200);
     assert!(s.world.player(ObjectId(P3)).is_none());
     assert!(!s.world.is_combat_flag_equipped(ObjectId(P3)));
-    // NOTE(java-quirk): `onPlayerLogoutInside` brings the bearer to town before the flag is
-    // taken away, so `getFort(player)` finds no fortress and the flag is destroyed without
-    // `dropCombatFlag`: it does not come back until the siege ends.
     assert_eq!(flags_on_ground(&s).len(), 1);
 }
 
@@ -2186,7 +2166,6 @@ fn the_foreman_opens_and_closes_doors() {
     assert!(!s.world.door_by_door_id(18_220_002).unwrap().open);
 }
 
-/// The clan vault: the rows of the clan warehouse are read again first (D-50).
 #[test]
 fn the_vault_reads_the_clan_warehouse_again() {
     let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
@@ -2363,7 +2342,6 @@ fn the_doorman_opens_the_doors_for_the_owner_when_there_is_no_siege() {
     // Not the owner.
     s.bypass(P3, doorman, "open_doors 5, 18220001, 18220002");
     assert!(!s.world.door_by_door_id(18_220_001).unwrap().open);
-    // NOTE(java-quirk): the first number is skipped, even when it is a door.
     s.bypass(P1, doorman, "open_doors 18220001, 18220002");
     assert!(!s.world.door_by_door_id(18_220_001).unwrap().open);
     assert!(s.world.door_by_door_id(18_220_002).unwrap().open);
@@ -2389,9 +2367,6 @@ fn logistics(s: &mut Scene, player: i32, officer: ObjectId, command: &str, blood
     pages_to(&s.take(), player)
 }
 
-/// `FortLogistics`: its window names the owner (or "NPC"); the rewards, the blood oaths, the
-/// supply level and the supply box. Each of them reads the fortress and the clan again first
-/// (D-50). `isMyLord` is Java's `||` of the castle and the fortress ids.
 #[test]
 fn logistics_hands_out_blood_oaths() {
     let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
@@ -2433,8 +2408,6 @@ fn logistics_hands_out_blood_oaths() {
     // The clan leader of another clan is not the lord of this fortress.
     s.talk(P3, officer);
     assert!(logistics(&mut s, P3, officer, "rewards", 5)[0].contains("LOGISTICS NOPRIVS"));
-    // NOTE(java-quirk): `isMyLord` compares the castle ids too: the lord of the castle that is
-    // nearest to the officer passes.
     s.talk(P5, officer);
     assert!(logistics(&mut s, P5, officer, "rewards", 5)[0].contains("REWARDS"));
 }
@@ -2533,7 +2506,6 @@ fn logistics_supply_level_without_a_contract_is_the_other_page() {
     assert!(logistics(&mut s, P1, officer, "supplylvl", 0)[0].contains("LOGISTICS ONE"));
 }
 
-/// A failed read refuses the command: nothing is shown (D-50: never fall back to memory).
 #[test]
 fn a_failed_reread_refuses_the_logistics_command() {
     let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
@@ -2711,7 +2683,6 @@ fn the_siege_manager_reads_the_registrations_before_it_registers() {
     s.enter(P3, WOLVES, 0);
     open_registration_page(&mut s, P3, merchant);
     let before = adena_of(&s, P3);
-    // The database (the Java game server) registered the Wolves meanwhile.
     let pages = siege_command(&mut s, P3, "register", vec![WOLVES]);
     assert!(pages[0].contains("PAGE 06"), "{pages:?}");
     assert_eq!(adena_of(&s, P3), before);
@@ -2952,13 +2923,11 @@ fn logging_out_inside_the_zone_stores_the_position_in_town() {
     );
 }
 
-/// D-50: the rows of a fortress read again replace its owner; the owner's updater follows.
 #[test]
 fn a_reread_that_moves_the_owner_moves_the_updater_too() {
     let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
     s.enter(P3, WOLVES, 0);
     assert!(s.world.fort_time_till_next_update(SHANTY) > 0);
-    // Sieghardt decided: the Wolves own Shanty.
     answer_reread(&mut s, ResidenceReadThen::Nothing, WOLVES, vec![], Some(3));
     assert_eq!(s.world.fort(SHANTY).unwrap().owner_id, WOLVES);
     assert_eq!((s.clan(WOLVES).fort_id, s.clan(LIONS).fort_id), (101, 0));

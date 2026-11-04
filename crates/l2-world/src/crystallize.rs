@@ -1,6 +1,4 @@
 //! `RequestCrystallizeItem`: an item is destroyed for crystals.
-// Java: network/clientpackets/RequestCrystallizeItem.java
-//
 // # Not Java's
 // `Player.isInCrystallize()` / `setInCrystallize` have no state here: Java sets the flag so that a
 // second packet on another thread is refused while the first one runs, and the world handles one
@@ -158,7 +156,6 @@ impl World {
         let Some(removed) = self.destroy_inventory_item(id, object_id, count) else {
             return;
         };
-        // NOTE(java-quirk): the update always says "removed", even when a part of a stack is left.
         let entry = self.update_entry(&removed, InventoryUpdate::REMOVED);
         // Sent inventory update for destruction instantly.
         self.send_inventory_update_now(id, vec![entry]);

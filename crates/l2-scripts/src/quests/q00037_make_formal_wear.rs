@@ -1,7 +1,5 @@
 //! Quest 37: Make Formal Wear (Alexis in the Talking Island, the Gludin and Dark Elven errand
 //! NPCs Leikar, Jeremy and Mist).
-// Java: dist/game/data/scripts/quests/Q00037_MakeFormalWear/Q00037_MakeFormalWear.java
-//
 // Pattern: a delivery chain over several NPCs (`docs/design/scripts.md`, "Quest patterns"): the
 // NPCs hand out and take items in turn, the sewing kit, the jewel box and the mysterious cloth
 // come from other quests, and the end is one-time.

@@ -1,5 +1,4 @@
 //! Quest 904: Dragon Trophy - Antharas (Theodric sends the party after Antharas, 30 medals after the kill).
-// Java: dist/game/data/scripts/quests/Q00904_DragonTrophyAntharas/Q00904_DragonTrophyAntharas.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, QuestSound, QuestType, STARTED};

@@ -1,6 +1,4 @@
 //! Quest 120: Pavel's Last Research (the stone pile, Wendy, Yumi, the three weather masters, the bookshelf).
-// Java: dist/game/data/scripts/quests/Q00120_PavelsLastResearch/Q00120_PavelsLastResearch.java
-//
 // Pattern: a memo state chain where almost every link page is guarded by the memo state (and
 // items), and three "puzzles" (the weather masters) that keep their progress as decimal digits in
 // `memoStateEx(0)`. Requires Q00114 done.
@@ -448,7 +446,6 @@ impl Script for Q00120PavelsLastResearch {
             }
             "wm2_3_a" | "wm2_3_b" | "wm2_3_c" | "wm2_3_d" | "wm2_3_m" | "wm2_3_n" | "wm2_3_v" | "wm2_3_w"
             | "wm2_3_x" => {
-                // NOTE(java-quirk): this one tests memo state 8, the others of the puzzle 16.
                 html = shown(qs.is_memo_state(ctx, 8), "32043-05.html");
             }
             "wm2_3_l" => {
@@ -643,7 +640,6 @@ impl Script for Q00120PavelsLastResearch {
                     qs.set_cond(ctx, 22, true);
                     qs.set_memo_state_ex(ctx, 0, 0);
                     ctx.play_sound(player, QuestSound::AmbsoundDrone);
-                    // NOTE(java-quirk): `npc.setTarget(player)` throws without an NPC.
                     let npc = npc?;
                     ctx.cast_skill(
                         npc,

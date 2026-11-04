@@ -1,6 +1,4 @@
 //! Quest 654: Journey to a Settlement (the Nameless Spirit at the Imperial Tomb, the Frintezza scroll).
-// Java: dist/game/data/scripts/quests/Q00654_JourneyToASettlement/Q00654_JourneyToASettlement.java
-//
 // Pattern: a memo-state quest (`set_memo_state(1)` then `2`) that the start NPC drives in two
 // talks, then a drop from the Canyon Antelopes (`get_random_party_member_state` with a chance
 // per monster) that sets cond 3. The spirit only takes the player who finished Q00119.

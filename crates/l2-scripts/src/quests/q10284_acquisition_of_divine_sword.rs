@@ -1,6 +1,4 @@
 //! Quest 10284: Acquisition of Divine Sword (Rafforty, Jinia in the Jinia guild hideout, Krun/Tarun in the mithril mine).
-// Java: dist/game/data/scripts/quests/Q10284_AcquisitionOfDivineSword/Q10284_AcquisitionOfDivineSword.java
-//
 // Pattern: a memo-state quest like Q10286: memo state 1 = the hideout (the three story pages are
 // remembered in `ex1`..`ex3`), 2 = out of the hideout, 3 = the mine is done (set by the
 // `MithrilMine` instance script, which is not this quest).
@@ -130,7 +128,6 @@ impl Script for Q10284AcquisitionOfDivineSword {
                     qs.unset(ctx, "ex3");
                     qs.set_cond(ctx, 3, true);
                     qs.set_memo_state(ctx, 2);
-                    // Java: `InstanceManager.getPlayerWorld(player).removeAllowed(player)` then
                     // `setInstanceId(0)`. The hideout's world belongs to the instance script.
                     if let Some(id) = ctx.world().player_instance_world(player).map(|w| w.instance_id)
                         && let Some(world) = ctx.world_mut().instance_world_mut(id)

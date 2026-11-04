@@ -8,7 +8,6 @@
 //! `mechanics/fishing/Fishing.java`, `entity/actor/Player.java` (`startFishing`, `endFishing`, ...),
 //! `dist/game/data/scripts/handlers/skill/effects/{Fishing,Pumping,Reeling}.java`,
 //! `handlers/items/FishShots.java`, `managers/FishingChampionshipManager.java`.
-//! Java: mechanics/fishing/Fishing.java
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};

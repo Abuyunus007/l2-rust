@@ -1,6 +1,4 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
-//! The character screen against recorded Java game server sessions.
-//!
 //! Needs two things that CI does not have, and skips with a printed note without them:
 //! `L2_CAPTURE_DIR` (a folder with `*.jsonl` captures, format: `l2-proxy` capture.rs) and the
 //! Java datapack (`L2_DATAPACK_ROOT`, default `dist/game`).

@@ -3,7 +3,6 @@
 //!
 //! `//teleto`, `//teleto r|end` and `//instant_move` set the GM's click-to-teleport mode, which
 //! the `MoveToLocation` handler reads (`tele_mode` of `zone_tools.rs`).
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminTeleport.java (walk, recallNPC)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;

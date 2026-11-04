@@ -1,6 +1,4 @@
 //! [`Qs`]: a handle on one quest state of one player (Java `QuestState`).
-// Java: mechanics/script/QuestState.java
-//
 // Java scripts hold a `QuestState` object and call `qs.setCond(2, true)` next to
 // `giveItems(player, ...)`. A Rust handle cannot hold `&mut World` while the script also calls
 // the helpers, so `Qs` is a small `Copy` value (player + script) and every method takes the
@@ -276,8 +274,6 @@ impl Qs {
 
     /// Java `isNowAvailable()`: the restart time has passed.
     pub fn is_now_available(self, ctx: &ScriptCtx<'_>) -> bool {
-        // NOTE(java-quirk): `Long.parseLong` of a bad value throws in Java; it counts as "not
-        // available" here.
         self.get(ctx, RESTART_VAR)
             .and_then(|v| v.parse::<i64>().ok())
             .is_some_and(|time| time <= ctx.now_ms())

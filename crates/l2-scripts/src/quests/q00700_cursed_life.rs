@@ -1,7 +1,5 @@
 //! Quest 700: Cursed Life (Orbyu at the Keucereus Alliance Base, the Mutant Birds and Dra Hawks
 //! of Gracia).
-// Java: dist/game/data/scripts/quests/Q00700_CursedLife/Q00700_CursedLife.java
-//
 // Pattern: a repeatable kill-and-collect quest like Q00699: Rok drops three kinds of swallowed
 // remains in a many-step chance, the other monsters drop one remain by a per-monster chance,
 // Orbyu pays per piece with a bonus from ten pieces. Offered after "Good Day to Fly" (Q10273).

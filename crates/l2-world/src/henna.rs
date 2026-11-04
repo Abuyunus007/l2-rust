@@ -1,12 +1,5 @@
 //! Hennas (dyes) and the symbol maker: the three slots, drawing and removing a dye, the lists and
 //! previews the client asks for, and the `SymbolMaker` NPC script (L-01).
-// Java: network/clientpackets/{RequestHennaItemList,RequestHennaItemInfo,RequestHennaEquip,
-// Java: RequestHennaRemoveList,RequestHennaItemRemoveInfo,RequestHennaRemove}.java
-// Java: network/serverpackets/{HennaEquipList,HennaRemoveList,HennaItemDrawInfo,
-// Java: HennaItemRemoveInfo,HennaInfo}.java
-// Java: entity/actor/Player.java (getHennaEmptySlots, addHenna, removeHenna, setPlayerClass)
-// Java: dist/game/data/scripts/ai/others/SymbolMaker/SymbolMaker.java (and its pages)
-//
 // # Where a dye lives
 // `PlayerProfile::hennas`: the dye id of slots 1 to 3 of the active class index, 0 for an empty
 // slot (loaded at enter world and again by the subclass switch, Java `restoreHenna`). The bonuses are not stored: the stat engine

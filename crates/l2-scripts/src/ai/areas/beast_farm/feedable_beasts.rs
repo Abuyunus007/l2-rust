@@ -1,7 +1,5 @@
 //! Feedable Beasts: growth-capable mobs polymorph when a character feeds them golden or crystal
 //! spice (the older, pre-Freya beast farm).
-// Java: dist/game/data/scripts/ai/areas/BeastFarm/FeedableBeasts.java
-//
 // The last step is a `TamedBeast` of the character (`spawn_tamed_beast`, S-API-05): his old
 // trained beasts go, the new one follows him, buffs him and eats his spice (the world's
 // `CheckDuration`, whose food skill comes back here as a skill-see: `onReceiveFood`).
@@ -221,7 +219,6 @@ const KOOKABURA_2_2: &[&[i32]] = &[&[21469, 21825], &[TRAINED_KOOKABURRA1, TRAIN
 const BUFFALO_0_GOLD: &[&[i32]] = &[&[21471, 21472, 21473, 21474]];
 const BUFFALO_0_CRYSTAL: &[&[i32]] = &[&[21475, 21476, 21477, 21478]];
 const BUFFALO_1_GOLD_1: &[&[i32]] = &[&[21479, 21481]];
-// NOTE(java-quirk): 21481 is in both lists of Java (21480 is in none).
 const BUFFALO_1_GOLD_2: &[&[i32]] = &[&[21481, 21482]];
 const BUFFALO_1_CRYSTAL_1: &[&[i32]] = &[&[21483, 21485]];
 const BUFFALO_1_CRYSTAL_2: &[&[i32]] = &[&[21484, 21486]];
@@ -364,8 +361,6 @@ fn spawn_next(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, growth_level: i32, player
 
         // also, perform a rare random chat
         if ctx.get_random(20) == 0 {
-            // NOTE(java-quirk): Java broadcasts the line from the fed mob (`npc`), which was
-            // deleted above, so nobody hears it; only the message is drawn.
             let _message = ctx.get_random_range(2024, 2029);
         }
     } else {
@@ -508,8 +503,6 @@ impl Script for FeedableBeasts {
                 }
             }
 
-            // NOTE(java-quirk): the feeder was stored a few lines up, so this "same player as
-            // the one who raised it" test can never fail.
             if (growth_level > 0) && (ctx.state::<FeedInfo>().0.get(&object_id) != Some(&caster.0)) {
                 // check if this is the same player as the one who raised it from growth 0.
                 // if no, then do not allow a chance to raise the pet (food gets consumed but has no effect).

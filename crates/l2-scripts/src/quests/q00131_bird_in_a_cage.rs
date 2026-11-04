@@ -1,6 +1,4 @@
 //! Quest 131: Bird in a Cage (Kanis and Parme, who sends the player out of the instance).
-// Java: dist/game/data/scripts/quests/Q00131_BirdInACage/Q00131_BirdInACage.java
-//
 // Pattern: a talk chain; Parme (cond 3) teleports the player to the instance exit
 // (`setInstanceId(0)` + `teleToLocation`). The reward is one of four fire stones.
 

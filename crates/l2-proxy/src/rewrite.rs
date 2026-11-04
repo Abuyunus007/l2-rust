@@ -1,6 +1,5 @@
 //! Rewriting the `ServerList` so the client's game connection goes through the proxy.
 //!
-//! Java: loginserver/network/serverpackets/ServerList.java (layout).
 //!
 //! The rewrite patches the IP and port bytes **in place** instead of decoding and re-encoding
 //! the packet. Everything else (flags, player counts, character info, anything a newer server

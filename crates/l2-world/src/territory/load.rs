@@ -1,7 +1,3 @@
-//! The war at server start (Java `TerritoryWarManager.load`, the `TerritoryWarSuperClass`
-//! constructor's `setNextTWDate` and `MercenaryCaptain`'s shouting timers) and the rows read
-//! again side by side (D-50, D-51).
-
 use tracing::{info, warn};
 
 use super::{Registration, Territory, TerritoryNpcSpawn, TerritoryThen, WARD_PLACES};
@@ -53,7 +49,6 @@ pub struct TerritoryLoad {
     pub next_tw_start_date: i64,
 }
 
-/// The war's rows read again (side by side, D-50/D-51).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct TerritoryRows {
     pub territories: Vec<TerritoryRecord>,
@@ -202,8 +197,6 @@ impl World {
                 .push(entry);
         }
     }
-
-    // ------------------------------------------------------------------ read again (D-50)
 
     /// Asks the persistence task for the war's rows; the answer comes back as
     /// `WorldCommand::ResidenceReread` and goes on with `then`.

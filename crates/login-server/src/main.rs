@@ -3,7 +3,6 @@
 //! Start it from a copy of `dist/login` (or give `--root`). Runs until Ctrl+C or SIGTERM
 //! (exit code 0). Exit code 2 asks the wrapper (start script, supervisor) to start it again,
 //! exit code 1 is a fatal startup error.
-// Java: org/l2jmobius/loginserver/LoginServer.java (main)
 
 use std::path::PathBuf;
 use std::process::ExitCode;

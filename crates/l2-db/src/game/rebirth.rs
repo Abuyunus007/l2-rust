@@ -1,19 +1,13 @@
 //! The `rebirth_system` table: the Rebirth custom feature (`Custom/Rebirth.ini`, M9-C05).
-// Java: org/l2jmobius/gameserver/managers/RebirthManager.java (SELECT_REBIRTH_COUNT,
-// Java: INSERT_FIRST_REBIRTH, UPDATE_REBIRTH_COUNT, SELECT_SELECTED_SKILLS, UPDATE_SELECTED_SKILLS)
 
 use sqlx::FromRow;
 
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: SELECT_REBIRTH_COUNT and SELECT_SELECTED_SKILLS, read in one go (ours).
 const SELECT_REBIRTH: &str = "SELECT rebirthCount, selectedSkills FROM rebirth_system WHERE charId=?";
-// Java: INSERT_FIRST_REBIRTH
 const INSERT_FIRST_REBIRTH: &str = "INSERT INTO rebirth_system (charId, rebirthCount) VALUES (?,1)";
-// Java: UPDATE_REBIRTH_COUNT
 const UPDATE_REBIRTH_COUNT: &str = "UPDATE rebirth_system SET rebirthCount=? WHERE charId=?";
-// Java: UPDATE_SELECTED_SKILLS
 const UPDATE_SELECTED_SKILLS: &str = "UPDATE rebirth_system SET selectedSkills=? WHERE charId=?";
 
 /// The row of one character.
@@ -40,7 +34,6 @@ impl RebirthRepository {
     }
 
     /// The row of a character, `None` when it never was reborn.
-    // Java: RebirthManager.getCount / getSelectedSkills
     pub async fn rebirth_of(&self, char_id: i32) -> Result<Option<RebirthRow>> {
         Ok(sqlx::query_as::<_, RebirthRow>(SELECT_REBIRTH)
             .bind(char_id)
@@ -49,7 +42,6 @@ impl RebirthRepository {
     }
 
     /// The first rebirth: a new row with count 1. `false` when no row was written.
-    // Java: RebirthManager.insertFirst
     pub async fn insert_first(&self, char_id: i32) -> Result<bool> {
         let done = sqlx::query(INSERT_FIRST_REBIRTH)
             .bind(char_id)
@@ -59,7 +51,6 @@ impl RebirthRepository {
     }
 
     /// A later rebirth: the new count. `false` when no row changed.
-    // Java: RebirthManager.updateCount
     pub async fn update_count(&self, char_id: i32, new_count: i32) -> Result<bool> {
         let done = sqlx::query(UPDATE_REBIRTH_COUNT)
             .bind(new_count)
@@ -70,7 +61,6 @@ impl RebirthRepository {
     }
 
     /// The selected skills, ids joined by commas.
-    // Java: RebirthManager.saveSelectedSkills
     pub async fn save_selected_skills(&self, char_id: i32, skills: &str) -> Result<()> {
         sqlx::query(UPDATE_SELECTED_SKILLS)
             .bind(skills)

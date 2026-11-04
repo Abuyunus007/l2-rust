@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/FindPvpConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/FindPvP.ini` (Java: `FindPvpConfig`).

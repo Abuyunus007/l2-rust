@@ -1,6 +1,4 @@
 //! Quest 404: Path of the Human Wizard (Parina and the five elemental guides).
-// Java: dist/game/data/scripts/quests/Q00404_PathOfTheHumanWizard/Q00404_PathOfTheHumanWizard.java
-//
 // Pattern: a delivery chain through five elemental NPCs, each handing out one item and taking
 // the previous one, with the kill steps in between: a ratman warrior's key, a water seer's two
 // pebbles, a red bear's red soil (`docs/design/scripts.md`, "Quest patterns"). Parina gives the

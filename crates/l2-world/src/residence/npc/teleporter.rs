@@ -1,6 +1,4 @@
 //! `CastleTeleporter`: the mass gatekeeper that sends the defenders into the inner castle.
-// Java: dist/game/data/scripts/ai/others/CastleTeleporter/CastleTeleporter.java
-//
 // The first click shows "ready" (`teleporter-01.html`), or, when all control towers of a running
 // siege fell, "the defenders may be teleported in 8 minutes" (`teleporter-02.html`); the button
 // starts the countdown (30 seconds, 8 minutes after the fall of the towers) and the NPC shouts

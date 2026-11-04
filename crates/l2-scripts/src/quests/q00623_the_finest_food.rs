@@ -1,7 +1,5 @@
 //! Quest 623: The Finest Food (Jeremy in the Hot Springs area; the thermal monsters drop the meat,
 //! the leaf and the horn of the dish; 100 of each give one of the four rewards).
-// Java: dist/game/data/scripts/quests/Q00623_TheFinestFood/Q00623_TheFinestFood.java
-//
 // Pattern: a kill that gives one item per kill up to a limit of 100 (`giveItemRandomly` with
 // its limit), cond 2 once all three items are at 100, and a random reward (one roll of 1000
 // over four bands) that ends the quest.

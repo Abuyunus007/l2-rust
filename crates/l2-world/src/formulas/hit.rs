@@ -1,6 +1,5 @@
 //! Hit, critical hit, shield and attack-break formulas (no skills).
 //!
-//! Java: `mechanics/stats/Formulas.java` `calcHitMiss`, `calcCrit(attacker, target)`,
 //! `calcShldUse(attacker, target)`, `calcAtkBreak`; `data/xml/HitConditionBonusData.getConditionBonus`.
 //! The skill variants (`skill != null`) are M5.
 
@@ -77,7 +76,6 @@ pub fn calc_hit_miss(input: &HitMissInput<'_>, rng: &mut impl Rnd) -> bool {
         .wrapping_mul(10);
 
     // Get additional bonus from the conditions when you are attacking.
-    // NOTE(java-quirk): `chance *= double` casts back to int right here (truncation toward zero).
     let bonus = condition_bonus(
         input.hit_condition_bonus,
         input.attacker_z,

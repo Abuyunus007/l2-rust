@@ -1,5 +1,4 @@
 //! The Sandstorm casts Gust at whoever comes near.
-// Java: dist/game/data/scripts/ai/others/Sandstorms.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};

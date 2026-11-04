@@ -1,5 +1,4 @@
 //! Quest 10269: To the Seed of Destruction (Keucereus sends the adventurer to Officer Allenos).
-// Java: dist/game/data/scripts/quests/Q10269_ToTheSeedOfDestruction/Q10269_ToTheSeedOfDestruction.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED};

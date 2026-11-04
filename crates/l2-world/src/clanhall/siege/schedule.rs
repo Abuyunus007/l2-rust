@@ -1,9 +1,5 @@
 //! The schedule of a conquerable hall: `schedule_config` and `SiegableHall.updateNextSiege`, and
 //! the date texts of the scripts' pages.
-// Java: mechanics/siege/clanhalls/SiegableHall.java (constructor: `_scheduleConfig`,
-//       updateNextSiege)
-// Java: commons/time/TimeUtil.java (formatDate), java.util.Date.toString
-//
 // # Calendars
 // Java computes the dates with `Calendar.getInstance()` in the JVM's zone (D-48). The functions
 // here take the offset of that zone as a function of the UTC time, so tests can fix it (the
@@ -34,8 +30,6 @@ fn java_split_semicolon(text: &str) -> Vec<&str> {
 /// the default; a part that is not a number keeps the default of that part.
 pub(crate) fn parse_schedule_config(hall_name: &str, raw: Option<&str>) -> [i32; 5] {
     let mut config = DEFAULT_SCHEDULE;
-    // NOTE(java-quirk): a NULL column makes `StatSet.getString` throw in Java and the hall is not
-    // loaded at all; here it keeps the default.
     let Some(raw) = raw else {
         warn!("{hall_name}: Wrong schedule_config value in siegable_halls table, using default (7 days)");
         return config;

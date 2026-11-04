@@ -59,7 +59,6 @@ fn write_list(w: &mut PacketWriter, items: &Option<Vec<WarehouseListEntry>>) {
     }
 }
 
-// Java: gameserver/network/clientpackets/SendWareHouseDepositList.java
 /// The player confirms what it puts into the warehouse (`SEND_WARE_HOUSE_DEPOSIT_LIST`). Java
 /// drops the list when an entry has an object id below 1 or a count below 1.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -87,7 +86,6 @@ impl Decode for SendWareHouseDepositList {
     }
 }
 
-// Java: gameserver/network/clientpackets/SendWareHouseWithDrawList.java
 /// The player confirms what it takes out of the warehouse (`SEND_WARE_HOUSE_WITH_DRAW_LIST`).
 /// Java drops the list when an entry has an object id below 1 or a count below 0 (a count of 0 is
 /// accepted).
@@ -116,7 +114,6 @@ impl Decode for SendWareHouseWithDrawList {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestPackageSend.java
 /// The player sends items to the freight of another character of its account
 /// (`REQUEST_PACKAGE_SEND`). Same entry rule as the withdraw list.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -149,7 +146,6 @@ impl Decode for RequestPackageSend {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestPackageSendableItemList.java
 /// The player asks which items it can send to the character `object_id`
 /// (`REQUEST_PACKAGE_SENDABLE_ITEM_LIST`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

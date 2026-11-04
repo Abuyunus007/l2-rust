@@ -1,8 +1,6 @@
 //! Quest 638: Seekers of the Holy Grail (Innocentin in the Town of Aden; the Triol's followers and
 //! the undead of the Schuttgart/Aden ruins drop the totems, 2000 of them buy an enchant scroll or
 //! 3576000 adena; some drop a key on the side).
-// Java: dist/game/data/scripts/quests/Q00638_SeekersOfTheHolyGrail/Q00638_SeekersOfTheHolyGrail.java
-//
 // Pattern: a repeatable kill count with a drop chance per monster, an optional key roll after a
 // drop (`DropInfo`), a random reward choice (an 80 % roll, then the scroll kind by a coin), and a
 // quit. Java's `getRandom(100)` runs before `getRandomBoolean()`.

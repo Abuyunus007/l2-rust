@@ -1,10 +1,5 @@
 //! The air ship docks (`AirShipController` and its four subclasses) and the scheduled ship
 //! between Gludio and Gracia (`AirShipGludioGracia`), built in.
-// Java: dist/game/data/scripts/ai/areas/Gracia/vehicles/AirShipController.java
-// Java: dist/game/data/scripts/ai/areas/Gracia/vehicles/{SoIController,SoDController,
-//       KeucereusNorthController,KeucereusSouthController}/*.java
-// Java: dist/game/data/scripts/ai/areas/Gracia/vehicles/AirShipGludioGracia/*.java
-//
 // The scripts' `ScriptZone` hooks (`onEnterZone`, `onExitZone`) are called from
 // [`World::vehicle_revalidate_zone`], which looks at the four dock zones for a steered ship (the
 // only creature the controllers care about). Their dialogs are the `Script <Name> <event>`
@@ -718,7 +713,6 @@ impl World {
                 return None;
             }
             if !self.destroy_item_by_item_id(player, LICENSE, 1, true) {
-                // NOTE(java-quirk): the license shortage is told with the Starstone message.
                 self.send(player, &Self::not_enough_starstones());
                 return None;
             }

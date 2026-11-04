@@ -1,5 +1,4 @@
 //! Quest 190: Lost Dream (Head Blacksmith Kusto, Juris, Researcher Lorain and Maestro Nikola).
-// Java: dist/game/data/scripts/quests/Q00190_LostDream/Q00190_LostDream.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED};

@@ -1,6 +1,4 @@
 //! Quest 431: Wedding March (Kantabilon; Lienrik and Lienrik Lad drop the silver crystals).
-// Java: dist/game/data/scripts/quests/Q00431_WeddingMarch/Q00431_WeddingMarch.java
-//
 // Pattern: a party kill quest (`get_random_party_member_cond` drops the item for a member at
 // cond 1) with a turn-in that gives the reward and ends the quest (repeatable).
 

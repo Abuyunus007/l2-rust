@@ -1,5 +1,4 @@
 //! The `RollingDice` item handler.
-// Java: dist/game/data/scripts/handlers/items/RollingDice.java
 
 use l2_geo::Location;
 use l2_protocol_game::SystemMessageId;

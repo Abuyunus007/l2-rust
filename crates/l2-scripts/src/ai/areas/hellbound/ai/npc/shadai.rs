@@ -1,5 +1,4 @@
 //! Shadai: moves with the day and the night.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/NPC/Shadai/Shadai.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, World};

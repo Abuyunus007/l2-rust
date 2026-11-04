@@ -14,7 +14,6 @@ pub struct BossRecordEntry {
     pub points: i32,
 }
 
-// Java: gameserver/network/serverpackets/ExGetBossRecord.java
 /// The player's raid boss points, ranking and the points per boss (`EX_GET_BOSS_RECORD`).
 ///
 /// Java writes a third zero after each boss. Java's null list is written as four zeros; the
@@ -37,7 +36,6 @@ impl Encode for ExGetBossRecord {
             .i32(self.total_points)
             .i32(self.records.len() as i32);
         for record in &self.records {
-            // NOTE(java-quirk): Java writes an unexplained zero (`// ??`) after each boss.
             w.i32(record.boss_id).i32(record.points).i32(0);
         }
     }
@@ -63,7 +61,6 @@ impl Decode for ExGetBossRecord {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExCursedWeaponList.java
 /// The ids of the cursed weapons in the world (`EX_CURSED_WEAPON_LIST`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExCursedWeaponList {
@@ -106,7 +103,6 @@ pub struct CursedWeaponLocation {
     pub z: i32,
 }
 
-// Java: gameserver/network/serverpackets/ExCursedWeaponLocation.java
 /// Where the cursed weapons are (`EX_CURSED_WEAPON_LOCATION`).
 ///
 /// Java writes two zeros when the list is empty (a count of 0 and one more zero), so an empty

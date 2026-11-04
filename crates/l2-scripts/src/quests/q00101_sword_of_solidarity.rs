@@ -1,7 +1,5 @@
 //! Quest 101: Sword of Solidarity (Roien sends a human to Altran for the directions to the
 //! ruins, the Tunath Orcs give the two broken blade parts, and Roien's helper gets the sword).
-// Java: dist/game/data/scripts/quests/Q00101_SwordOfSolidarity/Q00101_SwordOfSolidarity.java
-//
 // Pattern: a delivery chain with a kill chance (`getRandom(5) == 0`) for two parts that set the
 // next cond once both are in, and the NewbieGuide memo as in quest 104.
 

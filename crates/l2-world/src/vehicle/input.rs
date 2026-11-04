@@ -1,8 +1,4 @@
 //! The client packets of the boats and air ships.
-// Java: network/clientpackets/{RequestGetOnVehicle,RequestGetOffVehicle,
-//       RequestMoveToLocationInVehicle,CannotMoveAnymoreInVehicle,MoveToLocationAirShip,
-//       MoveToLocationInAirShip}.java
-// Java: network/clientpackets/RequestActionUse.java (the air ship actions 67 to 70)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{

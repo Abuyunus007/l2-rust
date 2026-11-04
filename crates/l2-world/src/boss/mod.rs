@@ -2,46 +2,12 @@
 //! (`grandboss_data`) and of their zones (`grandboss_list`), the raid boss spawn list and its
 //! respawn times (`raidboss_spawnlist`), the raid points of the players (`character_raid_points`),
 //! `RequestGetBossRecord` and the admin `//grandboss` page.
-// Java: managers/GrandBossManager.java
-// Java: managers/RaidBossSpawnManager.java
-// Java: managers/RaidBossPointsManager.java
-// Java: entity/actor/instance/{RaidBoss,GrandBoss}.java (doDie)
-// Java: entity/zone/type/BossZone.java
-// Java: network/clientpackets/RequestGetBossRecord.java
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminGrandBoss.java
-//
 // # Shape
 // What the three Java singletons keep lives in [`BossWorld`] (`World::boss`). A raid boss is an
 // ordinary NPC of the world (object id); its spawn is a runtime spawn (`add_runtime_spawn`) that
 // never respawns by the regular path (Java: `Npc.onDecay` skips `decreaseCount` for a raid boss
 // the manager defines), the manager's own timer ([`BossTimer::RaidSpawn`], Java `SpawnSchedule`)
 // brings it back. Everything refers to NPCs, players and zones by id (D-11).
-//
-// # The database (D-15, D-39, D-49, D-53)
-// The world never waits for the database. Starting data comes in with [`BossLoad`] and
-// [`RaidBossData`] (read before the world runs); every write is a [`BossWrite`] sent through the
-// outbox. The Java game server shares the rows, so:
-// - the grand boss states (`grandboss_data`, `grandboss_list`) and the raid boss rows
-//   (`raidboss_spawnlist`: respawn time, HP, MP, insert, delete) are written only with
-//   `BossSettings::cycle_database_writes` (`CycleDatabaseWrites` of `SideBySide.ini`, D-53,
-//   default off). The world changes its own state either way and reads the rows at start;
-//   `//grandboss <id>` reads the boss row again before it shows the state (D-50);
-// - the raid points of a player are written as Java writes them (`REPLACE` of the new total, per
-//   player). The rows of a character are read again when it enters the world (D-50), because the
-//   Java game server may have given it points since this server started. The weekly reset
-//   (`DELETE`, clan reputation) is a global job: with the switch off it only forgets the points
-//   in memory and gives no reputation (the Java server does both, D-49).
-//
-// # Left out, with the reason
-// - The boss AIs and the instance scripts (D-05) call [`World::set_grand_boss_status`],
-//   [`World::add_grand_boss`], [`World::allow_boss_zone_entry`] and friends; Antharas, Valakas and
-//   Baium do (`l2-scripts/src/ai/bosses`, S-BOSS-01), with [`World::reread_grand_boss_for_script`]
-//   before a respawn on the shared database (D-54).
-// - `Hero.setRBkilled` is `olympiad/hero.rs` (M8-HERO-01); a kill by a noble writes the diary.
-// - `ConditionPlayerCanEscape` (`GrandBossManager.getZone(player) != null`): the condition is not
-//   modelled by the stat engine; [`World::grand_boss_zone_of`] is the lookup it will use.
-// - `BossZone` for summons and NPCs (their zones are inert) and `returnHome` of a raid boss that
-//   leaves its zone.
 
 mod admin;
 mod grand;
@@ -235,7 +201,6 @@ pub struct RaidBossUpdateRow {
     pub current_mp: f64,
 }
 
-/// What a read of the shared rows asks for (D-50).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BossReadKind {
     /// The `grandboss_data` row of this boss.
@@ -343,8 +308,6 @@ impl World {
         self.outbox.persist(crate::outbox::PersistCommand::Boss(write));
     }
 
-    /// The answer of a read of the shared rows (`WorldCommand::BossReread`). A failed read changes
-    /// nothing and the action that waited for it is refused (D-50).
     pub(crate) fn on_boss_reread(&mut self, result: Result<BossRereadRows, ()>, then: BossReadThen) {
         let ok = match result {
             Ok(rows) => {

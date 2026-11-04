@@ -1,6 +1,4 @@
 //! Quest 306: Crystals of Fire and Ice (Katerina in the Town of Dion sends level 17 players after the elemental shards).
-// Java: dist/game/data/scripts/quests/Q00306_CrystalOfFireAndIce/Q00306_CrystalOfFireAndIce.java
-//
 // Pattern: a party drop quest without a condition (`docs/design/scripts.md`, "Quest patterns"):
 // the salamanders drop flame shards and the undines ice shards, a random started party member
 // gets them in the party range. Katerina pays 40 adena per shard, with a bonus from 10 shards, and

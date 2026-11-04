@@ -1,9 +1,4 @@
 //! `RequestSSQStatus`: the record of the Seven Signs (the four `SSQStatus` pages).
-// Java: network/clientpackets/RequestSSQStatus.java
-// Java: network/serverpackets/SSQStatus.java (the values it reads from SevenSigns)
-//
-// With `CycleDatabaseWrites = False` the rows are read again before the page is shown (D-50,
-// D-53: the Java game server runs the cycle); a failed read shows nothing.
 
 use l2_protocol_game::server::{SevenSignsView, SsqStatus};
 use l2_util::ObjectId;

@@ -1,6 +1,4 @@
 //! Quest 455: Wings of Sand (the Separated Souls; the raid bosses of the sand drop the baby dragons).
-// Java: dist/game/data/scripts/quests/Q00455_WingsOfSand/Q00455_WingsOfSand.java
-//
 // Pattern: a party kill where every member in range rolls for the item (`action_for_each_player`),
 // the item count moves the quest to cond 2 and 3, and the reward is one roll per step beyond the
 // first (`giveItems(qs)`), ending the quest for today (`exitQuest(DAILY, true)`).
@@ -75,7 +73,6 @@ impl Script for Q00455WingsOfSand {
         let Some(qs) = ctx.get_quest_state(player, false) else {
             return;
         };
-        // Java: `LocationUtil.checkIfInRange(ALT_PARTY_RANGE, npc, player, false) && getRandom(1000) < CHANCE`.
         if ctx.check_if_in_range(ctx.alt_party_range(), npc.object_id, player, false)
             && ctx.get_random(1000) < CHANCE
         {

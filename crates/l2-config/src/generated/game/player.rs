@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/PlayerConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Player.ini` (Java: `PlayerConfig`).

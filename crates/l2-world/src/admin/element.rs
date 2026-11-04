@@ -1,8 +1,6 @@
 //! The element admin commands: `//setlh`, `//setlc`, `//setlg`, `//setlb`, `//setll`, `//setlw` and
 //! `//setls` set the element of the head, chest, gloves, feet, legs, right hand and left hand
 //! piece the target wears (`<element> <value>`, element `fire|water|wind|earth|holy|dark|none`).
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminElement.java,
-// Java: entity/item/holders/Elementals.java (getElementId, getElementName, toString)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;
@@ -16,7 +14,6 @@ use crate::world::World;
 
 type Outcome = Result<(), JavaException>;
 
-// Java: `Inventory.PAPERDOLL_*` (the slot index of each body part).
 const PAPERDOLL_HEAD: usize = 1;
 const PAPERDOLL_RHAND: usize = 5;
 const PAPERDOLL_CHEST: usize = 6;
@@ -91,7 +88,6 @@ fn admin_element(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
         return Ok(());
     };
     let args = java_split_space(command);
-    // Java: `getElementId(args[1])` and `parseInt(args[2])` in one `try`; a missing word or a bad
     // number is the usage text.
     let parsed = match (args.get(1), args.get(2)) {
         (Some(name), Some(value)) => parse_int(value).ok().map(|v| (element_id(name), v)),

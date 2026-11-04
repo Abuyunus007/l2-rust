@@ -1,8 +1,5 @@
 //! Every object in the world (players, NPCs, doors) by id, and the per-object state the region
 //! grid needs.
-// Java: org/l2jmobius/gameserver/entity/WorldObject.java (_isSpawned, _worldRegion, _isInvisible,
-//       _instanceId), World._allObjects
-//
 // The kinds keep their own tables in `World` (`players`, `npcs`, `doors`); this table only says
 // which kind an id is and where it is in the grid (D-11: ids, never references).
 
@@ -82,7 +79,6 @@ pub struct Npc {
     pub core: CreatureCore,
     /// The template id (`npc_id`, Java `getId()`).
     pub npc_id: i32,
-    /// Java: which `entity/actor/instance/*` class the template type names.
     pub class: NpcClass,
     /// Java `_spawn`: index into the world's spawn list; `None` for minions and NPCs made by
     /// admin commands.

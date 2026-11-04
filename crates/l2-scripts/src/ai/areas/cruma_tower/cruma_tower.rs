@@ -1,5 +1,4 @@
 //! Mozella, the gatekeeper of the Cruma Tower: teleports characters up to level 55 inside.
-// Java: dist/game/data/scripts/ai/areas/CrumaTower/CrumaTower.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

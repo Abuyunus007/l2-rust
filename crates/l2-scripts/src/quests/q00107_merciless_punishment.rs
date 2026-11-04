@@ -1,7 +1,5 @@
 //! Quest 107: Merciless Punishment (Urutu Chief Hatos, an orc, sends orders through Centurion
 //! Parugon and the Baranka messengers, and each messenger's letter moves the order on).
-// Java: dist/game/data/scripts/quests/Q00107_MercilessPunishment/Q00107_MercilessPunishment.java
-//
 // Pattern: a delivery chain where the monster gives the next letter for the item in hand
 // (`onKill` by cond), and the give-up page that exits repeatable (`exitQuest(true)`).
 

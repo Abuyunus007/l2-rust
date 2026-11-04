@@ -1,18 +1,6 @@
 //! `//forge`, `//forge_values`, `//forge_send`: a GM builds a server packet by hand.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminPForge.java
-// Java: network/serverpackets/AdminForgePacket.java
-//
 // The numbers are read the way Java reads them: `Integer.decode`, `Long.decode` (decimal,
 // `0x`/`#` hexadecimal, a leading `0` octal), `Double.parseDouble` and `BigInteger(String)`.
-//
-// NOTE(java-quirk): `AdminForgePacket` reads its values when the packet is written to the
-// client, not when the command runs. A value that is not a number makes Java's writer throw on
-// the network thread; here the values are read first and a packet with such a value is not sent
-// (the page comes back as after a successful send).
-// NOTE(java-quirk): the method `cs` (a packet from the client) is "not implemented yet" in Java:
-// the values are checked, then the usage is shown.
-// NOTE(java-quirk): `validateOpCodes` accepts an op code that is not a number as long as it is
-// not the first one (the `catch` returns `i > 0`).
 
 use l2_protocol_game::server::{AdminForgePacket, ForgePart};
 use l2_util::ObjectId;
@@ -479,7 +467,6 @@ mod tests {
         assert!(!validate_op_codes(Some(&codes(&["1", "2", "3", "4"]))));
         assert!(!validate_op_codes(Some(&codes(&["-1"]))));
         assert!(!validate_op_codes(None));
-        // NOTE(java-quirk): a word is fine after the first op code, never as the first one.
         assert!(!validate_op_codes(Some(&codes(&["abc"]))));
         assert!(validate_op_codes(Some(&codes(&["1", "abc"]))));
     }

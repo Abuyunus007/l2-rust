@@ -6,16 +6,6 @@
 //!
 //! Every scenario is written once (`play`) against a `Harness` and runs like `e2e_m6.rs`:
 //!
-//! * `Net`: the real thing. The Rust login server and the Rust game server in one process, a
-//!   throwaway MariaDB, `FakeGameClient`s on sockets. It runs only when `L2_TEST_DATABASE_URL`
-//!   is set (CI's MariaDB job; never point it at a database with real data). The castle, fortress,
-//!   hall and auction rows are inserted before the game server starts; the clans (their ids come
-//!   from the characters) after, so the world reads them at `CharacterSelect` (D-50, D-51). After a
-//!   scenario the rows are read back and compared with what Java's statements write (D-39).
-//! * `BareWorld`: the same datapack, configuration, geodata, zones and spawns loaded the way the
-//!   game server loads them, but with the world driven directly (no sockets, no database, ticks
-//!   instead of time). The persistence commands the world sends are applied to a model of the
-//!   tables (`m7_db.rs`) that also answers the reads (D-50), so the same row checks run here.
 //!
 //! A client action is an `Act`: the `ClientInput` for the bare world and the bytes of the packet
 //! the real client sends for `Net`. `every_act_decodes_on_the_wire` checks that the bytes decode
@@ -618,7 +608,6 @@ struct BareWorld {
     answered: usize,
     players: [PlayerData; 3],
     opts: Opts,
-    /// Answer the reads of the world with a failure (a test of D-50).
     fail_reads: bool,
     /// Keeps the folder of the datapack (nothing reads it after the start).
     _root: tempfile::TempDir,
@@ -859,9 +848,6 @@ impl BareWorld {
         }
     }
 
-    /// What the persistence task does for the commands that ask a question (M6-SYNC-01, D-50): it
-    /// reads the rows and answers on the world's channel. Here the rows come from the model of the
-    /// tables.
     fn answer_reads(&mut self) {
         loop {
             let commands = self.persisted.commands();
@@ -919,9 +905,6 @@ impl Harness for BareWorld {
 
     async fn enter(&mut self, who: Who) -> Vec<Vec<u8>> {
         let index = who.index();
-        // The session loads the character from the store: what the world stored when he left (the
-        // first time the new character), and at `CharacterSelect` his clan and its residences as
-        // the tables have them now (D-50, D-51).
         let id = BARE_IDS[index];
         let mut player = self
             .persisted
@@ -1210,7 +1193,6 @@ impl Rig {
             "the creation point of the datapack"
         );
         let char_id = created.object_id;
-        // Java: Logout at the character screen disconnects.
         assert!(game.logout().await.is_empty());
         self.wait_until_out_of_game(account).await;
         char_id
@@ -1464,8 +1446,6 @@ impl Rig {
     }
 }
 
-/// One rig at a time: every real-server test starts a login server, a game server and a
-/// database, and the tests of this file run side by side.
 static ONE_RIG_AT_A_TIME: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 /// The scenario against the real servers.

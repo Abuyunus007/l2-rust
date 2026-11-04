@@ -5,7 +5,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_ex_opcode;
 use crate::generated::opcodes::ExClientOpcode;
 
-// Java: gameserver/network/clientpackets/RequestExCubeGameChangeTeam.java
 /// The player asks to switch team in the Cube game waiting room (`0xD0` 0x005A).
 ///
 /// Java's `readImpl` adds 1 to the arena the client sends (`-1, 0, 1, 2`), so `arena` holds the
@@ -38,7 +37,6 @@ impl Decode for RequestExCubeGameChangeTeam {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestExCubeGameReadyAnswer.java
 /// The answer to the Cube game "ready?" question (`0xD0` 0x005C).
 ///
 /// Like [`RequestExCubeGameChangeTeam`], `arena` is the Java field (wire value plus 1).
@@ -70,7 +68,6 @@ impl Decode for RequestExCubeGameReadyAnswer {
     }
 }
 
-// Java: gameserver/network/clientpackets/EndScenePlayer.java
 client_packet!(
     /// The client reports that a movie (scene) has ended (`0xD0` 0x005B).
     EndScenePlayer,

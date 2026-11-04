@@ -1,6 +1,4 @@
 //! Quest 7: A Trip Begins (Mirabel in Talking Island sends an elf to Ariel and Asterios).
-// Java: dist/game/data/scripts/quests/Q00007_ATripBegins/Q00007_ATripBegins.java
-//
 // Pattern: a delivery chain (`docs/design/scripts.md`, "Quest patterns"): Mirabel starts it,
 // Ariel hands out the recommendation (cond 2), Asterios takes it (cond 3), and Mirabel pays the
 // reward items. One-time: `exit_quest(ctx, false, true)`.

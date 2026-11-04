@@ -1,7 +1,5 @@
 //! The Territory Managers (36490 to 36498): the badge products, the noblesse for badges, the
 //! rewards of the last war; and the `TerritoryStatus` bypass of the town NPCs.
-// Java: dist/game/data/scripts/ai/others/TerritoryManagers/TerritoryManagers.java
-// Java: dist/game/data/scripts/handlers/bypass/npc/TerritoryStatus.java
 
 use l2_protocol_game::server::{ActionFailed, NpcHtmlMessage};
 use l2_util::ObjectId;

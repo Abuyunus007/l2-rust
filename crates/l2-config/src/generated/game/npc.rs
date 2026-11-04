@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/NpcConfig.java
 
 use crate::IniFile;
 /// Settings of `config/NPC.ini` (Java: `NpcConfig`).

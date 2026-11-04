@@ -1,5 +1,4 @@
 //! Quest 192: Seven Signs, Series of Doubt (Croop, Hector, Stan, Hollint and the unidentified body).
-// Java: dist/game/data/scripts/quests/Q00192_SevenSignsSeriesOfDoubt/Q00192_SevenSignsSeriesOfDoubt.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED};

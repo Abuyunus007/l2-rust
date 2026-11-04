@@ -1,14 +1,6 @@
 //! The drops of a dead monster: `NpcTemplate.calculateDrops` (the drop lists, the groups, the
 //! rates and the integer/double quirks of Java) and `Attackable.doItemDrop` (who gets the loot,
 //! auto loot, items on the ground).
-// Java: entity/actor/templates/NpcTemplate.java (calculateDrops, calculateGroupDrops,
-//       calculateUngroupedDrops, calculateGroupDrop, calculateUngroupedDrop)
-// Java: entity/actor/Attackable.java (calculateRewards: who the loot goes to; doItemDrop)
-// Java: data/xml/NpcData.java (the drop list post-processing: unknown items dropped, ungrouped
-//       lists sorted by chance high to low, groups low to high, `BossDrop*`)
-// Java: config/RatesConfig.java
-// Java: util/MathUtil.java (scaleToRange)
-//
 // # How the numbers are computed
 // All of it is done like Java does it, so a seeded run draws in the same order:
 // - the multipliers of `Rates.ini` are `float`s, widened to `double` when they meet a chance
@@ -320,9 +312,6 @@ fn champion<'a>(victim: &DropVictim, s: &'a DropSettings) -> Option<&'a Champion
 }
 
 /// Java's "champion extra drop" at the end of `calculateGroupDrops` and `calculateUngroupedDrops`.
-// NOTE(java-quirk): `calculatedDrops.containsAll(CHAMPION_REWARD_ITEMS)` compares `ItemHolder`s by
-// identity (the class has no `equals`), so the reward items are added every time the roll
-// succeeds, and `calculatedDrops` exists afterwards even when the list of reward items is empty.
 fn champion_extra_drop(
     s: &DropSettings,
     victim: &DropVictim,
@@ -694,8 +683,6 @@ fn calculate_ungrouped_drops(
                 && let (Some(random), Some(calculated)) = (random.as_mut(), calculated.as_mut())
             {
                 // Remove highest chance item (temporarily if no other item replaces it).
-                // NOTE(java-quirk): `randomDrops.remove(0)` throws on an empty list; the counter
-                // only reaches 0 after something was added, so the list is not empty here.
                 if !random.is_empty() {
                     let first = random.remove(0);
                     if let Some(at) = calculated.iter().position(|r| r.seq == first) {
@@ -802,9 +789,6 @@ impl World {
     ///
     /// Java returns early when the aggro list is empty, which skips the exp as well; callers that
     /// add the exp half must do the same (`aggro_list(npc).is_empty()`).
-    // NOTE(java-quirk): the biggest damage dealer is the first one over the running maximum, in the
-    // order Java's `ConcurrentHashMap` iterates the aggro list (an identity hash order). Here it
-    // is the order the attackers hit first; only an exact tie can differ.
     pub(crate) fn drop_rewards(&mut self, dying: ObjectId, last_attacker: Option<ObjectId>) {
         if !self.is_attackable_npc(dying) {
             return;
@@ -893,8 +877,6 @@ impl World {
             _ => last_attacker,
         };
         self.do_item_drop(dying, dealer);
-        // NOTE(java-quirk): the event drops go to the last attacker even when the damage dealer
-        // got the normal drops.
         self.do_event_drop(last_attacker, dying);
     }
 
@@ -907,8 +889,6 @@ impl World {
         }
         let killer_is_player = self.players.contains_key(&killer);
         // A player without karma killed by a player whose clan declared war on its clan drops
-        // nothing. NOTE(java-quirk): only this direction counts (the other one is commented out
-        // in Java).
         let own_clan = self.clan_id_of(dying);
         if killer_is_player
             && self.players.get(&dying).is_some_and(|p| p.data.karma <= 0)
@@ -1293,7 +1273,6 @@ impl World {
 
     /// Java `PlayerInventory.checkInventorySlotsAndWeight(itemList, false, false)`: the items fit
     /// the slots and the weight limit.
-    // NOTE(java-quirk): the weight is each template's weight once, not times the count.
     pub(crate) fn check_inventory_slots_and_weight(&self, player: ObjectId, items: &[ItemHolder]) -> bool {
         let Some(templates) = self.item_templates() else {
             return false;

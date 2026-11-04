@@ -1,6 +1,5 @@
 //! The Altars of Sacrifice: every four hours a boss appears at some altars and is gone four hours
 //! later (once it is out of combat).
-// Java: dist/game/data/scripts/ai/others/AltarsOfSacrifice.java
 
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
 
@@ -140,8 +139,6 @@ fn spawn_boss(ctx: &mut ScriptCtx<'_>, index: usize, altar: &Altar) -> Result<()
     let spawn_x = (f64::from(radius) * angle_radians.cos()) as i32 + altar.middle_point.0;
     let spawn_y = (f64::from(radius) * angle_radians.sin()) as i32 + altar.middle_point.1;
     let spawn_z = ctx.geo_height(spawn_x, spawn_y, altar.middle_point.2);
-    // NOTE(java-quirk): `spawn.doSpawn(false)` may return null (a bad template); Java then keeps
-    // `_spawnedBoss` null and the next spawn event tries again.
     let boss = ctx.add_spawn(npc_id, spawn_x, spawn_y, spawn_z, heading, false, 0, 0);
     ctx.state::<Bosses>().0[index] = boss;
     Ok(())
@@ -164,7 +161,6 @@ fn is_boss_fighting(ctx: &mut ScriptCtx<'_>, index: usize) -> bool {
 
 /// Java `getSpawnBossIndex(event)` / `getDespawnBossIndex(event)`.
 fn index_of(event: &str, prefix: &str) -> Option<usize> {
-    // NOTE(java-quirk): `Integer.parseInt` throws on a bad number; the event is dropped.
     event.strip_prefix(prefix)?.parse().ok()
 }
 

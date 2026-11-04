@@ -10,14 +10,12 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::{read_count, write_opcode};
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/ExOlympiadMatchEnd.java
 server_unit_packet!(
     /// The Olympiad match is over (`EX_OLYMPIAD_MATCH_END`). Java sends the static packet.
     ExOlympiadMatchEnd,
     ExOlympiadMatchEnd
 );
 
-// Java: gameserver/network/serverpackets/ExOlympiadMode.java
 /// The Olympiad observer mode (`EX_OLYMPIAD_MODE`): `0` returns the player, `3` starts spectating.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExOlympiadMode {
@@ -57,7 +55,6 @@ pub struct OlympiadMatchEntry {
     pub player_2: String,
 }
 
-// Java: gameserver/network/serverpackets/ExOlympiadMatchList.java
 /// The running matches, shown in the observer list (`EX_RECEIVE_OLYMPIAD`, type `0`).
 ///
 /// Java counts the tasks with a game and writes that count; the world passes only the games that
@@ -144,7 +141,6 @@ fn read_result_entry(r: &mut PacketReader) -> Result<OlympiadResultEntry, Packet
     })
 }
 
-// Java: gameserver/network/serverpackets/ExOlympiadMatchResult.java
 /// The result of a match (`EX_RECEIVE_OLYMPIAD`, type `1`). Teams are `1` and `2`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExOlympiadMatchResult {
@@ -239,7 +235,6 @@ impl Decode for ExOlympiadMatchResult {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExOlympiadUserInfo.java
 /// A fighter's side, id, name, class and HP/CP (`EX_OLYMPIAD_USER_INFO`).
 ///
 /// Java's constructors take the player, or the participant of a match, and fall back to `0/100`
@@ -302,7 +297,6 @@ pub struct OlympiadSpelledEffect {
     pub time: i32,
 }
 
-// Java: gameserver/network/serverpackets/ExOlympiadSpelledInfo.java
 /// The buffs of a fighter in the Olympiad (`EX_OLYMPIAD_SPELLED_INFO`).
 ///
 /// Java skips buffs that are not in use; the world passes only the ones that are.
@@ -357,7 +351,6 @@ pub struct HeroEntry {
     pub count: i32,
 }
 
-// Java: gameserver/network/serverpackets/ExHeroList.java
 /// The hero list (`EX_HERO_LIST`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExHeroList {
@@ -403,7 +396,6 @@ impl Decode for ExHeroList {
     }
 }
 
-// Java: gameserver/network/serverpackets/ObservationMode.java
 /// The observer mode starts at a place (`OBSERVER_START`, M8-OLY-01).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ObservationMode {
@@ -437,7 +429,6 @@ impl Decode for ObservationMode {
     }
 }
 
-// Java: gameserver/network/serverpackets/ObservationReturn.java
 /// The observer mode ends; the player is back at a place (`OBSERVER_END`, M8-OLY-01).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ObservationReturn {

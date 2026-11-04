@@ -1,6 +1,4 @@
 //! Quest 163: Legacy of the Poet (Starden wants four poems from the Baraq orcs).
-// Java: dist/game/data/scripts/quests/Q00163_LegacyOfThePoet/Q00163_LegacyOfThePoet.java
-//
 // Pattern: a one-time kill quest with four separate drops, each rolled on every kill. Dark Elves
 // are sent away (race gate).
 

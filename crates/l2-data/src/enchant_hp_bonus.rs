@@ -1,6 +1,5 @@
 //! Enchant HP bonus: the HP an armor gets from its enchant level, per crystal grade.
 //!
-//! Java: `gameserver/data/xml/EnchantItemHPBonusData.java` (`getHPBonus`). Attaching the
 //! `ENCHANTHP` function to the armors is M4-STAT-01.
 //! Data: `data/stats/enchantHPBonus.xml` (`xsd/enchantHPBonus.xsd`).
 
@@ -49,7 +48,6 @@ impl EnchantHpBonus {
 
     fn add(&mut self, doc: RawEnchantHpFile) -> Result<(), DataError> {
         for entry in doc.entries {
-            // Java: `parseEnum` gives null for an unknown grade and `EnumMap.put(null, ..)` throws.
             let grade = CrystalType::from_name(&entry.grade)
                 .ok_or_else(|| DataError::Invalid(format!("unknown crystal grade {}", entry.grade)))?;
             // Java `put`: a grade that appears twice keeps the later list.
@@ -69,7 +67,6 @@ impl EnchantHpBonus {
         if values.is_empty() || enchant_level <= 0 {
             return 0;
         }
-        // Java: enchant levels above the list use its last entry.
         let index = usize::try_from(enchant_level)
             .unwrap_or(0)
             .min(values.len())

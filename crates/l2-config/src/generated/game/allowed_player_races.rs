@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/AllowedPlayerRacesConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/AllowedPlayerRaces.ini` (Java: `AllowedPlayerRacesConfig`).

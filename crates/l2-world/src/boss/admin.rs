@@ -1,11 +1,5 @@
 //! The admin commands `//grandboss [id]`, `//grandboss_skip`, `//grandboss_respawn`,
 //! `//grandboss_minions` and `//grandboss_abort`.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminGrandBoss.java
-//
-// The page shows the state of one boss. The row of the boss is read again first (D-53, D-50): the
-// Java game server decides the states while it runs the bosses, and the page must show that. The
-// read goes out through the outbox; its answer (`WorldCommand::BossReread`) shows the page.
-//
 // `skip`, `respawn`, `minions` and `abort` send an event to the Antharas or Baium script
 // (`notifyEvent`, S-BOSS-01). Java throws when the script is not loaded; here the GM is told.
 
@@ -142,7 +136,6 @@ const BAIUM_AI: &str = "Baium";
 fn notify_boss_script(world: &mut World, gm: ObjectId, script: &str, event: &str) {
     match world.scripts.by_name(script) {
         Some(id) => world.script_notify_event(id, event, None, Some(gm)),
-        // Java: `getScript` answers null and `notifyEvent` throws a NullPointerException.
         None => world.send_sys_message(gm, "The boss scripts are not ported yet; the event was not sent."),
     }
 }
@@ -159,8 +152,6 @@ fn is_grand_boss_page(boss_id: i32) -> bool {
     [ANTHARAS, VALAKAS, BAIUM, QUEEN_ANT, ORFEN, CORE, ZAKEN, FRINTEZZA].contains(&boss_id)
 }
 
-/// Java `manageHtml(activeChar, grandBossId)`: checks the id and asks for the row (D-50); the page
-/// follows when the answer is in ([`World::show_grand_boss_page`]).
 fn manage_html(world: &mut World, gm: ObjectId, boss_id: i32) {
     if !is_grand_boss_page(boss_id) {
         world.send_sys_message(gm, "Wrong ID!");

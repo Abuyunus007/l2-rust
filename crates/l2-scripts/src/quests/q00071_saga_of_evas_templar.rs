@@ -1,6 +1,4 @@
 //! Quest 71: Saga of Eva's Templar.
-// Java: dist/game/data/scripts/quests/Q00071_SagaOfEvasTemplar/Q00071_SagaOfEvasTemplar.java
-//
 // Pattern: a saga (`docs/design/scripts.md`, "Quest patterns"): the Java class only fills the
 // fields of `AbstractSagaQuest`; here that is a `SagaData` constant and one `saga_quest!` line.
 // The hooks are the shared ones of `abstract_saga_quest.rs`.

@@ -1,6 +1,4 @@
 //! Quest 655: A Grand Plan for Taming Wild Beasts (the Beast Farm messenger, the clan hall siege qualification).
-// Java: dist/game/data/scripts/quests/Q00655_AGrandPlanForTamingWildBeasts/Q00655_AGrandPlanForTamingWildBeasts.java
-//
 // Pattern: a one-time quest that gathers items from another script's kills
 // (`check_crystal_of_purity`, called by the beast farm AI), then pays a license for the clan hall
 // siege. The messenger refuses while five clans are already in the siege of the Beast Farm.

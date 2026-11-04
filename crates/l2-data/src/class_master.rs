@@ -1,7 +1,6 @@
 //! The class master configuration: which class changes the Mr. Cat and Miss Queen NPCs offer and
 //! for what price.
 //!
-//! Java: `dist/game/data/scripts/ai/others/ClassMaster/ClassMaster.java` (`load`, `parseDocument`;
 //! the script reads the file itself). Data: `config/ClassMaster.xml` (not under `data/`).
 //!
 //! The script that uses this is `l2_scripts::ai::others::class_master`.
@@ -287,8 +286,6 @@ struct RawItem {
 }
 
 impl RawItem {
-    /// `parseInteger(attrs, "id")` and `parseInteger(attrs, "count", 1)`. NOTE(java-quirk): Java
-    /// throws for a missing id and aborts the file; here the item is skipped.
     fn holder(&self) -> Option<ItemHolder> {
         let id = self.id.as_deref()?.trim().parse().ok()?;
         let count: i32 = match self.count.as_deref() {

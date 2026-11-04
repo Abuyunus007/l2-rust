@@ -1,15 +1,5 @@
 //! Command channels: several parties under one leader, the invitation, the member windows, the
 //! user commands, the channel chat and the loot right of a raid boss.
-// Java: entity/groups/CommandChannel.java (and AbstractPlayerGroup.broadcast*)
-// Java: entity/actor/tasks/attackable/CommandChannelTimer.java
-// Java: entity/actor/Attackable.java (reduceCurrentHp: the first command channel that attacked)
-// Java: network/clientpackets/{RequestExAskJoinMPCC,RequestExAcceptJoinMPCC,RequestExOustFromMPCC,
-//       RequestExMPCCShowPartyMembersInfo}.java
-// Java: network/serverpackets/{ExOpenMPCC,ExCloseMPCC,ExAskJoinMPCC,ExMPCCPartyInfoUpdate,
-//       ExMPCCShowPartyMemberInfo,ExMultiPartyCommandChannelInfo}.java
-// Java: dist/game/data/scripts/handlers/chat/commands/user/{ChannelDelete,ChannelLeave,ChannelInfo}.java
-// Java: dist/game/data/scripts/handlers/chat/channels/{ChatPartyRoomAll,ChatPartyRoomCommander}.java
-//
 // # Shape
 // Java's `CommandChannel` holds `Party` objects and a leader `Player`. Here it is a record in a
 // table `CommandChannelId -> CommandChannel` of party ids, and `Party.command_channel` is the
@@ -20,13 +10,6 @@
 // window. A party also leaves the channel when it breaks up (`membership.rs`).
 //
 // # Quirks kept
-// - NOTE(java-quirk): the parties of a channel are a `ConcurrentHashMap` key set, so their order
-//   is arbitrary in Java (it is not even stable); they are kept in the order they joined here.
-// - NOTE(java-quirk): `disbandChannel` removes the parties one by one, and each removal under two
-//   parties disbands again; the messages go out once per removal, as in Java.
-// - NOTE(java-quirk): the channel leader is the player who made it. It follows an explicit leader
-//   change of its party (`Party.setLeader`), but not a leader who leaves a party that survives it
-//   (`AltLeavePartyLeader`), so it can name a player who left the party or the game.
 
 use std::collections::HashMap;
 

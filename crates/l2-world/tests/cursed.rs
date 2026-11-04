@@ -1,13 +1,5 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
-//! Cursed weapons (M8-CURSED-01): the drop from a monster, the pickup that binds the weapon to a
-//! player, the form and the skills, the kill count, the life timer, the drop on the owner's death,
-//! the end, and the side by side rule of D-53 (no drop without `CycleDatabaseWrites`).
-//! Java: managers/CursedWeaponsManager.java, entity/actor/holders/player/CursedWeapon.java,
-//! entity/actor/Player.java (addItem, doDie, onKillUpdatePvPKarma), entity/actor/Attackable.java
-//! (doItemDrop), network/clientpackets/EnterWorld.java, RequestCursedWeaponList.java,
-//! RequestCursedWeaponLocation.java, scripts/handlers/chat/commands/admin/AdminCursedWeapons.java.
-//!
 //! The scenes run on the real world with small synthetic data: two cursed weapons in the
 //! `CursedWeapons.xml` shape (the drop rate and the life times are the scene's), the cursed forms
 //! 301 and 302, and a monster with an empty drop list.
@@ -558,7 +550,6 @@ fn picking_the_weapon_up_activates_it() {
     let sent = s.log.take();
 
     let cw = s.world.cursed_weapon(AKAMANAH).unwrap();
-    // NOTE(java-quirk): `activate` never clears `_isDropped`, so a carried weapon is both.
     assert!(cw.is_activated && cw.is_dropped);
     assert_eq!((cw.player, cw.player_id), (Some(ObjectId(ME)), ME));
     assert_eq!((cw.player_karma, cw.player_pk_kills), (5, 3));

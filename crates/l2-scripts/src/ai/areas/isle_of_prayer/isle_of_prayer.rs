@@ -1,5 +1,4 @@
 //! The monsters of the Isle of Prayer drop the Seed of Evil shards.
-// Java: dist/game/data/scripts/ai/areas/IsleOfPrayer/IsleOfPrayer.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
@@ -49,7 +48,6 @@ impl Script for IsleOfPrayer {
         let Some((_, (item, chance))) = MONSTERS.iter().find(|(id, _)| *id == npc.id) else {
             return;
         };
-        // NOTE(java-quirk): `<=` against 10000 rolls 0..9999, so a chance of n is n+1 in 10000.
         if ctx.get_random(10000) <= *chance {
             ctx.drop_item(npc, Some(killer), *item, 1);
         }

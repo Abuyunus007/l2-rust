@@ -390,7 +390,6 @@ fn online_command_on_counts_the_players() {
         texts(&s.sent(), BOB),
         vec!["There are 2 players online!".to_owned()]
     );
-    // NOTE(java-quirk): the command is compared whole, so a trailing space says nothing.
     s.say(BOB, ".online ");
     let sent = s.sent();
     assert!(texts(&sent, BOB).is_empty() && says_to(&sent, BOB).is_empty());

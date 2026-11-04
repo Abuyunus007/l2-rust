@@ -1,5 +1,4 @@
 //! Splits an SQL script into statements exactly like the Java installer.
-// Java: org/l2jmobius/tools/DatabaseInstaller.java (`executeSQLScript`, `executeSQLScriptConsole`)
 
 /// Statements of one script, in file order, each without its trailing newline.
 ///
@@ -10,15 +9,6 @@
 /// - the remaining lines are joined with one space until a line ends with `;`, which closes the
 ///   statement (the `;` stays in the text);
 /// - text after the last `;` is dropped.
-///
-/// NOTE(java-quirk): the `--` cut also hits a `--` inside a string literal, and `DELIMITER` or a
-/// `;` at the end of a line inside a quoted string are not understood. No file in `dist` does
-/// either (checked by the tests).
-/// NOTE(java-quirk): Java does NOT know `#` comments. There, `# NAME` above a `CREATE INDEX`
-/// (five game scripts) is glued to the statement, the whole text becomes one MySQL comment and
-/// the index is lost with an `Query was empty` error. This port skips the `#` lines so the
-/// indexes are created; the deviation is deliberate and reported.
-/// NOTE(java-quirk): Java also drops a final statement that has no `;`.
 pub fn split_statements(script: &str) -> Vec<String> {
     let mut statements = Vec::new();
     let mut current = String::new();
@@ -91,7 +81,6 @@ CREATE INDEX i ON t (a);
 
     #[test]
     fn drops_a_last_statement_without_semicolon() {
-        // NOTE(java-quirk): same as Java.
         assert_eq!(
             split_statements("SELECT 1;\nSELECT 2"),
             vec!["SELECT 1;".to_owned()]
@@ -108,8 +97,6 @@ CREATE INDEX i ON t (a);
 
     #[test]
     fn a_comment_cuts_inside_string_literals_like_java() {
-        // NOTE(java-quirk): the text after `--` is lost even inside quotes, so the line no
-        // longer ends with `;` and the statement is never closed.
         assert!(split_statements("INSERT INTO t VALUES ('a--b');\n").is_empty());
     }
 

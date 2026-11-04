@@ -1,11 +1,5 @@
 //! The Underground Coliseum: the battle period (`UndergroundColiseumManager`), the arenas
 //! (`UCArena`), their two teams (`UCTeam`) and the start points (`UCPoint`).
-// Java: managers/games/UndergroundColiseumManager.java
-// Java: mechanics/undergroundColiseum/{UCArena,UCTeam,UCPoint,UCWaiting,UCRunningTask,UCReward,
-//       UCBestTeam}.java
-// Java: entity/actor/instance/UCTower.java
-// Java: config/UndergroundColiseumConfig.java
-//
 // # The battle period
 // `BattleStartTime` (cron) opens a period of `BattlePeriod` hours. Parties of `PartySize` or more
 // register at the arena's curator (`bypass.rs`); two waiting parties fight in the arena: first
@@ -205,8 +199,6 @@ impl World {
             .collect();
     }
 
-    /// Java `generateNewDate()`: the next period from the cron pattern; the two variables are
-    /// written with `CycleDatabaseWrites` (D-53).
     fn coliseum_generate_new_date(&mut self) {
         let now = self.minigame_now_ms();
         let text = self.minigames.settings.uc_start_time.clone();
@@ -379,7 +371,6 @@ impl World {
     // ------------------------------------------------------------------ the arena
 
     /// Java `UCArena.switchStatus(start)`.
-    // NOTE(java-quirk): a start while a task is pending takes the stop branch too.
     fn coliseum_arena_switch_status(&mut self, arena_id: i32, start: bool) {
         let Some(arena) = self.minigames.coliseum.arenas.get_mut(&arena_id) else {
             return;
@@ -779,7 +770,6 @@ impl World {
     }
 
     /// `new ExPVPMatchUserDie(arena)`.
-    // NOTE(java-quirk): the packet's "red" kills are the kills of team 0, which is the blue team.
     fn coliseum_user_die(&self, arena_id: i32) -> ExPvpMatchUserDie {
         let kills = |index: usize| self.uc_team(arena_id, index).map_or(0, |t| t.kill_count);
         ExPvpMatchUserDie {

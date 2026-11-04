@@ -1,7 +1,5 @@
 //! Quest 624: The Finest Ingredients - Part 1 (Jeremy in the Rune Town/Hot Springs area; the
 //! Hot Springs monsters drop the three ingredients, 50 of each make the first half of the dish).
-// Java: dist/game/data/scripts/quests/Q00624_TheFinestIngredientsPart1/Q00624_TheFinestIngredientsPart1.java
-//
 // Pattern: a kill count per item with a fill to 50 (`getRandomPartyMember(player, 1)` and the
 // radius check of the member), cond 2 when the three items reach 150 together, and the reward
 // of two items that ends the quest.

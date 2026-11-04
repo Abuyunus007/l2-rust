@@ -9,7 +9,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ClientOpcode;
 
-// Java: gameserver/network/clientpackets/Action.java
 /// A click on an object: a target, an NPC, a door, an item on the ground.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Action {
@@ -57,7 +56,6 @@ impl Decode for Action {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestTargetCanceld.java
 /// The client drops its target (Escape key or the "cancel target" button).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestTargetCanceld {
@@ -83,14 +81,9 @@ impl Decode for RequestTargetCanceld {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestBypassToServer.java
 /// A bypass command from an html link, e.g. `npc_%objectId%_Chat 0` or `admin_...`.
 ///
 /// `command` is the raw text. The world parses it. Java's rules the world has to keep:
-/// NOTE(java-quirk): an empty command makes Java disconnect the player (it is not just ignored).
-/// Commands that do not start with one of the non-html prefixes (`item_`, `_bbs`, `bbs`,
-/// `_mail`, `_friend`, `_match`, `_diary`, `_olympiad?command`, `manor_menu_select`, `report`)
-/// must match html the player was sent (Java `validateHtmlAction`), or they are dropped.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestBypassToServer {
     pub command: String,
@@ -113,7 +106,6 @@ impl Decode for RequestBypassToServer {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestLinkHtml.java
 /// A link to another html page of the same dialog, e.g. `teleports/gatekeeper/x.htm`.
 ///
 /// `link` is the raw path. Java rejects an empty link and any link with `..` in it, and checks
@@ -140,7 +132,6 @@ impl Decode for RequestLinkHtml {
     }
 }
 
-// Java: gameserver/network/clientpackets/SendBypassBuildCmd.java
 /// A GM command typed with two slashes (`//spawn 20101`): the text after the slashes. The
 /// client sends it as this packet, not as chat.
 ///
@@ -172,7 +163,6 @@ impl Decode for SendBypassBuildCmd {
     }
 }
 
-// Java: gameserver/network/clientpackets/BypassUserCmd.java
 /// A user command such as `/loc` (command id 0), picked from the client's command list.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct BypassUserCmd {
@@ -196,7 +186,6 @@ impl Decode for BypassUserCmd {
     }
 }
 
-// Java: gameserver/network/clientpackets/DlgAnswer.java
 /// The answer to a `ConfirmDlg` (`DLG_ANSWER`): yes or no. The message id says which question it
 /// was (a resurrection, a summon, a gate, ...); the world picks the handler from it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,7 +1,5 @@
 //! Rim Kamaloka: the solo Kamaloka of the Rim Kamaloka manager (32484), eleven of them, where
 //! Kanabions, Dopplers and Voiders are fought for twenty minutes and graded.
-// Java: dist/game/data/scripts/instances/RimKamaloka/RimKamaloka.java
-//
 // Java keeps the progress of an instance in a `RimKamaWorld extends InstanceWorld`, and runs
 // three `ThreadPool` tasks per instance (`FinishTask`, `DespawnTask`, `LockTask`). Here the
 // progress is the script's state by instance id ([`RimKamaWorld`]) and the tasks are quest timers
@@ -416,7 +414,6 @@ impl Script for RimKamaloka {
 
     fn on_talk(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, _player: ObjectId) -> Option<String> {
         if npc.id == START_NPC {
-            // NOTE(java-quirk): `npc.getCastle().getName()` throws for an NPC with no castle.
             let castle = ctx.world().npc_castle(npc.object_id)?;
             return Some(format!("{}.htm", ctx.world().castle(castle)?.name));
         } else if npc.id == REWARDER {
@@ -814,8 +811,6 @@ fn reward_player(ctx: &mut ScriptCtx<'_>, instance_id: i32) {
     let all_rewards = &REWARDS[world.index];
     world.grade = world.grade.min(i32::try_from(all_rewards.len()).unwrap_or(6));
     let grade = world.grade;
-    // NOTE(java-quirk): `Math.min(grade, allRewards.length)` would index past the end for a
-    // grade of 6; the grade never exceeds 5.
     let Some(Some(reward)) = usize::try_from(grade).ok().and_then(|g| all_rewards.get(g)) else {
         return;
     };
@@ -927,8 +922,6 @@ fn finish_task(ctx: &mut ScriptCtx<'_>, instance_id: i32) {
     }
 
     // Spawn rewarder NPC.
-    // NOTE(java-quirk): when the instance is gone already (it was empty for five minutes) the
-    // rewarder is spawned into the open world at these coordinates, as in Java.
     let at = REWARDERS[index];
     ctx.add_spawn(REWARDER, at.0, at.1, at.2, 0, false, 0, instance_id);
 }

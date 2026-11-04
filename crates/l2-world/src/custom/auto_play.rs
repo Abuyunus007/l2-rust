@@ -1,14 +1,6 @@
 //! Auto play (`config/Custom/AutoPlay.ini`, `EnableAutoPlay`, off by default): a player who typed
 //! `.play start` hunts on its own. Every 700 ms it picks a target, attacks it, sweeps and picks up
 //! the loot; every 300 ms it drinks a potion, casts its buffs and its attack skills.
-// Java: taskmanagers/AutoPlayTaskManager.java
-// Java: taskmanagers/AutoUseTaskManager.java
-// Java: entity/actor/holders/player/{AutoPlaySettingsHolder,AutoUseSettingsHolder}.java
-// Java: config/custom/AutoPlayConfig.java
-// Java: dist/game/data/scripts/handlers/chat/commands/voiced/AutoPlay.java (the login and logout
-//       listeners; the pages are in `auto_play_ui.rs`)
-// Java: mechanics/skill/Skill.java (`checkForAreaOffensiveSkills`: the auto play lines)
-//
 // # Model
 // Java keeps the players in pools of 200 that each run one repeating task. The world has one
 // timer per task kind that fires while a player is in its set (the order of the players is the
@@ -331,8 +323,6 @@ impl World {
         self.set_player_variable_int_list(id, "AUTO_USE_BUFFS", &java_hash_set_order(&state.buffs));
         self.set_player_variable_int_list(id, "AUTO_USE_SKILLS", &state.skills);
         self.set_player_variable_int_list(id, "AUTO_USE_ITEMS", &java_hash_set_order(&state.supply_items));
-        // NOTE(java-quirk): Java reads the potion back from the variable it is about to write, not
-        // from the settings, so the chosen potion is never stored.
         let potion = self
             .players
             .get(&id)
@@ -665,8 +655,6 @@ impl World {
             let (Some(from), Some(to)) = (self.position_of(id), self.position_of(creature)) else {
                 return;
             };
-            // NOTE(java-quirk): Java turns the heading value (0 to 65535) into radians as if it
-            // were degrees, and the course of 180 degrees makes the step `cos(radian)`.
             let heading = f64::from(heading_from(from, to));
             let radian = heading.to_radians();
             let course = 180.0_f64.to_radians();
@@ -1092,8 +1080,6 @@ impl World {
             if let Some(target) = target
                 && matches!(target_kind, Some(ObjectKind::Player | ObjectKind::Summon))
             {
-                // NOTE(java-quirk): `target.asPlayer()` of a summon target is null and the
-                // statement throws in Java; the buff is skipped here.
                 if target_kind != Some(ObjectKind::Player) {
                     continue;
                 }

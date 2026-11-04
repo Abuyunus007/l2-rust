@@ -1,85 +1,46 @@
 //! The clan tables: `clan_data`, `clan_privs`, `clan_subpledges`, `clan_skills`,
 //! `clan_notices`, `clan_wars` (read only here) and the clan columns of `characters`.
-// Java: org/l2jmobius/gameserver/entity/clan/Clan.java (restore*, store, updateClanInDB,
-//       removeMemberInDatabase, createSubPledge, updateSubPledgeInDB, setRankPrivs, storeNotice,
-//       changeLevel, changeAllyCrest, setNewLeader)
-// Java: org/l2jmobius/gameserver/entity/clan/ClanMember.java (updatePledgeType, updatePowerGrade,
-//       saveApprenticeAndSponsor)
-// Java: org/l2jmobius/gameserver/data/sql/ClanTable.java (constructor, destroyClan,
-//       restoreClanWars)
-// Java: network/GameClient.java (markToDeleteChar: the leader of a clan)
-//
-// Same layout as characters.rs: verbatim SQL, one method per statement. D-39: the Java game server
-// reads and writes the same rows, so every statement is Java's own. Java runs each statement on
-// its own (no transaction); so does this.
 
 use sqlx::FromRow;
 
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: ClanTable constructor
 const SELECT_CLAN_IDS: &str = "SELECT clan_id FROM clan_data";
-// Java: Clan.SELECT_CLAN_DATA
 const SELECT_CLAN_DATA: &str = "SELECT * FROM clan_data where clan_id=?";
-// Java: Clan.restore (the members)
 const SELECT_CLAN_MEMBERS: &str = "SELECT char_name,level,classid,charId,title,power_grade,subpledge,apprentice,sponsor,sex,race FROM characters WHERE clanid=?";
-// Java: Clan.restoreSubPledges
 const SELECT_SUB_PLEDGES: &str = "SELECT sub_pledge_id,name,leader_id FROM clan_subpledges WHERE clan_id=?";
-// Java: Clan.restoreRankPrivs
 const SELECT_RANK_PRIVS: &str = "SELECT privs,`rank`,party FROM clan_privs WHERE clan_id=?";
-// Java: Clan.restoreSkills
 const SELECT_CLAN_SKILLS: &str = "SELECT skill_id,skill_level,sub_pledge_id FROM clan_skills WHERE clan_id=?";
-// Java: Clan.addNewSkill
 const UPDATE_CLAN_SKILL: &str = "UPDATE clan_skills SET skill_level=? WHERE skill_id=? AND clan_id=?";
 const INSERT_CLAN_SKILL: &str =
     "INSERT INTO clan_skills (clan_id,skill_id,skill_level,skill_name,sub_pledge_id) VALUES (?,?,?,?,?)";
-// Java: Clan.restoreNotice
 const SELECT_CLAN_NOTICE: &str = "SELECT enabled,notice FROM clan_notices WHERE clan_id=?";
-// Java: ClanTable.restoreClanWars
 const SELECT_CLAN_WARS: &str = "SELECT clan1, clan2 FROM clan_wars";
 
-// Java: Clan.INSERT_CLAN_DATA
 const INSERT_CLAN_DATA: &str = "INSERT INTO clan_data (clan_id,clan_name,clan_level,hasCastle,blood_alliance_count,blood_oath_count,ally_id,ally_name,leader_id,crest_id,crest_large_id,ally_crest_id,new_leader_id) values (?,?,?,?,?,?,?,?,?,?,?,?,?)";
-// Java: Clan.updateClanInDB
 const UPDATE_CLAN: &str = "UPDATE clan_data SET leader_id=?,ally_id=?,ally_name=?,reputation_score=?,ally_penalty_expiry_time=?,ally_penalty_type=?,char_penalty_expiry_time=?,dissolving_expiry_time=?,new_leader_id=? WHERE clan_id=?";
-// Java: Clan.changeLevel
 const UPDATE_CLAN_LEVEL: &str = "UPDATE clan_data SET clan_level = ? WHERE clan_id = ?";
-// Java: Clan.changeAllyCrest(crestId, true)
 const UPDATE_ALLY_CREST_OF_CLAN: &str = "UPDATE clan_data SET ally_crest_id = ? WHERE clan_id = ?";
-// Java: Clan.changeClanCrest
 const UPDATE_CLAN_CREST: &str = "UPDATE clan_data SET crest_id = ? WHERE clan_id = ?";
-// Java: Clan.changeLargeCrest
 const UPDATE_CLAN_LARGE_CREST: &str = "UPDATE clan_data SET crest_large_id = ? WHERE clan_id = ?";
-// Java: Clan.changeAllyCrest(crestId, onlyThisClan = false)
 const UPDATE_ALLY_CREST_OF_ALLY: &str = "UPDATE clan_data SET ally_crest_id = ? WHERE ally_id = ?";
-// Java: ClanTable.storeClanWars, deleteClanWars
 const STORE_CLAN_WAR: &str =
     "REPLACE INTO clan_wars (clan1, clan2, wantspeace1, wantspeace2) VALUES(?,?,?,?)";
 const DELETE_CLAN_WAR: &str = "DELETE FROM clan_wars WHERE (clan1=? AND clan2=?) OR (clan2=? AND clan1=?)";
-// Java: Clan.removeMemberInDatabase (three statements)
 const REMOVE_MEMBER: &str = "UPDATE characters SET clanid=0, title=?, clan_join_expiry_time=?, clan_create_expiry_time=?, clan_privs=0, wantspeace=0, subpledge=0, lvl_joined_academy=0, apprentice=0, sponsor=0 WHERE charId=?";
 const CLEAR_APPRENTICE_OF: &str = "UPDATE characters SET apprentice=0 WHERE apprentice=?";
 const CLEAR_SPONSOR_OF: &str = "UPDATE characters SET sponsor=0 WHERE sponsor=?";
-// Java: Clan.setNewLeader (a leader who is offline)
 const UPDATE_CHAR_CLAN_PRIVS: &str = "UPDATE characters SET clan_privs = ? WHERE charId = ?";
-// Java: ClanMember.updatePledgeType
 const UPDATE_CHAR_SUBPLEDGE: &str = "UPDATE characters SET subpledge=? WHERE charId=?";
-// Java: ClanMember.updatePowerGrade
 const UPDATE_CHAR_POWER_GRADE: &str = "UPDATE characters SET power_grade=? WHERE charId=?";
-// Java: ClanMember.saveApprenticeAndSponsor
 const UPDATE_CHAR_APPRENTICE_SPONSOR: &str = "UPDATE characters SET apprentice=?,sponsor=? WHERE charId=?";
-// Java: Clan.createSubPledge
 const INSERT_SUB_PLEDGE: &str =
     "INSERT INTO clan_subpledges (clan_id,sub_pledge_id,name,leader_id) values (?,?,?,?)";
-// Java: Clan.updateSubPledgeInDB
 const UPDATE_SUB_PLEDGE: &str =
     "UPDATE clan_subpledges SET leader_id=?, name=? WHERE clan_id=? AND sub_pledge_id=?";
-// Java: Clan.setRankPrivs
 const REPLACE_RANK_PRIVS: &str = "REPLACE INTO clan_privs (clan_id,`rank`,party,privs) VALUES (?,?,?,?)";
-// Java: Clan.storeNotice
 const STORE_NOTICE: &str = "INSERT INTO clan_notices (clan_id,notice,enabled) values (?,?,?) ON DUPLICATE KEY UPDATE notice=?,enabled=?";
-// Java: ClanTable.destroyClan
 const DELETE_CLAN_DATA: &str = "DELETE FROM clan_data WHERE clan_id=?";
 const DELETE_CLAN_PRIVS: &str = "DELETE FROM clan_privs WHERE clan_id=?";
 const DELETE_CLAN_SKILLS: &str = "DELETE FROM clan_skills WHERE clan_id=?";
@@ -224,7 +185,6 @@ impl ClanRepository {
 
     /// The leader's character id of the clan, or `None` when no such clan exists
     /// (`ClanTable.getClan` returns `null`).
-    // Java: Clan.restore (leader_id), ClanTable.getClan
     pub async fn leader_id(&self, clan_id: i32) -> Result<Option<i32>> {
         let row = sqlx::query_as::<_, ClanLeaderRow>(SELECT_CLAN_DATA)
             .bind(clan_id)
@@ -236,7 +196,6 @@ impl ClanRepository {
     // ------------------------------------------------------------------ reads (startup)
 
     /// Every clan id, in the order the database returns them.
-    // Java: ClanTable constructor ("SELECT clan_id FROM clan_data")
     pub async fn clan_ids(&self) -> Result<Vec<i32>> {
         let ids = sqlx::query_scalar::<_, i32>(SELECT_CLAN_IDS)
             .fetch_all(&self.pool)
@@ -245,7 +204,6 @@ impl ClanRepository {
     }
 
     /// The `clan_data` row of a clan.
-    // Java: Clan.restore (SELECT_CLAN_DATA)
     pub async fn clan_data(&self, clan_id: i32) -> Result<Option<ClanDataRow>> {
         let row = sqlx::query_as::<_, ClanDataRow>(SELECT_CLAN_DATA)
             .bind(clan_id)
@@ -255,7 +213,6 @@ impl ClanRepository {
     }
 
     /// The characters whose `clanid` is the clan.
-    // Java: Clan.restore (the member query)
     pub async fn clan_members(&self, clan_id: i32) -> Result<Vec<ClanMemberRow>> {
         let rows = sqlx::query_as::<_, ClanMemberRow>(SELECT_CLAN_MEMBERS)
             .bind(clan_id)
@@ -264,7 +221,6 @@ impl ClanRepository {
         Ok(rows)
     }
 
-    // Java: Clan.restoreSubPledges
     pub async fn sub_pledges(&self, clan_id: i32) -> Result<Vec<ClanSubPledgeRow>> {
         let rows = sqlx::query_as::<_, ClanSubPledgeRow>(SELECT_SUB_PLEDGES)
             .bind(clan_id)
@@ -273,7 +229,6 @@ impl ClanRepository {
         Ok(rows)
     }
 
-    // Java: Clan.restoreRankPrivs
     pub async fn rank_privs(&self, clan_id: i32) -> Result<Vec<ClanPrivsRow>> {
         let rows = sqlx::query_as::<_, ClanPrivsRow>(SELECT_RANK_PRIVS)
             .bind(clan_id)
@@ -282,7 +237,6 @@ impl ClanRepository {
         Ok(rows)
     }
 
-    // Java: Clan.restoreSkills
     pub async fn clan_skills(&self, clan_id: i32) -> Result<Vec<ClanSkillRow>> {
         let rows = sqlx::query_as::<_, ClanSkillRow>(SELECT_CLAN_SKILLS)
             .bind(clan_id)
@@ -293,7 +247,6 @@ impl ClanRepository {
 
     /// The notice rows of a clan (the primary key makes it at most one; Java loops and keeps the
     /// last).
-    // Java: Clan.restoreNotice
     pub async fn clan_notices(&self, clan_id: i32) -> Result<Vec<ClanNoticeRow>> {
         let rows = sqlx::query_as::<_, ClanNoticeRow>(SELECT_CLAN_NOTICE)
             .bind(clan_id)
@@ -302,7 +255,6 @@ impl ClanRepository {
         Ok(rows)
     }
 
-    // Java: ClanTable.restoreClanWars
     pub async fn clan_wars(&self) -> Result<Vec<ClanWarRow>> {
         let rows = sqlx::query_as::<_, ClanWarRow>(SELECT_CLAN_WARS)
             .fetch_all(&self.pool)
@@ -312,7 +264,6 @@ impl ClanRepository {
 
     // ------------------------------------------------------------------ writes
 
-    // Java: Clan.store (INSERT_CLAN_DATA)
     pub async fn insert_clan(&self, clan: &NewClan) -> Result<()> {
         sqlx::query(INSERT_CLAN_DATA)
             .bind(clan.clan_id)
@@ -333,7 +284,6 @@ impl ClanRepository {
         Ok(())
     }
 
-    // Java: Clan.updateClanInDB
     pub async fn update_clan(&self, clan: &ClanUpdate) -> Result<()> {
         sqlx::query(UPDATE_CLAN)
             .bind(clan.leader_id)
@@ -351,7 +301,6 @@ impl ClanRepository {
         Ok(())
     }
 
-    // Java: Clan.changeLevel
     pub async fn update_clan_level(&self, clan_id: i32, level: i32) -> Result<()> {
         sqlx::query(UPDATE_CLAN_LEVEL)
             .bind(level)
@@ -361,7 +310,6 @@ impl ClanRepository {
         Ok(())
     }
 
-    // Java: Clan.changeAllyCrest(crestId, onlyThisClan = true)
     pub async fn update_ally_crest_of_clan(&self, clan_id: i32, crest_id: i32) -> Result<()> {
         sqlx::query(UPDATE_ALLY_CREST_OF_CLAN)
             .bind(crest_id)
@@ -371,7 +319,6 @@ impl ClanRepository {
         Ok(())
     }
 
-    // Java: Clan.changeClanCrest
     pub async fn update_clan_crest(&self, clan_id: i32, crest_id: i32) -> Result<()> {
         sqlx::query(UPDATE_CLAN_CREST)
             .bind(crest_id)
@@ -381,7 +328,6 @@ impl ClanRepository {
         Ok(())
     }
 
-    // Java: Clan.changeLargeCrest
     pub async fn update_clan_large_crest(&self, clan_id: i32, crest_id: i32) -> Result<()> {
         sqlx::query(UPDATE_CLAN_LARGE_CREST)
             .bind(crest_id)
@@ -392,7 +338,6 @@ impl ClanRepository {
     }
 
     /// Every clan of the alliance gets the crest (`ally_id` is the alliance's leading clan's id).
-    // Java: Clan.changeAllyCrest(crestId, onlyThisClan = false)
     pub async fn update_ally_crest_of_ally(&self, ally_id: i32, crest_id: i32) -> Result<()> {
         sqlx::query(UPDATE_ALLY_CREST_OF_ALLY)
             .bind(crest_id)
@@ -404,7 +349,6 @@ impl ClanRepository {
 
     /// A war of `clan1` on `clan2`; nobody wants peace. The columns are `VARCHAR`, the ids go as
     /// ints like Java's `setInt`.
-    // Java: ClanTable.storeClanWars
     pub async fn store_clan_war(&self, clan1: i32, clan2: i32) -> Result<()> {
         sqlx::query(STORE_CLAN_WAR)
             .bind(clan1)
@@ -417,7 +361,6 @@ impl ClanRepository {
     }
 
     /// The war in both directions.
-    // Java: ClanTable.deleteClanWars
     pub async fn delete_clan_war(&self, clan1: i32, clan2: i32) -> Result<()> {
         sqlx::query(DELETE_CLAN_WAR)
             .bind(clan1)
@@ -430,7 +373,6 @@ impl ClanRepository {
     }
 
     /// The member leaves the clan in the database, and nobody keeps it as apprentice or sponsor.
-    // Java: Clan.removeMemberInDatabase
     pub async fn remove_member(
         &self,
         char_id: i32,
@@ -458,7 +400,6 @@ impl ClanRepository {
         Ok(())
     }
 
-    // Java: Clan.setNewLeader ("UPDATE characters SET clan_privs = ? WHERE charId = ?")
     pub async fn update_char_clan_privs(&self, char_id: i32, privs: i32) -> Result<()> {
         sqlx::query(UPDATE_CHAR_CLAN_PRIVS)
             .bind(privs)
@@ -468,7 +409,6 @@ impl ClanRepository {
         Ok(())
     }
 
-    // Java: ClanMember.updatePledgeType (`setLong`)
     pub async fn update_char_subpledge(&self, char_id: i32, pledge_type: i32) -> Result<()> {
         sqlx::query(UPDATE_CHAR_SUBPLEDGE)
             .bind(i64::from(pledge_type))
@@ -478,7 +418,6 @@ impl ClanRepository {
         Ok(())
     }
 
-    // Java: ClanMember.updatePowerGrade (`setLong`)
     pub async fn update_char_power_grade(&self, char_id: i32, power_grade: i32) -> Result<()> {
         sqlx::query(UPDATE_CHAR_POWER_GRADE)
             .bind(i64::from(power_grade))
@@ -488,7 +427,6 @@ impl ClanRepository {
         Ok(())
     }
 
-    // Java: ClanMember.saveApprenticeAndSponsor
     pub async fn update_char_apprentice_sponsor(
         &self,
         char_id: i32,
@@ -506,7 +444,6 @@ impl ClanRepository {
 
     /// A clan that already had the skill: only the level changes. Java's statement does not look at
     /// `sub_pledge_id`, so a skill id that two squads of the clan share changes in all of them.
-    // Java: Clan.addNewSkill
     pub async fn update_clan_skill(&self, clan_id: i32, skill_id: i32, skill_level: i32) -> Result<()> {
         sqlx::query(UPDATE_CLAN_SKILL)
             .bind(skill_level)
@@ -518,7 +455,6 @@ impl ClanRepository {
     }
 
     /// `sub_pledge_id` is -2 for a clan skill, 0 for a skill of the main squad.
-    // Java: Clan.addNewSkill
     pub async fn insert_clan_skill(
         &self,
         clan_id: i32,
@@ -538,7 +474,6 @@ impl ClanRepository {
         Ok(())
     }
 
-    // Java: Clan.createSubPledge
     pub async fn insert_sub_pledge(
         &self,
         clan_id: i32,
@@ -556,7 +491,6 @@ impl ClanRepository {
         Ok(())
     }
 
-    // Java: Clan.updateSubPledgeInDB
     pub async fn update_sub_pledge(
         &self,
         clan_id: i32,
@@ -575,7 +509,6 @@ impl ClanRepository {
     }
 
     /// `party` is always 0 in Java.
-    // Java: Clan.setRankPrivs
     pub async fn replace_rank_privs(&self, clan_id: i32, rank: i32, privs: i32) -> Result<()> {
         sqlx::query(REPLACE_RANK_PRIVS)
             .bind(clan_id)
@@ -587,7 +520,6 @@ impl ClanRepository {
         Ok(())
     }
 
-    // Java: Clan.storeNotice
     pub async fn store_notice(&self, clan_id: i32, notice: &str, enabled: bool) -> Result<()> {
         let enabled = if enabled { "true" } else { "false" };
         sqlx::query(STORE_NOTICE)
@@ -603,7 +535,6 @@ impl ClanRepository {
 
     /// The rows `ClanTable.destroyClan` deletes, and the castle tax reset when the clan had a
     /// castle (`castle_id != 0`).
-    // Java: ClanTable.destroyClan
     pub async fn delete_clan(&self, clan_id: i32, castle_id: i32) -> Result<()> {
         for statement in [
             DELETE_CLAN_DATA,

@@ -1,6 +1,4 @@
 //! Quest 307: Control Device of the Giants (Droph in the Town of Giran sends level 79 players after the three giants' sheets and Hekaton Prime).
-// Java: dist/game/data/scripts/quests/Q00307_ControlDeviceOfTheGiants/Q00307_ControlDeviceOfTheGiants.java
-//
 // Pattern: a boss summon (`docs/design/scripts.md`, "Quest patterns"): the three giants drop one
 // control sheet each for a random party member in cond 1; with all three the player asks Droph for
 // Hekaton Prime, which spawns once (the script keeps the spawned boss in its own state) and is
@@ -72,8 +70,6 @@ impl Script for Q00307ControlDeviceOfTheGiants {
     ) -> Option<String> {
         let player = player?;
         let qs = ctx.get_quest_state(player, false)?;
-        // NOTE(java-quirk): an event the script does not know comes back as the text too, only the
-        // `default` branch of Java's switch (below) answers null.
         let mut htmltext = Some(event.to_owned());
         match event {
             "32711-04.html" => {

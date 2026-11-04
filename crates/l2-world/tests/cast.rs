@@ -816,8 +816,6 @@ fn out_of_range_the_player_walks_up_then_casts() {
     assert!(of(&sent, "MAGIC_SKILL_USE").is_empty());
     assert!(!s.world.is_casting_now(ME));
     assert_eq!(s.world.intention_of(ME), Intention::Cast);
-    // NOTE(java-quirk): `useMagic` raised the casting flag, so the follow task's first
-    // `moveToPawn` refuses (`ActionFailed`); the walk starts with its next run, 500 ms later.
     assert_eq!(names(&sent), ["ACTION_FAIL"]);
     assert!(!s.world.is_moving(ME));
     s.advance(500);

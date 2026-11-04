@@ -1,12 +1,5 @@
 //! `//delete [range]` and `//delete_group`: the NPC of the target (or every NPC in a range) is
 //! deleted and its spawn stops respawning; for a territory spawn the whole territory goes.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminDelete.java
-//
-// # Left out, with the system that brings it
-// - `SpawnData.deleteSpawn` removes the spawn from the datapack's xml. The spawn list is
-//   read-only here: the spawn stops respawning until the server stops, and it comes back at the
-//   next start (the same follow-up as `//spawn`). `RaidBossSpawnManager.deleteSpawn` is ported
-//   (M8-BOSS-01): the raid spawn and, with `CycleDatabaseWrites`, its row go.
 
 use l2_util::ObjectId;
 

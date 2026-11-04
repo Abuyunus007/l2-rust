@@ -1,6 +1,4 @@
 //! Quest 139: Shadow Fox - 1 (Mia; fragments and chests from the Tasaba lizardmen).
-// Java: dist/game/data/scripts/quests/Q00139_ShadowFoxPart1/Q00139_ShadowFoxPart1.java
-//
 // Pattern: a one-NPC party-kill quest. The drop test reads the `talk` variable of the party
 // member drawn, the items go to the killer (Java quirk).
 
@@ -112,7 +110,6 @@ impl Script for Q00139ShadowFoxPart1 {
         };
         if !qs.is_set(ctx, "talk") && ctx.get_random(100) < DROP_CHANCE {
             let item_id = if ctx.get_random(11) == 0 { CHEST } else { FRAGMENT };
-            // NOTE(java-quirk): the item goes to the killer, not to the member drawn.
             ctx.give_items(player, item_id, 1);
             ctx.play_sound(player, QuestSound::ItemsoundQuestItemget);
         }

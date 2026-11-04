@@ -1,6 +1,4 @@
 //! Quest 162: Curse of the Underground Fortress (Unoren sends a non-Dark Elf after skulls and bones).
-// Java: dist/game/data/scripts/quests/Q00162_CurseOfTheUndergroundFortress/Q00162_CurseOfTheUndergroundFortress.java
-//
 // Pattern: a kill count with drop chances up to two limits. The skull monsters drop an elf skull
 // (up to 3), the bone monsters a bone fragment (up to 10); the kill that completes both limits
 // sets cond 2. Unoren pays when 13 items of the two kinds are in hand (one-time).

@@ -2,43 +2,6 @@
 //! of Dusk), the registration at the priests, the seal stones and their contribution, the three
 //! seals and what they change, Ancient Adena, the catacomb and necropolis gatekeepers, the
 //! `SSQStatus` record and the auto spawns of the Seven Signs NPCs.
-// Java: mechanics/sevensigns/SevenSigns.java
-// Java: entity/actor/instance/{SignsPriest,DawnPriest,DuskPriest,DungeonGatekeeper}.java
-// Java: entity/spawns/AutoSpawnHandler.java
-// Java: network/clientpackets/RequestSSQStatus.java, network/serverpackets/{SSQStatus,SSQInfo}.java
-// Java: managers/CastleManager.java (validateTaxes)
-//
-// # Shape
-// - `mod.rs`: the constants, the state (`SevenSignsWorld`), the rows and writes, the questions the
-//   other modules ask (`seal owner`, `period`, `cabal of a player`, ...).
-// - `cycle.rs`: the restore at start, the period change on the timer wheel (competition, results,
-//   seal validation, a new cycle), the new seal owners, the saves, the 30 minute global save
-//   (`DailyResetManager.onSave`), the shutdown save, `isDateInSealValidPeriod`, the parts of
-//   `EnterWorld` and `onPlayerEnter`, and the D-50 re-reads.
-// - `priest.rs`: the dawn and dusk priests (`SignsPriest`, `DawnPriest`, `DuskPriest`): joining a
-//   cabal, the seal stones, Ancient Adena, the record of the Seven Signs.
-// - `gatekeeper.rs`: `DungeonGatekeeper` (the catacombs and necropolises).
-// - `status.rs`: `RequestSSQStatus` and the `SSQStatus` pages.
-// - `auto_spawn.rs`: `AutoSpawnHandler` (`random_spawn`) and `spawnSevenSignsNPC`.
-//
-// # Side by side with the Java game server (D-39, D-50, D-53)
-// Sieghardt (the Java GS) keeps running the cycle while both servers share the database. So:
-// - The global rows (`seven_signs_status`, the whole-table `seven_signs` save of a period change
-//   and of the shutdown, the castle tax and ticket rows a cycle change sets) are written only with
-//   `CycleDatabaseWrites = True` (`SevenSignsSettings::cycle_database_writes`). Off, the cycle runs
-//   in this world's memory only.
-// - The rows Java writes per player are written as usual: the `INSERT` of a new member, the
-//   `UPDATE` of one member (`Player.store`, and with `AltSevenSignsLazyUpdate = False` after a
-//   contribution or a reward).
-// - With the switch off the state is read again (D-50): at start, at `CharacterSelect` (the
-//   member's row and the status row, `PlayerProfile::seven_signs_refresh`; the `SSQInfo` sky of
-//   the select comes from that status row) and before the `SSQStatus` record is shown (every
-//   member row and the status row, `PersistCommand::SevenSignsReadRequest`). A read replaces the
-//   global state; the rows of the members who are online here stay as this world has them (this
-//   server writes them). A failed read shows nothing (the record) or keeps the memory (select).
-// - Kain's own contributions add to the cabal scores in its memory only while the switch is off;
-//   Sieghardt never sees them. That is D-53's price.
-//
 // - `festival.rs` (M8-FEST-01): the Festival of Darkness (`SevenSignsFestival`, the festival guides
 //   and monsters, `seven_signs_festival`). `rift.rs` (M8-FEST-01): `DimensionalRiftManager`,
 //   `DimensionalRift`, `DimensionalRiftRoom`. Their global rows follow the same switch.
@@ -203,8 +166,6 @@ pub(crate) fn java_round_f32(value: f32) -> i32 {
     (value + 0.5).floor() as i32
 }
 
-/// The configuration values the Seven Signs read (`Feature.ini`, `Npc.ini` and
-/// `CycleDatabaseWrites` of `SideBySide.ini`). `Default` is the Java default of each key.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SevenSignsSettings {
     /// `AltSevenSignsLazyUpdate`.
@@ -369,8 +330,6 @@ impl SevenSignsStatus {
     }
 }
 
-/// What the game server read at start or again (D-50): every `seven_signs` row and the status
-/// row (`None`: the table has no `id = 0` row).
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct SevenSignsLoad {
     pub players: Vec<SignsPlayer>,
@@ -383,15 +342,15 @@ pub struct SevenSignsLoad {
 #[derive(Debug, Clone, PartialEq)]
 pub enum SevenSignsWrite {
     /// `INSERT_PLAYER`: a new member (per player, always written).
-    InsertPlayer { char_id: i32, cabal: String, seal: i32 },
+    InsertPlayer {
+        char_id: i32,
+        cabal: String,
+        seal: i32,
+    },
     /// `saveSevenSignsData(objectId)`: one member (per player, always written).
     UpdatePlayer(SignsPlayer),
-    /// `saveSevenSignsData()`: every member (global, only with `CycleDatabaseWrites`).
     UpdateAllPlayers(Vec<SignsPlayer>),
-    /// `saveSevenSignsStatus()` (global, only with `CycleDatabaseWrites`).
     UpdateStatus(SevenSignsStatus),
-    /// `SevenSignsFestival.saveFestivalData()`: `REPLACE INTO seven_signs_festival` of every row
-    /// (global, only with `CycleDatabaseWrites`, M8-FEST-01).
     ReplaceFestival(Vec<FestivalData>),
 }
 

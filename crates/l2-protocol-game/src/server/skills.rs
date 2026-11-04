@@ -32,7 +32,6 @@ impl SkillPosition {
     }
 }
 
-// Java: gameserver/network/serverpackets/MagicSkillUse.java
 /// A skill cast starts (`MAGIC_SKILL_USE`): the caster, the target, the skill and the cast time.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MagicSkillUse {
@@ -67,8 +66,6 @@ impl Encode for MagicSkillUse {
             .i32(self.hit_time)
             .i32(self.reuse_delay);
         self.creature.write(w);
-        // NOTE(java-quirk): Java writes the constant `0` here. Its comment says
-        // `isGroundTargetSkill ? 65535 : 0`, but the code never does the 65535 part.
         w.i16(0);
         match self.ground_location {
             None => {
@@ -113,7 +110,6 @@ impl Decode for MagicSkillUse {
     }
 }
 
-// Java: gameserver/network/serverpackets/MagicSkillLaunched.java
 /// The skill has been launched and hits its targets (`MAGIC_SKILL_LAUNCHED`). Sent after
 /// [`MagicSkillUse`], when the cast time is over.
 ///
@@ -165,7 +161,6 @@ impl Decode for MagicSkillLaunched {
     }
 }
 
-// Java: gameserver/network/serverpackets/MagicSkillCanceled.java
 /// The cast of a skill was canceled (`MAGIC_SKILL_CANCELED`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MagicSkillCanceled {
@@ -222,7 +217,6 @@ impl EffectIcon {
     }
 }
 
-// Java: gameserver/network/serverpackets/AbnormalStatusUpdate.java
 /// The buff and debuff icons of the creature (`ABNORMAL_STATUS_UPDATE`).
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct AbnormalStatusUpdate {
@@ -244,9 +238,6 @@ impl AbnormalStatusUpdate {
 impl Encode for AbnormalStatusUpdate {
     fn encode(&self, w: &mut PacketWriter) {
         write_opcode(w, Self::OPCODE);
-        // NOTE(java-quirk): Java counts every icon in the list (`writeShort(_effects.size())`) but
-        // writes only the ones in use, so a buff that is not in use makes the count too high.
-        // Kept as Java does it.
         w.i16(self.effects.len() as i16);
         for effect in self.effects.iter().filter(|e| e.in_use) {
             effect.write(w);
@@ -265,7 +256,6 @@ impl Decode for AbnormalStatusUpdate {
     }
 }
 
-// Java: gameserver/network/serverpackets/ShortBuffStatusUpdate.java
 /// The short buff bar, the one buff with a timer above the skill bar (`SHORT_BUFF_STATUS_UPDATE`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ShortBuffStatusUpdate {
@@ -302,7 +292,6 @@ impl Decode for ShortBuffStatusUpdate {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExAutoSoulShot.java
 /// The auto soulshot state of an item (`EX_AUTO_SOULSHOT`, ex id `0x0C`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExAutoSoulShot {
@@ -335,7 +324,6 @@ impl Decode for ExAutoSoulShot {
     }
 }
 
-// Java: gameserver/mechanics/skill/enums/AcquireSkillType.java
 /// The window a skill is learned in (Java `AcquireSkillType`). The wire value is the Java
 /// `ordinal()`, so the order of the variants must not change.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -375,7 +363,6 @@ impl AcquireSkillType {
     }
 }
 
-// Java: gameserver/network/serverpackets/AcquireSkillList.java
 /// One skill a trainer can teach in the list (Java `AcquireSkillList.Skill`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AcquireSkillEntry {
@@ -490,7 +477,6 @@ impl AcquireSkillRequirement {
     }
 }
 
-// Java: gameserver/network/serverpackets/AcquireSkillInfo.java
 /// The details of one skill to learn: its SP and the items it needs (`ACQUIRE_SKILL_INFO`).
 ///
 /// Java's constructors pick which requirements are listed (the life crystal and divine
@@ -548,7 +534,6 @@ impl Decode for AcquireSkillInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/AcquireSkillDone.java
 /// The skill was learned: the learn window closes (`ACQUIRE_SKILL_DONE`). No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AcquireSkillDone;
@@ -569,7 +554,6 @@ impl Decode for AcquireSkillDone {
     }
 }
 
-// Java: gameserver/network/serverpackets/PartySpelled.java
 /// The buffs of a party member, shown on the party window (`PARTY_SPELLED`). Structure only: the
 /// party code that sends it comes in M6.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -596,8 +580,6 @@ impl PartySpelled {
 impl Encode for PartySpelled {
     fn encode(&self, w: &mut PacketWriter) {
         write_opcode(w, Self::OPCODE);
-        // NOTE(java-quirk): the same as ABNORMAL_STATUS_UPDATE: the count is of every icon, the
-        // icons written are only the ones in use.
         w.i32(self.creature_type)
             .i32(self.creature_id)
             .i32(self.effects.len() as i32);

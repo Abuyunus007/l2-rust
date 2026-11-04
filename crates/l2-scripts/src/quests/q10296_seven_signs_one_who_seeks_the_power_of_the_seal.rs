@@ -1,6 +1,4 @@
 //! Quest 10296: Seven Signs, One Who Seeks the Power of the Seal (Eris Evil Thoughts in the Monastery of Silence).
-// Java: dist/game/data/scripts/quests/Q10296_SevenSignsOneWhoSeeksThePowerOfTheSeal/Q10296_SevenSignsOneWhoSeeksThePowerOfTheSeal.java
-//
 // Pattern: a memo-state quest (`docs/design/scripts.md`): the memo state is the step of the Seven
 // Signs story, and the other scripts of the story (the monastery, the hideout, the tomb) move it
 // in their own places. This quest only reads the memo state and moves it where Java does: from

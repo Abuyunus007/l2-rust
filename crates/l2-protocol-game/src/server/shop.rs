@@ -18,7 +18,6 @@ const KIND_SELL: i32 = 1;
 /// Bytes of one [`BuyListProduct`] on the wire.
 const PRODUCT_LEN: usize = 76;
 
-// Java: gameserver/network/serverpackets/BuyList.java (the fields of one product)
 /// One product of a buy list as `BuyList.writeImpl` writes it.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct BuyListProduct {
@@ -38,12 +37,7 @@ pub struct BuyListProduct {
     pub price: i64,
 }
 
-// Java: gameserver/network/serverpackets/BuyList.java
 /// The merchant's buy window (`EX_BUY_SELL_LIST` with `0` in front).
-///
-/// NOTE(java-quirk): `size` is `list.getProducts().size()`, which also counts the products Java
-/// leaves out because their stock is used up. The client reads `size` entries and gets fewer;
-/// [`BuyList::new`] copies Java's number, [`Decode`] reads until the packet ends.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BuyList {
     /// The player's adena.
@@ -151,7 +145,6 @@ pub struct RefundEntry {
     pub price: i64,
 }
 
-// Java: gameserver/network/serverpackets/ExBuySellList.java
 /// The sell and refund tabs of a shop window (`EX_BUY_SELL_LIST` with `1` in front).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExBuySellList {

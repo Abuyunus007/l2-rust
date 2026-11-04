@@ -1,9 +1,4 @@
 //! Changing the loot rule of a running party by vote.
-// Java: entity/groups/Party.java (requestLootChange, answerLootChangeRequest, finishLootRequest,
-//       PARTY_DISTRIBUTION_TYPE_REQUEST_TIMEOUT)
-// Java: network/clientpackets/{RequestPartyLootModification,AnswerPartyLootModification}.java
-// Java: network/serverpackets/{ExAskModifyPartyLooting,ExSetPartyLooting}.java
-//
 // The leader asks, every other member answers, and the rule changes when all of them agreed. One
 // "no" or 15 seconds without all answers cancel the change. A member who joins during the vote
 // cancels it (`addPartyMember`). The 15 s task is a timer of the wheel.
@@ -124,8 +119,6 @@ impl World {
             return;
         }
         change.answers.insert(member);
-        // NOTE(java-quirk): the leader is a member too, so an answer of the leader counts, and the
-        // vote is over one answer early then.
         if change.answers.len() + 1 >= member_count {
             self.party_finish_loot_request(party, true);
         }

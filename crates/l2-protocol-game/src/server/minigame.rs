@@ -26,7 +26,6 @@ fn write_block_state(w: &mut PacketWriter, sub: i32) {
     w.i32(sub);
 }
 
-// Java: gameserver/network/serverpackets/ExCubeGameAddPlayer.java
 /// A player joined a team of the Cube game (`EX_BLOCK_UP_SET_LIST`, sub 1).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExCubeGameAddPlayer {
@@ -62,7 +61,6 @@ impl Decode for ExCubeGameAddPlayer {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExCubeGameRemovePlayer.java
 /// A player left a team of the Cube game (`EX_BLOCK_UP_SET_LIST`, sub 2).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExCubeGameRemovePlayer {
@@ -92,7 +90,6 @@ impl Decode for ExCubeGameRemovePlayer {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExCubeGameChangeTeam.java
 /// A player switched team of the Cube game (`EX_BLOCK_UP_SET_LIST`, sub 5). Java writes the
 /// "from red" flag and its negation.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -128,7 +125,6 @@ impl Decode for ExCubeGameChangeTeam {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExCubeGameChangePoints.java
 /// The time and the points of both teams (`EX_BLOCK_UP_SET_STATE`, sub 2).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExCubeGameChangePoints {
@@ -159,7 +155,6 @@ impl Decode for ExCubeGameChangePoints {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExCubeGameExtendedChangePoints.java
 /// The time and the points, with the player's own team and points (`EX_BLOCK_UP_SET_STATE`,
 /// sub 0).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -228,7 +223,6 @@ fn read_cube_players(r: &mut PacketReader) -> Result<Vec<CubePlayer>, PacketErro
     Ok(players)
 }
 
-// Java: gameserver/network/serverpackets/ExCubeGameTeamList.java
 /// The players of both teams in a Cube game room (`EX_BLOCK_UP_SET_LIST`, sub 0).
 ///
 /// Java writes `roomNumber - 1` as the room; `room` is that written value.
@@ -264,7 +258,6 @@ impl Decode for ExCubeGameTeamList {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExCubeGameCloseUI.java
 /// The Cube game window closes (`EX_BLOCK_UP_SET_LIST`, sub -1, no other field).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExCubeGameCloseUi;
@@ -286,7 +279,6 @@ impl Decode for ExCubeGameCloseUi {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExCubeGameRequestReady.java
 /// The "ready?" question of the Cube game (`EX_BLOCK_UP_SET_LIST`, sub 4, no other field).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExCubeGameRequestReady;
@@ -308,7 +300,6 @@ impl Decode for ExCubeGameRequestReady {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExCubeGameChangeTimeToStart.java
 /// The seconds left before the Cube game starts (`EX_BLOCK_UP_SET_LIST`, sub 3).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExCubeGameChangeTimeToStart {
@@ -333,7 +324,6 @@ impl Decode for ExCubeGameChangeTimeToStart {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExCubeGameEnd.java
 /// The Cube game is over, with the winning team (`EX_BLOCK_UP_SET_STATE`, sub 1).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExCubeGameEnd {
@@ -394,7 +384,6 @@ fn read_pvp_members(r: &mut PacketReader) -> Result<Vec<PvpMember>, PacketError>
     Ok(members)
 }
 
-// Java: gameserver/network/serverpackets/ExPVPMatchRecord.java
 /// The Underground Coliseum match record (`EX_PVP_MATCH_RECORD`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExPvpMatchRecord {
@@ -455,7 +444,6 @@ impl Decode for ExPvpMatchRecord {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExPVPMatchUserDie.java
 server_packet!(
     /// A player of the Underground Coliseum died; the kills of both teams (`EX_PVP_MATCH_USER_DIE`).
     /// Java writes red first.
@@ -482,7 +470,6 @@ pub struct CcRecordEntry {
     pub points: i32,
 }
 
-// Java: gameserver/network/serverpackets/ExPVPMatchCCRecord.java
 /// The Kratei's Cube score list (`EX_PVP_MATCH_CC_RECORD`). Java writes `min(size, 25)` entries
 /// and stops after the 25th, so a longer list is cut on encoding.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -522,7 +509,6 @@ impl Decode for ExPvpMatchCcRecord {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExPVPMatchCCMyRecord.java
 server_packet!(
     /// The player's own points in the Kratei's Cube match (`EX_PVP_MATCH_CC_MY_RECORD`).
     ExPvpMatchCcMyRecord,
@@ -531,14 +517,12 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/ExPVPMatchCCRetire.java
 server_unit_packet!(
     /// The player leaves the Kratei's Cube match (`EX_PVP_MATCH_CC_RETIRE`).
     ExPvpMatchCcRetire,
     ExPvpMatchCcRetire
 );
 
-// Java: gameserver/network/serverpackets/ExStartScenePlayer.java
 server_packet!(
     /// Starts a movie for the client (`EX_START_SCENE_PLAYER`).
     ExStartScenePlayer,
@@ -548,7 +532,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/ExSendUIEvent.java
 /// A countdown or hidden timer on the client's screen (`EX_SEND_UI_EVENT`).
 ///
 /// Java sends the start and end times as minute and second strings. `start_time` and `end_time`

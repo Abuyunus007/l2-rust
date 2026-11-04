@@ -1,7 +1,5 @@
 //! Dark Cloud Mansion (instance 9): six rooms between Beleth's minions, the monoliths, the shadow
 //! columns and Beleth's samples, and the Symbol of Truth that gives the Contaminated Crystal.
-// Java: dist/game/data/scripts/instances/DarkCloudMansion/DarkCloudMansion.java
-//
 // Java keeps the rooms as `DMCRoom` objects in the `InstanceWorld` parameters; here they are the
 // script's state by instance id ([`Mansion`]) and the NPCs in them are object ids. The progress
 // (`world.getStatus()`) is the `InstanceWorld`'s.
@@ -724,10 +722,6 @@ fn run_hall3(ctx: &mut ScriptCtx<'_>, instance_id: i32) {
 }
 
 /// The six minions of the third room.
-///
-/// NOTE(java-quirk): Java makes one `DMCNpc` and overwrites its `npc` for each of the six spawns,
-/// then adds the same object six times, so the room tracks only the last minion (BM[2] at
-/// 148865,180705): the room is done when that one dies and the other five do not count.
 fn spawn_third_room_minions(ctx: &mut ScriptCtx<'_>, instance_id: i32) -> DmcRoom {
     let mut third_room = DmcRoom::default();
     let mut last = None;
@@ -1291,7 +1285,6 @@ mod tests {
         kill_room(&mut t, id, Slot::Hall);
         assert_eq!(status(&t, id), 6);
 
-        // Third room: NOTE(java-quirk) only the last minion counts.
         let third = room_npcs(&mut t, id, Slot::ThirdRoom);
         assert_eq!(third.len(), 1);
         assert_eq!(third[0].1, BM[2]);

@@ -1,36 +1,22 @@
 //! The `messages` table: the mails of the post box (header and flags; the attached items are
 //! `items` rows with `loc = 'MAIL'`).
-// Java: managers/MailManager.java (load, sendMessage, markAsReadInDb, markAsDeletedBySenderInDb,
-// Java: markAsDeletedByReceiverInDb, removeAttachmentsInDb, deleteMessageInDb)
-// Java: network/holders/MailMessage.java (the restoring constructor, getStatement)
-//
-// D-39: the Java game server shares the table. Every statement is Java's, verbatim, and the flags
-// are written the way Java writes them: the strings `'true'` / `'false'` of the `enum` columns, and
-// `sendBySystem` as the decimal text of the int.
 
 use sqlx::FromRow;
 
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: MailManager.load
 const SELECT_ALL: &str = "SELECT * FROM messages ORDER BY expiration";
 // The mails one character can see in its boxes (M6-SYNC-01): the same columns and order as
 // `SELECT_ALL`, narrowed to the sender and the receiver, which are the two lists Java builds from
 // the map (`MailManager.getInbox`, `getOutbox`).
 const SELECT_OF_CHARACTER: &str =
     "SELECT * FROM messages WHERE senderId = ? OR receiverId = ? ORDER BY expiration";
-// Java: MailMessage.getStatement
 const INSERT_MESSAGE: &str = "INSERT INTO messages (messageId, senderId, receiverId, subject, content, expiration, reqAdena, hasAttachments, isUnread, isDeletedBySender, isDeletedByReceiver, sendBySystem, isReturned) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-// Java: MailManager.markAsReadInDb
 const MARK_READ: &str = "UPDATE messages SET isUnread = 'false' WHERE messageId = ?";
-// Java: MailManager.markAsDeletedBySenderInDb
 const MARK_DELETED_BY_SENDER: &str = "UPDATE messages SET isDeletedBySender = 'true' WHERE messageId = ?";
-// Java: MailManager.markAsDeletedByReceiverInDb
 const MARK_DELETED_BY_RECEIVER: &str = "UPDATE messages SET isDeletedByReceiver = 'true' WHERE messageId = ?";
-// Java: MailManager.removeAttachmentsInDb
 const REMOVE_ATTACHMENTS: &str = "UPDATE messages SET hasAttachments = 'false' WHERE messageId = ?";
-// Java: MailManager.deleteMessageInDb
 const DELETE_MESSAGE: &str = "DELETE FROM messages WHERE messageId = ?";
 
 /// A mail as the table holds it (Java `MailMessage`'s stored fields).
@@ -133,9 +119,6 @@ impl MessageRepository {
         Ok(rows.into_iter().map(MessageRow::from).collect())
     }
 
-    /// The mails a character is the sender or the receiver of, by expiration (M6-SYNC-01: read at
-    /// the character select, because the Java game server may have changed them after this server
-    /// loaded `messages`, D-39).
     pub async fn messages_of_character(&self, char_id: i32) -> Result<Vec<MessageRow>> {
         let rows: Vec<MessageDbRow> = sqlx::query_as(SELECT_OF_CHARACTER)
             .bind(char_id)

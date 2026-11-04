@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/FakePlayersConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/FakePlayers.ini` (Java: `FakePlayersConfig`).

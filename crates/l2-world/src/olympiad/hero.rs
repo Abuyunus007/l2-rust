@@ -1,12 +1,5 @@
 //! The heroes: the choice at the period end, `isHero`, the hero skills and items, the hero list,
 //! the diary and the history pages, the hero words and `//sethero`, `//givehero`.
-// Java: mechanics/olympiad/Hero.java
-// Java: entity/actor/Player.java (setHero, isHero)
-// Java: network/clientpackets/{RequestWriteHeroWords,RequestBypassToServer}.java (`_match`,
-//       `_diary`), network/serverpackets/ExHeroList.java
-// Java: dist/game/data/scripts/handlers/bypass/npc/OlympiadManagerLink.java (`olympiad 4`, `5`)
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminAdmin.java (sethero, givehero)
-//
 // # What a hero is
 // Java's `Hero` keeps `HEROES` (the heroes of the last period, claimed or not) and
 // `COMPLETE_HEROS` (everybody who ever was one) as separate maps of `StatSet`s, which are the same
@@ -15,22 +8,6 @@
 // overwrites, so [`HeroState`] keeps one map and the list of the ids in `HEROES` (in Java's
 // `ConcurrentHashMap` order, which the hero list and `getHeroByClass` follow).
 // `Player._hero` is [`PlayerOlympiad::hero`](super::PlayerOlympiad::hero).
-//
-// # Side by side (D-39, D-53)
-// The choice (`updateHeroes`, `deleteItemsInDb`) and the `heroes` rows are global: with
-// `CycleDatabaseWrites = False` the Java game server runs them on the same database. This server
-// then
-// - reads the `heroes` rows at start and again before it shows or uses them (the hero list, the
-//   history pages, the certification, `//givehero`: a [`OlympiadRereadRequest::Heroes`] through
-//   the outbox, D-15, D-50; a failed read shows and does nothing),
-// - runs the choice in memory (the online heroes of the last period lose their status and
-//   items, the online players' own item rows go through the normal inventory writes) but writes
-//   no `heroes` row and does not run `deleteItemsInDb`,
-// - keeps a claim made on this server when a later read brings the same hero unclaimed (the Java
-//   game server never sees it, nobody claims there),
-// - still writes what Java writes per player: the `heroes_diary` rows of a hero's deeds
-//   (`setDiaryData`) and the hero words (`UPDATE heroes SET message`) of the heroes whose words
-//   this server changed. With the switch on it writes everything where Java does.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -148,12 +125,8 @@ pub struct HeroLoad {
 /// A write of the hero tables (`OlympiadWrite::Hero`), in Java's statements.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HeroWrite {
-    /// `updateHeroes(true)`: `UPDATE heroes SET played = 0`. Only with `CycleDatabaseWrites`.
     ResetPlayed,
-    /// `deleteItemsInDb`. Only with `CycleDatabaseWrites`.
     DeleteItems,
-    /// `updateHeroes(false)` for a hero `COMPLETE_HEROS` did not know. Only with
-    /// `CycleDatabaseWrites`.
     Insert {
         char_id: i32,
         class_id: i32,
@@ -161,7 +134,6 @@ pub enum HeroWrite {
         played: i32,
         claimed: bool,
     },
-    /// `updateHeroes(false)` for a known hero. Only with `CycleDatabaseWrites`.
     Update {
         char_id: i32,
         class_id: i32,
@@ -177,7 +149,10 @@ pub enum HeroWrite {
         param: i32,
     },
     /// `saveHeroMessage`.
-    Message { char_id: i32, message: String },
+    Message {
+        char_id: i32,
+        message: String,
+    },
 }
 
 /// What a read of the hero tables is for (the `then` of `OlympiadRereadAction::Hero`).
@@ -398,8 +373,6 @@ impl World {
 
     /// The clan keys of `processHeros` and `updateHeroes`: name and crest of the clan, and, with
     /// an alliance, the name and crest of the alliance.
-    // NOTE(java-quirk): a clan `ClanTable` does not know is a `NullPointerException` in Java; here
-    // the hero has no clan.
     fn hero_clan_info(&self, clan_id: i32, ally_id: i32) -> (String, i32, String, i32) {
         if clan_id > 0
             && let Some(clan) = self.clan(clan_id)
@@ -481,7 +454,6 @@ impl World {
                 .template(row.param)
                 .map(|t| format!("{} was defeated", t.name)),
             ACTION_HERO_GAINED => Some("Gained Hero status".to_owned()),
-            // NOTE(java-quirk): "successfuly" is Java's spelling.
             ACTION_CASTLE_TAKEN => self
                 .castle(CastleId(row.param))
                 .map(|c| format!("{} Castle was successfuly taken", c.name)),
@@ -661,8 +633,6 @@ impl World {
                 old.played = 1;
                 old.claimed = false;
             } else {
-                // NOTE(java-quirk): a character listed twice (`HEROS_TO_BE` is never cleared) is
-                // a new hero twice; the second `StatSet` replaces the first.
                 fresh.insert(
                     char_id,
                     HeroData {
@@ -797,8 +767,6 @@ impl World {
         self.olympiad_write(OlympiadWrite::Hero(write));
     }
 
-    /// Java `setDiaryData(charId, action, param)`: the row is written as Java does (the deed of
-    /// the hero, D-53).
     pub fn hero_set_diary_data(&mut self, char_id: i32, action: i32, param: i32) {
         let time = self.olympiad_now_ms();
         self.hero_write(HeroWrite::Diary {
@@ -905,7 +873,6 @@ impl World {
         self.hero_do(player, npc, action);
     }
 
-    /// The answer of a read of the hero tables: a failed read shows and does nothing (D-50).
     pub(crate) fn on_hero_reread(
         &mut self,
         result: Result<OlympiadRereadRows, ()>,
@@ -1168,7 +1135,6 @@ impl World {
                 } else {
                     "<table width=270>"
                 });
-                // NOTE(java-quirk): the "non-cls" font is never closed (`<font>` again).
                 f_list.push_str(&format!(
                     "<tr><td width=220><font color=\"LEVEL\">{}</font>&nbsp;&nbsp;{}</td><td width=50 align=right>{}</td></tr>",
                     fight.start,

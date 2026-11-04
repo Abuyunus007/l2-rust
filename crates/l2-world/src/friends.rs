@@ -1,12 +1,6 @@
 //! The friend list and the block list (M6-FRIEND-01): the friend requests, the friend list
 //! window, the friend status notices, the private messages between friends, the `/block`
 //! commands and the message refusal mode.
-// Java: entity/actor/holders/player/BlockList.java
-// Java: network/clientpackets/{RequestFriendInvite,RequestAnswerFriendInvite,RequestFriendDel,
-// Java: RequestFriendList,RequestSendFriendMsg,RequestBlock}.java
-// Java: entity/actor/Player.java (restoreFriendList, notifyFriends, get/setMessageRefusal)
-// Java: network/clientpackets/EnterWorld.java (FriendList, YOUR_FRIEND_S1_JUST_LOGGED_IN)
-//
 // # Shape
 // The lists of every online character are in `FriendWorld`, keyed by the character's object id
 // (D-11): the other characters are ids, with the name copied when the list is loaded. The rows
@@ -75,8 +69,6 @@ pub enum FriendWrite {
 #[derive(Debug, Default)]
 pub(crate) struct SocialLists {
     /// In the order the rows were read, then the order of the changes made since.
-    // NOTE(java-quirk): Java keeps these in a `ConcurrentHashMap` key set, whose iteration order is
-    // not reproduced; the order here is the load order.
     pub(crate) friends: Vec<FriendEntry>,
     pub(crate) blocked: Vec<FriendEntry>,
     /// Java `_messageRefusal`: set by `/allblock`, never stored (a new login starts with false).
@@ -209,8 +201,6 @@ impl World {
         let Some(lists) = self.friends.lists.get(&id) else {
             return FriendList::default();
         };
-        // NOTE(java-quirk): Java writes a friend whose name is unknown with a null name (the packet
-        // would not encode it); the friend is left out here instead.
         let friends = lists
             .friends
             .iter()
@@ -494,7 +484,6 @@ impl World {
                 online: self.players.contains_key(&target),
             },
         );
-        // Java: `World.getPlayer(_name)`: the other side hears about it when it is online.
         if self.players.contains_key(&target) {
             if let Some(lists) = self.friends.lists.get_mut(&target) {
                 lists.friends.retain(|e| e.object_id != id.0);

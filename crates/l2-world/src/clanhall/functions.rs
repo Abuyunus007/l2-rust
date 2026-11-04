@@ -1,9 +1,5 @@
 //! What the hall functions do besides being paid for: the regeneration factors of the clan's own
 //! hall and the exp a resurrection in the hall gives back.
-// Java: mechanics/stats/Formulas.java (calcHpRegen, calcMpRegen: `ClanHall.FUNC_RESTORE_HP`,
-//       `FUNC_RESTORE_MP`)
-// Java: network/clientpackets/RequestRestartPoint.java (case 1: `FUNC_RESTORE_EXP`)
-//
 // The teleport, support and item creation functions are used at the hall manager (`manager.rs`),
 // the decoration functions show in `AgitDecoInfo` (`residence/clan_hall.rs`).
 

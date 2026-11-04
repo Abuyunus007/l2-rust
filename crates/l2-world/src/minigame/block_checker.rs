@@ -1,12 +1,5 @@
 //! Handy's Block Checker: the arena lobby (`HandysBlockCheckerManager`, `ArenaParticipantsHolder`)
 //! and the match (`BlockCheckerManager`).
-// Java: managers/HandysBlockCheckerManager.java
-// Java: managers/games/BlockCheckerManager.java (`StartEvent`, `SpawnRound`, `EndEvent`)
-// Java: entity/actor/holders/player/ArenaParticipantsHolder.java
-// Java: entity/actor/instance/Block.java (`changeColor`, `increaseTeamPointsAndSend`, `dropItem`)
-// Java: dist/game/data/scripts/handlers/skill/effects/FlipBlock.java (the effect's rule)
-// Java: dist/game/data/scripts/ai/areas/FantasyIsle/HandysBlockCheckerEvent.java (`onFirstTalk`)
-//
 // # Teams
 // Team 0 is red, team 1 blue (Java's `ArenaParticipantsHolder`); `World::set_team` takes the
 // `Team` ids (1 blue, 2 red).
@@ -413,8 +406,6 @@ impl World {
     }
 
     /// Java `HandysBlockCheckerManager.changePlayerToTeam(player, arena)`.
-    // NOTE(java-quirk): a player who is in neither team is "not from red", so he is put in the red
-    // team without any registration check.
     pub fn block_checker_change_player_to_team(&mut self, player: ObjectId, arena: i32) {
         let Some(index) = arena_index(arena).filter(|a| *a < self.minigames.block.arenas.len()) else {
             return;

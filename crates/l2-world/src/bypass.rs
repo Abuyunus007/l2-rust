@@ -1,11 +1,5 @@
 //! `RequestBypassToServer` and `RequestLinkHtml`: the commands of html links, and the handler
 //! registry they go through.
-// Java: network/clientpackets/{RequestBypassToServer,RequestLinkHtml}.java
-// Java: handler/BypassHandler.java (the registry: first word, lower case)
-// Java: dist/game/data/scripts/handlers/bypass/npc/{Link,ChatLink,SkillList}.java
-// Java: entity/actor/Npc.java (onBypassFeedback)
-// Java: util/LocationUtil.java (isInsideRangeOfObjectId)
-//
 // # The registry
 // A handler is a function `fn(&mut World, player, command, target) -> bool` registered under the
 // first word of the commands it takes (D-05: scripts come last, so only the handlers the M3 cards
@@ -198,8 +192,6 @@ fn link_handler(world: &mut World, player: ObjectId, command: &str, target: Opti
     }
 
     let object_id = target.map_or(0, |t| t.0);
-    // NOTE(java-quirk): without content Java sends an `NpcHtmlMessage` that has no html, which
-    // fails while it is written; nothing reaches the client.
     if let Some(content) = content
         && let Some(message) = l2_protocol_game::server::NpcHtmlMessage::new(
             object_id,
@@ -283,7 +275,6 @@ impl World {
         if command.starts_with("admin_") {
             self.admin_command(id, command, true);
         } else if self.is_community_board_command(command) {
-            // Java: CommunityBoardHandler.handleParseCommand (S-HAND-01, `community_board/`).
             self.board_handle_parse_command(id, command);
         } else if command == "come_here" && self.is_gm(id) {
             self.come_here(id);
@@ -317,7 +308,6 @@ impl World {
                 .map_or_else(|| "?".to_owned(), |s| format!("{s:?}"));
             warn!("{session} sent not handled RequestBypassToServer: [{command}]");
         }
-        // Java: `ON_PLAYER_BYPASS` for the script listeners of the player (S-API-03).
         self.script_on_player_bypass(id, command);
     }
 
@@ -369,8 +359,9 @@ impl World {
     }
 
     /// Java `Npc.onBypassFeedback(player, command)` with the override of the NPC's class.
+    // The empty branches are handlers that answer through their condition, in a fixed order.
+    #[allow(clippy::if_same_then_else)]
     pub(crate) fn npc_bypass_feedback(&mut self, npc: ObjectId, player: ObjectId, command: &str) {
-        // Java: DawnPriest, DuskPriest, SignsPriest and DungeonGatekeeper.onBypassFeedback
         // (M8-SS-01, `sevensigns/priest.rs`, `sevensigns/gatekeeper.rs`).
         if self.ss_priest_bypass_feedback(npc, player, command)
             || self.ss_dungeon_gatekeeper_bypass(npc, player, command)
@@ -390,31 +381,21 @@ impl World {
             npc_type == Some("ClanHallDoorman"),
         );
         if is_auctioneer {
-            // Java: Auctioneer.onBypassFeedback (the auction board, `clanhall/auctioneer.rs`).
             self.auctioneer_bypass_feedback(npc, player, command);
         } else if is_hall_manager {
-            // Java: ClanHallManager.onBypassFeedback (`clanhall/manager.rs`).
             self.clan_hall_manager_bypass_feedback(npc, player, command);
         } else if is_hall_doorman {
-            // Java: ClanHallDoorman.onBypassFeedback (`clanhall/doorman.rs`).
             self.clan_hall_doorman_bypass_feedback(npc, player, command);
         } else if npc_type == Some("PetManager") {
-            // Java: PetManager.onBypassFeedback (exchange, evolve, restore, `summon/evolve.rs`).
             self.pet_manager_bypass_feedback(npc, player, command);
         } else if self.minigame_npc_bypass_feedback(npc, player, command) {
-            // Java: KrateisCubeManager, KrateisMatchManager, UCManager, UCHelper (`minigame/bypass.rs`).
         } else if self.castle_doorman_bypass_feedback(npc, player, command) {
-            // Java: CastleDoorman.onBypassFeedback (`residence/npc/doorman.rs`).
         } else if is_teleporter {
             self.teleporter_bypass_feedback(npc, player, command);
         } else if is_fisherman && self.fisherman_bypass_feedback(npc, player, command) {
-            // Java: Fisherman.onBypassFeedback (the championship, `fishing/championship.rs`).
         } else if self.fort_npc_bypass_feedback(npc, player, command) {
-            // Java: FortManager, FortDoorman, FortLogistics.onBypassFeedback (`fort/npc.rs`).
         } else if is_scheme_buffer && self.scheme_buffer_bypass_feedback(npc, player, command) {
-            // Java: SchemeBuffer.onBypassFeedback (M9-C03, `custom/scheme_buffer.rs`).
         } else if self.is_village_master(npc) {
-            // Java: VillageMaster.onBypassFeedback (the clan commands, `clan/village_master.rs`).
             self.village_master_bypass_feedback(npc, player, command);
         } else {
             self.generic_npc_bypass_feedback(npc, player, command);

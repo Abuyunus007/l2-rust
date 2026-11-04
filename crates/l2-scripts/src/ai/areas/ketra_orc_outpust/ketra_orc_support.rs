@@ -1,6 +1,5 @@
 //! The NPCs of the Ketra Orc Outpost: what they say and sell follows the character's Mark of
 //! Ketra's Alliance.
-// Java: dist/game/data/scripts/ai/areas/KetraOrcOutpust/KetraOrcSupport/KetraOrcSupport.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};

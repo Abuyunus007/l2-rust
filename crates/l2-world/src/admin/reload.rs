@@ -1,8 +1,5 @@
 //! `//reload`, `//reload_menu`, `//reload_menu_page`: the reload panel and what the Rust server
 //! can reload while it runs.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminReload.java
-// Java: gameserver/cache/HtmCache.java (reload)
-//
 // # What reloads
 // - The panel (`//reload`, `//reload_menu`, `//reload_menu_page <n>`): all of it, with Java's
 //   57 buttons and its pager.

@@ -1,5 +1,4 @@
 //! Sin Wardens: five dead minions and the master leaves.
-// Java: dist/game/data/scripts/ai/others/SinWardens.java
 
 use std::collections::HashMap;
 

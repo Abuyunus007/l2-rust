@@ -1,6 +1,4 @@
 //! Quest 69: Saga of the Trickster.
-// Java: dist/game/data/scripts/quests/Q00069_SagaOfTheTrickster/Q00069_SagaOfTheTrickster.java
-//
 // Pattern: a saga (`docs/design/scripts.md`, "Quest patterns"): the Java class only fills the
 // fields of `AbstractSagaQuest`; here that is a `SagaData` constant and one `saga_quest!` line.
 // The hooks are the shared ones of `abstract_saga_quest.rs`.

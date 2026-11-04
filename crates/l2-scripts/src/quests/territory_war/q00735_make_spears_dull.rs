@@ -1,5 +1,4 @@
 //! Quest 735: Make Spears Dull!
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/Q00735_MakeSpearsDull.java
 
 use l2_protocol_game::NpcStringId;
 

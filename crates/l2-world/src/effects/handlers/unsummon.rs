@@ -1,5 +1,4 @@
 //! The `Unsummon` effect: sends the target's summon away.
-// Java: dist/game/data/scripts/handlers/skill/effects/Unsummon.java
 
 use l2_data::skill::EffectTemplate;
 use l2_protocol_game::SystemMessageId;

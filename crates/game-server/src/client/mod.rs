@@ -1,11 +1,4 @@
 //! The client listener on `GameserverPort` and the per-connection sessions.
-// Java: org/l2jmobius/gameserver/GameServer.java
-//   `new ConnectionManager<>(new InetSocketAddress(ServerConfig.PORT_GAME), GameClient::new, new GamePacketHandler())`
-// Java: org/l2jmobius/gameserver/network/GameClient.java, GamePacketHandler.java
-//
-// NOTE(java-quirk): Java binds `InetSocketAddress(PORT_GAME)`, i.e. every interface, and never
-// looks at `GameserverHostname`. Here the hostname is the bind address (`*` and the default
-// `0.0.0.0` mean every interface), which behaves the same with the shipped config.
 
 pub mod charlist;
 pub mod charscreen;
@@ -212,7 +205,6 @@ pub async fn start_listener(server: &mut Server) -> Result<(), StartupError> {
         }),
     });
 
-    // Java: ConnectionConfig (Network.ini). A missing file gives Java's defaults.
     let processors = std::thread::available_parallelism().map_or(1, |n| i32::try_from(n.get()).unwrap_or(1));
     let network = NetworkConfig::from_ini(
         &IniFile::load(state.paths.config_dir.join(NETWORK_CONFIG_FILE))?,

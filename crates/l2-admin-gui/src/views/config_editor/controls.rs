@@ -1,7 +1,6 @@
 //! The control of one setting in the config editor: which one fits the key
 //! ([`choose_control`], pure and tested) and how it is drawn ([`draw_entry`]) (card G-07).
 //!
-//! Java: none (tooling). What a control may do is decided by `l2_config::ranges` (slider ranges,
 //! allowed words, list keys, colours) and the type of the value in the file ([`ValueKind`]).
 //!
 //! | value | control |

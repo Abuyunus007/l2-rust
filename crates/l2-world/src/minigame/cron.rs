@@ -1,6 +1,4 @@
 //! The cron-like pattern of `UndergroundColiseum.ini` (`BattleStartTime`).
-// Java: commons/time/SchedulingPattern.java (`next`, `CronExpression.getNextMatch`)
-//
 // Only what the coliseum needs: five fields (minute hour day month weekday), `*`, lists, ranges
 // (with the wrap-around of Java), `/step`, month and weekday names, `L` (last day of the month)
 // and `|` for alternatives. The extended modifiers of Java (`~N`, `+N`, the sixth week-offset
@@ -8,10 +6,6 @@
 // default pattern with a warning.
 //
 // The zone is the machine's (`TimeZone.getDefault()`), through the offset the caller hands in.
-//
-// NOTE(java-quirk): Java accepts any number in a field, so the day of week 7 of the shipped
-// default (`5,6,7`) is a value that no day has (Calendar days run 0..=6 here): Sunday never
-// matches.
 
 use std::collections::BTreeSet;
 

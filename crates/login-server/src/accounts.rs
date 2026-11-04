@@ -1,7 +1,6 @@
 //! Account management behind the admin endpoint (G-04): search, create, password, access level,
 //! ban, unban and delete.
 //!
-//! Java: `tools/AccountManager.java` is the spec for what each action writes; the password hash
 //! is `LoginController.retriveAccountInfo`'s (SHA-1, Base64), see `l2_db::hash_password`.
 //!
 //! [`AccountStore`] is the database seam: [`LoginRepository`] in production, an in-memory map in
@@ -281,8 +280,6 @@ impl<S: AccountStore> AccountsService<S> {
             AccountsAction::Delete { login } => {
                 let login = clean_login(&login)?;
                 self.require(&login).await?;
-                // NOTE(java-quirk): AccountManager runs only `DELETE FROM accounts WHERE login = ?`.
-                // Characters, `account_data` (temporary bans) and `accounts_ipauth` stay behind.
                 self.store.delete(&login).await?;
                 Ok(Self::done(login, None))
             }

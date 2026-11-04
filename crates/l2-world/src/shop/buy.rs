@@ -1,8 +1,5 @@
 //! Opening a merchant's buy window (`Merchant.showBuyWindow`, the `Buy` bypass) and
 //! `RequestBuyItem`.
-// Java: entity/actor/instance/Merchant.java (showBuyWindow)
-// Java: dist/game/data/scripts/handlers/bypass/npc/Buy.java
-// Java: network/clientpackets/RequestBuyItem.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::client::{BuyItemEntry, RequestBuyItem};
@@ -296,8 +293,6 @@ impl World {
                 continue;
             };
             if product.has_limited_stock() {
-                // NOTE(java-quirk): when the stock ran out between the check and here (the same
-                // item twice in one request) the adena is gone and the item is not given.
                 if self.decrease_product_count(list_id, product.item_id, entry.count) {
                     self.inventory_add_item_by_id(id, entry.item_id, entry.count);
                 }

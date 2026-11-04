@@ -1,7 +1,5 @@
 //! Quest 337: Audience With The Land Dragon (Gabrielle in Gludio; the Harit lizardmen, the marsh
 //! monsters, the caves, the abyssal jewels of Antharas and their guardians).
-// Java: dist/game/data/scripts/quests/Q00337_AudienceWithTheLandDragon/Q00337_AudienceWithTheLandDragon.java
-//
 // Pattern: the memo state is a four-digit code (one digit per errand: 1 = Kranrot and Hamrut,
 // 2 = marsh, 3 = totem, 4 = remains; hundreds, tens and units of 2xxxx) that the errand NPCs
 // add to; the jewel fights (`onAttack`) spawn guardians and drop fragments; the timers

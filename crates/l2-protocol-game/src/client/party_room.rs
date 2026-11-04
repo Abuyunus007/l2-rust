@@ -5,7 +5,6 @@
 //! `party/loot_vote.rs`, `party/nickname.rs`, `admin/gm_view.rs`).
 
 client_packet!(
-    // Java: gameserver/network/clientpackets/RequestPartyMatchConfig.java
     /// The party matching button / the list of rooms (`REQUEST_PARTY_MATCH_CONFIG`, 0x7F).
     RequestPartyMatchConfig,
     plain RequestPartyMatchConfig {
@@ -19,7 +18,6 @@ client_packet!(
 );
 
 client_packet!(
-    // Java: gameserver/network/clientpackets/RequestPartyMatchList.java
     /// Creates a room (`room_id` 0) or changes the room `room_id` (`REQUEST_PARTY_MATCH_LIST`,
     /// 0x80).
     RequestPartyMatchList,
@@ -34,7 +32,6 @@ client_packet!(
 );
 
 client_packet!(
-    // Java: gameserver/network/clientpackets/RequestPartyMatchDetail.java
     /// A click on a room of the list (`REQUEST_PARTY_MATCH_DETAIL`, 0x81).
     RequestPartyMatchDetail,
     plain RequestPartyMatchDetail {
@@ -47,7 +44,6 @@ client_packet!(
 );
 
 client_packet!(
-    // Java: gameserver/network/clientpackets/RequestOustFromPartyRoom.java
     /// The room owner throws a member out (`REQUEST_OUST_FROM_PARTY_ROOM`, `0xD0` 0x0009).
     RequestOustFromPartyRoom,
     ex RequestOustFromPartyRoom {
@@ -57,7 +53,6 @@ client_packet!(
 );
 
 client_packet!(
-    // Java: gameserver/network/clientpackets/RequestDismissPartyRoom.java
     /// Closes the room (`REQUEST_DISMISS_PARTY_ROOM`, `0xD0` 0x000A).
     RequestDismissPartyRoom,
     ex RequestDismissPartyRoom {
@@ -68,7 +63,6 @@ client_packet!(
 );
 
 client_packet!(
-    // Java: gameserver/network/clientpackets/RequestWithdrawPartyRoom.java
     /// A member leaves the room (`REQUEST_WITHDRAW_PARTY_ROOM`, `0xD0` 0x000B).
     RequestWithdrawPartyRoom,
     ex RequestWithdrawPartyRoom {
@@ -79,7 +73,6 @@ client_packet!(
 );
 
 client_packet!(
-    // Java: gameserver/network/clientpackets/RequestAskJoinPartyRoom.java
     /// Invites the player `name` into the room (`REQUEST_ASK_JOIN_PARTY_ROOM`, `0xD0` 0x002F).
     RequestAskJoinPartyRoom,
     ex RequestAskJoinPartyRoom {
@@ -88,7 +81,6 @@ client_packet!(
 );
 
 client_packet!(
-    // Java: gameserver/network/clientpackets/AnswerJoinPartyRoom.java
     /// The invited player answers (`ANSWER_JOIN_PARTY_ROOM`, `0xD0` 0x0030): 1 accepts.
     AnswerJoinPartyRoom,
     ex AnswerJoinPartyRoom {
@@ -97,7 +89,6 @@ client_packet!(
 );
 
 client_packet!(
-    // Java: gameserver/network/clientpackets/RequestListPartyMatchingWaitingRoom.java
     /// The list of the players who wait for a room
     /// (`REQUEST_LIST_PARTY_MATCHING_WAITING_ROOM`, `0xD0` 0x0031).
     RequestListPartyMatchingWaitingRoom,
@@ -111,7 +102,6 @@ client_packet!(
 );
 
 client_unit_packet!(
-    // Java: gameserver/network/clientpackets/RequestExitPartyMatchingWaitingRoom.java
     /// The player leaves the waiting list (`REQUEST_EXIT_PARTY_MATCHING_WAITING_ROOM`, `0xD0`
     /// 0x0025). No fields.
     RequestExitPartyMatchingWaitingRoom,
@@ -119,7 +109,6 @@ client_unit_packet!(
 );
 
 client_packet!(
-    // Java: gameserver/network/clientpackets/RequestPartyLootModification.java
     /// The leader asks to change the loot rule (`REQUEST_PARTY_LOOT_MODIFICATION`, `0xD0` 0x0078).
     /// The raw `PartyDistributionType` id; Java ignores an unknown one.
     RequestPartyLootModification,
@@ -129,7 +118,6 @@ client_packet!(
 );
 
 client_packet!(
-    // Java: gameserver/network/clientpackets/AnswerPartyLootModification.java
     /// A member answers the loot rule vote (`ANSWER_PARTY_LOOT_MODIFICATION`, `0xD0` 0x0079):
     /// 1 agrees.
     AnswerPartyLootModification,
@@ -139,7 +127,6 @@ client_packet!(
 );
 
 client_packet!(
-    // Java: gameserver/network/clientpackets/RequestGiveNickName.java
     /// A title for a clan member or, for a noblesse, for itself (`REQUEST_GIVE_NICK_NAME`, 0x0B).
     RequestGiveNickName,
     plain RequestGiveNickName {
@@ -149,7 +136,6 @@ client_packet!(
 );
 
 client_packet!(
-    // Java: gameserver/network/clientpackets/RequestChangeNicknameColor.java
     /// Uses a title colour item (`REQUEST_CHANGE_NICKNAME_COLOR`, `0xD0` 0x004F).
     RequestChangeNicknameColor,
     ex RequestChangeNicknameColor {
@@ -160,21 +146,18 @@ client_packet!(
 );
 
 client_unit_packet!(
-    // Java: gameserver/network/clientpackets/RequestResetNickname.java
     /// Resets the title and its colour (`REQUEST_RESET_NICKNAME`, `0xD0` 0x0050). No fields.
     RequestResetNickname,
     ex RequestResetNickname
 );
 
 client_unit_packet!(
-    // Java: gameserver/network/clientpackets/RequestGmList.java
     /// The `/gmlist` command (`REQUEST_GM_LIST`, 0x8B). No fields.
     RequestGmList,
     plain RequestGmList
 );
 
 client_packet!(
-    // Java: gameserver/network/clientpackets/RequestGMCommand.java
     /// The Alt+G window of a GM (`REQUEST_GM_COMMAND`, 0x7E): which view of `target_name`.
     RequestGmCommand,
     plain RequestGmCommand {

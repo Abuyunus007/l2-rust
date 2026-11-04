@@ -1,6 +1,4 @@
 //! Quest 10289: Fade to Black (Greymore in the Gludio area, Anays).
-// Java: dist/game/data/scripts/quests/Q10289_FadeToBlack/Q10289_FadeToBlack.java
-//
 // Pattern: a party kill with one lucky member (`docs/design/scripts.md`, "Kills, drops and
 // parties"): the killing blow goes to a random started member (`random_party_member_state`,
 // `check_party_member_state` = Java `checkPartyMember`, cond below 3). In a party one member
@@ -44,7 +42,6 @@ fn moirai_reward(choice: &str) -> Option<(i32, Option<i64>)> {
         "21" => Some((15785, Some(505_100))),
         "22" => Some((15786, Some(505_100))),
         "23" => Some((15787, Some(505_100))),
-        // NOTE(java-quirk): Java's "24" gives 15787 again (the piece of "23"), not 15788.
         "24" => Some((15787, Some(505_100))),
         "25" => Some((15789, Some(505_100))),
         "26" => Some((15790, Some(496_680))),

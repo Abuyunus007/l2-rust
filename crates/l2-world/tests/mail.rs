@@ -3,7 +3,6 @@
 //! The post box (M6-MAIL-01): `RequestSendPost` and its checks, the fee, the attachments, reading,
 //! deleting, collecting (with a payment request), rejecting, cancelling, the expiry task and the
 //! notice at login. The expected values come from the Java code named in each test.
-//! Java: network/clientpackets/{RequestSendPost,RequestReceivedPost,RequestPostAttachment,
 //! RequestRejectPostAttachment,RequestCancelPostAttachment,RequestDeleteReceivedPost,
 //! RequestDeleteSentPost}.java, managers/MailManager.java, network/holders/MailMessage.java,
 //! taskmanagers/MessageDeletionTaskManager.java, entity/itemcontainer/Mail.java.
@@ -769,7 +768,6 @@ fn the_checks_of_request_send_post() {
             req_adena: 0,
         }),
     );
-    // NOTE(java-quirk): there is no message for a long text, Java reuses the title one.
     assert_eq!(
         messages(&s.log.take(), A),
         [SystemMessageId::TheAllowedLengthForATitleExceeded]
@@ -881,7 +879,6 @@ fn an_offline_receivers_block_list_is_read_before_the_mail_goes() {
 
 #[test]
 fn a_failed_block_list_read_sends_no_mail() {
-    // D-50: a failed read refuses the action, never falls back to "not blocked".
     let mut s = Scene::new();
     s.enter(player(A, "Alice", alice_items()));
     s.log.take();
@@ -1285,7 +1282,6 @@ fn collecting_pays_an_offline_sender_with_a_new_adena_row() {
     s.collect(B, id);
     let out = s.log.take();
     assert_eq!(s.world.adena_of(B), 4_000);
-    // NOTE(java-quirk): a new stack in the sender's inventory.
     let inserts: Vec<Row> = rows(&out).into_iter().filter(|r| r.0 == "insert").collect();
     assert_eq!(inserts.len(), 1, "{inserts:?}");
     assert_eq!((inserts[0].1, inserts[0].3, inserts[0].4), (A.0, ADENA, 3_000));
@@ -1393,7 +1389,6 @@ fn rejecting_returns_the_items_in_a_new_mail_to_the_sender() {
     assert_eq!((returned.sender_id, returned.receiver_id), (A.0, A.0));
     assert!(returned.returned && returned.has_attachments && returned.unread);
     assert!(returned.deleted_by_sender && !returned.deleted_by_receiver);
-    // NOTE(java-quirk): `MessageSenderType.NONE`.
     assert_eq!(returned.send_by_system, 2);
     assert_eq!(returned.req_adena, 0);
     assert_eq!(returned.attachments.len(), 1);
@@ -1701,8 +1696,6 @@ fn without_a_refresh_the_mails_stay_as_they_are() {
     assert!(s.world.mail_message(500).is_some());
 }
 
-/// A mail this server made since it started is unknown to the Java GS and its rows may not be
-/// written yet: a refresh that does not list it does not drop it.
 #[test]
 fn a_mail_made_here_survives_a_refresh_that_misses_it() {
     let mut s = Scene::new();
@@ -1722,8 +1715,6 @@ fn a_mail_made_here_survives_a_refresh_that_misses_it() {
     assert!(s.world.mail_message(id).is_some());
 }
 
-/// `RequestPostAttachment` reads the rows of the message before it moves anything; an item the
-/// Java GS gave out meanwhile (its row is no longer `MAIL` with this `loc_data`) is not handed out.
 #[test]
 fn an_attachment_row_moved_away_is_not_handed_out() {
     let mut s = Scene::new();
@@ -1747,7 +1738,6 @@ fn an_attachment_row_moved_away_is_not_handed_out() {
     assert!(rows(&waiting).is_empty() && mail_writes(&waiting).is_empty());
     assert!(s.inventory_of(B).is_empty());
 
-    // The sword was given out at the Java GS; rows of other places never count.
     let mut other_place = item(7001, SWORD, 1, "WAREHOUSE");
     other_place.loc_data = 500;
     s.world.handle(WorldCommand::MailAttachmentsLoaded {
@@ -1771,8 +1761,6 @@ fn an_attachment_row_moved_away_is_not_handed_out() {
     assert!(!mail.has_attachments && mail.attachments.is_empty());
 }
 
-/// Every attachment was taken at the Java GS: nothing is handed out and a payment request is not
-/// charged.
 #[test]
 fn attachments_taken_elsewhere_hand_out_nothing_and_charge_nothing() {
     let mut s = Scene::new();
@@ -1938,7 +1926,6 @@ fn rejecting_returns_only_the_rows_that_are_still_in_the_mail() {
     );
     assert!(s.world.mail_message(500).unwrap().has_attachments);
 
-    // The sword went to somebody on the Java GS.
     s.world.handle(WorldCommand::MailAttachmentsLoaded {
         player: B,
         message_id: 500,
@@ -1968,7 +1955,6 @@ fn rejecting_returns_only_the_rows_that_are_still_in_the_mail() {
     assert!(!s.world.mail_message(500).unwrap().has_attachments);
 }
 
-/// Everything was taken at the Java GS: nothing is returned.
 #[test]
 fn rejecting_a_mail_whose_rows_are_gone_returns_nothing() {
     let mut s = Scene::new();
@@ -2040,7 +2026,6 @@ fn cancelling_gives_back_only_the_rows_that_are_still_in_the_mail() {
         "{waiting:?}"
     );
 
-    // The sword was taken at the Java GS (Bob is online there), only the ore is left.
     s.world.handle(WorldCommand::MailAttachmentsLoaded {
         player: A,
         message_id: id,

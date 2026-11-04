@@ -1,5 +1,4 @@
 //! Quest 903: The Call of Antharas (Theodric gives the Antharas scroll after two dragon kills a day).
-// Java: dist/game/data/scripts/quests/Q00903_TheCallOfAntharas/Q00903_TheCallOfAntharas.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, QuestSound, QuestType, STARTED};

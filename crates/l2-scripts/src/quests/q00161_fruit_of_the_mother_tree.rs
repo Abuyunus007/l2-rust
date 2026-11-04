@@ -1,6 +1,4 @@
 //! Quest 161: Fruit of the Mother Tree (Andellia sends an Elf to Thalia for the fruit).
-// Java: dist/game/data/scripts/quests/Q00161_FruitOfTheMotherTree/Q00161_FruitOfTheMotherTree.java
-//
 // Pattern: a delivery chain over two NPCs. The start NPC gives the letter, Thalia swaps it for
 // the fruit and sets cond 2, the start NPC takes the fruit and gives adena and exp (one-time).
 // Elves only (race gate).

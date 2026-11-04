@@ -1,6 +1,4 @@
 //! The alliance master script of the village masters: the alliance commands' pages.
-// Java: dist/game/data/scripts/village_master/AllianceMaster/AllianceMaster.java
-//
 // `bypass -h Script AllianceMaster` is `onTalk` (`9001-01.htm`); the pages after it are
 // `onEvent`. The commands on those pages are the world's `clan/village_master.rs`.
 

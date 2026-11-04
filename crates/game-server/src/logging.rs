@@ -1,9 +1,6 @@
 //! Logging: console plus rolling files in `./log/`, and the three side logs of Java (chat, item,
 //! GM audit).
-// Java: dist/game/log.cfg and GameServer constructor (`log/java%g.log`, `log/error%g.log`,
 // 20 files kept). Same pattern as `login-server/src/logging.rs`.
-// Java: log/handler/{ChatLogHandler,ItemLogHandler,GMAuditLogHandler}.java,
-//       log/formatter/{ChatLogFormatter,ItemLogFormatter}.java, util/GMAudit.java
 //
 // Differences from Java, on purpose: `log.cfg` is a `java.util.logging` file and is not read.
 // The level comes from `RUST_LOG` (default `info`). Files roll daily, the last 20 are kept.
@@ -17,10 +14,6 @@
 //   `dd/MM/yyyy H:mm:ss>gm>action>target>params` (GMAudit.logAction). The message is
 //   `gm>action>target>params`, the gm name is the text before the first `>`.
 //   Java opens and appends the file for every line; so does this layer.
-//   NOTE(java-quirk): Java's `log/gmaudit%g.log` handler never gets a line (`GMAudit` logs only
-//   its own IO errors through that logger), so no such file is written.
-// The item lines come from the item-process call sites, which are not ported yet (see the
-// inventory modules); the file and the layer are ready for them.
 
 use std::io::Write;
 use std::path::{Path, PathBuf};
@@ -88,7 +81,6 @@ pub fn init(log_dir: &Path) -> Result<LogGuard, LoggingError> {
 
 /// The subscriber `init` installs, without installing it (tests use it with `with_default`).
 pub fn build(log_dir: &Path) -> Result<(impl Subscriber + Send + Sync + 'static, LogGuard), LoggingError> {
-    // Java: mkdir the log folder (and `log/GMAudit` in the GMAudit static initializer).
     create_dir(log_dir)?;
     let gm_audit_dir = log_dir.join(GM_AUDIT_DIR_NAME);
     create_dir(&gm_audit_dir)?;

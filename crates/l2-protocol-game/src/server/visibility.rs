@@ -16,9 +16,6 @@ use crate::generated::opcodes::ServerOpcode;
 const NPC_TYPE_ID_OFFSET: i32 = 1_000_000;
 
 /// The paperdoll slots `CharInfo` writes, in wire order (Java `CharInfo.PAPERDOLL_ORDER`).
-///
-/// NOTE(java-quirk): this is not the order `UserInfo` uses (`ServerPacket.PAPERDOLL_ORDER`, 26
-/// slots), and `RHAND` is in it twice (positions 2 and 9); Java writes the same item id twice.
 pub const CHAR_INFO_PAPERDOLL_ORDER: [usize; 21] = [
     paperdoll::UNDER,
     paperdoll::HEAD,
@@ -43,7 +40,6 @@ pub const CHAR_INFO_PAPERDOLL_ORDER: [usize; 21] = [
     paperdoll::BELT,
 ];
 
-// Java: gameserver/network/serverpackets/CharInfo.java
 /// Describes another player to a client (`CHAR_INFO`).
 ///
 /// Java has a second constructor for decoys that overrides the object id and the position;
@@ -146,8 +142,6 @@ pub struct CharInfo {
     pub water_or_flying: u8,
     /// `getRecomHave()`, a short.
     pub recom_have: i16,
-    /// `getMountNpcId()`. NOTE(java-quirk): Java adds 1000000 unconditionally, so a player
-    /// without a mount sends 1000000 (`UserInfo` sends 0 in that case). `encode` adds it.
     pub mount_npc_id: i32,
     /// `getPlayerClass().getId()`.
     pub class_id: i32,
@@ -237,7 +231,6 @@ impl Encode for CharInfo {
             .bool(self.alike_dead)
             .bool(self.invisible);
         w.u8(self.mount_type).u8(self.private_store_type);
-        // Java: `writeShort(cubics.size())`, the low 16 bits of the count.
         w.u16(self.cubics.len() as u16);
         for &cubic in &self.cubics {
             w.i16(cubic);
@@ -356,7 +349,6 @@ impl Decode for CharInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/AbstractNpcInfo.java (inner class `NpcInfo`)
 /// Describes an NPC or monster to a client (`NPC_INFO`).
 ///
 /// Java's `NpcInfo.writeImpl` sends nothing at all when `isDecayed()`: the caller must not build
@@ -475,8 +467,6 @@ impl Encode for NpcInfo {
         w.f64(f64::from(self.attack_speed_multiplier));
         w.f64(f64::from(self.collision_radius));
         w.f64(f64::from(self.collision_height));
-        // NOTE(java-quirk): the chest slot is the `_chest` field of AbstractNpcInfo, which
-        // `NpcInfo` never sets (only `SummonInfo` does), so it is always 0 here.
         w.i32(self.right_hand).i32(0).i32(self.left_hand);
         w.u8(1); // "name above char"
         w.bool(self.running).bool(self.in_combat).bool(self.alike_dead);
@@ -565,7 +555,6 @@ impl Decode for NpcInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/DeleteObject.java
 /// Removes an object from the client's world (`DELETE_OBJECT`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct DeleteObject {
@@ -629,7 +618,6 @@ pub mod relation {
     pub const TERRITORY_WAR: i32 = 0x80000;
 }
 
-// Java: gameserver/network/serverpackets/RelationChanged.java (inner class `Relation`)
 /// One player's relation to the receiver.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct RelationEntry {
@@ -645,13 +633,10 @@ pub struct RelationEntry {
     pub pvp_flag: i32,
 }
 
-// Java: gameserver/network/serverpackets/RelationChanged.java
 /// Relations of one or more players to the receiver (`RELATION_CHANGED`).
 ///
 /// Java has two constructors, one entry (`new RelationChanged(player, relation, attackable)`)
 /// and a list (`addRelation`); both write a count and then the entries, so one struct covers
-/// both. NOTE(java-quirk): `addRelation` silently skips invisible players; the single-entry
-/// constructor does not. The caller applies that rule.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct RelationChanged {
     pub relations: Vec<RelationEntry>,
@@ -701,7 +686,6 @@ impl Decode for RelationChanged {
     }
 }
 
-// Java: gameserver/network/serverpackets/NicknameChanged.java
 /// A creature's title changed (`NICK_NAME_CHANGED`): `Player.broadcastTitleInfo` sends it to
 /// everybody who sees the player (M6-PVP-01, the PvP title colour system).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -764,7 +748,6 @@ pub mod status {
     pub const MAX_CP: i32 = 0x22;
 }
 
-// Java: gameserver/network/serverpackets/StatusUpdate.java
 /// Changed stats of one object (`STATUS_UPDATE`): a list of `(attribute id, value)` pairs.
 ///
 /// Java collects them with `addAttribute(id, value)`, in call order, and may send the packet
@@ -836,7 +819,6 @@ pub mod compass_zone {
     pub const GENERALZONE: i32 = 0x0F;
 }
 
-// Java: gameserver/network/serverpackets/ExSetCompassZoneCode.java
 /// Sets the zone icon next to the minimap compass (`EX_SET_COMPASS_ZONE_CODE`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct ExSetCompassZoneCode {

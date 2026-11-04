@@ -1,5 +1,4 @@
 //! The `Book` handler: the help page of an item.
-// Java: dist/game/data/scripts/handlers/items/Book.java
 
 use l2_protocol_game::server::{ActionFailed, NpcHtmlMessage};
 use l2_util::ObjectId;

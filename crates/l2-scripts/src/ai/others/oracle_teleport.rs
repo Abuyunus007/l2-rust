@@ -1,6 +1,5 @@
 //! The Oracle of Dusk and Dawn teleporters, the temple priests, the dimensional rift posters and
 //! the ziggurat teleporters.
-// Java: dist/game/data/scripts/ai/others/OracleTeleport/OracleTeleport.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_util::ObjectId;
@@ -170,7 +169,6 @@ impl Script for OracleTeleport {
         let npc_id = npc.id;
         if event.eq_ignore_ascii_case("Return") {
             if TEMPLE_PRIEST.contains(&npc_id) && qs.state(ctx) == STARTED {
-                // NOTE(java-quirk): `RETURN_LOCS[qs.getInt("id")]` throws outside the table.
                 let (x, y, z) = return_location(qs.get_int(ctx, "id"))?;
                 ctx.teleport_player(player, x, y, z, 0, false);
                 ctx.world_mut().set_in_7s_dungeon(player, false);
@@ -190,8 +188,6 @@ impl Script for OracleTeleport {
             }
         } else if event.eq_ignore_ascii_case("Festival") {
             let id = qs.get_int(ctx, "id");
-            // NOTE(java-quirk): `id` is an index into `TELEPORTERS`, but it is looked up among the
-            // NPC ids of `TOWN_DAWN` / `TOWN_DUSK`, so neither matches and the page is shown.
             if TOWN_DAWN.contains(&id) {
                 ctx.teleport_player(player, -80157, 111344, -4901, 0, false);
                 ctx.world_mut().set_in_7s_dungeon(player, true);

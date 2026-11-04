@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/PremiumSystemConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/PremiumSystem.ini` (Java: `PremiumSystemConfig`).

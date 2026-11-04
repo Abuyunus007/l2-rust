@@ -1,6 +1,5 @@
 //! `Scripts.xml`: which script folders and files Java skips when it compiles the scripts.
 //!
-//! Java: `scripting/ScriptEngine.java` (`parseDatapackFile("config/Scripts.xml")`). Rust scripts
 //! are compiled into the server (D-16), so the file has no effect on the Rust game server. The
 //! view is read-only and only shows what is in the file.
 

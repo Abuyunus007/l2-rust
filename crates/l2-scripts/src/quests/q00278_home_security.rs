@@ -1,6 +1,4 @@
 //! Quest 278: Home Security (Tunatun in the Gludin area sends level 82 players after the sel mahum manes).
-// Java: dist/game/data/scripts/quests/Q00278_HomeSecurity/Q00278_HomeSecurity.java
-//
 // Pattern: a party collect quest with a count target (`docs/design/scripts.md`, "Quest patterns"):
 // the Farm Ravager and the bandits and beasts drop sel mahum manes for a random party member in
 // cond 1, the 300th sets cond 2; Tunatun gives one random reward out of a table and ends the quest.
@@ -73,7 +71,6 @@ impl Script for Q00278HomeSecurity {
         player: Option<ObjectId>,
     ) -> Option<String> {
         let player = player?;
-        // NOTE(java-quirk): without a quest state Java returns the event itself as the text.
         let mut htmltext = Some(event.to_owned());
         let Some(qs) = ctx.get_quest_state(player, false) else {
             return htmltext;

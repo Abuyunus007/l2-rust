@@ -1,13 +1,3 @@
-//! Residences: castles, fortresses and clan halls (M7-RES-01). Their owners, the castle tax and
-//! treasury, the residence functions and their fees, the residence doors and zones, the
-//! residential skills of the owners' members, the castle circlets, and the re-read of a clan's
-//! residences at `CharacterSelect` (D-50, D-51).
-// Java: managers/{CastleManager,FortManager}.java
-// Java: mechanics/siege/Castle.java (ownership, tax, treasury, functions, doors; not the siege)
-// Java: mechanics/siege/Fort.java (ownership, functions, doors, the flag pole; not the siege,
-//       the fort spawns or `FortUpdater`)
-// Java: entity/residences/{AbstractResidence,ClanHall,AuctionableHall}.java (not the rent)
-// Java: data/sql/ClanHallTable.java, managers/CHSiegeManager.java (the hall rows)
 // Design: docs/design/m7-residences.md
 //
 // # Shape
@@ -23,23 +13,7 @@
 // after the clans, the doors and the zones. Every row Java writes goes out as
 // `PersistCommand::Residence` with Java's statement ([`ResidenceWrite`]).
 //
-// # Side by side with the Java game server (D-39, D-49, D-50, D-51)
-// Sieghardt (the Java GS) runs the real sieges and charges the real fees while both servers share
-// the database. So the writes of the jobs that change residences on their own go out only with
-// `SiegeDatabaseWrites = True` in `config/SideBySide.ini` ([`World::siege_write`]):
-// - an owner change (`setOwner`, `removeOwner`, a hall set free), and what Java writes with it
-//   (the `hasCastle` columns, the functions it drops, the circlets of offline members);
-// - the castle treasury (`addToTreasuryNoTax`: the tax of every shop and multisell);
-// - a function fee the clan warehouse pays (`FunctionTask` with `cwh`): without the switch the
-//   task only moves the paid time on in this world; it neither charges nor drops the function.
-// What a player does himself (buying a function at a chamberlain or hall manager, a castle lord
-// setting the tax) is written like any other player action. The world changes its own state
-// either way, so a GM test siege works end to end without the switch.
 //
-// The owners Sieghardt decided are read again at `CharacterSelect` for the clan of the character
-// (`PlayerProfile::residence_refresh`, applied in `on_entered`, see `refresh.rs`), and any
-// residence can be read again on demand through the outbox ([`World::request_residence_reread`],
-// answered by `WorldCommand::ResidenceReread`). A failed read changes nothing.
 //
 // # Left to other cards (each has its marker where it belongs)
 // - Sieges of every kind (`Castle.getSiege()`, `Fort.getSiege()`, the siege zones' activity,
@@ -529,8 +503,6 @@ impl World {
             // `player.getClanId() != _ownerId`.
             ResidenceRef::Castle(_) => clan_id == owner,
             // `player.getClan() != _fortOwner`.
-            // NOTE(java-quirk): a player without a clan passes at a fortress without an owner
-            // (`null == null`).
             ResidenceRef::Fort(_) => self.clan_of(player).map_or(0, |c| c.id) == owner,
             // `player.getClanId() == _ownerId`.
             ResidenceRef::ClanHall(_) => clan_id == owner,

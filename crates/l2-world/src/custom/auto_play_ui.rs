@@ -1,8 +1,5 @@
 //! The voiced commands of the auto play: `.play`, `.playskills`, `.playitems`, `.playpotion` and
 //! the pages they open.
-// Java: dist/game/data/scripts/handlers/chat/commands/voiced/AutoPlay.java (onCommand)
-// Java: util/HtmlUtil.java (countPageNumber)
-//
 // The lists Java builds from `ConcurrentHashMap`s (the skills of a creature by skill id, the items
 // of an inventory by object id) are shown in the order of the hash table (`java_hash_set_order`).
 
@@ -252,8 +249,6 @@ impl World {
                         && (self.known_skill(summon, skill_id).is_some()
                             || self.pet_known_skill(summon, skill_id).is_some())
                     {
-                        // NOTE(java-quirk): a skill only the summon knows `break`s out of the
-                        // switch in Java: nothing is toggled and no page is sent.
                         return Some(true);
                     }
                     if rules.enable_auto_skill
@@ -470,9 +465,6 @@ impl World {
                         .filter(|id| *id != 0),
                 );
             }
-            // NOTE(java-quirk): Java looks the augmentation up with `getAugmentationId()`, the two
-            // option ids packed in one number, not with each option id: only an augmentation whose
-            // high option is 0 finds its option.
             option_ids.extend(item.augmentation);
             for option_id in option_ids {
                 if let Some(option) = self.data.augmentation_option(option_id) {

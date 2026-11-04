@@ -1,6 +1,4 @@
 //! Quest 457: Lost and Found (Gumiel follows the player out of the Solina area; a daily escort).
-// Java: dist/game/data/scripts/quests/Q00457_LostAndFound/Q00457_LostAndFound.java
-//
 // Pattern: an escort. The NPC follows the player (`script_start_follow`) and a repeating quest
 // timer ("CHECK") watches the distance and the escort checkers; the timers of the NPC's lines and
 // the time limit are quest timers too. Gumiel can also appear next to a killed Solina (1%).
@@ -247,15 +245,11 @@ fn npc_say(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, string: Np
         };
         ctx.world().send(player, &packet);
     }
-    // NOTE(java-quirk): `broadcastNpcSay(npc, player, id, false)` calls `npc.sendPacket(...)`, and
-    // `WorldObject.sendPacket` does nothing, so the NPC's line is never sent to anybody.
 }
 
 /// Java `for (Spawn escortSpawn : _escortCheckers) escortSpawn.getLastSpawn()`: the last spawned
 /// NPC of each checker spawn (none before a checker spawned).
 fn checkers_in_world(ctx: &mut ScriptCtx<'_>) -> Vec<ObjectId> {
-    // NOTE(java-quirk): Java's loop over a null `_escortCheckers` throws (the timer stops with an
-    // error) until a checker spawned; here the loop is empty.
     if !ctx.state::<EscortCheckers>().0 {
         return Vec::new();
     }

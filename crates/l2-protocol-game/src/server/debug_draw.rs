@@ -8,7 +8,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: java.awt.Color constants (`getRGB()`, alpha in the top byte).
 /// A colour as `java.awt.Color.getRGB()` gives it (`0xAARRGGBB`); the packet sends R, G and B.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PrimitiveColor(pub i32);
@@ -36,7 +35,6 @@ impl PrimitiveColor {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExServerPrimitive.java
 /// One point (`end` is `None`) or line of an [`ExServerPrimitive`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Primitive {
@@ -200,7 +198,6 @@ impl Decode for ExServerPrimitive {
     }
 }
 
-// Java: gameserver/network/serverpackets/ShowBoard.java
 /// Opens, fills or closes the community board window (`SHOW_BOARD`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ShowBoard {
@@ -227,9 +224,6 @@ impl ShowBoard {
     pub const OPCODE: ServerOpcode = ServerOpcode::ShowBoard;
 
     /// Java `new ShowBoard(htmlCode, id)`.
-    ///
-    /// NOTE(java-quirk): Java concatenates `id + "\b" + htmlCode`, so a `null` page is the text
-    /// "null" (the part packets "102" and "103" of a short page carry it).
     pub fn page(html: Option<&str>, id: &str) -> Self {
         Self {
             show: true,

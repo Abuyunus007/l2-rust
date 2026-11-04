@@ -1,7 +1,5 @@
 //! The `Spoil` effect: the caster becomes the spoiler of a monster, which can then be swept after
 //! it dies.
-// Java: dist/game/data/scripts/handlers/skill/effects/Spoil.java
-// Java: mechanics/stats/Formulas.java (calcMagicSuccess)
 
 use l2_data::SkillTemplate;
 use l2_data::skill::EffectTemplate;

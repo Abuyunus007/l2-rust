@@ -1,6 +1,4 @@
 //! Quest 313: Collect Spores (Herbiel in Gludio, Spore Fungus).
-// Java: dist/game/data/scripts/quests/Q00313_CollectSpores/Q00313_CollectSpores.java
-//
 // Pattern: a kill-count quest with a drop chance up to a limit (`docs/design/scripts.md`,
 // "Quest patterns"): `on_kill` gives the spore sacs with `give_item_randomly` and moves to cond 2
 // at the limit; the NPC pays and ends the quest (repeatable).

@@ -1,5 +1,4 @@
 //! `Disarm`: the player's weapon comes off and goes back on when the effect ends.
-// Java: dist/game/data/scripts/handlers/skill/effects/Disarm.java
 
 use l2_data::skill::EffectTemplate;
 use l2_protocol_game::server::charscreen::paperdoll;

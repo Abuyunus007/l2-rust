@@ -1,20 +1,6 @@
 //! The castle siege tables: `siege_clans` (the registrations), `castle_siege_guards` (the guards
 //! and the hired mercenaries), `castle_doorupgrade`, `castle_trapupgrade`, and the siege columns of
 //! `castle` and `clan_data` (M7-SIEGE-01).
-// Java: org/l2jmobius/gameserver/mechanics/siege/Siege.java (loadSiegeClan, saveSiegeClan,
-//       removeSiegeClan, clearSiegeClan, clearSiegeWaitingClan, saveSiegeDate)
-// Java: org/l2jmobius/gameserver/managers/SiegeManager.java (checkIsRegistered, loadTrapUpgrade)
-// Java: org/l2jmobius/gameserver/managers/SiegeGuardManager.java (loadSiegeGuard, saveSiegeGuard,
-//       removeMerc, removeMercs)
-// Java: org/l2jmobius/gameserver/managers/MercTicketManager.java (load)
-// Java: org/l2jmobius/gameserver/mechanics/siege/Castle.java (loadDoorUpgrade, setDoorUpgrade,
-//       removeDoorUpgrade, setTrapUpgrade, removeTrapUpgrade)
-// Java: org/l2jmobius/gameserver/entity/clan/Clan.java (updateBloodAllianceCountInDB)
-//
-// Same layout as residences.rs: verbatim SQL, one method per statement. The world keeps the rows
-// in memory (D-15), so the whole tables are read at startup (`SELECT ... FROM siege_clans` and
-// `castle_siege_guards` without the `WHERE` of Java's per-castle reads, Rust-only) and again
-// before the registrations are acted on (D-50).
 
 use sqlx::FromRow;
 
@@ -23,23 +9,19 @@ use crate::pool::Pool;
 
 // Rust-only: Java's `SELECT clan_id,type FROM siege_clans where castle_id=?` for every castle.
 const SELECT_SIEGE_CLANS: &str = "SELECT castle_id,clan_id,type FROM siege_clans";
-// Java: Siege.saveSiegeClan
 const INSERT_SIEGE_CLAN: &str =
     "INSERT INTO siege_clans (clan_id,castle_id,type,castle_owner) values (?,?,?,0)";
 const UPDATE_SIEGE_CLAN: &str = "UPDATE siege_clans SET type = ? WHERE castle_id = ? AND clan_id = ?";
-// Java: Siege.removeSiegeClan, clearSiegeClan, clearSiegeWaitingClan
 const DELETE_SIEGE_CLAN: &str = "DELETE FROM siege_clans WHERE castle_id=? and clan_id=?";
 const DELETE_SIEGE_CLANS_OF_CASTLE: &str = "DELETE FROM siege_clans WHERE castle_id=?";
 const DELETE_SIEGE_CLANS_OF_CLAN: &str = "DELETE FROM siege_clans WHERE clan_id=?";
 const DELETE_WAITING_SIEGE_CLANS: &str = "DELETE FROM siege_clans WHERE castle_id=? and type = 2";
-// Java: Siege.saveSiegeDate
 const UPDATE_CASTLE_SIEGE_DATE: &str =
     "UPDATE castle SET siegeDate = ?, regTimeEnd = ?, regTimeOver = ?  WHERE id = ?";
 
 // Rust-only: Java's `SELECT * FROM castle_siege_guards Where castleId = ? And isHired = ?` and
 // `... Where isHired = 1` over the whole table.
 const SELECT_SIEGE_GUARDS: &str = "SELECT * FROM castle_siege_guards";
-// Java: SiegeGuardManager.saveSiegeGuard, removeMerc, removeMercs
 const INSERT_SIEGE_GUARD: &str = "Insert Into castle_siege_guards (castleId, npcId, x, y, z, heading, respawnDelay, isHired) Values (?, ?, ?, ?, ?, ?, ?, ?)";
 const DELETE_HIRED_GUARD: &str =
     "Delete From castle_siege_guards Where npcId = ? And x = ? AND y = ? AND z = ? AND isHired = 1";
@@ -47,17 +29,14 @@ const DELETE_HIRED_GUARDS: &str = "Delete From castle_siege_guards Where castleI
 
 // Rust-only: Java's `SELECT * FROM castle_doorupgrade WHERE castleId=?` of every castle.
 const SELECT_DOOR_UPGRADES: &str = "SELECT * FROM castle_doorupgrade";
-// Java: Castle.setDoorUpgrade, removeDoorUpgrade
 const REPLACE_DOOR_UPGRADE: &str = "REPLACE INTO castle_doorupgrade (doorId, ratio, castleId) values (?,?,?)";
 const DELETE_DOOR_UPGRADES: &str = "DELETE FROM castle_doorupgrade WHERE castleId=?";
 // Rust-only: Java's `SELECT * FROM castle_trapupgrade WHERE castleId=?` of every castle.
 const SELECT_TRAP_UPGRADES: &str = "SELECT * FROM castle_trapupgrade";
-// Java: Castle.setTrapUpgrade, removeTrapUpgrade
 const REPLACE_TRAP_UPGRADE: &str =
     "REPLACE INTO castle_trapupgrade (castleId, towerIndex, level) values (?,?,?)";
 const DELETE_TRAP_UPGRADES: &str = "DELETE FROM castle_trapupgrade WHERE castleId=?";
 
-// Java: Clan.updateBloodAllianceCountInDB
 const UPDATE_BLOOD_ALLIANCE_COUNT: &str = "UPDATE clan_data SET blood_alliance_count=? WHERE clan_id=?";
 
 /// A `siege_clans` row (`type` NULL reads as 0, like Java's `getInt`).
@@ -201,7 +180,6 @@ impl SiegeRepository {
             .collect())
     }
 
-    // Java: Siege.saveSiegeClan (a new registration)
     pub async fn insert_siege_clan(&self, clan_id: i32, castle_id: i32, kind: i32) -> Result<()> {
         sqlx::query(INSERT_SIEGE_CLAN)
             .bind(clan_id)
@@ -212,7 +190,6 @@ impl SiegeRepository {
         Ok(())
     }
 
-    // Java: Siege.saveSiegeClan (an approval)
     pub async fn update_siege_clan(&self, castle_id: i32, clan_id: i32, kind: i32) -> Result<()> {
         sqlx::query(UPDATE_SIEGE_CLAN)
             .bind(kind)
@@ -223,7 +200,6 @@ impl SiegeRepository {
         Ok(())
     }
 
-    // Java: Siege.removeSiegeClan(clanId)
     pub async fn delete_siege_clan(&self, castle_id: i32, clan_id: i32) -> Result<()> {
         sqlx::query(DELETE_SIEGE_CLAN)
             .bind(castle_id)
@@ -233,7 +209,6 @@ impl SiegeRepository {
         Ok(())
     }
 
-    // Java: Siege.clearSiegeClan (the castle's rows)
     pub async fn delete_siege_clans_of_castle(&self, castle_id: i32) -> Result<()> {
         sqlx::query(DELETE_SIEGE_CLANS_OF_CASTLE)
             .bind(castle_id)
@@ -242,7 +217,6 @@ impl SiegeRepository {
         Ok(())
     }
 
-    // Java: Siege.clearSiegeClan (the owner's rows)
     pub async fn delete_siege_clans_of_clan(&self, clan_id: i32) -> Result<()> {
         sqlx::query(DELETE_SIEGE_CLANS_OF_CLAN)
             .bind(clan_id)
@@ -251,7 +225,6 @@ impl SiegeRepository {
         Ok(())
     }
 
-    // Java: Siege.clearSiegeWaitingClan
     pub async fn delete_waiting_siege_clans(&self, castle_id: i32) -> Result<()> {
         sqlx::query(DELETE_WAITING_SIEGE_CLANS)
             .bind(castle_id)
@@ -261,7 +234,6 @@ impl SiegeRepository {
     }
 
     /// The siege date, the end of the registration and whether it is over (`String.valueOf`).
-    // Java: Siege.saveSiegeDate
     pub async fn update_castle_siege_date(
         &self,
         castle_id: i32,
@@ -289,7 +261,6 @@ impl SiegeRepository {
         Ok(rows.into_iter().map(SiegeGuardRow::from).collect())
     }
 
-    // Java: SiegeGuardManager.saveSiegeGuard
     pub async fn insert_siege_guard(&self, guard: &NewSiegeGuard) -> Result<()> {
         sqlx::query(INSERT_SIEGE_GUARD)
             .bind(guard.castle_id)
@@ -305,7 +276,6 @@ impl SiegeRepository {
         Ok(())
     }
 
-    // Java: SiegeGuardManager.removeMerc
     pub async fn delete_hired_guard(&self, npc_id: i32, x: i32, y: i32, z: i32) -> Result<()> {
         sqlx::query(DELETE_HIRED_GUARD)
             .bind(npc_id)
@@ -317,7 +287,6 @@ impl SiegeRepository {
         Ok(())
     }
 
-    // Java: SiegeGuardManager.removeMercs
     pub async fn delete_hired_guards(&self, castle_id: i32) -> Result<()> {
         sqlx::query(DELETE_HIRED_GUARDS)
             .bind(castle_id)
@@ -343,7 +312,6 @@ impl SiegeRepository {
             .collect())
     }
 
-    // Java: Castle.setDoorUpgrade
     pub async fn replace_door_upgrade(&self, door_id: i32, ratio: i32, castle_id: i32) -> Result<()> {
         sqlx::query(REPLACE_DOOR_UPGRADE)
             .bind(door_id)
@@ -354,7 +322,6 @@ impl SiegeRepository {
         Ok(())
     }
 
-    // Java: Castle.removeDoorUpgrade
     pub async fn delete_door_upgrades(&self, castle_id: i32) -> Result<()> {
         sqlx::query(DELETE_DOOR_UPGRADES)
             .bind(castle_id)
@@ -378,7 +345,6 @@ impl SiegeRepository {
             .collect())
     }
 
-    // Java: Castle.setTrapUpgrade
     pub async fn replace_trap_upgrade(&self, castle_id: i32, tower_index: i32, level: i32) -> Result<()> {
         sqlx::query(REPLACE_TRAP_UPGRADE)
             .bind(castle_id)
@@ -389,7 +355,6 @@ impl SiegeRepository {
         Ok(())
     }
 
-    // Java: Castle.removeTrapUpgrade
     pub async fn delete_trap_upgrades(&self, castle_id: i32) -> Result<()> {
         sqlx::query(DELETE_TRAP_UPGRADES)
             .bind(castle_id)
@@ -400,7 +365,6 @@ impl SiegeRepository {
 
     // ------------------------------------------------------------------------- clan_data
 
-    // Java: Clan.updateBloodAllianceCountInDB
     pub async fn update_blood_alliance_count(&self, clan_id: i32, count: i32) -> Result<()> {
         sqlx::query(UPDATE_BLOOD_ALLIANCE_COUNT)
             .bind(count)

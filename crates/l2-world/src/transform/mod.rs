@@ -1,12 +1,6 @@
 //! Transformations (M6-TRANS-01): the `Transformation` effect turns a player into a form of the
 //! datapack (`l2_data::transform`), with the form's stats, skills, action list and item rules.
 //! Design: `docs/design/m6-social.md`.
-// Java: entity/actor/Player.java (transform, untransform, sendSkillList, getTransformation...),
-//       entity/actor/Creature.java (stopTransformation), entity/actor/transform/Transform.java
-//       (onTransform, onUntransform, onLevelUp), data/xml/TransformData.java,
-//       entity/itemcontainer/PlayerInventory.java (the inventory block),
-//       network/serverpackets/ExBasicActionList.java (ACTIONS_ON_TRANSFORM)
-//
 // # How it fits together
 // - The state of a transformed player is [`TransformState`] in `Player::transform`: the id of the
 //   transformation (Java `_transformation`), the transformation skills the skill list made

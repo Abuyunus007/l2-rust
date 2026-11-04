@@ -1,6 +1,4 @@
 //! Quest 300: Hunting Leto Lizardman (Rath in the Town of Aden sends level 34 players after the Leto lizardmen).
-// Java: dist/game/data/scripts/quests/Q00300_HuntingLetoLizardman/Q00300_HuntingLetoLizardman.java
-//
 // Pattern: a party kill quest with a count target (`docs/design/scripts.md`, "Quest patterns"):
 // a random party member in cond 1 gets a bracelet from a Leto lizardman with a chance per monster,
 // the 60th bracelet sets cond 2; Rath gives a random reward (adena or an animal item) and ends
@@ -104,8 +102,6 @@ impl Script for Q00300HuntingLetoLizardman {
                 && qs.is_cond(ctx, 1)
                 && ctx.get_random(1000) < bracelet_chance(npc.id)
             {
-                // NOTE(java-quirk): the bracelet goes to the killer, the cond 2 to the party member
-                // drawn above (Java gives to `player` and sets the cond on `partyMember`).
                 ctx.give_items(killer, BRACELET_OF_LIZARDMAN, 1);
                 if ctx.get_quest_items_count(killer, BRACELET_OF_LIZARDMAN) == REQUIRED_BRACELET_COUNT {
                     qs.set_cond(ctx, 2, true);

@@ -1,8 +1,6 @@
 //! Quest 239: Won't You Join Us? (Athenia in the Hot Springs Village breaks the Waste Landfill
 //! Machines and the Suppressors and Exterminators of the Ruins of Agony for the Support
 //! Certificate's support).
-// Java: dist/game/data/scripts/quests/Q00239_WontYouJoinUs/Q00239_WontYouJoinUs.java
-//
 // Pattern: two kill counts in a row, each drawn from a random party member at the cond of its
 // step (`docs/design/scripts.md`, "Kills, drops and parties"). The items go to the member the
 // draw picked, unlike Q00238 (where the killer gets the items).

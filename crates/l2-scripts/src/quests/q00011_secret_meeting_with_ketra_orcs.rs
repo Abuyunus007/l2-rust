@@ -1,6 +1,4 @@
 //! Quest 11: Secret Meeting With Ketra Orcs (Cadmon, Leon and Wahkan in the Ketra Orc Village).
-// Java: dist/game/data/scripts/quests/Q00011_SecretMeetingWithKetraOrcs/Q00011_SecretMeetingWithKetraOrcs.java
-//
 // Pattern: a three-NPC errand for a high-level character (`docs/design/scripts.md`, "Quest
 // patterns"): Cadmon starts it, Leon gives the box (cond 2), and Wahkan takes the box for the
 // reward. One-time: `exit_quest(ctx, false, true)`.
@@ -49,8 +47,6 @@ impl Script for Q00011SecretMeetingWithKetraOrcs {
         _npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        // NOTE(java-quirk): without a quest state `onEvent` returns the event itself (not null),
-        // so the event's page is shown anyway.
         let Some(player) = player else {
             return Some(event.to_owned());
         };

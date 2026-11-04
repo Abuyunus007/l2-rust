@@ -1,5 +1,4 @@
 //! Quest 191: Vain Conclusion (Dorothy the Locksmith, Shegfield, Lorain and Kusto).
-// Java: dist/game/data/scripts/quests/Q00191_VainConclusion/Q00191_VainConclusion.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED};

@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/HellboundStatusConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/HellboundStatus.ini` (Java: `HellboundStatusConfig`).

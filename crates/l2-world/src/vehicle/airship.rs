@@ -1,9 +1,5 @@
 //! `AirShipManager` and `ControllableAirShip`: licenses, summoning a ship, the captain, the
 //! destination list of a dock and the commands of the control panel.
-// Java: managers/AirShipManager.java
-// Java: entity/actor/instance/{AirShip,ControllableAirShip}.java
-// Java: network/clientpackets/{MoveToLocationAirShip,RequestActionUse}.java (the air ship actions)
-// Java: dist/game/data/scripts/handlers/skill/effects/RefuelAirship.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{AirShipTeleport, ExAirShipTeleportList, SystemMessage};
@@ -132,8 +128,6 @@ impl World {
         if index < -1 || index >= len {
             return None;
         }
-        // NOTE(java-quirk): `index == len - 1` passes the check and reads one past the end (an
-        // exception in Java, no destination here).
         all.routes.get(usize::try_from(index + 1).ok()?).copied()
     }
 

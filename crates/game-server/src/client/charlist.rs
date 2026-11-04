@@ -1,9 +1,4 @@
 //! The character list of an account (`CharSelectionInfo`), read from the shared database.
-// Java: org/l2jmobius/gameserver/network/serverpackets/CharSelectionInfo.java
-//   (loadCharacterSelectInfo, restoreChar, loadCharacterSubclassInfo)
-// Java: org/l2jmobius/gameserver/entity/itemcontainer/PlayerInventory.java (restoreVisibleInventory)
-//
-// The list is built from read-only queries. Nothing here writes to the database (D-39).
 
 use std::sync::Arc;
 
@@ -35,7 +30,6 @@ pub struct CharacterInfo {
 
 /// `CharSelectionInfo.restoreChar`: `if (MULTILANG_ENABLE)` the language of the row (the default
 /// one when the column is NULL or not allowed) becomes `data/lang/<lang>/`.
-// NOTE(java-quirk): unlike `Player.getHtmlPrefix`, English gets `data/lang/en/` here.
 pub fn char_select_html_prefix(settings: &MultilangSettings, language: Option<&str>) -> String {
     if !settings.enable {
         return String::new();
@@ -63,7 +57,6 @@ pub struct SubclassStats {
 
 /// The paperdoll of the list entry: `[slot] -> (object id, display item id, enchant)`.
 /// Java's array has 31 slots; the packet only shows the first [`paperdoll::TOTAL_SLOTS`].
-// Java: PlayerInventory.restoreVisibleInventory
 pub fn visible_paperdoll(
     rows: &[PaperdollItemRow],
     datapack: &Datapack,
@@ -87,7 +80,6 @@ pub fn visible_paperdoll(
 
 /// Builds one list entry the way `restoreChar` does. `None` for a character whose deletion time
 /// has passed.
-// Java: CharSelectionInfo.restoreChar + the per-entry part of writeImpl
 pub fn build_character(
     row: &CharacterRow,
     subclass: Option<SubclassStats>,
@@ -120,7 +112,6 @@ pub fn build_character(
         clan_id: row.clanid.map_or(0, |c| c as i32),
         sex: i32::from(row.sex.unwrap_or(0)),
         race: i32::from(row.race.unwrap_or(0)),
-        // Java: characters from before `base_class` existed show their active class.
         base_class_id: if base_class == 0 && active_class > 0 {
             active_class
         } else {
@@ -131,7 +122,6 @@ pub fn build_character(
         z: row.z.unwrap_or(0),
         current_hp: f64::from(row.cur_hp.unwrap_or(0)),
         current_mp: f64::from(row.cur_mp.unwrap_or(0)),
-        // Java: `(int) sp` of a long.
         sp: sp as i32,
         exp,
         exp_percent: datapack.experience.exp_percent(exp, level).unwrap_or(0.0),
@@ -150,7 +140,6 @@ pub fn build_character(
         class_id: active_class,
         selected: false,
         enchant_effect: paperdoll_slots[paperdoll::RHAND].2,
-        // Java: -1 in the table means "none".
         augmentation_id: match augmentation {
             Some(-1) | None => 0,
             Some(aug) => aug,
@@ -269,7 +258,6 @@ impl DbCharacterList {
         list
     }
 
-    // Java: PlayerInventory.restoreVisibleInventory (the transmog branch)
     async fn show_transmogs(
         &self,
         transmog: &l2_db::TransmogRepository,
@@ -299,7 +287,6 @@ impl DbCharacterList {
         }
     }
 
-    // Java: CharSelectionInfo.loadCharacterSubclassInfo
     async fn active_subclass(&self, object_id: i32, class_id: i32) -> Option<SubclassStats> {
         match self.subclasses.subclasses_of(object_id).await {
             Ok(subs) => subs

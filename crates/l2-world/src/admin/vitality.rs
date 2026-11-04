@@ -1,6 +1,5 @@
 //! The vitality admin commands: `//set_vitality <points>`, `//set_vitality_level <0-4>`,
 //! `//full_vitality`, `//empty_vitality` and `//get_vitality`, for the targeted player.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminVitality.java
 
 use l2_util::ObjectId;
 
@@ -53,8 +52,6 @@ fn admin_vitality(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
             world.send_message(target, &format!("Admin set your Vitality points to {vitality}"));
         }
         "admin_set_vitality_level" => {
-            // NOTE(java-quirk): a bad level prints "Incorrect vitality level" and still goes on
-            // with level 0, which sets the minimum points and says "level 0".
             let level = match words.get(1).map(|w| parse_int(w)) {
                 Some(Ok(value)) => value,
                 _ => {

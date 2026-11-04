@@ -1,7 +1,4 @@
 //! The CP restoring effects: `CpHeal`, `CpHealOverTime` and `CpHealPercent`.
-// Java: dist/game/data/scripts/handlers/skill/effects/CpHeal.java
-// Java: dist/game/data/scripts/handlers/skill/effects/CpHealOverTime.java
-// Java: dist/game/data/scripts/handlers/skill/effects/CpHealPercent.java
 
 use l2_data::skill::EffectTemplate;
 
@@ -74,7 +71,6 @@ impl EffectHandler for CpHealOverTime {
         cp += self.power * cx.ticks_multiplier(world);
         cp = cp.min(max_cp);
         world.set_current_cp(effected, cp, true);
-        // NOTE(java-quirk): always true, where `HealOverTime` returns `skill.isToggle()`.
         true
     }
 }

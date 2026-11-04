@@ -1,26 +1,15 @@
 //! The `announcements` table: the server announcements GMs add with `//announces`.
-// Java: data/sql/AnnouncementsTable.java (load), mechanics/announce/{Announcement,
-// Java: AutoAnnouncement}.java (INSERT_QUERY, UPDATE_QUERY, DELETE_QUERY)
-//
-// Same layout as punishments.rs: verbatim SQL, one method per statement. The Java game server
-// reads the table when it starts and writes the same rows.
 
 use sqlx::FromRow;
 
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: AnnouncementsTable.load
 const SELECT_ALL: &str = "SELECT * FROM announcements";
-// Java: Announcement.INSERT_QUERY
 const INSERT_NORMAL: &str = "INSERT INTO announcements (type, content, author) VALUES (?, ?, ?)";
-// Java: AutoAnnouncement.INSERT_QUERY
 const INSERT_AUTO: &str = "INSERT INTO announcements (`type`, `content`, `author`, `initial`, `delay`, `repeat`) VALUES (?, ?, ?, ?, ?, ?)";
-// Java: Announcement.UPDATE_QUERY
 const UPDATE_NORMAL: &str = "UPDATE announcements SET type = ?, content = ?, author = ? WHERE id = ?";
-// Java: AutoAnnouncement.UPDATE_QUERY
 const UPDATE_AUTO: &str = "UPDATE announcements SET `type` = ?, `content` = ?, `author` = ?, `initial` = ?, `delay` = ?, `repeat` = ? WHERE id = ?";
-// Java: Announcement.DELETE_QUERY
 const DELETE: &str = "DELETE FROM announcements WHERE id = ?";
 
 /// A row of `announcements`.
@@ -58,7 +47,6 @@ impl AnnouncementRepository {
     }
 
     /// Every row.
-    // Java: AnnouncementsTable.load
     pub async fn load_all(&self) -> Result<Vec<AnnouncementRow>> {
         let rows = sqlx::query_as::<_, AnnouncementRow>(SELECT_ALL)
             .fetch_all(&self.pool)
@@ -67,7 +55,6 @@ impl AnnouncementRepository {
     }
 
     /// Stores a new announcement and returns the id the database gave it.
-    // Java: Announcement.storeMe / AutoAnnouncement.storeMe (RETURN_GENERATED_KEYS)
     pub async fn insert(
         &self,
         kind: i32,
@@ -100,7 +87,6 @@ impl AnnouncementRepository {
     }
 
     /// Updates an announcement.
-    // Java: Announcement.updateMe / AutoAnnouncement.updateMe
     pub async fn update(
         &self,
         id: u32,
@@ -136,7 +122,6 @@ impl AnnouncementRepository {
     }
 
     /// Deletes an announcement.
-    // Java: Announcement.deleteMe
     pub async fn delete(&self, id: u32) -> Result<()> {
         sqlx::query(DELETE).bind(id).execute(&self.pool).await?;
         Ok(())

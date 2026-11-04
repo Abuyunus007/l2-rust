@@ -1,6 +1,5 @@
 //! Tests for the login↔game link cipher (`LinkCipher`).
 //!
-//! Java: loginserver/GameServerThread.java (`sendPacket`, `run`, `DEFAULT_BLOWFISH_KEY`) and
 //! gameserver/LoginServerThread.java (`sendPacket`). Three kinds of check:
 //! - `java_send_packet` is a literal port of the Java byte work, including the
 //!   `appendChecksum(data, 2, size)` bounds quirk. `seal` must match it for every size.
@@ -79,7 +78,6 @@ fn java_send_packet(key: &[u8], payload: &[u8]) -> Vec<u8> {
 
 #[test]
 fn default_key_is_the_java_static_key_with_nul() {
-    // Java: "_;v.]05-31!|+-%xT!^[$\00". The \00 escape is one NUL byte, so 21 text bytes + NUL.
     let mut expected = b"_;v.]05-31!|+-%xT!^[$".to_vec();
     expected.push(0);
     assert_eq!(DEFAULT_KEY, expected.as_slice());

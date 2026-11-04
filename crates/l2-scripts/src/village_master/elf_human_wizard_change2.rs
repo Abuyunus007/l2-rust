@@ -1,6 +1,5 @@
 //! The 2nd class transfer of human and elven wizards (Jurek, Arkenias, Valleria, Scraide,
 //! Drikiyan, Valdis, Halaster, Javier).
-// Java: dist/game/data/scripts/village_master/ElfHumanWizardChange2/ElfHumanWizardChange2.java
 
 use l2_util::ObjectId;
 use l2_world::subclass::CategoryType;

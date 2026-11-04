@@ -13,7 +13,6 @@ pub const SCRAMBLED_MODULUS_LEN: usize = 128;
 /// Length of the per-client Blowfish key in `Init`.
 pub const BLOWFISH_KEY_LEN: usize = 16;
 
-// Java: loginserver/network/serverpackets/Init.java
 /// First packet of every connection, sent encrypted with the static Blowfish key.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Init {
@@ -78,7 +77,6 @@ impl Decode for Init {
     }
 }
 
-// Java: loginserver/network/serverpackets/LoginFail.java
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LoginFail {
     pub reason: LoginFailReason,
@@ -102,7 +100,6 @@ impl Decode for LoginFail {
     }
 }
 
-// Java: loginserver/network/serverpackets/AccountKicked.java
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AccountKicked {
     pub reason: AccountKickedReason,
@@ -127,7 +124,6 @@ impl Decode for AccountKicked {
     }
 }
 
-// Java: loginserver/network/serverpackets/LoginOk.java
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LoginOk {
     pub login_ok1: i32,
@@ -217,7 +213,6 @@ pub struct ServerCharInfo {
 impl ServerCharInfo {
     fn write(&self, w: &mut PacketWriter) {
         w.u8(self.server_id).u8(self.chars);
-        // NOTE(java-quirk): Java writes the count with `writeByte`, so it wraps at 256.
         w.u8(self.seconds_until_delete.len() as u8);
         for &seconds in &self.seconds_until_delete {
             w.i32(seconds);
@@ -240,7 +235,6 @@ impl ServerCharInfo {
     }
 }
 
-// Java: loginserver/network/serverpackets/ServerList.java
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ServerList {
     pub last_server: u8,
@@ -256,7 +250,6 @@ impl ServerList {
 
 impl Encode for ServerList {
     fn encode(&self, w: &mut PacketWriter) {
-        // NOTE(java-quirk): all counts are `writeByte(size)` in Java, so they wrap at 256.
         w.u8(Self::OPCODE)
             .u8(self.servers.len() as u8)
             .u8(self.last_server);
@@ -305,7 +298,6 @@ impl Decode for ServerList {
     }
 }
 
-// Java: loginserver/network/serverpackets/PlayFail.java
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PlayFail {
     pub reason: PlayFailReason,
@@ -329,7 +321,6 @@ impl Decode for PlayFail {
     }
 }
 
-// Java: loginserver/network/serverpackets/PlayOk.java
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PlayOk {
     pub play_ok1: i32,
@@ -355,7 +346,6 @@ impl Decode for PlayOk {
     }
 }
 
-// Java: loginserver/network/serverpackets/GGAuth.java
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GGAuth {
     pub response: i32,

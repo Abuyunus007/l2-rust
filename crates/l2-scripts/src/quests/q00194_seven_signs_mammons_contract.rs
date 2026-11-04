@@ -1,6 +1,4 @@
 //! Quest 194: Seven Signs, Mammon's Contract (Sir Gustav, Colin and three transformation NPCs).
-// Java: dist/game/data/scripts/quests/Q00194_SevenSignsMammonsContract/Q00194_SevenSignsMammonsContract.java
-//
 // Pattern: a long chain of cond steps; Colin casts a transformation skill on the player (frog,
 // kid, native) and the pages depend on `getTransformationId()` (111, 112, 124).
 

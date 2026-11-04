@@ -1,21 +1,10 @@
 //! The Lucky Lottery: the weekly draw, the `lottery` table and the ticket checks (S-HAND-03).
-// Java: managers/games/LotteryManager.java
-// Java: dist/game/data/scripts/handlers/bypass/npc/Loto.java (see `loto.rs`)
-//
 // # Where it lives
 // One [`LotteryWorld`] in the world (D-10). Java's manager is a singleton with three
 // `ThreadPool` tasks; here they are timers on the wheel ([`LotteryTimer`]). The newest row of
 // `lottery` is read before the world starts ([`World::load_lottery`], D-15), like the manager's
 // constructor does. (The table is `lottery`; the card calls it `games`.)
 //
-// # Rows (D-39, D-53)
-// `lottery` is a global cycle shared with the Java GS. The statements are Java's
-// ([`LotteryWrite`] through `PersistCommand::Lottery`). While the Java GS shares the DB the Rust
-// GS runs no draw of its own: a lottery runs only with `AllowLottery` **and**
-// `CycleDatabaseWrites = True` ([`LotterySettings::runs`]). Without it no ticket is sold here
-// ("not currently being sold"), the pages that only show data work, and the winning numbers and
-// prizes are read again whenever a ticket list is shown or a ticket is claimed
-// (`PersistCommand::LotteryRequest`, D-50).
 //
 // # The draw
 // `finishLottery` counts the tickets in the `items` table, which only the database knows
@@ -23,9 +12,6 @@
 // (`LotteryThen::Draw`) and finishes when the answer comes back ([`World::on_lottery_reread`]).
 //
 // # Left out on purpose
-// - NOTE(java-quirk): the next draw's day is found with `Calendar.set(DAY_OF_WEEK, SUNDAY)`,
-//   whose week starts on Sunday or Monday by locale. The Monday-first week (the coming Sunday)
-//   is used; a Sunday-first week would give the Sunday before, i.e. a draw that finishes at once.
 
 mod loto;
 
@@ -50,7 +36,6 @@ const WEEK: i64 = 7 * DAY;
 /// The lottery ticket item.
 pub const LOTTERY_TICKET: i32 = 4442;
 
-/// The values the lottery reads (`General.ini`, and `SideBySide.ini` for the switch).
 #[derive(Debug, Clone, PartialEq)]
 pub struct LotterySettings {
     /// `ALLOW_LOTTERY` (`AllowLottery`).
@@ -242,8 +227,6 @@ pub fn decode_numbers(enchant_value: i32, type2_value: i32) -> [i32; 5] {
     let mut enchant = enchant_value;
     while enchant > 0 {
         if enchant % 2 != 0 {
-            // NOTE(java-quirk): Java writes `res[id]` without a bound; a ticket with more than
-            // five numbers throws there. The extra numbers are dropped here.
             if let Some(slot) = res.get_mut(id) {
                 *slot = nr;
             }
@@ -311,7 +294,6 @@ pub fn next_draw_end(end: i64, offset_at: impl Fn(i64) -> i64) -> i64 {
 }
 
 impl World {
-    /// The lottery settings (`General.ini`, `SideBySide.ini`).
     pub fn set_lottery_settings(&mut self, settings: LotterySettings) {
         self.lottery.settings = settings;
     }
@@ -356,7 +338,6 @@ impl World {
             .schedule_at(self.tick + ticks, TimerKind::Lottery(timer));
     }
 
-    /// The lottery runs only with `CycleDatabaseWrites` (D-53), so every write goes out.
     fn lottery_write(&mut self, write: LotteryWrite) {
         self.outbox.persist(PersistCommand::Lottery(write));
     }
@@ -384,7 +365,6 @@ impl World {
         if self.lottery.settings.runs() {
             self.lottery_start();
         } else if let Some(row) = self.lottery.last.clone() {
-            // A mirror of the Java GS's lottery (D-53): the number and the prize it shows.
             self.lottery.number = row.idnr;
             if row.finished {
                 self.lottery.number += 1;

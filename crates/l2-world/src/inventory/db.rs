@@ -1,6 +1,4 @@
 //! `Item.updateDatabase()`: item rows leave the world through the outbox as they change.
-// Java: entity/item/instance/Item.java (updateDatabase, updateInDb, insertIntoDb, removeFromDb)
-//
 // Java writes an item the moment its location or count changes (`LazyItemsUpdate = False`, the
 // default), not only when the character is stored. The persistence task picks `UPDATE` or
 // `INSERT` by whether it knows the row (`_existsInDb`), so one command covers both. The full

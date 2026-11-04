@@ -1,9 +1,5 @@
 //! Sowing and harvesting: the seeded state of a monster, the `Seed` and `Harvester` item handlers
 //! and the `Sow` and `Harvesting` effects.
-// Java: entity/actor/Attackable.java (setSeeded, getSeed, getSeederId, isSeeded, takeHarvest)
-// Java: dist/game/data/scripts/handlers/items/{Seed,Harvester}.java
-// Java: dist/game/data/scripts/handlers/skill/effects/{Sow,Harvesting}.java
-//
 // A player uses a seed on a monster: the handler stores the seed and the seeder in the monster
 // and casts the item's skill (Sowing, 2097). The `Sow` effect takes the seed from the inventory
 // and rolls the chance; on success the monster is seeded and the crop it will give is fixed
@@ -31,8 +27,6 @@ fn strong_type_factor(skill_id: i32) -> Option<i32> {
 }
 
 /// Java `Sow.calcSuccess`: the chance of a sowing in percent. The roll is `Rnd.get(99) <` it.
-// NOTE(java-quirk): Java calls `Math.max(basicSuccess, 1)` and drops the result, so the chance
-// can be below 1 (a roll never succeeds then).
 pub(crate) fn sow_chance(seed_level: i32, alternative: bool, player_level: i32, target_level: i32) -> i32 {
     let min_level_seed = seed_level - 5;
     let max_level_seed = seed_level + 5;

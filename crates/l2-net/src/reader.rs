@@ -1,6 +1,5 @@
 //! Bounds-checked little-endian packet reader.
 //!
-//! Java: `commons/network/packet/ReadablePacket.java` (game/login client packets) and
 //! `SimpleReadablePacket.java` (LS↔GS link packets).
 
 use crate::error::PacketError;
@@ -113,11 +112,6 @@ impl<'a> PacketReader<'a> {
     }
 
     /// Java `readString()`: UTF-16LE code units up to a `0x0000` terminator.
-    ///
-    /// NOTE(java-quirk): Java catches the exception when the data ends before the terminator and
-    /// returns what it read so far, so a missing terminator is **not** an error here either.
-    /// The reader is then at the end of the buffer (a dangling odd byte stays unread).
-    /// Unpaired surrogates (legal in Java strings) become U+FFFD.
     pub fn string(&mut self) -> String {
         let mut units = Vec::new();
         while let Ok(unit) = self.u16() {
@@ -130,9 +124,6 @@ impl<'a> PacketReader<'a> {
     }
 
     /// Java `readSizedString()`: `u16` length in code units, then that many UTF-16LE units.
-    ///
-    /// NOTE(java-quirk): a length `<= 0` (read as signed `short`) or truncated data gives `""`,
-    /// as Java swallows the exception. On truncation nothing after the length is consumed.
     pub fn sized_string(&mut self) -> String {
         let Ok(count) = self.i16() else {
             return String::new();

@@ -1,9 +1,4 @@
 //! User commands (`BypassUserCmd`): `/loc`, `/partyinfo`, `/mount` and `/dismount`.
-// Java: network/clientpackets/BypassUserCmd.java
-// Java: dist/game/data/scripts/handlers/chat/commands/user/Loc.java
-// Java: dist/game/data/scripts/handlers/chat/commands/user/PartyInfo.java
-// Java: dist/game/data/scripts/handlers/chat/commands/user/{Mount,Dismount}.java (`mount.rs`)
-//
 // Java's `//loc` does not exist; the client's `/loc` is user command 0. The other user commands
 // (clan penalty, channels, time ...) belong to their systems; the card of each ports its handler.
 

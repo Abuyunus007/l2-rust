@@ -1,6 +1,5 @@
 //! The sound and sky admin commands: `//play_sounds [page]`, `//play_sound <name>`, and
 //! `//atmosphere <signsky dawn|dusk>|<sky day|night|red> <duration>` with its menu.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminEffects.java (the play_sound(s)
 // and atmosphere branches, adminAtmosphere, playAdminSound)
 
 use l2_protocol_game::server::{ExRedSky, PlaySound, SsqInfo, SunRise, SunSet};
@@ -80,7 +79,6 @@ fn air_packet(world: &mut World, gm: ObjectId, kind: &str, state: &str, duration
             "night" => world.broadcast_to_all_online_players(&SunSet),
             "day" => world.broadcast_to_all_online_players(&SunRise),
             "red" => {
-                // Java: `duration != 0 ? duration : 10`.
                 let seconds = if duration != 0 { duration } else { 10 };
                 world.broadcast_to_all_online_players(&ExRedSky { duration: seconds });
             }

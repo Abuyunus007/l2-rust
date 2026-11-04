@@ -1,6 +1,5 @@
 //! Fortress of the Dead (clan hall 64): the clan that does the most damage to Lidia wins the hall;
 //! the siege starts only at night.
-// Java: dist/game/data/scripts/conquerablehalls/FortressOfTheDead/FortressOfTheDead.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;
@@ -20,7 +19,6 @@ pub(super) const GISELLE: i32 = 35631;
 #[derive(Debug, Default)]
 pub(crate) struct Dead {
     /// `_damageToLidia`: clan id to damage (a static `HashMap`).
-    // NOTE(java-quirk): static and never cleared, the damage of an earlier siege counts in the next.
     pub(crate) damage: Vec<(i32, i32)>,
 }
 

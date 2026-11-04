@@ -1,6 +1,4 @@
 //! Quest 351: Black Swan (Captain Gosta and Iason Heine in Innadril, Roman the blacksmith).
-// Java: dist/game/data/scripts/quests/Q00351_BlackSwan/Q00351_BlackSwan.java
-//
 // Pattern: a party kill drop (a random member in the started state gets the fangs and the barrels),
 // the NPC pays the fangs (a bonus from ten of them), the barrels turn into bills that Roman
 // exchanges. Reads the state of Q00345 (`player.getQuestState`), read only.

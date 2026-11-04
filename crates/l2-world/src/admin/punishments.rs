@@ -1,7 +1,5 @@
 //! The punishment commands: `//punishment`, `//punishment_add`, `//punishment_remove` and the
 //! shortcuts `//ban_acc`, `//ban_char`, `//ban_chat`, `//jail`... with their `//unban_*` pairs.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminPunishment.java
-//
 // # Left out, with the system that brings it
 // - `CharInfoTable` is the startup name table plus the characters who entered since
 //   (`World::char_id_by_name`): a character created after the server started and never online

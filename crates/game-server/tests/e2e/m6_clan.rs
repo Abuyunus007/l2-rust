@@ -192,7 +192,6 @@ pub fn assert_played(played: &Played, a: i32) {
     );
     assert_eq!(played.clans_before_crest[0].level, 3);
     assert_eq!(played.clans_before_crest[0].crest_id, 0);
-    // D-39: the clan has an id of the Rust range.
     assert!(clan.clan_id >= l2_world::RUST_FIRST_OBJECT_ID, "{}", clan.clan_id);
     // `CrestTable.createCrest`: the first crest is 1, type 1 is the clan crest.
     assert_eq!(

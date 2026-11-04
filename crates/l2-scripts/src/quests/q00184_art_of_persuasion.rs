@@ -1,5 +1,4 @@
 //! Quest 184: Art of Persuasion (Maestro Nikola, Researcher Lorain, the Destroyed Device and the Alarm of Giant).
-// Java: dist/game/data/scripts/quests/Q00184_ArtOfPersuasion/Q00184_ArtOfPersuasion.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED};

@@ -1,7 +1,5 @@
 //! What the instance scripts (S-INST-01) call and the world did not offer `pub` yet: small
 //! wrappers over the world's own state, one Java call each.
-// Java: entity/actor/Npc.java, entity/actor/Attackable.java, entity/WorldObject.java,
-//       entity/spawns/Spawn.java, entity/instancezone/Instance.java
 
 use l2_util::ObjectId;
 
@@ -218,7 +216,6 @@ impl World {
     /// Crystal Caverns `Throw(effector, effected)`: the effected creature is thrown (`THROW_UP`)
     /// along the line from the effected through the effector, at most 1400 units, to the farthest
     /// point the geodata lets it reach, and everybody around gets `ValidateLocation`.
-    // Java: instances/CrystalCaverns/CrystalCaverns.java (Throw)
     pub fn throw_creature(&mut self, effector: ObjectId, effected: ObjectId) {
         let (Some((ex, ey, ez)), Some((cx, cy, cz))) =
             (self.position_of(effector), self.position_of(effected))

@@ -1,6 +1,4 @@
 //! Quest 14: Whereabouts of the Archaeologist (Liesel in the Dion Coliseum sends a level 74 character to a ghost).
-// Java: dist/game/data/scripts/quests/Q00014_WhereaboutsOfTheArchaeologist/Q00014_WhereaboutsOfTheArchaeologist.java
-//
 // Pattern: a single delivery to one NPC (`docs/design/scripts.md`, "Quest patterns"): the start
 // NPC gives the letter on the start event, and the ghost pays the reward items when the letter
 // is in hand. One-time: `exit_quest(ctx, false, true)`.
@@ -48,8 +46,6 @@ impl Script for Q00014WhereaboutsOfTheArchaeologist {
         _npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        // NOTE(java-quirk): without a quest state `onEvent` returns the event itself (not null),
-        // so the event's page is shown anyway.
         let Some(player) = player else {
             return Some(event.to_owned());
         };

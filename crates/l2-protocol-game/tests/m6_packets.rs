@@ -502,7 +502,6 @@ mod trade {
 
     #[test]
     fn trade_update_change_follows_java() {
-        // Java: `(newCount > 0) && stackable ? 3 : 2`.
         assert_eq!(TradeUpdate::change_for(5, true), 3);
         assert_eq!(TradeUpdate::change_for(0, true), 2);
         assert_eq!(TradeUpdate::change_for(5, false), 2);
@@ -602,7 +601,6 @@ mod store {
             .long(0)
             .done();
         check_round_trip(&packet, &expected, 1);
-        // Java: `readInt() == 1` is the package flag; any other value is a normal sale.
         let body = Bytes::default().int(2).int(0).done();
         let decoded: SetPrivateStoreListSell = decode_body(body);
         assert!(!decoded.package_sale);
@@ -678,7 +676,6 @@ mod store {
                     count: 2,
                     price: 300,
                 },
-                // NOTE(java-quirk): the same object id twice stays twice (inverted `equals`).
                 StoreBuyRequestEntry {
                     object_id: 11,
                     count: 1,
@@ -2156,7 +2153,6 @@ mod summon {
 
     #[test]
     fn pet_info_never_writes_a_level_start_above_the_experience() {
-        // NOTE(java-quirk): Java writes `exp` instead when `expForThisLevel > exp`.
         let packet = PetInfo {
             exp: 1_000,
             exp_for_this_level: 1_500,

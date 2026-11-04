@@ -1,6 +1,4 @@
 //! The combat stance: `AutoAttackStop` 15 s after the last attack or hit.
-// Java: taskmanagers/AttackStanceTaskManager.java
-//
 // Java runs one task every second over every creature in a stance and ends the ones refreshed
 // more than `COMBAT_TIME` ago. Here one timer-wheel event does the same run, and only while some
 // creature is in a stance (nothing to do otherwise). Java's run is not tied to the refresh either,

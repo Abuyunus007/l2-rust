@@ -1,10 +1,5 @@
 //! The blocks and limits an effect puts on a creature: actions, chat, abnormal slots, buff slots
 //! and single skills.
-// Java: dist/game/data/scripts/handlers/skill/effects/BlockAction.java
-// Java: dist/game/data/scripts/handlers/skill/effects/BlockChat.java
-// Java: dist/game/data/scripts/handlers/skill/effects/BlockAbnormalSlot.java
-// Java: dist/game/data/scripts/handlers/skill/effects/EnlargeAbnormalSlot.java
-// Java: dist/game/data/scripts/handlers/skill/effects/ResistSkill.java
 
 use std::collections::BTreeSet;
 
@@ -207,8 +202,6 @@ impl EffectHandler for EnlargeAbnormalSlot {
     }
 
     fn on_start(&self, world: &mut World, cx: &EffectCx<'_>) {
-        // NOTE(java-quirk): `getMaxBuffCount()` includes the Divine Inspiration levels, which
-        // `setMaxBuffCount` then stores into the base.
         let count = world.max_buff_count(cx.effected).wrapping_add(self.slots);
         world.set_max_buff_count(cx.effected, count);
     }

@@ -2,13 +2,6 @@
 //! the lists), the base siege engine `ClanHallSiegeEngine` (the schedule, the start, the end, the
 //! owner change) and the six hall scripts built on it: Fortress of Resistance, Devastated Castle,
 //! Fortress of the Dead, Bandit Stronghold, Wild Beast Reserve and Rainbow Springs Chateau.
-// Java: managers/CHSiegeManager.java
-// Java: mechanics/siege/clanhalls/{ClanHallSiegeEngine,SiegableHall,SiegeStatus}.java
-// Java: config/ConquerableHallSiegeConfig.java (`ConquerableHallSiege.ini`)
-// Java: dist/game/data/scripts/conquerablehalls/{FortressOfResistance,DevastatedCastle,
-//       FortressOfTheDead,BanditStronghold,WildBeastReserve,RainbowSpringsChateau}
-// Java: entity/zone/type/{SiegableHallZone,ResidenceHallTeleportZone}.java
-// Java: network/clientpackets/{RequestJoinSiege,RequestSiegeAttackerList}.java (the hall branches)
 // Design: docs/design/m7-residences.md
 //
 // # Shape
@@ -39,29 +32,7 @@
 // - `load.rs`: the rows read at startup.
 // - `schedule.rs`: `schedule_config` and `updateNextSiege`.
 //
-// # Side by side with the Java game server (D-39, D-49, D-50, D-51)
-// Sieghardt (the Java GS) runs the real conquerable hall sieges while both servers share the
-// database. So:
-// - Every row the sieges write goes out through [`World::siege_write`] (`SiegeDatabaseWrites`,
-//   default off): the new siege date, the attackers saved at shutdown, the flag war and Rainbow
-//   Springs registrations, and the owner change (`residence/clan_hall.rs`, the same switch). Off,
-//   the world still changes its own state, so a GM test siege works end to end.
-// - The automatic chain (`PrepareOwner` one hour before the siege date, then `SiegeStarts`, then
-//   `SiegeEnds`) is armed as in Java, but the first task does nothing without the switch (the
-//   Java game server runs the real siege). A GM starts a test siege with the functions of
-//   `World::hall_siege_*` (`//chsiege`, ADMIN-06): they run the chain to its end in this world.
-// - A registration reads the hall's row again first (D-50: the owner and the next siege date
-//   change on Sieghardt), and the flag war and Rainbow Springs registrations read their tables
-//   again before the messenger acts on them. The attackers of the other three halls are saved by
-//   Java only at its shutdown, so their rows are as old as that and are not read again: a
-//   registration is as fresh as this world's memory.
-// - The siege guards (`clanhall_siege_guards`) are read at startup, not at the first siege (D-15).
 //
-// # Java quirks kept (each marked `NOTE(java-quirk)` where it is)
-// Bandit Stronghold and Wild Beast Reserve never start their battle: `startSiege()` of the script
-// schedules itself again five minutes later and never reaches `ClanHallSiegeEngine.startSiege()`.
-// Rainbow Springs never sets the status to running, fills its four arenas with the first
-// registered clan, and so on. The scripts' other code is ported as it is.
 //
 // # Left to other cards
 // - `SpecialSiegeGuardAI` (the AI of the flag war warriors: `SiegeGuardAI` that never attacks the

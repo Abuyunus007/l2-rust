@@ -1,11 +1,5 @@
 //! Clan wars: declaring, answering, stopping and surrendering, and the war list window
 //! (M6-CLAN-02).
-// Java: data/sql/ClanTable.java (storeClanWars, deleteClanWars)
-// Java: network/clientpackets/{RequestStartPledgeWar,RequestReplyStartPledgeWar,
-//       RequestStopPledgeWar,RequestReplyStopPledgeWar,RequestSurrenderPledgeWar,
-//       RequestReplySurrenderPledgeWar,RequestPledgeWarList}.java
-// Java: network/serverpackets/PledgeReceiveWarList.java
-//
 // A war is one-sided: `clan1.setEnemyClan(clan2)` and `clan2.setAttackerClan(clan1)`
 // (`Clan::at_war_with` and `Clan::at_war_attackers`), and `clan_wars` holds the pair. Two clans
 // at war with each other have a row each way. The war bits of the relation mask and the auto
@@ -365,8 +359,6 @@ impl World {
                 "RequestReplySurrenderPledgeWar: Missing implementation for answer: {answer} and name: {req_name}!"
             );
         }
-        // NOTE(java-quirk): `player.onTransactionRequest(requestor)`, not the response: the
-        // requestor starts a new request on the player and the active requester is not cleared.
         self.on_transaction_request(player, requestor);
     }
 

@@ -8,7 +8,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::{write_ex_opcode, write_opcode};
 use crate::generated::opcodes::{ClientOpcode, ExClientOpcode};
 
-// Java: gameserver/network/clientpackets/RequestJoinParty.java
 /// The player invites another player into its party (`REQUEST_JOIN_PARTY`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestJoinParty {
@@ -40,7 +39,6 @@ impl Decode for RequestJoinParty {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestAnswerJoinParty.java
 /// The invited player answers (`REQUEST_ANSWER_JOIN_PARTY`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestAnswerJoinParty {
@@ -66,7 +64,6 @@ impl Decode for RequestAnswerJoinParty {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestWithDrawalParty.java
 /// The player leaves its party (`REQUEST_WITH_DRAWAL_PARTY`). No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestWithDrawalParty;
@@ -87,7 +84,6 @@ impl Decode for RequestWithDrawalParty {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestOustPartyMember.java
 /// The leader expels a member (`REQUEST_OUST_PARTY_MEMBER`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestOustPartyMember {
@@ -111,7 +107,6 @@ impl Decode for RequestOustPartyMember {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestChangePartyLeader.java
 /// The leader hands the party over to another member (`REQUEST_CHANGE_PARTY_LEADER`). Ex packet
 /// `0xD0 0x000C`.
 #[derive(Debug, Clone, PartialEq, Eq)]

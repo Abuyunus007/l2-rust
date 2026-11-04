@@ -1,6 +1,4 @@
 //! Using up an item by its object id.
-// Java: entity/actor/Player.java (destroyItem(process, objectId, count, ...) and
-//       destroyItem(process, item, count, ...))
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{InventoryUpdate, SystemMessage, SystemMessageParam};

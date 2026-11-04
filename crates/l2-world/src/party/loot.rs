@@ -1,7 +1,4 @@
 //! Sharing loot: who gets an item or the adena of a kill, by the loot rule of the party.
-// Java: entity/groups/Party.java (getCheckedRandomMember, getCheckedNextLooter, getActualLooter,
-//       distributeItem, distributeAdena)
-// Java: entity/actor/Player.java (doAutoLoot, addItem with `ItemProcessType.SWEEP`)
 
 use l2_data::item::ADENA_ID;
 use l2_protocol_game::SystemMessageId;
@@ -128,8 +125,6 @@ impl World {
                 shares[(start + i) % to_reward.len()] += 1;
             }
         }
-        // NOTE(java-quirk): Java hands the shares out in the iteration order of a `HashMap`; here
-        // it is the party order.
         for (member, amount) in to_reward.into_iter().zip(shares) {
             if amount > 0 {
                 self.add_adena(member, amount, true);

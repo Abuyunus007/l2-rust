@@ -1,9 +1,5 @@
 //! Casting the line: the `Fishing` skill effect, `Player.startFishing`, the bite task and
 //! `Player.endFishing`.
-// Java: dist/game/data/scripts/handlers/skill/effects/Fishing.java
-// Java: entity/actor/Player.java (startFishing, stop/startLookingForFishTask, getRandomFishGrade,
-//       getRandomFishGroup, getRandomFishLvl, startFishCombat, endFishing)
-// Java: entity/actor/tasks/player/LookingForFishTask.java
 
 use l2_data::item::types::{EtcItemType, WeaponType};
 use l2_protocol_game::SystemMessageId;
@@ -56,9 +52,6 @@ fn pick(check: i32, first: i32, second: i32, types: [i32; 3]) -> i32 {
 
 /// Java `Player.getRandomFishGroup(group)` for the `check = Rnd.get(100)` already drawn. `group`
 /// is the grade of `getRandomFishGrade`.
-// NOTE(java-quirk): a lure that is none of the listed ones leaves the type at 1, whatever the
-// grade, so a beginner fish (grade 0) of type 1 does not exist and the cast ends with "Fish are
-// not defined".
 fn random_fish_group_for(grade: i32, lure_id: i32, check: i32) -> i32 {
     let mut kind = 1;
     match grade {
@@ -127,8 +120,6 @@ fn random_fish_group_for(grade: i32, lure_id: i32, check: i32) -> i32 {
 }
 
 /// `startLookingForFishTask`: the delay between two bite checks for a lure.
-// NOTE(java-quirk): the ranges overlap. 8507, 8510 and 8513 are in the `8505..=8513` range of the
-// second branch, so the third branch (x66) is never reached for them.
 fn check_delay_ms(lure_id: i32, guts_check_time: i32) -> i32 {
     if matches!(lure_id, 6519 | 6522 | 6525 | 8505 | 8508 | 8511) {
         guts_check_time.wrapping_mul(133)
@@ -476,8 +467,6 @@ impl World {
             return;
         };
         if period == 0 {
-            // NOTE(java-quirk): `ThreadPool.scheduleAtFixedRate` refuses a period of 0, logs it and
-            // returns null: no bite task runs and only the `Fishing` skill ends the cast.
             warn!(
                 "ThreadPool: Failed to schedule recurring task LookingForFishTask: lure {lure_id} has no bite delay."
             );

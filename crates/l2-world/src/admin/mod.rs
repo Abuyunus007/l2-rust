@@ -1,9 +1,5 @@
 //! The admin command framework: `//command` from the client and `admin_` bypasses from the
 //! admin html panels, the access checks, the GM audit line, and the handler registry.
-// Java: network/clientpackets/SendBypassBuildCmd.java, handler/AdminCommandHandler.java
-// Java: network/clientpackets/RequestBypassToServer.java (the `admin_` branch)
-// Java: util/GMAudit.java, entity/actor/Player.java (sendMessage, sendSysMessage)
-//
 // # How a command runs
 // `//spawn 20101` arrives as `SendBypassBuildCmd("spawn 20101")`; the world turns it into
 // `admin_spawn 20101` and runs it like a bypass of the admin panel does
@@ -417,7 +413,6 @@ impl World {
                 .admin_rights()
                 .is_some_and(|rights| rights.requires_confirm(command, level));
         if needs_confirm {
-            // Java: `setAdminConfirmCmd`, `ConfirmDlg(S1_3)` with the question as its string,
             // `addAction(ADMIN_COMMAND)`.
             self.admin.pending_confirm.insert(id, full_command.to_owned());
             let dialog = ConfirmDlg::new(SystemMessageId::S13).with(SystemMessageParam::Text(format!(

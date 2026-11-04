@@ -1,7 +1,5 @@
 //! The castle siege effects: `HeadquarterCreate` (Build Headquarters) and `TakeCastle` (Seal of
 //! Ruler), see `siege/npcs.rs` (M7-SIEGE-01).
-// Java: dist/game/data/scripts/handlers/skill/effects/HeadquarterCreate.java
-// Java: dist/game/data/scripts/handlers/skill/effects/TakeCastle.java
 
 use l2_data::skill::EffectTemplate;
 

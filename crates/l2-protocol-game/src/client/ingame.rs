@@ -6,7 +6,6 @@ use super::write_opcode;
 use crate::generated::opcodes::ClientOpcode;
 use crate::server::chat::ChatType;
 
-// Java: gameserver/network/clientpackets/Say2.java
 /// A chat line the player typed.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Say2 {
@@ -41,7 +40,6 @@ impl Decode for Say2 {
     fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
         let text = r.string();
         let chat_type = r.i32()?;
-        // Java: `_target = (_type == WHISPER) ? readString() : null`.
         let target = if chat_type == ChatType::Whisper.client_id() {
             Some(r.string())
         } else {
@@ -55,7 +53,6 @@ impl Decode for Say2 {
     }
 }
 
-// Java: gameserver/network/clientpackets/Logout.java
 /// "Exit game" button. No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Logout;
@@ -76,7 +73,6 @@ impl Decode for Logout {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestRestart.java
 /// "Back to character selection" button. No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestRestart;
@@ -97,7 +93,6 @@ impl Decode for RequestRestart {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestNetPing.java
 /// The client's periodic net ping (opcode `NET_PING`). No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestNetPing;
@@ -118,7 +113,6 @@ impl Decode for RequestNetPing {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestSkillCoolTime.java
 /// Asks for the skills that are still in their reuse delay. No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestSkillCoolTime;

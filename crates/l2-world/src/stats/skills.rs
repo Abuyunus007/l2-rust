@@ -1,10 +1,5 @@
 //! The stat side of skills: what `Creature.addSkill` / `removeSkill` do, and the skills the
 //! inventory listeners and the penalty checks give a player.
-// Java: entity/actor/Creature.java (addSkill, removeSkill, the NPC constructor's template skills)
-// Java: mechanics/skill/Skill.java (applyEffects with passive = true; see `effects/apply.rs`)
-// Java: entity/itemcontainer/Inventory.java (ArmorSetListener, ItemSkillsListener)
-// Java: entity/actor/Player.java (refreshOverloaded, refreshExpertisePenalty)
-//
 // A passive skill is applied through the effect engine (`effects/`, M5-EFFECT-01): its info sits
 // in the effect list's passives, its effects' functions are owned by `FuncOwner::Effect`, like
 // Java's `EffectList._passives` and the `AbstractEffect` owners.
@@ -600,9 +595,6 @@ impl World {
             }
         }
         // `Options.remove`: `removeStatsOwner(option)`, then the skills below.
-        // NOTE(java-quirk): the owner of an option's functions is the shared `Options` object, so
-        // taking off one augmented item also strips the functions of that option from any other
-        // worn item that has it. Kept: the owner here is the option id.
         let mut stats = Vec::new();
         if let Some(player) = self.players.get_mut(&id) {
             for option_id in option_ids {
@@ -629,8 +621,6 @@ impl World {
         for (skill_id, level) in remove {
             self.remove_skill_of(id, skill_id, level);
         }
-        // NOTE(java-quirk): the reuse delay of a skill that comes back is the one of the item
-        // that was taken off, not of the item the skill belongs to.
         let equip_delay = self
             .data
             .stat_data()

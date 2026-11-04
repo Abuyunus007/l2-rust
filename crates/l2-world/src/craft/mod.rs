@@ -1,17 +1,5 @@
 //! Crafting: the recipe books, making an item, and the manufacture (dwarven workshop) shop
 //! (M6-CRAFT-01).
-// Java: managers/RecipeManager.java, data/xml/RecipeData.java
-// Java: network/clientpackets/{RequestRecipeBookOpen,RequestRecipeBookDestroy,
-//       RequestRecipeItemMakeInfo,RequestRecipeItemMakeSelf,RequestRecipeShopMessageSet,
-//       RequestRecipeShopListSet,RequestRecipeShopManageQuit,RequestRecipeShopMakeInfo,
-//       RequestRecipeShopMakeItem,RequestRecipeShopManagePrev}.java
-// Java: network/serverpackets/{RecipeBookItemList,RecipeItemMakeInfo,RecipeShopItemInfo,
-//       RecipeShopManageList,RecipeShopMsg,RecipeShopSellList}.java
-// Java: entity/actor/Player.java (the recipe books, the manufacture items, isCrafting,
-//       restoreRecipeBook, storeRecipeShopList, restoreRecipeShopList)
-// Java: dist/game/data/scripts/handlers/items/Recipes.java
-// Java: dist/game/data/scripts/handlers/skill/effects/{OpenDwarfRecipeBook,OpenCommonRecipeBook}.java
-//
 // # Where things are
 // - `book.rs`: the two recipe books of a player, `character_recipebook` rows, the book window
 //   packets and the `Recipes` item handler.
@@ -31,10 +19,6 @@
 // the maker of the "alt" crafting waits on the timer wheel between its passes. Without
 // `AltGameCreation` (the default) a craft is one synchronous call and nothing is kept.
 //
-// # Rows (D-39)
-// A recipe joining or leaving a book is written at once, like Java (`PersistCommand::Recipe`).
-// The manufacture list is written with the character's store, with Java's statements, and only
-// with `StoreRecipeShopList` (`PlayerProfile::recipe_shop_to_store`).
 //
 // # Left out on purpose (each has a comment where it belongs)
 // - (The Olympiad exists since M8-OLY-01; `isSellingBuffs` is `custom/sell_buffs.rs`, M9-C03.)
@@ -259,8 +243,6 @@ impl World {
             return None;
         }
         let craft = &self.players.get(&id)?.craft;
-        // NOTE(java-quirk): `if (hasManufactureShop())` guards the whole method, so a shop that
-        // was emptied never deletes its old rows.
         if craft.manufacture.is_empty() {
             return None;
         }

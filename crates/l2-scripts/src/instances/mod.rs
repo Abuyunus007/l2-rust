@@ -73,12 +73,7 @@ const DAY_MS: i64 = 86_400_000;
 /// The re-entry time of Kamaloka and Rim Kamaloka: the next 06:30 on the server's clock (D-48),
 /// with the seconds and milliseconds of `now` (`Calendar.set` leaves them alone).
 ///
-/// Java: `reenter.set(MINUTE, 30); if (reenter.get(HOUR_OF_DAY) >= 6) { reenter.add(DATE, 1) }
 /// (Kamaloka) or reenter.roll(DATE, true) (Rim Kamaloka); reenter.set(HOUR_OF_DAY, 6)`.
-///
-/// NOTE(java-quirk): `Calendar.roll(DATE, true)` does not carry into the month: on the last day
-/// of a month the date becomes the 1st of the same month, a time in the past, so Rim Kamaloka
-/// restricts nobody on that day after 06:00.
 pub(crate) fn kamaloka_reset_time(now_utc: i64, offset_ms: i64, roll: bool) -> i64 {
     const RESET_HOUR: i64 = 6;
     const RESET_MIN: i64 = 30;

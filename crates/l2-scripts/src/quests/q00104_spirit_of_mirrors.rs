@@ -1,7 +1,5 @@
 //! Quest 104: Spirit of Mirrors (Gallint gives three Gallint's Oak Wands; a wand equipped in the
 //! right hand kills a Spirit of Mirrors for a Spirit-bound Wand).
-// Java: dist/game/data/scripts/quests/Q00104_SpiritOfMirrors/Q00104_SpiritOfMirrors.java
-//
 // Pattern: a kill chain that needs an item equipped (`getItemEquipped`), the NewbieGuide memo
 // (`ScriptManager.getScript("NewbieGuide")`), and the three guards' names as quest variables.
 
@@ -214,8 +212,6 @@ impl Script for Q00104SpiritOfMirrors {
             },
             ARNOLD | JOHNSTONE | KENYOS => {
                 if qs.is_cond(ctx, 1) {
-                    // NOTE(java-quirk): Java keys the variable by `npc.getName()`; these are the
-                    // template names of the three guards (stats/npcs/30000-30099.xml).
                     let name = match npc.id {
                         ARNOLD => "Arnold",
                         JOHNSTONE => "Johnstone",

@@ -1,7 +1,5 @@
 //! The `<schedule pattern>` loop every custom event script has (`loadConfig` and the
 //! `Schedule*` branch of `onTimerEvent`).
-// Java: dist/game/data/scripts/custom/events/Elpies/Elpies.java (`loadConfig`, `onTimerEvent`)
-//
 // The patterns come from the `config.xml` of the event folder (the game server reads them into
 // `CustomScriptSettings::event_schedules`, keyed by the event's name). The shipped files have
 // every `<schedule>` commented out, so nothing is scheduled by default.

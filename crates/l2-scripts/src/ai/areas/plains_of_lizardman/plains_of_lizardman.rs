@@ -1,6 +1,5 @@
 //! The Tanta lizardmen and the plants of the Plains of the Lizardmen: buffs on a kill, plants that
 //! burst when hit, a summoner that calls scouts.
-// Java: dist/game/data/scripts/ai/areas/PlainsOfLizardman/PlainsOfLizardman.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};

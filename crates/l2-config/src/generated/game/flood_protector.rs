@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/FloodProtectorConfig.java
 
 use crate::IniFile;
 /// Settings of `config/FloodProtector.ini` (Java: `FloodProtectorConfig`).

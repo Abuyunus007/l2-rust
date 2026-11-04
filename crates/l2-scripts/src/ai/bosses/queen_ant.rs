@@ -1,8 +1,6 @@
 //! Queen Ant, the Ant Nest grand boss: the row restored at start, the players moved out of the
 //! nest when she spawns, the larva and the nurses that heal, the raid curse, the minion respawns
 //! and the respawn cycle.
-// Java: dist/game/data/scripts/ai/bosses/QueenAnt/QueenAnt.java
-//
 // The Java constructor is `on_load`; the fields are `QueenAntState` (`ctx.state`). Statuses: 0
 // alive, 1 dead.
 //
@@ -109,7 +107,6 @@ impl Script for QueenAnt {
     /// The constructor's second half.
     fn on_load(&self, ctx: &mut ScriptCtx<'_>) {
         let Some(boss_info) = ctx.world().grand_boss_info(QUEEN_ANT_ID).cloned() else {
-            // Java: `getStatSet` answers null and the constructor throws.
             warn!("QueenAnt: no grandboss_data row for {QUEEN_ANT_ID}, the script does not start.");
             return;
         };
@@ -124,7 +121,6 @@ impl Script for QueenAnt {
             }
         } else {
             let (mut loc_x, mut loc_y, mut loc_z) = (boss_info.loc_x, boss_info.loc_y, boss_info.loc_z);
-            // Java: `_queenNestZone` is null without the zone and the constructor throws; the
             // default place is the safe reading.
             if !inside_nest(ctx, loc_x, loc_y, loc_z) {
                 loc_x = QUEEN_NEST_X;

@@ -1,6 +1,4 @@
 //! Quest 348: An Arrogant Search (Magister Hanellin in the Town of Oren).
-// Java: dist/game/data/scripts/quests/Q00348_AnArrogantSearch/Q00348_AnArrogantSearch.java
-//
 // Pattern: a long, memo-driven chain. `memoState` is the stage (1..19); `memoStateEx(0)` mirrors
 // it for the kill hooks and `memoStateEx(1)` packs one digit per Holy Ark (letters delivered,
 // guardians killed, keys found): units = the saint's item the player must bring, tens = Harne,
@@ -217,7 +215,6 @@ fn platinum_progress(
 ) {
     if qs.get_memo_state_ex(ctx, 0) == 12 {
         qs.set_memo_state_ex(ctx, 1, qs.get_memo_state_ex(ctx, 1) + step);
-        // NOTE(java-quirk): the limit is tested against the value plus the step again.
         if qs.get_memo_state_ex(ctx, 1) + step > 80000 {
             ctx.give_items(member, BLOODED_FABRIC, 1);
             ctx.take_items(member, WHITE_FABRIC_1, 1);
@@ -501,7 +498,6 @@ impl Script for Q00348AnArrogantSearch {
                 }
             }
             ANGEL_KILLER => {
-                // NOTE(java-quirk): Java dereferences the quest state without a null check.
                 let Some(qs) = ctx.get_quest_state(attacker, false) else {
                     return;
                 };
@@ -633,7 +629,6 @@ impl Script for Q00348AnArrogantSearch {
                 if qs.get_memo_state_ex(ctx, 0) == 17 && ctx.has_quest_items(member, WHITE_FABRIC_1) {
                     let i0 = qs.get_memo_state_ex(ctx, 1) + ctx.get_random(100) + 100;
                     qs.set_memo_state_ex(ctx, 1, i0);
-                    // NOTE(java-quirk): the stored value is added to `i0` again.
                     if qs.get_memo_state_ex(ctx, 1) + i0 > 750 {
                         ctx.give_items(member, BLOODED_FABRIC, 1);
                         ctx.take_items(member, WHITE_FABRIC_1, 1);

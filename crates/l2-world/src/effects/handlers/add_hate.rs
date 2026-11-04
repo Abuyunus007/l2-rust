@@ -1,6 +1,5 @@
 //! The `AddHate` effect: an attackable NPC's hate for the caster grows by `power` (or shrinks
 //! when it is negative).
-// Java: dist/game/data/scripts/handlers/skill/effects/AddHate.java
 
 use l2_data::skill::EffectTemplate;
 
@@ -37,8 +36,6 @@ impl EffectHandler for AddHate {
         if val > 0.0 {
             world.add_damage_hate(cx.effected, cx.effector, 0, i64::from(val as i32));
         } else if val < 0.0 {
-            // NOTE(java-quirk): `reduceHate` adds its amount, so a negative power raises the hate
-            // by `-power` (the call reads as a reduction, the effect does the opposite).
             reduce_hate(world, cx.effected, cx.effector, i64::from((-val) as i32));
         }
     }

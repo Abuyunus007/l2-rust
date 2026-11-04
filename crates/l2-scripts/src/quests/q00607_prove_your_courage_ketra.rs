@@ -1,6 +1,4 @@
 //! Quest 607: Prove Your Courage! (Ketra) (Kadun in the Ketra Orc Village, Shadith).
-// Java: dist/game/data/scripts/quests/Q00607_ProveYourCourageKetra/Q00607_ProveYourCourageKetra.java
-//
 // Pattern: a one-kill quest. The monster's party members in range get the head through
 // `actionForEachPlayer` (`executeForEachPlayer(killer, npc, isSummon, true, false)`), and the
 // NPC rewards the totem and experience once.

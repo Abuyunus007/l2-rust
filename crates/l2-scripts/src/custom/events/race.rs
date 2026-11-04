@@ -1,7 +1,5 @@
 //! Race event: sign up at the start NPC in Dion, transform, and be the first to reach the finish
 //! NPC at a random place.
-// Java: dist/game/data/scripts/custom/events/Race/Race.java
-//
 // Off by default: the shipped `config.xml` schedules nothing, so the event only runs when a GM
 // starts it (`//event_start Race`).
 
@@ -139,8 +137,6 @@ impl Script for Race {
         // Check Custom Table - we use custom NPCs.
         if !ctx.world().custom_script_settings().custom_npc_data {
             tracing::info!("Race: Event can't be started, because custom npc table is disabled!");
-            // NOTE(java-quirk): Java calls `eventMaker.sendMessage` unchecked (a NullPointerException
-            // for the scheduled start).
             if let Some(maker) = event_maker {
                 ctx.world().send_message(
                     maker,
@@ -279,8 +275,6 @@ impl Script for Race {
             ctx.world_mut().untransform(player);
             return None;
         } else if event.eq_ignore_ascii_case("showfinish") {
-            // NOTE(java-quirk): `_randspawn` is null before the race starts: a
-            // NullPointerException in Java, so nothing happens here.
             if let Some(r) = ctx.state::<RaceState>().randspawn {
                 ctx.add_radar(player, r[0], r[1], r[2]);
             }
@@ -398,8 +392,6 @@ fn time_up(script: &Race, ctx: &mut ScriptCtx<'_>) {
 
 /// Java `winRace(player)`.
 fn win_race(script: &Race, ctx: &mut ScriptCtx<'_>, player: ObjectId) {
-    // NOTE(java-quirk): `getRandom(_rewards.length - 1)` is 0..12: the Revita pop (the last
-    // entry) is never given.
     let reward = REWARDS[ctx.get_random(REWARDS.len() as i32 - 1) as usize];
     ctx.world_mut()
         .add_item(player, reward[0], i64::from(reward[1]), true);

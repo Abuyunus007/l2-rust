@@ -1,11 +1,5 @@
 //! Picking items up: the click on an item (`ItemClick`), the `PICK_UP` intention of a player and
 //! `Player.doPickupItem`.
-// Java: dist/game/data/scripts/handlers/actions/click/ItemClick.java
-// Java: ai/CreatureAI.java (setIntentionPickUp, notifyActionForgetObject)
-// Java: ai/PlayerAI.java (thinkPickUp)
-// Java: entity/actor/Player.java (doPickupItem)
-// Java: entity/item/instance/Item.java (pickupMe, resetOwnerTimer)
-//
 // # The flow
 // A click on an item calls `setIntentionPickUp`, which walks to the item (`moveToPawn`, offset 20).
 // When the player has arrived (the movement tick raises `ARRIVED`), `thinkPickUp` checks the
@@ -75,7 +69,6 @@ impl World {
             player.movement.pawn.ai_target = Some(object);
         }
 
-        // NOTE(java-quirk): an object at 0,0 is moved next to the actor ("using a temporary fix").
         if let (Some(me), Some((0, 0, _))) = (self.position_of(id), self.position_of(object)) {
             if let Some(item) = self.ground_item_mut(object) {
                 (item.x, item.y, item.z) = (me.0, me.1, me.2 + 5);
@@ -238,9 +231,6 @@ impl World {
         // `Item.pickupMe`: a mercenary ticket takes its hire with it (M7-SIEGE-01).
         self.merc_on_pickup(&taken);
         // `ON_PLAYER_ITEM_PICKUP` (S-API-04, queued).
-        // NOTE(java-quirk): Java asks the item template's listeners first and the player's only
-        // when the template has none; the engine has no template listeners for items, so the
-        // player's and the global ones hear it.
         self.script_fire_async(
             crate::script::ScriptEvent::PlayerItemPickup {
                 player: id,

@@ -1,9 +1,6 @@
 //! Quest 461: Rumble in the Base (Stan in the Aden Castle Base, Shiny Salmon and Shoes String).
-// Java: dist/game/data/scripts/quests/Q00461_RumbleInTheBase/Q00461_RumbleInTheBase.java
-//
 // Pattern: a daily kill quest. Each monster drops an item with a chance (the roll comes first,
 // for every monster); the NPC pays the experience once a day. Java's `getRandomPartyMember(player,
-// 1)` decides who gets the cond, while the item goes to the killer (NOTE(java-quirk) below).
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, QuestSound, QuestType, STARTED};
@@ -108,8 +105,6 @@ impl Script for Q00461RumbleInTheBase {
             };
             let qs = ctx.get_quest_state(member, false);
             if ctx.get_quest_items_count(killer, SHOES_STRING_OF_SEL_MAHUM) < 10 {
-                // NOTE(java-quirk): the shoes string goes to the killer, but the cond is set on
-                // the state of the member drawn above.
                 ctx.give_items(killer, SHOES_STRING_OF_SEL_MAHUM, 1);
                 ctx.play_sound(killer, QuestSound::ItemsoundQuestItemget);
                 if ctx.get_quest_items_count(killer, SHINY_SALMON) >= 5

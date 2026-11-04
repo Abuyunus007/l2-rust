@@ -1,6 +1,4 @@
 //! Krateis' Cube: the monsters of the arenas give points to the player who kills them.
-// Java: dist/game/data/scripts/ai/areas/FantasyIsle/KrateisCube.java
-//
 // The arenas, their registration cycle and the points are the world's `minigame/krateis.rs`.
 
 use l2_util::ObjectId;

@@ -1,8 +1,4 @@
 //! What other players see of a player: `CharInfo`, `ExBrExtraUserInfo` and `RelationChanged`.
-// Java: org/l2jmobius/gameserver/entity/actor/Player.java (sendInfo, getKnownRelations; the
-//       relation and isAutoAttackable are in `pvp.rs`)
-// Java: org/l2jmobius/gameserver/network/serverpackets/CharInfo.java
-//
 // The values come from the same computation as the player's own `UserInfo`
 // (`enter::build_user_info`), so both views agree.
 // Compared field by field with Java's CharInfo constructor and writeImpl (M3-PLAYERS-01): the
@@ -45,7 +41,6 @@ impl World {
         if appearing {
             self.send_rider_get_on(subject, viewer);
         }
-        // Java: RelationChanged only when it differs from what this viewer was told before.
         let relation = self.relation(subject, viewer);
         let auto_attackable = self.is_auto_attackable(subject, viewer);
         let Some(player) = self.players.get_mut(&subject) else {
@@ -124,7 +119,6 @@ impl World {
             hair_style: ui.hair_style,
             hair_color: ui.hair_color,
             face: ui.face,
-            // Java: a GM looking at an invisible player sees the title "Invisible".
             // `appearance.getVisibleTitle()` (UserInfo writes the real title).
             title: if gm_sees_invisible {
                 "Invisible".to_string()
@@ -139,15 +133,12 @@ impl World {
             sitting: self.is_sitting(subject),
             running: ui.running,
             in_combat: false,
-            // Java: `!_player.isInOlympiadMode() && _player.isAlikeDead()` (M8-OLY-01).
             alike_dead: !self.is_in_olympiad_mode(subject) && self.is_alike_dead(subject),
-            // Java: `!gmSeeInvis && isInvisible()` (a GM sees the player, a ghostly one).
             invisible: !gm_sees_invisible && invisible,
             mount_type: ui.mount_type,
             private_store_type: ui.private_store_type,
             cubics: ui.cubics,
             in_party_match_room: ui.in_party_match_room,
-            // Java: a GM viewer gets `AbnormalVisualEffect.STEALTH` on top.
             abnormal_visual_effects: if gm_sees_invisible {
                 visual_effects | STEALTH_MASK
             } else {

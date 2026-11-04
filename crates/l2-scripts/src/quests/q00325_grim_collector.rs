@@ -1,6 +1,4 @@
 //! Quest 325: Grim Collector (Guard Curtiz, Varsak and Samed in the Talking Island / Gludin area).
-// Java: dist/game/data/scripts/quests/Q00325_GrimCollector/Q00325_GrimCollector.java
-//
 // Pattern: a collection quest with drop chances per monster (`docs/design/scripts.md`, "Quest
 // patterns"). The anatomy diagram (from Samed) lets the player collect bones and zombie parts:
 // one roll per kill, compared with the monster's drop list in order. Varsak assembles a skeleton

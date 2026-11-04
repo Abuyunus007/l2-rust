@@ -1,8 +1,4 @@
 //! The force and soul handlers: `FocusEnergy`, `FocusMaxEnergy`, `FocusSouls` and `SoulEating`.
-// Java: dist/game/data/scripts/handlers/skill/effects/FocusEnergy.java
-// Java: dist/game/data/scripts/handlers/skill/effects/FocusMaxEnergy.java
-// Java: dist/game/data/scripts/handlers/skill/effects/FocusSouls.java
-// Java: dist/game/data/scripts/handlers/skill/effects/SoulEating.java
 
 use l2_data::skill::EffectTemplate;
 

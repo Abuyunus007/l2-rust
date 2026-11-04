@@ -1,5 +1,4 @@
 //! Headquarters and the conquerable hall bosses cannot be hit by lethal skills.
-// Java: dist/game/data/scripts/ai/others/NonLethalableNpcs.java
 
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
 

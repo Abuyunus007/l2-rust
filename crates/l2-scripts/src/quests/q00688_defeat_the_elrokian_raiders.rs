@@ -1,6 +1,4 @@
 //! Quest 688: Defeat the Elrokian Raiders! (Dinn on the Talking Island wharf, the Elrokian raiders of the Primeval Plains).
-// Java: dist/game/data/scripts/quests/Q00688_DefeatTheElrokianRaiders/Q00688_DefeatTheElrokianRaiders.java
-//
 // Pattern: a repeatable kill-and-collect quest. The necklaces drop from the raiders to the party
 // member the random pick returns (`get_random_party_member_cond(player, 1)`), and Dinn pays per
 // necklace or, with 100 of them, a donation (a coin toss between two sums).

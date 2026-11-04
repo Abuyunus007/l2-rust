@@ -1,6 +1,4 @@
 //! Quest 116: Beyond the Hills of Winter (Filaur in the Heine area, the supplier Obi).
-// Java: dist/game/data/scripts/quests/Q00116_BeyondTheHillsOfWinter/Q00116_BeyondTheHillsOfWinter.java
-//
 // Pattern: a delivery with a memo state (`setMemoState`) that tells the two steps apart, and a
 // reward the player picks from two links (`bypass -h Script ... MATERIAL` / `ADENA`). The
 // `hasAllItems(player, true, ...)` of Java compares counts, not presence.

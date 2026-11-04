@@ -2,7 +2,6 @@
 
 //! Doors, fences and static objects in the world: spawning from data, the packets players get,
 //! open / close, and the geoengine's door and fence checks over the world and over the snapshot.
-//! Java: Door.java, Fence.java, StaticObject.java, DoorData.java, FenceData.java, WorldRegion.java.
 
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};

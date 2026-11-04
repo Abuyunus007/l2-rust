@@ -1,6 +1,4 @@
 //! Quest 279: Target of Opportunity (Jerian in the Hunters Village sends level 82 players after the seal components).
-// Java: dist/game/data/scripts/quests/Q00279_TargetOfOpportunity/Q00279_TargetOfOpportunity.java
-//
 // Pattern: a party collect quest (`docs/design/scripts.md`, "Quest patterns"): a random party
 // member whose `progress` variable is 1 is the one the four seal components count for. Each
 // component drops once per monster kind with a chance; the last one sets cond 2. Jerian gives the
@@ -67,8 +65,6 @@ impl Script for Q00279TargetOfOpportunity {
             Some(qs) if ctx.player_level(player) >= MIN_LEVEL => qs,
             _ => return Some(ctx.get_no_quest_msg(player)),
         };
-        // NOTE(java-quirk): every event comes back as the text, also the `-h Script ... enter`
-        // links of the pages, which Java shows as a chat line.
         let htmltext = event.to_owned();
         if event.eq_ignore_ascii_case("32302-05.html") {
             qs.start_quest(ctx);
@@ -95,8 +91,6 @@ impl Script for Q00279TargetOfOpportunity {
         };
         let qs = ctx.get_quest_state(pl, false);
         if ctx.get_random(1000) < 311 && !ctx.has_quest_items(killer, SEAL_COMPONENTS[idx]) {
-            // NOTE(java-quirk): the component goes to the killer, the cond 2 to the member drawn
-            // above (Java gives to `player` and sets the cond on `pl`).
             ctx.give_items(killer, SEAL_COMPONENTS[idx], 1);
             if have_all_except_this(ctx, killer, idx) {
                 if let Some(qs) = qs {

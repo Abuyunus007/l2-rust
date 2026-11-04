@@ -1,8 +1,6 @@
 //! The door admin commands: `//open <doorId>`, `//close <doorId>`, `//open` and `//close` on the
 //! target door, `//openall`, `//closeall`, and `//showdoors [off]`, which draws the doors near the
 //! GM with the client's debug primitives.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminDoorControl.java
-//
 // # Left out, with the system that brings it
 // - The coliseum doors `open1`..`open4`, `close1`..`close4` (their words are not in the list of
 //   `AdminDoorControl`'s `ADMIN_COMMANDS`, so they answer "does not exist" like Java).

@@ -1,7 +1,5 @@
 //! Quest 240: I'm the Only One You Can Trust (Kintaijin, a bounty hunter in the Dion area,
 //! sends the characters of level 81 and up to the Stakato's Nest for 25 Stakato Fangs).
-// Java: dist/game/data/scripts/quests/Q00240_ImTheOnlyOneYouCanTrust/Q00240_ImTheOnlyOneYouCanTrust.java
-//
 // Pattern: a party kill, a random member at cond 1 gets the drop (`docs/design/scripts.md`,
 // "Quest patterns"), then one-time with adena, exp and the items taken back.
 

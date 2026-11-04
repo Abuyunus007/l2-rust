@@ -1,6 +1,4 @@
 //! Quest 661: Making the Harvest Grounds Safe (Warehouse Keeper Norman, the Fellmere Harvesting Grounds monsters).
-// Java: dist/game/data/scripts/quests/Q00661_MakingTheHarvestGroundsSafe/Q00661_MakingTheHarvestGroundsSafe.java
-//
 // Pattern: a repeatable kill-and-collect quest with one drop per monster (`MONSTER_CHANCES`), a
 // party member drawn by `get_random_party_member_state` and paid per item, with a bonus at ten
 // items. Java's varargs `hasQuestItems(player, a, b, c)` means "all of them".

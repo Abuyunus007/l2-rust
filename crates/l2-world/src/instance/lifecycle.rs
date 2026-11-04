@@ -1,11 +1,5 @@
 //! The life of an instance: made from a template (doors and the "general" spawn group), its
 //! duration and empty-destroy countdown, and its destruction.
-// Java: managers/InstanceManager.java (createInstanceFromTemplate, createDynamicInstance,
-//       destroyInstance)
-// Java: entity/instancezone/Instance.java (loadInstanceTemplate, spawnDoors, spawnGroup,
-//       removePlayer, removePlayers, removeNpcs, removeDoors, setDuration, doCheckTimeUp,
-//       cancelTimer, CheckTimeUp, TimeUp)
-// Java: entity/instancezone/InstanceWorld.java (destroy, broadcastPacket, openDoor, closeDoor)
 
 use std::sync::Arc;
 
@@ -84,7 +78,6 @@ impl World {
     fn load_instance_template(&mut self, id: i32, template_id: i32) {
         let templates = Arc::clone(&self.instances.templates);
         let Some(template) = templates.get(template_id) else {
-            // Java: the file name is `null`, the read fails with an IOException.
             warn!("Instance: can not find ./data/instances/null ! (template {template_id})");
             return;
         };
@@ -116,7 +109,6 @@ impl World {
         if let Some(minutes) = template.activity_time_minutes {
             // `new CheckTimeUp(Integer.parseInt(val) * 60000)`: int arithmetic; the end time is
             // `Long.parseLong(val) * 60000 + 15000`.
-            // NOTE(java-quirk): this does not cancel a countdown that already runs.
             let remaining = minutes.wrapping_mul(60_000);
             instance.end_time_ms = now + i64::from(minutes) * 60_000 + ACTIVITY_START_DELAY_MS;
             let timer = self.schedule_instance_task(
@@ -148,8 +140,6 @@ impl World {
         for door_id in door_ids {
             // `DoorData.getDoorTemplate(doorId)`: the template of the door of the normal world.
             let Some(template) = self.door_by_door_id(door_id).map(|d| Arc::clone(&d.template)) else {
-                // NOTE(java-quirk): Java gets `null` and the `DoorTemplate` constructor throws, which
-                // ends the creation of the instance; here the door is left out.
                 warn!("Instance {id}: door {door_id} has no template.");
                 continue;
             };
@@ -265,9 +255,6 @@ impl World {
             return;
         }
         instance.last_left_ms = now;
-        // NOTE(java-quirk): `(int) (_instanceEndTime - now - 500)`: for an instance without an end
-        // time (-1) the long is truncated to an int, so the "duration" is whatever the low 32 bits
-        // of a large negative number are.
         let duration = (instance.end_time_ms - now - i64::from(DURATION_START_DELAY_MS)) as i32;
         self.set_instance_duration(id, duration);
     }
@@ -306,8 +293,6 @@ impl World {
 
     /// Java `Instance.cancelTimer()`.
     fn cancel_instance_timer(&mut self, id: i32) {
-        // NOTE(java-quirk): Java cancels `_checkTimeUpTask` but keeps the reference, which does
-        // not matter: every later schedule replaces it.
         if let Some(timer) = self
             .instances
             .instances

@@ -1,8 +1,5 @@
 //! The fortress foreman (Java `FortManager` the NPC): expelling outsiders, the report, the doors,
 //! the clan vault, the fortress functions and their management.
-// Java: entity/actor/instance/FortManager.java
-// Java: mechanics/siege/Fort.java (updateFunctions, getFunction)
-//
 // The pages are the datapack's `data/html/fortress/*.htm`; the numbers come from `Feature.ini`
 // (`Fortress*FunctionFee*`). Every Java call that can throw (`Integer.parseInt` of a token, the
 // token that is not there) ends the command here as well: nothing more happens and a warning
@@ -316,8 +313,6 @@ impl World {
             let t2 = self.fort_time_till_next_update(fort);
             let hour2 = (t2 / 3600) as i32;
             let minutes2 = ((t2 - i64::from(hour2) * 3600) / 60) as i32;
-            // NOTE(java-quirk): `getContractedCastle().getName()` fails for a fortress without
-            // its castle; the page is not sent then.
             let castle = self
                 .fort_contracted_castle(fort)
                 .map(|c| self.residence_name(ResidenceRef::Castle(c)));
@@ -369,8 +364,6 @@ impl World {
         }
     }
 
-    /// Java `showVaultWindowDeposit(player)`. The rows of the clan warehouse are read first
-    /// (M6-SYNC-01, D-50), like the window of every other clan warehouse.
     fn fort_show_vault_deposit(&mut self, player: ObjectId) {
         self.send(player, &ActionFailed);
         let clan = self.clan_id_of(player);
@@ -784,8 +777,6 @@ impl World {
     /// `getFort().updateFunctions(player, type, level, fee, ratio, getFunction(type) == null)`.
     /// `double_send` is the `sendHtmlMessage(player, html)` after a failed purchase that falls
     /// through to the one at the end of the branch.
-    // NOTE(java-quirk): the HP, MP, EXP and teleport branches send the page twice when the player
-    // cannot pay: "low_adena" in the failure branch, and the same page object again at the end.
     fn fort_apply_function(
         &mut self,
         npc: ObjectId,

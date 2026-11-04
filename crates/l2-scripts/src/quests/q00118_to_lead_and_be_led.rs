@@ -1,6 +1,4 @@
 //! Quest 118: To Lead And Be Led (Blacksmith Pinter, sponsor and academy member).
-// Java: dist/game/data/scripts/quests/Q00118_ToLeadAndBeLed/Q00118_ToLeadAndBeLed.java
-//
 // Pattern: two players in one script. The apprentice (a clan academy member) owns the quest; the
 // sponsor talks to the same NPC and `onEvent` answers for the sponsor's apprentice. The sponsor
 // and apprentice come from the clan state (`player_sponsor` / `player_apprentice`).
@@ -87,7 +85,6 @@ impl Script for Q00118ToLeadAndBeLed {
             ctx.world().player(apprentice)?;
 
             let q118 = ctx.get_quest_state(apprentice, false);
-            // NOTE(java-quirk): Java's `checkIfInRange(.., npc, ..)` throws on a null NPC; here it is false.
             let in_range = npc
                 .is_some_and(|n| ctx.check_if_in_range(ctx.alt_party_range(), n.object_id, apprentice, true));
             match event {

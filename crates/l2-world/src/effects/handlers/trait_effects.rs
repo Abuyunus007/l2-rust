@@ -1,6 +1,4 @@
 //! `AttackTrait` and `DefenceTrait`: the effects that move a creature's trait tables.
-// Java: dist/game/data/scripts/handlers/skill/effects/AttackTrait.java
-// Java: dist/game/data/scripts/handlers/skill/effects/DefenceTrait.java
 
 use l2_data::skill::{EffectTemplate, ParamValue, TraitType};
 use tracing::warn;

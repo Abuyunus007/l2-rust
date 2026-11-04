@@ -1,6 +1,4 @@
 //! Quest 699: Guardian of the Skies (Engineer Lekon at the Keucereus Alliance Base, the Vulture Riders of Gracia).
-// Java: dist/game/data/scripts/quests/Q00699_GuardianOfTheSkies/Q00699_GuardianOfTheSkies.java
-//
 // Pattern: a repeatable kill-and-collect quest. Master Rider Valdstone drops 60 to 99 feathers
 // (a three-step chance); the Vulture Riders drop one with a per-monster chance. Lekon pays per
 // feather with a bonus above ten. The quest is offered after "Good Day to Fly" (Q10273).

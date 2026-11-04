@@ -1,5 +1,4 @@
 //! Quest 196: Seven Signs, Seal of the Emperor (Iason Heine, Merchant of Mammon, Shunaiman, Wood, Court Magician).
-// Java: dist/game/data/scripts/quests/Q00196_SevenSignsSealOfTheEmperor/Q00196_SevenSignsSealOfTheEmperor.java
 
 use l2_protocol_game::server::ChatType;
 use l2_protocol_game::{NpcStringId, SystemMessageId};

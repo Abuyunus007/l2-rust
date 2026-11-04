@@ -1,5 +1,4 @@
 //! The Priests of Blessing: Nevit's Voice and the Nevit hourglasses for adena, once every 20 hours.
-// Java: dist/game/data/scripts/ai/others/PriestOfBlessing/PriestOfBlessing.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
@@ -101,7 +100,6 @@ fn send_reuse_message(ctx: &mut ScriptCtx<'_>, player: ObjectId, item: SystemMes
 
 /// The stored reuse time of a variable: 0 when it is not set.
 fn reuse_time_of(ctx: &ScriptCtx<'_>, player: ObjectId, name: &str) -> i64 {
-    // NOTE(java-quirk): `Long.parseLong` of a bad value throws in Java; it counts as 0 here.
     ctx.player_variable(player, name)
         .and_then(|v| v.parse().ok())
         .unwrap_or(0)
@@ -189,7 +187,6 @@ impl Script for PriestOfBlessing {
     }
 
     fn on_first_talk(&self, ctx: &mut ScriptCtx<'_>, _npc: ScriptNpc, player: ObjectId) -> Option<String> {
-        // NOTE(java-quirk): a missing page is a null `content` and `replace` throws; no page here.
         let content = ctx.get_htm(player, "32783.htm")?;
         Some(content.replace(
             "%donate%",

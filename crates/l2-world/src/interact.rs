@@ -1,12 +1,6 @@
 //! Walking up to something that was clicked: the `INTERACT` intention of a player, `moveToPawn`,
 //! and the follow task that walks the last steps (also the chase of the `ATTACK` intention, see
 //! `ai/`).
-// Java: ai/CreatureAI.java (setIntentionInteract, maybeMoveToPawn, notifyActionForgetObject)
-// Java: ai/PlayerAI.java (thinkInteract, notifyActionThink)
-// Java: ai/AbstractAI.java (moveToPawn, startFollow, stopFollow, clientStoppedMoving)
-// Java: taskmanagers/CreatureFollowTaskManager.java (addAttackFollow, follow)
-// Java: entity/actor/Player.java (doInteract)
-//
 // # The flow of a talk click from afar
 // `NpcClick` sees that the NPC is too far (`canInteract`), so `setIntentionInteract(npc)` walks
 // towards it (`moveToPawn`, offset 60). When the player arrives, `thinkInteract` checks the

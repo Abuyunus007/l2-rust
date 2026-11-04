@@ -7,7 +7,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/ChooseInventoryItem.java
 server_packet!(
     /// Opens the scroll window of the enchant scroll `item_id` (`CHOOSE_INVENTORY_ITEM`). It is the
     /// template id (`item.getId()`), not the display id.
@@ -17,7 +16,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/EnchantResult.java
 server_packet!(
     /// The outcome of an enchant (`ENCHANT_RESULT`). `result`: 0 success, 1 failed with crystals,
     /// 2 error, 3 blessed failure (level 0), 4 failed without crystals, 5 safe failure.
@@ -31,7 +29,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/ExPutEnchantTargetItemResult.java
 server_packet!(
     /// The answer to `RequestExTryToPutEnchantTargetItem`: the object id of the accepted item, 0
     /// when it does not fit (`EX_PUT_ENCHANT_TARGET_ITEM_RESULT`).
@@ -41,7 +38,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/ExPutEnchantSupportItemResult.java
 server_packet!(
     /// The answer to `RequestExTryToPutEnchantSupportItem` (`EX_PUT_ENCHANT_SUPPORT_ITEM_RESULT`).
     ExPutEnchantSupportItemResult,
@@ -50,7 +46,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/ExAttributeEnchantResult.java
 server_packet!(
     /// The power an element stone added (`EX_ATTRIBUTE_ENCHANT_RESULT`); 0 when it failed.
     ExAttributeEnchantResult,
@@ -59,7 +54,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/ExBaseAttributeCancelResult.java
 /// An element was taken off an item (`EX_BASE_ATTRIBUTE_CANCEL_RESULT`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExBaseAttributeCancelResult {
@@ -90,7 +84,6 @@ impl Decode for ExBaseAttributeCancelResult {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExChooseInventoryAttributeItem.java
 /// Opens the window to choose the item an element stone goes on
 /// (`EX_CHOOSE_INVENTORY_ATTRIBUTE_ITEM`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -148,7 +141,6 @@ impl Decode for ExChooseInventoryAttributeItem {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExShowBaseAttributeCancelWindow.java
 /// The window to take an element off an item: every item with an element and what it costs
 /// (`EX_SHOW_BASE_ATTRIBUTE_CANCEL_WINDOW`).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]

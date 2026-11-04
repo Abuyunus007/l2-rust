@@ -1,5 +1,4 @@
 //! Chamber of Delusion West, instance 128.
-// Java: dist/game/data/scripts/instances/ChambersOfDelusion/ChamberOfDelusionWest.java
 
 use super::chamber::{ChamberData, chamber_script};
 

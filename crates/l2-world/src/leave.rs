@@ -1,8 +1,4 @@
 //! Leaving the world: logout, restart, disconnect, kick and shutdown.
-// Java: network/clientpackets/{Logout,RequestRestart}.java
-// Java: network/Disconnection.java (storeAndDelete, storeAndDeleteWith)
-// Java: Shutdown.disconnectAllCharacters, LoginServerThread.doKickPlayer
-//
 // Every way out stores the character first (`PersistCommand::StorePlayer` with the snapshot, then
 // `PlayerLeft`), then the last packet of that way goes out, then the connection hears about it
 // through `PacketSink::left_world`.
@@ -77,9 +73,6 @@ impl World {
             return;
         }
         // Java `RequestRestart`: a festival participant cannot restart while the festival runs
-        // (M8-FEST-01); `canLogout()` after it asks the same again (NOTE(java-quirk): so the party
-        // is told twice that the player is out of the upcoming festival), with "A superior power
-        // doesn't allow you to leave." (M8-GAMES-01) before its festival part.
         if self.festival_blocks_restart(id)
             || self.minigame_blocks_logout(id)
             || self.festival_blocks_logout(id)
@@ -227,7 +220,6 @@ impl World {
         // `Player.stopAllTasks`: the quest timers stop; the quest states go with the player
         // (S-API-01).
         self.script_on_player_leave(id);
-        // Java: PlayerAutoSaveTaskManager.remove
         if let Some(timer) = self.autosave_timers.remove(&id) {
             self.timers.cancel(timer);
         }
@@ -244,7 +236,6 @@ impl World {
             // A trader's account was freed when it went offline.
             logout: reason != LeaveReason::Restart && !was_trader,
         });
-        // Java: `deleteMe()` after `storeMe()`: out of everybody's view, out of the world.
         self.decay(id);
         // `deleteMe`: the other members see the player go offline.
         self.clan_after_leave(id, clan_leave);
@@ -261,7 +252,6 @@ impl World {
         self.forget_effects(id);
         self.forget_combat(id);
         self.forget_death_state(id);
-        // Java: the Player object is gone with its `_isInvul` and regeneration task (a new login is
         // a new object, so the invulnerability of the GM does not carry over).
         self.forget_status(id);
         // `Player.stopAllTimers` -> `stopPvpRegTask`; the flag goes with the object.

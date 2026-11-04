@@ -1,6 +1,4 @@
 //! Quest 66: Certified Arbalester (Master Rindy, Selsia, Clayton, Poitan, Gaius, Gauen, ...).
-// Java: dist/game/data/scripts/quests/Q00066_CertifiedArbalester/Q00066_CertifiedArbalester.java
-//
 // Pattern: a kill and delivery chain with the memo state as the step counter, sibling of
 // `q00064_certified_berserker.rs`; the diamond reward is paid once per character.
 
@@ -135,7 +133,6 @@ impl Script for Q00066CertifiedArbalester {
         let mut htmltext = None;
         match event {
             "ACCEPT" => {
-                // NOTE(java-quirk): unlike Q00065 it does not check `qs.isCreated()`.
                 if ctx.player_level(player) >= MIN_LEVEL
                     && ctx.player_class_id(player) == player_class::WARDER
                     && !ctx.has_quest_items(player, KAMAEL_INQUISITOR_MARK)
@@ -199,7 +196,6 @@ impl Script for Q00066CertifiedArbalester {
                 if qs.is_memo_state(ctx, 24) {
                     qs.set_memo_state(ctx, 25);
                 }
-                // NOTE(java-quirk): the cond is set whatever the memo state is.
                 qs.set_cond(ctx, 14, true);
                 htmltext = Some(event.to_owned());
             }

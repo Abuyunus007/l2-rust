@@ -1,13 +1,8 @@
 //! Quest 309: For A Good Cause (Atra in the Hot Springs area trades the mucrokian hides for dynasty and Moirai items).
-// Java: dist/game/data/scripts/quests/Q00309_ForAGoodCause/Q00309_ForAGoodCause.java
-//
 // Pattern: the same trade as Q00308 (`q00308_reed_field_maintenance.rs`) with its own hides and
 // drop chances: the mucrokians drop hides for a random party member, the contaminated one a fallen
 // hide and a second one through the quest rewards; Atra exchanges the hides for one item of a
 // table. Players on Q00308_ReedFieldMaintenance are sent to its own NPC (`player_quest_state`).
-//
-// NOTE(java-quirk): the exchange answers are the pages `32646-16.htm` and `32646-15.htm` (the
-// pages of Q00308), not this quest's own `32647-*` pages.
 
 use l2_util::ObjectId;
 use l2_world::script::{QuestSound, STARTED};
@@ -84,7 +79,6 @@ fn item_exchange_request(ctx: &mut ScriptCtx<'_>, player: ObjectId, item: i32, q
             ctx.give_items(player, item, 1);
         }
         ctx.play_sound(player, QuestSound::ItemsoundQuestFinish);
-        // NOTE(java-quirk): the answer pages are the ones of Q00308 (see the file comment).
         "32646-16.htm".to_owned()
     } else {
         "32646-15.htm".to_owned()

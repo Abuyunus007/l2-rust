@@ -1,5 +1,4 @@
 //! Jinia Guild Hideout 1 instance zone, template 140.
-// Java: dist/game/data/scripts/instances/JiniaGuildHideout1/JiniaGuildHideout1.java
 
 use super::jinia_guild_hideout::{Condition, HideoutData, jinia_script};
 

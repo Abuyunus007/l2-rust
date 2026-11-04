@@ -1,9 +1,5 @@
 //! Making a summon and putting it into the world: the `Summon` constructor, `Servitor`'s, the
 //! `Summon` effect's set up, `spawnMe` and `onSpawn`.
-// Java: entity/actor/Summon.java (constructor, onSpawn, setFollowStatus, setRunning via
-//       Creature.setRunning)
-// Java: entity/actor/instance/Servitor.java (constructor, onSpawn)
-// Java: dist/game/data/scripts/handlers/skill/effects/Summon.java (onStart)
 
 use l2_protocol_game::server::{RelationChanged, RelationEntry};
 use l2_util::ObjectId;

@@ -3,7 +3,6 @@
 //!
 //! `//commands [page=N]` lists every admin command of the rights table with its description, five
 //! per page. `//instancezones` is in `admin/instance.rs` (M8-INST-01).
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/{AdminHtml,AdminHelp}.java
 
 use l2_protocol_game::server::NpcHtmlMessage;
 use l2_util::ObjectId;
@@ -47,10 +46,6 @@ fn admin_html(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
 
 /// Java `AdminHtml.onCommand`, `admin_loadhtml <path>`: the page at the datapack path, shown as
 /// the text of the file (`showHtml(reload = true)`).
-// NOTE(java-quirk): Java reads the file again from the disk here and shows that text (and keeps
-// it in its cache; the Rust cache is not changed). The file is read by the game server task (D-15,
-// no file IO inside a tick): the page is sent when `WorldCommand::HtmlFileLoaded` comes back. The
-// missing page text is Java's own for this path (lower case "text").
 fn admin_loadhtml(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     let Some(path) = argument(command) else {
         world.send_sys_message(gm, "Usage: //loadhtml path");
@@ -85,9 +80,6 @@ fn admin_help(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
 
 /// Java `AdminHelp.onCommand`, `admin_commands [page=N]`: the rows of the rights table, five per
 /// page, in `commands.htm`. The page number is `Integer.parseInt` (a bad one is the exception).
-// NOTE(java-quirk): Java cuts the page from `substring(15)` after a plain `contains("page")`, and
-// its default page is 1, which `PageBuilder` counts from 0: `//commands` alone shows the second
-// page of five, and `page=0` the first.
 fn admin_commands(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     let page = if command.contains("page") {
         let text: String = command.chars().skip(15).collect();

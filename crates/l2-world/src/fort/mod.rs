@@ -2,13 +2,6 @@
 //! combat flag, the fort spawns, the owner change), `FortUpdater`, the fortress NPCs and the
 //! `//fortsiege` commands. The residence part of a fortress (owner, functions, doors, flag pole,
 //! supply level) is `residence/fort.rs` (M7-RES-01).
-// Java: managers/{FortManager,FortSiegeManager,FortSiegeGuardManager}.java
-// Java: mechanics/siege/{Fort,FortSiege,CombatFlag,FortSpawnHolder,FortTeleportWhoType,FortUpdater,
-//       FortUpdaterType}.java
-// Java: entity/actor/instance/{FortCommander,FortDoorman,FortLogistics,FortManager}.java
-// Java: entity/zone/type/SiegeZone.java (the fortress's siege zone)
-// Java: dist/game/data/scripts/ai/others/{FortressSiegeManager,FortressArcherCaptain}
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminFortSiege.java
 // Design: docs/design/m7-residences.md
 //
 // # Shape
@@ -18,20 +11,6 @@
 // ids into the spawn table (`respawn.rs`: runtime spawns), clans are ids, flags and players are
 // object ids (D-11). Every Java `ThreadPool.schedule` is a [`FortTimer`] on the wheel (D-12).
 //
-// # Side by side with the Java game server (D-39, D-49, D-51)
-// Sieghardt runs the real fortress sieges. So:
-// - every row the siege writes (the registrations, the siege date) goes out through
-//   [`World::siege_write`] (`SiegeDatabaseWrites`); the owner change goes through the residence
-//   code (`residence/fort.rs`), which does the same;
-// - the automatic start of a siege (Java's `ScheduleStartSiegeTask` chain: the announcements and
-//   `startSiege()`) runs only with `SiegeDatabaseWrites`; without it the chain's first task is
-//   armed (Java's `_siegeStartTask != null` is read by the registration code) and does nothing.
-//   A GM starts a test siege (`//startfortsiege`), which runs to its end in this world;
-// - the periodic jobs of `FortUpdater` that charge the clan warehouse and the castle treasury
-//   skip those parts without the switch (as the function fees of RES-01 do);
-// - a registration is read again before it is acted on (D-50): the Fortress Siege Manager asks
-//   [`World::request_residence_reread`] with [`ResidenceReadThen::FortSiegeRegister`] and so on,
-//   and a registration this world holds without a row (written with the switch off) survives it.
 //
 // # Left to other cards
 // - Castle sieges, `SiegeFlag` (the headquarters), the siege skills and the siege clan states of
@@ -98,7 +77,6 @@ pub enum LogisticsCommand {
     Supply,
 }
 
-/// What the fortress code does once a fortress was read again (`ResidenceReadThen::Fort`, D-50).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FortThen {
     /// `FortressSiegeManager` "register".
@@ -162,9 +140,6 @@ impl FortWorld {
 }
 
 impl crate::world::World {
-    /// Asks the persistence task for the fortress's row, its registrations and the blood oaths of
-    /// its owner; the answer comes back as `WorldCommand::ResidenceReread` and goes on with
-    /// `then` (D-50, D-15).
     pub fn fort_request_siege_reread(&mut self, fort: FortId, then: FortThen) {
         self.outbox
             .persist(crate::outbox::PersistCommand::ResidenceRereadRequest {

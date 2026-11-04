@@ -4,7 +4,6 @@
 //! These only read the packet. The registration period, the owner's exemption, the level check
 //! and the registration lists are the world's job (M7 territory cards).
 
-// Java: gameserver/network/clientpackets/RequestJoinDominionWar.java
 client_packet!(
     /// The clan or the player registers for a territory war, or takes the registration back
     /// (`0xD0` 0x0057, `REQUEST_EX_JOIN_DOMINION_WAR`).
@@ -19,7 +18,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestDominionInfo.java
 client_unit_packet!(
     /// Asks for the territory list (`0xD0` 0x0058, `REQUEST_EX_DOMINION_INFO`).
     RequestDominionInfo,

@@ -1,9 +1,6 @@
 //! `ScriptCtx` helpers of the quest and AI scripts that ask a player about its clan links, send it
 //! a social action, or touch its private warehouse (S-DATA-01): small `pub` doors named after
 //! the Java calls they stand for.
-// Java: entity/actor/Player.java (getSponsor, getApprentice, getPledgeType, getWarehouse),
-//       network/serverpackets/SocialAction.java,
-//       entity/itemcontainer/ItemContainer.java (destroyItem, getItemByObjectId)
 
 use l2_protocol_game::server::SocialAction;
 use l2_util::ObjectId;

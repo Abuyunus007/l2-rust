@@ -1,6 +1,4 @@
 //! Quest 10: Into the World (Balanki in Talking Island sends a dwarf to Reed and Gerald).
-// Java: dist/game/data/scripts/quests/Q00010_IntoTheWorld/Q00010_IntoTheWorld.java
-//
 // Pattern: a chain with a necklace hand-over (`docs/design/scripts.md`, "Quest patterns"): Reed
 // gives the necklace (cond 2), Gerald takes it (cond 3), Reed moves the quest on (cond 4), and
 // Balanki pays the reward items. One-time: `exit_quest(ctx, false, true)`.

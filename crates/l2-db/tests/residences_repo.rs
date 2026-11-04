@@ -136,7 +136,6 @@ async fn castle_rows_owner_treasury_and_functions_with_javas_statements() {
     assert_eq!(repo.castle_owner_ids(8).await.unwrap(), [900]);
     assert!(repo.castle_owner_ids(1).await.unwrap().is_empty());
 
-    // D-50: the proofs of alliance of a clan, as the table has them.
     db.exec("UPDATE clan_data SET blood_alliance_count = 7 WHERE clan_id = 900")
         .await;
     assert_eq!(repo.blood_alliance_count(900).await.unwrap(), Some(7));

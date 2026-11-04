@@ -1,5 +1,4 @@
 //! `config/Custom/OnlineInfo.ini`: the `.online` voiced command.
-// Java: dist/game/data/scripts/handlers/chat/commands/voiced/Online.java
 
 use l2_util::ObjectId;
 
@@ -7,8 +6,6 @@ use crate::world::World;
 
 impl World {
     /// `Online.onCommand`: the command only counts when it is exactly `online`.
-    // NOTE(java-quirk): the handler compares the whole command, so `.online ` (a trailing space)
-    // is taken by the handler (`vcdUsed`) and says nothing.
     pub(crate) fn online_voiced(&mut self, player: ObjectId, command: &str) -> bool {
         if command != "online" || !self.settings.custom_misc.online_command {
             return true;

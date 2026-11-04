@@ -2,15 +2,6 @@
 //! (`PrivateStoreManageList*`), what a customer sees (`PrivateStoreList*`), and the
 //! `TradeList.adjustAvailableItem` / `updateItems` they use. Also `Player.doInteract` and the
 //! store title a viewer gets with `sendInfo`.
-// Java: network/serverpackets/{PrivateStoreManageListSell,PrivateStoreManageListBuy,
-//       PrivateStoreListSell,PrivateStoreListBuy,AbstractItemPacket,PrivateStoreMsgSell,
-//       PrivateStoreMsgBuy,ExPrivateStoreSetWholeMsg}.java
-// Java: network/holders/{TradeList,TradeItem}.java (getAvailableItems, adjustAvailableItem,
-//       updateItems)
-// Java: entity/itemcontainer/PlayerInventory.java (getUniqueItems, getAvailableItems(TradeList),
-//       adjustAvailableItem)
-// Java: entity/actor/Player.java (doInteract, sendInfo)
-// Java: entity/item/holders/ItemInfo.java (the `TradeItem` constructor)
 
 use l2_data::item::{ADENA_ID, ItemTemplate};
 use l2_protocol_game::server::{
@@ -315,8 +306,6 @@ impl World {
         customer: ObjectId,
         store: ObjectId,
     ) -> Option<PrivateStoreListBuy> {
-        // NOTE(java-quirk): the constructor refreshes the store's *sell* list ("Update SellList for
-        // case inventory content has changed"), not the buy list it shows.
         self.update_sell_list_items(store);
         let templates = self.item_templates()?;
         let buy = self.buy_list_copy(store);

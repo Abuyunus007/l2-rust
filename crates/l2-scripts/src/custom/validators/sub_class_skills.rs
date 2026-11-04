@@ -1,7 +1,6 @@
 //! The certification skill check at login (`SkillCheckEnable`): certification skills on a
 //! subclass, skills and books the certification variables do not account for. Also the quest
 //! state `RequestAcquireSkill` asks for when a certification skill is learned.
-// Java: dist/game/data/scripts/custom/Validators/SubClassSkills.java
 
 use l2_util::ObjectId;
 use l2_world::{IllegalActionPunishment, Script, ScriptCtx, ScriptSetup};

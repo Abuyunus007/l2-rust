@@ -1,6 +1,5 @@
 //! `BabyPet`: the baby buffalo, kookaburra and cougar (and their improved forms) heal and buff
 //! their owner on their own every two seconds, unless they are switched to the attack mode.
-// Java: entity/actor/instance/BabyPet.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
@@ -143,9 +142,6 @@ impl World {
     }
 
     /// Java `BabyPet.startCastTask()`.
-    // NOTE(java-quirk): the condition is `major != null || buffs != null || (recharge != null &&
-    // castTask == null && !isDead())`, so a pet with a heal or a buff is never refused a task.
-    // Java would start a second task over the first one then; here a running task stays.
     pub(crate) fn baby_start_cast_task(&mut self, pet: ObjectId) {
         let Some(baby) = self.baby_state(pet) else {
             return;
@@ -239,7 +235,6 @@ impl World {
                 self.stats(owner).map_or(1, |s| s.max_hp()),
             );
             let hp_percent = cur_hp / f64::from(max_hp);
-            // NOTE(java-quirk): the name says "improved", the category is the plain baby pets.
             let is_improved_baby = self.summon_npc_id(pet).is_some_and(|id| {
                 self.id_in_category_or(l2_data::stats::CategoryType::BabyPetGroup, id, |id| {
                     BABY_PET_GROUP.contains(&id)

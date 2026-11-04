@@ -1,5 +1,4 @@
 //! The Zealots of Shilen and the guards that fight the monsters next to them.
-// Java: dist/game/data/scripts/ai/areas/Gracia/AI/NPC/ZealotOfShilen/ZealotOfShilen.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
@@ -75,7 +74,6 @@ impl Script for ZealotOfShilen {
     }
 
     fn on_first_talk(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, _player: ObjectId) -> Option<String> {
-        // NOTE(java-quirk): the page of the fighting guard is always "32628-01.html", for 32629 too.
         Some(if ctx.world().is_attacking_now(npc.object_id) {
             "32628-01.html".to_owned()
         } else {

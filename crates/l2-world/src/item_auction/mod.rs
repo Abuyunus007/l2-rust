@@ -1,12 +1,5 @@
 //! Item auctions: the auctioneer NPCs that sell the items of `data/ItemAuctions.xml` to the
 //! highest bidder (L-05).
-// Java: managers/ItemAuctionManager.java
-// Java: entity/item/auction/{ItemAuctionInstance,ItemAuction,ItemAuctionBid,AuctionItem,
-//       AuctionDateGenerator,ItemAuctionState,ItemAuctionExtendState}.java
-// Java: network/clientpackets/{RequestInfoItemAuction,RequestBidItemAuction}.java
-// Java: network/serverpackets/ExItemAuctionInfoPacket.java
-// Java: dist/game/data/scripts/handlers/bypass/npc/ItemAuctionLink.java
-//
 // # Where it lives
 // One [`ItemAuctionWorld`] in the world (D-10): the instances of the XML (one per auctioneer NPC
 // id), each with its auctions, the current and the next one and its state timer on the wheel
@@ -21,18 +14,12 @@
 // - `bid.rs`: `registerBid`, `cancelBid`.
 // - `request.rs`: the two client packets, the `ItemAuction` bypass, `ExItemAuctionInfo`.
 //
-// # Rows (D-39)
-// `item_auction` (the state of an auction) and `item_auction_bid` (one row per bidder) are shared
-// with the Java GS. Statements are Java's, as [`ItemAuctionWrite`] through
-// `PersistCommand::ItemAuction`. The winner's item is a new `items` row (`loc = WAREHOUSE`).
 //
 //
 // # Left out on purpose
 // - Java sends the "bidder exists" extension message from a thread pool task; it is sent at once
 //   after the "bid submitted" message here.
 // - `ItemProcessType` logging (`LogItems`).
-// - NOTE(java-quirk): `ItemAuction.endingTime` is never stored: an extended auction ends at its
-//   original time again after a restart.
 
 mod bid;
 mod date;

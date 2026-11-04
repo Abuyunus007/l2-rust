@@ -1,15 +1,12 @@
 //! The screen packets of the admin effect commands: the earthquake (`//earthquake`), the sun
 //! rise and set and the red sky (`//atmosphere`), and the special camera of `//cam`, `//camex`
 //! and `//cam3`.
-//!
-//! Java: `gameserver/network/serverpackets/{Earthquake,SunRise,SunSet,ExRedSky,SpecialCamera}.java`.
 
 use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/Earthquake.java
 /// Shakes the screen of the players around `(x, y, z)` (`EARTHQUAKE`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Earthquake {
@@ -32,7 +29,6 @@ impl Encode for Earthquake {
             .i32(self.z)
             .i32(self.intensity)
             .i32(self.duration)
-            // Java: `writeInt(0); // Unknown`.
             .i32(0);
     }
 }
@@ -52,7 +48,6 @@ impl Decode for Earthquake {
     }
 }
 
-// Java: gameserver/network/serverpackets/SunRise.java
 /// The day comes (`SUNRISE`). A header only packet.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SunRise;
@@ -73,7 +68,6 @@ impl Decode for SunRise {
     }
 }
 
-// Java: gameserver/network/serverpackets/SunSet.java
 /// The night comes (`SUNSET`). A header only packet.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SunSet;
@@ -94,7 +88,6 @@ impl Decode for SunSet {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExRedSky.java
 /// The red sky for `duration` seconds (`EX_RED_SKY`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExRedSky {
@@ -118,7 +111,6 @@ impl Decode for ExRedSky {
     }
 }
 
-// Java: gameserver/network/serverpackets/SpecialCamera.java
 /// The camera moves around the creature `id` on the receiving client (`SPECIAL_CAMERA`). The
 /// fields are the wire fields; [`SpecialCamera::from_range_duration`] and the other constructors
 /// give Java's three constructors.
@@ -153,10 +145,6 @@ impl SpecialCamera {
 
     /// Java `SpecialCamera(creature, force, angle1, angle2, time, range, duration, relYaw,
     /// relPitch, isWide, relAngle, unk)`: the constructor writes `duration` into the packet.
-    // NOTE(java-quirk): Java's 11-argument constructor (`//cam`) passes its `duration` and
-    // `range` to the 12-argument one in the swapped order, so the packet's duration field is the
-    // `range` argument; `range` itself is never written. Java's `SpecialCamera(creature, force,
-    // ..., relAngle)` is [`SpecialCamera::from_range_duration`].
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         id: i32,
@@ -202,7 +190,6 @@ impl SpecialCamera {
         is_wide: i32,
         rel_angle: i32,
     ) -> Self {
-        // Java: this(creature, force, angle1, angle2, time, duration, range, ...): the 12-argument
         // constructor's `range` gets `duration` and its `duration` gets `range`.
         Self::new(
             id, force, angle1, angle2, time, range, rel_yaw, rel_pitch, is_wide, rel_angle, 0,
@@ -211,8 +198,6 @@ impl SpecialCamera {
 
     /// Java `SpecialCamera(creature, talker, force, angle1, angle2, time, duration, relYaw,
     /// relPitch, isWide, relAngle)` (`//camex`): the packet's duration is always 0.
-    // NOTE(java-quirk): the Ex constructor passes `0` as the 12-argument constructor's
-    // `duration`, so `//camex` never sends its duration argument.
     #[allow(clippy::too_many_arguments)]
     pub fn ex(
         id: i32,

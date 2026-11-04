@@ -1,5 +1,4 @@
 //! Buron, the trader of Hellbound's native village who sells armor for Darion's Badges.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/NPC/Buron/Buron.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

@@ -2,7 +2,6 @@
 
 //! `//skill_test <skillId>` (`admin/skill_test.rs`): the cast of a level 1 skill shown toward the
 //! GM from the target (or the GM).
-//! Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminTest.java
 
 use std::sync::{Arc, Mutex};
 

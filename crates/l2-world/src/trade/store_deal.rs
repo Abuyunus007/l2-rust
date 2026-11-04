@@ -1,11 +1,6 @@
 //! The deals of the private stores: a customer buys from a sell store or package sale
 //! (`RequestPrivateStoreBuy`, `TradeList.privateStoreBuy`) or sells to a buy store
 //! (`RequestPrivateStoreSell`, `TradeList.privateStoreSell`).
-// Java: network/clientpackets/{RequestPrivateStoreBuy,RequestPrivateStoreSell}.java
-// Java: network/holders/{TradeList,RequestTrade}.java (privateStoreBuy, privateStoreSell)
-// Java: entity/itemcontainer/{PlayerInventory,ItemContainer}.java (reduceAdena, addAdena,
-//       transferItem)
-//
 // # How Java's code is mirrored
 // `privateStoreBuy` / `privateStoreSell` are methods of the store's `TradeList` and change both
 // inventories. Here the list of the store owner is copied out of the player, worked on, and put
@@ -13,9 +8,6 @@
 // inventories are changed through the `World` like everywhere else.
 //
 // # Java quirks that are kept
-// See the `NOTE(java-quirk)` comments: the inverted `RequestTrade.equals`, the item id of a
-// buy request that is always 0, and the adena item that is gone when a customer pays with all
-// of its adena.
 
 use l2_data::item::ADENA_ID;
 use l2_protocol_game::SystemMessageId;
@@ -131,14 +123,11 @@ impl World {
             return;
         }
 
-        // NOTE(java-quirk): the request is collected in a `HashSet` whose `equals` is inverted
-        // (see `RequestPrivateStoreBuy`), so every line is kept, in hash order.
         let requests = hash_set_order(
             items
                 .iter()
                 .map(|e| RequestTrade {
                     object_id: e.object_id,
-                    // NOTE(java-quirk): `new RequestTrade(objectId, cnt, price)` has no item id.
                     item_id: 0,
                     count: e.count,
                     price: e.price,
@@ -289,9 +278,6 @@ impl World {
                 return BuyResult::Failed;
             }
 
-            // NOTE(java-quirk): `item.getItemId()` of a buy request is 0, which is no template, so
-            // neither the weight nor the slots of what the customer buys are ever counted (the
-            // checks below are made with 0 and 0).
             let Some(template) = templates.as_ref().and_then(|t| t.get(item.item_id)) else {
                 continue;
             };
@@ -336,9 +322,6 @@ impl World {
         // Prepare inventory update packets.
         let mut owner_iu: Vec<ItemUpdate> = Vec::new();
         let mut player_iu: Vec<ItemUpdate> = Vec::new();
-        // NOTE(java-quirk): `playerInventory.getAdenaInstance()` is null once the adena item is
-        // used up, and `playerIU.addItem(null)` throws. A customer who pays with every adena it
-        // has loses it: the exception ends the packet before the seller is paid or an item moves.
         let Some(adena_item) = self.inventory_item_by_item_id(player, ADENA_ID).cloned() else {
             warn!(
                 "{}: paid every adena in a private store purchase; Java's NullPointerException ends the deal here.",

@@ -1,7 +1,5 @@
 //! Monastery Minigame AI: Sumiel lights the nine burners of a secret room in an order the player
 //! has to repeat with the Torch Light skill.
-// Java: dist/game/data/scripts/ai/others/Minigame/Minigame.java
-//
 // The Java `MinigameRoom` objects and the `ConsumerEventListener`s on the player are the script's
 // state (`ctx.state`): the rooms, and a list of listeners (id, player, room) that the global
 // `on_creature_skill_use` hook walks, since a listener of Java only reaches its own player.
@@ -238,11 +236,7 @@ impl Script for Minigame {
         npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        // NOTE(java-quirk): Java reads `npc.getId()`/`getRoomByManager(npc)` first; a null NPC
-        // throws, nothing happens.
         let npc = npc?;
-        // NOTE(java-quirk): `room` is null for a burner or a treasure box; only the cases that
-        // use it would throw.
         let room = room_by_manager(ctx, npc.object_id);
         match event {
             "restart" => {
@@ -374,8 +368,6 @@ impl Script for Minigame {
             _ => {}
         }
 
-        // NOTE(java-quirk): every event but "restart" returns itself, so a player's
-        // "teleport1" is also sent as a chat message.
         Some(event.to_owned())
     }
 

@@ -1,6 +1,4 @@
 //! `PlayerAI.thinkAttack` and `thinkCast`: walk up to the target, then attack it or cast at it.
-// Java: ai/PlayerAI.java (thinkAttack, thinkCast), ai/CreatureAI.java (maybeMoveToPawn: the attack
-//       parts, maybeMoveToPosition, checkTargetLost)
 
 use l2_data::SkillTemplate;
 use l2_data::skill::TargetType;
@@ -57,9 +55,6 @@ impl World {
                 self.set_casting_now(id, false);
                 return;
             }
-            // NOTE(java-quirk): `useMagic` raised the casting flag, so the first `moveToPawn` of
-            // the follow task started here refuses (`ActionFailed`); the walk begins with the
-            // task's next run.
             if let Some(t) = target
                 && self.maybe_move_to_pawn(id, t, range)
             {

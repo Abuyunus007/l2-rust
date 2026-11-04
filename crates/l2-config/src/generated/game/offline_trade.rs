@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/OfflineTradeConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/OfflineTrade.ini` (Java: `OfflineTradeConfig`).

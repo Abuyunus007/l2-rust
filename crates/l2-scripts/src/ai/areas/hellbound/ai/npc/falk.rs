@@ -1,5 +1,4 @@
 //! Falk, the caravan trader who hands out the basic certificate for Darion's Badges.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/NPC/Falk/Falk.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

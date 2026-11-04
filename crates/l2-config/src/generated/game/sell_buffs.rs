@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/SellBuffsConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/SellBuffs.ini` (Java: `SellBuffsConfig`).

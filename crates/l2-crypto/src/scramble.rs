@@ -1,6 +1,5 @@
 //! Scrambled RSA modulus for the login `Init` packet.
 //!
-//! Java: loginserver/controller/ScrambledKeyPair.java (`scrambleModulus`)
 //!
 //! The client expects the 128-byte modulus of the 1024-bit RSA key in a shuffled form. Java first
 //! strips the leading `0x00` that `BigInteger.toByteArray` adds when the top bit is set (see

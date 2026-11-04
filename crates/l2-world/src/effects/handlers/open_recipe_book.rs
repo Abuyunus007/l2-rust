@@ -1,7 +1,5 @@
 //! The `OpenDwarfRecipeBook` and `OpenCommonRecipeBook` effects: the skill opens the recipe book
 //! window of the caster.
-// Java: dist/game/data/scripts/handlers/skill/effects/OpenDwarfRecipeBook.java
-// Java: dist/game/data/scripts/handlers/skill/effects/OpenCommonRecipeBook.java
 
 use l2_data::skill::EffectTemplate;
 

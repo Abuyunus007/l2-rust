@@ -1,11 +1,6 @@
 //! The skills a hit or a cast triggers by chance: the activation skills of worn item options
 //! (`Creature._triggerSkills`, `OptionSkillHolder`) and the weapon's `oncrit_skill` /
 //! `onmagic_skill`.
-// Java: entity/actor/Creature.java (getTriggerSkills, addTriggerSkill, removeTriggerSkill, the end
-//       of doAttackHitSimple's hit and `callSkill`)
-// Java: entity/item/Weapon.java (castOnCriticalSkill, castOnMagicSkill)
-// Java: mechanics/options/{Options,OptionSkillHolder,OptionSkillType}.java
-//
 // # Where they fire
 // - [`World::trigger_skills_on_hit`]: `Creature.onHitTimer` after a normal attack landed
 //   (`combat/damage.rs`): the ATTACK holders when it was not a critical hit, the CRITICAL holders

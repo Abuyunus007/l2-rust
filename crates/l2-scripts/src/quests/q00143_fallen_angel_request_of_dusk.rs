@@ -1,6 +1,4 @@
 //! Quest 143: Fallen Angel - Request of Dusk (started by Q00998_FallenAngelSelect).
-// Java: dist/game/data/scripts/quests/Q00143_FallenAngelRequestOfDusk/Q00143_FallenAngelRequestOfDusk.java
-//
 // Pattern: no start NPC (the select quest notifies "30894-01.html"), a `talk` memo, a rock that
 // spawns an angel to talk to (`addSpawn`, `deleteMe`) and the `isAngelSpawned` field.
 

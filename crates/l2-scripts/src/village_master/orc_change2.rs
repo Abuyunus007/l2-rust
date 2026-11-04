@@ -1,6 +1,5 @@
 //! The 2nd class transfer of orcs (Penatus, Karia, Garvarentz, Ladanza, Tushku, Aklan, Lambac,
 //! Rahorakti, Shaka).
-// Java: dist/game/data/scripts/village_master/OrcChange2/OrcChange2.java
 
 use l2_util::ObjectId;
 use l2_world::subclass::CategoryType;

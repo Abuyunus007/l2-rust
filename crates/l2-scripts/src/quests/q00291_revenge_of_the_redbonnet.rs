@@ -1,6 +1,4 @@
 //! Quest 291: Revenge of the Redbonnet (Maryse Redbonnet in the Dark Elven area, Black Wolves).
-// Java: dist/game/data/scripts/quests/Q00291_RevengeOfTheRedbonnet/Q00291_RevengeOfTheRedbonnet.java
-//
 // Pattern: a kill-count quest with a drop chance and a limit (`docs/design/scripts.md`, "Quest
 // patterns"): Black Wolves in the party range drop pelts up to 40, the 40th sets cond 2; the NPC
 // takes the pelts, gives one random grandma's treasure and ends the quest (repeatable).

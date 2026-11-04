@@ -6,7 +6,6 @@
 //! The expected numbers are worked out by hand from Java's formulas (`Attackable.calculateExpAndSp`,
 //! `PlayableStat.addExp`, `Player.calculateDeathExpPenalty`) and the real `experience.xml` /
 //! `experienceLoss.xml` values, not from this code.
-//! Java: entity/actor/{Attackable,Player}.java, entity/actor/stat/{PlayableStat,PlayerStat}.java
 
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};

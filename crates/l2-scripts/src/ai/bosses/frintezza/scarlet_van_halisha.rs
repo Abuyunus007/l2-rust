@@ -1,7 +1,5 @@
 //! Scarlet van Halisha, the two forms Frintezza's party fights: the skill rotation and the target
 //! choice. (The movie and the morph are `LastImperialTomb`.)
-// Java: dist/game/data/scripts/ai/bosses/Frintezza/ScarletVanHalisha.java
-//
 // The Java fields are `ScarletState` (`ctx.state`). Java registers the three hooks twice
 // (`addAttackId` ... repeated); a second registration changes nothing.
 
@@ -169,7 +167,6 @@ fn get_skill_ai(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
         return;
     }
 
-    // Java: a skill the table does not have is null and `getCastRange()` throws.
     let Some(range) = ctx.world().skill_cast_range(skill) else {
         return;
     };
@@ -200,15 +197,11 @@ fn get_random_target(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, skill: Option<Skil
             continue;
         }
 
-        // NOTE(java-quirk): `(z < npcZ - 100) && (z > npcZ + 100)` is never true, so only the
-        // line of sight can skip a player here.
         if !ctx.world().can_see_target(obj, id) {
             continue;
         }
 
         let mut skill_range = 150;
-        // NOTE(java-quirk): the player is only added when a skill was given; `RANDOM_TARGET`
-        // passes none, so it always ends with no target.
         if let Some(skill) = skill {
             match skill.id {
                 FRINTEZZA_DAEMON_ATTACK => skill_range = 150,

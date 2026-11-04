@@ -681,8 +681,6 @@ fn a_teleport_needs_a_scroll() {
     );
 }
 
-/// NOTE(java-quirk): the message comes before the bookmark is looked up. An id that is not a
-/// bookmark shows "S1 has disappeared" and costs nothing.
 #[test]
 fn an_unknown_bookmark_shows_the_message_and_costs_nothing() {
     let mut options = Options::new("unknown");

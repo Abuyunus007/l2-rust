@@ -1,18 +1,4 @@
 //! The fishing championship: the five longest fish of the week, the ranking pages and the prizes.
-// Java: managers/FishingChampionshipManager.java
-// Java: entity/actor/instance/Fisherman.java (onBypassFeedback: FishingChampionship,
-//       FishingReward)
-// Java: network/clientpackets/RequestExFishRanking.java
-// Java: network/GameServer.java and Shutdown.java (the manager is built and saved only with
-//       `AltFishChampionshipEnabled`)
-//
-// # Rows (D-39, D-49)
-// The manager reads `fishing_championship` and the global variable `fishChampionshipEnd` at start
-// and writes them (`DELETE FROM fishing_championship`, one `INSERT` per fisher) when a period ends
-// and at shutdown. The rows are one table for the whole server, and the Java game server rewrites
-// them from its own memory, so while it shares the database this server only reads them and keeps
-// its changes in memory; `FishingChampionshipDatabaseWrites = True` in `config/SideBySide.ini`
-// (`FishingSettings::championship_database_writes`) turns the writes on.
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
@@ -80,7 +66,6 @@ impl Default for Championship {
             tmp_players: Vec::new(),
             win_players: Vec::new(),
             min_fish_length: 0.0,
-            // Java: `protected boolean _needRefresh = true;`
             need_refresh: true,
             finish_timer: None,
         }
@@ -378,8 +363,6 @@ impl World {
 
     /// The five table rows of the ranking pages. Java builds them on a `String` that starts as
     /// `null`.
-    // NOTE(java-quirk): `String str = null; str += "<tr>..."` makes the text start with "null", so
-    // the page shows the word before the table.
     fn championship_table(&self, names: &[String], lengths: &[String], none_length: &str) -> String {
         let mut table = String::from("null");
         for x in 1..=5 {

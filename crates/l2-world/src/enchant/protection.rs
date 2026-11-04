@@ -1,7 +1,4 @@
 //! `OverEnchantProtection`: items enchanted past what `EnchantItemGroupsData` has a chance for.
-// Java: network/clientpackets/UseItem.java (the "Over-enchant protection." block)
-// Java: network/clientpackets/EnterWorld.java (the same block, for every item at login)
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminCreateItem.java (getMaxEnchant)
 
 use l2_data::item::{ItemTemplate, TYPE2_ACCESSORY};
 use l2_protocol_game::server::ExShowScreenMessage;
@@ -45,8 +42,6 @@ impl World {
 
     /// `UseItem`'s over-enchant block for `item` that is about to be equipped or taken off: when it
     /// holds, the item is destroyed and `true` is returned (the caller stops).
-    // NOTE(java-quirk): Java destroys it with `Inventory.destroyItem`, which sends the client
-    // nothing; the item stays in the client's list until the next `ItemList`.
     pub(crate) fn over_enchant_protection_on_use(
         &mut self,
         id: ObjectId,

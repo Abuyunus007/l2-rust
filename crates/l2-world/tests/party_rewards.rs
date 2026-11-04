@@ -119,7 +119,6 @@ fn the_class_multipliers_scale_the_share() {
 
 /// The party takes its share of the damage once in `calculateExpAndSp` and once more as
 /// `partyMul`; a player outside the party gets the plain share.
-// NOTE(java-quirk): that makes the party's share smaller than its damage share.
 #[test]
 fn a_shared_kill_counts_the_party_damage_twice() {
     let mut s = Scene::with(config());

@@ -1,11 +1,4 @@
 //! The function lists of one creature, one per stat.
-// Java: mechanics/stats/Calculator.java (addFunc, removeFunc, removeOwner, equalsCals)
-// Java: mechanics/stats/functions/AbstractFunction.java, FuncTemplate.java (getFunc)
-// Java: entity/actor/Creature.java (_calculators, NPC_STD_CALCULATOR, addStatFunc,
-//       removeStatFunc, removeStatsOwner)
-// Java: mechanics/stats/Formulas.java (getStdNPCCalculators, getStdDoorCalculators,
-//       addFuncsToNewCharacter)
-//
 // Java keeps one `Calculator` object per stat (null when the stat has no function) and replaces
 // its function array on every change. Here a [`CalcSet`] holds one `Vec<Func>` per stat (empty =
 // Java's null calculator) and a [`Calculators`] holds the set behind an `Arc`: NPCs share the
@@ -133,10 +126,6 @@ impl CalcSet {
 
     /// Java `Calculator.removeFunc`: the first function equal to `func`. `false` when there is
     /// none.
-    // NOTE(java-quirk): Java's removeFunc drops the *last* function of the calculator when the
-    // one asked for is not in it (its loop stops one short and the "not found" check can never
-    // be true). Java only calls it with functions it added, so this never happens there; here a
-    // function that is not present changes nothing.
     pub fn remove(&mut self, func: &Func) -> bool {
         let Some(list) = self.slots.get_mut(func.stat.ordinal()) else {
             return false;
@@ -330,10 +319,6 @@ impl Calculators {
     }
 
     /// Java `Creature.removeStatsOwner` without the broadcast: the stats that changed.
-    // NOTE(java-quirk): Java runs `removeOwner` on the shared NPC calculators themselves, so a
-    // call with owner `null` would strip the standard functions of every NPC. Here the shared
-    // set is never changed: an owner with no function changes nothing, any other change copies
-    // first.
     pub fn remove_owner(&mut self, owner: FuncOwner) -> Vec<Stat> {
         if !self.set.has_owner(owner) {
             return Vec::new();
@@ -376,7 +361,6 @@ mod tests {
         set.add(template(FuncKind::Set, 0, 4.0));
         set.add(template(FuncKind::Mul, 20, 5.0));
         let values: Vec<f64> = set.funcs(Stat::PowerAttack).iter().map(|f| f.value).collect();
-        // Java: order 0, then the two 20s and the two 30s, each pair in insertion order.
         assert_eq!(values, [4.0, 2.0, 5.0, 1.0, 3.0]);
     }
 

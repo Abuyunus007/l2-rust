@@ -1,6 +1,5 @@
 //! Ranku's AI: his minions are strangled while he lives and Ranku's second kind comes up when
 //! one of them dies.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/Ranku.java
 
 use std::collections::HashSet;
 

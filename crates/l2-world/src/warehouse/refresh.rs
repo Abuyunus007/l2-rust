@@ -1,7 +1,3 @@
-//! A clan warehouse window waits for fresh rows (M6-SYNC-01, D-39).
-// Java: entity/itemcontainer/ClanWarehouse.java, ItemContainer.java (restore),
-// Java: dist/game/data/scripts/handlers/bypass/npc/ClanWarehouse.java
-//
 // The window of `WithdrawC`, `WithdrawSortedC` and `DepositC` is not built from the container in
 // memory: the persistence task reads the `CLANWH` rows of the clan first
 // (`PersistCommand::ClanWarehouseRequest`, D-15: the world never waits for the database) and the

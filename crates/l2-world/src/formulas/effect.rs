@@ -1,6 +1,5 @@
 //! Effect landing, skill mastery and abnormal time.
 //!
-//! Java: `mechanics/stats/Formulas.java` `calcEffectSuccess`, `calcSkillMastery`,
 //! `calcEffectAbnormalTime`, `calcProbability`.
 
 use super::Rnd;
@@ -81,8 +80,6 @@ pub fn calc_effect_success(input: &EffectSuccessInput, rng: &mut impl Rnd) -> bo
         - f64::from(target_base_stat);
     let element_mod = input.element_mod;
     let trait_mod = input.trait_mod;
-    // NOTE(java-quirk): `1 + (stat / 100)` where the stat starts at 1, so a creature without
-    // modifiers has 1.01, not 1.
     let buff_debuff_mod = 1.0 + (input.buff_debuff_vuln / 100.0);
     let mut m_atk_mod = 1.0;
 
@@ -169,8 +166,6 @@ pub fn calc_skill_mastery(input: &SkillMasteryInput, rng: &mut impl Rnd) -> bool
         return false;
     }
 
-    // NOTE(java-quirk): any other stat value than 1 and 4 leaves the chance at 0 but still
-    // rolls the draw.
     let mut chance = match val {
         1 => input.str_bonus,
         4 => input.int_bonus,

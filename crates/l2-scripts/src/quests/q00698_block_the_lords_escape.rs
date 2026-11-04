@@ -1,6 +1,4 @@
 //! Quest 698: Block the Lord's Escape (Tepios at the Seed of Infinity, the stage 5 defence of Ekimus's escape).
-// Java: dist/game/data/scripts/quests/Q00698_BlockTheLordsEscape/Q00698_BlockTheLordsEscape.java
-//
 // Pattern: a level 75 to 85 quest offered only while the Seed of Infinity is at stage 5. The
 // defence sets `defenceDone` to 1 (`ai/areas/gracia/instances`); Tepios then pays 5 to 8 Vesper
 // Stones with the quest rates (`reward_items`, Java `rewardItems`).
@@ -46,8 +44,6 @@ impl Script for Q00698BlockTheLordsEscape {
         player: Option<ObjectId>,
     ) -> Option<String> {
         let player = player?;
-        // NOTE(java-quirk): every event is echoed back as a page, even one for a player with no
-        // quest state (Java returns `event` before it checks anything else).
         let Some(qs) = ctx.get_quest_state(player, false) else {
             return Some(event.to_owned());
         };

@@ -1,5 +1,4 @@
 //! The Ragna Orc Commander calls its private minions when it spawns.
-// Java: dist/game/data/scripts/ai/areas/DenOfEvil/RagnaOrcCommander.java
 
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
 

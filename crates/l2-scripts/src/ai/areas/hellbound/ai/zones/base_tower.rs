@@ -1,6 +1,5 @@
 //! The Base Tower: Guzen's death opens the doors and calls Kendal, the Body Destroyers curse
 //! with Death Word.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/Zones/BaseTower/BaseTower.java
 
 use std::collections::HashMap;
 

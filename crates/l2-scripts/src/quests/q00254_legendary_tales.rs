@@ -1,8 +1,6 @@
 //! Quest 254: Legendary Tales (Gilmore, the Watcher of Antharas, sends the characters of level 80
 //! and up to the seven raid bosses of the Antharas lair for their Large Dragon Skulls, and trades
 //! seven skulls for a Vesper weapon).
-// Java: dist/game/data/scripts/quests/Q00254_LegendaryTales/Q00254_LegendaryTales.java
-//
 // Pattern: a kill count where each boss counts once (a bit mask of the bosses in the `raids`
 // variable), the party kill through `execute_for_each_player` and a reward choice (the Vesper
 // events).
@@ -84,9 +82,6 @@ impl Script for Q00254LegendaryTales {
                 qs.start_quest(ctx);
                 htmltext = event.to_owned();
             }
-            // NOTE(java-quirk): the boss and Vesper links are `bypass -h <id>` (no `Script`
-            // prefix), which no bypass handler routes to a script (`RequestBypassToServer`
-            // reports them as not handled). The arms are kept as Java has them.
             "25718" | "25719" | "25720" | "25721" | "25722" | "25723" | "25724" => {
                 let index = BOSSES
                     .iter()

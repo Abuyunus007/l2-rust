@@ -1,6 +1,4 @@
 //! Quest 10275: Containing the Attribute Power (Holly/Weber send the adventurer to Yin and Yang with an attribute sword).
-// Java: dist/game/data/scripts/quests/Q10275_ContainingTheAttributePower/Q10275_ContainingTheAttributePower.java
-//
 // Pattern: a kill quest that needs an item equipped (`getItemEquipped`, see Q00104), with a
 // reward chosen by a numeric event (the attribute-crystal page links `1`..`6`).
 
@@ -125,7 +123,6 @@ impl Script for Q10275ContainingTheAttributePower {
 
         // Java `StringUtil.isNumeric(event)`: the crystal choice page.
         if !event.is_empty() && event.bytes().all(|b| b.is_ascii_digit()) {
-            // NOTE(java-quirk): `npc` is not null for a bypass; a timer-less event cannot get here.
             let npc_id = npc.map_or(0, |n| n.id);
             let choice: i32 = event.parse().unwrap_or(0);
             htmltext = Some(format!("{npc_id}-1{event}.html"));
@@ -159,7 +156,6 @@ impl Script for Q10275ContainingTheAttributePower {
                 }
             }
             WATER => {
-                // NOTE(java-quirk): `(cond >= 3) || (cond <= 5)` is always true in Java.
                 if (qs.get_cond(ctx) >= 3 || qs.get_cond(ctx) <= 5)
                     && item_equipped(ctx, killer, paperdoll::RHAND) == YINSWORD
                     && ctx.get_quest_items_count(killer, SOULPIECEWATER) < 6

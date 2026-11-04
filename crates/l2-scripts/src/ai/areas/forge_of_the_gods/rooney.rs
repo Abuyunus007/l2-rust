@@ -1,6 +1,5 @@
 //! Rooney, the wandering merchant of the Forge of the Gods: he talks and jumps to another place
 //! a few minutes after a character sees him.
-// Java: dist/game/data/scripts/ai/areas/ForgeOfTheGods/Rooney.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

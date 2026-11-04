@@ -1,16 +1,6 @@
 //! The Grand Olympiad (M8-OLY-01): the periods (competition, validation, the weekly points),
 //! the nobles and their points, the registration (classed, non-classed, teams), the games in
 //! the stadiums, the buffers, the spectators and the manager NPCs.
-// Java: mechanics/olympiad/{Olympiad,OlympiadManager,OlympiadGameManager,OlympiadGameTask,
-//       AbstractOlympiadGame,OlympiadGameNormal,OlympiadGameClassed,OlympiadGameNonClassed,
-//       OlympiadGameTeams,Participant,OlympiadInfo,OlympiadAnnouncer,CompetitionType,
-//       OlympiadGameState}.java
-// Java: entity/zone/type/OlympiadStadiumZone.java, entity/actor/instance/OlympiadManager.java
-// Java: entity/actor/Player.java (the olympiad and observer fields, enterOlympiadObserverMode,
-//       leaveOlympiadObserverMode, leaveObserverMode)
-// Java: dist/game/data/scripts/handlers/bypass/npc/{OlympiadManagerLink,OlympiadObservation}.java
-// Java: dist/game/data/scripts/handlers/chat/commands/user/OlympiadStat.java
-//
 // # How it fits together
 // - [`OlympiadWorld`] (in `World::olympiad`) is Java's three singletons: `Olympiad` (the period,
 //   the nobles by char id, the scheduled tasks), `OlympiadManager` (the waiting lists) and
@@ -39,20 +29,6 @@
 // `Calendar.getInstance()` in the JVM's zone (D-48). Tests pin both with
 // [`OlympiadSettings::clock_override_unix_ms`] and [`OlympiadSettings::zone_offset_override_ms`].
 //
-// # Side by side (D-39, D-53)
-// The period, the validation and the weekly points are global: with `CycleDatabaseWrites = False`
-// the Java game server runs them on the same database. This server then
-// - reads `olympiad_data`, `olympiad_nobles` and the last period's ranking at start (the game
-//   server's loader) and keeps its own copy in memory,
-// - runs the same timers and matches in memory but writes none of the global rows: no
-//   `olympiad_data`, no whole-table `olympiad_nobles` save, no `TRUNCATE`, no
-//   `olympiad_nobles_eom` copy, and it hands out no passes at the period end (Java writes those
-//   `character_variables` rows for every noble),
-// - reads the rows again when it shows them: the class rankings and the last period's points
-//   (Java reads the database there too) and the unclaimed passes before it shows or hands them
-//   out (D-50),
-// - still writes what Java writes per match: the `olympiad_fights` row of a decided match.
-// With the switch on it writes everything where Java does.
 //
 // # Left out, with the system that brings it
 // - `Hero` is `hero.rs` (M8-HERO-01): the hero choice at the period end, `isHero`, `claimHero`,
@@ -102,8 +78,6 @@ pub const UNCLAIMED_OLYMPIAD_PASSES_VAR: &str = "UNCLAIMED_OLYMPIAD_POINTS";
 /// The user command of `OlympiadStat.java` (`/olympiadstat`).
 pub const OLYMPIAD_STAT_COMMAND: i32 = 109;
 
-/// The `Olympiad.ini` values the Olympiad reads (Java `OlympiadConfig`), the D-53 switch and the
-/// test clocks.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OlympiadSettings {
     /// `OlympiadEnabled` (default true).
@@ -280,24 +254,17 @@ pub struct OlympiadLoad {
 /// A write for the persistence task (`PersistCommand::Olympiad`), in Java's order.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OlympiadWrite {
-    /// Java `saveNobleData`: one `INSERT` (`insert`, a new noble) or `UPDATE` per noble. Only with
-    /// `CycleDatabaseWrites` (D-53).
     SaveNobles(Vec<(i32, NobleStats)>),
-    /// Java `saveOlympiadStatus`'s `OLYMPIAD_SAVE_DATA`. Only with `CycleDatabaseWrites`.
     SaveData(OlympiadData),
-    /// Java `deleteNobles`: `TRUNCATE olympiad_nobles`. Only with `CycleDatabaseWrites`.
     DeleteNobles,
-    /// Java `updateMonthlyData`. Only with `CycleDatabaseWrites`.
     UpdateMonthlyData,
-    /// Java `loadNoblesRank` for an offline noble: the `character_variables` row of the unclaimed
-    /// points is replaced. Only with `CycleDatabaseWrites`.
-    UnclaimedPoints { char_id: i32, points: i32 },
+    UnclaimedPoints {
+        char_id: i32,
+        points: i32,
+    },
     /// Java `OlympiadGameNormal.saveResults`: the row of one decided match (written as Java does,
     /// whatever the switch says: it is the match of this server's players).
     Fight(OlympiadFight),
-    /// A write of the hero tables (`heroes`, `heroes_diary`, the hero items), see `hero.rs`
-    /// (M8-HERO-01). The diary rows are always written, the rest only with `CycleDatabaseWrites`
-    /// (D-53).
     Hero(HeroWrite),
 }
 
@@ -314,8 +281,6 @@ pub struct OlympiadFight {
     pub classed: bool,
 }
 
-/// A read the world asks for (`PersistCommand::OlympiadReread`): Java reads the database at
-/// these points (or the world reads a shared row again before it hands items out, D-50).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum OlympiadRereadRequest {
     /// Java `getClassLeaderBoard(classId)`.

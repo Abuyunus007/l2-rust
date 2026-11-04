@@ -1,6 +1,4 @@
 //! Quest 402: Path of the Human Knight (Sir Klaus Vasper and the six coin masters).
-// Java: dist/game/data/scripts/quests/Q00402_PathOfTheHumanKnight/Q00402_PathOfTheHumanKnight.java
-//
 // Pattern: six coins, each earned at a different guild NPC: the NPC gives a badge (an event), the
 // badge's monsters drop their item (a chance or an exact count), then the NPC takes the item and
 // gives the coin. Sir Klaus gives the sword for three to five coins from his event pages, or

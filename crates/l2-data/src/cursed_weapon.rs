@@ -1,6 +1,5 @@
 //! The cursed weapons: `data/CursedWeapons.xml` (M8-CURSED-01).
 //!
-//! Java: `managers/CursedWeaponsManager.java` (`load`). The definitions are immutable; where a
 //! cursed weapon is, who owns it and how long it lasts is the world's (`l2_world::cursed`).
 //!
 //! # The order of Java's `HashMap`

@@ -1,5 +1,4 @@
 //! Quest 10279: Mutated Kaneus - Oren (Mouen sends the party after Kaim Abigore and Knight Montagnar).
-// Java: dist/game/data/scripts/quests/Q10279_MutatedKaneusOren/Q10279_MutatedKaneusOren.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, QuestSound, STARTED};
@@ -123,7 +122,6 @@ impl Script for Q10279MutatedKaneusOren {
                         }
                         .to_owned();
                 }
-                // NOTE(java-quirk): Java's completed page of Mouen is Gosta's `30916-06.htm`.
                 COMPLETED => htmltext = "30916-06.htm".to_owned(),
                 _ => {}
             },
@@ -234,7 +232,6 @@ mod tests {
                 rows::update(NAME, "<state>", "Completed"),
             ]
         );
-        // NOTE(java-quirk): Mouen's completed page is Gosta's page, as in Java.
         assert!(t.quest_page(1, mouen).contains("30916-06.htm"));
         assert!(
             t.quest_page(1, rovia)

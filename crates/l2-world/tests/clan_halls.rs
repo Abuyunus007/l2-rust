@@ -2,7 +2,6 @@
 
 //! Clan halls (M7-CH-01): the weekly rent, the auctions and the auction board, the hall manager,
 //! the hall doorman and what the hall functions do.
-//! Java: entity/residences/{ClanHall,AuctionableHall,ClanHallAuction}.java,
 //! managers/ClanHallAuctionManager.java, entity/actor/instance/{Auctioneer,ClanHallManager,
 //! ClanHallDoorman,Doorman}.java, mechanics/stats/Formulas.java (calcHpRegen, calcMpRegen). The
 //! expected values come from the Java code named in each test.
@@ -938,8 +937,6 @@ fn a_due_rent_is_taken_from_the_clan_warehouse() {
 }
 
 /// A clan that cannot pay hears about it (the lease as the number) and keeps the hall; the row says
-/// `paid = 0`. NOTE(java-quirk): the next try is scheduled with the absolute time as the delay,
-/// so it never comes.
 #[test]
 fn a_clan_that_cannot_pay_is_reminded_and_keeps_the_hall() {
     let mut s = Scene::new();
@@ -1246,7 +1243,6 @@ fn a_bid_takes_the_adena_from_the_clan_warehouse() {
     let auction = s.world.clan_hall_auction(39).unwrap();
     assert_eq!(auction.highest_bidder_id, LIONS);
     assert_eq!(auction.highest_bidder_max_bid, 1500);
-    // NOTE(java-quirk): the row holds the player's name, the memory the leader's.
     assert_eq!(auction.highest_bidder_name, "P1");
     assert_eq!(auction.bidders[&LIONS].name, "P1");
 }
@@ -1273,7 +1269,6 @@ fn a_low_bid_is_refused_with_the_message() {
     assert_eq!(s.clan(LIONS).auction_bid_at, 0);
 }
 
-/// D-50: the bid of another clan on the Java game server counts: this world's copy had no bid.
 #[test]
 fn the_auction_is_read_again_so_a_bid_of_the_other_server_counts() {
     let (mut s, npc) = auction_scene();
@@ -1385,7 +1380,6 @@ fn another_clan_outbids_and_the_old_leader_hears_it() {
     assert_eq!(auction.bidders.len(), 2);
 }
 
-/// A failed read refuses the bid (D-50): nothing is taken from the memory's copy.
 #[test]
 fn a_failed_read_refuses_the_bid() {
     let (mut s, npc) = auction_scene();
@@ -1632,7 +1626,6 @@ fn the_list_has_fifteen_auctions_to_a_page() {
     assert!(second.contains("Auction 55") && !second.contains("Auction 54"));
 }
 
-/// M7-FU-03 (D-50): the list is built from `auction` rows read just now, not from memory.
 #[test]
 fn the_list_is_built_from_rows_read_again() {
     let mut s = Scene::new();
@@ -1646,8 +1639,6 @@ fn the_list_is_built_from_rows_read_again() {
     s.take();
     s.talk(P2, npc);
     s.take();
-    // The Java game server changed the starting bid of 41, ended 40 (the row is gone) and added 43
-    // (a hall the world has no auction for).
     s.hold_list_reads = true;
     s.bypass(P2, npc, "list");
     let out = s.take();
@@ -2070,7 +2061,6 @@ fn an_auction_without_bids_is_extended_a_week() {
     );
 }
 
-/// A player's auction without a bid leaves the list; NOTE(java-quirk): the row stays.
 #[test]
 fn an_unsold_auction_leaves_only_the_list() {
     let record = ending(39, P3, "Wolves", vec![]);
@@ -2081,7 +2071,6 @@ fn an_unsold_auction_leaves_only_the_list() {
     assert!(s.world.clan_hall(ClanHallId(39)).unwrap().is_free);
 }
 
-/// D-50: the Java game server moved the end on, or ended the auction: this world follows.
 #[test]
 fn the_end_reads_the_auction_again() {
     let record = ending(39, 0, "NPC Clan", vec![bid_record(LIONS, "P1", "Lions", 5000)]);
@@ -2736,8 +2725,6 @@ fn the_manager_keeps_the_clan_warehouse() {
     )));
 }
 
-/// A hall the Java game server gave to a clan (read again, D-50) starts its rent here too, as
-/// `new AuctionableHall(set)` does; a hall that went back to nobody stops paying.
 #[test]
 fn a_hall_read_again_with_an_owner_starts_its_rent() {
     let mut s = Scene::new();

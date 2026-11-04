@@ -1,6 +1,4 @@
 //! Quest 156: Millennium Love (Lilith sends the player's letter to Baenedes and back).
-// Java: dist/game/data/scripts/quests/Q00156_MillenniumLove/Q00156_MillenniumLove.java
-//
 // Pattern: a delivery chain over two NPCs. Lilith starts the quest (the level gate is on the
 // accept link, not on the first page); Baenedes either takes the letter for the diary (cond 2)
 // or ends the quest for exp at once; Lilith takes the diary for the package and exp. One-time.

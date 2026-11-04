@@ -8,7 +8,6 @@
 //! only decodes a copy for the capture. The real client and the real server therefore stay in
 //! sync on their own.
 //!
-//! Java: gameserver/network/GamePacketHandler.java (opcode dispatch: `0xD0` + `u16` ex id),
 //! serverpackets/KeyPacket.java (the key, the encryption flag), GameClient.java
 //! (`enableCrypt`, `setConnectionState`), Encryption.java (via `l2_crypto::GameCipher`).
 //! Not in Java: the Java server has no proxy.
@@ -138,8 +137,6 @@ impl Decoder {
         while let Some(header) = self.pending.get(pos..pos + 2) {
             let total = usize::from(u16::from_le_bytes([header[0], header[1]]));
             if total <= 2 {
-                // NOTE(java-quirk): Java's ReadHandler treats a length of 2 or less as "no body"
-                // and reads the next header, so empty frames vanish. Same here.
                 pos += 2;
                 continue;
             }
@@ -245,8 +242,6 @@ fn name_server(payload: &[u8]) -> (u8, Option<u16>, &'static str) {
     };
     if opcode == EX_SERVER {
         return match payload.len() {
-            // NOTE(java-quirk): Java writes the ex id only when it is above 0, so EX_DUMMY
-            // (0xFE, 0x0000) is a single 0xFE byte on the wire.
             1 => (
                 opcode,
                 None,

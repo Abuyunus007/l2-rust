@@ -1,9 +1,6 @@
 //! The warehouse bypasses (`PrivateWarehouse`, `ClanWarehouse`, `Freight`) and the packets
 //! `SendWareHouseDepositList`, `SendWareHouseWithDrawList`, `RequestPackageSend` and
 //! `RequestPackageSendableItemList`.
-// Java: dist/game/data/scripts/handlers/bypass/npc/{PrivateWarehouse,ClanWarehouse,Freight}.java
-// Java: network/clientpackets/{SendWareHouseDepositList,SendWareHouseWithDrawList,
-//       RequestPackageSend,RequestPackageSendableItemList}.java
 
 use l2_data::item::ADENA_ID;
 use l2_protocol_game::SystemMessageId;
@@ -353,7 +350,6 @@ impl World {
         }
 
         // Get current tradelist if any.
-        // NOTE(java-quirk): the fee is already paid when a trade list stops the deposit.
         if self.players.get(&id).is_some_and(|p| p.trade.active.is_some()) {
             return;
         }
@@ -459,14 +455,9 @@ impl World {
 
         if let ContainerRef::Clan(clan_id) = warehouse {
             if !refreshed {
-                // The Java GS shares the clan warehouse (D-39): what the window showed may be gone.
                 self.request_clan_window(id, clan_id, PendingClanWindow::WithdrawPacket(items));
                 return;
             }
-            // NOTE(M6-SYNC-01): after the refresh a missing item is not a forged packet: another
-            // clan member took it on the Java game server after the window was built. Java's
-            // "tried to withdraw non-existent item" punishment would hit a player who did
-            // nothing wrong, so such entries are skipped and the rest of the packet goes on.
             items.retain(|entry| {
                 let there = self
                     .container_item(warehouse, ObjectId(entry.object_id))
@@ -548,8 +539,6 @@ impl World {
             entries.push(self.update_entry(&moved.new, change));
         }
         self.flush_item_rows(id, ops);
-        // NOTE(java-quirk): a failed item ends the packet without the `InventoryUpdate` of the
-        // items moved before it.
         if !aborted {
             self.finish_warehouse_packet(id, entries);
         }

@@ -1,14 +1,5 @@
 //! The fortress siege (Java `FortSiege`): registration, the countdown, start and end, the siege
 //! state of the clans' members, the commanders and the barracks, the flags of the attackers.
-// Java: mechanics/siege/FortSiege.java
-// Java: mechanics/siege/FortTeleportWhoType.java
-// Java: mechanics/siege/Fort.java (resetDoors, setSiegeDate, getSiegeDate)
-// Java: managers/FortSiegeManager.java (getSiege(x, y, z), getSieges)
-// Java: entity/actor/tasks/player/FameTask.java, entity/actor/Player.java (startFameTask,
-//       stopFameTask)
-//
-// See the module comment of `fort/mod.rs` for what runs side by side with the Java game server.
-// Java's `ThreadPool.execute(task)` (run at once on a pool thread) is a plain call here.
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::SystemMessageId;
@@ -576,8 +567,6 @@ impl World {
             }
         }
         // `loadDoorUpgrade()` ("Check for any upgrade the doors may have").
-        // NOTE(java-quirk): it selects `fort_doorupgrade` and reads a column `id` that table does
-        // not have (it is `doorId`), and nothing inserts a row: it never does anything.
     }
 
     // ------------------------------------------------------------------ teleports
@@ -753,9 +742,6 @@ impl World {
             fort_id: fort.0,
             owner_clan_id: owner,
         });
-        // NOTE(java-quirk): the owner's registrations at the other fortresses are deleted from
-        // the table only; the other sieges keep the clan in their lists until they are loaded
-        // again.
         self.fort.state_mut(fort).siege.attackers.clear();
         // If siege is in progress, end siege.
         if self.fort_siege_in_progress(fort) {
@@ -835,9 +821,6 @@ impl World {
             self.on_fort_timer(FortTimer::SuspiciousMerchantSpawn(fort));
             start(self, 3600, delay - 3_600_000);
         }
-        // NOTE(java-quirk): this is an `if`, not an `else if`: with more than an hour left both
-        // the 3600 and the 600 task are scheduled, and the countdown runs twice from 10 minutes
-        // on (the announcements come twice; `startSiege` ignores the second call).
         if delay > 600_000 {
             // More than 10 min, spawn suspicious merchant.
             self.on_fort_timer(FortTimer::SuspiciousMerchantSpawn(fort));

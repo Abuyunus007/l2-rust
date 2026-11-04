@@ -1,12 +1,5 @@
 //! Zone membership of players: which zones a player is inside, the `ZoneId` flags they set, the
 //! messages and compass icon the client gets, and the nearest-town lookups for restart points.
-// Java: entity/zone/{ZoneType,ZoneRegion,ZoneId}.java (revalidateInZone, removeCharacter,
-//       revalidateZones, isAffected, setParameter)
-// Java: entity/zone/type/*.java (onEnter / onExit of each type)
-// Java: entity/actor/Creature.java (revalidateZone, setXYZ, setInsideZone, isInsideZone)
-// Java: entity/actor/Player.java (revalidateZone with the compass icon)
-// Java: managers/ZoneManager.java (getRegion), data/xml/MapRegionData.java (getTeleToLocation)
-//
 // # What is modelled
 // Zone shapes and the zone table come from `l2-data` (`Zones`, `MapRegions`); the world only
 // keeps, per player, the zones whose `_characterList` holds them (Java keeps the same list on the
@@ -528,8 +521,6 @@ impl World {
             && zone_cell(ox, oy) != Some(new_cell)
         {
             self.remove_from_zones(id, ox, oy);
-            // NOTE(java-quirk): Java revalidates the new cell's zones before it moves the
-            // creature, so they are tested against the old position.
             self.revalidate_zones_in_cell(id, x, y);
         }
         true
@@ -1026,8 +1017,6 @@ fn show_danger_icon(zone: &Zone) -> bool {
 //
 // NOTE: Java keeps `_skills` in a `ConcurrentHashMap`; the skills are given here in the order
 // they were added (an added id that is there already keeps its place).
-// NOTE(java-quirk): `ThreadPool.scheduleAtFixedRate(.., initialDelay, reuse)`: an initial delay
-// of 0 runs the first pass on the next tick.
 
 /// `EffectZone` defaults: `_chance`, `_initialDelay`, `_reuse`.
 const EFFECT_DEFAULT_CHANCE: i32 = 100;

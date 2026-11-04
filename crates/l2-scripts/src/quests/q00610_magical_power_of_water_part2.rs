@@ -1,12 +1,5 @@
 //! Quest 610: Magical Power of Water - Part 2 (Asefa; the Varka totem summons
 //! Ashutar, the raid boss, whose heart Asefa wants; Ashutar respawns after a random time).
-// Java: dist/game/data/scripts/quests/Q00610_MagicalPowerOfWaterPart2/Q00610_MagicalPowerOfWaterPart2.java
-//
-// Pattern: a raid boss that a quest summons (the totem spawned at load and at the respawn timer),
-// the timers of the boss (`spawn_npc`, `despawn_ashutar`), the respawn time kept in a global
-// variable (D-54: the row is written by the engine's global variables), and the kill that gives
-// the heart to every player in range (`executeForEachPlayer`, `actionForEachPlayer`).
-// The constructor's spawn and timer are ported as `on_load` (the scripts are installed at start).
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;
@@ -113,7 +106,6 @@ impl Script for Q00610MagicalPowerOfWaterPart2 {
             return;
         }
         if npc.id == ASHUTAR {
-            // Java: case 1 takes the red totem and falls through to case 2.
             let cond = qs.get_cond(ctx);
             if cond == 1 {
                 ctx.take_items(player, GREEN_TOTEM, 1);
@@ -182,7 +174,6 @@ impl Script for Q00610MagicalPowerOfWaterPart2 {
     }
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, is_summon: bool) {
-        // Java: the respawn delay from the raid settings (43200000 and 129600000 ms).
         let settings = ctx.world().boss_settings();
         let (min_multiplier, max_multiplier) = (
             settings.raid_min_respawn_multiplier,

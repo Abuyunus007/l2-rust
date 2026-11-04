@@ -1,6 +1,4 @@
 //! The Monument of Heroes: a hero's circlet and weapon (`bypass -h Script MonumentOfHeroes ...`).
-// Java: dist/game/data/scripts/ai/others/MonumentOfHeroes/MonumentOfHeroes.java
-//
 // The pages of the monument NPCs (31690, 31769 to 31772) are `data/html/olympiad/hero_main*.htm`
 // (the hero list, the certification, the reward page); this script is what the reward page's
 // buttons call.
@@ -86,7 +84,6 @@ impl Script for MonumentOfHeroes {
                 }
             }
             _ => {
-                // NOTE(java-quirk): `Integer.parseInt(event)` throws for any other event.
                 if let Ok(weapon_id) = event.parse::<i32>() {
                     if WEAPONS.contains(&weapon_id) {
                         ctx.give_items(player, weapon_id, 1);

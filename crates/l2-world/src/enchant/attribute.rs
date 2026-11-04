@@ -1,10 +1,5 @@
 //! Element attributes: using a stone, crystal or jewel on an item, taking an element off at the
 //! NPC, and the window of the NPC.
-// Java: dist/game/data/scripts/handlers/items/EnchantAttribute.java
-// Java: network/clientpackets/{RequestExEnchantItemAttribute,RequestExRemoveItemAttribute}.java
-// Java: dist/game/data/scripts/handlers/bypass/npc/ReleaseAttribute.java
-// Java: network/serverpackets/{ExChooseInventoryAttributeItem,ExShowBaseAttributeCancelWindow}.java
-//
 // The element rows are `item_elementals`; `World::set_item_elemental` and `clear_item_elemental`
 // (`effects/item_extras.rs`) write them with the item, as Java's `setElementAttr` and
 // `clearElementAttr` do.
@@ -33,9 +28,6 @@ fn item_is_elementable(item: &ItemData, template: &ItemTemplate) -> bool {
 
 /// `RequestExRemoveItemAttribute.getPrice` and `ExShowBaseAttributeCancelWindow.getPrice` for one
 /// item, given the price field the packet instance still holds.
-// NOTE(java-quirk): `_price` is a field of the packet and a grade other than S, S80 and S84
-// leaves it as it was, so the window shows the price of the previous item for such an item (0
-// for the first), and a removal of one costs nothing.
 fn cancel_price(template: &ItemTemplate, previous: i64) -> i64 {
     let weapon = template.is_weapon();
     match template.crystal_type {
@@ -130,9 +122,6 @@ impl World {
             .as_ref()
             .map_or(elementals::NONE, |e| e.item_element(display_id));
         if element == elementals::NONE {
-            // NOTE(java-quirk): the constructor throws `IllegalArgumentException` after the stone
-            // was stored as the active one, so the player cannot log out until the window is
-            // cancelled or the stone leaves the inventory.
             warn!("EnchantAttribute: Undefined Atribute item: {}", item.item_id);
             return false;
         }
@@ -233,9 +222,6 @@ impl World {
         }
 
         let old_element = item.elemental(element_to_add);
-        // NOTE(java-quirk): `getElemental(elementToAdd)` only finds the same element, so for a
-        // weapon `oldElement.getElement() != elementToAdd` is never true and a weapon takes a
-        // second element.
         if (weapon && old_element.is_some_and(|old| old.element != element_to_add && old.element != -2))
             || (armor && old_element.is_none() && !item.elementals.is_empty() && item.elementals.len() >= 3)
         {

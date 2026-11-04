@@ -1,6 +1,4 @@
 //! Quest 271: Proof of Valor (Rukain in the Orc Village sends the orcs after the kasha wolves).
-// Java: dist/game/data/scripts/quests/Q00271_ProofOfValor/Q00271_ProofOfValor.java
-//
 // Pattern: a kill-count quest with a double drop (`docs/design/scripts.md`, "Quest patterns"):
 // every kasha wolf gives one fang, sometimes two, until 50 are in; the 50th sets cond 2 and
 // Rukain gives a necklace of valor (with 10 healing potions, 13% of the time) or of courage.

@@ -1,6 +1,4 @@
 //! Character Birthday: the gatekeepers call Alegria, who swaps the Adventurer's Hat for the birthday hat.
-// Java: dist/game/data/scripts/events/CharacterBirthday/CharacterBirthday.java
-//
 // Not a `LongTimeEvent` (it has no `config.xml`): it extends `Script` and is always on.
 //
 // `onDailyReset` (the birthday mail): the query goes out through the outbox and the mails are made
@@ -40,7 +38,6 @@ impl Script for CharacterBirthday {
         s.set_on_daily_reset();
     }
 
-    // Java: `@RegisterEvent(ON_DAILY_RESET)`: every character whose birthday was in the last 24
     // hours gets a mail from Alegria with the birthday gift.
     fn on_daily_reset(&self, ctx: &mut ScriptCtx<'_>) {
         ctx.world_mut().request_birthday_gifts();
@@ -181,8 +178,6 @@ mod tests {
         assert_eq!((mail.receiver_id, mail.sender_id), (5, -1));
         assert_eq!(mail.subject, "Happy Birthday!");
         assert_eq!(mail.send_by_system, l2_world::mail::SENDER_TYPE_ALEGRIA);
-        // NOTE(java-quirk): `replaceAll("$c1", ..)` is a regular expression where `$` ends the
-        // input, so the text keeps its placeholders.
         assert_eq!(mail.content, "Hello $c1, you are $s1 now.");
         assert!(mail.has_attachments && mail.unread && mail.deleted_by_sender);
         assert_eq!(mail.attachments.len(), 1);

@@ -1,10 +1,5 @@
 //! The datapack as the world sees it ([`l2_world::StaticData`], including the stat engine's
 //! tables), and the settings the world reads from the configuration.
-// Java: mechanics/stats/BaseStat.java (the statBonus.xml loader)
-// Java: data/xml/{AdminData,SkillData}.java, data/holders/AccessLevel.java
-// Java: config/{PlayerConfig,NpcConfig,ChampionMonstersConfig,OlympiadConfig,FeatureConfig}.java,
-//       config/custom/ClassBalanceConfig.java (the values the stat getters and the attack read)
-//
 // The stat engine itself is `l2_world::stats` (M4-STAT-01); this file only hands it the tables
 // (`StatData`) and the settings (`StatSettings`).
 
@@ -191,7 +186,6 @@ impl AccessLevels {
                     else {
                         continue;
                     };
-                    // Java: `Integer.decode("0x" + set.getString("nameColor", "FFFFFF"))`
                     let color = |key: &str| {
                         attribute(&e, key)
                             .and_then(|v| i32::from_str_radix(v.trim(), 16).ok())
@@ -207,7 +201,6 @@ impl AccessLevels {
                     if attribute(&e, "allowFixedRes").is_some_and(|v| v.eq_ignore_ascii_case("true")) {
                         table.fixed_res.insert(level);
                     }
-                    // Java: `set.getBoolean("takeAggro", true)`, which is `Boolean.parseBoolean`
                     // for a present value: anything but "true" is false.
                     if attribute(&e, "takeAggro").is_some_and(|v| !v.eq_ignore_ascii_case("true")) {
                         table.no_take_aggro.insert(level);
@@ -215,7 +208,6 @@ impl AccessLevels {
                     if attribute(&e, "gainExp").is_some_and(|v| v.eq_ignore_ascii_case("false")) {
                         table.no_gain_exp.insert(level);
                     }
-                    // Java: `set.getBoolean("allowTransaction", true)`: anything but "true" is false.
                     if attribute(&e, "allowTransaction").is_some_and(|v| !v.eq_ignore_ascii_case("true")) {
                         table.no_transaction.insert(level);
                     }
@@ -432,9 +424,7 @@ pub fn exp_settings(config: &GameConfig, config_dir: &Path) -> ExpSettings {
         rate_xp: r.rate_xp,
         rate_sp: r.rate_sp,
         monster_exp_max_level_difference: r.monster_exp_max_level_difference,
-        // Java: `if (RATE_KARMA_LOST == -1) RATE_KARMA_LOST = RATE_XP;`
         rate_karma_lost: config.effective_rate_karma_lost(),
-        // Java: `MAX_SP = getLong("MaxSp", 50000000000L) >= 0 ? that : Long.MAX_VALUE`.
         max_sp: config.manual.player.max_sp,
         rate_karma_exp_lost: r.rate_karma_exp_lost,
         player_delevel: p.player_delevel,
@@ -445,7 +435,6 @@ pub fn exp_settings(config: &GameConfig, config_dir: &Path) -> ExpSettings {
         alt_party_range: p.alt_party_range,
         enable_free_strider: config.free_mounts.enable_free_strider,
         enable_free_wyvern: config.free_mounts.enable_free_wyvern,
-        // Java: `DynamicExpRateData.getInstance()` in `GameServer` (the `Data` section).
         dynamic_rates: l2_data::DynamicExpRates::load(
             config_dir,
             i32::from(config.effective_player_maximum_level()),
@@ -477,7 +466,6 @@ pub fn party_settings(config: &GameConfig, config_dir: &Path) -> l2_world::Party
         xp_cutoff_gap_percents: core.party_xp_cutoff_gap_percents.clone(),
         ..PartySettings::default()
     };
-    // Java: `Enum.valueOf(PartyExpType.class, getString("PartyXpCutoffMethod", "LEVEL").toUpperCase())`.
     let method = &core.party_xp_cutoff_method;
     match PartyExpType::from_name(method) {
         Some(method) => settings.xp_cutoff_method = method,
@@ -552,7 +540,6 @@ pub fn punishment_settings(config: &GameConfig, _config_dir: &Path) -> l2_world:
     use l2_world::{IllegalActionPunishment, PunishmentSettings};
 
     let core = &config.manual.core.general;
-    // Java: `Enum.valueOf(ChatType.class, name)` throws for a bad name; the config crate already
     // dropped those, in file order and without doubles.
     let ban_chat_channels = core
         .ban_chat_channels
@@ -607,9 +594,7 @@ pub fn bot_report_settings(config: &GameConfig, config_dir: &Path) -> l2_world::
     let mut settings = l2_world::BotReportSettings {
         enable: config.general.botreport_enable,
         allow_reports_from_same_clan_members: config.general.botreport_allow_reports_from_same_clan_members,
-        // Java: `config.getInt("BotReportDelay", 30) * 60000`.
         report_delay_ms: core.botreport_report_delay,
-        // Java: `getString("BotReportPointsResetHour", "00:00").split(":")`, parsed with
         // `Integer.parseInt`; anything else fails the scheduling (every 24 hours).
         reset_hour_minute: match (
             core.botreport_resetpoint_hour.first(),
@@ -764,7 +749,6 @@ pub fn enchant_settings(config: &GameConfig, _config_dir: &Path) -> l2_world::En
     let p = &config.player;
     let core = &config.manual.core.player;
     EnchantSettings {
-        // Java: `Integer.parseInt` of each comma separated id, sorted.
         enchant_blacklist: core.enchant_blacklist.clone(),
         over_enchant_punishment: IllegalActionPunishment::find_by_name(&core.over_enchant_punishment),
         over_enchant_protection: p.over_enchant_protection,
@@ -1145,7 +1129,6 @@ pub fn pet_settings(config: &GameConfig, _config_dir: &Path) -> l2_world::PetSet
         sineater_xp_rate: config.rates.sineater_xp_rate,
         inventory_maximum_pet: config.npc.inventory_maximum_pet,
         player_spawn_protection: config.player.player_spawn_protection,
-        // Java: `PET_HP_REGEN_MULTIPLIER = config.getDouble("PetHpRegenMultiplier", 100) / 100;`
         pet_hp_regen_multiplier: config.manual.core.npc.pet_hp_regen_multiplier,
         pet_mp_regen_multiplier: config.manual.core.npc.pet_mp_regen_multiplier,
         ..l2_world::PetSettings::default()
@@ -1407,7 +1390,6 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
         );
     }
     // `ListPetRentNpc` is a post-processed list in the generated config (`manual.core.npc`;
-    // Java: `Integer.parseInt` of each comma separated id).
     settings.talk.list_pet_rent_npc = config.npc.list_pet_rent_npc.iter().copied().collect();
     // `TimeToReturn` (seconds, Java keeps ms) is a hand-port placeholder in the generated config.
     if let Ok(ini) = IniFile::load(config_dir.join(l2_config::game::CancelReturnConfig::FILE)) {
@@ -1417,7 +1399,6 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
     // (`manual.core.player`).
     settings.player_movement_block_time_ms = config.manual.core.player.player_movement_block_time;
     settings.keyboard_movement = p.enable_keyboard_movement;
-    // Java: `Enum.valueOf(ChatBroadcastType.class, config.getString("GlobalChat", "ON"))` throws
     // for a bad name; the default is kept here.
     let general = &config.manual.core.general;
     for (key, text, target) in [
@@ -1558,7 +1539,6 @@ pub fn stat_settings(config: &GameConfig, config_dir: &Path) -> StatSettings {
         dusk_gates_mdef_mult: config.feature.alt_siege_dusk_gates_mdef_mult,
         gm_skill_restriction: config.general.gm_skill_restriction,
         expertise_penalty: p.expertise_penalty,
-        // Java: `RAID_PDEFENCE_MULTIPLIER = config.getDouble("RaidPDefenceMultiplier", 100) / 100;` ...
         raid_pdefence_multiplier: config.manual.core.npc.raid_pdefence_multiplier,
         raid_mdefence_multiplier: config.manual.core.npc.raid_mdefence_multiplier,
         raid_pattack_multiplier: config.manual.core.npc.raid_pattack_multiplier,
@@ -1701,7 +1681,6 @@ pub fn combat_settings(config: &GameConfig, _config_dir: &Path) -> CombatSetting
     let player = &config.manual.core.player;
     let npc = &config.manual.core.npc;
     CombatSettings {
-        // Java: `ALT_GAME_CANCEL_BOW = AltGameCancelByHit is "bow" or "all"`,
         // `ALT_GAME_CANCEL_CAST` the same with "cast" (both ignoring case, default "Cast").
         alt_game_cancel_bow: player.alt_game_cancel_bow,
         alt_game_cancel_cast: player.alt_game_cancel_cast,

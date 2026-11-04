@@ -1,6 +1,5 @@
 //! The script handlers S-HAND-02 ports (the ones S-HAND-01 left): newbie buffs, the voiced
 //! `.expon`/`.expoff`, the escape and birthday user commands, and the item handlers.
-// Java: dist/game/data/scripts/handlers/{bypass/npc,chat/commands,items}/*.java
 
 pub(crate) mod charm;
 pub(crate) mod dice;

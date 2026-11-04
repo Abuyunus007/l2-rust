@@ -1,10 +1,6 @@
 //! The instance words: `//setinstance`, `//createinstance`, `//destroyinstance`,
 //! `//listinstances`, `//instancezone`, `//instancezone_clear`, `//instance_spawns` and
 //! `//instancezones` (M8-INST-01).
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminInstance.java
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminInstanceZone.java
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminSpawn.java (admin_instance_spawns)
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminHelp.java (admin_instancezones)
 
 use l2_protocol_game::server::NpcHtmlMessage;
 use l2_util::ObjectId;
@@ -283,8 +279,6 @@ fn admin_instance_spawns(world: &mut World, gm: ObjectId, command: &str) -> Outc
 }
 
 /// Java `AdminHelp`, `admin_instancezones [page=N]`: the template ids and names, ten per page.
-// NOTE(java-quirk): like `//commands`, the page is `substring(20)` after a plain `contains("page")`
-// and the default page is 1 of a list counted from 0.
 fn admin_instance_zones(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     let page = if command.contains("page") {
         let text: String = command.chars().skip(20).collect();

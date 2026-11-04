@@ -1,6 +1,4 @@
 //! Quest 362: Bard's Mandolin (Swan, Galion, Woodrow and Nanarin in the Town of Gludin).
-// Java: dist/game/data/scripts/quests/Q00362_BardsMandolin/Q00362_BardsMandolin.java
-//
 // Pattern: a delivery chain over four NPCs, the memo state is the stage (`docs/design/scripts.md`,
 // "Quest patterns"): 1 = Woodrow to visit, 2 = Galion to visit, 3 = Swan's letter, 4 = Nanarin's
 // flute and letter, 5 = done. The reward is adena and the theme of the journey.

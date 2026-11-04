@@ -1174,7 +1174,6 @@ impl Rig {
             "the creation point of the datapack"
         );
         let char_id = created.object_id;
-        // Java: Logout at the character screen disconnects.
         assert!(game.logout().await.is_empty());
         self.wait_until_out_of_game(account).await;
         char_id
@@ -1359,8 +1358,6 @@ async fn a_hunter_kills_loots_levels_dies_and_restarts_while_a_watcher_sees_it()
             "Java: setItemLocation(INVENTORY) has loc_data 0"
         );
         if item_id != ADENA_ID {
-            // The item the monster dropped has an id of the Rust range (D-39), and it is one of
-            // the ground items of the kill.
             assert!(*object_id >= RUST_FIRST_OBJECT_ID, "{object_id}");
             assert!(
                 played.loot_ids.contains(&(item_id, *object_id)),

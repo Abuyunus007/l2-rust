@@ -704,7 +704,6 @@ fn adding_an_item_withdraws_the_own_confirmation() {
     let mut s = Scene::pair(vec![inv(100, SWORD, 1), inv(105, PILE, 10)], vec![]);
     s.begin_trade();
     s.done(A, 1);
-    // Java: `invalidateConfirmation()` when the list changes... but the add itself is refused
     // while a side is confirmed, so the flag is still set.
     s.add(A, 100, 1);
     assert!(
@@ -735,7 +734,6 @@ fn cancelling_closes_both_windows_with_javas_messages() {
     let m = messages(&out, B);
     assert_eq!(m[0].id, SystemMessageId::C1HasCancelledTheTrade);
     assert_eq!(m[0].params, [SystemMessageParam::PlayerName("Alice".into())]);
-    // NOTE(java-quirk): the canceller is told its own name.
     let m = messages(&out, A);
     assert_eq!(m[0].params, [SystemMessageParam::PlayerName("Alice".into())]);
     assert!(s.world.player(A).unwrap().trade.active.is_none());
@@ -877,7 +875,6 @@ fn a_part_of_a_stack_becomes_a_new_item_with_an_id_from_the_rust_range() {
     let b = s.items_of(B);
     assert_eq!(b.len(), 1);
     let (new_id, item_id, count) = b[0];
-    // D-39: the Java GS never allocates here.
     assert!(new_id >= RUST_FIRST_OBJECT_ID, "{new_id:#x}");
     assert_eq!((item_id, count), (PILE, 4));
 
@@ -892,9 +889,6 @@ fn a_part_of_a_stack_becomes_a_new_item_with_an_id_from_the_rust_range() {
         ]
     );
 
-    // NOTE(java-quirk): `PlayerInventory.addItem(itemId, count, actor)` tells the actor (the
-    // giver), not the receiver, about the new item: a StatusUpdate now and an InventoryUpdate
-    // entry for the new object (ADDED) 100 ms later, next to A's own entries.
     let to_a = names(&out, A);
     assert_eq!(
         to_a,
@@ -999,7 +993,6 @@ fn an_item_that_vanished_leaves_the_trade_locked_and_silent() {
     s.log.take();
     s.done(A, 1);
     let out = s.log.take();
-    // NOTE(java-quirk): both lists stay confirmed and locked and nobody is told.
     assert!(out.is_empty(), "{out:?}");
     for who in [A, B] {
         let list = s.world.player(who).unwrap().trade.active.as_ref().unwrap();
@@ -1017,8 +1010,6 @@ fn an_item_that_vanished_leaves_the_trade_locked_and_silent() {
 fn a_player_who_leaves_in_the_middle_of_a_trade_does_not_cancel_it() {
     let mut s = Scene::pair(vec![inv(100, SWORD, 1)], vec![]);
     s.begin_trade();
-    // NOTE(java-quirk): `deleteMe` cancels only `if (getActiveRequester() != null)`, and a trade
-    // that has begun has no requester.
     s.input(B, ClientInput::Logout);
     let out = s.log.take();
     assert!(of(&out, A, "TRADE_DONE").is_empty());

@@ -1,6 +1,4 @@
 //! The four random ints that tie a client's login to its game server login.
-//!
-//! Java: `loginserver/controller/SessionKey.java`.
 
 use l2_util::WorldRng;
 
@@ -15,7 +13,6 @@ pub struct SessionKey {
 }
 
 impl SessionKey {
-    // Java: LoginController.assignSessionKeyToClient (4 × Rnd.nextInt, in this order)
     pub fn random(rng: &mut WorldRng) -> Self {
         Self {
             login_ok1: rng.next_i32(),
@@ -25,7 +22,6 @@ impl SessionKey {
         }
     }
 
-    // Java: SessionKey.checkLoginPair
     pub fn check_login_pair(&self, login_ok1: i32, login_ok2: i32) -> bool {
         self.login_ok1 == login_ok1 && self.login_ok2 == login_ok2
     }

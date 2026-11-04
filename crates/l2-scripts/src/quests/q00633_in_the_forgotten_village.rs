@@ -1,8 +1,6 @@
 //! Quest 633: In the Forgotten Village (Mina in the Gludin area; the undead of the Forgotten
 //! Village drop the rib bones of a black magus and the zombie livers; 200 ribs buy the adena and
 //! the experience and send the character back to cond 1).
-// Java: dist/game/data/scripts/quests/Q00633_InTheForgottenVillage/Q00633_InTheForgottenVillage.java
-//
 // Pattern: two kinds of drop per monster: the ribs are a limited count (cond 2 at 200, only from
 // cond 1), the livers have no limit. The reward takes the ribs and sets cond 1 again (with the
 // sound), so the quest can be done again while it is still open.

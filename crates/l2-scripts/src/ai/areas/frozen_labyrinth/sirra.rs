@@ -1,5 +1,4 @@
 //! Sirra's first page depends on the Freya instance the character stands in.
-// Java: dist/game/data/scripts/ai/areas/FrozenLabyrinth/Sirra/Sirra.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

@@ -1,6 +1,4 @@
 //! Quest 419: Get a Pet (Pet Manager Martin, the racial animal lists, the wolf collar quiz).
-// Java: dist/game/data/scripts/quests/Q00419_GetAPet/Q00419_GetAPet.java
-//
 // Pattern: a kill quest where every race hunts its own spider/animal drop (table in `hunt`),
 // followed by a quiz whose progress is a bit field in the memo state.
 

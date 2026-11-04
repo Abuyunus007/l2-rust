@@ -309,7 +309,6 @@ pub fn assert_played(played: &Played) {
         left.count_of(m5_data::MANA_POTION),
         m5_data::POTIONS_AT_START + POTIONS_BOUGHT
     );
-    // The ore is used up and the ingots are new items (D-39: ids of the Rust range).
     assert_eq!(
         left.count_of(m6_data::ORE),
         m6_data::ORE_AT_START - m6_data::EXCHANGE_ORE * EXCHANGES

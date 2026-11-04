@@ -1,6 +1,5 @@
 //! Quest 692: How to Oppose Evil (Dilios sends the character to the three Seeds; Kirklan trades
 //! the items the Seed monsters drop for rewards).
-// Java: dist/game/data/scripts/quests/Q00692_HowtoOpposeEvil/Q00692_HowtoOpposeEvil.java
 
 use l2_util::ObjectId;
 use l2_world::script::QuestSound;
@@ -142,7 +141,6 @@ impl Script for Q00692HowtoOpposeEvil {
             }
 
             if num_items > 0 {
-                // NOTE(java-quirk): the item goes to the killer, not to the party member drawn.
                 ctx.give_items(player, item, i64::from(num_items));
                 ctx.play_sound(player, QuestSound::ItemsoundQuestItemget);
             }

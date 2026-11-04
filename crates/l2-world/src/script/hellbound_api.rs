@@ -1,7 +1,5 @@
 //! Small `pub` entry points the scripts of `ai/areas/Hellbound` need and the `pub` world API did
 //! not offer (S-AI-02). Each is a thin call into the module that owns the rule.
-// Java: entity/spawns/Spawn.java (setRespawnDelay, doSpawn), SpawnTable.addSpawn,
-//       entity/World.java (broadcastToAllOnlinePlayers), entity/actor/Attackable.java (getLeader)
 
 use l2_util::ObjectId;
 

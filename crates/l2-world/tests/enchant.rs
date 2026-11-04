@@ -1336,7 +1336,6 @@ fn using_a_stone_opens_the_attribute_window_of_its_element() {
 
 #[test]
 fn a_stone_gives_a_weapon_twenty_then_five() {
-    // Java: FIRST_WEAPON_BONUS 20 when the weapon has none of that element, NEXT_WEAPON_BONUS 5
     // after. A stone (level 3) stops at WEAPON_VALUES[3] = 150.
     let mut s = stone_scene(vec![inv(110, S_SWORD, 1), inv(210, FIRE_STONE, 3)], 100.0);
     s.use_item(A, 210);
@@ -1604,8 +1603,6 @@ fn a_stone_cancels_the_open_trade_request() {
     );
     assert_eq!(s.count_of(A, FIRE_STONE), 1);
     assert_eq!(s.world.enchant_state(A).unwrap().active_attr, None);
-    // NOTE(java-quirk): `cancelActiveTrade()` only cancels a trade list; a request that was not
-    // answered yet stays, so Alice can still accept it.
     assert_eq!(s.world.player(A).unwrap().trade.active_requester, Some(B));
 }
 
@@ -1738,7 +1735,6 @@ fn without_the_adena_the_element_stays() {
 
 #[test]
 fn a_grade_without_a_price_is_removed_for_free() {
-    // NOTE(java-quirk): `_price` stays 0 for a grade other than S, S80 and S84.
     let mut s = stone_scene(vec![with_element(inv(110, D_SWORD, 1), 0, 20)], 100.0);
     s.enchant(
         A,
@@ -1757,7 +1753,6 @@ fn a_grade_without_a_price_is_removed_for_free() {
 
 #[test]
 fn the_cancel_window_lists_the_items_with_an_element_and_keeps_the_last_price() {
-    // NOTE(java-quirk): the packet's `_price` carries over to an item whose grade has none.
     let s = stone_scene(
         vec![
             with_element(inv(110, S_SWORD, 1), 0, 20),

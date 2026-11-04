@@ -1,9 +1,5 @@
 //! Quest states as data: the state of one quest of one player, the quests of a player, and the
 //! `character_quests` writes they cause.
-// Java: mechanics/script/{QuestState,State,QuestType}.java
-// Java: entity/actor/Player.java (_quests, getQuestState, setQuestState, delQuestState,
-//       _notifyQuestOfDeathList)
-//
 // The methods that change a state and talk to the client or the database are on the handle
 // [`super::Qs`]; this file only keeps the values, so it has no world access.
 
@@ -236,9 +232,6 @@ impl PlayerQuests {
     }
 }
 
-/// One `character_quests` statement of Java's `Quest` (`createQuestVarInDb`, ...), sent to the
-/// persistence task in the order Java runs them (D-15). Per-player rows: written side by side
-/// as Java writes them (D-54).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum QuestWrite {
     /// Java `createQuestVarInDb`: `INSERT ... ON DUPLICATE KEY UPDATE value=?` (also the state

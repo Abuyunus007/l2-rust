@@ -1,7 +1,5 @@
 //! Quest 260: Orc Hunting (Rayen in the Elven Village hunts the Kaboo orcs for the amulets and
 //! necklaces; rookies get shots, and the newbie guide hears about it).
-// Java: dist/game/data/scripts/quests/Q00260_OrcHunting/Q00260_OrcHunting.java
-//
 // Pattern: a repeatable kill count with a random drop and a race restriction (`docs/design/
 // scripts.md`, "Quest patterns"), a one-time level-25 flag for the shots, and the newbie guide's
 // memo (Java `NewbieGuide`, a script of its own: read through `ctx.quest_state_of`).

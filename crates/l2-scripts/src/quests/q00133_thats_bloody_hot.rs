@@ -1,6 +1,4 @@
 //! Quest 133: That's Bloody Hot! (Kanis and Galate; unlocks Hellbound level 1 when it is locked).
-// Java: dist/game/data/scripts/quests/Q00133_ThatsBloodyHot/Q00133_ThatsBloodyHot.java
-//
 // Pattern: a short talk chain behind Q00131. The reward at the end depends on the Hellbound
 // engine (`ai::areas::hellbound::engine`): a locked island is set to level 1 and pays less exp.
 

@@ -1,6 +1,4 @@
 //! Quest 368: Trespassing into the Holy Ground (Priestess Restina, the Blade Stakatos of the Garden of Eva).
-// Java: dist/game/data/scripts/quests/Q00368_TrespassingIntoTheHolyGround/Q00368_TrespassingIntoTheHolyGround.java
-//
 // Pattern: a repeatable kill-count quest with a drop chance (`docs/design/scripts.md`, "Quest
 // patterns"): the party check (`random_party_member_state`, state -1) differs per monster, the
 // reward is the fangs turned into adena with a bonus at ten fangs, and the player chooses to go
@@ -88,8 +86,6 @@ impl Script for Q00368TrespassingIntoTheHolyGround {
         let qs = ctx.random_party_member_state(killer, -1, i, Some(npc));
         if qs.is_some() {
             let chance = MOBS.iter().find(|(id, _)| *id == npc.id).map_or(0.0, |(_, c)| *c);
-            // NOTE(java-quirk): the fang goes to the killer (`giveItemRandomly(player, ..)`), not
-            // to the party member the roll above picked.
             ctx.give_item_randomly(killer, Some(npc), BLADE_STAKATO_FANG, 1, 1, 0, chance, true);
         }
     }

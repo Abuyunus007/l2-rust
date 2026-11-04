@@ -1,6 +1,5 @@
 //! The `Restoration` effect: the playable gets `itemCount` of `itemId` (enchanted to
 //! `itemEnchantmentLevel` when that is above zero).
-// Java: dist/game/data/scripts/handlers/skill/effects/Restoration.java
 
 use l2_data::skill::EffectTemplate;
 use l2_protocol_game::SystemMessageId;

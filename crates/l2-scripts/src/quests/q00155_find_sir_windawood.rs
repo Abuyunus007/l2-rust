@@ -1,6 +1,4 @@
 //! Quest 155: Find Sir Windawood (Abellos sends the player to Sir Collin Windawood with a letter).
-// Java: dist/game/data/scripts/quests/Q00155_FindSirWindawood/Q00155_FindSirWindawood.java
-//
 // Pattern: a delivery chain, the start NPC hands out the letter, the other NPC takes it and
 // gives a potion and ends the quest (one-time, `exit_quest(ctx, false, true)`).
 

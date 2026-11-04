@@ -2,10 +2,6 @@
 //! `ExShowSeedInfo`, `ExShowCropInfo`, `ExShowSeedSetting`, `ExShowCropSetting`,
 //! `ExShowProcureCropDetail`, `ExShowSellCropList`, `BuyListSeed` and `ExSendManorList` read from
 //! the manor, the inventory and the castles.
-// Java: network/serverpackets/{ExShowManorDefaultInfo,ExShowSeedInfo,ExShowCropInfo,
-//       ExShowSeedSetting,ExShowCropSetting,ExShowProcureCropDetail,ExShowSellCropList,
-//       BuyListSeed,ExSendManorList}.java
-//
 // The chamberlain pages (M7-NPC-01) and the `ManorManager` bypass ask these.
 
 use l2_data::seed::java_hash_order;

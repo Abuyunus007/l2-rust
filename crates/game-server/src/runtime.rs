@@ -1,5 +1,4 @@
 //! The world thread and the seam between it and the async side (persistence, LS link).
-// Java: org/l2jmobius/gameserver/Shutdown.java (disconnectAllCharacters saves everyone)
 // Design: docs/design/world-loop.md ("Processes and tasks", "Shutdown")
 //
 // The world only knows the `Outbox` trait. Here it is implemented with a channel
@@ -150,7 +149,6 @@ impl WorldRuntime {
 
     /// Stores and disconnects every player, stops the world thread, then waits until the
     /// consumer has handled everything the world produced (D-15, "Shutdown" in the design).
-    // Java: Shutdown.disconnectAllCharacters
     pub async fn shutdown(self) {
         let (done_tx, done_rx) = oneshot::channel();
         let sent = self.handle.send(WorldCommand::Shutdown {

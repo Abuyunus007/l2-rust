@@ -1,7 +1,4 @@
 //! The game server: startup, background tasks and shutdown.
-// Java: org/l2jmobius/gameserver/GameServer.java (constructor = startup order)
-// Java: org/l2jmobius/gameserver/Shutdown.java (what is stored and stopped on shutdown)
-//
 // Same layout as `login-server`:
 // - `main.rs`    command line, logging, signals, exit code. Nothing else.
 // - `lib.rs`     `Server::start` runs the startup steps in Java's order and returns a running
@@ -10,25 +7,6 @@
 // - `state.rs`   the shared `Arc<GameState>` (config, pool, ids, datapack, world handle).
 // - `runtime.rs` the world thread and its outbox seam.
 // - `hexid.rs`, `admin.rs`, `client.rs`, `logging.rs`: one module per concern.
-//
-// Startup order (Java `GameServer` constructor): config, database, IdManager, data, World,
-// ... client listener, login server thread. What exists so far:
-//   1. config            `GameConfig::load`                              (M2-CFG-01)
-//   2. database          `l2_db::connect`
-//   3. IdManager         `IdFactory` from the Rust range (D-39)           (M2-IDF-01)
-//   4. data              `Datapack::load`                                (M2-DATA-01)
-//   5. geodata           `geo::load_engine` (before the world: it gets the engine) (M3-GEO-03)
-//   6. world             the world thread + persistence task            (M2-WORLD-01, M2-PERSIST-01)
-//   7. path workers      `geo::Geo::start` (need the world's command channel)   (M3-GEO-03)
-//   8. hexid.txt         the saved login server registration
-//   9. login server link (M2-GS-02), then the client listener and sessions (M2-GS-03)
-//  10. admin endpoint
-//   4. data              `Datapack::load_with` (options from the config) (M2-DATA-01, M3-CFG-02)
-//   5. world             the world thread + persistence task            (M2-WORLD-01, M2-PERSIST-01)
-//   6. hexid.txt         the saved login server registration
-//   7. login server link (M2-GS-02), then the client listener and sessions (M2-GS-03)
-//   8. admin endpoint
-// The character screen (M2-CHAR-01) and entering the world (M2-ENTER-01) live in `client/`.
 
 pub mod admin;
 pub mod client;
@@ -603,8 +581,6 @@ pub enum StartupError {
     Config(#[from] ConfigError),
     #[error("database error: {0}")]
     Database(#[from] DbError),
-    /// Java: `IdManager.getNextId` throws "Ran out of valid ids." The server must not start
-    /// without ids to hand out (D-39).
     #[error("object ids: {0}")]
     Ids(#[from] IdError),
     #[error("cannot load the datapack: {0}")]
@@ -646,7 +622,6 @@ pub struct Server {
 impl Server {
     /// Runs the startup steps. On success the server is initialized and listening.
     pub async fn start(paths: &Paths) -> Result<Self, StartupError> {
-        // Java: ConfigLoader.init (+ InterfaceConfig.load, DatabaseConfig)
         let config = GameConfig::load(&paths.config_dir)?;
         let database = DatabaseConfig::from_ini(&IniFile::load(paths.config_dir.join(DATABASE_CONFIG_FILE))?);
         let interface =
@@ -660,21 +635,12 @@ impl Server {
             warn!("BackupDatabase is set, but database backups on shutdown are not supported yet.");
         }
 
-        // Java: DatabaseFactory.init
         let pool = l2_db::connect(&database).await?;
         Self::start_with(config, pool, paths).await
     }
 
     /// Everything after the database connection.
     async fn start_with(config: GameConfig, pool: Pool, paths: &Paths) -> Result<Self, StartupError> {
-        // Java: IdManager.getInstance -> DatabaseIdManager. Only the read-only scan runs.
-        //
-        // D-39 (side by side with the Java GS on the same database): Java's startup also runs
-        // `DatabaseIdManager.cleanDatabase` (orphan DELETEs), `cleanCharacterStatus`
-        // (`UPDATE characters SET online = 0`) and `cleanTimestamps` (expired-row DELETEs).
-        // They are NOT ported: they would modify rows the running Java GS owns, and resetting
-        // `online` would mark its players offline. For the same reason this server never calls
-        // `CharacterRepository::reset_all_online`.
         let used = IdRepository::new(pool.clone())
             .used_object_ids(RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID)
             .await?;
@@ -685,7 +651,6 @@ impl Server {
             used.outside_range
         );
 
-        // Java: ServerConfig.DATAPACK_ROOT, then the data loaders ("Data", "Characters", ...)
         let datapack_root = resolve_datapack_root(&paths.root, &config.manual.core.server.datapack_root);
         let datapack = {
             let root = datapack_root.clone();
@@ -709,42 +674,32 @@ impl Server {
         let regen_settings = world_data::regen_settings(&config);
         let summon_settings = world_data::summon_settings(&config);
         let pc_cafe_settings = world_data::pc_cafe_settings(&config);
-        // Java: the Custom/*.ini of M9-C02 (premium system, auto potions, auto play, offline play).
         let custom_play = custom_play::custom_play_settings(&config, &paths.config_dir);
         let pet_settings = world_data::pet_settings(&config, &paths.config_dir);
         let instance_settings = world_data::instance_settings(&config, &paths.config_dir);
-        // Java: PetNameTable (the names of the pets that exist), read only.
         let pet_names = persist::load_pet_names(&pool).await;
-        // Java: ItemsOnGroundManager.getInstance (the database half of its constructor). Touches
         // `itemsonground` only with SaveDroppedItem / ClearDroppedItemTable on, like Java.
         let ground_items = persist::restore_ground_items(&pool, &config.general).await;
-        // Java: PunishmentManager.getInstance (the `punishments` table) and CharInfoTable (the
         // names the punishment commands look up).
         let punishments = persist::load_punishments(&pool).await;
         let char_names = persist::load_char_names(&pool).await;
         let punishment_settings = world_data::punishment_settings(&config, &paths.config_dir);
-        // Java: AnnouncementsTable (the `announcements` rows, read only here) and the values the
         // server control commands, the petitions and `//debug` read (M7-ADMIN-10).
         let announcements = persist::load_announcements(&pool).await;
         let admin_settings = world_data::admin_settings(&config, &paths.config_dir);
-        // Java: FishingChampionshipManager (GameServer, with AltFishChampionshipEnabled): the rows of
         // `fishing_championship` and `fishChampionshipEnd`, read only.
         let fishing_championship = if config.general.alt_fish_championship_enabled {
             Some(persist::load_fishing_championship(&pool).await)
         } else {
             None
         };
-        // Java: GlobalVariablesManager.getInstance (GameServer, section "World"): every row, read
         // here; the scripts write them (S-API-01).
         let global_variables = persist::load_global_variables(&pool).await;
-        // Java: SchemeBufferTable.getInstance (GameServer): the saved schemes, read here (M9-C03).
         let buffer_schemes = persist::load_buffer_schemes(&pool).await;
         let script_settings = script_settings(&config, &paths.config_dir);
-        // Java: LotteryManager.getInstance (GameServer): the newest `lottery` row, read only here;
         // the world writes it (S-HAND-03).
         let lottery_settings = world_data::lottery_settings(&config, &paths.config_dir);
         let lottery_row = persist::load_lottery(&pool).await;
-        // Java: CoupleManager.getInstance (GameServer, only with AllowWedding): the couples of
         // `mods_wedding`, read only here.
         let wedding_settings = world_data::wedding_settings(&config);
         let couples = if wedding_settings.allow_wedding {
@@ -752,17 +707,13 @@ impl Server {
         } else {
             Vec::new()
         };
-        // Java: RaidBossPointsManager, GrandBossManager (+ initZones) and RaidBossSpawnManager
         // (M8-BOSS-01): the boss tables, read only.
         let boss_settings = world_data::boss_settings(&config, &paths.config_dir);
         let boss_load = persist::load_bosses(&pool).await;
         let raid_boss_rows = persist::load_raid_boss_rows(&pool).await;
-        // Java: ClanTable.getInstance (section "Clans"): every clan and the clan wars, read only.
         let (clans, clan_wars) = persist::load_clans(&pool).await;
-        // Java: MailManager.getInstance and CharInfoTable: the mails with their attachments, read only.
         let mail = persist::load_mail(&pool).await;
         let mail_settings = mail_settings(&config, &paths.config_dir);
-        // Java: BotReportTable.getInstance (only with EnableBotReportButton): the punishments and
         // the reports of the table, read only.
         let bot_report_settings = world_data::bot_report_settings(&config, &paths.config_dir);
         let bot_reports = if bot_report_settings.enable {
@@ -770,7 +721,6 @@ impl Server {
         } else {
             Vec::new()
         };
-        // Java: OfflineTradeConfig, and OfflineTraderTable.restoreOfflineTraders (GameServer, with
         // RESTORE_OFFLINERS): the shops of the
         // tables, with their characters, read only.
         let offline_settings = offline_settings(&config, &paths.config_dir);
@@ -779,7 +729,6 @@ impl Server {
         } else {
             Vec::new()
         };
-        // Java: OfflinePlayTable.restoreOfflinePlayers (GameServer, with EnableOfflinePlayCommand and
         // RestoreAutoPlayOffliners), read only.
         let restore_offline_play = custom_play.offline_play.restore_wanted();
         let (offline_players, offline_play_groups) = if restore_offline_play {
@@ -787,15 +736,11 @@ impl Server {
         } else {
             (Vec::new(), Vec::new())
         };
-        // Java: FloodProtectorConfig.load (FloodProtector.ini).
         let flood_settings = world_data::flood_settings_from_config(&config);
-        // Java: GeneralConfig / CommunityBoardConfig (the community board, S-HAND-01).
         let community_board_settings = world_data::community_board_settings(&config);
-        // Java: CommunityBoardConfig (the custom board), SchemeBufferConfig, SellBuffsConfig (M9-C03).
         let custom_board_settings = world_data::custom_board_settings(&config, &paths.config_dir);
         let scheme_buffer_settings = world_data::scheme_buffer_settings(&config);
         let sell_buffs_settings = world_data::sell_buffs_settings(&config);
-        // Java: GameServer `if (MULTILANG_ENABLE)`: SystemMessageId/NpcStringId.loadLocalisations,
         // SendMessageLocalisationData, NpcNameLocalisationData (M9-L02). Nothing is read with the
         // switch off.
         let lang_data = if config.multilingual_support.multilang_enable {
@@ -806,7 +751,6 @@ impl Server {
         let user_command_info_settings = l2_world::UserCommandInfoSettings {
             display_server_time: config.server_time.display_server_time,
         };
-        // Java: PlayerConfig.UNSTUCK_INTERVAL (`/unstuck`, S-HAND-02).
         let script_handler_settings = l2_world::ScriptHandlerSettings {
             unstuck_interval: config.player.unstuck_interval,
             allow_wear: config.general.allow_wear,
@@ -814,24 +758,19 @@ impl Server {
             enable_find_pvp: config.find_pvp.enable_find_pvp,
             alt_game_viewnpc: config.npc.alt_game_viewnpc,
         };
-        // Java: CrestTable.getInstance (after ClanTable): the crest images, read only here.
         let crests = persist::load_crests(&pool).await;
         let clan_settings = clan_settings(&config, &paths.config_dir);
-        // Java: CHSiegeManager, ClanHallTable, CastleManager, FortManager (the rows; M7-RES-01).
         let residences = persist::load_residences(&pool).await;
-        // Java: ItemAuctionManager (data/ItemAuctions.xml and the `item_auction` rows; L-05).
         let item_auction_settings = item_auctions::item_auction_settings(&config, &paths.config_dir);
         let item_auction_load =
             item_auctions::load_item_auctions(&pool, &item_auction_settings, &datapack_root, |item_id| {
                 datapack.items.get(item_id).is_some()
             })
             .await;
-        // Java: ClanHallAuctionManager (the `auction` rows; M7-CH-01).
         let clan_hall_auctions = persist::load_clan_hall_auctions(&pool).await;
         let clan_hall_settings = clan_hall_settings(&config);
         let residence_npc_settings = residence_npc_settings(&config);
         let residence_settings = residence_settings(&config, &paths.config_dir);
-        // Java: SiegeManager (Siege.ini, the registrations, the guards, the upgrades; M7-SIEGE-01).
         let sieges = persist::load_sieges(&pool).await;
         let castle_names: Vec<(i32, String)> = residences
             .castles
@@ -839,36 +778,29 @@ impl Server {
             .map(|c| (c.id, c.name.clone()))
             .collect();
         let siege_settings = world_data::siege_settings(&config, &paths.config_dir, &castle_names);
-        // Java: Fort constructors and FortSiege (fort_spawnlist, fort_siege_guards,
         // fortsiege_clans; M7-FORT-01) and FortSiegeManager (FortSiege.ini).
         let fort_sieges = persist::load_fort_sieges(&pool).await;
         let fort_settings = fort_settings(&config, &paths.config_dir);
-        // Java: TerritoryWarManager (TerritoryWar.ini, territory_spawnlist, territories,
         // territory_registrations, the nextTWStartDate global variable; M7-TW-01).
         let territory_load = persist::load_territories(&pool).await;
         let territory_settings = territory_settings(&paths.config_dir);
-        // Java: the conquerable hall scripts (`clanhall_siege_*`, the flag war tables,
         // `rainbowsprings_attacker_list`) and ConquerableHallSiege.ini (M7-CHSIEGE-01).
         let hall_sieges = persist::load_hall_sieges(&pool).await;
         let hall_siege_settings = hall_siege_settings(&config);
-        // Java: CastleManorManager (after CastleManager): the manor rows, only with `AllowManor`.
         let manor_settings = manor_settings(&config);
         let manor_load = if manor_settings.allow_manor {
             persist::load_manor(&pool).await
         } else {
             l2_world::ManorLoad::default()
         };
-        // Java: SevenSigns.getInstance (section "Seven Signs": the `seven_signs` rows and the status
         // row, read only here) and AutoSpawnHandler (`random_spawn`, read only; M8-SS-01).
         let seven_signs_settings = seven_signs_settings(&config, &paths.config_dir);
         let seven_signs_load = persist::load_seven_signs(&pool).await;
         let auto_spawns = persist::load_auto_spawns(&pool).await;
-        // Java: DimensionalRiftManager (the `dimensional_rift` rooms, read only, and
         // data/DimensionalRift.xml; M8-FEST-01).
         let rift_settings = rift_settings(&config);
         let rift_rooms = persist::load_dimensional_rift_rooms(&pool).await;
         let rift_spawns = l2_data::RiftSpawns::load(&datapack_root);
-        // Java: CursedWeaponsManager (data/CursedWeapons.xml, the `cursed_weapons` rows and
         // `controlPlayers`).
         let cursed_settings = cursed_settings(&config);
         let cursed_load = if cursed_settings.allow_cursed_weapons {
@@ -876,7 +808,6 @@ impl Server {
         } else {
             l2_world::CursedLoad::default()
         };
-        // Java: Olympiad.getInstance (GameServer): `olympiad_data`, the nobles and the last ranking,
         // read here (M8-OLY-01).
         let olympiad_settings = olympiad_settings(&config);
         let olympiad_load = if olympiad_settings.enabled {
@@ -884,7 +815,6 @@ impl Server {
         } else {
             l2_world::OlympiadLoad::default()
         };
-        // Java: Hero.getInstance (GameServer, right after the Olympiad): the `heroes` rows, the
         // diary and the match history of the heroes, read here (M8-HERO-01).
         let hero_load = if olympiad_settings.enabled {
             let before = l2_world::hero_fights_cutoff_ms(
@@ -895,13 +825,10 @@ impl Server {
         } else {
             l2_world::HeroLoad::default()
         };
-        // Java: UndergroundColiseumManager.load (`UC_START_TIME`, `UC_STOP_TIME`) and
         // restoreBestTeams. Read always: they are only read here.
         let minigame_settings = minigame_settings(&config);
         let minigame_load = persist::load_minigames(&pool).await;
-        // Java: AirShipManager (the `airships` rows).
         let vehicle_load = persist::load_airships(&pool).await;
-        // Java: BuyListData.getInstance (data/buylists, then the `buylists` table) and
         // MerchantPriceConfigTable.
         let (buy_lists, price_configs) = {
             let datapack = Arc::clone(&datapack);
@@ -920,7 +847,6 @@ impl Server {
         };
         let buy_list_stock = persist::load_buy_list_stock(&pool).await;
 
-        // Java: GeoEngine.getInstance (section "Geodata"). Loaded before the world starts, so the
         // world thread gets the engine. Not fatal: Java runs without geodata too.
         let geo_settings = geo::GeoSettings::load(&config, &paths.config_dir, &datapack_root);
         let geo_engine = {
@@ -930,10 +856,8 @@ impl Server {
                 .map_err(|e| StartupError::Internal(format!("geodata loader: {e}")))?
         };
 
-        // Java: ServerConfig.loadHexid (at the end of ServerConfig.load)
         let hexid = hexid::load(&paths.config_dir);
 
-        // Java: World.init, PlayerAutoSaveTaskManager. The outbox consumer is the persistence
         // task; it stores in order and reports logouts (after the store) on `ls_notices`.
         let autosave = persist::autosave_interval_from_config(&config);
         let (notices_tx, ls_notices) = mpsc::unbounded_channel();
@@ -991,7 +915,6 @@ impl Server {
                 move |world| {
                     world.set_static_data(Box::new(data));
                     world.set_settings(settings);
-                    // Java: `GameServer` starts the `CustomMailManager` (M9-C06).
                     world.start_custom_misc();
                     world.set_regen_settings(regen_settings);
                     world.set_summon_settings(summon_settings);
@@ -1005,53 +928,34 @@ impl Server {
                     // The pages of NPC dialogs and the gatekeeper lists (always preloaded).
                     world.set_html_cache(html);
                     world.set_teleporter_data(teleporters);
-                    // Java: HitConditionBonusData (the attack's height, side and night bonus).
                     world.set_hit_condition_bonus(hit_condition_bonus);
-                    // Java: ExperienceData, ExperienceLossData, KarmaLossData, SkillTreeData.
                     let (experience, experience_loss, karma_loss, skill_trees) = exp_tables;
                     world.set_exp_data(experience, experience_loss, karma_loss, skill_trees);
-                    // Java: SkillLearnData (the classes each trainer teaches).
                     world.set_skill_learn_data(skill_learn);
-                    // Java: PetSkillData (the skill levels of the summon actions).
                     world.set_pet_skill_data(pet_skills);
-                    // Java: PetDataTable (the pets), PetNameTable, the pet values of the .ini files.
                     world.set_pet_data(pets);
                     world.set_pet_settings(pet_settings);
                     world.load_pet_names(pet_names);
-                    // Java: CubicData (the cubic templates of `SummonCubic`).
                     world.set_cubic_data(cubics);
-                    // Java: RecipeData (data/Recipes.xml).
                     world.set_recipe_data(recipes);
-                    // Java: FishData, FishingRodsData, FishingMonstersData.
                     let (fish, fishing_rods, fishing_monsters) = fishing;
                     world.set_fishing_data(fish, fishing_rods, fishing_monsters);
-                    // Java: ClassListData (the class names of the admin pages).
                     world.set_class_list(class_list);
-                    // Java: MultisellData (the exchange lists of NPCs).
                     let (multisell_data, multisell_settings) = multisell;
                     world.set_multisell_data(multisell_data, multisell_settings);
-                    // Java: EnchantItemData, EnchantItemGroupsData, ElementalAttributeData.
                     let (enchant_items, enchant_groups, elemental_attributes) = enchant_data;
                     world.set_enchant_data(enchant_items, enchant_groups, elemental_attributes);
-                    // Java: GameServer, after the managers: SpawnData, then the day/night start.
                     let (datapack, ids, config, config_dir) = npc_start;
-                    // Java: AugmentationData (the skill map and the retail chance tables).
                     world.set_augmentation_data(datapack.augmentation_data.clone());
-                    // Java: DoorData, FenceData, StaticObjectData (GameServer constructor), before the
                     // spawns.
                     if let Err(e) = world.spawn_door_data(&datapack, &ids) {
                         tracing::error!("Doors, fences and static objects could not all be spawned: {e}");
                     }
-                    // Java: InstanceManager.getInstance (the names and templates; M8-INST-01).
                     world.set_instance_settings(instance_settings);
                     world.set_instance_data(Arc::clone(&datapack.instances));
-                    // Java: WalkingManager.getInstance (GameServer, before the spawns: a spawn asks
                     // `isTargeted` and starts its route).
                     world.set_walking_routes(Arc::clone(&datapack.routes));
-                    // Java: GameServer, after the managers: SpawnData, then the day/night start.
-                    // Java: GameServer's "Scripts" section (`ScriptEngine.executeScriptList`,
                     // skipped with `NoQuests`) comes before `SpawnData` (S-API-01).
-                    // Java: RaidBossPointsManager (GameServer, early) and GrandBossManager (with its
                     // `initZones`, after the zones), both before the "Scripts" section: the grand
                     // boss scripts read the states when they load (M8-BOSS-01, S-BOSS-01).
                     world.set_boss_settings(boss_settings);
@@ -1063,105 +967,79 @@ impl Server {
                     // their own sections below (S-API-04).
                     world.set_olympiad_settings(olympiad_settings.clone());
                     world.set_minigame_settings(minigame_settings.clone());
-                    // Java: CategoryData (GameServer constructor, before the scripts: `isInCategory`).
                     world.set_category_data(Arc::clone(&datapack.categories));
-                    // Java: LevelUpCrystalData (GameServer, before the scripts: Q00350 registers
                     // its monsters from it; the chance multiplier is applied at load, S-API-05).
                     world.set_level_up_crystal_data(Arc::new(l2_data::LevelUpCrystalData::load(
                         &datapack.root,
                         config.player.soul_crystal_chance_multiplier,
                     )));
-                    // Java: the ClassMaster script reads `config/ClassMaster.xml` in its constructor.
                     let scripts = (!config.development.no_quests)
                         .then(|| l2_scripts::all_with(l2_data::ClassMasterConfig::load(&datapack.root)));
                     npcs::spawn_npcs_with_scripts(world, &datapack, ids, &config, &config_dir, scripts);
-                    // Java: RaidBossSpawnManager (right after SpawnData; M8-BOSS-01).
                     if !config.development.no_spawns {
                         world.spawn_raid_bosses(raid_boss_rows);
                     }
-                    // Java: ItemsOnGroundManager (the items that lay on the ground at shutdown).
                     world.load_ground_items(ground_items);
-                    // Java: DailyResetManager (06:30 every day: Nevit's advent time, recommendations).
                     world.start_daily_reset_task();
-                    // Java: PunishmentManager, CharInfoTable.
                     world.set_punishment_settings(punishment_settings);
                     world.load_char_names(char_names);
                     world.load_punishments(punishments);
-                    // Java: AnnouncementsTable (automatic announcements start here), the
                     // values of `//server_*` and the petition limits (M7-ADMIN-10).
                     world.set_admin_settings(admin_settings);
                     world.load_announcements(announcements);
-                    // Java: ClanTable (after the skills: the clan skills are checked against them).
                     world.set_clan_settings(clan_settings);
                     world.load_clans(clans, clan_wars);
-                    // Java: CHSiegeManager, ClanHallTable (after ClanTable), CastleManager,
                     // FortManager, SiegeScheduleData (M7-RES-01).
                     world.set_residence_settings(residence_settings);
                     world.set_fort_settings(fort_settings);
                     world.set_siege_schedule(Arc::clone(&datapack.siege_schedule));
                     world.load_residences(residences);
-                    // Java: SiegeManager.getSieges(), Castle.loadDoorUpgrade, MercTicketManager
                     // (M7-SIEGE-01).
                     world.set_siege_settings(siege_settings);
                     world.load_sieges(sieges);
-                    // Java: the Fort constructors' spawns, FortSiege, FortSiegeGuardManager
                     // (M7-FORT-01).
                     world.load_fort_data(fort_sieges);
-                    // Java: TerritoryWarManager.getInstance(), then the TerritoryWarSuperClass
                     // and MercenaryCaptain constructors (the next war date, the shouts;
                     // M7-TW-01).
                     world.set_territory_settings(territory_settings);
                     world.load_territories(territory_load);
-                    // Java: the conquerable hall scripts, after the zones, the NPCs and the
                     // residences (M7-CHSIEGE-01).
                     world.set_hall_siege_settings(hall_siege_settings);
                     world.load_hall_sieges(hall_sieges);
-                    // Java: CastleManorManager (Seeds.xml, the rows, the mode of the hour; after the
                     // castles; M7-MANOR-01).
                     world.set_manor_settings(manor_settings);
                     world.set_manor_seeds(Arc::clone(&datapack.seeds));
                     world.load_manor(manor_load);
-                    // Java: SevenSigns.getInstance (after the castles), then, after the spawns and
                     // the sieges, spawnSevenSignsNPC with AutoSpawnHandler (M8-SS-01).
                     world.set_seven_signs_settings(seven_signs_settings);
                     world.load_seven_signs(seven_signs_load);
                     world.load_auto_spawns(auto_spawns);
                     world.spawn_seven_signs_npc();
-                    // Java: DimensionalRiftManager (M8-FEST-01).
                     world.set_rift_settings(rift_settings);
                     world.load_dimensional_rift(rift_rooms, &rift_spawns);
-                    // Java: CursedWeaponsManager (GameServer, after the items and the skills;
                     // M8-CURSED-01).
                     world.set_cursed_settings(cursed_settings);
                     world.load_cursed_weapons(&datapack.cursed_weapons, cursed_load);
-                    // Java: Olympiad.getInstance (GameServer, "Olympiad" section; M8-OLY-01).
                     world.set_olympiad_settings(olympiad_settings);
                     world.load_olympiad(olympiad_load);
                     world.load_heroes(hero_load);
-                    // Java: KrateisCubeManager, UndergroundColiseumManager (GameServer, after the
                     // spawns and the doors) and the Block Checker queue (M8-GAMES-01).
                     world.set_minigame_settings(minigame_settings);
                     world.set_minigame_data(Arc::clone(&datapack.minigames));
                     world.start_minigames(minigame_load);
-                    // Java: the scripts of the boats and the air ship docks (M8-VEHICLE-01).
                     world.set_vehicle_settings(vehicle_settings(&config));
                     world.load_airships(vehicle_load);
                     world.spawn_boats();
                     world.start_air_ships();
                     world.set_clan_hall_settings(clan_hall_settings);
-                    // Java: FeatureConfig (the castle functions' fees, the upgrade prices, the
                     // dawn tickets; M7-NPC-01).
                     world.set_residence_npc_settings(residence_npc_settings);
                     world.load_clan_hall_auctions(clan_hall_auctions);
-                    // Java: ItemAuctionManager.getInstance (GameServer, after the managers; needs the
                     // item templates and the id factory).
                     world.set_item_auction_settings(item_auction_settings);
                     world.load_item_auctions(item_auction_load);
-                    // Java: MailManager, MessageDeletionTaskManager.
-                    // Java: FloodProtectors (per client, the settings are shared).
                     world.set_flood_settings(flood_settings);
                     world.set_community_board_settings(community_board_settings);
-                    // Java: the custom board, SchemeBufferTable, SellBuffsManager (M9-C03).
                     world.set_custom_board_settings(custom_board_settings);
                     world.set_scheme_buffer(scheme_buffer_settings, scheme_buffer_skills);
                     world.load_buffer_schemes(buffer_schemes);
@@ -1171,39 +1049,31 @@ impl Server {
                     world.set_script_handler_settings(script_handler_settings);
                     world.set_mail_settings(mail_settings);
                     world.load_mail(mail);
-                    // Java: BotReportTable (after the skills: a punishment needs its skill).
                     let bot_report_on = bot_report_settings.enable;
                     world.set_bot_report(bot_report_settings);
                     if bot_report_on {
                         world.load_bot_reports(bot_reports);
                         world.start_bot_report_reset_task();
                     }
-                    // Java: BuyListData (the products' stock the last run left).
                     world.set_buy_lists(buy_lists, price_configs);
                     world.load_buy_list_stock(buy_list_stock);
-                    // Java: CrestTable (after ClanTable: it clears the crests clans lost).
                     world.load_crests(crests);
-                    // Java: LotteryManager (GameServer): sells and draws only with the switch.
                     world.set_lottery_settings(lottery_settings);
                     world.load_lottery(lottery_row);
-                    // Java: CoupleManager (GameServer, only with AllowWedding).
                     let wedding_on = wedding_settings.allow_wedding;
                     world.set_wedding_settings(wedding_settings);
                     if wedding_on {
                         world.load_couples(couples);
                     }
-                    // Java: FishingChampionshipManager.getInstance (GameServer, after the managers).
                     if let Some(data) = fishing_championship {
                         world.load_fishing_championship(data);
                     }
-                    // Java: GameServer, last: OfflineTraderTable.restoreOfflineTraders (after the
                     // spawns and the clans, so the traders find their surroundings).
                     let restore_traders = offline_settings.restore_wanted();
                     world.set_offline_settings(offline_settings);
                     if restore_traders {
                         world.restore_offline_traders(offline_traders);
                     }
-                    // Java: GameServer, after the traders: OfflinePlayTable.restoreOfflinePlayers.
                     if restore_offline_play {
                         world.restore_offline_players(offline_players, offline_play_groups);
                     }
@@ -1458,7 +1328,6 @@ impl Server {
 
     /// Waits until `stop` completes (a signal: exit code 0) or something requests a shutdown or
     /// restart through [`GameState::request_shutdown`], then shuts down.
-    // Java: the shutdown hook (SIGTERM) and Shutdown.startShutdown
     pub async fn run_until(mut self, stop: impl Future<Output = ()>) -> ExitReason {
         let reason = tokio::select! {
             () = stop => {
@@ -1483,7 +1352,6 @@ impl Server {
         self.finish(reason).await
     }
 
-    // Java: Shutdown.startShutdownActions
     async fn finish(mut self, reason: ExitReason) -> ExitReason {
         info!(
             "Game server is shutting down{}.",
@@ -1507,7 +1375,6 @@ impl Server {
         //    still open, and so the login server link (a task below) is still up for the
         //    `PlayerLogout` messages M2-GS-02 sends once a character is saved.
         self.world.shutdown().await;
-        // Java: the server is reported down, then `LoginServerThread` is interrupted.
         if let Some(link) = &self.ls_link {
             link.shutdown().await;
         }
@@ -1539,7 +1406,6 @@ fn reload_html(
     l2_world::HtmlReloadResult::Reloaded(Arc::new(l2_data::HtmCache::load_with(root, lazy, check_encoding)))
 }
 
-/// Java: `new File(config.getString("DatapackRoot", ".").replace('\\', '/')).getCanonicalFile()`.
 /// A relative path is relative to the server's root folder (Java: the working directory).
 /// Symlinks are not resolved.
 fn resolve_datapack_root(root: &Path, value: &str) -> PathBuf {
@@ -1559,15 +1425,11 @@ fn resolve_datapack_root(root: &Path, value: &str) -> PathBuf {
     out
 }
 
-/// The datapack options the owner's Java game server gets from its config, so the Rust GS loads
-/// the same custom items and NPCs (D-39, both servers share one database).
-///
 /// Each value is the key's getter result after Java's `load()`, with the same defaults, so an
 /// empty config gives [`DatapackOptions::default`]. Keys: `General.ini` `CustomItemsLoad`,
 /// `CustomNpcData` and `HtmCache`; `NPC.ini` `MaxAggroRange` and `DefaultCorpseTime`;
 /// `Custom/FakePlayers.ini` `EnableFakePlayers`; `Development.ini` `NoSpawns`; `General.ini`
 /// `CheckHtmlEncoding`.
-// Java: GeneralConfig.java:258, 355, 358; NpcConfig.java:142, 145; FakePlayersConfig.java:50;
 // the NoSpawns read in DevelopmentConfig; HtmCache.java:140 (CHECK_HTML_ENCODING).
 fn options_from_config(config: &GameConfig, config_dir: &Path) -> DatapackOptions {
     DatapackOptions {

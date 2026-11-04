@@ -6,7 +6,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/StartRotation.java
 /// A creature starts to turn (`START_ROTATING`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StartRotation {
@@ -41,7 +40,6 @@ impl Decode for StartRotation {
     }
 }
 
-// Java: gameserver/network/serverpackets/StopRotation.java
 /// A creature stops turning at `degree` (`FINISH_ROTATING`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct StopRotation {
@@ -74,7 +72,6 @@ impl Decode for StopRotation {
     }
 }
 
-// Java: gameserver/network/serverpackets/FlyToLocation.java
 /// A creature flies to a point (`FLY_TO_LOCATION`): a charge, a throw or a blink.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct FlyToLocation {
@@ -122,7 +119,6 @@ impl Decode for FlyToLocation {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExSpawnEmitter.java
 /// The soul of a dead NPC flows to a player (`EX_SPAWN_EMITTER`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExSpawnEmitter {

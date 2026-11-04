@@ -724,9 +724,6 @@ fn a_rare_product_replaces_the_normal_one() {
     );
 }
 
-/// NOTE(java-quirk): a success draws `Rnd.get(100)` for the rare product also when the recipe has
-/// none (its rare item id is 0, not -1), while `CraftMasterwork` is on. The draws of two worlds
-/// that differ only in that switch are one apart.
 #[test]
 fn masterwork_rolls_the_dice_even_without_a_rare_product() {
     let mut next = Vec::new();

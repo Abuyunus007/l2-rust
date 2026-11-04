@@ -939,7 +939,6 @@ fn a_talisman_request_always_takes_the_first_talisman_slot() {
         skill_level: 1,
     }];
     let (mut world, _log) = world_with(p);
-    // NOTE(java-quirk): `BodyPart.fromPaperdollSlot(DECO3)` is `DECO`, whose slot is DECO1.
     input(&mut world, ClientInput::UnEquipItem { paperdoll_slot: 19 });
     assert_eq!(worn_slots(&world), [(19, 101)]);
 }
@@ -1027,7 +1026,6 @@ fn destroying_a_stack_partly_writes_nothing_until_the_next_store() {
         },
     );
     let out = log.take();
-    // Java: `changeCount` only marks the item dirty; `updateDatabase()` is not called.
     assert!(item_changes(&out).is_empty());
     let packets: Vec<Vec<u8>> = out
         .iter()
@@ -1457,7 +1455,6 @@ fn slot_and_weight_limits() {
     assert!(!world.validate_capacity(ME, 2, false));
     // A quest item is counted against the quest limit (100), not the 80.
     assert!(world.validate_capacity(ME, 2, true));
-    // NOTE(java-quirk): zero slots are checked against the quest limit unless AutoLootSlotLimit.
     assert!(world.validate_capacity(ME, 0, false));
     // A stackable item the player has needs no new slot.
     assert!(world.validate_capacity_by_item_id(ME, 23));

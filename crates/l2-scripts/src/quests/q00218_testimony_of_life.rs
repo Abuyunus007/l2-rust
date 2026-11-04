@@ -1,5 +1,4 @@
 //! Quest 218: Testimony of Life (Master Cardien, Asterios, Pushkin, Thalia, Arkenia, Adonius and Isael; the elf's mark).
-// Java: dist/game/data/scripts/quests/Q00218_TestimonyOfLife/Q00218_TestimonyOfLife.java
 
 use l2_util::ObjectId;
 use l2_world::script::{QuestSound, race};

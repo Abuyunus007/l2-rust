@@ -1,11 +1,5 @@
 //! Putting objects into the world, moving them between regions and taking them out, with the
 //! packets Java sends for each, plus the "who can see this" queries every game feature uses.
-// Java: org/l2jmobius/gameserver/entity/WorldObject.java (spawnMe, decayMe, setXYZ)
-// Java: org/l2jmobius/gameserver/entity/World.java (addVisibleObject, removeVisibleObject,
-//       switchRegion, forEachVisibleObject*, disposeOutOfBoundsObject)
-// Java: org/l2jmobius/gameserver/entity/WorldRegion.java (addVisibleObject, removeVisibleObject,
-//       setActive, startActivation, startDeactivation, areNeighborsEmpty)
-//
 // The AI hooks of Java are here (M4-AI-01): `wake_npc_in_view` (`getAI()`,
 // `describeStateToPlayer`, `setIntentionActive` of an idle monster) where objects come into view,
 // `notifyActionForgetObject` through `forget_each_other`, `switchAI` in `set_region_active`, and
@@ -467,7 +461,6 @@ impl World {
             r.objects.insert(id);
             r.active
         };
-        // Java: a door or fence also goes into the lists of every surrounding region, which the
         // geodata checks read.
         match kind {
             Some(ObjectKind::Door) => {

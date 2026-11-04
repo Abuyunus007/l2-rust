@@ -1,5 +1,4 @@
 //! Quest 188: Seal Removal (Lorain, Maestro Nikola and Dorothy the Locksmith).
-// Java: dist/game/data/scripts/quests/Q00188_SealRemoval/Q00188_SealRemoval.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

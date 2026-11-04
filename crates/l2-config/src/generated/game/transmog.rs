@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/TransmogConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/Transmog.ini` (Java: `TransmogConfig`).

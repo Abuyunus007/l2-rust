@@ -1,5 +1,4 @@
 //! The settings of the misc custom features (M9-C06) as the world reads them.
-// Java: gameserver/config/custom/{ScreenWelcomeMessage,OnlineInfo,PasswordChange,
 // MultilingualSupport,CustomMailManager,DualboxCheck,Captcha,ChatModeration,WalkerBotProtection,
 // HellboundStatus,Banking}Config.java
 

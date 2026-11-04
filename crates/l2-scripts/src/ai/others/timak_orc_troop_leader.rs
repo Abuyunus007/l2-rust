@@ -1,5 +1,4 @@
 //! The Timak Orc Troop Leader calls its private minions when hit.
-// Java: dist/game/data/scripts/ai/others/TimakOrcTroopLeader.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

@@ -1,11 +1,3 @@
-//! The tables of the M7 scenarios as the bare world sees them: a model of what the persistence
-//! task of the real game server leaves in the database. It starts from the same [`Seed`] the
-//! throwaway database gets, applies the commands the world sent (`PersistCommand::Residence`,
-//! `Clan`, `ItemRows`, ...) and answers the reads the world asks for
-//! (`ResidenceRereadRequest`, `ClanWarehouseRequest`), so the bare world runs the D-50 steps like
-//! the real servers do. `Rows` is what a scenario compares: the same struct comes out of the model
-//! and out of `SELECT`s on the real database.
-//!
 //! The model is strict: a write it does not know panics, so a new statement of the world cannot
 //! slip past the checks.
 

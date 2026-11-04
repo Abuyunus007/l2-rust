@@ -1,6 +1,4 @@
 //! Quest 153: Deliver Goods (Arnold in Talking Island sends parcels to Jackson, Silvia and Rant).
-// Java: dist/game/data/scripts/quests/Q00153_DeliverGoods/Q00153_DeliverGoods.java
-//
 // Pattern: a delivery chain over several NPCs (`docs/design/scripts.md`, "Quest patterns"): the
 // start NPC hands out the parcels, every other talk NPC swaps its parcel for a receipt, and the
 // quest moves on when all receipts are in. One-time: `exit_quest(ctx, false, ..)`.
@@ -79,8 +77,6 @@ impl Script for Q00153DeliverGoods {
             ctx.give_items(player, CLOTH_BUNDLE_ID, 1);
             ctx.give_items(player, CLAY_POT_ID, 1);
         }
-        // NOTE(java-quirk): every event is shown back as a page, also one this quest does not
-        // know (and with no quest state).
         Some(event.to_owned())
     }
 

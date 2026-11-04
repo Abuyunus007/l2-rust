@@ -1,6 +1,4 @@
 //! Quest 601: Watching Eyes (Eye of Argos in the Ketra and Varka villages, Proof of Avenger).
-// Java: dist/game/data/scripts/quests/Q00601_WatchingEyes/Q00601_WatchingEyes.java
-//
 // Pattern: a repeatable collect quest. Each monster drops a Proof of Avenger with a chance; the
 // hundredth sets cond 2. The NPC rewards one of three item bundles or the adena alone, drawn
 // with the world RNG (`getRandom(4)`), and ends the quest repeatable.

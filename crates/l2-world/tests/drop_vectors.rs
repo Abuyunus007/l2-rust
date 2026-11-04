@@ -18,7 +18,6 @@
 //!   skips when the datapack is missing.
 //! - Files that are missing skip with a message (CI has all of them: they are committed).
 //!
-//! Java: entity/actor/templates/NpcTemplate.java (calculateDrops, calculateGroupDrops,
 //! calculateUngroupedDrops, calculateGroupDrop, calculateUngroupedDrop)
 
 use std::collections::HashMap;

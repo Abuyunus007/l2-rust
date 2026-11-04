@@ -1,6 +1,4 @@
 //! The date generator of an auction instance: when the next auction starts.
-// Java: entity/item/auction/AuctionDateGenerator.java
-//
 // Java sets the fields of a `Calendar` in the JVM's zone and then moves the result by whole weeks
 // (or `interval` days) until it is not in the past. The same is done here on "local wall-clock
 // milliseconds" (D-48): the offset of the machine's zone is added, the day maths is plain integer

@@ -1,16 +1,11 @@
 //! Quest 727: Hope Within the Darkness (the castle wardens; the party of the castle clan enters
 //! the Pailaka of the Rune castle, saves the four victims from three waves of bosses and gets
 //! 159 Knight's Epaulettes).
-// Java: dist/game/data/scripts/quests/Q00727_HopeWithinTheDarkness/Q00727_HopeWithinTheDarkness.java
-//
 // Pattern: a quest with its own instance (`CAUWorld`). The Java `Runnable`s on the thread pool
 // are timers with the instance id in their parameters; `underAttack` is the world parameter
 // `underAttack`, the status is the world status, and the world carries the parameter `script`
 // (Java's `instanceof CAUWorld`). The victims buff the players near them and attack the foes in
 // their aggro range every five seconds.
-//
-// FOLLOW-UP(engine): `CastleDungeon.getReEnterTime()` decides on the `CastlePailaka <warden>`
-// row (D-54): the in-memory copy is read here, the page cannot wait for an asynchronous re-read.
 
 use l2_protocol_game::server::ChatType;
 use l2_protocol_game::{NpcStringId, SystemMessageId};
@@ -181,7 +176,6 @@ fn check_enter_conditions(ctx: &mut ScriptCtx<'_>, player: ObjectId, npc: Script
                 .get_htm(player, "CastleWarden-12.html")
                 .map(|page| page.replace("%player%", &name));
         }
-        // NOTE(java-quirk): Java asks the leader's clan, not the member's.
         if clan_castle(ctx, player) != Some(castle.0) {
             return ctx
                 .get_htm(player, "CastleWarden-11.html")

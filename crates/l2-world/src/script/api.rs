@@ -1,6 +1,4 @@
 //! The [`Script`] trait: what a ported Java `Quest` / `Script` implements.
-// Java: mechanics/script/Quest.java (the `on*` methods), mechanics/script/Script.java
-//
 // A Java script is a subclass of `Quest` that overrides some `on*` methods and registers its
 // listeners in the constructor. In Rust it is a type that implements [`Script`]:
 // - [`Script::setup`] is the constructor: it registers the listeners (`addTalkId`, ...).

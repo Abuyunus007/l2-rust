@@ -1,7 +1,6 @@
 //! Java `managers/GrandBossManager.java`: the state of each grand boss (`grandboss_data`), the
 //! info the boss AIs read (`_storedInfo`), the registered boss NPCs (`BOSSES`) and the 5 minute
 //! store.
-//
 // The scripts of the grand bosses (D-05) are the callers of the setters; the status numbers are
 // theirs (0 alive for all; 1 to 3 waiting, in fight and dead for Antharas, Valakas, Baium and
 // Frintezza; 1 dead for the others, see `AdminGrandBoss`).
@@ -74,8 +73,6 @@ impl World {
                 .grand
                 .stored
                 .insert(row.boss_id, GrandBossInfo::from(row));
-            // NOTE(java-quirk): Java throws on a boss without a template and drops the rest of the
-            // rows; here the name is the id and the loading goes on.
             let name = self.boss_name(row.boss_id);
             info!(
                 "GrandBossManager: {name}({}) status is {}.",
@@ -105,14 +102,10 @@ impl World {
         self.boss.grand.status.get(&boss_id).copied()
     }
 
-    /// A grand boss spawns here only when its state row says it is alive (status 0, D-53). A boss
-    /// without a row does not spawn.
     pub fn grand_boss_may_spawn(&self, boss_id: i32) -> bool {
         self.grand_boss_status(boss_id) == Some(0)
     }
 
-    /// Java `setStatus(bossId, status)`: the status changes in memory and `UPDATE grandboss_data
-    /// set status` follows (with `CycleDatabaseWrites`).
     pub fn set_grand_boss_status(&mut self, boss_id: i32, status: i32) {
         self.boss.grand.status.insert(boss_id, status);
         info!(
@@ -191,7 +184,6 @@ impl World {
     /// Java `GrandBossManager.updateDb(bossId, statusOnly)`.
     fn grand_boss_update_db(&mut self, boss_id: i32, status_only: bool) {
         let Some(status) = self.boss.grand.status.get(&boss_id).copied() else {
-            // Java: `_bossStatus.get(bossId)` unboxes a null.
             warn!("GrandBossManager: Couldn't update grandbosses to database: no status for {boss_id}");
             return;
         };
@@ -236,7 +228,6 @@ impl World {
         self.boss.zones.clear();
     }
 
-    /// The answer of a re-read (D-50): the row replaces the status and the info in memory.
     pub(crate) fn apply_grand_boss_row(&mut self, boss_id: i32, row: Option<GrandBossData>) {
         match row {
             Some(row) => {

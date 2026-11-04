@@ -5,7 +5,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::{write_ex_opcode, write_opcode};
 use crate::generated::opcodes::{ClientOpcode, ExClientOpcode};
 
-// Java: gameserver/network/clientpackets/EnterWorld.java
 /// The "enter world" packet. Most of its fields are unknown to Java as well: it reads and
 /// ignores them. Only the trace route is used, Java passes it to the login server.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -58,7 +57,6 @@ impl Decode for EnterWorld {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestKeyMapping.java
 /// Asks for the stored UI key mapping (ex packet `0xD0 0x0021`). No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestKeyMapping;

@@ -1,13 +1,5 @@
 //! Teleport bookmarks ("My Teleports"): the list, saving the current location, changing and
 //! deleting an entry, and teleporting to one (L-04).
-// Java: network/clientpackets/{RequestBookMarkSlotInfo,RequestSaveBookMarkSlot,
-// Java: RequestModifyBookMarkSlot,RequestDeleteBookMarkSlot,RequestTeleportBookMark,
-// Java: RequestChangeBookMarkSlot}.java
-// Java: network/serverpackets/ExGetBookMarkInfoPacket.java
-// Java: entity/actor/holders/player/TeleportBookmark.java
-// Java: entity/actor/Player.java (teleportBookmarkAdd/Modify/Delete/Go/Condition,
-// Java: restoreTeleportBookmark)
-//
 // # Where a bookmark lives
 // `PlayerProfile::bookmarks`: the rows of `character_tpbookmark` the session read at
 // `CharacterSelect` (Java `restoreTeleportBookmark`), kept sorted by id (Java keeps a
@@ -387,8 +379,6 @@ impl World {
             );
             return;
         }
-        // NOTE(java-quirk): "S1 has disappeared" goes out before the bookmark is looked up, so an
-        // unknown bookmark id costs nothing but still shows the message.
         self.send(
             id,
             &SystemMessage::new(SystemMessageId::S1HasDisappeared)

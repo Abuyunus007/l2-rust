@@ -8,7 +8,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ClientOpcode;
 
-// Java: gameserver/network/clientpackets/RequestShortcutReg.java
 /// Put a skill, item, action, macro or recipe on the shortcut bar (`REQUEST_SHORT_CUT_REG`).
 ///
 /// The fields are the raw wire values: Java turns `type_id` into a `ShortcutType` (anything outside
@@ -53,7 +52,6 @@ impl Decode for RequestShortCutReg {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestShortcutDel.java
 /// Take a shortcut off the bar (`REQUEST_SHORT_CUT_DEL`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestShortCutDel {

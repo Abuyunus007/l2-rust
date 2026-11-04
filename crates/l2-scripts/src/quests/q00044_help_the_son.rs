@@ -1,7 +1,5 @@
 //! Quest 44: Help the Son! (Lundy in the Gludin Village, Drikus in the Gludio area; the Maille
 //! guards, scouts and lizardmen give the gemstone fragments).
-// Java: dist/game/data/scripts/quests/Q00044_HelpTheSon/Q00044_HelpTheSon.java
-//
 // Pattern: the same chain as Q00042 Help the Uncle (`docs/design/scripts.md`, "Quest patterns"):
 // a work hammer starts the hunt, thirty fragments make the gemstone, and the gemstone goes to
 // Drikus for the ticket.

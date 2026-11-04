@@ -11,7 +11,6 @@
 //! `//clearteams`, `//setteam` and `//setteam_close` set the team of players through
 //! `World::set_team` (`duel.rs`). A creature that is not a player keeps its team (no team field
 //! for NPCs yet).
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminEffects.java
 
 use l2_data::skill::AbnormalVisualEffect;
 use l2_protocol_game::SystemMessageId;

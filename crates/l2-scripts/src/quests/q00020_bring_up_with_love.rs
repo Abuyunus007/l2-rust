@@ -1,6 +1,4 @@
 //! Quest 20: Bring Up With Love (Tunatun in the Gludio beast farm, for a level 82 character).
-// Java: dist/game/data/scripts/quests/Q00020_BringUpWithLove/Q00020_BringUpWithLove.java
-//
 // Pattern: a long talk chain, then a drop-chance item found while hunting (`docs/design/scripts.md`,
 // "Quest patterns"): Tunatun explains the beast farm over many pages, the quest starts on
 // `31537-11.html`, the Innocence Jewel comes from beast farm kills (`check_jewel_of_innocence`),

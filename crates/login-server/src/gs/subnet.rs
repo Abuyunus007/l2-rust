@@ -1,6 +1,4 @@
 //! Subnets of a game server's address list: which address a client gets to see.
-// Java: org/l2jmobius/loginserver/util/Subnet.java
-// Java: org/l2jmobius/loginserver/data/GameServerTable.java (`GameServerInfo.GameServerAddress`)
 
 use std::fmt;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
@@ -8,9 +6,6 @@ use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 /// Why a subnet text could not be used.
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 pub enum SubnetError {
-    // NOTE(java-quirk): Java accepts a host name here (`InetAddress.getByName` looks it up in
-    // DNS). The Rust version only takes IP literals: a login server should not block on DNS,
-    // and subnets are IP literals in every shipped `ipconfig.xml`.
     #[error("{0:?} is not an IP address")]
     NotAnAddress(String),
     #[error("invalid prefix length {0:?}")]
@@ -40,7 +35,6 @@ fn address_bytes(address: IpAddr) -> Vec<u8> {
 
 impl Subnet {
     /// Parses `address[/prefix]`. Without a prefix the whole address counts (32 or 128 bits).
-    // Java: Subnet(String)
     pub fn parse(input: &str) -> Result<Self, SubnetError> {
         let mut parts = input.split('/');
         // `split` always yields a first part.
@@ -51,7 +45,6 @@ impl Subnet {
         let mut address = address_bytes(ip);
         let max_prefix = u32::try_from(address.len() * 8).unwrap_or(u32::MAX);
         let prefix = match parts.next() {
-            // Java: `Integer.parseInt(parts[1])`, which also accepts a sign.
             Some(text) => text
                 .parse::<i32>()
                 .map_err(|_| SubnetError::BadPrefix(text.to_owned()))?,
@@ -79,7 +72,6 @@ impl Subnet {
     }
 
     /// True when `candidate` lies in this subnet.
-    // Java: Subnet.isInSubnet
     pub fn contains(&self, candidate: IpAddr) -> bool {
         // Java compares the byte arrays that `getAddress()` returns. A mapped IPv6 candidate is
         // already an IPv4 address there, which `address_bytes` reproduces.
@@ -100,7 +92,6 @@ impl Subnet {
 }
 
 impl fmt::Display for Subnet {
-    // Java: Subnet.toString
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self.address.as_slice() {
             &[a, b, c, d] => write!(f, "{}/{}", Ipv4Addr::new(a, b, c, d), self.prefix_len()),
@@ -113,7 +104,6 @@ impl fmt::Display for Subnet {
 }
 
 /// One entry of the address list a game server sends: clients inside `subnet` connect to `host`.
-// Java: GameServerTable.GameServerInfo.GameServerAddress
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GameServerAddress {
     pub subnet: Subnet,

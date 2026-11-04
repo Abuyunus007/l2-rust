@@ -1,5 +1,4 @@
 //! The Stronghold teleporters: the page depends on the player's level.
-// Java: dist/game/data/scripts/ai/others/StrongholdsTeleports/StrongholdsTeleports.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

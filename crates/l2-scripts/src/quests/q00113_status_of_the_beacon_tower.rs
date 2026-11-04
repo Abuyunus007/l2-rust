@@ -1,6 +1,4 @@
 //! Quest 113: Status of the Beacon Tower (Seer Moira sends the box, Torrant at the Den of Evil).
-// Java: dist/game/data/scripts/quests/Q00113_StatusOfTheBeaconTower/Q00113_StatusOfTheBeaconTower.java
-//
 // Pattern: a delivery with a reward that depends on an item the player holds (the Fire box of a
 // previous quest gives the smaller reward). `on_event` answers only the events it knows: Java's
 // `default: htmltext = null`, and a player without the quest gets null, not the no-quest page.

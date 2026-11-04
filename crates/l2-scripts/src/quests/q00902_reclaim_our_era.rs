@@ -1,5 +1,4 @@
 //! Quest 902: Reclaim Our Era (Mathias sends the party after the Varka, Ketra, Stakato and Anais bosses).
-// Java: dist/game/data/scripts/quests/Q00902_ReclaimOurEra/Q00902_ReclaimOurEra.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, QuestType, STARTED};

@@ -1,5 +1,4 @@
 //! Quest 718: For the Sake of the Territory - Dion.
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/Q00718_ForTheSakeOfTheTerritoryDion.java
 
 use l2_protocol_game::NpcStringId;
 

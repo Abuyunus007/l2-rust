@@ -1,6 +1,4 @@
 //! Quest 355: Family Honor (Galibredo in the Town of Rune).
-// Java: dist/game/data/scripts/quests/Q00355_FamilyHonor/Q00355_FamilyHonor.java
-//
 // Pattern: a repeatable kill-and-sell quest. Timak orcs drop Galfredo Romer's busts (sold to
 // Galibredo for adena) or a Sculptor Berona, which Patrin turns into an ancient statue.
 

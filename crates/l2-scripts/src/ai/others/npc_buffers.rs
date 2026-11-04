@@ -1,7 +1,5 @@
 //! NPC Buffers: summoned NPCs (totems, cakes, decoys) that apply a skill to the summoner's party
 //! or to the friends or enemies around them, again and again.
-// Java: dist/game/data/scripts/ai/others/NpcBuffers/{NpcBuffers,NpcBufferAI,NpcBufferSkillData}.java
-//
 // Java's `NpcBufferAI` is a `Runnable` that schedules itself; here each skill of an NPC is a quest
 // timer `NPC_BUFFER_<index>` of that NPC that starts itself again. A run that finds the NPC gone
 // or without a player as summoner stops, as in Java.
@@ -51,8 +49,6 @@ fn is_enemy(ctx: &ScriptCtx<'_>, player: ObjectId, target: ObjectId) -> bool {
 
     // `target instanceof TamedBeast`: the beast stands for its owner.
     if ctx.world().is_tamed_beast(target) {
-        // NOTE(java-quirk): a beast without an owner makes Java's `isFriendly(player, null)`
-        // throw; here it is no enemy.
         return ctx
             .world()
             .tamed_beast_owner(target)

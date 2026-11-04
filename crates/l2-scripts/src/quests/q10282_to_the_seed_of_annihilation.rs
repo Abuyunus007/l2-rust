@@ -1,5 +1,4 @@
 //! Quest 10282: To the Seed of Annihilation (Commander Kbaldir sends the order to Officer Klemis).
-// Java: dist/game/data/scripts/quests/Q10282_ToTheSeedOfAnnihilation/Q10282_ToTheSeedOfAnnihilation.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED};

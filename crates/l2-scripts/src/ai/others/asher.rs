@@ -1,5 +1,4 @@
 //! Asher, the gatekeeper of the Primeval Isle: teleports to Rune for 50,000 adena.
-// Java: dist/game/data/scripts/ai/others/Asher/Asher.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

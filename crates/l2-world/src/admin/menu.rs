@@ -2,7 +2,6 @@
 //! character to coordinates, `//goto_char_menu`, `//kick_menu`, and the ban and unban buttons of
 //! the menu. The recall and kill buttons of the same menu are in `party.rs`, `clan.rs` and
 //! `combat.rs`.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminMenu.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;
@@ -133,8 +132,6 @@ fn admin_goto_char_menu(world: &mut World, gm: ObjectId, command: &str) -> Outco
 /// Java `AdminMenu.onCommand`, `admin_kick_menu <name>`: the character is stored and kicked, and
 /// the GM is told in a plain message. Java's `Disconnection.storeAndDeleteWith(LeaveWorld)` ends
 /// with the `LeaveWorld` packet, which is the logout ending here.
-// NOTE(java-quirk): the kick is the Logout ending of `leave` (LeaveWorld, then the connection is
-// closed), not the `Kicked` ending of the login server's kick, which sends no last packet.
 fn admin_kick_menu(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     let words = java_split_space(command);
     if words.len() > 1 {
@@ -180,10 +177,6 @@ fn admin_unban_menu(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
 /// Java `AdminMenu.onCommand`, `admin_kill_menu` (exactly that word): the targeted creature loses
 /// its maximum hit points (and its maximum CP and 1 more, for a player), then the page of the
 /// target is shown. A target that is not a creature is the invalid target, with `main_menu.htm`.
-// NOTE(java-quirk): Java's `handleKill` calls `obj.asCreature()` on the target without a check, so
-// a command without any target is Java's NullPointerException. Champion monsters are not scaled
-// here (nobody is a champion yet), so the champion branch (`maxHp * ChampionHp + 1`) is wired but
-// not taken.
 fn admin_kill_menu(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     if command != "admin_kill_menu" {
         return Ok(());

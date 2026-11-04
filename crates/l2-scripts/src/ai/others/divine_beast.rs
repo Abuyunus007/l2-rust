@@ -1,7 +1,5 @@
 //! The Divine Beast servitor: it stays only while its owner keeps the Divine Beast
 //! transformation.
-// Java: dist/game/data/scripts/ai/others/DivineBeast.java
-//
 // `addSummonSpawnId` starts a repeating check for the owner (S-API-05's `on_summon_spawn`); the
 // check stops when the owner has no servitor and unsummons the beast once the owner's
 // transformation is another one.

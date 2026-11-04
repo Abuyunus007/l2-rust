@@ -1,7 +1,5 @@
 //! Quest 223: Test of the Champion (Veteran Ascalon in Gludio: the Warrior and Orc Raider second
 //! class change, through Trader Groot, Captain Mouen and Mason).
-// Java: dist/game/data/scripts/quests/Q00223_TestOfTheChampion/Q00223_TestOfTheChampion.java
-//
 // Pattern: the test chain of the "Test of ..." quests (see Q00222), with monsters that call
 // their own helpers when they are first hit (`onAttack` on the NPC's script value and the
 // `lastAttacker` variable of the NPC).

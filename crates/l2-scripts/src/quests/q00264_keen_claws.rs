@@ -1,6 +1,4 @@
 //! Quest 264: Keen Claws (Paint in the Talking Island area collects wolf claws from the wolves).
-// Java: dist/game/data/scripts/quests/Q00264_KeenClaws/Q00264_KeenClaws.java
-//
 // Pattern: a kill-count quest with a graded drop (`docs/design/scripts.md`, "Quest patterns"): a
 // roll of 100 per kill gives 2 or 8 wolf claws (wolves) or 1 or 2 (kasha/wolf chief monsters) up to
 // 50 claws; the 50th sets cond 2. Paint pays one random reward out of a table of seventeen.
@@ -33,8 +31,6 @@ fn monster_chances(npc_id: i32) -> &'static [(i64, i32)] {
 /// 17 sit in a 16-slot table, so 17 shares bucket 1 with 1 and comes right after it. The keys are
 /// `chance <` thresholds: the first one above the roll wins, so a roll of 1..=16 gives the key-17
 /// reward (never the key-2 .. key-14 ones) and only a roll of 0 gives the key-1 reward.
-// NOTE(java-quirk): the table order of `HashMap` is kept on purpose; the rewards of keys 2, 5, 8,
-// 11 and 14 are never given.
 const REWARDS: [(i32, &[(i32, i64)]); 7] = [
     (1, &[(4633, 1)]),
     (17, &[(35, 1), (57, 50)]),

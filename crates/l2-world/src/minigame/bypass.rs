@@ -1,10 +1,5 @@
 //! The NPCs of the minigames: the Kratei's Cube entrance and match managers, the coliseum
 //! curators and the coliseum helper.
-// Java: entity/actor/instance/KrateisCubeManager.java (`onBypassFeedback`)
-// Java: entity/actor/instance/KrateisMatchManager.java (`onBypassFeedback`)
-// Java: entity/actor/instance/UCManager.java (`onBypassFeedback`)
-// Java: entity/actor/instance/UCHelper.java (`onBypassFeedback`)
-//
 // A command the NPC does not know goes on to `super.onBypassFeedback` in Java; here the function
 // answers `false` and the caller goes on.
 
@@ -284,7 +279,6 @@ impl World {
                 return true;
             };
             if self.coliseum_arena_def(arena).is_none() {
-                // Java: `arena.getId()` throws.
                 return true;
             }
             match self.coliseum_best_team(arena) {

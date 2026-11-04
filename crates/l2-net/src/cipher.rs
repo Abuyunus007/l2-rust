@@ -1,6 +1,5 @@
 //! The per-frame encryption hook.
 //!
-//! Java: `Client.encrypt/decrypt` overrides (LoginClient, GameClient) and the link threads.
 //! The concrete ciphers live in `l2-crypto`; their users wrap them in this trait, so `l2-net`
 //! doesn't depend on `l2-crypto`.
 

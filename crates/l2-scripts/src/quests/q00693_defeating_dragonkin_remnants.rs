@@ -1,7 +1,5 @@
 //! Quest 693: Defeating Dragonkin Remnants (Officer Edric in front of the Seed of Destruction;
 //! the party registers for the mounted troop battle and is paid in a chest).
-// Java: dist/game/data/scripts/quests/Q00693_DefeatingDragonkinRemnants/Q00693_DefeatingDragonkinRemnants.java
-//
 // Pattern: a quest that only registers the party; `difficulty` and `members` are set by the
 // mounted troop instances (`ai/areas/gracia/instances/seed_of_destruction/mounted_troops`).
 
@@ -162,8 +160,6 @@ fn check_instances(ctx: &ScriptCtx<'_>, talker: ObjectId) -> bool {
 }
 
 fn reward_player(ctx: &mut ScriptCtx<'_>, player: ObjectId, difficulty: i32, member_count: i32) -> bool {
-    // NOTE(java-quirk): a `members` of 0 divides by zero in Java (an exception, no reward page);
-    // here it is a refusal.
     if member_count == 0 {
         return false;
     }

@@ -1,8 +1,6 @@
 //! Quest 333: Hunt of the Black Lion (Sophya hands out four orders; the drops are paid in adena
 //! and Lion's Claws, the cargo boxes go to Reedfoot and Morgon, the statue and tablet pieces to
 //! Rupio, Undrias and Lockirin).
-// Java: dist/game/data/scripts/quests/Q00333_HuntOfTheBlackLion/Q00333_HuntOfTheBlackLion.java
-//
 // Pattern: a repeatable quest with orders (items that switch the kill table), the memo state as a
 // counter, and several random rolls per event (`docs/design/scripts.md`, "Quest patterns").
 
@@ -317,7 +315,6 @@ impl Script for Q00333HuntOfTheBlackLion {
         let player = player?;
         let qs = ctx.get_quest_state(player, false)?;
 
-        // NOTE(java-quirk): both rolls are made for every event, before the switch.
         let chance = ctx.get_random(100);
         let chance1 = ctx.get_random(100);
 
@@ -659,7 +656,6 @@ impl Script for Q00333HuntOfTheBlackLion {
                         let insignia = ctx.get_quest_items_count(player, BLOODY_AXE_INSIGNIA);
                         let fang = ctx.get_quest_items_count(player, DELU_LIZARDMAN_FANG);
                         let talon = ctx.get_quest_items_count(player, STAKATO_TALON);
-                        // NOTE(java-quirk): `(fang + 35)` instead of `(fang * 35)`.
                         ctx.give_adena(player, ash * 35 + insignia * 35 + (fang + 35 + talon * 35), true);
                         for trophy in TROPHIES {
                             ctx.take_items(player, trophy, -1);

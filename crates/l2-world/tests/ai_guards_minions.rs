@@ -8,7 +8,6 @@
 //!   with the aggro list of its master; a raid boss takes its minions with it,
 //! - an NPC with a fear time runs away and calms down (`AttackableAI.notifyActionAfraid`).
 //!
-//! Java: ai/AttackableAI.java, entity/actor/instance/{Guard,QuestGuard,Defender,FortCommander,
 //! Monster}.java, entity/actor/holders/npc/MinionList.java, entity/actor/Attackable.java.
 
 use std::collections::HashMap;

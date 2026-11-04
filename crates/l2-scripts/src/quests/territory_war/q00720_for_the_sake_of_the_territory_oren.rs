@@ -1,5 +1,4 @@
 //! Quest 720: For the Sake of the Territory - Oren.
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/Q00720_ForTheSakeOfTheTerritoryOren.java
 
 use l2_protocol_game::NpcStringId;
 

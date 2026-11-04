@@ -1,12 +1,5 @@
 //! NPC dialogs: the html window a click opens (`Npc.showChatWindow`), which file it shows, and the
 //! bookkeeping that decides which `bypass` and `link` commands the client may send back.
-// Java: entity/actor/Npc.java (showChatWindow, getHtmlPath, insertObjectIdAndShowChatWindow,
-//       showPkDenyChatWindow, canInteract)
-// Java: network/serverpackets/{AbstractHtmlPacket,NpcHtmlMessage}.java (setFile, replace, runImpl)
-// Java: util/HtmlUtil.java (buildHtmlActionCache, buildHtmlBypassCache, buildHtmlLinkCache)
-// Java: entity/actor/Player.java (addHtmlAction, clearHtmlActions, validateHtmlAction)
-// Java: cache/HtmCache.java (getHtm)
-//
 // # The html action cache
 // Every `NpcHtmlMessage` that reaches a player rebuilds that player's cache for its scope: the
 // `="bypass ..."` and `="link ..."` commands found in the page, plus the id of the NPC the page
@@ -153,8 +146,6 @@ fn java_trim(text: &str) -> &str {
 /// Java `Player.validateHtmlAction(Iterable<String>, String)`.
 fn validate_in(cached: &[String], action: &str) -> bool {
     for entry in cached {
-        // NOTE(java-quirk): `charAt(length - 1)` of an empty entry throws in Java, which drops the
-        // whole packet; an empty entry (`bypass ""` in a page) simply never matches here.
         let Some(last) = entry.chars().last() else {
             continue;
         };
@@ -210,8 +201,6 @@ fn build_link_cache(talk: &mut PlayerTalk, scope: HtmlActionScope, html: &str) {
         };
         link_end = start_end + quote;
         let link = java_trim(&html[start_end..link_end]);
-        // NOTE(java-quirk): for an empty or `..` link Java `continue`s without moving on, which
-        // spins forever on the same link; here the link is skipped and the scan goes on.
         if link.is_empty() {
             warn!("Html link path is empty!");
         } else if link.contains("..") {
@@ -242,7 +231,6 @@ pub(crate) struct TalkWorld {
     pub busy: std::collections::HashMap<ObjectId, (bool, String)>,
 }
 
-/// Java: which `entity/actor/instance/*` classes are a `Merchant`.
 pub(crate) fn is_merchant(npc_type: &str) -> bool {
     matches!(
         npc_type,
@@ -501,8 +489,6 @@ impl World {
             return;
         }
 
-        // NOTE(java-quirk): Java's `!(target instanceof ClanHallManager) || !(target instanceof
-        // Doorman)` is always true (nothing is both), so a cursed weapon owner never gets a page.
         if self.is_cursed_weapon_equipped(player) {
             self.set_target(player, Some(player));
             return;
@@ -510,8 +496,6 @@ impl World {
 
         if karma > 0 {
             let settings = self.settings.talk.clone();
-            // NOTE(java-quirk): a `Teleporter` is a `Merchant`, so with `AltKarmaPlayerCanShop`
-            // off a karma player is shown the merchant page of a gatekeeper.
             if !settings.karma_player_can_shop && is_merchant(&npc_type) {
                 if self.show_pk_deny_chat_window(npc, npc_id, player, "merchant") {
                     return;

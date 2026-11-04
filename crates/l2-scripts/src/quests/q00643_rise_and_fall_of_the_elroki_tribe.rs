@@ -1,8 +1,6 @@
 //! Quest 643: Rise and Fall of the Elroki Tribe (Singsing in the Dion/Plains area, Karakawei in the
 //! Dinosaur Tracks; the plains dinosaurs drop their bones, 300 of them buy five pieces of a weapon
 //! or 1374 adena each).
-// Java: dist/game/data/scripts/quests/Q00643_RiseAndFallOfTheElrokiTribe/Q00643_RiseAndFallOfTheElrokiTribe.java
-//
 // Pattern: a repeatable kill drop (the bones: one or two per kill of the first group, a chance
 // for the second group and for the Deinonychus), a random reward (pieces) and the adena per bone.
 // Karakawei's first talk is a field of the Java script (`isFirstTalk`): it is per script, so it

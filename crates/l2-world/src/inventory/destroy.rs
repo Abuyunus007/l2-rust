@@ -1,11 +1,5 @@
 //! `RequestDestroyItem`, `RequestDropItem` (the inventory side) and `RequestItemList`, with the
 //! container operations they use: `destroyItem`, `removeItem`, `dropItem`.
-// Java: network/clientpackets/{RequestDestroyItem,RequestDropItem,RequestItemList}.java
-// Java: entity/itemcontainer/{ItemContainer,Inventory,PlayerInventory}.java (destroyItem,
-//       removeItem, dropItem)
-// Java: managers/ItemManager.java (destroyItem)
-// Java: entity/actor/Player.java (dropItem, removeItemFromShortcut)
-//
 // # Database
 // A destroyed item is deleted at once (`ItemManager.destroyItem` empties it, `updateDatabase()`
 // removes the row). A count that only goes down is *not* written by Java until the next store
@@ -421,7 +415,6 @@ impl World {
             return;
         }
 
-        // NOTE(java-quirk): `isJailed()` is the punishment, not the zone.
         if self.settings.zones.jail_disable_transaction && self.is_jailed(id) {
             self.send_message(id, "You cannot drop items in Jail.");
             return;
@@ -501,7 +494,6 @@ impl World {
 
         let dropped = self.player_drop_item(id, object_id, count, x, y, z);
 
-        // Java: `GMAudit.logAction(name [objectId], "Drop", target, "(id: ... x: ... z: ...)")` for a
         // GM (the file target `log/GMAudit/<name>.txt` comes with the logging card, D-25). Java
         // reads the dropped item before it checks it for null.
         if gm && self.settings.gm_audit {

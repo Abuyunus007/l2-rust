@@ -1,6 +1,5 @@
 //! The hook for dynamic obstacles (doors and fences).
 //!
-//! Java: the `DoorData.getInstance().checkIfDoorsBetween(...)` and
 //! `FenceData.getInstance().checkIfFenceBetween(...)` calls inside `GeoEngine`
 //! (`canSeeTarget`, `getValidLocation`, `canMoveToTarget`).
 //!

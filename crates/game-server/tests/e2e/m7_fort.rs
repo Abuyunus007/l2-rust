@@ -77,7 +77,6 @@ pub struct Played {
 }
 
 pub async fn play<H: Harness>(h: &mut H, finish: Finish) -> Played {
-    // ---- the raider and the GM enter; the raider's clan comes from the tables (D-50) ----------------------
     let entered = h.enter(Who::Raider).await;
     let npcs = all::<NpcInfo>(&entered, "NPC_INFO");
     let npc_of = |template: i32| {

@@ -1,6 +1,5 @@
 //! The login↔game server link cipher: seal and open for packets between the two servers.
 //!
-//! Java: loginserver/GameServerThread.java (`sendPacket`, the read loop in `run`,
 //! `DEFAULT_BLOWFISH_KEY`) and gameserver/LoginServerThread.java (`sendPacket`, the 40-byte
 //! session key). Both sides do the same byte work, so one type serves both.
 //!
@@ -14,8 +13,6 @@ use crate::checksum::{self, CHECKSUM_SIZE};
 use crate::{CryptoError, L2Blowfish};
 
 /// The static key both servers use before the session key is exchanged.
-///
-/// Java: `"_;v.]05-31!|+-%xT!^[$\00"`. `\00` is a NUL byte, so the key is 22 bytes, not 21.
 pub const DEFAULT_KEY: &[u8] = b"_;v.]05-31!|+-%xT!^[$\0";
 
 /// Keyed link cipher (Java `NewCrypt` as used on the login↔game link).

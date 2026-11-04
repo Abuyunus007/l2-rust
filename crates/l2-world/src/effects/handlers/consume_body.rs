@@ -1,6 +1,5 @@
 //! The `ConsumeBody` effect: the corpse of a dead NPC is consumed. With a start effect in the
 //! skill it decays after the skill's cast time, otherwise it decays now.
-// Java: dist/game/data/scripts/handlers/skill/effects/ConsumeBody.java
 
 use l2_data::skill::{EffectScope, EffectTemplate};
 

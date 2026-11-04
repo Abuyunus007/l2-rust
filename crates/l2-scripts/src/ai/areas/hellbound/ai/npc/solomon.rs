@@ -1,5 +1,4 @@
 //! Solomon, the native who speaks of the Quarry once Hellbound reached level five.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/NPC/Solomon/Solomon.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

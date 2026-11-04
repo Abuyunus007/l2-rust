@@ -1,7 +1,3 @@
-//! Skill, buff and item-use packets against byte layouts worked out by hand from the Java
-//! `writeImpl` / `readImpl` code, round trips, and the recorded Java game server sessions
-//! (`fixtures/captures`, or `L2_CAPTURE_DIR`).
-//!
 //! The expected bytes are built with an independent little-endian builder (not the crate's
 //! `PacketWriter`), so a mistake in the crate's encoder cannot hide behind the same mistake here.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
@@ -81,7 +77,6 @@ fn icon(display_id: i32, display_level: i32, time: i32) -> EffectIcon {
 
 #[test]
 fn magic_skill_use_layout_without_a_ground_point() {
-    // Java: caster id, target id, skill, level, hit time, reuse delay, caster position, the
     // ground-target short (0), the has-ground short (0), target position.
     let packet = MagicSkillUse {
         creature_id: CASTER,
@@ -236,8 +231,6 @@ fn healing_potion_skills_get_no_icon() {
 
 #[test]
 fn abnormal_status_update_counts_every_icon_but_writes_only_the_ones_in_use() {
-    // NOTE(java-quirk): Java's `writeShort(_effects.size())` counts the icon that is not in use,
-    // while only the in-use icon is written. The expected bytes are that exact output.
     let hidden = EffectIcon {
         in_use: false,
         ..icon(1204, 2, 90)
@@ -307,7 +300,6 @@ fn acquire_skill_list_layout_for_a_normal_type() {
 
 #[test]
 fn acquire_skill_list_of_subpledge_skills_writes_a_zero_after_each_entry() {
-    // Java: `if (_skillType == SUBPLEDGE) writeInt(0)`, after each skill.
     let list = AcquireSkillList {
         skill_type: AcquireSkillType::Subpledge,
         skills: vec![
@@ -366,7 +358,6 @@ fn acquire_skill_info_layout_with_a_long_item_count() {
         sp_cost: 500,
         requirements: vec![AcquireSkillRequirement::item(9000, 5_000_000_000)],
     };
-    // Java: id, level, SP, the type ordinal, the count, then per requirement: type 99, item id,
     // count (a long, so 8 bytes), unk 50.
     let expected = Bytes::default()
         .byte(0x91)

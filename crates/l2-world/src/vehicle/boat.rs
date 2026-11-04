@@ -1,8 +1,4 @@
 //! `BoatManager` and the ferry scripts' engine.
-// Java: managers/BoatManager.java
-// Java: dist/game/data/scripts/vehicles/{BoatTalkingGludin,BoatGiranTalking,BoatGludinRune,
-//       BoatRunePrimeval,BoatInnadrilTour}.java (`main`, `run`)
-//
 // The five scripts are one machine over data (`boat_routes.rs`): a `case` is a [`BoatStep`] and
 // runs its statements in Java's order. A case without a delay is run again by the boat's arrival at
 // the end of its path (`Vehicle.moveToNextRoutePoint` -> `runEngine(10)`), as in Java.
@@ -62,8 +58,6 @@ impl World {
     /// Java `BoatManager.dockShip(dock, value)`: a dock number outside the three flags is
     /// ignored (the exception is caught).
     pub(crate) fn dock_ship(&mut self, dock: i32, busy: bool) {
-        // NOTE(java-quirk): `_docksBusy` has 3 entries and `RUNE_HARBOR` is 3, so the Rune harbor
-        // can be neither locked nor busy.
         if let Some(flag) = usize::try_from(dock)
             .ok()
             .and_then(|d| self.vehicle.docks_busy.get_mut(d))

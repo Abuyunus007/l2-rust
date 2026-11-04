@@ -1,11 +1,6 @@
 //! The hero tables: `heroes` (the heroes of the last period and everybody who was one) and
 //! `heroes_diary` (the deeds of a hero), plus the reads of `olympiad_fights` the hero pages show
 //! (M8-HERO-01).
-// Java: mechanics/olympiad/Hero.java (init, loadMessage, loadDiary, loadFights, updateHeroes,
-//       setDiaryData, saveHeroMessage, deleteItemsInDb)
-//
-// Same layout as olympiad.rs: verbatim SQL, one method per statement. D-39, D-53: the Java game
-// server writes the same rows; the world decides which writes go out (`CycleDatabaseWrites`).
 
 use sqlx::Row;
 
@@ -13,26 +8,19 @@ use super::sql_number::SqlNumber;
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: Hero.GET_ALL_HEROES (the played ones are the rows with `played = 1`, `GET_HEROES`)
 const GET_ALL_HEROES: &str = "SELECT heroes.charId, characters.char_name, heroes.class_id, heroes.count, heroes.played, heroes.claimed FROM heroes, characters WHERE characters.charId = heroes.charId";
-// Java: Hero.GET_CLAN_ALLY
 const GET_CLAN_ALLY: &str = "SELECT characters.clanid AS clanid, coalesce(clan_data.ally_Id, 0) AS allyId FROM characters LEFT JOIN clan_data ON clan_data.clan_id = characters.clanid WHERE characters.charId = ?";
-// Java: Hero.UPDATE_ALL / INSERT_HERO / UPDATE_HERO / DELETE_ITEMS
 const UPDATE_ALL: &str = "UPDATE heroes SET played = 0";
 const INSERT_HERO: &str = "INSERT INTO heroes (charId, class_id, count, played, claimed) VALUES (?,?,?,?,?)";
 const UPDATE_HERO: &str =
     "UPDATE heroes SET class_id = ?, count = ?, played = ?, claimed = ? WHERE charId = ?";
 const DELETE_ITEMS: &str = "DELETE FROM items WHERE item_id IN (6842, 6611, 6612, 6613, 6614, 6615, 6616, 6617, 6618, 6619, 6620, 6621, 9388, 9389, 9390) AND owner_id NOT IN (SELECT charId FROM characters WHERE accesslevel > 0)";
-// Java: Hero.loadMessage / saveHeroMessage
 const LOAD_MESSAGE: &str = "SELECT message FROM heroes WHERE charId=?";
 const SAVE_MESSAGE: &str = "UPDATE heroes SET message=? WHERE charId=?;";
-// Java: Hero.loadDiary / setDiaryData
 const LOAD_DIARY: &str = "SELECT * FROM  heroes_diary WHERE charId=? ORDER BY time ASC";
 const INSERT_DIARY: &str = "INSERT INTO heroes_diary (charId, time, action, param) values(?,?,?,?)";
-// Java: Hero.loadFights
 const LOAD_FIGHTS: &str =
     "SELECT * FROM olympiad_fights WHERE (charOneId=? OR charTwoId=?) AND start<? ORDER BY start ASC";
-// Java: CharInfoTable.getNameById (its table is `SELECT charId, char_name, accesslevel FROM
 // characters`)
 const CHAR_NAME: &str = "SELECT char_name FROM characters WHERE charId=?";
 

@@ -1,5 +1,4 @@
 //! The monsters that run away when hit (Victims, Rabbit, Elpy).
-// Java: dist/game/data/scripts/ai/others/FleeMonsters.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};

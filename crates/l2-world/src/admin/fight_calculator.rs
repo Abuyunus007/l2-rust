@@ -1,7 +1,5 @@
 //! `//fight_calculator`, `//fight_calculator_show`, `//fcs`: two creatures hit each other 10000
 //! times with the real formulas and the page shows the averages.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminFightCalculator.java
-//
 // `//fight_calculator` picks two NPC templates (by level, then by name) and links to
 // `//fight_calculator_show <id1> <id2>`, which builds two monsters from the templates. Without
 // ids `//fcs` compares the GM ("me") with the target.
@@ -10,9 +8,6 @@
 // NPC, so the two monsters are created at (0, 0, 0) (where an unspawned Java object also sits)
 // through the ordinary NPC creation, read, and deleted at the end of the command, all inside one
 // call: nothing runs between them and no tick passes.
-//
-// NOTE(java-quirk): the first creature's attack adds the random damage multiplier to its attack
-// (`+=`), the second multiplies by it (`*=`). The `shld` row shows the other creature's value.
 
 use l2_data::Stat;
 use l2_util::ObjectId;

@@ -1,7 +1,5 @@
 //! Quest 629: Clean Up the Swamp of Screams (Pierce in the Gludio/Dion area; the Stakato monsters
 //! of the Swamp of Screams drop talons, 100 of them buy 20 Golden Ram Coins).
-// Java: dist/game/data/scripts/quests/Q00629_CleanUpTheSwampOfScreams/Q00629_CleanUpTheSwampOfScreams.java
-//
 // Pattern: a repeatable kill count with a drop chance per monster (a fraction, `giveItemRandomly`
 // with no limit), the kill goes to a random started party member (`getRandomPartyMemberState`),
 // the exchange of 100 items, and the quit of the quest.
@@ -89,8 +87,6 @@ impl Script for Q00629CleanUpTheSwampOfScreams {
                     ctx.take_items(player, TALON_OF_STAKATO, 100);
                     htmltext = Some(event.to_owned());
                 } else {
-                    // NOTE(java-quirk): the "not enough" page is also shown to a character that
-                    // is not started (Java sets it outside the `isStarted` check).
                     htmltext = Some("31553-08.html".to_owned());
                 }
             }

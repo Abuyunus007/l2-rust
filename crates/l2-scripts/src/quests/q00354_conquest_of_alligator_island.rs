@@ -1,6 +1,4 @@
 //! Quest 354: Conquest of Alligator Island (Warehouse Freightman Kluck, the monsters of Alligator Island).
-// Java: dist/game/data/scripts/quests/Q00354_ConquestOfAlligatorIsland/Q00354_ConquestOfAlligatorIsland.java
-//
 // Pattern: a repeatable kill-count quest with drop chances (`docs/design/scripts.md`, "Quest
 // patterns"): the teeth are paid with a bonus from 100 teeth (`ADENA` bypass), a mysterious map
 // piece drops on every kill with a 10% chance and ten pieces become the pirate's treasure map
@@ -114,8 +112,6 @@ impl Script for Q00354ConquestOfAlligatorIsland {
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, _is_summon: bool) {
         let qs = ctx.random_party_member_state(killer, -1, 3, Some(npc));
         if qs.is_some() {
-            // NOTE(java-quirk): the teeth and the map piece go to the killer (`giveItemRandomly(player,
-            // ..)`), not to the party member the roll above picked.
             if let Some((_, chance)) = MOB1.iter().find(|(id, _)| *id == npc.id) {
                 ctx.give_item_randomly(killer, Some(npc), ALLIGATOR_TOOTH, 1, 1, 0, *chance, true);
             } else {

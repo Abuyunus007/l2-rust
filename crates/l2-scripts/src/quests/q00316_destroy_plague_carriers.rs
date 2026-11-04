@@ -1,6 +1,4 @@
 //! Quest 316: Destroy Plague Carriers (Ellenia in the Elven village, Sukar Wererats and Varool).
-// Java: dist/game/data/scripts/quests/Q00316_DestroyPlagueCarriers/Q00316_DestroyPlagueCarriers.java
-//
 // Pattern: a kill-count quest over a party (`docs/design/scripts.md`, "Quest patterns"): the
 // fangs drop with `giveItemRandomly` to a random member started on the quest (`-1`, killer three
 // times as likely), Varool's fang only once. The NPC pays for all fangs at once, with a bonus at
@@ -103,10 +101,6 @@ impl Script for Q00316DestroyPlagueCarriers {
     }
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, _is_summon: bool) {
-        // NOTE(java-quirk): the `checkPartyMember(Player, Npc)` override of Java (Varool's fang
-        // only for members without it) is never called on this path: `getRandomPartyMemberState`
-        // asks `checkPartyMember(QuestState, Npc)`, which this quest does not override. The
-        // limit of 1 on Varool's fang is what keeps it to one.
         if let Some(qs) = ctx.random_party_member_state(killer, -1, 3, Some(npc)) {
             let drop = MONSTER_DROPS.iter().find(|(id, _, _)| *id == npc.id).copied();
             if let Some((_, item, count)) = drop {

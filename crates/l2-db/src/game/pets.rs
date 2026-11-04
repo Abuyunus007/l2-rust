@@ -1,10 +1,5 @@
 //! The pet tables: `pets` (one row per pet collar: name, level, exp, food, whether it comes back
 //! after a relog) and `character_pet_skills_save` (the buffs a pet had when it was unsummoned).
-// Java: org/l2jmobius/gameserver/entity/actor/instance/Pet.java (restore, storeMe,
-// Java: destroyControlItem, ADD_SKILL_SAVE, RESTORE_SKILL_SAVE, DELETE_SKILL_SAVE)
-// Java: org/l2jmobius/gameserver/data/sql/PetNameTable.java (CHECK_PET_NAME)
-// Java: org/l2jmobius/gameserver/data/sql/CharSummonTable.java (INIT_PET)
-//
 // Same layout as summons.rs: verbatim SQL, one method per statement. Pet items are rows of
 // `items` with `loc` `PET` / `PET_EQUIP` under the owner's id and need nothing here (see
 // `items.rs`).
@@ -14,33 +9,20 @@ use sqlx::FromRow;
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: Pet.restore
 const RESTORE_PET: &str = "SELECT item_obj_id, name, level, curHp, curMp, exp, sp, fed, ownerId, restore FROM pets WHERE item_obj_id=?";
-// Java: Pet.restore for every collar a character holds at once (the Rust loader reads before the
 // character enters the world; Java reads when the pet is summoned).
 const RESTORE_PETS_OF_OWNER: &str = "SELECT p.item_obj_id, p.name, p.level, p.curHp, p.curMp, p.exp, p.sp, p.fed, p.ownerId, p.restore FROM pets p JOIN items i ON p.item_obj_id = i.object_id WHERE i.owner_id=? AND (i.loc='INVENTORY' OR i.loc='PAPERDOLL')";
-// Java: Pet.storeMe (a pet that is not in the table yet)
 const INSERT_PET: &str = "INSERT INTO pets (name,level,curHp,curMp,exp,sp,fed,ownerId,restore,item_obj_id) VALUES (?,?,?,?,?,?,?,?,?,?)";
-// Java: Pet.storeMe (a pet that is in the table)
 const UPDATE_PET: &str = "UPDATE pets SET name=?,level=?,curHp=?,curMp=?,exp=?,sp=?,fed=?,ownerId=?,restore=? WHERE item_obj_id = ?";
-// Java: Player.storePetFood
 const UPDATE_PET_FED: &str = "UPDATE pets SET fed=? WHERE item_obj_id = ?";
-// Java: Pet.destroyControlItem
 const DELETE_PET: &str = "DELETE FROM pets WHERE item_obj_id = ?";
-// Java: CharSummonTable.INIT_PET
 const INIT_PET: &str = "SELECT ownerId, item_obj_id FROM pets WHERE restore = 'true'";
-// Java: PetNameTable.CHECK_PET_NAME
 const CHECK_PET_NAME: &str =
     "SELECT p.name FROM pets p JOIN items i ON p.item_obj_id = i.object_id WHERE p.name=? AND i.item_id=?";
-// Java: PetNameTable.CHECK_PET_NAME for every pet at once (the name table is read at startup).
 const ALL_PET_NAMES: &str = "SELECT p.name, i.item_id FROM pets p JOIN items i ON p.item_obj_id = i.object_id WHERE p.name IS NOT NULL";
-// Java: Pet.ADD_SKILL_SAVE
 const ADD_SKILL_SAVE: &str = "INSERT INTO character_pet_skills_save (petObjItemId,skill_id,skill_level,remaining_time,buff_index) VALUES (?,?,?,?,?)";
-// Java: Pet.RESTORE_SKILL_SAVE
 const RESTORE_SKILL_SAVE: &str = "SELECT petObjItemId,skill_id,skill_level,remaining_time,buff_index FROM character_pet_skills_save WHERE petObjItemId=? ORDER BY buff_index ASC";
-// Java: Pet.RESTORE_SKILL_SAVE for every collar a character holds at once.
 const RESTORE_SKILL_SAVE_OF_OWNER: &str = "SELECT s.petObjItemId, s.skill_id, s.skill_level, s.remaining_time, s.buff_index FROM character_pet_skills_save s JOIN items i ON s.petObjItemId = i.object_id WHERE i.owner_id=? AND (i.loc='INVENTORY' OR i.loc='PAPERDOLL') ORDER BY s.petObjItemId, s.buff_index ASC";
-// Java: Pet.DELETE_SKILL_SAVE
 const DELETE_SKILL_SAVE: &str = "DELETE FROM character_pet_skills_save WHERE petObjItemId=?";
 
 /// A row of `pets`.
@@ -122,7 +104,6 @@ impl PetRepository {
     }
 
     /// The row of one collar.
-    // Java: Pet.restore
     pub async fn pet_of_control_item(&self, item_obj_id: i32) -> Result<Option<PetRow>> {
         let row = sqlx::query_as::<_, PetRow>(RESTORE_PET)
             .bind(item_obj_id)
@@ -132,7 +113,6 @@ impl PetRepository {
     }
 
     /// The rows of every collar a character holds in its inventory.
-    // Java: Pet.restore (all collars at once)
     pub async fn pets_of_owner(&self, owner_id: i32) -> Result<Vec<PetRow>> {
         let rows = sqlx::query_as::<_, PetRow>(RESTORE_PETS_OF_OWNER)
             .bind(owner_id)
@@ -142,13 +122,11 @@ impl PetRepository {
     }
 
     /// `INSERT INTO pets`: a pet that was not stored yet.
-    // Java: Pet.storeMe
     pub async fn insert_pet(&self, pet: &PetValues) -> Result<()> {
         self.write(INSERT_PET, pet).await
     }
 
     /// `UPDATE pets`: a pet that was stored before.
-    // Java: Pet.storeMe
     pub async fn update_pet(&self, pet: &PetValues) -> Result<()> {
         self.write(UPDATE_PET, pet).await
     }
@@ -171,7 +149,6 @@ impl PetRepository {
     }
 
     /// `UPDATE pets SET fed`: the food a mounted pet had left when its rider got off.
-    // Java: Player.storePetFood
     pub async fn update_fed(&self, item_obj_id: i32, fed: i32) -> Result<()> {
         sqlx::query(UPDATE_PET_FED)
             .bind(fed)
@@ -182,7 +159,6 @@ impl PetRepository {
     }
 
     /// Forgets a pet whose collar is gone.
-    // Java: Pet.destroyControlItem
     pub async fn delete_pet(&self, item_obj_id: i32) -> Result<()> {
         sqlx::query(DELETE_PET)
             .bind(item_obj_id)
@@ -192,7 +168,6 @@ impl PetRepository {
     }
 
     /// `(ownerId, item_obj_id)` of every pet that comes back after a relog.
-    // Java: CharSummonTable.init
     pub async fn restoring_pets(&self) -> Result<Vec<(i32, u32)>> {
         let rows = sqlx::query_as::<_, (i32, u32)>(INIT_PET)
             .fetch_all(&self.pool)
@@ -201,7 +176,6 @@ impl PetRepository {
     }
 
     /// Whether a pet of this collar item already has that name.
-    // Java: PetNameTable.doesPetNameExist
     pub async fn pet_name_exists(&self, name: &str, collar_item_id: i32) -> Result<bool> {
         let row = sqlx::query_as::<_, (String,)>(CHECK_PET_NAME)
             .bind(name)
@@ -212,7 +186,6 @@ impl PetRepository {
     }
 
     /// `(name, collar item id)` of every named pet.
-    // Java: PetNameTable.doesPetNameExist (read once, at startup)
     pub async fn all_pet_names(&self) -> Result<Vec<(String, i32)>> {
         let rows = sqlx::query_as::<_, (String, i32)>(ALL_PET_NAMES)
             .fetch_all(&self.pool)
@@ -221,7 +194,6 @@ impl PetRepository {
     }
 
     /// The saved buffs of one pet, in `buff_index` order.
-    // Java: Pet.restoreEffects
     pub async fn effects_of(&self, pet_obj_item_id: i32) -> Result<Vec<PetSkillSaveRow>> {
         let rows = sqlx::query_as::<_, PetSkillSaveRow>(RESTORE_SKILL_SAVE)
             .bind(pet_obj_item_id)
@@ -231,7 +203,6 @@ impl PetRepository {
     }
 
     /// The saved buffs of every collar a character holds, by collar and `buff_index`.
-    // Java: Pet.restoreEffects (all collars at once)
     pub async fn effects_of_owner(&self, owner_id: i32) -> Result<Vec<PetSkillSaveRow>> {
         let rows = sqlx::query_as::<_, PetSkillSaveRow>(RESTORE_SKILL_SAVE_OF_OWNER)
             .bind(owner_id)
@@ -242,7 +213,6 @@ impl PetRepository {
 
     /// Replaces the saved buffs of one pet: the `DELETE`, then the rows (none = only the delete),
     /// on one connection like Java's batch.
-    // Java: Pet.storeEffect, Pet.restoreEffects (the DELETE)
     pub async fn store_effects(&self, pet_obj_item_id: i32, rows: &[NewPetSkillSave]) -> Result<()> {
         let mut conn = self.pool.acquire().await?;
         sqlx::query(DELETE_SKILL_SAVE)

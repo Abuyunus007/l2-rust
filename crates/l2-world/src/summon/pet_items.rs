@@ -1,14 +1,5 @@
 //! The pet's inventory and what the player does with it: the five pet packets, the pickup of the
 //! pet, the pet food, and what the pet wears.
-// Java: entity/itemcontainer/{PetInventory,Inventory,ItemContainer}.java
-// Java: entity/actor/instance/Pet.java (transferItem, doPickupItem, destroyItem, dropAllItems,
-//       setName)
-// Java: entity/actor/Player.java (transferItem, validateItemManipulation)
-// Java: network/clientpackets/{RequestPetGetItem,RequestGiveItemToPet,RequestGetItemFromPet,
-//       RequestPetUseItem,RequestChangePetName}.java
-// Java: dist/game/data/scripts/handlers/items/PetFood.java
-// Java: data/sql/PetNameTable.java
-//
 // # Rows
 // The pet's items are rows of the owner's `items` (`PetInventory.getOwnerId()` is the owner), so
 // moving an item between the owner and the pet is the same `UPDATE items SET loc = ..` Java does
@@ -421,7 +412,6 @@ impl World {
             return;
         }
         if self.pet_is_uncontrollable(pet) {
-            // NOTE(java-quirk): Java sends YOU_ARE_NOT_ALLOWED_TO_ENTER_THE_PARTY_ROOM here.
             self.send(
                 player,
                 &SystemMessage::new(SystemMessageId::YouAreNotAllowedToEnterThePartyRoom),
@@ -446,7 +436,6 @@ impl World {
         // `object.isItem() && getItemLocation() != VOID`: an item on the ground is always `VOID`.
         self.set_intention_value(pet, crate::movement::Intention::PickUp);
         self.set_ai_target(pet, Some(object));
-        // NOTE(java-quirk): an object at 0,0 is moved next to the actor ("using a temporary fix").
         if let (Some(me), Some((0, 0, _))) = (self.position_of(pet), self.position_of(object))
             && let Some(item) = self.ground_item_mut(object)
         {

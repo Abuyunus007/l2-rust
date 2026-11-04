@@ -1,24 +1,6 @@
 //! Moving items from one player to another: `ItemContainer.transferItem` (trade, private stores)
 //! and the manipulation checks of `Player` (`checkItemManipulation`, `validateItemManipulation`,
 //! `Item.isTradeable`).
-// Java: entity/itemcontainer/{ItemContainer,PlayerInventory}.java (transferItem, addItem)
-// Java: entity/actor/Player.java (checkItemManipulation, validateItemManipulation)
-// Java: entity/item/instance/Item.java (isTradeable, updateDatabase)
-// Java: managers/ItemManager.java (createItem, destroyItem)
-//
-// # Database (D-39: the Java GS shares the rows)
-// Java moves an item by changing `owner_id`/`loc` of its row and calling `updateDatabase(true)`,
-// i.e. one `UPDATE items SET owner_id=?,count=?,loc=?,loc_data=?,...`. The persistence task keeps
-// the rows of each character separately (`PersistCommand::ItemChanges` has one owner), so the same
-// end state is reached with two commands in this order: the row leaves the old owner (a `DELETE`,
-// because that owner's baseline knows it) and the new owner gets the whole row (an `INSERT` with
-// the new `owner_id`). The commands go through one queue, so nobody sees the row missing, and a
-// later full store of either character cannot delete or duplicate it. A partial move is an
-// `UPDATE` of the source row and an `UPDATE` (stack merge) or `INSERT` (new stack, new id from the
-// Rust range) of the target row, as in Java.
-// NOTE: `item_variables` rows of the item are not modelled by the Rust server (they are not read),
-// so the `DELETE` of the old row drops them; Java's `UPDATE` keeps them. Only matters for items
-// that carry variables (appearance stones, ...).
 
 use l2_data::item::ItemTemplate;
 use l2_protocol_game::server::InventoryUpdate;
@@ -189,13 +171,6 @@ impl World {
         })
     }
 
-    /// `ItemContainer.addItem(process, itemId, count, actor, reference)` for an item that is not in
-    /// the target yet (a new object id from the Rust range, D-39), with `PlayerInventory`'s
-    /// additions.
-    // NOTE(java-quirk): `PlayerInventory.addItem(process, itemId, count, actor, reference)` sends
-    // the `InventoryUpdate` and the load to `actor`, not to the inventory's owner. A trade passes
-    // the player who gives the item, so the giver is told about an item that is in the other
-    // player's inventory. The full `ItemList` that the exchange sends afterwards replaces it.
     pub(crate) fn create_transferred_item(
         &mut self,
         to: ObjectId,

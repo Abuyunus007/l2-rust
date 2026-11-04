@@ -1,7 +1,5 @@
 //! Quest 39: Red-Eyed Invaders (Guard Babenco and Captain Bathia at the Talking Island
 //! Village; the lizardmen and the giant arane of the Gludio hunting grounds).
-// Java: dist/game/data/scripts/quests/Q00039_RedEyedInvaders/Q00039_RedEyedInvaders.java
-//
 // Pattern: party kills with several drop chances (`docs/design/scripts.md`, "Quest patterns"):
 // each monster gives one of the four quest items to the killer, and the member whose state is at
 // the right cond moves on when the items it needs are in.

@@ -1,6 +1,5 @@
 //! The Tower of Infinitum: Jerian lets a party with the Pass skill in, the gatekeepers move it
 //! up and down.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/Zones/TowerOfInfinitum/TowerOfInfinitum.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

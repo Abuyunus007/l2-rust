@@ -40,9 +40,6 @@ pub mod paperdoll {
     pub const TOTAL_SLOTS: usize = 25;
 
     /// The order in which the item ids go on the wire (Java `ServerPacket.PAPERDOLL_ORDER`).
-    ///
-    /// NOTE(java-quirk): `RHAND` appears twice (positions 7 and 14). The client reads the
-    /// second one as the two-handed weapon slot; Java simply writes the same item id again.
     pub const WIRE_ORDER: [usize; 26] = [
         UNDER, REAR, LEAR, NECK, RFINGER, LFINGER, HEAD, RHAND, LHAND, GLOVES, CHEST, LEGS, FEET, CLOAK,
         RHAND, HAIR, HAIR2, RBRACELET, LBRACELET, DECO1, DECO2, DECO3, DECO4, DECO5, DECO6, BELT,
@@ -51,9 +48,6 @@ pub mod paperdoll {
 
 /// Java `(float) (exp - expForLevel) / (expForNextLevel - expForLevel)`, as written into
 /// [`CharSelectEntry::exp_percent`].
-///
-/// NOTE(java-quirk): the division is done in 32-bit `float` and widened to `double` afterwards,
-/// so the value is only float-precise. Level 80 and above divide by a real exp span, never 0.
 pub fn exp_percent(exp: i64, exp_for_level: i64, exp_for_next_level: i64) -> f64 {
     f64::from((exp - exp_for_level) as f32 / (exp_for_next_level - exp_for_level) as f32)
 }
@@ -65,7 +59,6 @@ pub fn exp_percent(exp: i64, exp_for_level: i64, exp_for_next_level: i64) -> f64
 pub fn delete_seconds(access_level: i32, delete_time_ms: i64, now_ms: i64) -> i32 {
     if access_level > -1 {
         if delete_time_ms > 0 {
-            // Java: `(int) ((deleteTimer - now) / 1000)`, truncating long division.
             ((delete_time_ms - now_ms) / 1000) as i32
         } else {
             0
@@ -90,7 +83,6 @@ pub fn active_slot(last_access: &[i64]) -> Option<usize> {
     slot
 }
 
-// Java: gameserver/network/serverpackets/CharSelectionInfo.java (one loop iteration)
 /// One character of [`CharSelectionInfo`]: every value Java writes for it, already computed.
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct CharSelectEntry {
@@ -140,7 +132,7 @@ impl CharSelectEntry {
         w.string(account_name).i32(session_id);
         w.i32(self.clan_id).i32(0); // 0: builder level
         w.i32(self.sex).i32(self.race).i32(self.base_class_id);
-        w.i32(1); // Java: "GameServerName", always 1
+        w.i32(1);
         w.i32(self.x).i32(self.y).i32(self.z);
         w.f64(self.current_hp).f64(self.current_mp);
         w.i32(self.sp).i64(self.exp).f64(self.exp_percent);
@@ -234,7 +226,6 @@ impl CharSelectEntry {
     }
 }
 
-// Java: gameserver/network/serverpackets/CharSelectionInfo.java
 /// The character list. Sent after `AuthLogin`, `RequestGotoLobby`, `CharacterDelete` and
 /// `CharacterRestore`.
 #[derive(Debug, Clone, PartialEq, Default)]
@@ -290,7 +281,6 @@ impl Decode for CharSelectionInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/NewCharacterSuccess.java (one `addChar`)
 /// Race/class template shown on the character creation screen.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct NewCharTemplate {
@@ -350,7 +340,6 @@ impl NewCharTemplate {
     }
 }
 
-// Java: gameserver/network/serverpackets/NewCharacterSuccess.java
 /// The answer to `NewCharacter`: the templates the creation screen offers.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NewCharacterSuccess {
@@ -389,7 +378,6 @@ impl Decode for NewCharacterSuccess {
     }
 }
 
-// Java: gameserver/network/serverpackets/CharCreateOk.java
 /// Character created (opcode name `CHARACTER_CREATE_SUCCESS`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CharCreateOk;
@@ -412,7 +400,6 @@ impl Decode for CharCreateOk {
     }
 }
 
-// Java: gameserver/network/serverpackets/CharCreateFail.java
 /// Character creation refused. `reason` is a plain int on the wire (Java passes any int), so
 /// unknown values decode fine.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -451,7 +438,6 @@ impl Decode for CharCreateFail {
     }
 }
 
-// Java: gameserver/network/serverpackets/CharDeleteSuccess.java
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CharDeleteSuccess;
 
@@ -471,7 +457,6 @@ impl Decode for CharDeleteSuccess {
     }
 }
 
-// Java: gameserver/network/serverpackets/CharDeleteFail.java
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CharDeleteFail {
     pub reason: i32,
@@ -497,7 +482,6 @@ impl Decode for CharDeleteFail {
     }
 }
 
-// Java: gameserver/network/serverpackets/CharSelected.java
 /// The player was loaded and enters the world next (opcode name `CHARACTER_SELECTED`).
 #[derive(Debug, Clone, PartialEq)]
 pub struct CharSelected {
@@ -541,9 +525,9 @@ impl Encode for CharSelected {
         write_opcode(w, Self::OPCODE);
         w.string(&self.name).i32(self.object_id).string(&self.title);
         w.i32(self.session_id).i32(self.clan_id);
-        w.i32(0); // Java: "??"
+        w.i32(0);
         w.i32(i32::from(self.is_female)).i32(self.race).i32(self.class_id);
-        w.i32(1); // Java: "active ??"
+        w.i32(1);
         w.i32(self.x).i32(self.y).i32(self.z);
         w.f64(self.current_hp).f64(self.current_mp);
         w.i32(self.sp).i64(self.exp);
@@ -611,7 +595,6 @@ impl Decode for CharSelected {
     }
 }
 
-// Java: gameserver/network/serverpackets/ServerClose.java
 /// "Server closes the connection" notice, sent right before the socket is closed.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ServerClose;
@@ -632,7 +615,6 @@ impl Decode for ServerClose {
     }
 }
 
-// Java: gameserver/network/serverpackets/SSQInfo.java
 /// Sky colour of the Seven Signs competition (opcode name `SSQ_INFO`): 0 normal, 1 dusk, 2 dawn.
 /// Java sends it right before `CharSelected`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -648,7 +630,6 @@ impl SsqInfo {
 impl Encode for SsqInfo {
     fn encode(&self, w: &mut PacketWriter) {
         write_opcode(w, Self::OPCODE);
-        // Java: `writeShort(256 + _state)`.
         w.i16((256 + self.state) as i16);
     }
 }

@@ -1,6 +1,5 @@
 //! Effect templates: what a skill's `<effect name="..">` elements hold until the handlers exist.
 //!
-//! Java: `mechanics/effects/AbstractEffect.java` (name, ticks, attach condition, function
 //! templates) and the effect parts of `util/DocumentBase.java` (`attachEffect`, `parseParameters`,
 //! `hasLevelSpecificValues`, `parseLevelSpecificValues`, the `RestorationRandom` item lists).
 //!
@@ -147,10 +146,6 @@ pub(super) struct ParamContext<'a> {
 /// Java `parseParameters(n.getFirstChild(), template)` for a `Skill` template. `children` are the
 /// element children of the `<effect>`. Java returns an empty set when nothing matched; so does
 /// this.
-///
-/// NOTE(java-quirk): every child element that is not in [`IGNORED_ELEMENTS`] becomes a parameter,
-/// the condition elements too: a leaf `<player level="40"/>` directly under `<effect>` is stored as
-/// the parameter `player` with an empty value, `<and>` (which has children) is skipped.
 pub(super) fn parse_parameters(
     children: &[XmlNode],
     cx: &ParamContext<'_>,
@@ -345,8 +340,6 @@ mod tests {
             r#"<effect name="X"><using kind="BOW"/><and><player level="1"/></and></effect>"#,
             1,
         );
-        // NOTE(java-quirk): a leaf condition element has only text content (none), so it is
-        // stored with an empty value; `<and>` has element children and is skipped.
         assert_eq!(text(&p, "using").as_deref(), Some(""));
         assert!(!p.contains_key("and"));
     }

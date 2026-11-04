@@ -1,5 +1,4 @@
 //! The Mouth of Ekimus: which hall the seed's stage lets a party into.
-// Java: dist/game/data/scripts/ai/areas/Gracia/AI/NPC/EkimusMouth/EkimusMouth.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

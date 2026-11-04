@@ -216,8 +216,6 @@ fn send_post_body(count: i32, tail: Bytes) -> Vec<u8> {
 
 #[test]
 fn a_bad_attachment_list_leaves_a_mail_without_attachments_like_java() {
-    // NOTE(java-quirk): `readImpl` returns, `runImpl` sends the mail anyway.
-    // The length does not fit the count: the adena is not read either.
     let body = send_post_body(2, Bytes::default().int(100).long(1).long(500));
     let packet = RequestSendPost::decode(&mut PacketReader::new(&body)).unwrap();
     assert_eq!((packet.items, packet.req_adena), (None, 0));
@@ -495,7 +493,6 @@ fn a_sent_mail_opened() {
     let expected = item_bytes(head, &item).int(item.object_id).long(0).int(0).done();
     check_round_trip(&packet, &expected, 3);
 
-    // NOTE(java-quirk): without items the packet ends after the adena.
     let plain = ExReplySentPost {
         msg_id: 81,
         locked: true,

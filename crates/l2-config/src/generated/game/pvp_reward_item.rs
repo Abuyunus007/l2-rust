@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/PvpRewardItemConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/PvpRewardItem.ini` (Java: `PvpRewardItemConfig`).

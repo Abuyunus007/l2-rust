@@ -1,7 +1,6 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
 //! The admin command framework and the core commands, with a fake GM and a fake normal player.
-//! Java: network/clientpackets/SendBypassBuildCmd.java, handler/AdminCommandHandler.java,
 //! data/xml/AdminData.java, scripts/handlers/chat/commands/admin/{AdminAdmin,AdminSpawn,
 //! AdminTeleport,AdminGoto,AdminKill,AdminHeal}.java, commands/user/Loc.java.
 //!
@@ -476,7 +475,6 @@ fn a_normal_player_gets_no_answer_at_all() {
     let mut s = setup();
     s.enter(USER, 0);
     s.log.take();
-    // Java: `if (!player.isGM()) return;` before anything else, even for a command that exists.
     for command in ["admin", "kill", "nothing", "spawn 2000", "heal"] {
         s.cmd(USER, command);
     }
@@ -680,7 +678,6 @@ fn an_admin_bypass_that_no_page_offered_is_dropped() {
     s.enter(GM, 0);
     s.cmd(GM, "admin");
     s.log.take();
-    // Java: `validateHtmlAction` -> not in the html the player got -> ignored.
     s.bypass(GM, "admin_kill_menu");
     s.bypass(GM, "admin_spawn 2000");
     assert!(s.log.take().is_empty());
@@ -709,7 +706,6 @@ fn spawn_puts_an_npc_at_the_gm_and_says_so() {
         (X, Y, Z, 321)
     );
     let out = s.log.take();
-    // Java: "Created <name> on <target object id>" - the GM is its own target.
     assert_eq!(texts_to(&out, GM), [format!("Created Rat on {GM}")]);
     assert!(names_to(&out, GM).contains(&"NPC_INFO".to_owned()));
 }
@@ -1336,7 +1332,6 @@ fn loc_names_the_area_with_the_real_map_regions() {
     let out = s.log.take();
     let messages = decoded::<SystemMessage>(&out, USER, "SYSTEM_MESSAGE");
     assert_eq!(messages.len(), 1);
-    // Java: `new SystemMessage(locId)`, with the player's coordinates for a 3-parameter message.
     let message = &messages[0];
     assert!(message.id.id() > 0);
     assert_ne!(message.id, SystemMessageId::CurrentLocationS1);

@@ -1,6 +1,4 @@
 //! Beast Farm (Freya): growth-capable mobs polymorph when a character feeds them spice.
-// Java: dist/game/data/scripts/ai/areas/BeastFarm/BeastFarm.java
-//
 // The last step of the growth is a Freya `TamedBeast` of the character (`spawn_tamed_beast`,
 // S-API-05) with a random name and beast skills.
 
@@ -164,8 +162,6 @@ fn spawn_next(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, next_np
             18872 => name.replace("%name%", "Alpine Grendel"),
             _ => name.to_owned(),
         };
-        // NOTE(java-quirk): Java goes on with a null `TamedBeast` only if the constructor threw;
-        // here a beast that could not spawn skips its name and skills.
         if let Some(next_npc) = next_npc {
             // `nextNpc.setName(name)`, `broadcastPacket(new NpcInfo(nextNpc, player))`.
             ctx.world_mut().set_npc_name(next_npc, &name);
@@ -280,8 +276,6 @@ impl Script for BeastFarm {
                 }
                 return;
             };
-            // NOTE(java-quirk): the feeder was stored a few lines up, so this "same player as the
-            // one who raised it" test can never fail.
             if (growth_level > 0) && (ctx.state::<FeedInfo>().0.get(&object_id) != Some(&caster.0)) {
                 // check if this is the same player as the one who raised it from growth 0.
                 // if no, then do not allow a chance to raise the pet (food gets consumed but has no effect).

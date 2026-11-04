@@ -1,11 +1,5 @@
 //! Local admin endpoint: game status (online characters) and a clean shutdown for the
 //! supervisor/GUI (D-30, D-38).
-//!
-//! Java: `Shutdown.startShutdown` (the GM command) is the same action; the Java game server
-//! has no remote endpoint. Settings come from the Rust-only `config/Admin.ini` (D-36); a missing
-//! file means disabled. Same pattern as `login-server/src/admin.rs`.
-//! The character list is read from the world thread (D-10): the endpoint sends an
-//! `AdminQuery` and waits for the answer, it never touches the world's state.
 
 use std::path::Path;
 use std::sync::Arc;

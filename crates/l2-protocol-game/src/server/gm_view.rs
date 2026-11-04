@@ -1,6 +1,5 @@
 //! The packets of the GM windows: `GMViewItemList`.
 //!
-//! Java: `gameserver/network/serverpackets/GMViewItemList.java` (`AbstractItemPacket.writeItem`
 //! for the entries).
 
 use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
@@ -9,7 +8,6 @@ use super::items::{ItemInfo, read_item, write_item};
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/GMViewItemList.java
 /// The item window a GM sees of another character (`GM_VIEW_ITEM_LIST`): the owner's name, the
 /// inventory limit and every item of the inventory, quest items included (Java filters nothing).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]

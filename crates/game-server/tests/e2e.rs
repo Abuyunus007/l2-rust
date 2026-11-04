@@ -49,7 +49,6 @@ const PASSWORD: &str = "secret";
 const NAME: &str = "Newbie";
 /// A protocol revision the game server accepts by default.
 const PROTOCOL: i32 = 273;
-/// `RUST_FIRST_OBJECT_ID` (D-39): ids of characters created by the Rust server start here.
 const RUST_ID_START: i32 = 0x6000_0000;
 
 /// The packets the Rust game server sends after `EnterWorld` (the closing `SKILL_LIST` is the
@@ -65,7 +64,6 @@ const ENTER_WORLD_PACKETS: [&str; 26] = [
     "EX_BASIC_ACTION_LIST",
     "HENNA_INFO",
     "QUEST_LIST",
-    // Java: spawnMe -> revalidateZone (the zone the character stands in).
     "EX_SET_COMPASS_ZONE_CODE",
     "EX_ROTATION",
     "ETC_STATUS_UPDATE",
@@ -306,7 +304,6 @@ impl Rig {
         game.create_character(&character_create(NAME, 0)).await.unwrap();
         let list = game.goto_lobby().await;
         let char_id = list.characters[0].object_id;
-        // Java: Logout at the character screen disconnects.
         assert!(game.logout().await.is_empty());
         self.wait_until_out_of_game(ACCOUNT).await;
         char_id
@@ -532,8 +529,6 @@ async fn what_the_character_had_when_it_entered_is_what_the_next_login_sees() {
     };
     let char_id = rig.create_character_and_leave().await;
 
-    // The character was played elsewhere (the Java game server, say): level 3, some exp and sp,
-    // a title, another place. `lastAccess = 1` shows later that the logout wrote it.
     rig.db
         .exec(&format!(
             "UPDATE characters SET level = 3, exp = 500, sp = 77, x = -70000, y = 250000, z = -3000, \

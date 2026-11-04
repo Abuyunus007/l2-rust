@@ -1,5 +1,4 @@
 //! Naia Lock AI: removes the minions after the master's death.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/NaiaLock.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

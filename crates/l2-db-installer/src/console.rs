@@ -1,6 +1,4 @@
 //! Console mode: the questions on stdin, as Java's console mode.
-// Java: org/l2jmobius/tools/DatabaseInstaller.java (`console`, `installDatabaseMenu`)
-//
 // Generic over the input and output so the tests can script a whole session.
 
 use std::io::{BufRead, Write};

@@ -1,5 +1,4 @@
 //! The small NPC bypass handlers: `PlayerHelp`, `TutorialClose` and `QuestList`.
-// Java: dist/game/data/scripts/handlers/bypass/npc/{PlayerHelp,TutorialClose,QuestList}.java
 
 use l2_protocol_game::server::{ExShowQuestInfo, NpcHtmlMessage};
 use l2_util::ObjectId;

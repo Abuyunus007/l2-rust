@@ -1,6 +1,4 @@
 //! Quest 297: Gatekeeper's Favor (Wirphy in the Gludin area sends the player to the Whinstone Golems).
-// Java: dist/game/data/scripts/quests/Q00297_GatekeepersFavor/Q00297_GatekeepersFavor.java
-//
 // Pattern: a kill-count quest (`docs/design/scripts.md`, "Quest patterns"): every Whinstone Golem
 // gives one starstone until 20 are in, the 20th sets cond 2; the NPC pays and the quest repeats.
 // The same shape as Q00277 (Gatekeeper's Offering).

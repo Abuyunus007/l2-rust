@@ -1,7 +1,5 @@
 //! Quest 628: Hunt of the Golden Ram Mercenary Force (Kahman in the Gludio area; the Stakato
 //! monsters drop the splinter and the needle chitins, 100 of each, and the badges go up a rank).
-// Java: dist/game/data/scripts/quests/Q00628_HuntGoldenRam/Q00628_HuntGoldenRam.java
-//
 // Pattern: three conds. The kills give a chitin only while the cond allows it (`ItemChanceHolder`
 // count is the cond the chitin belongs to, and the drop is limited to 100), cond 2 and 3 are set
 // by the talk and the badges, and the talk takes the items back. Java's `setCond(n)` has no sound.

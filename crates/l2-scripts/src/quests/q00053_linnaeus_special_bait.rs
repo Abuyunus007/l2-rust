@@ -1,7 +1,5 @@
 //! Quest 53: Linnaeus's Special Bait (Linnaeus in the Fishing Village; the crimson drakes give the
 //! crimson drake heart).
-// Java: dist/game/data/scripts/quests/Q00053_LinnaeusSpecialBait/Q00053_LinnaeusSpecialBait.java
-//
 // Pattern: a kill-count quest with a drop chance up to a limit (`docs/design/scripts.md`, "Quest
 // patterns"): the crimson drakes drop the heart with 33% to the party member at cond 1, and the
 // hundredth heart moves that member on to cond 2. The flaming fishing lures come back with the

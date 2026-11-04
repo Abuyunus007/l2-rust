@@ -1,5 +1,4 @@
 //! Quest 724: For the Sake of the Territory - Rune.
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/Q00724_ForTheSakeOfTheTerritoryRune.java
 
 use l2_protocol_game::NpcStringId;
 

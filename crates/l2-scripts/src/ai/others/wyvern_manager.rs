@@ -1,5 +1,4 @@
 //! Wyvern Manager: the castle, fortress and hall lords change their Strider into a Wyvern.
-// Java: dist/game/data/scripts/ai/others/WyvernManager/WyvernManager.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_util::ObjectId;

@@ -1,5 +1,4 @@
 //! The `EventItem` item handler: Handy's Block Checker Bond and Land Mine.
-// Java: dist/game/data/scripts/handlers/items/EventItem.java
 
 use l2_data::item::ItemTemplate;
 use l2_protocol_game::SystemMessageId;
@@ -71,8 +70,6 @@ impl World {
             return false;
         }
 
-        // NOTE(java-quirk): `(Block) caster.getTarget()` throws when the target is not a block;
-        // the item is gone by then.
         let Some(block) = self.target_of(caster).filter(|t| self.is_block_checker_block(*t)) else {
             warn!("EventItem: {caster} used a block checker item without a block as target");
             return false;

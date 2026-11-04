@@ -1,8 +1,4 @@
 //! The NPC-only parts of the stat getters and the standard NPC calculators.
-// Java: entity/actor/stat/NpcStat.java (getLevel)
-// Java: entity/actor/Creature.java (the constructor: `_calculators = NPC_STD_CALCULATOR`)
-// Java: entity/actor/Npc.java (getTemplate)
-//
 // NPCs start with the one shared standard set (`Formulas.getStdNPCCalculators`). The functions
 // of their template skills join at spawn in phase 2 of M4-STAT-01 (the skill tables), which
 // copies the set for that NPC only.

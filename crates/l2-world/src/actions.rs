@@ -1,13 +1,5 @@
 //! The player's own actions of `RequestActionUse`: sit and stand, walk and run, the social
 //! emotes, the couple actions and the answer to one (`AnswerCoupleAction`).
-// Java: network/clientpackets/RequestActionUse.java (the sit, run, social and couple branches,
-//       useSit, tryBroadcastSocial, useCoupleSocial)
-// Java: network/clientpackets/AnswerCoupleAction.java
-// Java: entity/actor/Player.java (canMakeSocialAction, setMultiSocialAction)
-// Java: ai/NextAction.java, ai/AbstractAI.java (setNextAction), ai/CreatureAI.java
-//       (notifyActionArrived, notifyActionFinishCasting, setIntentionCast: the triggers and the
-//       removal of a `NextAction`)
-//
 // # Where it plugs in
 // - `summon/actions.rs` runs the checks every action goes through (`RequestActionUse.runImpl`)
 //   and hands every action it does not know as a summon action to [`World::on_player_action`].
@@ -191,8 +183,6 @@ impl World {
             };
             self.send(player, &packet);
             self.sit_down(player, true);
-            // NOTE(java-quirk): `broadcastPacket` of a player also sends it to the player, who
-            // gets the packet twice.
             self.broadcast_creature_packet(player, &packet);
             return;
         }
@@ -338,8 +328,6 @@ impl World {
             );
             return;
         }
-        // NOTE(java-quirk): the `isInHideoutSiege()` branch of the player has no `return`, the
-        // checks go on after the message.
         if self.is_in_hideout_siege(player) {
             self.couple_refusal(
                 player,
@@ -549,8 +537,6 @@ impl World {
                     let id = SystemMessageId::TheRequestCannotBeCompletedBecauseTheTargetDoesNotMeetLocationRequirements;
                     self.action_system_message(player, id);
                     self.action_system_message(target, id);
-                    // NOTE(java-quirk): this `return` skips the `setMultiSocialAction(0, 0)` at
-                    // the end, the asker keeps the request until the next answer or relog.
                     return;
                 }
                 let heading = heading_from_points(from.0, from.1, to.0, to.1);
@@ -619,8 +605,6 @@ impl World {
     }
 
     /// Java `CreatureAI.notifyActionFinishCasting`: the `FINISH_CASTING` callback runs.
-    // NOTE(java-quirk): unlike `ARRIVED`, Java does not clear the action when it runs it. It stays
-    // until a cast intention removes it (`setIntentionCast`) or another action replaces it.
     pub(crate) fn fire_finish_casting_next_action(&mut self, id: ObjectId) {
         if !self.can_handle_next_action(id) {
             return;

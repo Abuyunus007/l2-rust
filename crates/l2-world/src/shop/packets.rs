@@ -1,8 +1,5 @@
 //! The two shop windows: `BuyList` (the merchant's side) and `ExBuySellList` (the sell and refund
 //! tabs), and the price config of a merchant.
-// Java: network/serverpackets/{BuyList,ExBuySellList}.java
-// Java: data/MerchantPriceConfigTable.java (getMerchantPriceConfig)
-// Java: entity/itemcontainer/PlayerInventory.java (getAvailableItems)
 
 use std::collections::HashSet;
 
@@ -99,7 +96,6 @@ impl World {
             });
         }
         let mut packet = BuyList::new(self.adena_of(player), list_id, products);
-        // NOTE(java-quirk): the size counts the products that were left out.
         packet.size = u16::try_from(list.products().len()).unwrap_or(u16::MAX);
         Some(packet)
     }

@@ -1,6 +1,4 @@
 //! Quest 360: Plunder Their Supplies (Guard Coleman in the Cemetery, Taik Orc Seekers and Supply Leaders).
-// Java: dist/game/data/scripts/quests/Q00360_PlunderTheirSupplies/Q00360_PlunderTheirSupplies.java
-//
 // Pattern: a one-time kill-count quest with drops (`docs/design/scripts.md`, "Quest patterns"):
 // the supplies drop with a chance, a suspicious document piece drops on every kill with a 10%
 // chance and four pieces become a recipe. The NPC pays for both (`exit_quest(false, true)`).

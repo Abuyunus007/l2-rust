@@ -7,7 +7,6 @@ use crate::generated::opcodes::ServerOpcode;
 
 const NPC_TYPE_ID_OFFSET: i32 = 1_000_000;
 
-// Java: gameserver/network/serverpackets/AbstractNpcInfo.java (inner class `TrapInfo`)
 /// Describes a trap to a player who may see it (`NPC_INFO`, the trap variant).
 ///
 /// Same opcode as [`super::NpcInfo`], its own layout: no weapons, the owner's name as title and

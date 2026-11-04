@@ -1,8 +1,4 @@
 //! The `character_friends` table: the friend list (`relation` 0) and the block list (`relation` 1).
-// Java: org/l2jmobius/gameserver/entity/actor/Player.java (restoreFriendList, DELETE of the friend
-// Java: rows in RequestFriendDel), entity/actor/holders/player/BlockList.java (loadList, updateInDB),
-// Java: network/clientpackets/RequestAnswerFriendInvite.java (the INSERT of both rows)
-//
 // Same layout as characters.rs: verbatim SQL, one method per statement. The two reads also join
 // `characters` for the name: Java gets the name from `CharInfoTable`, which holds every character
 // name, so the join is the same answer without a second query per friend.
@@ -12,19 +8,13 @@ use sqlx::FromRow;
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: Player.restoreFriendList (relation 0), BlockList.loadList (relation 1). The join is ours.
 const SELECT_RELATION: &str = "SELECT cf.friendId, c.char_name FROM character_friends cf LEFT JOIN characters c ON c.charId = cf.friendId WHERE cf.charId=? AND cf.relation=? AND cf.friendId<>cf.charId";
-// Java: RequestAnswerFriendInvite (both rows of a new friendship, relation 0 by default)
 const INSERT_FRIENDS: &str = "INSERT INTO character_friends (charId, friendId) VALUES (?, ?), (?, ?)";
-// Java: RequestFriendDel (both directions, whatever the relation)
 const DELETE_FRIENDS: &str =
     "DELETE FROM character_friends WHERE (charId=? AND friendId=?) OR (charId=? AND friendId=?)";
-// Java: BlockList.updateInDB (add)
 const INSERT_BLOCK: &str = "INSERT INTO character_friends (charId, friendId, relation) VALUES (?, ?, 1)";
-// Java: BlockList.updateInDB (remove)
 const DELETE_BLOCK: &str = "DELETE FROM character_friends WHERE charId=? AND friendId=? AND relation=1";
 
-// Java: FriendListExtended (the row of a friend who is not in the world). The CASTs only make the
 // column types one type for the driver.
 const SELECT_SUMMARY: &str = "SELECT char_name, CAST(online AS SIGNED), CAST(classid AS SIGNED), CAST(level AS SIGNED) FROM characters WHERE charId = ?";
 
@@ -74,13 +64,11 @@ impl FriendRepository {
 
     /// The friends of a character (relation 0), in the order the rows come back. A row whose id
     /// does not fit an `i32` is skipped.
-    // Java: Player.restoreFriendList
     pub async fn friends_of(&self, char_id: i32) -> Result<Vec<FriendLink>> {
         self.links_of(char_id, RELATION_FRIEND).await
     }
 
     /// The block list of a character (relation 1).
-    // Java: BlockList.loadList
     pub async fn block_list_of(&self, char_id: i32) -> Result<Vec<FriendLink>> {
         self.links_of(char_id, RELATION_BLOCK).await
     }
@@ -103,7 +91,6 @@ impl FriendRepository {
     }
 
     /// The name, online flag, class and level of a character (`None` when no row has the id).
-    // Java: FriendListExtended
     pub async fn character_summary(&self, char_id: i32) -> Result<Option<CharacterSummary>> {
         let row: Option<(Option<String>, i64, i64, i64)> = sqlx::query_as(SELECT_SUMMARY)
             .bind(char_id)
@@ -118,7 +105,6 @@ impl FriendRepository {
     }
 
     /// Makes two characters friends: one row each way, relation 0.
-    // Java: RequestAnswerFriendInvite (INSERT INTO character_friends (charId, friendId) VALUES ...)
     pub async fn add_friends(&self, first: i32, second: i32) -> Result<()> {
         sqlx::query(INSERT_FRIENDS)
             .bind(first)
@@ -131,7 +117,6 @@ impl FriendRepository {
     }
 
     /// Ends a friendship: both rows, whatever their relation (Java's `RequestFriendDel`).
-    // Java: RequestFriendDel
     pub async fn remove_friends(&self, first: i32, second: i32) -> Result<()> {
         sqlx::query(DELETE_FRIENDS)
             .bind(first)
@@ -144,7 +129,6 @@ impl FriendRepository {
     }
 
     /// Adds a row to the owner's block list.
-    // Java: BlockList.updateInDB(targetId, true)
     pub async fn add_block(&self, owner: i32, target: i32) -> Result<()> {
         sqlx::query(INSERT_BLOCK)
             .bind(owner)
@@ -155,7 +139,6 @@ impl FriendRepository {
     }
 
     /// Removes a row from the owner's block list.
-    // Java: BlockList.updateInDB(targetId, false)
     pub async fn remove_block(&self, owner: i32, target: i32) -> Result<()> {
         sqlx::query(DELETE_BLOCK)
             .bind(owner)

@@ -1,10 +1,5 @@
 //! What players are told about a summon: `PetInfo` and `PetStatusUpdate` to its owner,
 //! `SummonInfo` to everybody else, the buff icons (`PartySpelled`) to the owner.
-// Java: entity/actor/Summon.java (sendInfo, updateAndBroadcastStatus, broadcastNpcInfo,
-//       updateAbnormalEffect, broadcastStatusUpdate, getWeapon, getArmor)
-// Java: network/serverpackets/{PetInfo,PetStatusUpdate,AbstractNpcInfo}.java (SummonInfo)
-// Java: entity/actor/holders/creature/EffectList.java (updateEffectIcons, the summon branch)
-// Java: dist/game/data/scripts/handlers/actions/click/SummonClick.java (see `actions.rs`)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{PetInfo, PetStatusUpdate, SummonInfo, SystemMessage, SystemMessageParam};

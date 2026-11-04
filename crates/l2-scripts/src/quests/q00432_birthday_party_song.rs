@@ -1,6 +1,4 @@
 //! Quest 432: Birthday Party Song (Octavia; the Golems drop the red crystals).
-// Java: dist/game/data/scripts/quests/Q00432_BirthdayPartySong/Q00432_BirthdayPartySong.java
-//
 // Pattern: a kill-count quest with a drop chance up to a limit (the killer collects, cond 2 at
 // 50) and a turn-in that gives the reward and ends the quest (repeatable).
 

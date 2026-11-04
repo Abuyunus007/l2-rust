@@ -1,9 +1,5 @@
 //! What Java keeps on an `Npc` for the scripts: the weapon of the killing blow and the NPCs it
 //! summoned with `addSpawn(summoner, ...)` (S-DATA-01).
-// Java: entity/actor/Npc.java (_killingBlowWeaponId, _summonedNpcs, addSummonedNpc,
-//       removeSummonedNpc, getSummonedNpcCount, onDecay, onSpawn, doDie),
-//       entity/actor/Creature.java (getSummoner), entity/spawns/Spawn.java (doSpawn),
-//       mechanics/script/Quest.java (addSpawn with a summoner)
 
 use std::collections::{BTreeSet, HashMap};
 

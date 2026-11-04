@@ -1,5 +1,4 @@
 //! The Arena Manager and Director: recovery and buffs for adena.
-// Java: dist/game/data/scripts/ai/others/ArenaManager/ArenaManager.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_util::ObjectId;

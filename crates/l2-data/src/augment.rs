@@ -1,7 +1,6 @@
 //! The tables an augmentation is rolled from: the skill map of the free-form generator and the
 //! retail chance tables.
 //!
-//! Java: `gameserver/data/AugmentationData.java` (the loading part; the rolling is
 //! `l2_world::augment`). Data: `data/stats/augmentation/{augmentation_skillmap,retailchances,
 //! retailchances_accessory}.xml` (`xsd/augmentation_skillmap.xsd`, `xsd/augmentation_retailchances.xsd`).
 //! What an option id gives is [`crate::augmentation`] (`OptionData`).
@@ -403,7 +402,6 @@ mod tests {
 
     #[test]
     fn the_accessory_blocks_follow_java() {
-        // Java: ACC_RING_BLOCKSIZE = 18 + 4 * 21 = 102, ACC_RING_END = 16669 + 10 * 102 - 1.
         assert_eq!(ACC_RING_BLOCKSIZE, 102);
         assert_eq!(ACC_RING_END, 17688);
         assert_eq!(ACC_EAR_START, 17689);

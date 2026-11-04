@@ -1,8 +1,5 @@
 //! Flood protectors: the minimum time between two requests of the same kind, with an optional
 //! punishment for a player who keeps sending them (M6-FU-06).
-// Java: util/FloodProtectors.java, util/FloodProtectorAction.java, util/FloodProtectorSettings.java
-// Java: config/FloodProtectorConfig.java, dist/game/config/FloodProtector.ini
-//
 // # How it fits
 // Java keeps one `FloodProtectors` (fifteen `FloodProtectorAction`s) per `GameClient`. Here every
 // player in the world has one [`PlayerFlood`] (World::flood), a handler asks
@@ -307,8 +304,6 @@ impl FloodAction {
         if current_tick < self.next_game_tick {
             let mut log_flooding_ms = None;
             if config.log_flooding && !self.logged {
-                // NOTE(java-quirk): `interval - (next - current)` is the time since the previous
-                // command, in ticks; Java multiplies in `int`.
                 let since_previous = config
                     .protection_interval
                     .wrapping_sub(self.next_game_tick.wrapping_sub(current_tick));
@@ -446,8 +441,6 @@ impl World {
             }
             FloodPunishment::Ban => {
                 let account = self.account_of(id);
-                // NOTE(java-quirk): a time of 0 is "forever" in the log line, but the task gets
-                // `now + 0`, which is over at once.
                 self.start_punishment(NewPunishment::new(
                     account,
                     PunishmentAffect::Account,
@@ -549,7 +542,6 @@ mod tests {
         assert!(!action.check(&cfg, 102).punish);
         let third = action.check(&cfg, 103);
         assert!(!third.allowed && third.punish);
-        // NOTE(java-quirk): every further blocked request punishes again.
         assert!(action.check(&cfg, 104).punish);
         // An allowed request resets the count.
         assert!(action.check(&cfg, 110).allowed);

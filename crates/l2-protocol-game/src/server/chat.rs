@@ -9,7 +9,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/enums/ChatType.java
 /// Chat channels. The discriminant is the id the client uses on the wire (Java `clientId`).
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -80,7 +79,6 @@ impl ChatType {
     }
 }
 
-// Java: gameserver/network/serverpackets/CreatureSay.java
 /// Who a [`CreatureSay`] is from. Java writes the sender's name when it has one, otherwise the
 /// character id (system messages have no sender name).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -143,7 +141,6 @@ impl Encode for CreatureSay {
 // name or a char id, and the body has no length, so a decoder cannot tell a text from a list of
 // parameters. Only the encoder is needed by the server.
 
-// Java: gameserver/network/serverpackets/LeaveWorld.java
 /// "Log out OK": the client leaves the world and shows the character list. No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct LeaveWorld;
@@ -164,7 +161,6 @@ impl Decode for LeaveWorld {
     }
 }
 
-// Java: gameserver/network/serverpackets/RestartResponse.java
 /// Answer to `RequestRestart`: `true` when the client may go back to the character list.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RestartResponse {
@@ -178,7 +174,6 @@ impl RestartResponse {
 impl Encode for RestartResponse {
     fn encode(&self, w: &mut PacketWriter) {
         write_opcode(w, Self::OPCODE);
-        // Java: `writeInt(boolean)`, 1 or 0.
         w.i32(i32::from(self.result));
     }
 }
@@ -191,7 +186,6 @@ impl Decode for RestartResponse {
     }
 }
 
-// Java: gameserver/network/serverpackets/NetPing.java
 /// Answer to `RequestNetPing`: the game time in the client's ping measurement.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct NetPing {
@@ -216,7 +210,6 @@ impl Decode for NetPing {
     }
 }
 
-// Java: gameserver/network/serverpackets/NpcSay.java
 /// An NPC (or a summon) says something over its head (`NPC_SAY`): a fixed text, or a client
 /// `NpcStringId` with its parameters.
 ///

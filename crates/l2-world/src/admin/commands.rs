@@ -1,8 +1,5 @@
 //! The core admin commands: `//admin` (the panels), `//spawn`, `//teleport`..., `//goto`,
 //! `//heal`. The combat ones (`//kill`, `//res`) are in `combat.rs`.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/{AdminAdmin,AdminSpawn,
-// Java: AdminTeleport,AdminGoto,AdminHeal,AdminHtml}.java
-//
 // Only the commands the card names are here (plus the few the panels link to and `//goto`
 // needs); every other command of those classes answers "The command '...' does not exist!" like
 // a command without handler. A handler gets the command text as typed (`admin_spawn 20101`) and
@@ -238,7 +235,6 @@ fn spawn_monster(
         world.send_sys_message(gm, &format!("Created {name} on {}", target.0));
         return Ok(());
     }
-    // Java: `new Spawn`, `setAmount(mobCount)`, `setRespawnDelay(respawnTime)`, `addNewSpawn` when
     // permanent, `init()`, and `stopRespawn()` when the spawn is not permanent or has no delay.
     if permanent {
         world.store_new_spawn(template_id, (x, y, z), heading, mob_count, respawn_time);
@@ -621,8 +617,6 @@ fn teleport_to_character(world: &mut World, gm: ObjectId, target: Option<ObjectI
 /// `AdminTeleport.changeCharacterPosition`: `UPDATE characters SET x=?, y=?, z=? WHERE
 /// char_name=?` for a player who is not online.
 fn change_character_position(world: &mut World, gm: ObjectId, name: &str) {
-    // FOLLOW-UP: the world never touches the database (D-15); this needs a persistence command
-    // that writes exactly what Java writes (D-39).
     warn!("{gm}: //recall {name}: the player is offline; the position update is not ported yet");
     world.send_sys_message(gm, "SQLException while changing offline character's position");
 }
@@ -662,7 +656,6 @@ fn go_direction(world: &mut World, gm: ObjectId, command: &str) {
 
 // ------------------------------------------------------------------------------- AdminGoto
 
-/// `AdminGoto.LOCATIONS`. NOTE(java-quirk): "jail" is put twice; the later place wins.
 const LOCATIONS: &[(&str, (i32, i32, i32))] = &[
     // Town
     ("gludio", (-14225, 123540, -3121)),
@@ -775,8 +768,6 @@ const LOCATIONS: &[(&str, (i32, i32, i32))] = &[
 fn admin_goto(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     let target_name = command.to_lowercase().replace("admin_goto ", "");
     let no_spaces = target_name.replace(' ', "");
-    // NOTE(java-quirk): `//goto` alone leaves "admin_goto" in the name (the replaced text has a
-    // space), so the usage line only shows for a command that ends in spaces.
     if no_spaces.is_empty() {
         world.send_message(gm, "Usage: //goto <area name, player name, npc name or npc id>");
         return Ok(());
@@ -834,7 +825,6 @@ fn handle_heal(world: &mut World, gm: ObjectId, param: Option<&str>) {
         if let Some(player) = world.player_by_name(param) {
             obj = Some(player);
         } else if let Ok(radius) = parse_int(param) {
-            // NOTE(java-quirk): the radius is only printed; every visible creature is healed.
             let all: Vec<ObjectId> = world
                 .visible_objects(gm)
                 .into_iter()

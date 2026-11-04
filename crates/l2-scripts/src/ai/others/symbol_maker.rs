@@ -1,6 +1,4 @@
 //! The symbol makers (dye sellers): the first page and the draw / remove lists.
-// Java: dist/game/data/scripts/ai/others/SymbolMaker/SymbolMaker.java
-//
 // The packets behind the lists (`HennaEquipList`, `HennaRemoveList`) and the dye requests are the
 // world's `henna.rs`.
 

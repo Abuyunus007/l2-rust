@@ -1,9 +1,5 @@
 //! What each function does to a value: the template functions (`FuncSet` ... `FuncEnchantHp`)
 //! and the standard formula functions of `Formulas`.
-// Java: mechanics/stats/functions/{FuncSet,FuncAdd,FuncSub,FuncMul,FuncDiv,FuncShare,FuncEnchant,
-//       FuncEnchantHp}.java
-// Java: mechanics/stats/functions/formulas/*.java
-//
 // Every function gets the creature the stat belongs to (Java's `effector`) as a [`StatView`];
 // a formula that needs another stat asks the view (`view.dex()`), which runs that stat's
 // calculation again, as Java does.
@@ -87,8 +83,6 @@ impl StdFunc {
             StdFunc::MaxMpMul => init * view.bonus(BaseStat::Men),
             StdFunc::PAtkMod => init * view.bonus(BaseStat::Str) * view.level_mod(),
             StdFunc::MAtkMod => {
-                // NOTE(java-quirk): Java names the INT bonus `lvlMod` and the level modifier
-                // `intMod`; the product is the same.
                 let int_mod = view.bonus(BaseStat::Int);
                 let lvl_mod = view.level_mod();
                 init * (int_mod * int_mod) * (lvl_mod * lvl_mod)
@@ -268,8 +262,6 @@ pub(crate) fn apply(
                 init
             }
         }
-        // NOTE(java-quirk): Java catches an exception to log "Division by zero", but a double
-        // division never throws: a 0 divisor gives an infinity, as here.
         FuncKind::Div => {
             if holds() {
                 init / func.value
@@ -348,7 +340,6 @@ fn enchant(func: &Func, view: &StatView<'_>, init: f64) -> f64 {
         };
         return value;
     }
-    // NOTE(java-quirk): any other stat (the shield's `sDef` enchant function) gets nothing.
     if let Some(weapon) = template.weapon() {
         let kind = weapon.weapon_type;
         let two_handed = template.body_part == BodyPart::BothHands;

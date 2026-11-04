@@ -1,6 +1,4 @@
 //! Quest 366: Silver Haired Shaman (Magister Dieter, Sairon's dolls on Devil's Isle).
-// Java: dist/game/data/scripts/quests/Q00366_SilverHairedShaman/Q00366_SilverHairedShaman.java
-//
 // Pattern: a repeatable kill-count quest with a drop chance per monster (`docs/design/scripts.md`,
 // "Quest patterns"): the kill goes to a random started party member (`random_party_member_state`,
 // `check_party_member_state` = Java `checkPartyMember`), the NPC pays for the hair and the player

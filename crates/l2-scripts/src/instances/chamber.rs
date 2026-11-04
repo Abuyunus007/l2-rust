@@ -1,7 +1,5 @@
 //! Chambers of Delusion, the shared base: the six chambers (East, North, South, West, Square and
 //! Tower) are this code with their own numbers ([`ChamberData`]).
-// Java: dist/game/data/scripts/instances/ChambersOfDelusion/Chamber.java
-//
 // Java keeps `PartyInside`, `currentRoom` and the two scheduled tasks in the `InstanceWorld`
 // parameters; here the first two are the script's state by instance id ([`ChamberWorld`]) and the
 // tasks are quest timers whose event names carry the instance id (`banish;300000`).
@@ -369,8 +367,6 @@ fn exit_instance(ctx: &mut ScriptCtx<'_>, player: ObjectId) {
                 coords[1].parse::<i32>(),
                 coords[2].parse::<i32>(),
             ) {
-                // NOTE(java-quirk): `ret` is the instance's own exit location, so this moves
-                // the exit point of the instance for whoever leaves later without a variable.
                 ret = Some((x, y, z));
                 if let Some(instance) = ctx.world_mut().instance_mut(instance_id) {
                     instance.exit_location = ret;

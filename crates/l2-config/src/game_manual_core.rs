@@ -1,6 +1,5 @@
 //! Hand-ported game config fields of the core (non-custom) classes (L-09): the `()` placeholders
 //! of the generated structs that `game_manual.rs` (M2-CFG-01) did not cover.
-// Java: org/l2jmobius/gameserver/config/{ServerConfig,DevelopmentConfig,FeatureConfig,
 // FloodProtectorConfig,GeneralConfig,GeoEngineConfig,GraciaSeedsConfig,IdManagerConfig,NpcConfig,
 // OlympiadConfig,PlayerConfig,PvpConfig,RatesConfig}.java
 //
@@ -121,8 +120,6 @@ fn skill_id_list(key: &str, text: &str) -> HashMap<i32, i32> {
 
 /// `id,value;id,value` with a `Float.parseFloat` value (`Rates.ini`
 /// `DropAmountMultiplierByItemId` / `DropChanceMultiplierByItemId`).
-// NOTE(java-quirk): Java skips the whole list when the first piece is empty (`"".split(";")` is
-// `[""]`), so a list that starts with `;` is ignored too.
 fn item_multipliers(key: &str, text: &str) -> BTreeMap<i32, f32> {
     let mut map = BTreeMap::new();
     let pieces = java_split(text, ';');
@@ -157,7 +154,6 @@ fn item_multipliers(key: &str, text: &str) -> BTreeMap<i32, f32> {
 /// `game-server/src/ls_link/ipconfig.rs`), `SERVER_ID` / `HEX_ID` (`hexid.txt`, `game-server/src/
 /// hexid.rs`) and `RESERVE_HOST_ON_LOGIN` (a constant `false` that `load()` never assigns).
 #[derive(Debug, Clone, PartialEq, Eq)]
-// Java: ServerConfig.java:130-147, 212-241, 250-265
 pub struct ServerRest {
     /// Java `DATAPACK_ROOT`: `DatapackRoot` (default `.`) with `\` replaced by `/`. Java then
     /// calls `getCanonicalFile()`; the game server resolves the text against its root folder.
@@ -182,7 +178,6 @@ pub struct ServerRest {
 /// Java `ServerConfig.getServerTypeId` on a `ServerListType` value (`split(",")` by the caller
 /// or here): the flags of the known words, ignoring case and blanks. Unknown words count for
 /// nothing.
-// Java: ServerConfig.java:349-410
 pub fn server_list_type_id(value: &str) -> i32 {
     java_split(value, ',')
         .into_iter()
@@ -259,7 +254,6 @@ fn load_chat_filter(path: &Path) -> Vec<String> {
 
 /// `DevelopmentConfig` field the generator could not port (`config/Development.ini`).
 #[derive(Debug, Clone, PartialEq, Eq)]
-// Java: DevelopmentConfig.java:63-65
 pub struct DevelopmentManual {
     /// Java `EXCLUDED_DEBUG_PACKETS`: `ExcludedPacketList`, default empty, `trim().split(",")`,
     /// each piece trimmed (so the default is the set with the empty name).
@@ -287,7 +281,6 @@ impl Default for DevelopmentManual {
 
 /// `FeatureConfig` field the generator could not port (`config/Feature.ini`).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
-// Java: FeatureConfig.java:264-271
 pub struct FeatureManual {
     /// Java `SIEGE_HOUR_LIST`: `SiegeHourList`, default empty; the numeric pieces, in order.
     pub siege_hour_list: Vec<i32>,
@@ -305,7 +298,6 @@ impl FeatureManual {
 
 /// Java `FloodProtectorSettings` as `FloodProtectorConfig.loadFloodProtectorConfig` fills it.
 #[derive(Debug, Clone, PartialEq, Eq)]
-// Java: util/FloodProtectorSettings.java
 pub struct FloodProtectorSettings {
     /// `FloodProtector<Name>Interval` (game ticks of 100 ms in Java's flood protector).
     pub protection_interval: i32,
@@ -316,8 +308,6 @@ pub struct FloodProtectorSettings {
     /// `FloodProtector<Name>PunishmentType`, default `none`. The raw text.
     pub punishment_type: String,
     /// `FloodProtector<Name>PunishmentTime` (minutes, default 0) times 60000.
-    // NOTE(java-quirk): `getInt(...) * 60000` is an int multiplication; a huge number of minutes
-    // overflows before it widens.
     pub punishment_time: i32,
 }
 
@@ -337,7 +327,6 @@ impl FloodProtectorSettings {
 
 /// `FloodProtectorConfig`: the fifteen protectors of `config/FloodProtector.ini`.
 #[derive(Debug, Clone, PartialEq, Eq)]
-// Java: FloodProtectorConfig.java:55-102
 pub struct FloodProtectorManual {
     pub use_item: FloodProtectorSettings,
     pub roll_dice: FloodProtectorSettings,
@@ -417,7 +406,6 @@ impl Default for FloodProtectorManual {
 /// changes afterwards: see [`GameConfig::effective_default_punish_param`] and
 /// [`GameConfig::effective_min_block_checker_team_members`].
 #[derive(Debug, Clone, PartialEq, Eq)]
-// Java: GeneralConfig.java:225-381
 pub struct GeneralManual {
     /// Java `LOG_ITEMS_IDS_LIST`: `LogItemsIdsList`, default `0`.
     pub log_items_ids_list: BTreeSet<i32>,
@@ -554,7 +542,6 @@ impl Default for GeneralManual {
 /// `game-server/src/geo.rs` resolves the geodata folder itself (it also has the per-region
 /// override file); the pathnode and geo edit folders are used by nothing yet.
 #[derive(Debug, Clone, PartialEq, Eq)]
-// Java: GeoEngineConfig.java:54-56
 pub struct GeoEngineManual {
     /// Java `GEODATA_PATH`: `GeoDataPath`, default `geodata`.
     pub geodata_path: String,
@@ -583,7 +570,6 @@ impl Default for GeoEngineManual {
 
 /// `GraciaSeedsConfig` field the generator could not port (`config/GraciaSeeds.ini`).
 #[derive(Debug, Clone, PartialEq, Eq)]
-// Java: GraciaSeedsConfig.java:54
 pub struct GraciaSeedsManual {
     /// Java `SOD_STAGE_2_LENGTH`: `Stage2Length` (minutes, default 720) in ms. Used by the Seed
     /// of Destruction manager (M8).
@@ -606,7 +592,6 @@ impl Default for GraciaSeedsManual {
 
 /// `IdManagerConfig` field the generator could not port (`config/IdManager.ini`).
 #[derive(Debug, Clone, PartialEq, Eq)]
-// Java: IdManagerConfig.java:48
 pub struct IdManagerManual {
     /// The `InitialCapacity` setting (default 100000) before Java caps it at `LAST_OBJECT_ID - 1`;
     /// the capped value is [`GameConfig::effective_initial_capacity`]. Java sizes its id bitset
@@ -632,7 +617,6 @@ impl Default for IdManagerManual {
 
 /// `NpcConfig` fields that `NpcManual` does not hold (`config/NPC.ini`).
 #[derive(Debug, Clone, PartialEq)]
-// Java: NpcConfig.java:107-202
 pub struct NpcRest {
     /// Java `NPC_DMG_PENALTY`: `DmgPenaltyForLvLDifferences`, default `0.7, 0.6, 0.6, 0.55`.
     pub npc_dmg_penalty: Vec<f32>,
@@ -692,7 +676,6 @@ impl Default for NpcRest {
 /// `OlympiadConfig` fields that the generator could not port (`config/Olympiad.ini`). The
 /// olympiad itself is M8; these are read for it.
 #[derive(Debug, Clone, PartialEq, Eq)]
-// Java: OlympiadConfig.java:105-148, 160-203
 pub struct OlympiadManual {
     /// Java `OLYMPIAD_CLASSED_REWARD`: `OlympiadClassedReward`, default `13722,50`, as
     /// `[itemId, count]` pairs.
@@ -709,8 +692,6 @@ pub struct OlympiadManual {
 }
 
 /// Java `OlympiadConfig.parseItemsList`: `split(";")`, each entry `itemId,itemNumber`.
-// NOTE(java-quirk): Java sizes the result by the number of entries and leaves a skipped entry
-// as `null` in it (a later `null` dereference). Here a skipped entry is simply not in the list.
 fn parse_items_list(text: &str) -> Vec<[i32; 2]> {
     let mut list = Vec::new();
     for value in java_split(text, ';') {
@@ -773,7 +754,6 @@ const ENCHANT_BLACKLIST_DEFAULT: &str =
 
 /// `PlayerConfig` fields that `PlayerManual` does not hold (`config/Player.ini`).
 #[derive(Debug, Clone, PartialEq)]
-// Java: PlayerConfig.java:258-567
 pub struct PlayerRest {
     /// Java `RESPAWN_RESTORE_CP`: `RespawnRestoreCP` / 100 (default 0).
     pub respawn_restore_cp: f64,
@@ -934,7 +914,6 @@ fn parse_party_percents(text: &str) -> Option<Vec<i32>> {
 
 /// `PvpConfig` fields that the generator could not port (`config/PVP.ini`).
 #[derive(Debug, Clone, PartialEq, Eq)]
-// Java: PvpConfig.java:59-79
 pub struct PvpManual {
     /// Java `KARMA_LIST_NONDROPPABLE_PET_ITEMS`: `ListOfPetItems`, sorted.
     pub karma_list_nondroppable_pet_items: Vec<i32>,
@@ -976,7 +955,6 @@ impl Default for PvpManual {
 
 /// A `DropHolder` of `BossDropList` (`DropType.DROP` is the only type used).
 #[derive(Debug, Clone, PartialEq)]
-// Java: holders/DropHolder.java
 pub struct BossDrop {
     pub item_id: i32,
     pub min: i32,
@@ -989,7 +967,6 @@ pub struct BossDrop {
 /// `RATE_KARMA_LOST` is a generated field that `load()` changes afterwards: see
 /// [`GameConfig::effective_rate_karma_lost`].
 #[derive(Debug, Clone, PartialEq, Default)]
-// Java: RatesConfig.java:172-246
 pub struct RatesManual {
     /// Java `RATE_DROP_AMOUNT_BY_ID`: `DropAmountMultiplierByItemId`, `itemId,multiplier;...`.
     pub rate_drop_amount_by_id: BTreeMap<i32, f32>,
@@ -1104,13 +1081,11 @@ impl CoreManual {
 
 impl GameConfig {
     /// `MIN_BLOCK_CHECKER_TEAM_MEMBERS`: `MinBlockCheckerTeamMembers` clamped to 1..=6.
-    // Java: GeneralConfig.java:367-374
     pub fn effective_min_block_checker_team_members(&self) -> i32 {
         self.general.min_block_checker_team_members.clamp(1, 6)
     }
 
     /// `INITIAL_CAPACITY`: `InitialCapacity` at most `LastObjectId - 1`.
-    // Java: IdManagerConfig.java:48
     pub fn effective_initial_capacity(&self) -> i32 {
         self.manual
             .core
@@ -1120,7 +1095,6 @@ impl GameConfig {
     }
 
     /// `RATE_KARMA_LOST`: `RateKarmaLost` (default -1), and the exp rate when it is -1.
-    // Java: RatesConfig.java:143-147
     pub fn effective_rate_karma_lost(&self) -> f32 {
         if self.rates.rate_karma_lost == -1.0 {
             self.rates.rate_xp

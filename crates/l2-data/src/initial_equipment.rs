@@ -1,6 +1,5 @@
 //! The items every new character of a class starts with.
 //!
-//! Java: `gameserver/data/xml/InitialEquipmentData.java` and `entity/item/holders/InitialEquipment.java`.
 //! Data: `data/stats/players/initialEquipment.xml` (`xsd/initialEquipment.xsd`).
 //!
 //! Java has no fallback: a class without an `equipment` element gets no items, because

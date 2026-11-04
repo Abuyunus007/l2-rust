@@ -7,7 +7,6 @@
 //! `PvpFlagTaskManager`, `Player.onKillUpdatePvPKarma`, `Player.setKarma`, `Player.getRelation`,
 //! `Player.isAutoAttackable`, `Creature.callSkill`), the karma numbers from the Java vector file
 //! `crates/l2-testkit/vectors/formulas_karma_gain.json`.
-//! Java: entity/actor/{Player,Playable,Creature}.java, taskmanagers/PvpFlagTaskManager.java
 
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
@@ -927,7 +926,6 @@ fn is_auto_attackable_follows_the_player_rules() {
     s.world.update_pvp_status(P2);
     assert!(s.world.is_auto_attackable(P2, ME), "flagged");
     assert!(s.world.is_auto_attackable_by(P2, ME));
-    // NOTE(java-quirk): any other creature falls through to the same karma/flag test.
     assert!(s.world.is_auto_attackable(P2, folk));
     // Guards attack only players with karma.
     assert!(!s.world.is_auto_attackable(P2, guard));

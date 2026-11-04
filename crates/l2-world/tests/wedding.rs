@@ -514,7 +514,6 @@ fn a_friend_is_asked_and_the_yes_makes_a_couple() {
         );
         assert!(!st.engage_request);
     }
-    // The couple id is an object id of the Rust range (D-39).
     assert!(couple.id >= RUST_FIRST_OBJECT_ID);
 
     // Engaged already: the next `.engage` says so (and the big head follows with the setting).

@@ -1,5 +1,4 @@
 //! The Survivor of the Seed of Annihilation / Hall: a teleport for 150000 adena.
-// Java: dist/game/data/scripts/ai/others/Survivor/Survivor.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

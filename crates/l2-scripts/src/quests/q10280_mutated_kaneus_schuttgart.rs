@@ -1,5 +1,4 @@
 //! Quest 10280: Mutated Kaneus - Schuttgart (Vishotsky sends the party after Venomous Storace and Kel Bilette).
-// Java: dist/game/data/scripts/quests/Q10280_MutatedKaneusSchuttgart/Q10280_MutatedKaneusSchuttgart.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, QuestSound, STARTED};

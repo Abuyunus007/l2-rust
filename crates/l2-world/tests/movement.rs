@@ -3,7 +3,6 @@
 //! Player movement: MoveToLocation -> checks -> per-tick updates -> broadcasts, geodata,
 //! pathfinding through the request service, ValidatePosition corrections, and the recorded Java
 //! session (`fixtures/captures/java-gs-session.jsonl`).
-//! Java: Creature.moveToLocation / updatePosition / stopMove, MovementTaskManager, the client
 //! packets MoveToLocation / ValidatePosition / CannotMoveAnymore.
 
 use std::path::PathBuf;
@@ -730,7 +729,6 @@ fn stopping_while_the_path_is_out_drops_the_answer() {
 
 #[test]
 fn a_refused_request_or_a_missing_service_walks_straight() {
-    // Java: no path found -> direct movement.
     for with_service in [true, false] {
         let log = Log::default();
         let engine = wall_engine(2);

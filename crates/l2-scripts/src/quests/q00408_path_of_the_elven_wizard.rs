@@ -1,6 +1,4 @@
 //! Quest 408: Path of the Elven Wizard (Rossela, Greenis, Thalia and Northwind).
-// Java: dist/game/data/scripts/quests/Q00408_PathOfTheElvenWizard/Q00408_PathOfTheElvenWizard.java
-//
 // Pattern: four guild NPCs, each trading one item for the next one (a letter, a charm, an apple,
 // a sap, a potpourri), with a kill step for the material each one needs (red down, gold leaves,
 // amethysts). The quest never calls `setCond`: the cond stays 1 until the reward

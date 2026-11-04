@@ -1,5 +1,4 @@
 //! Quest 198: Seven Signs, Embryo (Wood and Franz at the Hideout of the Dawn; Shilen's Evil Thoughts).
-// Java: dist/game/data/scripts/quests/Q00198_SevenSignsEmbryo/Q00198_SevenSignsEmbryo.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

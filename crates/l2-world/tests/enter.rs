@@ -396,7 +396,6 @@ fn user_info_describes_the_character_and_the_second_one_knows_the_recommendation
     // Java `getMaxLoad()`: floor(CON bonus * 69000 * AltWeightLimit), the bonus is 1 here.
     assert_eq!(a.max_load, 69_000);
     assert_eq!(a.inventory_limit, 80);
-    // Java: the first UserInfo is built before the recommendations are loaded, and before the
     // player has "entered": it still lets the client equip a cloak.
     assert_eq!((a.recom_left, a.recom_have), (0, 0));
     assert!(a.can_equip_cloak);

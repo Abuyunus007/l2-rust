@@ -1,10 +1,4 @@
 //! The clan packets of the client.
-// Java: network/clientpackets/{RequestJoinPledge,RequestAnswerJoinPledge,RequestWithdrawalPledge,
-//       RequestOustPledgeMember,RequestPledgeMemberList,RequestPledgeInfo,RequestPledgePower,
-//       RequestPledgePowerGradeList,RequestPledgeMemberPowerInfo,RequestPledgeMemberInfo,
-//       RequestPledgeSetMemberPowerGrade,RequestPledgeReorganizeMember,
-//       RequestPledgeSetAcademyMaster}.java
-// Java: entity/clan/Clan.java (checkClanJoinCondition)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::pledge::{

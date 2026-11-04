@@ -1,7 +1,5 @@
 //! The cubic effects: `SummonCubic` (a player gets a cubic) and `CubicMastery` (how many cubics a
 //! player may have at once).
-// Java: dist/game/data/scripts/handlers/skill/effects/SummonCubic.java
-// Java: dist/game/data/scripts/handlers/skill/effects/CubicMastery.java
 
 use l2_data::skill::EffectTemplate;
 use tracing::warn;

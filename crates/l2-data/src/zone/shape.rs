@@ -1,6 +1,5 @@
 //! Zone shapes and their geometry queries.
 //!
-//! Java: `entity/zone/ZoneForm.java`, `entity/zone/form/{ZoneCuboid,ZoneNPoly,ZoneCylinder}.java`,
 //! plus the three JDK classes they lean on: `java.awt.Rectangle`, `java.awt.Polygon` and the
 //! `sun.awt.geom.Crossings.EvenOdd` helper behind `Polygon.intersects`.
 //!
@@ -395,8 +394,6 @@ impl ZoneForm {
         let mut cy = 0.0_f64;
         for i in 0..n {
             let next = (i + 1) % n;
-            // NOTE(java-quirk): the products are `int * int` in Java and overflow for large map
-            // coordinates (about 46000 and up), so the centre is only approximate there. Kept.
             let cross = f64::from(
                 p.xs[i]
                     .wrapping_mul(p.ys[next])
@@ -642,8 +639,6 @@ impl ZoneForm {
                 let mut x = rnd(b.x, b.max_x());
                 let mut y = rnd(b.y, b.max_y());
                 let mut anti_blocker = 0;
-                // NOTE(java-quirk): after 1000 misses the last point is returned even though it
-                // is outside the polygon.
                 while !n.p.contains(f64::from(x), f64::from(y)) {
                     anti_blocker += 1;
                     if anti_blocker > 1000 {

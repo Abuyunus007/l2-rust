@@ -1,9 +1,4 @@
 //! The Mammon words: `//mammon_find` and `//mammon_respawn` (M8-ADMIN-07).
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminMammon.java
-//
-// NOTE(java-quirk): Java reads `SevenSigns.isSealValidationPeriod()` once, into a field, when the
-// handler is created at start-up, so the commands keep answering for the period of that moment.
-// Here the period is read when the command runs (the handler has no state of its own).
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;

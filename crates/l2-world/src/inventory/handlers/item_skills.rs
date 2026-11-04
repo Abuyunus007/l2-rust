@@ -1,9 +1,5 @@
 //! `ItemSkills`, `ItemSkillsTemplate` and `Elixir`: potions, scrolls, elixirs and herbs cast the
 //! skills the item carries.
-// Java: dist/game/data/scripts/handlers/items/ItemSkillsTemplate.java
-// Java: dist/game/data/scripts/handlers/items/ItemSkills.java
-// Java: dist/game/data/scripts/handlers/items/Elixir.java
-//
 // # What happens
 // For every `item_skill` of the item: the skill's own conditions, its reuse, the casting state;
 // then the skill is cast. A static skill of an item with an immediate effect (potions, herbs) is

@@ -1,8 +1,4 @@
 //! The user commands `/unstuck` (52) and `/mybirthday` (126).
-// Java: dist/game/data/scripts/handlers/chat/commands/user/Unstuck.java
-// Java: dist/game/data/scripts/handlers/chat/commands/user/MyBirthday.java
-// Java: entity/actor/Creature.java (forceIsCasting)
-//
 // `/unstuck` is the Soul of Escape animation without a scroll: the long escape skill (2099, five
 // minutes; 2100 for a GM, one second) is cast, or, when the interval is not the retail 300 s,
 // the animation is faked and a timer teleports to the nearest town.

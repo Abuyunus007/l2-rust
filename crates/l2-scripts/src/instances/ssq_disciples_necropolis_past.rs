@@ -1,5 +1,4 @@
 //! Disciple's Necropolis, Past (instance 112), the Seven Signs quest 196 (Seal of the Emperor).
-// Java: dist/game/data/scripts/instances/SSQDisciplesNecropolisPast/SSQDisciplesNecropolisPast.java
 
 use l2_protocol_game::server::{ChatType, NpcSay};
 use l2_protocol_game::{NpcStringId, SystemMessageId};
@@ -191,9 +190,6 @@ impl Script for SSQDisciplesNecropolisPast {
             );
             ctx.set_script_value(npc, 1);
             ctx.start_quest_timer("FINISH", 1000, Some(npc), Some(player), false);
-            // NOTE(java-quirk): the FIGHT timer was started without an NPC, so this cancel (with
-            // the seal device) finds nothing and the fight goes on until the player is not allowed
-            // in any instance.
             ctx.cancel_quest_timer("FIGHT", Some(npc), Some(player));
         }
 
@@ -267,8 +263,6 @@ impl Script for SSQDisciplesNecropolisPast {
                         ctx.start_quest_timer("FIGHT", 1000, None, Some(talker), false);
                     }
                 }
-                // NOTE(java-quirk): the gatekeeper answers with the "no quest" page even when
-                // the fight starts; `htmltext` is not changed in this branch.
             }
             _ => {}
         }
@@ -782,7 +776,6 @@ mod tests {
         let instance_id = t.world.instance_id_of(Oid(1));
         let gatekeepers = t.npcs_of(DISCIPLES_GATEKEEPER);
         assert_eq!(gatekeepers.len(), 1);
-        // NOTE(java-quirk): the answer is the no-quest page.
         let page = talk(&mut t, gatekeepers[0]).unwrap();
         assert!(page.contains("html"));
         assert!(

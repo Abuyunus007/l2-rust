@@ -1,5 +1,4 @@
 //! Altar Gatekeeper: shouts that the door to the 3rd floor is open when it spawns.
-// Java: dist/game/data/scripts/ai/areas/PaganTemple/AltarGatekeeper.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

@@ -1,6 +1,4 @@
 //! Quest 373: Supplier of Reagents (Wesley, the alchemist's mixing urn).
-// Java: dist/game/data/scripts/quests/Q00373_SupplierOfReagents/Q00373_SupplierOfReagents.java
-//
 // Pattern: a quest that keeps a mixing recipe in the memo state: an ingredient page adds 11..24,
 // a catalyst page adds 1100..1600, and `mixitems` looks the sum up in a reward table.
 

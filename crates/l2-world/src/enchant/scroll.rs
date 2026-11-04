@@ -1,9 +1,5 @@
 //! The enchant scroll window: using a scroll, putting the item and the support item in, cancelling
 //! and the enchant itself.
-// Java: dist/game/data/scripts/handlers/items/EnchantScrolls.java
-// Java: network/clientpackets/{RequestExTryToPutEnchantTargetItem,RequestExTryToPutEnchantSupportItem,
-//       RequestExCancelEnchantItem,RequestEnchantItem}.java
-// Java: entity/item/enchant/EnchantScroll.java (calculateSuccess; the odds are `l2_data::enchant`)
 
 use std::sync::Arc;
 
@@ -460,8 +456,6 @@ impl World {
         }
 
         // Last validation check.
-        // NOTE(java-quirk): the scroll (and support item) are already used up when this fails, and
-        // the `InventoryUpdate` that says so is never sent.
         let current = self.inventory_item(id, item.object_id).cloned().filter(|i| {
             templates
                 .get(i.item_id)

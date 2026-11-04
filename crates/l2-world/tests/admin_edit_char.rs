@@ -2,7 +2,6 @@
 
 //! The character admin commands of `AdminEditChar` (`admin/edit_char.rs`), with a fake GM and
 //! fake players.
-//! Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminEditChar.java
 //!
 //! The admin pages are small files in a temporary datapack root.
 

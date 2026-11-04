@@ -1,6 +1,5 @@
 //! The `TeleportToTarget` effect: the caster jumps to 25 units behind the target, as far as the
 //! geodata lets it.
-// Java: dist/game/data/scripts/handlers/skill/effects/TeleportToTarget.java
 
 use l2_data::skill::{EffectTemplate, FlyType};
 use l2_geo::Location;

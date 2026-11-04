@@ -1,6 +1,4 @@
 //! Quest 331: Arrow of Vengeance (Belton in the Rune town, Harpies, Medusae and Wyrms).
-// Java: dist/game/data/scripts/quests/Q00331_ArrowOfVengeance/Q00331_ArrowOfVengeance.java
-//
 // Pattern: a kill-count quest with a drop chance per monster (`docs/design/scripts.md`, "Quest
 // patterns"): one roll per kill decides the item of the monster; the NPC pays for everything the
 // player brings, with a bonus at ten items.
@@ -71,9 +69,6 @@ impl Script for Q00331ArrowOfVengeance {
                 qs.start_quest(ctx);
                 htmltext = Some(event.to_owned());
             }
-            // NOTE(java-quirk): the pages of this quest link to `30125-6.html` and `30125-7.html`
-            // (no leading zero), which are not these events and not files: those links do
-            // nothing, so the end (`30125-06.html`) is out of reach from the page.
             "30125-06.html" => {
                 qs.exit_quest(ctx, true, true);
                 htmltext = Some(event.to_owned());

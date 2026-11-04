@@ -1,6 +1,4 @@
 //! Quest 10288: Secret Mission (Dominic in the Gludio area, Aquilani, Greymore).
-// Java: dist/game/data/scripts/quests/Q10288_SecretMission/Q10288_SecretMission.java
-//
 // Pattern: a delivery chain (`docs/design/scripts.md`, "Quest patterns"): Dominic starts the
 // quest, the letter goes to Aquilani (cond 2) and then to Greymore, who pays. Aquilani's first
 // talk changes after the quest and teleports a finished character.

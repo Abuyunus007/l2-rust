@@ -1,11 +1,5 @@
 //! The paperdoll: `Inventory.setPaperdollItem`, `equipItem`, the unequip variants and the
 //! listeners that run on every change.
-// Java: entity/itemcontainer/Inventory.java (setPaperdollItem, equipItem, unEquipItemInSlot,
-//       unEquipItemInBodySlot, equipTalisman, the PaperdollListener classes)
-// Java: entity/item/enums/BodyPart.java
-// Java: entity/actor/Player.java (checkItemRestriction)
-// Java: entity/item/ItemTemplate.java (checkCondition)
-//
 // Java runs these listeners, in this order, on every change of a slot: `ArmorSetListener`,
 // `BowCrossRodListener`, `ItemSkillsListener`, `BraceletListener`, `StatsListener`, and the
 // `ChangeRecorder` of the caller last. The stat engine does the armor set, item skill and stat
@@ -257,8 +251,6 @@ impl World {
             _ => return,
         };
         // `findArrowForBow` / `findBoltForCrossBow`: the first etc item of the same grade.
-        // NOTE(java-quirk): Java walks a hash set, so which stack of the right grade wins is
-        // arbitrary there; the first one in the inventory list wins here.
         let found = self.players.get(&id).and_then(|p| {
             p.data
                 .items

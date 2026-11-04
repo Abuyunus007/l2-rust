@@ -1,9 +1,5 @@
 //! The small castle scripts: `CastleSiegeManager`, `CastleMercenaryManager`, `CastleWarehouse`
 //! (the vault keeper of the blood alliance items) and `CastleBlacksmith`.
-// Java: dist/game/data/scripts/ai/others/CastleSiegeManager/CastleSiegeManager.java
-// Java: dist/game/data/scripts/ai/others/CastleMercenaryManager/CastleMercenaryManager.java
-// Java: dist/game/data/scripts/ai/others/CastleWarehouse/CastleWarehouse.java
-// Java: dist/game/data/scripts/ai/others/CastleBlacksmith/CastleBlacksmith.java
 
 use l2_util::ObjectId;
 use tracing::{debug, warn};
@@ -78,8 +74,6 @@ impl World {
         if !allowed {
             return "mercmanager-no.html".to_owned();
         }
-        // NOTE(java-quirk): `getSiege()` of a castle that is not there throws; the page is the
-        // normal one then.
         if self.castle_siege_running_at(npc).unwrap_or(false) {
             return "mercmanager-siege.html".to_owned();
         }
@@ -106,8 +100,6 @@ impl World {
                     .and_then(|c| self.castle(c))
                     .map(|c| (c.id, c.name.clone()))
                     .ok_or(ScriptFailed)?;
-                // NOTE(java-quirk): the names are compared case sensitive, and the castle table
-                // has "Aden" and "Rune", so the general page is what a stock database shows.
                 let file = match castle.1.as_str() {
                     "aden" => "mercmanager-aden-limit.html",
                     "rune" => "mercmanager-rune-limit.html",
@@ -124,7 +116,6 @@ impl World {
             }
             "buy" => {
                 if self.seven_signs_is_seal_validation() {
-                    // `Integer.parseInt(npc.getId() + st.nextToken())`: the digits side by side.
                     let list_id = parse_int(&format!(
                         "{}{}",
                         self.castle_npc_id(npc),
@@ -196,8 +187,6 @@ impl World {
                     return Ok(Some("warehouse-05.html".to_owned()));
                 }
                 self.script_give_items(player, BLOOD_ALLIANCE, i64::from(count));
-                // `clan.resetBloodAllianceCount()`: the lord's own action, written.
-                // (The count was read again first, D-50: `NpcThen::Warehouse`.)
                 if let Some(clan) = self.clan_mut(clan_id) {
                     clan.blood_alliance_count = 0;
                 }

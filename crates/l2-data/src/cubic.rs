@@ -1,6 +1,5 @@
 //! Cubic templates: what a cubic does, how often, for how long and with which skills.
 //!
-//! Java: `gameserver/data/xml/CubicData.java` and `gameserver/entity/actor/templates/
 //! CubicTemplate.java`, `gameserver/entity/cubic/{CubicSkill,CubicTargetType,CubicSelectionMode,
 //! ICubicConditionHolder}.java`, `gameserver/entity/cubic/conditions/*.java`. Data:
 //! `data/stats/cubics/*.xml` (`xsd/cubics.xsd`). What a cubic does in the world (the timers, the
@@ -245,7 +244,6 @@ enum RawCondition {
     Range(RawRange),
     #[serde(rename = "healthPercent")]
     HealthPercent(RawHealth),
-    /// Java: "Unsupported cubic condition".
     #[serde(other)]
     Other,
 }

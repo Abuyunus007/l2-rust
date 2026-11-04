@@ -1,10 +1,4 @@
 //! Residential skills: what the members of a castle's or fortress's owner get (not stored).
-// Java: entity/residences/AbstractResidence.java (initResidentialSkills, giveResidentialSkills,
-//       removeResidentialSkills)
-// Java: mechanics/siege/Castle.java (giveResidentialSkills, removeResidentialSkills: the
-//       territory ward skills first)
-// Java: network/clientpackets/{EnterWorld,RequestAnswerJoinPledge}.java ("Residential skills
-//       support"), entity/clan/Clan.java (removeClanMember: "Remove Residential skills")
 
 use l2_data::SkillTrees;
 use l2_util::ObjectId;

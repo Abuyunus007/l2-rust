@@ -22,7 +22,6 @@ fn read_bool(r: &mut PacketReader) -> Result<bool, PacketError> {
     Ok(r.i32()? != 0)
 }
 
-// Java: gameserver/network/serverpackets/ExNoticePostArrived.java
 /// A new mail arrived, or unread mail is waiting at login (`EX_NOTICE_POST_ARRIVED`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExNoticePostArrived {
@@ -49,7 +48,6 @@ impl Decode for ExNoticePostArrived {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExNoticePostSent.java
 /// The mail was sent (`EX_NOTICE_POST_SENT`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExNoticePostSent {
@@ -75,7 +73,6 @@ impl Decode for ExNoticePostSent {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExMailArrived.java
 /// `EX_MAIL_ARRIVED`: nothing in the Java server sends it, but the class exists.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExMailArrived;
@@ -96,7 +93,6 @@ impl Decode for ExMailArrived {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExChangePostState.java
 /// Mails changed state (`EX_CHANGE_POST_STATE`): read, rejected or deleted. One state for all the
 /// listed mails; Java writes it after each id.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -141,7 +137,6 @@ impl Decode for ExChangePostState {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExShowReceivedPostList.java
 /// One mail of the inbox list.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReceivedPostEntry {
@@ -184,7 +179,6 @@ impl Encode for ExShowReceivedPostList {
             w.i32(i32::from(mail.locked));
             w.i32(mail.expiration);
             w.i32(i32::from(mail.unread));
-            // Java: constant 1.
             w.i32(1);
             w.i32(i32::from(mail.has_attachments));
             w.i32(i32::from(mail.returned));
@@ -227,7 +221,6 @@ impl Decode for ExShowReceivedPostList {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExShowSentPostList.java
 /// One mail of the outbox list.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SentPostEntry {
@@ -266,7 +259,6 @@ impl Encode for ExShowSentPostList {
             w.i32(i32::from(mail.locked));
             w.i32(mail.expiration);
             w.i32(i32::from(mail.unread));
-            // Java: constant 1.
             w.i32(1);
             w.i32(i32::from(mail.has_attachments));
         }
@@ -321,7 +313,6 @@ fn read_attachments(r: &mut PacketReader, count: usize) -> Result<Vec<ItemInfo>,
     Ok(items)
 }
 
-// Java: gameserver/network/serverpackets/ExReplyReceivedPost.java
 /// A mail of the inbox opened (`EX_REPLY_RECEIVED_POST`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExReplyReceivedPost {
@@ -385,7 +376,6 @@ impl Decode for ExReplyReceivedPost {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExReplySentPost.java
 /// A mail of the outbox opened (`EX_REPLY_SENT_POST`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExReplySentPost {
@@ -396,8 +386,6 @@ pub struct ExReplySentPost {
     pub content: String,
     pub items: Vec<ItemInfo>,
     pub req_adena: i64,
-    /// NOTE(java-quirk): Java writes it only after a non-empty item list; the decoder gives 0
-    /// when there are no items.
     pub send_by_system: i32,
 }
 
@@ -445,7 +433,6 @@ impl Decode for ExReplySentPost {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExReplyPostItemList.java
 /// The items the player can attach to a new mail (`EX_REPLY_POST_ITEM_LIST`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExReplyPostItemList {

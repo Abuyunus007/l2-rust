@@ -1,5 +1,4 @@
 //! Quest 731: Protect the Military Association Leader.
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/Q00731_ProtectTheMilitaryAssociationLeader.java
 
 use super::territory_war_super_class::{TerritoryWarData, territory_war_quest};
 

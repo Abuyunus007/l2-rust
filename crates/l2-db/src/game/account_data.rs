@@ -1,7 +1,5 @@
 //! The `account_gsdata` table: per account values of the game server. The secondary password
 //! (`secauth_pwd`) and its wrong attempts (`secauth_wte`) live here.
-// Java: org/l2jmobius/gameserver/security/SecondaryPasswordAuth.java (SELECT_PASSWORD,
-// Java: INSERT_PASSWORD, UPDATE_PASSWORD, INSERT_ATTEMPT)
 
 use base64::Engine as _;
 use base64::engine::general_purpose::STANDARD;
@@ -16,14 +14,10 @@ pub const VAR_PWD: &str = "secauth_pwd";
 /// Java `SecondaryPasswordAuth.VAR_WTE`.
 pub const VAR_WTE: &str = "secauth_wte";
 
-// Java: SecondaryPasswordAuth.SELECT_PASSWORD
 const SELECT_PASSWORD: &str =
     "SELECT var, value FROM account_gsdata WHERE account_name=? AND var LIKE 'secauth_%'";
-// Java: SecondaryPasswordAuth.INSERT_PASSWORD
 const INSERT_PASSWORD: &str = "INSERT INTO account_gsdata VALUES (?, ?, ?)";
-// Java: SecondaryPasswordAuth.UPDATE_PASSWORD
 const UPDATE_PASSWORD: &str = "UPDATE account_gsdata SET value=? WHERE account_name=? AND var=?";
-// Java: SecondaryPasswordAuth.INSERT_ATTEMPT
 const INSERT_ATTEMPT: &str = "INSERT INTO account_gsdata VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE value=?";
 
 /// `SHA-1` of a byte string. Java `MessageDigest.getInstance("SHA")`; the game server has no
@@ -33,7 +27,6 @@ pub fn sha1_digest(data: &[u8]) -> [u8; 20] {
 }
 
 /// The stored form of a secondary password: `base64(sha1(utf8(password)))`.
-// Java: SecondaryPasswordAuth.cryptPassword
 pub fn crypt_secondary_password(password: &str) -> String {
     STANDARD.encode(Sha1::digest(password.as_bytes()))
 }
@@ -58,7 +51,6 @@ impl AccountDataRepository {
     }
 
     /// The `secauth_*` rows of an account, in the order the rows come back.
-    // Java: SecondaryPasswordAuth.loadPassword
     pub async fn secondary_auth_of(&self, account: &str) -> Result<Vec<AccountDataRow>> {
         let rows = sqlx::query_as::<_, AccountDataRow>(SELECT_PASSWORD)
             .bind(account)
@@ -68,7 +60,6 @@ impl AccountDataRepository {
     }
 
     /// The first password of an account (`secauth_pwd`, the already hashed value).
-    // Java: SecondaryPasswordAuth.savePassword
     pub async fn insert_password(&self, account: &str, hashed: &str) -> Result<()> {
         sqlx::query(INSERT_PASSWORD)
             .bind(account)
@@ -80,7 +71,6 @@ impl AccountDataRepository {
     }
 
     /// A new password for an account that has one.
-    // Java: SecondaryPasswordAuth.changePassword
     pub async fn update_password(&self, account: &str, hashed: &str) -> Result<()> {
         sqlx::query(UPDATE_PASSWORD)
             .bind(hashed)
@@ -92,7 +82,6 @@ impl AccountDataRepository {
     }
 
     /// The wrong attempts in a row (`secauth_wte`).
-    // Java: SecondaryPasswordAuth.insertWrongAttempt
     pub async fn insert_wrong_attempt(&self, account: &str, attempts: i32) -> Result<()> {
         let value = attempts.to_string();
         sqlx::query(INSERT_ATTEMPT)

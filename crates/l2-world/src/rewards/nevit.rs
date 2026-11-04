@@ -1,13 +1,5 @@
 //! Nevit's blessing: the hunting points a player earns by hunting, the 3 minute blessing they
 //! fill, the advent time that limits it per day, and the hourglass bonus of the recommendations.
-// Java: entity/actor/holders/player/Nevit.java
-// Java: entity/actor/Player.java (the Nevit hourglass: startNevitHourglassTask, getNevitHourglass*,
-//       loadRecommendations, storeRecommendations, checkRecoBonusTask)
-// Java: entity/actor/tasks/player/RecoBonusTaskEnd.java
-// Java: entity/zone/type/PeaceZone.java (onEnter)
-// Java: network/serverpackets/{ExNevitAdventEffect,ExNevitAdventPointInfoPacket,
-//       ExNevitAdventTimeChange,ExVoteSystemInfo}.java
-//
 // # State
 // Java keeps three scheduled tasks per player and four values in `PlayerVariables`:
 //
@@ -22,12 +14,6 @@
 // Remaining times are `end - now` on the world's clock (`tick * TICK`), which is what Java's
 // `ScheduledFuture.getDelay` answers.
 //
-// # Variables and recommendations in the database (D-39)
-// `PlayerVariables` keeps its changes in memory and writes them 60 s after the first change, at a
-// store, and on logout. The world keeps the values in `PlayerProfile::variables` and the names it
-// touched in `variables_changed` / `variables_removed`; the persistence task upserts and deletes
-// those names with every store (autosave and logout). `character_reco_bonus` is written the same
-// way from `recom_have`, `recom_left` and `recom_time_left_ms` (`reco_store`).
 //
 // # What is left out
 // - The visual aura (`AbnormalVisualEffect.NAVIT_ADVENT`): abnormal visual effects belong to the
@@ -336,8 +322,6 @@ impl World {
         let boundary = nevit_reset_boundary_ms(now, l2_util::time::local_offset_millis(now));
         let last_access = self.players.get(&id).map_or(0, |p| p.data.profile.last_access);
         // Reset Nevit's Blessing.
-        // NOTE(java-quirk): `getLastAccess()` is milliseconds and is compared with seconds, so the
-        // reset only happens for a character whose `lastAccess` is 0 (never logged out).
         if last_access < boundary / 1000 && now > boundary {
             self.set_player_variable(id, HUNTING_TIME, 0);
         }

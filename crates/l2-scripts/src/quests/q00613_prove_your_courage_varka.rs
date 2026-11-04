@@ -1,6 +1,4 @@
 //! Quest 613: Prove Your Courage! (Varka) (Ashas in the Varka Silenos Village, Hekaton Prime).
-// Java: dist/game/data/scripts/quests/Q00613_ProveYourCourageVarka/Q00613_ProveYourCourageVarka.java
-//
 // Pattern: a one-kill quest, the same shape as Q00607 (`actionForEachPlayer` gives the head to the
 // party members in range; the NPC rewards the feather and experience once).
 

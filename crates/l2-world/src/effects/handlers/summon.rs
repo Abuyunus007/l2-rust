@@ -1,5 +1,4 @@
 //! The `Summon` effect: the caster calls its servitor.
-// Java: dist/game/data/scripts/handlers/skill/effects/Summon.java
 
 use l2_data::npc::NpcRace;
 use l2_data::skill::EffectTemplate;

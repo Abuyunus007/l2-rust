@@ -1,6 +1,4 @@
 //! Quest 62: Path of the Trooper (Master Gwain and Master Shubain, the Kamael soldiers' masters).
-// Java: dist/game/data/scripts/quests/Q00062_PathOfTheTrooper/Q00062_PathOfTheTrooper.java
-//
 // Pattern: a kill chain with the memo state as a step counter (`docs/design/scripts.md`, "Quest
 // patterns"): five felim heads, ten venomous spider legs and a tumran heart, each killed by the
 // killer while the cond fits, then the recommendation and the reward.

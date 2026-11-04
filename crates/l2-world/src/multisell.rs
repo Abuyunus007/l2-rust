@@ -1,12 +1,6 @@
 //! Multisell: the exchange windows of NPCs. Opening a list for a player (`PreparedListContainer`,
 //! `PreparedEntry`, the `MultiSellList` pages), the `multisell` / `exc_multisell` bypasses and
 //! `MultiSellChoose`.
-// Java: data/xml/MultisellData.java (separateAndSend, hasSpecialIngredient, takeSpecialIngredient,
-//       giveSpecialProduct)
-// Java: mechanics/multisell/{PreparedListContainer,PreparedEntry,ItemInfo}.java
-// Java: network/clientpackets/MultiSellChoose.java, network/serverpackets/MultiSellList.java
-// Java: dist/game/data/scripts/handlers/bypass/npc/Multisell.java
-//
 // # Model
 // The lists are the datapack's ([`l2_data::MultisellData`], handed to the world with
 // [`World::set_multisell_data`]). Opening one builds a [`PreparedList`] for the player, stored on
@@ -189,8 +183,6 @@ pub fn prepared_entry(
         }
         let mut copy = product.copy();
         if maintain_enchantment && product.is_armor_or_weapon() {
-            // NOTE(java-quirk): `info` is whatever the last armor or weapon ingredient (or an
-            // earlier product with a default enchant level) left; it is null when there was none.
             copy.item_info = info.clone();
         } else if product.is_armor_or_weapon()
             && let Some(default_level) = product.template.map(|t| t.default_enchant_level)
@@ -417,8 +409,6 @@ impl World {
                 let Some(first) = entry.ingredients.first() else {
                     continue;
                 };
-                // NOTE(java-quirk): the comment of Java says a list that keeps enchantments shows
-                // an entry per enchant level, but the loop stops at the first item that matches.
                 if let Some(item) = unique
                     .iter()
                     .find(|i| !is_equipped(i) && i.item_id == first.item_id)
@@ -635,8 +625,6 @@ impl World {
             }
             CLAN_REPUTATION => match self.clan_of(player).map(|c| c.id) {
                 Some(clan_id) => self.add_reputation_score(clan_id, amount as i32),
-                // NOTE(java-quirk): `player.getClan()` is null here and Java throws a
-                // NullPointerException, which ends the packet with the ingredients already taken.
                 None => warn!("Multisell: {player} has no clan to receive the reputation"),
             },
             FAME => {
@@ -727,7 +715,6 @@ impl World {
         }
 
         // The slots and the weight the products need.
-        // NOTE(java-quirk): both are `int` variables that `+=` a `long`, so they wrap.
         let mut slots: i32 = 0;
         let mut weight: i32 = 0;
         for product in &entry.products {
@@ -773,8 +760,6 @@ impl World {
                         return;
                     }
                     // Two same ingredients, merge into one and replace the old one.
-                    // NOTE(java-quirk): `getCopy()` drops the item info, so the merged ingredient
-                    // has the enchant level of the XML again.
                     let mut merged = existing.copy();
                     merged.item_count = existing.item_count + e.item_count;
                     ingredients[i] = merged;
@@ -881,8 +866,6 @@ impl World {
                 // The enchantment is not kept: take the instances with the LOWEST enchant level.
                 for _ in 0..total {
                     let contents = self.multisell_unequipped(id, e.item_id, None);
-                    // NOTE(java-quirk): `iterator().next()` on nothing throws, which ends the
-                    // packet where it is (the list stays open).
                     let Some(mut lowest) = contents.first().cloned() else {
                         warn!("Multisell: {id} has no {} left to take", e.item_id);
                         return;
@@ -970,8 +953,6 @@ impl World {
         self.send_item_list(id, false);
         self.send_cur_load(id);
 
-        // Finally, give the tax to the castle (M7-RES-01; D-51: the treasury row only with
-        // `SiegeDatabaseWrites`).
         if entry.tax_amount > 0
             && let Some(castle) = npc.and_then(|n| self.npc_castle(n))
         {

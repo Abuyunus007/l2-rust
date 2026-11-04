@@ -1,5 +1,4 @@
 //! Quest 738: Destroy Key Targets.
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/Q00738_DestroyKeyTargets.java
 
 use l2_protocol_game::NpcStringId;
 

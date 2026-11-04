@@ -1,6 +1,5 @@
 //! The 1st class transfer of the Kamael (Hanarin, Yeniche, Gershwin, Holst, Khadava): the
 //! trooper and warder quests stand in for the proofs.
-// Java: dist/game/data/scripts/village_master/KamaelChange1/KamaelChange1.java
 
 use l2_util::ObjectId;
 use l2_world::subclass::{CategoryType, Race};

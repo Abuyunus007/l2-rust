@@ -1,5 +1,4 @@
 //! Quest 179: Into the Large Cavern (Kekropus in the Kamael village, the Menacing Machine).
-// Java: dist/game/data/scripts/quests/Q00179_IntoTheLargeCavern/Q00179_IntoTheLargeCavern.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED, race};
@@ -100,8 +99,6 @@ impl Script for Q00179IntoTheLargeCavern {
                 }
                 STARTED => {
                     if qs.is_cond(ctx, 1) {
-                        // NOTE(java-quirk): Java asks for `32138-03.htm`, but the folder has only
-                        // `32138-03.html` (the event page). The stand-in of the port follows the file.
                         htmltext = "32138-03.htm".to_owned();
                     }
                 }

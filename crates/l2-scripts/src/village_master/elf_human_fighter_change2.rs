@@ -1,6 +1,5 @@
 //! The 2nd class transfer of human and elven fighters (Hannavalt, Klaus, Siria, Sedrick, Marcus,
 //! Bernhard, Siegmund, Hector).
-// Java: dist/game/data/scripts/village_master/ElfHumanFighterChange2/ElfHumanFighterChange2.java
 
 use l2_util::ObjectId;
 use l2_world::subclass::CategoryType;

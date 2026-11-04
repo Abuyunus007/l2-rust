@@ -1,5 +1,4 @@
 //! Quest 734: Pierce through a Shield!
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/Q00734_PierceThroughAShield.java
 
 use l2_protocol_game::NpcStringId;
 

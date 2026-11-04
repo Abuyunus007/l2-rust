@@ -8,7 +8,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ClientOpcode;
 
-// Java: gameserver/network/clientpackets/TradeRequest.java
 /// The player asks another player to trade (`TRADE_REQUEST`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TradeRequest {
@@ -33,7 +32,6 @@ impl Decode for TradeRequest {
     }
 }
 
-// Java: gameserver/network/clientpackets/AnswerTradeRequest.java
 /// The asked player answers (`ANSWER_TRADE_REQUEST`). Java accepts only `1`; any other value
 /// counts as a refusal.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -58,7 +56,6 @@ impl Decode for AnswerTradeRequest {
     }
 }
 
-// Java: gameserver/network/clientpackets/AddTradeItem.java
 /// The player puts an item into the trade window (`ADD_TRADE_ITEM`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AddTradeItem {
@@ -89,7 +86,6 @@ impl Decode for AddTradeItem {
     }
 }
 
-// Java: gameserver/network/clientpackets/TradeDone.java
 /// The player confirms (`1`) or cancels (anything else) the trade (`TRADE_DONE`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TradeDone {

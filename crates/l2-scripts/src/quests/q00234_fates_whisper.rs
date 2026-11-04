@@ -1,8 +1,6 @@
 //! Quest 234: Fate's Whisper (Maestro Leorin forges a B-grade weapon into an A-grade one: the
 //! coffers of Cabrio, Kernon, Golkonda and Hallate, Cliff's varnish, Ferris' hammer, Kaspar's
 //! fabrics and the pipette knife that is used on Baium).
-// Java: dist/game/data/scripts/quests/Q00234_FatesWhisper/Q00234_FatesWhisper.java
-//
 // Pattern: the memo state drives the quest; the html pages send numeric events (`Script
 // Q00234_FatesWhisper 21`), so `on_event` parses the event as a number; timed coffers
 // (`startQuestTimer` from `onSpawn`, `decayMe`) and a quest item weapon checked in `onAttack`.
@@ -260,7 +258,6 @@ fn random_player_from_party(
             if let Some(qs2) = ctx.get_quest_state(pm, false)
                 && qs2.is_started(ctx)
                 && qs2.get_memo_state(ctx) == memo_state
-                // NOTE(java-quirk): the fabric is checked on the killer, not on the member.
                 && ctx.has_quest_items(player, Q_WHITE_FABRIC_Q0234)
                 && ctx.check_if_in_range(ctx.alt_party_range(), npc.object_id, pm, true)
             {
@@ -509,8 +506,6 @@ impl Script for Q00234FatesWhisper {
     ) -> Option<String> {
         let Some(player) = player else {
             if matches!(event, "23401" | "23402" | "23403" | "23404") {
-                // NOTE(java-quirk): `npc.decayMe()` removes the coffer without the death
-                // handling; `delete_npc` is the closest world call.
                 if let Some(npc) = npc {
                     ctx.delete_npc(npc);
                 }

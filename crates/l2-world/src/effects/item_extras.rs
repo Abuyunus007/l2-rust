@@ -2,11 +2,6 @@
 //! (`item_attributes`, `item_elementals`). They live on the item itself
 //! (`ItemData::augmentation`, `ItemData::elementals`), loaded with the item at login and written
 //! back by the persistence task.
-// Java: entity/item/instance/Item.java (isAugmented, getAugmentation, setAugmentation,
-//       removeAugmentation, getElementals, getElemental, applyAttribute, setElementAttr,
-//       clearElementAttr, getAttackElementType, getAttackElementPower, getElementDefAttr),
-//       entity/item/holders/Elementals.java
-//
 // The stat side (the bonuses of the augmentation options and of the elements) is applied when
 // the item is equipped: `World::equip_item_skills` in `stats/skills.rs`.
 
@@ -76,9 +71,6 @@ impl ItemData {
     }
 
     /// Java `Item.getElementDefAttr(element)`: 0 for anything but an armor.
-    // NOTE(java-quirk): once the template has any element, the instance's elements are not
-    // looked at (`else if`), so an armor with a template element and no entry for `element`
-    // reports 0 even when the instance has one.
     pub fn element_def_attr(&self, element: i32, template: Option<&ItemTemplate>) -> i32 {
         let Some(template) = template.filter(|t| t.is_armor()) else {
             return 0;

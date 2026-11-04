@@ -1,8 +1,4 @@
 //! The date texts of the auction board and the hall manager pages.
-// Java: entity/actor/instance/Auctioneer.java (DATE_FORMAT, DATE_FORMAT_SHORT, the bidder list's
-//       `Calendar` fields)
-// Java: entity/actor/instance/ClanHallManager.java (DATE_FORMAT)
-//
 // Java formats `Instant.ofEpochMilli(x).atZone(ZoneId.systemDefault())`, so the fields are those of
 // the machine's local zone (D-48). The functions take the zone offset so tests do not depend on
 // the zone of the machine they run on.

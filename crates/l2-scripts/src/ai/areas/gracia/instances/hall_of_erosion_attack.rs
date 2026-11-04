@@ -1,6 +1,5 @@
 //! The Hall of Erosion (attack): a command channel destroys the Tumors of Death until Cohemenes
 //! shows himself, and kills him for `Q00696_ConquerTheHallOfErosion` and the Seed of Infinity.
-// Java: dist/game/data/scripts/ai/areas/Gracia/instances/HallOfErosionAttack/HallOfErosionAttack.java
 
 use l2_protocol_game::server::{ChatType, SystemMessage, SystemMessageParam};
 use l2_protocol_game::{NpcStringId, SystemMessageId};
@@ -131,9 +130,6 @@ struct HeaWorld {
 }
 
 /// The script's fields and its worlds.
-// NOTE(java-quirk): `conquestEnded` and `tumorRespawnTime` are fields of the script, shared by
-// every instance: one conquest that ends stops the tumors of all, and every Soul Coffin (18711)
-// killed anywhere makes the tumors of all come back later.
 struct State {
     worlds: Worlds<HeaWorld>,
     conquest_ended: bool,

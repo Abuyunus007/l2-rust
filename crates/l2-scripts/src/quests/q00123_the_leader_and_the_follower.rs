@@ -1,6 +1,4 @@
 //! Quest 123: The Leader and the Follower (Head Blacksmith Newyear, sponsor and academy member).
-// Java: dist/game/data/scripts/quests/Q00123_TheLeaderAndTheFollower/Q00123_TheLeaderAndTheFollower.java
-//
 // Pattern: two players in one script. The apprentice (a clan academy member) owns the quest; the
 // sponsor talks to the same NPC and `onEvent` answers for the sponsor's apprentice. The sponsor
 // and apprentice come from the clan state (`player_sponsor` / `player_apprentice`).
@@ -80,7 +78,6 @@ impl Script for Q00123TheLeaderAndTheFollower {
             ctx.world().player(apprentice)?;
 
             let q123 = ctx.get_quest_state(apprentice, false);
-            // NOTE(java-quirk): Java's `checkIfInRange(.., npc, ..)` throws on a null NPC; here it is false.
             let in_range = npc
                 .is_some_and(|n| ctx.check_if_in_range(ctx.alt_party_range(), n.object_id, apprentice, true));
             match event {

@@ -1,5 +1,4 @@
 //! `TargetMe`: the playable has to target the caster (`TargetMeProbability` is in `hate_chance.rs`).
-// Java: dist/game/data/scripts/handlers/skill/effects/TargetMe.java
 
 use l2_data::skill::EffectTemplate;
 
@@ -9,10 +8,6 @@ use crate::world::World;
 
 /// The target switch both effects start with: a playable that does not target the effector yet
 /// targets it, if the skill may be used on it.
-///
-/// NOTE(java-quirk): `effected.setTarget(player)` runs with `player = effector.asPlayer()`, which
-/// is `null` for an NPC caster: an NPC's `TargetMe` clears the target of the playable instead of
-/// setting it.
 fn switch_target(world: &mut World, cx: &EffectCx<'_>) {
     let effected = cx.effected;
     if world.target_of(effected) == Some(cx.effector) {
@@ -48,8 +43,6 @@ impl TargetMe {
 }
 
 impl EffectHandler for TargetMe {
-    // NOTE(java-quirk): `TargetMe` is not instant, and the engine only asks an instant effect
-    // whether it lands (`Skill.applyEffectScope`), so this roll never happens.
     fn calc_success(&self, world: &mut World, _cx: &EffectCx<'_>) -> bool {
         world.rng().below(100) < self.chance
     }

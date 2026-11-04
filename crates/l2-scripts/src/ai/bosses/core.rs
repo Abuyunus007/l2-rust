@@ -1,7 +1,5 @@
 //! Core, the Cruma Tower grand boss: the row restored at start, the minions and their one-minute
 //! respawns, the voice lines, the teleport cubes on death and the respawn cycle.
-// Java: dist/game/data/scripts/ai/bosses/Core/Core.java
-//
 // The Java constructor is `on_load`; the static fields are `CoreState` (`ctx.state`). Statuses: 0
 // alive, 1 dead.
 //
@@ -52,7 +50,6 @@ type Place = (i32, i32, i32);
 
 /// Java `MINION_SPAWN_POINTS` in the order a `HashMap<Integer, ..>` iterates the three keys
 /// (bucket = id mod 16 of a 16-slot table: 29008 -> 0, 29011 -> 3, 29007 -> 15).
-// NOTE(java-quirk): the minions spawn in that hash order, not in the order they are added.
 const MINION_SPAWN_POINTS: [(i32, &[Place]); 3] = [
     (
         MINION_DOOM_WRAITH_ID,
@@ -141,7 +138,6 @@ impl Script for Core {
         ctx.state::<CoreState>().first_attacked = false;
 
         let Some(info) = ctx.world().grand_boss_info(CORE_NPC_ID).cloned() else {
-            // Java: `getStatSet` answers null and the constructor throws.
             warn!("Core: no grandboss_data row for {CORE_NPC_ID}, the script does not start.");
             return;
         };

@@ -1,9 +1,6 @@
 //! Small `pub` entry points to world behaviour that the scripts of `ai/areas` (part 2) need and
 //! the `pub` world API did not offer (S-AI-04). Each is a thin call into the module that owns the
 //! rule.
-// Java: skills/Skill.java (isMagic, getMpConsume, getHpConsume), entity/actor/Npc.java
-//       (getCurrentMp), entity/teleporter/TeleportHolder.java (showTeleportList),
-//       entity/spawns/Spawn.java (decreaseCount), entity/siege/Siege.java
 
 use l2_util::ObjectId;
 

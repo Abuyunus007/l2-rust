@@ -1,6 +1,5 @@
 //! The `Detection` effect: a player who casts it on an invisible player (one that is neither in its
 //! party, clan nor alliance) makes that player's `Hide` effect go.
-// Java: dist/game/data/scripts/handlers/skill/effects/Detection.java
 
 use l2_data::skill::EffectTemplate;
 use l2_data::stats::AbnormalType;

@@ -1,7 +1,5 @@
 //! The camera admin commands: `//cam`, `//camex` and `//cam3`. Each sends the special camera packet
 //! of its Java `Quest` helper to the GM, the camera turning around the target.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminCamera.java,
-// Java: mechanics/script/Quest.java (specialCamera, specialCameraEx, specialCamera3)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SpecialCamera, SystemMessage};
@@ -60,9 +58,6 @@ fn prepare(
 
 /// Java `AdminCamera`, `admin_cam force angle1 angle2 time range duration relYaw relPitch isWide
 /// relAngle`. The command takes eleven numbers, and the last one is read but not used, as in Java.
-// NOTE(java-quirk): the usage text lists ten parameters, the length check wants eleven. The packet
-// gets `range` (not `duration`) as its duration field, because Java's 11-argument `SpecialCamera`
-// constructor swaps the two.
 fn admin_cam(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     let words = java_split_space(command);
     let usage = "Usage: //cam force angle1 angle2 time range duration relYaw relPitch isWide relAngle";
@@ -79,8 +74,6 @@ fn admin_cam(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
 
 /// Java `AdminCamera`, `admin_camex force angle1 angle2 time duration relYaw relPitch isWide
 /// relAngle`.
-// NOTE(java-quirk): the Ex constructor passes 0 as the packet's duration, so the duration argument
-// is parsed and then dropped.
 fn admin_camex(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     let words = java_split_space(command);
     let usage = "Usage: //camex force angle1 angle2 time duration relYaw relPitch isWide relAngle";

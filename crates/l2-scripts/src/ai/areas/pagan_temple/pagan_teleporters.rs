@@ -1,5 +1,4 @@
 //! Pagan Temple teleport AI: the mirrors of Triol and the gate keepers of the temple doors.
-// Java: dist/game/data/scripts/ai/areas/PaganTemple/PaganTeleporters/PaganTeleporters.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

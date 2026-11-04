@@ -9,7 +9,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::{read_count, write_opcode};
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/AgitDecoInfo.java
 /// The decorations of a clan hall (`AGIT_DECO_INFO`), sent when a player walks into its zone.
 /// Each byte is 0 (no function), 1 (a low level) or 2 (a high level); which level counts as high
 /// depends on the hall's grade, see `l2_world::residence`.
@@ -105,7 +104,6 @@ pub struct AgitInfo {
     pub grade_below_one: bool,
 }
 
-// Java: gameserver/network/serverpackets/ExShowAgitInfo.java
 /// The list of the auctionable clan halls (`EX_SHOW_AGIT_INFO`), answer of `RequestAllAgitInfo`.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ExShowAgitInfo {

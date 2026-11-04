@@ -1,7 +1,5 @@
 //! The `Recovery` effect: a player's death penalty goes down one level (the penalty buff of skill
 //! 5076 changes with it, and is gone at level 0).
-// Java: dist/game/data/scripts/handlers/skill/effects/Recovery.java
-// Java: entity/actor/Player.java (reduceDeathPenaltyBuffLevel)
 
 use l2_data::skill::EffectTemplate;
 use l2_protocol_game::SystemMessageId;

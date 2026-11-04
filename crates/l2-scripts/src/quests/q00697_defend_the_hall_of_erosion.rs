@@ -1,6 +1,4 @@
 //! Quest 697: Defend the Hall of Erosion (Tepios at the Seed of Infinity, the defence of the Hall of Erosion).
-// Java: dist/game/data/scripts/quests/Q00697_DefendTheHallOfErosion/Q00697_DefendTheHallOfErosion.java
-//
 // Pattern: a level 75+ quest offered only while the Seed of Infinity is at stage 4. The Hall of
 // Erosion defence instance sets `defenceDone` (`ai/areas/gracia/instances/hall_of_erosion_defence.rs`);
 // Tepios then pays 12 to 20 Vesper Stones (a random range) and clears the variable.
@@ -46,8 +44,6 @@ impl Script for Q00697DefendTheHallOfErosion {
         player: Option<ObjectId>,
     ) -> Option<String> {
         let player = player?;
-        // NOTE(java-quirk): every event is echoed back as a page, even one for a player with no
-        // quest state (Java returns `event` before it checks anything else).
         let Some(qs) = ctx.get_quest_state(player, false) else {
             return Some(event.to_owned());
         };

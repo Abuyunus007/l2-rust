@@ -1,7 +1,4 @@
 //! The pvp flag of a fake player: it blinks and goes out when the fight is over.
-// Java: dist/game/data/scripts/custom/FakePlayers/PvpFlaggingStopTask.java
-//
-// Java: "TODO: Move it to Creature." The world starts it (`FLAG_CHECK`) when a fake player attacks
 // a playable (`l2_world::custom::fake_players`); the script value of the NPC is its flag: 0 none,
 // 1 in combat, 2 blinking.
 

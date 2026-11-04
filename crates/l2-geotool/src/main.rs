@@ -1,6 +1,5 @@
 //! Geodata tool: compare two geodata sets numerically and visually (D-26).
 //!
-//! Java: none (uses `l2-geo`). The metrics and CSV columns follow `tools/analysis/geocmp.py`, and
 //! the surface-containment percentages follow `tools/analysis/geolayers.py`.
 
 mod diff;
@@ -44,15 +43,6 @@ enum Command {
         regions: Vec<String>,
     },
     /// Render one region to a PNG, one pixel per geo cell (2048 x 2048).
-    ///
-    /// Modes: `height` colours the top layer's Z over the region's min..max (with
-    /// `--side-by-side`, A and B share one scale so their colours compare); `nswe` colours the
-    /// blocked directions of the top layer (red N, green E, blue S, yellow W, white all four);
-    /// `layers` is a heatmap of the layer count per cell (1 to 8 or more).
-    ///
-    /// With `--side-by-side DIR_B` the image is three panels, A | B | difference, where the
-    /// difference panel is a heat map of |dz| (height), of differing NSWE bits (nswe) or of the
-    /// layer-count difference (layers). Pixel x is the cell's X inside the region, pixel y its Y.
     Render {
         /// Directory with the `X_Y.l2j` files (set A).
         dir: PathBuf,

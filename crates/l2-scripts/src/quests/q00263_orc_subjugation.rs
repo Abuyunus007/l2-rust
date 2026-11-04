@@ -1,6 +1,4 @@
 //! Quest 263: Orc Subjugation (Kayleen in the Dark Elven area pays for the balor orc amulets and necklaces).
-// Java: dist/game/data/scripts/quests/Q00263_OrcSubjugation/Q00263_OrcSubjugation.java
-//
 // Pattern: a repeatable collect quest (`docs/design/scripts.md`, "Quest patterns"): the balor orcs
 // drop an amulet (archers) or a necklace (fighters) half of the time; Kayleen pays per item, with
 // a bonus at 10 items or more, takes them all and the quest stays open until the player leaves.

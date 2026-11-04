@@ -1,7 +1,4 @@
 //! The item handler table and the handler branch of `UseItem`.
-// Java: handler/ItemHandler.java (getHandler)
-// Java: dist/game/data/scripts/handlers/MasterHandler.java (the names registered)
-// Java: network/clientpackets/UseItem.java (the `else` branch of `if (item.isEquipable())`)
 
 use l2_data::item::ItemTemplate;
 use l2_util::ObjectId;

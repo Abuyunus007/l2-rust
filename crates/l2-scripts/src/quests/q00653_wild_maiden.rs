@@ -1,6 +1,4 @@
 //! Quest 653: Wild Maiden (Suki, the wild maiden out of the village, and Galibredo in Talking Island).
-// Java: dist/game/data/scripts/quests/Q00653_WildMaiden/Q00653_WildMaiden.java
-//
 // Pattern: a level-gated quest that takes the Scroll of Escape on start and deletes the start
 // NPC. The start page is a coin toss (`get_random(2)`): a second one is shown half the time.
 

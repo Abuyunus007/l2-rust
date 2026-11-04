@@ -1,6 +1,4 @@
 //! Quest 65: Certified Soul Breaker (Grand Master Vitus, Kekropus, Casca, Holst, Katenar, ...).
-// Java: dist/game/data/scripts/quests/Q00065_CertifiedSoulBreaker/Q00065_CertifiedSoulBreaker.java
-//
 // Pattern: a kill and delivery chain with the memo state as the step counter, sibling of
 // `q00064_certified_berserker.rs`; the diamond reward is paid once per character. The guardian
 // angel, the cargo box and Katenar (`ai/others/katenar.rs`) keep the player and the NPC they
@@ -174,7 +172,6 @@ impl Script for Q00065CertifiedSoulBreaker {
             }
             return None;
         } else if event == "DESPAWN_70" {
-            // NOTE(java-quirk): `npc.getVariables()` throws for a null NPC; nothing happens then.
             let npc = npc?;
             let npc0 = object_var(ctx, npc.object_id, "npc0");
             let c0 = object_var(ctx, npc.object_id, "player0");
@@ -352,7 +349,6 @@ impl Script for Q00065CertifiedSoulBreaker {
                         let (x, y, z) = ctx.world().position_of(killer).unwrap_or_default();
                         if let Some(katenar) = ctx.add_spawn(KATENAR, x + 20, y + 20, z, 0, false, 0, 0) {
                             set_object_var(ctx, katenar.object_id, "player0", killer);
-                            // NOTE(java-quirk): Katenar's `npc0` is the angel, not the cargo box.
                             set_object_var(ctx, katenar.object_id, "npc0", npc.object_id);
                         }
                         qs.set_memo_state(ctx, 13);
@@ -475,7 +471,6 @@ impl Script for Q00065CertifiedSoulBreaker {
                     },
                     &mut htmltext,
                 ),
-                // NOTE(java-quirk): Vesa and Zerome show the same page on the first and the repeated visit.
                 GUARD_VESA => visit_guard(
                     ctx,
                     qs,

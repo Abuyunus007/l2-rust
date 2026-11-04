@@ -18,7 +18,6 @@ fn read_count(r: &mut PacketReader, field: &'static str) -> Result<usize, Packet
     usize::try_from(count).map_err(|_| PacketError::invalid(field, format!("negative: {count}")))
 }
 
-// Java: gameserver/network/serverpackets/SendMacroList.java (one `MacroCmd`)
 /// One command of a [`MacroEntry`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MacroCommandEntry {
@@ -32,7 +31,6 @@ pub struct MacroCommandEntry {
     pub cmd: String,
 }
 
-// Java: gameserver/network/serverpackets/SendMacroList.java (one `Macro`)
 /// One macro of [`MacroList`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MacroEntry {
@@ -45,7 +43,6 @@ pub struct MacroEntry {
     pub commands: Vec<MacroCommandEntry>,
 }
 
-// Java: gameserver/network/serverpackets/SendMacroList.java
 /// One macro of the list (`MACRO_LIST`). Java sends one packet per macro, or a single packet
 /// without a macro when the list is empty (`MacroList.sendUpdate`).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -65,7 +62,7 @@ impl Encode for MacroList {
     fn encode(&self, w: &mut PacketWriter) {
         write_opcode(w, Self::OPCODE);
         w.i32(self.revision);
-        w.u8(0); // Java: "unknown"
+        w.u8(0);
         w.u8(self.count);
         w.u8(u8::from(self.macro_entry.is_some()));
         if let Some(m) = &self.macro_entry {
@@ -125,7 +122,6 @@ impl Decode for MacroList {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExQuestItemList.java
 /// The quest items of the inventory (`EX_QUEST_ITEM_LIST`). Java sends it right after
 /// [`ItemList`](super::ItemList) (from `ItemList.runImpl`).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -161,7 +157,6 @@ impl Decode for ExQuestItemList {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExRotation.java
 /// Turns a character to a heading (`EX_ROTATION`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExRotation {
@@ -189,7 +184,6 @@ impl Decode for ExRotation {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExShowContactList.java
 /// The mail contact list (opcode name `EX_RECEIVE_SHOW_POST_FRIEND`).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ExShowContactList {
@@ -221,7 +215,6 @@ impl Decode for ExShowContactList {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExBrExtraUserInfo.java
 /// Event effects and the lecture mark of a player (`EX_BR_EXTRA_USER_INFO`), sent after every
 /// `UserInfo`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -229,7 +222,6 @@ pub struct ExBrExtraUserInfo {
     pub object_id: i32,
     /// `getAbnormalVisualEffectEvent()`.
     pub abnormal_visual_effects_event: i32,
-    /// Java: constant 1 ("TODO: Implement").
     pub lecture_mark: u8,
 }
 
@@ -256,7 +248,6 @@ impl Decode for ExBrExtraUserInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExNevitAdventPointInfoPacket.java
 /// Nevit's blessing points (`EX_NAVIT_ADVENT_POINT_INFO`): 72 is 1%, 7200 is 100%.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExNevitAdventPointInfo {
@@ -280,7 +271,6 @@ impl Decode for ExNevitAdventPointInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExNevitAdventEffect.java
 /// The seconds Nevit's blessing lasts (`EX_NAVIT_ADVENT_EFFECT`); 0 ends the effect.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExNevitAdventEffect {
@@ -304,7 +294,6 @@ impl Decode for ExNevitAdventEffect {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExVitalityPointInfo.java
 /// The vitality points (`EX_VITALITY_POINT_INFO`), 0 to 20000.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExVitalityPointInfo {
@@ -328,7 +317,6 @@ impl Decode for ExVitalityPointInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExNevitAdventTimeChange.java
 /// The Nevit advent time left (`EX_NAVIT_ADVENT_TIME_CHANGE`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExNevitAdventTimeChange {

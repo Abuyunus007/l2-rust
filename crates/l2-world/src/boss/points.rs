@@ -1,6 +1,5 @@
 //! Java `managers/RaidBossPointsManager.java`: the raid points of every player (the sum of the
 //! points of each boss), the ranking, `RequestGetBossRecord`'s numbers and the weekly reset.
-//
 // # Java's `HashMap` order
 // `getList(player)` is a `HashMap<Integer, Integer>`, and `ExGetBossRecord` writes it in the
 // map's order; the ranking sorts a `HashMap` of the players by points, so players with the same
@@ -291,15 +290,11 @@ impl World {
         };
         let mut bytes = packet.to_bytes();
         if record.list.is_none() {
-            // NOTE(java-quirk): `ExGetBossRecord` writes four zeros for a null list (the count
-            // and three more), where an empty list is the count and nothing else.
             bytes.extend_from_slice(&[0; 12]);
         }
         self.send_bytes(player, bytes);
     }
 
-    /// D-50: the rows of a character are read again when it enters the world (the Java game
-    /// server may have given it points since this server started).
     pub(crate) fn request_raid_points_reread(&mut self, char_id: i32) {
         // Without the managers (nothing loaded) there is nothing to refresh.
         if self.boss.started_ms == 0 {

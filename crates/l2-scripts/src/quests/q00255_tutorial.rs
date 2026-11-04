@@ -1,7 +1,5 @@
 //! Quest 255: Tutorial (the newbie helpers of every village, the tutorial window, the question
 //! marks and the client events of a new character).
-// Java: dist/game/data/scripts/quests/Q00255_Tutorial/Q00255_Tutorial.java
-//
 // Pattern: the tutorial (`docs/design/scripts.md`, "Quest patterns"): no journal entry, the
 // state is started at login (`on_enter_world`) and lives in `memoState` (a bit field of the
 // shown steps) and `memoStateEx1` (the newbie helper step). The world sends the tutorial
@@ -390,7 +388,6 @@ impl Script for Q00255Tutorial {
             }
 
             let ex = qs.get_memo_state_ex(ctx, 1);
-            // NOTE(java-quirk): `getRandom(2) <= 1` is always true (the roll is still made).
             if (ex == 1 || ex == 2 || ex == 0)
                 && !ctx.has_quest_items(killer, BLUE_GEMSTONE)
                 && ctx.get_random(2) <= 1
@@ -479,7 +476,6 @@ fn forget_listeners(ctx: &mut ScriptCtx<'_>, player: ObjectId) {
 
 /// The timer of the player's tutorial steps: `String.valueOf(talker.getObjectId() + 1000000)`.
 fn player_timer(player: ObjectId) -> String {
-    // NOTE(java-quirk): an int sum; above 2146483647 it wraps to a negative, non-numeric event.
     player.0.wrapping_add(1000000).to_string()
 }
 
@@ -1114,7 +1110,6 @@ fn question_mark_clicked(ctx: &mut ScriptCtx<'_>, talker: ObjectId, question_id:
             let radar = match class {
                 pc::FIGHTER => Some((-71424, 258336, -3109)),
                 pc::MAGE => Some((-91036, 248044, -3568)),
-                // NOTE(java-quirk): the elves get the human mage's place.
                 pc::ELVEN_FIGHTER | pc::ELVEN_MAGE => Some((-91036, 248044, -3568)),
                 pc::DARK_FIGHTER | pc::DARK_MAGE => Some((28384, 11056, -4233)),
                 pc::ORC_FIGHTER | pc::ORC_MAGE => Some((-56736, -113680, -672)),
@@ -1282,7 +1277,6 @@ fn question_mark_clicked(ctx: &mut ScriptCtx<'_>, talker: ObjectId, question_id:
                 28 => Some("tw-dion.html"),
                 38 => Some("tw-heine.html"),
                 48 => Some("tw-oren.html"),
-                // NOTE(java-quirk): "shuttgart", while `levelUp` shows "tw-schuttgart.html".
                 58 => Some("tw-shuttgart.html"),
                 68 => Some("tw-rune.html"),
                 _ => None,
@@ -1534,7 +1528,6 @@ fn event_roien(ctx: &mut ScriptCtx<'_>, event: i32, talker: ObjectId, npc: Scrip
             }
         }
         41 => {
-            // NOTE(java-quirk): Roien's teleport has no radar, the others' have one.
             ctx.teleport_player(talker, -120050, 44500, 360, 0, true);
             ctx.show_html_file(talker, "30008-005.html", None);
         }
@@ -1788,8 +1781,6 @@ fn talk_doff(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, talker: ObjectId, qs: Qs) 
         ctx.show_html_file(talker, "30019-002.html", None);
     }
 
-    // NOTE(java-quirk): an `if`, not an `else if`: the first talk of the step above goes on
-    // here (`memoStateEx(1)` is 0 now) and takes a gemstone the player already has.
     if helper_step(ctx, qs) && ctx.has_quest_items(talker, BLUE_GEMSTONE) {
         helper_gemstone(ctx, npc, talker, qs, RECOMMENDATION_2);
         helper_shots(ctx, talker, false, 200);
@@ -1831,8 +1822,6 @@ fn talk_poeny(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, talker: ObjectId, qs: Qs)
         ctx.show_html_file(talker, page, None);
 
         helper_gemstone(ctx, npc, talker, qs, BLOOD_OF_MITRAELL);
-        // NOTE(java-quirk): the dark elf helper gives an orc mage 100 soulshots (the others
-        // give 200); no dark elf is an orc mage.
         helper_shots(ctx, talker, true, 100);
     } else if qs.get_memo_state_ex(ctx, 1) == 3 {
         ctx.show_html_file(talker, "30131-004.html", None);
@@ -1907,8 +1896,6 @@ fn talk_miner_mai(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, talker: ObjectId, qs:
                 ctx.give_items(talker, SPIRITSHOT_NO_GRADE_FOR_BEGINNERS, 100);
             }
         } else {
-            // NOTE(java-quirk): the page is the `else` of the mage shots, so a mage who gets
-            // spiritshots sees no page.
             ctx.show_html_file(talker, "30530-003.html", None);
         }
     } else if qs.get_memo_state_ex(ctx, 1) == 3 {
@@ -2273,8 +2260,6 @@ mod tests {
             Q00255Tutorial.on_player_sit(ctx, Oid(1));
         });
         let out = t.take();
-        // NOTE(java-quirk) of the port: three attacked listeners (login, the helper's talk, the
-        // level step all had bit 256) and the step checks the level, not the bit: three marks.
         assert_eq!(marks(&out), [10, 10, 10]);
         // Then the sit step.
         assert!(voices(&out).contains(&"tutorial_voice_018".to_owned()));

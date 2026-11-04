@@ -1,6 +1,4 @@
 //! Quest 416: Path of the Orc Shaman (Tataru Zu Hestui, Umos, Moira and the totem spirits).
-// Java: dist/game/data/scripts/quests/Q00416_PathOfTheOrcShaman/Q00416_PathOfTheOrcShaman.java
-//
 // Pattern: the longest kill chain of the path quests. The memo state is the step (1 for the
 // first phase, 100 to 110 for the leopard phase), the kill hooks look at the cond of a random
 // party member (`getRandomPartyMemberState`), and the monsters drop the item the cond asks for.
@@ -240,7 +238,6 @@ impl Script for Q00416PathOfTheOrcShaman {
     }
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, _is_summon: bool) {
-        // Java: `getRandomPartyMemberState(player, -1, 3, npc)`: the member whose cond counts.
         let Some(qs) = ctx.random_party_member_state(killer, -1, 3, Some(npc)) else {
             return;
         };

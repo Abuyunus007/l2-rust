@@ -1,14 +1,8 @@
 //! The mail contact list and the friend list of the mail window (L-04).
-// Java: entity/actor/holders/player/ContactList.java
-// Java: network/clientpackets/{RequestExShowContactList,RequestExAddContactToContactList,
-// Java: RequestExDeleteContactFromContactList,RequestExFriendListExtended}.java
-// Java: network/serverpackets/{ExShowContactList,ExConfirmAddingContact,FriendListExtended}.java
-//
 // # Where the contacts live
 // `PlayerProfile::contacts`: the names of the contacts, in the order the session read the rows of
 // `character_contacts` (Java `ContactList.restore`: a contact without a name, the character itself
 // and unknown ids are skipped), then the order of the additions. Java keeps a `Set<String>` whose
-// iteration order is not reproduced (NOTE(java-quirk)).
 //
 // # Database
 // Java writes at once: `REPLACE INTO character_contacts` for an added contact and `DELETE` for a

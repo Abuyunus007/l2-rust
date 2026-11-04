@@ -1,6 +1,4 @@
 //! Elpies event: a hundred Elpies appear near a town for two minutes and drop items.
-// Java: dist/game/data/scripts/custom/events/Elpies/Elpies.java
-//
 // Off by default: the shipped `config.xml` schedules nothing, so the event only runs when a GM
 // starts it (`//event_start Elpies`).
 
@@ -108,8 +106,6 @@ impl Script for Elpies {
         // Check Custom Table - we use custom NPCs.
         if !ctx.world().custom_script_settings().custom_npc_data {
             tracing::info!("Elpies: Event can't be started because custom NPC table is disabled!");
-            // NOTE(java-quirk): Java calls `eventMaker.sendMessage` here, which is a
-            // NullPointerException for the scheduled start (no maker); it ends the timer task.
             if let Some(maker) = event_maker {
                 ctx.world().send_message(
                     maker,

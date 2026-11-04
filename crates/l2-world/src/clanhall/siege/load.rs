@@ -1,9 +1,5 @@
 //! Loading the hall sieges at startup (the engine of each hall with its script) and the rows the
 //! sieges write and read again.
-// Java: mechanics/siege/clanhalls/ClanHallSiegeEngine.java (the constructor, loadAttackers,
-//       loadGuards)
-// Java: mechanics/siege/clanhalls/SiegableHall.java (the constructor: `_scheduleConfig`)
-// Java: dist/game/data/scripts/conquerablehalls/* (the constructors and `loadAttackers`)
 
 use l2_data::residence::siege_zone_of;
 use tracing::info;
@@ -51,13 +47,11 @@ pub struct HallSiegeHallLoad {
     pub rainbow: Vec<(i32, i64)>,
 }
 
-/// Everything the game server read for the hall sieges at startup (D-15: only reads, D-39).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct HallSiegeLoad {
     pub halls: Vec<HallSiegeHallLoad>,
 }
 
-/// The rows of a hall read again on demand (`ResidenceReadKind::HallSiege`, D-50).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HallSiegeRows {
     pub hall_id: i32,

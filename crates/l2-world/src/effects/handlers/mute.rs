@@ -1,7 +1,4 @@
 //! The mutes: no magic, no physical skills, no physical attacks.
-// Java: dist/game/data/scripts/handlers/skill/effects/Mute.java
-// Java: dist/game/data/scripts/handlers/skill/effects/PhysicalMute.java
-// Java: dist/game/data/scripts/handlers/skill/effects/PhysicalDamageMute.java
 
 use l2_data::skill::EffectTemplate;
 

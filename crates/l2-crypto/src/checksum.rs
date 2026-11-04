@@ -1,15 +1,6 @@
 //! The packet checksum of `NewCrypt.appendChecksum` / `verifyChecksum`.
 //!
-//! Java: commons/crypt/NewCrypt.java. The buffer is read as little-endian 32-bit words; the last
 //! word is the checksum slot and holds the XOR of all words before it.
-//!
-//! NOTE(java-quirk): Java's `appendChecksum/verifyChecksum(buf, offset, size)` compute the end of
-//! the data as `size - 4` **without adding `offset`**, so they are only right when called as
-//! `(data, 2, len - 2)` on `[2-byte length header][body]`, which is exactly what
-//! `GameServerThread.sendPacket` and `LoginServerThread.sendPacket` do. That works out to the
-//! checksum over the body alone. So these functions take the *body slice* (offset-0 semantics):
-//! pass `&mut data[2..]`. The test `matches_java_offset_call_on_length_prefixed_packet` in
-//! `tests/vectors_newcrypt.rs` pins this against a literal port of the Java loop.
 
 use crate::CryptoError;
 

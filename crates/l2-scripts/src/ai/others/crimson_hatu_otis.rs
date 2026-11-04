@@ -1,5 +1,4 @@
 //! Crimson Hatu Otis (18558): Spinning Slash every minute, Haste below 30% HP.
-// Java: dist/game/data/scripts/ai/others/CrimsonHatuOtis.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;
@@ -45,8 +44,6 @@ impl Script for CrimsonHatuOtis {
                     return None;
                 }
 
-                // NOTE(java-quirk): the timer is started without a player, so Java targets null
-                // here (`npc.setTarget(null)`) and casts at nobody.
                 ctx.cast_skill_at(npc, player, BOSS_SPINING_SLASH);
                 ctx.start_quest_timer("SKILL", 60000, Some(npc), None, false);
             }
@@ -90,8 +87,6 @@ impl Script for CrimsonHatuOtis {
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, _killer: ObjectId, _is_summon: bool) {
         ctx.cancel_quest_timer("SKILL", Some(npc), None);
         ctx.cancel_quest_timer("BUFF", Some(npc), None);
-        // NOTE(java-quirk): the script value stays 1 or 2 after the kill, and a respawn brings
-        // the same NPC back with it, so the slash timer never starts again.
     }
 }
 

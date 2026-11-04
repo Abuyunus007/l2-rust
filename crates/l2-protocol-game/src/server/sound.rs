@@ -1,6 +1,5 @@
 //! `PlaySound`: the client plays a sound file. The first user is the duel start (`B04_S01`).
 
-// Java: gameserver/network/serverpackets/PlaySound.java
 server_packet!(
     /// Plays `sound_file` (`PLAY_SOUND`). Java names the ints `unknown1`, `unknown3` ... `unknown8`
     /// and only fills them for ship and quest sounds.
@@ -9,17 +8,11 @@ server_packet!(
         /// Java `_unknown1`: "0 for quest and ship"; the duel start sends 1.
         unknown1: i32,
         sound_file: String,
-        /// Java: "0 for quest; 1 for ship".
         unknown3: i32,
-        /// Java: "0 for quest; objectId of ship".
         unknown4: i32,
-        /// Java: x.
         unknown5: i32,
-        /// Java: y.
         unknown6: i32,
-        /// Java: z.
         unknown7: i32,
-        /// Java: always 0.
         unknown8: i32,
     }
 );

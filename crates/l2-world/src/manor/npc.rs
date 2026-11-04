@@ -1,14 +1,6 @@
 //! The `ManorManager` NPCs (the merchants of the castle towns that sell seeds and buy crops) and
 //! the `manor_menu_select` bypass, Java's `OnNpcManorBypass` event, of it and of the castle
 //! chamberlains.
-// Java: dist/game/data/scripts/ai/others/ManorManager/ManorManager.java (and its pages)
-// Java: dist/game/data/scripts/ai/others/CastleChamberlain/CastleChamberlain.java
-//       (`onNpcManorBypass`, `isOwner`; the rest of the chamberlain is M7-NPC-01)
-// Java: network/clientpackets/RequestBypassToServer.java (`manor_menu_select`)
-// Java: dist/game/data/scripts/handlers/bypass/npc/ChatLink.java, handlers/actions/click/NpcClick.java
-//       (the `ON_NPC_FIRST_TALK` and `ON_NPC_QUEST_START` listeners)
-// Java: entity/actor/Player.java (processScriptEvent)
-//
 // The first talk and the help pages of `ManorManager` are a script of the engine (S-API-02,
 // `l2-scripts/src/ai/others/manor_manager.rs`). What is left here is its `OnNpcManorBypass`
 // listener: the engine has no annotation listeners yet, so `manor_menu_select?ask=..` opens the

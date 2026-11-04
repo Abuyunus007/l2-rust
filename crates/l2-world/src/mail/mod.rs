@@ -1,51 +1,12 @@
 //! The post box: sending a mail with attachments or a payment request, reading, deleting,
 //! collecting, rejecting and cancelling, the 15 day (12 hour for a payment request) expiry and
 //! the new-mail notice at login (M6-MAIL-01).
-// Java: managers/MailManager.java, taskmanagers/MessageDeletionTaskManager.java
-// Java: network/holders/MailMessage.java, entity/itemcontainer/Mail.java
-// Java: network/clientpackets/{RequestSendPost,RequestReceivedPost,RequestReceivedPostList,
-//       RequestSentPost,RequestSentPostList,RequestPostAttachment,RequestRejectPostAttachment,
-//       RequestCancelPostAttachment,RequestDeleteReceivedPost,RequestDeleteSentPost,
-//       RequestPostItemList}.java
-// Java: network/serverpackets/{ExShowReceivedPostList,ExShowSentPostList,ExReplyReceivedPost,
-//       ExReplySentPost,ExReplyPostItemList,ExChangePostState,ExNoticePostArrived,
-//       ExNoticePostSent}.java
-// Java: data/sql/CharInfoTable.java (the names and access levels of the mail receivers)
-//
-// # Where the mails live
-// Every mail is a [`MailMessage`] in the world ([`MailWorld::messages`]), read at startup like
-// Java's `MailManager` constructor (`SELECT * FROM messages ORDER BY expiration`), together with
-// its attachments: the `items` rows with `loc = 'MAIL'`, `owner_id` = the sender and `loc_data` =
-// the message id. The attachments are a container like the warehouse ones
-// ([`ContainerRef::Mail`](crate::ContainerRef)), so `World::move_item` moves items between the
-// inventory and a mail and queues the rows as `PersistCommand::ItemRows` (D-39).
-//
-// NOTE(java-quirk): Java loads the attachments of a message when somebody first asks for them and
-// drops them after 15 to 30 minutes (`AttachmentsUnloadTask`). That only saves memory, so they
-// stay loaded here.
-//
-// # Rows (D-39)
-// The Java GS reads and writes the same `messages` table, so the statements are Java's, in
-// Java's order, as [`MailWrite`]s through `PersistCommand::Mail`: an `INSERT` with the flags
-// spelled `'true'`/`'false'`, and one `UPDATE` per flag. A mail one server writes shows on the
-// other after the next start (each loads the table once, like Java between two servers).
-//
 // # Order of the lists
 // Java keeps the messages in a `ConcurrentHashMap<Integer, MailMessage>` and the lists
 // (`getInbox`, `getOutbox`) iterate it, so the order is the map's (see
 // `java_concurrent_map_order`), not the ids' or the dates'. [`MailWorld::order`] is the insertion
 // order that function needs (the load order is `ORDER BY expiration`).
 //
-// # One database, two servers (M6-SYNC-01, D-39)
-// The Java GS reads `messages` and the MAIL rows of `items` once at its start, like this server, so
-// a mail one server changes is not seen by the other. What is done about it (refresh.rs):
-// - At `CharacterSelect` the session reads the character's mails with their attachments
-//   ([`MailRefresh`]) and the world replaces its copies of exactly those messages when the player
-//   enters.
-// - `RequestPostAttachment`, `RequestRejectPostAttachment` and `RequestCancelPostAttachment` ask for
-//   the attachment rows of the message first (`PersistCommand::MailAttachmentsRequest` /
-//   `WorldCommand::MailAttachmentsLoaded`, D-15) and move only the rows that are still
-//   `loc = 'MAIL'` with that `loc_data`.
 //
 // # Left out on purpose (each has a comment where it belongs)
 // - `BlockList.isInBlockList` (the ignore list is the friend list card's, `// M6-FRIEND:`).
@@ -204,8 +165,6 @@ impl MailMessage {
     /// Java `MailMessage(MailMessage msg)`: the mail that gives the attachments of `msg` back to
     /// its sender. The attachments move to the new mail (`msg.removeAttachments()`,
     /// `setNewMessageId`), `msg` keeps none.
-    // NOTE(java-quirk): the returned mail has `NONE` as the sender type (2), so the client shows
-    // "****" as its sender and it cannot be returned again.
     pub fn new_returned(id: i32, original: &mut MailMessage, now_ms: i64) -> Self {
         let mut attachments = std::mem::take(&mut original.attachments);
         original.has_attachments = false;
@@ -319,9 +278,6 @@ pub(crate) struct MailWorld {
     pub ids_by_name: BTreeMap<String, i32>,
     /// The timer of the 10 s deletion task.
     pub deletion_timer: Option<TimerId>,
-    /// The ids of the mails this server made since it started (`mail_send_message`). The Java GS
-    /// does not know them, and their rows may still be in the persistence queue, so a refresh
-    /// leaves them alone.
     pub local_ids: std::collections::BTreeSet<i32>,
     /// The attachment packet waiting for the attachment rows: player to message id and packet.
     pub pending_attachments: BTreeMap<ObjectId, (i32, refresh::AttachmentAction)>,
@@ -383,7 +339,6 @@ mod tests {
         assert!(returned.has_attachments && returned.returned && returned.unread);
         assert!(returned.deleted_by_sender && !returned.deleted_by_receiver);
         assert_eq!((returned.subject.as_str(), returned.content.as_str()), ("", ""));
-        // NOTE(java-quirk): `MessageSenderType.NONE`.
         assert_eq!(returned.send_by_system, 2);
         assert_eq!(returned.attachments.len(), 1);
         assert_eq!(returned.attachments[0].loc_data, 11);

@@ -1,6 +1,4 @@
 //! Quest 696: Conquer the Hall of Erosion (Tepios at the Seed of Infinity, the attack on the Hall of Erosion).
-// Java: dist/game/data/scripts/quests/Q00696_ConquerTheHallOfErosion/Q00696_ConquerTheHallOfErosion.java
-//
 // Pattern: a quest that only the Hall of Erosion attack instance can finish: its `cohemenes`
 // variable is set there (`ai/areas/gracia/instances/hall_of_erosion_attack.rs`). The first
 // Mark of Keucereus becomes the second one. Java's `exitQuest(true)` (no sound) ends the quest
@@ -46,8 +44,6 @@ impl Script for Q00696ConquerTheHallOfErosion {
         player: Option<ObjectId>,
     ) -> Option<String> {
         let player = player?;
-        // NOTE(java-quirk): every event is echoed back as a page, even one for a player with no
-        // quest state (Java returns `event` before it checks anything else).
         let Some(qs) = ctx.get_quest_state(player, false) else {
             return Some(event.to_owned());
         };

@@ -1,6 +1,4 @@
 //! Quest 363: Sorrowful Sound of Flute (Nanarin in the Town of Gludin).
-// Java: dist/game/data/scripts/quests/Q00363_SorrowfulSoundOfFlute/Q00363_SorrowfulSoundOfFlute.java
-//
 // Pattern: a repeatable delivery quest. The `ex` variable packs one "visited" digit per NPC
 // (Poitan 10s, Holvas 100s, Ranspo 1000s, Aldo 10000s, Opix 100000s); the memo state is the stage.
 

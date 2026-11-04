@@ -1,6 +1,5 @@
 //! The `GetAgro` effect: the NPC attacks the caster (the chance is `chance`), and the NPCs of its
 //! clan that can move come to help with a little hate for the caster.
-// Java: dist/game/data/scripts/handlers/skill/effects/GetAgro.java
 
 use l2_data::skill::EffectTemplate;
 

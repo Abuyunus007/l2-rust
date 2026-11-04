@@ -1,6 +1,4 @@
 //! Quest 378: Grand Feast (Ranspo in Rune, wines and recipes for a feast).
-// Java: dist/game/data/scripts/quests/Q00378_GrandFeast/Q00378_GrandFeast.java
-//
 // Pattern: a delivery quest that sums the choices in `memoStateEx1` (wine 10/20/30 + dish 1/2/3)
 // and picks the reward from that sum.
 

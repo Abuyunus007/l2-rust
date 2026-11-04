@@ -1,10 +1,5 @@
 //! Channeling skills: a creature channels a skill (`SkillChannelizer`), the creatures it is
 //! channeled at know who does (`SkillChannelized`).
-// Java: mechanics/skill/SkillChannelizer.java
-// Java: mechanics/skill/SkillChannelized.java
-// Java: entity/actor/Creature.java (isChanneling, getSkillChannelizer, isChannelized,
-//       getSkillChannelized)
-//
 // # Shape
 // A cast of a skill with `operateType` CA1/CA5/DA... and a `channelingSkillId` starts the
 // channelizer at `beginCast` (`cast.rs`) and stops it when the cast ends (`completeMagicFinalizer`)

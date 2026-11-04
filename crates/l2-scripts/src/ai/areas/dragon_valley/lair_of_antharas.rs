@@ -1,5 +1,4 @@
 //! Lair of Antharas AI: the Dragon Knights rise again, the guards return home, Knoriks shouts.
-// Java: dist/game/data/scripts/ai/areas/DragonValley/LairOfAntharas.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;
@@ -136,8 +135,6 @@ impl Script for LairOfAntharas {
                 }
             }
             DRAGON_GUARD | DRAGON_MAGE => {
-                // NOTE(java-quirk): the timer is named "CHECK_HOME_<objectId>" in `onSpawn`
-                // (and is a `getTimers()` timer), so this quest-timer cancel never finds it.
                 ctx.cancel_quest_timer("CHECK_HOME", Some(npc), None);
             }
             _ => {}

@@ -1,6 +1,4 @@
 //! Quest 453: Not Strong Enough Alone (Klemis; three groups of monsters, one phase each).
-// Java: dist/game/data/scripts/quests/Q00453_NotStrongEnoughAlone/Q00453_NotStrongEnoughAlone.java
-//
 // Pattern: party kills with a count per monster (every party member in range counts the kill, the
 // log packet of the counts goes to each of them), the phase chosen by an event link of the
 // previous page, and a reward roll at cond 5 (daily).
@@ -85,7 +83,6 @@ impl Script for Q00453NotStrongEnoughAlone {
     }
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, _is_summon: bool) {
-        // Java: every party member (the killer alone without a party) counts the kill.
         for member in ctx.world().party_members_of(killer) {
             increase_kill(ctx, member, npc);
         }
@@ -203,9 +200,6 @@ fn fold(group: &[i32], npc_id: i32) -> i32 {
 
 /// Java `checkProgress(qs, count, mobs...)`: when every monster of the group reached `count`, the
 /// quest moves to cond 5.
-// NOTE(java-quirk): the phases of cond 2, 3 and 4 all call `setCond(5, true)` once their group is
-// complete. So the first group finished in cond 2 already moves the quest to the reward, and the
-// later phases are skipped. Ported as Java has it.
 fn check_progress(ctx: &mut ScriptCtx<'_>, qs: Qs, count: i32, mobs: &[i32]) {
     for mob in mobs {
         if qs.get_int(ctx, &mob.to_string()) < count {

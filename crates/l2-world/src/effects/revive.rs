@@ -1,10 +1,6 @@
 //! Resurrection requests: a player who is dead gets a "do you want to be resurrected" dialog
 //! (`ConfirmDlg`) from the `Resurrection` and `ResurrectionSpecial` effects and answers it with
 //! `DlgAnswer`.
-// Java: entity/actor/Player.java (reviveRequest, reviveAnswer, isReviveRequested, isRevivingPet,
-//       removeReviving, hasCharmOfCourage), network/clientpackets/DlgAnswer.java (the two
-//       resurrection questions), mechanics/stats/Formulas.java (calculateSkillResurrectRestorePercent)
-//
 // A request "for the pet" revives the player's dead pet (`summon/pet.rs`); without one it does
 // nothing, as in Java.
 

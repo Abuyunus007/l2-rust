@@ -1,6 +1,5 @@
 //! The `ApplySkillEffects` effect: the listed skills (`skills`: `id,level;id,level`) are applied
 //! from the caster to the target, as if they were cast on it.
-// Java: dist/game/data/scripts/handlers/skill/effects/ApplySkillEffects.java
 
 use l2_data::skill::EffectTemplate;
 

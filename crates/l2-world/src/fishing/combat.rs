@@ -1,7 +1,4 @@
 //! The fight with the fish: `Fishing.java`, and the `Pumping` and `Reeling` skill effects.
-// Java: mechanics/fishing/Fishing.java
-// Java: dist/game/data/scripts/handlers/skill/effects/{Pumping,Reeling}.java
-// Java: entity/actor/Player.java (startFishCombat)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{
@@ -286,8 +283,6 @@ impl World {
     /// The `if (win)` block of `Fishing.doDie`.
     fn fish_caught(&mut self, id: ObjectId, fish_id: i32, lure_id: i32) {
         let level = self.players.get(&id).map_or(0, |p| p.core.level);
-        // NOTE(java-quirk): a level without a fishing monster (below 6 or above 85 in the shipped
-        // file) gets neither the fish nor a message.
         let Some(monster) = self
             .fishing
             .monsters

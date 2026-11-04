@@ -1,10 +1,5 @@
 //! The bot report button (M6-FU-09): `RequestActionUse` 65, the reports of the players, their
 //! points, the punishments by report count and the daily reset of the points.
-// Java: data/BotReportTable.java
-// Java: network/clientpackets/RequestActionUse.java (case 65)
-// Java: config/GeneralConfig.java (EnableBotReportButton, BotReportPointsResetHour,
-// Java:   BotReportDelay, AllowReportsFromSameClanMembers)
-//
 // # Shape
 // Everything `BotReportTable` keeps is in [`BotReportWorld`], keyed by character id (D-11): the
 // reports of each reported character, the points of each reporter and the report time of each IP
@@ -12,14 +7,6 @@
 // read at startup only when the button is on, like Java), and every new report is a
 // `PersistCommand::BotReport` row.
 //
-// # Differences from Java, with the reason
-// - Java rewrites the whole table when the server shuts down (`saveReportedCharData`: `DELETE`, then
-//   one `INSERT` per report). The Java game server shares the table (D-39), so a rewrite from this
-//   server's memory would erase the reports the other one took meanwhile (D-49). Every report is
-//   written when it is made instead (`INSERT .. ON DUPLICATE KEY UPDATE`); the rows are the same
-//   ones in the end.
-// - The IP hash needs the IPv4 address of the reporter's connection; Java's `hashIp` throws for
-//   anything else, and the report is dropped without a word (here too).
 //
 // # Left out, with the card that brings it
 // - Fake players (`isFakePlayer`, `getFakePlayerInfo().isTalkable()`) do not exist in the port.
@@ -333,8 +320,6 @@ impl World {
             );
             return false;
         }
-        // NOTE(java-quirk): `PlayerStat.setStartingExp` is never called, so the starting exp is 0
-        // and only a character without any exp "has not acquired any exp after connecting".
         if self.players.get(&bot).is_some_and(|p| p.data.exp == 0) {
             self.report_tell(
                 reporter,
@@ -357,7 +342,6 @@ impl World {
         }
         let ip_client = self.players.get(&reporter).and_then(|p| p.client_ip);
         let Some(ip) = hash_ip(ip_client) else {
-            // Java: `Integer.parseInt` of a part that is not a number throws.
             warn!("BotReportTable: no IPv4 address for {reporter}; the report is dropped.");
             return false;
         };
@@ -375,7 +359,6 @@ impl World {
         }
         if let Some(reported) = table.reports.get(&bot.0) {
             if reported.contains_key(&reporter.0) {
-                // NOTE(java-quirk): the message id is C1_PURCHASED_S3_S2_S, no parameters.
                 self.report_tell(reporter, SystemMessageId::C1PurchasedS3S2S);
                 return false;
             }
@@ -401,8 +384,6 @@ impl World {
             }
             let reuse = now_ms - rep.last_report;
             if reuse < delay {
-                // NOTE(java-quirk): the text is FIVE_YEARS_HAVE_PASSED_SINCE_THIS_CHARACTER_S_CREATION,
-                // whose parameters are the minutes since the last report and the points left.
                 self.send(
                     reporter,
                     &SystemMessage::new(SystemMessageId::FiveYearsHavePassedSinceThisCharacterSCreation)
@@ -463,7 +444,6 @@ impl World {
     fn handle_bot_report(&mut self, bot: ObjectId, count: i32) {
         let punishments = &self.bot_report.settings.punishments;
         let mut due: Vec<BotPunishment> = punishments.get(&count).copied().into_iter().collect();
-        // NOTE(java-quirk): Java walks a `ConcurrentHashMap`; the order here is by key.
         due.extend(
             punishments
                 .iter()

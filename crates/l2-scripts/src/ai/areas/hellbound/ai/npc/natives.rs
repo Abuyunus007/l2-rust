@@ -1,6 +1,5 @@
 //! The natives of Hellbound: the starving ones, the insurgents, the traitor and the captives of
 //! the castle.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/NPC/Natives/Natives.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

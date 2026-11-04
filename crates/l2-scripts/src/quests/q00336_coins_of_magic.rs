@@ -1,6 +1,4 @@
 //! Quest 336: Coins of Magic (Warehouse Keeper Sorint in the Town of Gludin).
-// Java: dist/game/data/scripts/quests/Q00336_CoinsOfMagic/Q00336_CoinsOfMagic.java
-//
 // Pattern: a long exchange quest. The nine "coin" NPCs (Pano, Collob, Rapin, Hagger, Stan, Lorain,
 // Duning, Page, Ferris) all run the same three-step game, with their own item tables: the player
 // pays coins for a number to guess (`param1` packs three base-4 digits, `flag` collects the
@@ -235,7 +233,6 @@ fn config(npc_id: i32) -> Option<Cfg> {
                 Q_BLOOD_SUCCUBUS,
                 Q_BLOOD_DRAGON,
             ]),
-            // NOTE(java-quirk): the fourth item is Q_SILVER_DRAGON again, as in Java.
             third: [
                 Q_BERETHS_SILVER_DRAGON,
                 Q_GOLD_DRAGON,
@@ -741,7 +738,6 @@ fn random_player_from_party(
             if let Some(qss) = qss
                 && qss.is_started(ctx)
                 && qss.is_memo_state(ctx, memo_state)
-                // NOTE(java-quirk): the coin variant checks the killer's coin, not the member's.
                 && (!coin || !ctx.has_quest_items(player, Q_KALDIS_GOLD_DRAGON))
                 && ctx.check_if_in_range(ctx.alt_party_range(), npc.object_id, pm, true)
             {
@@ -966,8 +962,6 @@ impl Script for Q00336CoinsOfMagic {
             return Some(event.to_owned());
         }
 
-        // NOTE(java-quirk): Java dereferences the NPC and parses the event with
-        // `Integer.parseInt`; an event that is no number throws there, here it ends the call.
         let npc_id = npc?.id;
         let event_id: i32 = event.parse().ok()?;
 

@@ -1,13 +1,4 @@
 //! Event dispatch: what the world hooks call, and the queue of Java's asynchronous events.
-// Java: mechanics/events/EventDispatcher.java (notifyEvent, notifyEventAsync, notifyToListeners)
-// Java: mechanics/script/Quest.java (notifyEvent, notifyTalk, notifyFirstTalk, notifyItemTalk,
-//       notifyEventReceived, notifyMoveFinished, notifyNodeArrived, notifyRouteFinished,
-//       notifyTeleport, notifyOnCanSeeMe, playerEnter)
-// Java: the firing sites: handlers/actions/click/NpcClick, handlers/bypass/npc/ChatLink,
-//       Npc.onSpawn, Attackable.addDamage / addDamageHate / doDie, Playable.doDie,
-//       ZoneType.revalidateInZone / removeCharacter, Player.onPlayerEnter, Item.onBypassFeedback,
-//       AttackableAI (ON_NPC_HATE, ON_ATTACKABLE_FACTION_CALL), WalkingManager, WalkInfo
-//
 // # Order
 // Java's `notifyEventAsync` hands the event to a thread pool, so it runs after the code that
 // fired it. Here it waits in a queue that [`World::script_drain`] empties at the end of the
@@ -743,9 +734,6 @@ impl World {
             return;
         }
         let quest_name = command.get(6..).unwrap_or("");
-        // NOTE(java-quirk): `command.substring(6)` keeps the space after `Script`, so the
-        // `indexOf(' ') > 0` test fails for `Script <name> <event>` and every such link is an
-        // item talk; only `Script<name> <event>` reaches the item event.
         let event = match quest_name.find(' ') {
             Some(index) if index > 0 => Some(quest_name[index..].trim_matches(|c: char| c <= ' ').to_owned()),
             _ => None,
@@ -835,9 +823,6 @@ impl World {
 
     /// Java `Creature.doDie` / `Playable.doDie`: `ON_CREATURE_DEATH`, a synchronous
     /// `notifyEvent` right after the creature is dead.
-    // NOTE(java-quirk): `Playable.doDie` asks for a `TerminateReturn` that can keep the playable
-    // alive (the first listener's answer); `Creature.doDie` ignores it. The answer is returned
-    // here and `death.rs` reads it for the playable only (S-API-04).
     pub(crate) fn script_on_creature_death(
         &mut self,
         victim: ObjectId,

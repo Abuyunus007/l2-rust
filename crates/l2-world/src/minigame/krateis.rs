@@ -1,8 +1,4 @@
 //! Kratei's Cube: the registration cycle (`KrateisCubeManager`) and the arenas (`KrateiArena`).
-// Java: managers/games/KrateisCubeManager.java
-// Java: mechanics/krateisCube/{KrateiArena,KrateiCubePlayer,KrateisReward,KrateiMsgType}.java
-// Java: entity/actor/Player.java (`doDie`: the respawn task and the killer's points)
-//
 // # The cycle
 // Twice an hour (minute 27 and 57 of the local time) registration closes; three minutes later the
 // players near the entrance manager (`AltPartyRange`) are put in the waiting room of their arena,
@@ -762,8 +758,6 @@ impl World {
     }
 
     /// Java `changeDoorStatus(active)`.
-    // NOTE(java-quirk): the task that closes the doors at the end schedules itself again every
-    // `doorRotationTime` seconds, and nothing cancels it until the next match starts.
     fn krateis_change_door_status(&mut self, arena_id: i32, active: bool) {
         let Some(arena) = self.minigames.krateis.arenas.get_mut(&arena_id) else {
             return;
@@ -1178,7 +1172,6 @@ impl World {
             -300 => {
                 let fame = self.players.get(&player).map_or(0, |p| p.data.profile.fame);
                 self.set_fame(player, fame.wrapping_add(amount as i32));
-                // NOTE(java-quirk): the fame reward says "You have acquired $s1 reputation".
                 self.send(
                     player,
                     &SystemMessage::new(SystemMessageId::YouHaveAcquiredS1Reputation)

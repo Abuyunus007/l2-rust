@@ -1,7 +1,6 @@
 //! Skill enchanting data: the enchant groups (costs and success chances per enchant level) and the
 //! enchant routes of every skill.
 //!
-//! Java: `gameserver/data/xml/EnchantSkillGroupsData.java`,
 //! `gameserver/mechanics/skill/holders/{EnchantSkillGroup,EnchantSkillLearn}.java`, and the route
 //! part of `gameserver/util/DocumentSkill.java` (`parseSkill` calls `addNewRouteForSkill` for the
 //! attributes `enchantGroup1`..`enchantGroup8` of a `<skill>`).
@@ -63,8 +62,6 @@ pub struct EnchantSkillHolder {
 
 impl EnchantSkillHolder {
     /// Java `getRate(player)`: 0 below level 76, else the chance of the player's level.
-    // NOTE(java-quirk): Java indexes the 24 entries with `level - 76` and throws past level 99;
-    // no datapack level gets there, the rate is 0 here.
     pub fn rate(&self, player_level: i32) -> i8 {
         if player_level < FIRST_RATE_LEVEL {
             return 0;

@@ -1,6 +1,5 @@
 //! Little-endian packet writer.
 //!
-//! Java: `commons/network/buffer/WriteBuffer.java` (game/login packets) and
 //! `packet/SimpleWritablePacket.java` (LS↔GS link packets). Both write the same bytes.
 
 /// Builds a packet payload (opcode included, no length header, no encryption).
@@ -107,9 +106,6 @@ impl PacketWriter {
 
     /// Java `writeSizedString(text)`: `u16` length in code units, then the units, no terminator.
     /// Empty or null writes just a `0` length.
-    ///
-    /// NOTE(java-quirk): Java writes `(short) len`, so strings over 32767 units would wrap.
-    /// Client strings never get close; we truncate the count the same way.
     pub fn sized_string(&mut self, text: &str) -> &mut Self {
         let units: Vec<u16> = text.encode_utf16().collect();
         self.u16(units.len() as u16);

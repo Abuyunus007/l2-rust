@@ -1709,9 +1709,6 @@ impl ExClientOpcode {
 }
 /// Server packet ids. Plain packets have one id byte. Ex packets are written as the
 /// byte `0xFE` followed by a `u16` ex id (`ex_id()`).
-///
-/// NOTE(java-quirk): Java writes the ex id only when it is greater than 0, so `ExDummy`
-/// (0xFE, 0x00) goes on the wire as the single byte 0xFE. The table keeps the declared `Some(0)`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum ServerOpcode {
     Die,

@@ -1,12 +1,5 @@
 //! The magical damage effects: `MagicalDamage`, `MagicalDamageByAbnormal`, `MagicalSoulDamage`,
 //! `DeathLink`, `HpDrain` and `MagicalDamageMp`.
-// Java: dist/game/data/scripts/handlers/skill/effects/MagicalDamage.java
-// Java: dist/game/data/scripts/handlers/skill/effects/MagicalDamageByAbnormal.java
-// Java: dist/game/data/scripts/handlers/skill/effects/MagicalSoulDamage.java
-// Java: dist/game/data/scripts/handlers/skill/effects/DeathLink.java
-// Java: dist/game/data/scripts/handlers/skill/effects/HpDrain.java
-// Java: dist/game/data/scripts/handlers/skill/effects/MagicalDamageMp.java
-//
 // The damage numbers come from `skill_calc.rs` (M5-FORM-02's formulas). The resist messages the
 // formulas send in Java are sent there too. M5-SHOT-01: every spiritshot charge is read as "not
 // charged".
@@ -251,7 +244,6 @@ impl EffectHandler for HpDrain {
         {
             return;
         }
-        // NOTE(java-quirk): no fake death stand-up here, unlike the other magical damage effects.
         let (damage, mcrit) = roll_magic_damage(world, cx);
         let cp = world.core_of(effected).map_or(0, |c| c.cur_cp as i32);
         let hp = world.core_of(effected).map_or(0, |c| c.cur_hp as i32);

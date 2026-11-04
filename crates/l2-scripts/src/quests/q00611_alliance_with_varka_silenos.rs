@@ -1,6 +1,4 @@
 //! Quest 611: Alliance with Varka Silenos (Naran Ashanuk in the Varka Silenos Village, Ketra badges).
-// Java: dist/game/data/scripts/quests/Q00611_AllianceWithVarkaSilenos/Q00611_AllianceWithVarkaSilenos.java
-//
 // Pattern: a five-step alliance. Each step trades badges (soldier, officer, captain) of the
 // Varka monsters for a Ketra mark; the badges are dropped by a random party member in the
 // started state, only as many as the current step asks for (`canGetItem`).

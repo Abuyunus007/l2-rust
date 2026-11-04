@@ -1,13 +1,4 @@
 //! NPC shops: the buy lists of merchants, buying, selling and the refund list (M6-SHOP-01).
-// Java: data/xml/BuyListData.java, mechanics/buylist/{BuyListHolder,Product}.java
-// Java: taskmanagers/BuyListTaskManager.java
-// Java: entity/actor/instance/Merchant.java (showBuyWindow)
-// Java: network/clientpackets/{RequestBuyItem,RequestSellItem,RequestRefundItem,
-//       RequestBuySellUIClose}.java
-// Java: network/serverpackets/{BuyList,ExBuySellList}.java
-// Java: entity/itemcontainer/PlayerRefund.java
-// Java: dist/game/data/scripts/handlers/bypass/npc/Buy.java
-//
 // # Model
 // The buy lists are definitions in `l2_data::BuyLists` (immutable, shared by `Arc`). What changes
 // is the stock of the *limited* products (`count` in the XML) and their restock times: that is
@@ -25,11 +16,6 @@
 // leaves). The result is the same: a sold item is gone from the database as long as it is in the
 // refund list, and gone for good when the player leaves.
 //
-// # Tax
-// `MerchantPriceConfig.getTotalTaxRate()` adds the castle's `taxPercent` to the town's base tax
-// (`MerchantPriceConfig.xml`), and a purchase pays `subTotal * castleTaxRate` into the treasury of
-// the merchant's castle (`residence/castle.rs`, M7-RES-01; D-51: the treasury row only with
-// `SiegeDatabaseWrites`).
 //
 // # What is left out, with the system that brings it
 // - `ItemProcessType` logging (`LogItems`) and the GM audit.

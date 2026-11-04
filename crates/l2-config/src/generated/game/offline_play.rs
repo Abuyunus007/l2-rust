@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/OfflinePlayConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/OfflinePlay.ini` (Java: `OfflinePlayConfig`).

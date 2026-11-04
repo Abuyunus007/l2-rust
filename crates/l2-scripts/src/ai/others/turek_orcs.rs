@@ -1,5 +1,4 @@
 //! The Turek Orcs: a wounded one flees to a point, then calls the others against its attacker.
-// Java: dist/game/data/scripts/ai/others/TurekOrcs.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;
@@ -156,8 +155,6 @@ impl Script for TurekOrcs {
         if state == 1 {
             let flee = flee_point(ctx, npc);
             let at = ctx.world().position_of(npc.object_id);
-            // NOTE(java-quirk): `getAIValue` is -1 for a missing value, so an NPC without the
-            // values never "arrives" and is sent to (-1, -1, -1) again.
             let (fx, fy, fz) = flee.unwrap_or((-1, -1, -1));
             if at.is_some_and(|(x, y, _)| x == fx && y == fy) {
                 ctx.disable_core_ai(npc, false);

@@ -7,7 +7,6 @@
 //! The expected values are worked out by hand from the Java sources: the order of the list is the
 //! `HashMap` order of `skillId * 1021 + skillLevel` (bucket `(h ^ h >>> 16) & (capacity - 1)`),
 //! the messages are the ones `RequestAcquireSkill` sends, the rows are what `storeSkill` writes.
-//! Java: network/clientpackets/{RequestAcquireSkill,RequestAcquireSkillInfo}.java,
 //! entity/actor/instance/Folk.java, data/xml/SkillTreeData.java, entity/actor/Player.java.
 
 use std::sync::{Arc, Mutex};

@@ -1,7 +1,6 @@
 //! The sub-class certification at the village masters: a level 65 to 80 subclass gets the
 //! certificate books (Emergent Ability, class ability, Master Ability, the transformation
 //! sealbooks) that Avant-Garde turns into skills.
-// Java: dist/game/data/scripts/ai/others/SubclassCertification/SubclassCertification.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;
@@ -76,7 +75,6 @@ fn active_class(ctx: &ScriptCtx<'_>, player: ObjectId) -> i32 {
 
 impl SubclassCertification {
     /// Java `replaceHtml(player, htmlFile, replaceClass, levelToReplace)`.
-    // NOTE(java-quirk): a missing page throws in Java (`htmltext.replace` on null).
     fn replace_html(
         ctx: &ScriptCtx<'_>,
         player: ObjectId,
@@ -177,8 +175,6 @@ impl Script for SubclassCertification {
                 } else if ctx.player_level(player) < MIN_LEVEL {
                     Some("NotMinLevel.html".to_owned())
                 } else {
-                    // NOTE(java-quirk): `(VillageMaster) npc` throws for an NPC that is no
-                    // village master (or no NPC).
                     let class = active_class(ctx, player);
                     if ctx.world().check_village_master(npc?.object_id, class)? {
                         Some("CertificationList.html".to_owned())

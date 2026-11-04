@@ -1,12 +1,5 @@
 //! Where the six scripts meet the world: the `Script` bypass, the first click on a script's NPC
 //! and the NPC events the scripts listen to, and `Quest.showResult` for what a script returns.
-// Java: mechanics/script/Quest.java (notifyEvent, notifyFirstTalk, showResult, showHtmlFile,
-//       getHtm), entity/actor/Player.java (processScriptEvent)
-// Java: entity/actor/Attackable.java (addDamage: OnAttackableAttack; doDie: OnAttackableKill after
-//       `_onKillDelay`), entity/actor/Npc.java (onSpawn: OnNpcSpawn)
-// Java: mechanics/events (the listeners the scripts register with `addAttackId`, `addKillId`,
-//       `addSpawnId`, `addSkillSeeId`, `addFirstTalkId`, `addStartNpc`, `addTalkId`)
-//
 // D-05: the script API comes last. These six scripts are built in like `ClanMaster` and the two
 // fortress scripts: the tables below say which NPC each listens to.
 
@@ -214,8 +207,6 @@ impl World {
             _ => return true,
         };
         let hall = ClanHallId(script.hall_id());
-        // D-50: the registrations of the flag wars and of Rainbow Springs change on the Java game
-        // server: read them again before the messenger acts (a page needs no row).
         let registration = matches!(
             script,
             HallScript::BanditStronghold | HallScript::WildBeastReserve | HallScript::RainbowSpringsChateau

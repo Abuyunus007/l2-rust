@@ -1,42 +1,8 @@
 //! The persistence task: stores player snapshots in order and tells the login server link when
 //! a player's data is safe.
-// Java: org/l2jmobius/gameserver/entity/actor/Player.java (store, storeCharBase)
-// Java: org/l2jmobius/gameserver/taskmanagers/PlayerAutoSaveTaskManager.java (autosave interval)
-// Java: org/l2jmobius/gameserver/Shutdown.java (everybody is stored before the DB is closed)
 // Design: docs/design/world-loop.md ("Persistence")
 //
-// The world never waits for the database (D-15): it pushes `PersistCommand`s into the outbox
-// channel and this task applies them one after the other. One task, one queue, so the writes of
-// a character are applied in the order the world produced them, and `PlayerLeft` (which the
-// world sends after the final `StorePlayer`) is only handled once that store finished. That is
-// requirement 1: the login server hears `PlayerLogout` strictly after the data is written, so
-// a quick re-login on the Java game server can never read stale rows.
 //
-// Side by side with the Java GS (D-39, requirement 2): the Java game server runs on the same
-// database. This task only ever writes
-// - `characters` through Java's own `UPDATE_CHARACTER` and `UPDATE_ONLINE_STATUS`,
-// - `items`, `character_skills`, `character_shortcuts` of the character it stores,
-// - `character_skills_save` and `character_item_reuse_save` (the buffs and reuse timers),
-// - `character_reco_bonus` (the Nevit hourglass time) and the `character_variables` rows the
-//   world changed (Nevit's points; M4-VIT-01),
-// - `character_reco_bonus` again for a vote or `RecoGiveTask` (`storeRecommendationValues`) and
-//   for Java's daily reset (`resetRecommends`: the two `UPDATE`s over every row, M5-FU-03; only
-//   with `DailyResetDatabaseWrites = True` in `SideBySide.ini`),
-// - the clan tables (`clan_data`, `clan_privs`, `clan_subpledges`, `clan_notices`) and the clan
-//   columns of offline members' `characters` rows, with Java's clan statements
-//   (`PersistCommand::Clan`, M6-CLAN-01),
-// - `buylists` through Java's `Product.save` statement (`PersistCommand::BuyList`, M6-SHOP-01),
-// - `character_friends` rows of the friend list and the block list (`PersistCommand::Friend`,
-//   M6-FRIEND-01),
-// - `character_recipebook` (a recipe learned or forgotten, `PersistCommand::Recipe`) and
-//   `character_recipeshoplist` (with the store, `StoreRecipeShopList`; M6-CRAFT-01),
-// - the residence tables (`castle`, `fort`, `clanhall`, `siegable_clanhall`, the function tables,
-//   `clan_data.hasCastle`) and the circlet rows of offline clan members, with Java's residence
-//   statements (`PersistCommand::Residence`, M7-RES-01; the world sends the siege-like ones only
-//   with `SiegeDatabaseWrites = True` in `SideBySide.ini`, D-51),
-// with the statements the repositories copied from Java. It never runs bulk updates or cleanup
-// on its own; the daily reset `UPDATE`s are the one bulk write, because the Java game server
-// runs the same ones every day.
 //
 // Item rows reach the database two ways, like in Java: `PersistCommand::ItemChanges` carries the
 // rows of one `Item.updateDatabase()` (an equip, an unequip, a destroyed item) and is written at
@@ -386,7 +352,6 @@ pub trait PlayerStore: Send + 'static {
         async move { Ok(rows) }
     }
 
-    /// One residence read again (D-50, D-51, M7-RES-01). A store without a database has no rows.
     fn load_residence(
         &mut self,
         _kind: ResidenceReadKind,
@@ -409,8 +374,6 @@ pub trait PlayerStore: Send + 'static {
         }
     }
 
-    /// Java `Mail.restore` for one message (M6-SYNC-01): the items still in the mail. The Java game
-    /// server shares the rows (D-39), so the world asks before it hands attachments out.
     fn load_mail_attachments(
         &mut self,
         _sender_id: i32,
@@ -439,9 +402,6 @@ pub trait PlayerStore: Send + 'static {
         async { Ok(OfflinePetRows::default()) }
     }
 
-    /// Java `BlockList.loadList` for a character that is not online (M6-FU-09): the ids of its
-    /// block list. The Java game server shares the rows (D-39), so the world asks before a mail
-    /// goes to an offline receiver.
     fn load_block_list(
         &mut self,
         _owner: i32,
@@ -513,7 +473,6 @@ pub trait PlayerStore: Send + 'static {
         async { Ok(()) }
     }
 
-    /// Boss rows read again (D-50, D-53, M8-BOSS-01). A store without a database has no rows.
     fn load_boss_rows(
         &mut self,
         kind: BossReadKind,
@@ -616,8 +575,6 @@ pub trait PlayerStore: Send + 'static {
         async { Ok(()) }
     }
 
-    /// A `global_variables` write of the scripts (S-API-01, only sent with `CycleDatabaseWrites`,
-    /// D-54).
     fn store_global_variables(
         &mut self,
         _write: &l2_world::script::GlobalVariablesWrite,
@@ -625,8 +582,6 @@ pub trait PlayerStore: Send + 'static {
         async { Ok(()) }
     }
 
-    /// `DELETE FROM items WHERE item_id=?` of a long time event that ended (S-LEFT-01, only sent
-    /// with `CycleDatabaseWrites`, D-53).
     fn delete_items_of_item_id(
         &mut self,
         _item_id: i32,
@@ -634,9 +589,6 @@ pub trait PlayerStore: Send + 'static {
         async { Ok(()) }
     }
 
-    /// The characters whose birthday came since `since_ms` as `(charId, char_name, age)`
-    /// (`CharacterBirthday`, S-LEFT-01, only asked for with `DailyResetDatabaseWrites`, D-49). A
-    /// store without a database has none.
     fn load_pending_birthday_gifts(
         &mut self,
         _since_ms: i64,
@@ -1046,7 +998,6 @@ async fn run<S: PlayerStore>(
                 }
             }
             OutboxMessage::Persist(PersistCommand::ResetRecommends) => {
-                // Java: "Could not reset Recommendations System", logged, no retry.
                 if let Err(e) = store.reset_recommends().await {
                     error!("Could not reset Recommendations System: {e}");
                 }
@@ -1536,8 +1487,6 @@ async fn run<S: PlayerStore>(
                 }
             }
             OutboxMessage::Persist(PersistCommand::OlympiadRereadRequest { request, then }) => {
-                // Not a write: the answer goes back to the world (D-15). A failed read is reported
-                // as a failure; the world then shows and hands out nothing (D-50).
                 let result = match store.load_olympiad_reread(&request).await {
                     Ok(rows) => Ok(rows),
                     Err(e) => {
@@ -1555,8 +1504,6 @@ async fn run<S: PlayerStore>(
                 kind,
                 then,
             }) => {
-                // Not a write: the answer goes back to the world (D-15). A failed read is reported
-                // as a failure; the world then changes nothing (D-50).
                 let result = match store.load_residence(kind, residence_id).await {
                     Ok(rows) => Ok(rows),
                     Err(e) => {
@@ -1653,8 +1600,6 @@ async fn run<S: PlayerStore>(
                 }
             }
             OutboxMessage::Persist(PersistCommand::BossRereadRequest { kind, then }) => {
-                // Not a write: the answer goes back to the world (D-15). A failed read is reported
-                // as a failure; the world then changes nothing and refuses the action (D-50).
                 let result = match store.load_boss_rows(kind).await {
                     Ok(rows) => Ok(rows),
                     Err(e) => {
@@ -1774,9 +1719,6 @@ async fn run<S: PlayerStore>(
     debug!("Outbox closed, persistence task done.");
 }
 
-/// Java `FishingChampionshipManager.restoreData()`: the rows of `fishing_championship` and the
-/// global variable `fishChampionshipEnd`. Only reads (D-39). A database error is logged and the
-/// championship starts empty, like Java.
 pub async fn load_fishing_championship(pool: &Pool) -> ChampionshipData {
     let repo = FishingChampionshipRepository::new(pool.clone());
     let mut data = ChampionshipData::default();
@@ -1906,9 +1848,6 @@ pub async fn load_buy_list_stock(pool: &Pool) -> Vec<ProductRow> {
     }
 }
 
-/// Java `MailManager`'s constructor and `CharInfoTable`'s, the database half: every mail with the
-/// items of its `Mail` container, and the id, name and access level of every character. Only reads
-/// (D-39). A database error is logged and the post box starts empty, like Java.
 pub async fn load_mail(pool: &Pool) -> MailLoad {
     let mut load = MailLoad::default();
     match CharacterRepository::new(pool.clone()).all_names().await {
@@ -1993,10 +1932,6 @@ fn mail_messages_of(
         .collect()
 }
 
-/// The mails of one character as sender or receiver with their attachments, read at
-/// `CharacterSelect` (M6-SYNC-01): the Java game server shares the tables (D-39), so what
-/// `load_mail` read at startup may be out of date. Only reads. A failed read is an error, never
-/// an empty list: the world then keeps what it has.
 pub async fn load_mail_of_character(
     messages: &MessageRepository,
     items: &ItemRepository,
@@ -2045,10 +1980,6 @@ async fn write_offline_shop(
     Ok(())
 }
 
-/// Java `OfflineTraderTable.restoreOfflineTraders`, the database half: the shops of the tables
-/// that are young enough and of a known type, each with its character loaded like at
-/// `CharacterSelect`. Only reads (D-39). A shop whose character cannot be read is skipped with
-/// Java's warning; the world sits them down (`World::restore_offline_traders`).
 pub async fn load_offline_traders(
     pool: &Pool,
     settings: &OfflineSettings,
@@ -2118,10 +2049,6 @@ pub async fn load_offline_traders(
     traders
 }
 
-/// Java `OfflinePlayTable.restoreOfflinePlayers`, the database half: the characters of
-/// `character_offline_play` with their rows, each loaded like at `CharacterSelect`, and the
-/// groups of `character_offline_play_group`. Only reads (D-39); the world puts them together
-/// (`World::restore_offline_players`) and clears the group table.
 pub async fn load_offline_players(pool: &Pool) -> (Vec<OfflinePlayRestore>, Vec<OfflinePlayGroup>) {
     use crate::client::enter::{DbPlayerLoader, PlayerLoader};
     let repo = l2_db::OfflinePlayRepository::new(pool.clone());
@@ -2375,8 +2302,6 @@ pub async fn load_dimensional_rift_rooms(pool: &Pool) -> Vec<l2_world::sevensign
     }
 }
 
-/// Java `SevenSigns.restoreSevenSignsData()` (read only at start, D-53). A database that cannot be
-/// read gives the defaults, like Java ("Unable to load Seven Signs data from database").
 pub async fn load_seven_signs(pool: &Pool) -> l2_world::sevensigns::SevenSignsLoad {
     match read_seven_signs(&l2_db::SevenSignsRepository::new(pool.clone())).await {
         Ok(load) => load,
@@ -2536,8 +2461,6 @@ pub fn saved_pet_effect_of(r: l2_db::PetSkillSaveRow) -> SavedPetEffect {
     }
 }
 
-/// Java `PetNameTable.doesPetNameExist`, read once: the name and the collar item id of every
-/// named pet. Only reads (D-39); a failed read leaves the table empty and is logged.
 pub async fn load_pet_names(pool: &Pool) -> Vec<(String, i32)> {
     match PetRepository::new(pool.clone()).all_pet_names().await {
         Ok(names) => names,
@@ -2548,9 +2471,6 @@ pub async fn load_pet_names(pool: &Pool) -> Vec<(String, i32)> {
     }
 }
 
-/// Java `ClanTable`'s constructor, the database half: every clan (`new Clan(clanId)`'s queries)
-/// and the `clan_wars` rows. Only reads (D-39). A clan whose rows cannot be read is logged and
-/// left out, like Java's caught `restore` (which keeps a half-restored clan).
 pub async fn load_clans(pool: &Pool) -> (Vec<ClanRecord>, Vec<(String, String)>) {
     let repo = ClanRepository::new(pool.clone());
     let ids = match repo.clan_ids().await {
@@ -2594,8 +2514,6 @@ pub async fn load_clan_warehouse(items: &ItemRepository, clan_id: i32) -> Vec<It
     }
 }
 
-/// Java `CrestTable.load()`, the database half: the rows of `crests`, only a read (D-39). A
-/// database error is logged and the server goes on without crests, like Java.
 pub async fn load_crests(pool: &Pool) -> Vec<CrestRecord> {
     match CrestRepository::new(pool.clone()).all().await {
         Ok(rows) => rows
@@ -2613,11 +2531,6 @@ pub async fn load_crests(pool: &Pool) -> Vec<CrestRecord> {
     }
 }
 
-/// Java's residence managers at startup, the database half (M7-RES-01): the conquerable halls
-/// (`CHSiegeManager`), the auctionable halls (`ClanHallTable`), the castles
-/// (`CastleManager.loadInstances`, `new Castle(id)`) and the fortresses (`FortManager`), each with
-/// the functions of an owned residence. Only reads (D-39). A failed read is logged like Java's and
-/// the rest goes on.
 pub async fn load_residences(pool: &Pool) -> ResidenceLoad {
     let repo = ResidenceRepository::new(pool.clone());
     let mut load = ResidenceLoad::default();
@@ -2677,11 +2590,6 @@ pub async fn load_residences(pool: &Pool) -> ResidenceLoad {
     load
 }
 
-/// Java's siege managers at startup, the database half (M7-SIEGE-01): the registrations
-/// (`Siege.loadSiegeClan`), the guards and hired mercenaries (`SiegeGuardManager`,
-/// `MercTicketManager`) and the door and trap upgrades (`Castle.loadDoorUpgrade`,
-/// `SiegeManager.loadTrapUpgrade`). Only reads (D-39). A failed read is logged like Java's and the
-/// rest goes on.
 pub async fn load_sieges(pool: &Pool) -> l2_world::SiegeLoad {
     let repo = SiegeRepository::new(pool.clone());
     let mut load = l2_world::SiegeLoad::default();
@@ -2736,9 +2644,6 @@ pub async fn load_sieges(pool: &Pool) -> l2_world::SiegeLoad {
     load
 }
 
-/// Java's fortress constructors and `FortSiege` constructors at startup, the database half
-/// (M7-FORT-01): `fort_spawnlist`, `fort_siege_guards` and `fortsiege_clans` of every fortress.
-/// Only reads (D-39). A failed read is logged like Java's and that fortress goes without.
 pub async fn load_fort_sieges(pool: &Pool) -> FortSiegeLoad {
     let residences = ResidenceRepository::new(pool.clone());
     let repo = FortSiegeRepository::new(pool.clone());
@@ -2820,9 +2725,6 @@ fn parse_global_long(value: Option<&str>) -> i64 {
     }
 }
 
-/// Java `TerritoryWarManager.load()` and `GlobalVariablesManager` (`nextTWStartDate`), the
-/// database half (M7-TW-01): the spawn list, the territories, the registrations. Only reads
-/// (D-39); a failed read is logged like Java's and that part is empty.
 pub async fn load_territories(pool: &Pool) -> TerritoryLoad {
     let repo = TerritoryRepository::new(pool.clone());
     let spawns = match repo.spawns().await {
@@ -2881,11 +2783,6 @@ pub async fn load_territories(pool: &Pool) -> TerritoryLoad {
     }
 }
 
-/// Java's conquerable hall scripts at startup, the database half (M7-CHSIEGE-01):
-/// `clanhall_siege_attackers`, `clanhall_siege_guards` and, for the scripts that have them, the
-/// flag war tables and `rainbowsprings_attacker_list`. Only reads (D-39). A failed read is logged
-/// like Java's and that part goes without. Java reads the guards at the first siege; they are read
-/// here because the world never waits for the database (D-15).
 pub async fn load_hall_sieges(pool: &Pool) -> HallSiegeLoad {
     let repo = HallSiegeRepository::new(pool.clone());
     let mut load = HallSiegeLoad::default();
@@ -2975,11 +2872,6 @@ fn olympiad_noble_row(char_id: i32, noble: &NobleStats) -> l2_db::OlympiadNobleR
     }
 }
 
-/// Java `Olympiad.load()`, the database half (M8-OLY-01): the `olympiad_data` row, the nobles
-/// and the last period's ranking (`GET_ALL_CLASSIFIED_NOBLESS`, which `loadNoblesRank` reads when
-/// the server starts in the validation period). Read in both modes of `CycleDatabaseWrites`
-/// (D-53: the state is read again at start). A failed read is logged like Java's and that part
-/// starts empty.
 pub async fn load_olympiad(pool: &Pool, min_matches: i32) -> OlympiadLoad {
     let repo = l2_db::OlympiadRepository::new(pool.clone());
     let data = match repo.load_data().await {
@@ -3046,10 +2938,6 @@ fn cursed_db_row(row: &CursedRow) -> CursedWeaponRow {
     }
 }
 
-/// Java `Hero.init()`, the database half (M8-HERO-01): every `heroes` row with the clan of the
-/// character, and the message, the diary and the match history of the heroes of the last period
-/// (`before` is [`l2_world::hero_fights_cutoff_ms`]). Read in both modes of `CycleDatabaseWrites`
-/// (D-53: the state is read again at start). A failed read is logged like Java's and starts empty.
 pub async fn load_heroes(pool: &Pool, before: i64) -> l2_world::HeroLoad {
     match read_heroes(&l2_db::HeroRepository::new(pool.clone()), before, None).await {
         Ok(load) => load,
@@ -3180,11 +3068,6 @@ pub async fn load_minigames(pool: &Pool) -> MinigameLoad {
     }
 }
 
-/// Java `CursedWeaponsManager.restore()` and `controlPlayers()`, the database half (M8-CURSED-01):
-/// the rows of `cursed_weapons`, and the cleanup of a cursed weapon item a character holds
-/// without a row. Called only with `CycleDatabaseWrites` (D-53): without it the table is the
-/// Java game server's and nothing is read or written.
-///
 /// A failed read is logged like Java's and the weapons start as not in the world.
 pub async fn load_cursed(pool: &Pool, defs: &l2_data::CursedWeaponDefs) -> CursedLoad {
     let repo = CursedWeaponRepository::new(pool.clone());
@@ -3213,7 +3096,6 @@ pub async fn load_cursed(pool: &Pool, defs: &l2_data::CursedWeaponDefs) -> Curse
                 warn!("Error while deleting cursed weapon {item_id} from userId {owner}");
             }
             // Restore the player's old karma and pk count.
-            // NOTE(java-quirk): the weapon has no row, so its old karma and pk count are 0.
             if repo.restore_karma(owner, 0, 0).await? != 1 {
                 warn!("Error while updating karma & pkkills for userId 0");
             }
@@ -3241,10 +3123,6 @@ pub async fn load_cursed(pool: &Pool, defs: &l2_data::CursedWeaponDefs) -> Curse
     }
 }
 
-/// Java `CastleManorManager.loadDb`, the database half (M7-MANOR-01): the seeds the castles sell
-/// and the crops they buy, both periods, for every castle of the `castle` table. Only reads
-/// (D-39). A failed read is logged like Java's ("Unable to load manor data!") and the manor starts
-/// with empty lists.
 pub async fn load_manor(pool: &Pool) -> ManorLoad {
     let residences = ResidenceRepository::new(pool.clone());
     let repo = ManorRepository::new(pool.clone());
@@ -3383,9 +3261,6 @@ fn procure_row(row: &ManorProcureRow) -> ProcureRow {
     }
 }
 
-/// The residences of one clan as the database has them now (D-50, D-51): the castle its
-/// `hasCastle` names (`castle_id`, read at `CharacterSelect` with the clan) and the fortresses and
-/// halls whose owner it is, each with its functions.
 pub async fn load_residence_refresh(
     repo: &ResidenceRepository,
     clan_id: i32,
@@ -3440,7 +3315,6 @@ async fn load_castle_record(repo: &ResidenceRepository, id: i32) -> CastleRecord
     record
 }
 
-/// A castle read again: any failure fails the read (D-50).
 async fn read_castle_record(repo: &ResidenceRepository, id: i32) -> Result<CastleRecord, l2_db::DbError> {
     let mut record = CastleRecord {
         id,
@@ -3453,7 +3327,6 @@ async fn read_castle_record(repo: &ResidenceRepository, id: i32) -> Result<Castl
     record.owner_id = repo.castle_owner_ids(id).await?.last().copied().unwrap_or(0);
     if record.owner_id != 0 {
         record.functions = function_records(repo.functions(FunctionTable::Castle, id).await?);
-        // D-50: the owner's proofs of alliance, which the vault keeper hands out.
         record.owner_blood_alliance_count = repo.blood_alliance_count(record.owner_id).await?;
     }
     Ok(record)
@@ -3624,9 +3497,6 @@ async fn store_auction_write(repo: &AuctionRepository, write: &AuctionWrite) -> 
     Ok(())
 }
 
-/// The clan hall auction rows (`ClanHallAuctionManager.load()`: every `auction` id, each read like
-/// `new ClanHallAuction(id)` with its bids). Only reads (D-39). A failed read is logged like
-/// Java's.
 pub async fn load_clan_hall_auctions(pool: &Pool) -> Vec<AuctionRecord> {
     let repo = AuctionRepository::new(pool.clone());
     let mut records = Vec::new();
@@ -3853,11 +3723,6 @@ pub async fn load_char_names(pool: &Pool) -> Vec<(i32, String)> {
 /// Java `ItemsOnGroundManager`'s constructor, the database half (`load()`): what is in
 /// `itemsonground` when the server starts. The world puts the rows back
 /// (`World::load_ground_items`).
-///
-/// D-39: exactly as Java, nothing touches the table unless the owner turned `SaveDroppedItem`
-/// (read, and rewritten later by the world's periodic save) or `ClearDroppedItemTable` (emptied
-/// when `SaveDroppedItem` is off) on. A database error is logged and the server goes on without
-/// the items, like Java.
 pub async fn restore_ground_items(pool: &Pool, general: &GeneralConfig) -> Vec<GroundItemRow> {
     let repo = GroundItemRepository::new(pool.clone());
     // If SaveDroppedItem is false, may want to delete all items previously stored to avoid add old
@@ -3945,7 +3810,6 @@ pub fn autosave_interval_from_config(config: &l2_config::GameConfig) -> Duration
 /// Java `Item.restoreAttributes` for the items of one owner: the augmentation and the element
 /// attributes the `item_attributes` and `item_elementals` rows give them. Java reads the two
 /// tables one item at a time; this reads them once for the owner (same rows, same order).
-// Java: Item.restoreAttributes
 pub async fn restore_item_attributes<'a>(
     repo: &ItemRepository,
     owner_id: i32,
@@ -3965,7 +3829,6 @@ pub async fn restore_item_attributes<'a>(
 /// WHERE owner_id=? AND loc=?`), with their augmentation and elements. The private warehouse
 /// (`WAREHOUSE`), the freight (`FREIGHT`) and the clan warehouse (`CLANWH`, the owner is the clan)
 /// read their items this way (M6-WH-01).
-// Java: ItemContainer.restore, Item.restoreFromDb
 pub async fn load_container_items(
     repo: &ItemRepository,
     owner_id: i32,
@@ -4073,7 +3936,6 @@ impl Baseline {
     }
 }
 
-/// Stores into the real database through the repositories (Java's SQL, D-39).
 pub struct DbStore {
     characters: CharacterRepository,
     items: ItemRepository,
@@ -4260,7 +4122,6 @@ impl DbStore {
             self.variables.delete_variable(char_id, name).await?;
         }
         for name in &profile.variables_changed {
-            // Java: `if (value != null)`.
             if let Some(value) = profile.variables.get(name) {
                 self.variables.upsert_variable(char_id, name, value).await?;
             }
@@ -4272,7 +4133,6 @@ impl DbStore {
     /// one row per saved buff or reuse timer, `buff_index` counting from 1 in the order the world
     /// gave them (`restoreEffects` reads them back in that order). Java runs the batch on one
     /// connection without a transaction, so does this.
-    // Java: Player.storeEffect (DELETE_SKILL_SAVE, ADD_SKILL_SAVE)
     async fn store_effects(
         &self,
         char_id: i32,
@@ -4300,7 +4160,6 @@ impl DbStore {
     /// M5-FIX-03: Java `Player.storeItemReuseDelay` replaces the character's
     /// `character_item_reuse_save` rows with the timers that still run. Java catches a failure and
     /// logs it ("Could not store char item reuse data"), so a failure here does not fail the store.
-    // Java: Player.storeItemReuseDelay (DELETE_ITEM_REUSE_SAVE, ADD_ITEM_REUSE_SAVE)
     async fn store_item_reuse(&self, char_id: i32, rows: &[SavedItemReuse]) {
         let rows: Vec<NewItemReuse> = rows
             .iter()
@@ -4367,7 +4226,6 @@ impl DbStore {
         }
         // Java `Item.restoreAttributes`: the augmentation and elements the rows hold now.
         restore_item_attributes(&self.items, char_id, baseline.items.values_mut()).await?;
-        // Java: MacroList.restoreMe (the same rows and the same reading as at the login).
         for row in self.macros.macros_of(char_id).await? {
             let macro_data = MacroData {
                 id: row.id,
@@ -4463,7 +4321,6 @@ impl DbStore {
                 })
                 .await?;
         }
-        // Java: updateItemAttributes (REPLACE) / removeAugmentation (DELETE), updateItemElements
         // (DELETE all, INSERT each).
         let old_augmentation = old.and_then(|o| o.augmentation);
         if item.augmentation != old_augmentation {
@@ -4556,7 +4413,6 @@ impl DbStore {
     }
 
     /// The writes of `store_skill_changes`; the baseline follows each successful statement.
-    // Java: Player.storeSkill (UPDATE_CHARACTER_SKILL_LEVEL when the skill was known, else
     // ADD_NEW_SKILLS) and Player.removeSkill (DELETE_SKILL_FROM_CHAR).
     async fn apply_skill_changes(
         &self,
@@ -4633,7 +4489,6 @@ impl DbStore {
             }
         }
 
-        // Java: MacroList.registerMacroInDb / deleteMacroFromDb (by difference, L-02). The macros
         // belong to the character, not to a class index, and a snapshot always carries the whole
         // list (the profile is loaded at the login), so a macro that is gone is deleted even while
         // the baseline still comes from the database.
@@ -4679,7 +4534,6 @@ impl DbStore {
             return Ok(());
         };
 
-        // Java: Player.storeSkill
         let now_skills: HashSet<i32> = player.skills.iter().map(|s| s.skill_id).collect();
         for SkillData {
             skill_id,
@@ -4721,7 +4575,6 @@ impl DbStore {
             }
         }
 
-        // Java: Shortcuts.registerShortcutInDb / deleteShortcutFromDb
         let now_shortcuts: HashSet<(i32, i32)> = player.shortcuts.iter().map(|s| (s.page, s.slot)).collect();
         for shortcut in &player.shortcuts {
             let key = (shortcut.page, shortcut.slot);
@@ -4817,7 +4670,6 @@ fn clamp_i64(value: u64) -> i64 {
 
 /// The values of Java's `Player.storeCharBase`: what the snapshot models comes from the
 /// snapshot, everything else is the row's current value, written back unchanged.
-// Java: Player.storeCharBase (UPDATE_CHARACTER)
 pub fn build_character_update(player: &PlayerData, row: &CharacterRow) -> CharacterUpdate {
     // Java stores the base class level, exp and sp in `characters` (`getBaseLevel` ...); the
     // active subclass has its own row in `character_subclasses` (S-SUB-01). A snapshot without the
@@ -4927,11 +4779,9 @@ impl PlayerStore for DbStore {
         if row.account_name.as_deref() != Some(player.account.as_str()) {
             return Err(PersistError::WrongAccount(char_id, player.account.clone()));
         }
-        // Java: Player.store -> storeCharBase
         self.characters
             .update_character(char_id, &build_character_update(player, &row))
             .await?;
-        // Java: Player.store -> storeCharSub (S-SUB-01). Java logs a failure and goes on.
         for sub in l2_world::stored_subclasses(player) {
             let values = SubclassValues {
                 class_id: sub.class_id,
@@ -4947,20 +4797,16 @@ impl PlayerStore for DbStore {
                 warn!("Could not store sub class data for {}: {e}", player.name);
             }
         }
-        // Java: Player.store -> getVariables().storeMe(); autoSave / deleteMe -> storeRecommendations.
         self.store_nevit_rows(player).await?;
-        // Java: Player.store -> storeEffect (the buffs of the character, see `store_effects`).
         if let Some(effects) = &player.profile.effects_to_store {
             self.store_effects(char_id, player.profile.class_index, effects)
                 .await?;
         }
 
-        // Java: Player.store -> storeItemReuseDelay.
         if let Some(rows) = &player.profile.item_reuse_to_store {
             self.store_item_reuse(char_id, rows).await;
         }
 
-        // Java: Player.store -> storeRecipeShopList (only with `StoreRecipeShopList`, and only a
         // character that has a shop; Java logs a failure and goes on).
         if let Some(shop) = &player.profile.recipe_shop_to_store {
             let rows: Vec<RecipeShopRow> = shop
@@ -4972,7 +4818,6 @@ impl PlayerStore for DbStore {
             }
         }
 
-        // Java: Player.store -> SevenSigns.saveSevenSignsData(getObjectId()) (M8-SS-01; Java logs a
         // failure and goes on).
         if let Some(row) = &player.profile.seven_signs_to_store
             && let Err(e) = self.seven_signs.update_player(&seven_signs_row(row)).await
@@ -4980,7 +4825,6 @@ impl PlayerStore for DbStore {
             error!("SevenSigns: Unable to save data to database: {e}");
         }
 
-        // Java: Inventory.updateDatabase, Shortcuts / storeSkill (by difference).
         let class_index = class_index_of(player);
         // A baseline of another class index (the class changed since it was made, S-SUB-01) says
         // nothing about this one's rows: they are read again, and nothing is deleted this time.
@@ -5199,7 +5043,6 @@ impl PlayerStore for DbStore {
 
     async fn store_mail_write(&mut self, write: &MailWrite) -> Result<(), PersistError> {
         match write {
-            // Java: MailManager.sendMessage (MailMessage.getStatement)
             MailWrite::Insert(msg) => {
                 self.messages
                     .insert(&l2_db::MessageRow {
@@ -5242,7 +5085,6 @@ impl PlayerStore for DbStore {
 
     async fn store_summon(&mut self, write: &SummonWrite) -> Result<(), PersistError> {
         match write {
-            // Java: CharSummonTable.saveSummon
             SummonWrite::SaveServitor {
                 owner,
                 summon_skill_id,
@@ -5254,9 +5096,7 @@ impl PlayerStore for DbStore {
                     .save_summon(owner.0, *summon_skill_id, *cur_hp, *cur_mp, *time)
                     .await?;
             }
-            // Java: CharSummonTable.removeServitor
             SummonWrite::RemoveServitor { owner } => self.summons.remove_summon(owner.0).await?,
-            // Java: Servitor.storeEffect / restoreEffects
             SummonWrite::ServitorEffects {
                 owner,
                 class_index,
@@ -5275,7 +5115,6 @@ impl PlayerStore for DbStore {
                     .store_servitor_effects(owner.0, *class_index, *summon_skill_id, &rows)
                     .await?;
             }
-            // Java: Pet.storeMe
             SummonWrite::StorePet { insert, pet } => {
                 let values = PetValues {
                     name: pet.name.clone().unwrap_or_default(),
@@ -5303,16 +5142,13 @@ impl PlayerStore for DbStore {
                     self.pets.update_pet(&values).await?;
                 }
             }
-            // Java: Player.storePetFood
             SummonWrite::PetFed {
                 control_object_id,
                 fed,
             } => {
                 self.pets.update_fed(control_object_id.0, *fed).await?;
             }
-            // Java: Pet.destroyControlItem, ItemManager.destroyItem
             SummonWrite::DeletePet { control_object_id } => self.pets.delete_pet(control_object_id.0).await?,
-            // Java: Pet.storeEffect / restoreEffects
             SummonWrite::PetEffects {
                 control_object_id,
                 effects,
@@ -5698,7 +5534,6 @@ impl PlayerStore for DbStore {
             .map(|row| FriendSummary {
                 object_id: char_id,
                 name: row.name,
-                // Java: `rset.getInt(2) == 1`
                 online: row.online == 1,
                 class_id: row.class_id,
                 level: row.level,
@@ -5708,7 +5543,6 @@ impl PlayerStore for DbStore {
     async fn store_subclass_write(&mut self, write: &l2_world::SubclassWrite) -> Result<(), PersistError> {
         use l2_world::SubclassWrite;
         match write {
-            // Java: Player.addSubClass (ADD_CHAR_SUBCLASS, then storeSkill for each skill). A
             // failed insert stores no skill.
             SubclassWrite::Add {
                 char_id,
@@ -5737,7 +5571,6 @@ impl PlayerStore for DbStore {
                         .await?;
                 }
             }
-            // Java: Player.modifySubClass (DELETE_CHAR_HENNA per slot, DELETE_CHAR_SHORTCUTS,
             // DELETE_SKILL_SAVE, DELETE_CHAR_SKILLS, DELETE_CHAR_SUBCLASS; one try block).
             SubclassWrite::Delete {
                 char_id,
@@ -5761,12 +5594,10 @@ impl PlayerStore for DbStore {
     async fn load_class_index(&mut self, owner: ObjectId, class_index: i32) -> l2_world::ClassIndexLoad {
         let char_id = owner.0;
         let mut load = l2_world::ClassIndexLoad::default();
-        // Java: restoreRecipeBook(false)
         match self.recipes.dwarven_recipes_of_class(char_id, class_index).await {
             Ok(ids) => load.dwarven_recipes = ids,
             Err(e) => error!("Could not restore recipe book data:{e}"),
         }
-        // Java: restoreSkills (sorted like the login's, `enter.rs`)
         match self.skills.skills_of(char_id, class_index).await {
             Ok(mut rows) => {
                 rows.sort_by_key(|s| s.skill_id);
@@ -5780,7 +5611,6 @@ impl PlayerStore for DbStore {
             }
             Err(e) => warn!("Could not restore character {char_id} skills: {e}"),
         }
-        // Java: restoreEffects, then "Remove previously restored skills." (the rows are deleted).
         match self.skills.skill_effects_of(char_id, class_index).await {
             Ok(rows) => {
                 load.effects = rows.iter().map(crate::client::enter::saved_effect_of).collect();
@@ -5790,12 +5620,10 @@ impl PlayerStore for DbStore {
             }
             Err(e) => warn!("Could not restore {char_id} active effect data: {e}"),
         }
-        // Java: restoreHenna
         match self.hennas.hennas_of(char_id, class_index).await {
             Ok(rows) => load.hennas = crate::client::enter::henna_slots(&rows),
             Err(e) => error!("Failed restoing character {char_id} hennas. {e}"),
         }
-        // Java: Shortcuts.restoreMe
         match self.shortcuts.shortcuts_of(char_id, class_index).await {
             Ok(rows) => {
                 load.shortcuts = rows
@@ -5811,7 +5639,6 @@ impl PlayerStore for DbStore {
             }
             Err(e) => warn!("Could not restore character shortcuts: {e}"),
         }
-        // Java: Servitor.restoreEffects reads these when a servitor spawns; with the rest here.
         match self.summons.servitor_effects_of(char_id, class_index).await {
             Ok(rows) => {
                 load.summon_effects = rows
@@ -6645,7 +6472,6 @@ impl PlayerStore for DbStore {
                     None => ResidenceRereadRows::Missing,
                 }
             }
-            // M7-TW-01: the territories, the registrations and the next war date (D-50, D-51).
             ResidenceReadKind::Territory => {
                 let repo = &self.territories;
                 let territories = repo.territories().await?;
@@ -6663,7 +6489,6 @@ impl PlayerStore for DbStore {
                     next_tw_start_date: parse_global_long(next.as_deref()),
                 }))
             }
-            // M7-CHSIEGE-01: a conquerable hall and its registration tables (D-50).
             ResidenceReadKind::HallSiege => {
                 let hall = match repo
                     .siegable_halls()
@@ -6709,7 +6534,6 @@ impl PlayerStore for DbStore {
                     rainbow,
                 }))
             }
-            // M7-SIEGE-01: the castle and every registration (D-50).
             ResidenceReadKind::SiegeClans => {
                 let castle = read_castle_record(repo, residence_id).await?;
                 let rows = self.sieges.siege_clans().await?;
@@ -6836,7 +6660,6 @@ impl PlayerStore for DbStore {
         let now_ms = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .map_or(0, |d| i64::try_from(d.as_millis()).unwrap_or(i64::MAX));
-        // Java: Player.updateOnlineStatus (UPDATE_ONLINE_STATUS: online and lastAccess)
         self.characters
             .update_online_status(object_id.0, 0, now_ms)
             .await?;
@@ -7574,9 +7397,6 @@ mod tests {
         }
     }
 
-    /// A residence re-read (M7-RES-01, D-50) is not a write either: the store is asked and the
-    /// rows go back to the world as `WorldCommand::ResidenceReread` with the follow-up the world
-    /// named.
     #[tokio::test]
     async fn a_residence_reread_is_answered_to_the_world() {
         let (world_tx, world_rx) = std::sync::mpsc::channel();
@@ -7605,8 +7425,6 @@ mod tests {
         }
     }
 
-    /// The boss writes reach the store in order, and a boss read (M8-BOSS-01, D-50) comes after
-    /// the writes sent before it and goes back to the world as `WorldCommand::BossReread`.
     #[tokio::test]
     async fn the_boss_writes_and_reads_are_in_order_and_answered_to_the_world() {
         let (world_tx, world_rx) = std::sync::mpsc::channel();

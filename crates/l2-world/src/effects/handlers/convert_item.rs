@@ -1,6 +1,5 @@
 //! The `ConvertItem` effect: the weapon the player holds turns into its "change weapon" twin
 //! (the weapon keeps its enchant level and element).
-// Java: dist/game/data/scripts/handlers/skill/effects/ConvertItem.java
 
 use l2_data::skill::EffectTemplate;
 use l2_protocol_game::SystemMessageId;

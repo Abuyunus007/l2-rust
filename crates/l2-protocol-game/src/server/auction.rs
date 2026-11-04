@@ -20,7 +20,6 @@ pub struct ItemAuctionNext {
     pub item: ItemInfo,
 }
 
-// Java: gameserver/network/serverpackets/ExItemAuctionInfoPacket.java
 /// The running item auction of an instance, and the next one (`EX_ITEM_AUCTION_INFO`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExItemAuctionInfo {
@@ -29,7 +28,6 @@ pub struct ExItemAuctionInfo {
     pub refresh: bool,
     /// The auction instance id.
     pub instance_id: i32,
-    /// Java: the highest bid, or the initial bid when nobody bid yet.
     pub bid: i64,
     /// Seconds left in the running auction (0 unless it is started).
     pub time_remaining: i32,

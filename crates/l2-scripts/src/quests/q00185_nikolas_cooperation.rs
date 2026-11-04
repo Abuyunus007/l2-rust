@@ -1,6 +1,4 @@
 //! Quest 185: Nikolas' Cooperation (Maestro Nikola, Researcher Lorain, the Destroyed Device and the Alarm of Giant).
-// Java: dist/game/data/scripts/quests/Q00185_NikolasCooperation/Q00185_NikolasCooperation.java
-//
 // The same steps as Q00184 (Art of Persuasion) with its own items; the two quests are the two
 // choices Nikola offers (`docs/design/scripts.md`: Q00183 sends the event to one of them).
 

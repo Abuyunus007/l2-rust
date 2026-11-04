@@ -6,8 +6,6 @@
 //! Most tests use synthetic templates written inline, so they run in CI. The vector test reads the
 //! datapack (`dist/game`) and `crates/l2-testkit/vectors/formulas_regen.json` and skips
 //! with a message when either is missing.
-// Java: entity/actor/status/{CreatureStatus,PlayerStatus}.java, mechanics/stats/Formulas.java
-//       (calcHpRegen, calcMpRegen, calcCpRegen, getRegeneratePeriod)
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, OnceLock};

@@ -1,10 +1,4 @@
 //! The manufacture shop: setting it up, closing it, looking at it and ordering from it.
-// Java: network/clientpackets/{RequestRecipeShopMessageSet,RequestRecipeShopListSet,
-//       RequestRecipeShopManageQuit,RequestRecipeShopMakeInfo,RequestRecipeShopMakeItem,
-//       RequestRecipeShopManagePrev,RequestActionUse (actions 37 and 51)}.java
-// Java: network/serverpackets/{RecipeShopManageList,RecipeShopSellList,RecipeShopMsg,
-//       RecipeShopItemInfo}.java
-// Java: entity/actor/Player.java (getManufactureItems, hasManufactureShop, doInteract, sendInfo)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::client::RecipeShopListEntry;
@@ -216,9 +210,6 @@ impl World {
         let max = usize::try_from(self.settings.store.max_item_in_packet).unwrap_or(0);
         let items = items.filter(|list| list.len() <= max);
         if let Some(list) = &items {
-            // NOTE(java-quirk): `new ManufactureItem(id, cost)` reads the recipe, so a recipe id
-            // that does not exist throws inside `readImpl` and the packet is dropped without a
-            // word (the shop is not closed either).
             let data = self.recipe_data();
             if list
                 .iter()

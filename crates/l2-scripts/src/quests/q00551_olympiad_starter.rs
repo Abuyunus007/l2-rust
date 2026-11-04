@@ -1,6 +1,4 @@
 //! Quest 551: Olympiad Starter (the Grand Olympiad Manager rewards 3, 5 and 10 games, daily).
-// Java: dist/game/data/scripts/quests/Q00551_OlympiadStarter/Q00551_OlympiadStarter.java
-//
 // `addOlympiadMatchFinishId()` is the global `ON_OLYMPIAD_MATCH_RESULT` listener. Java's
 // `onOlympiadLose` is never called by anything, so it is not ported.
 
@@ -108,7 +106,6 @@ impl Script for Q00551OlympiadStarter {
         loser: i32,
         _competition_type: i32,
     ) {
-        // NOTE(java-quirk): an offline winner ends the method, so the loser is not counted then.
         if let Some(winner) = winner {
             let player = ObjectId(winner);
             if ctx.world().player(player).is_none() {

@@ -1,8 +1,6 @@
 //! The Last Imperial Tomb (instance 136): the guide that takes a command channel in, the four
 //! rooms, the wait, Frintezza's movie, the two forms of Scarlet van Halisha, the portraits and
 //! demons, the songs and the end.
-// Java: dist/game/data/scripts/ai/bosses/Frintezza/LastImperialTomb.java
-//
 // Java keeps the NPCs and lists in `InstanceWorld` parameters; here they are `TombWorld`, by
 // instance id, in the script's state. A timer whose player or NPC is not in a world any more
 // ends there (Java throws a NullPointerException in that task).
@@ -1333,8 +1331,6 @@ fn on_enter_instance(world: &mut World, player: ObjectId, instance_id: i32, firs
             }
             Some(channel) => {
                 for channel_member in world.command_channel_members(channel) {
-                    // NOTE(java-quirk): the condition asks the leader's inventory, the removal
-                    // takes what the member has.
                     if world.inventory_item_count(player, DEWDROP_OF_DESTRUCTION_ITEM_ID) > 0
                         && world.inventory_item_count(channel_member, DEWDROP_OF_DESTRUCTION_ITEM_ID) > 0
                     {

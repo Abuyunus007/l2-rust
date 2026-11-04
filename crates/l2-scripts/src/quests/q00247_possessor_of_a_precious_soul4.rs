@@ -1,7 +1,5 @@
 //! Quest 247: Possessor of a Precious Soul 4 (Caradine in Gludio's Ruins sends a sub-class
 //! character to the Lady of the Lake, who makes it a noble).
-// Java: dist/game/data/scripts/quests/Q00247_PossessorOfAPreciousSoul4/Q00247_PossessorOfAPreciousSoul4.java
-//
 // Pattern: a sub-class quest (`ctx.is_sub_class_active`, `no_sub.html`), a teleport at cond 1 and
 // a one-time reward (`docs/design/scripts.md`, "Quest patterns").
 

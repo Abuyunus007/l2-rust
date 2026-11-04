@@ -1,6 +1,4 @@
 //! Quest 289: No More Soup For You (Stan in the Town of Gludin buys the soup of the sel mahum monsters).
-// Java: dist/game/data/scripts/quests/Q00289_NoMoreSoupForYou/Q00289_NoMoreSoupForYou.java
-//
 // Pattern: a repeatable collect quest with a fixed drop (`docs/design/scripts.md`, "Quest
 // patterns"): every sel mahum monster gives five soups; Stan trades 100 soups for one random armour
 // piece or 500 soups for one random weapon. The quest never ends by itself. It needs the quest
@@ -88,7 +86,6 @@ impl Script for Q00289NoMoreSoupForYou {
         player: Option<ObjectId>,
     ) -> Option<String> {
         let player = player?;
-        // NOTE(java-quirk): without a quest state Java returns the event itself as the text.
         let mut htmltext = Some(event.to_owned());
         let Some(qs) = ctx.get_quest_state(player, false) else {
             return htmltext;

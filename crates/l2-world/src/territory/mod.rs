@@ -2,19 +2,6 @@
 //! registration of clans and mercenaries, the war period on the timer wheel, the territory wards
 //! and the players who carry them, the outposts and flags, the badges and rewards, the Territory
 //! Managers, `//territory_war` and the territory side of the castle, fortress and player code.
-// Java: managers/TerritoryWarManager.java
-// Java: mechanics/siege/TerritoryWard.java
-// Java: entity/actor/instance/TerritoryWard.java
-// Java: network/clientpackets/{RequestJoinDominionWar,RequestDominionInfo}.java
-// Java: network/serverpackets/{ExShowDominionRegistry,ExReplyDominionInfo,ExShowOwnthingPos}.java
-// Java: dist/game/data/scripts/ai/others/TerritoryManagers/TerritoryManagers.java
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/TerritoryWarSuperClass.java (the part
-//       of the super class instance: the next war date, the outpost and ward transport skills)
-// Java: dist/game/data/scripts/handlers/skill/effects/{OutpostCreate,OutpostDestroy,
-//       TakeTerritoryFlag}.java
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminTerritoryWar.java
-// Java: dist/game/data/scripts/handlers/{items/Disguise,chat/channels/ChatBattlefield,
-//       bypass/npc/TerritoryStatus}.java
 // Design: docs/design/m7-residences.md
 //
 // # Shape
@@ -271,7 +258,6 @@ pub enum TerritoryInput {
     DominionInfo,
 }
 
-/// What the war does once its rows were read again (`ResidenceReadThen::Territory`, D-50).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TerritoryThen {
     /// `RequestJoinDominionWar` on the fresh registrations.
@@ -317,8 +303,6 @@ pub(crate) struct TerritoryWorld {
     pub(crate) reward_task: Option<TimerId>,
     /// `GlobalVariablesManager.getLong(GLOBAL_VARIABLE, 0)` as this world knows it.
     pub(crate) next_tw_start_date: i64,
-    /// D-51: a GM started the war (`//territory_war_start`); the start task starts it whatever
-    /// `SiegeDatabaseWrites` says.
     pub(crate) gm_start: bool,
     /// The fortresses whose siege zone has the war as its siege instance (`setSiegeInstance`).
     pub(crate) fort_zones: BTreeSet<i32>,
@@ -338,7 +322,6 @@ impl Default for TerritoryWorld {
             clan_flags: BTreeMap::new(),
             participant_points: BTreeMap::new(),
             start_tw_date: 0,
-            // Java: `_isRegistrationOver = true`, `_isTWChannelOpen = false`.
             registration_over: true,
             channel_open: false,
             in_progress: false,
@@ -479,8 +462,6 @@ impl World {
         self.residence_write(crate::residence::ResidenceWrite::Territory(write));
     }
 
-    /// `getTerritory(castleId).setOwnerClan(clan)` (`Castle.setOwner`; side by side also the
-    /// owner a re-read of the castle brings, D-51).
     pub(crate) fn territory_set_owner_clan(&mut self, castle_id: i32, clan: Option<i32>) {
         match self.territory.territories.get_mut(&castle_id) {
             Some(t) => t.owner_clan = clan,

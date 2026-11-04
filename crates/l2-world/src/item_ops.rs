@@ -1,14 +1,5 @@
 //! Taking items away from a player (a gatekeeper's fee) and the `InventoryUpdate` that tells the
 //! client, with Java's delay.
-// Java: entity/actor/Player.java (destroyItemByItemId, reduceAdena, sendInventoryUpdate)
-// Java: entity/itemcontainer/{Inventory,ItemContainer}.java (destroyItem, destroyItemByItemId,
-//       getInventoryItemCount)
-// Java: managers/ItemManager.java (destroyItem)
-//
-// The items live in `PlayerData::items`; the persistence task stores the difference to what it
-// last wrote (a changed count is an `UPDATE`, a spent item a `DELETE`), so changing the list here
-// is all the database needs. D-39: Java writes the same rows.
-//
 // # What is left out
 // - `ItemProcessType` logging (`LogItems`), the item audit of GMs: the item log is not ported.
 // - Releasing the object id of a destroyed item: ids of items loaded from the database belong to
@@ -233,7 +224,6 @@ impl World {
 
     /// Java `Player.flushInventoryUpdate()`: the pending update goes out now instead of 100 ms
     /// after the last change.
-    // NOTE(java-quirk): Java sends the packet even when nothing is pending (an update of 0 items).
     pub(crate) fn flush_inventory_update(&mut self, player: ObjectId) {
         let Some(p) = self.players.get_mut(&player) else {
             return;

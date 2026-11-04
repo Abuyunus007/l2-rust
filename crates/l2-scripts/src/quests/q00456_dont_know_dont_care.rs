@@ -1,6 +1,4 @@
 //! Quest 456: Don't Know, Don't Care (the Separated Souls; the raid bosses' corpses, command channel).
-// Java: dist/game/data/scripts/quests/Q00456_DontKnowDontCare/Q00456_DontKnowDontCare.java
-//
 // Pattern: a command channel of at least 18 members kills a raid boss, and the attackers of the
 // same channel near it get a corpse that gives its essence once per player (`on_first_talk`). With
 // the three essences the start NPC pays a reward (daily). The allowed players of each corpse are
@@ -159,7 +157,6 @@ impl Script for Q00456DontKnowDontCare {
         }
 
         let mut state = qs.state(ctx);
-        // Java: `case COMPLETED` falls through to `CREATED` once the quest is available again.
         if state == COMPLETED {
             if !qs.is_now_available(ctx) {
                 return Some("32864-02.html".to_owned());
@@ -223,9 +220,6 @@ impl Script for Q00456DontKnowDontCare {
                 }
             }
             "unspawnRaidCorpse" => {
-                // NOTE(java-quirk): the timer is started with the raid boss that died (not with
-                // the corpse), so this forgets the boss's entry and deletes the boss, which is
-                // already dead; the corpse stays until its own despawn.
                 if let Some(npc) = npc {
                     ctx.state::<AllowedPlayers>().0.remove(&npc.object_id);
                     ctx.delete_npc(npc);

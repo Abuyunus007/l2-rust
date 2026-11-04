@@ -1,6 +1,5 @@
 //! Reading the parameters of a status effect the way Java's `StatSet` getters do (the constructor
 //! of a handler throws on a bad number, which `createEffect` logs and turns into "no effect").
-// Java: util/StatSet.java (getInt, getDouble, getString)
 
 use l2_data::skill::EffectTemplate;
 use l2_data::stats::jnum::{parse_double, parse_int};

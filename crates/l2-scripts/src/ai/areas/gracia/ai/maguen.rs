@@ -1,7 +1,5 @@
 //! The Maguen of the Seed of Annihilation: the Wild Maguen that follows a character and gives
 //! plasma buffs and pet collars.
-// Java: dist/game/data/scripts/ai/areas/Gracia/AI/Maguen.java
-//
 // Java keeps the Maguen's `getVariables()` (`SUMMON_PLAYER`, `IS_NEAR_PLAYER`, `NPC_EFFECT`,
 // `BLOCKED_SKILLSEE`, `TEST_MAGUEN`) on the NPC; they are the script state by NPC object here.
 // Nemo's practice Maguen is set up by the event `PRACTICE_MAGUEN` (Java: Nemo writes the
@@ -163,7 +161,6 @@ impl Script for Maguen {
                 ctx.show_on_screen_npc_string(player, NpcStringId::MaguenAppearance, 2, 4000, &[]);
                 ctx.start_quest_timer("DIST_CHECK_TIMER", 1000, Some(maguen), Some(player), false);
             }
-            // Java: Nemo's `summonMaguen` sets these variables on the practice Maguen and starts
             // the timer through `maguenAi().startQuestTimer(...)`.
             "PRACTICE_MAGUEN" => {
                 let vars = Self::vars(ctx, npc.object_id);

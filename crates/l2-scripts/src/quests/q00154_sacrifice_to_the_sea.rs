@@ -1,6 +1,4 @@
 //! Quest 154: Sacrifice to the Sea (Rockswell, Cristel and Rollfnan, ten fox furs for an earring).
-// Java: dist/game/data/scripts/quests/Q00154_SacrificeToTheSea/Q00154_SacrificeToTheSea.java
-//
 // Pattern: a delivery chain whose first step is a party kill count (`getRandomPartyMemberState`).
 
 use l2_util::ObjectId;

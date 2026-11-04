@@ -1,7 +1,5 @@
 //! Small `pub` entry points to NPC behaviour that the scripts of `ai/areas/Gracia` need and the
 //! `pub` world API did not offer (S-AI-01). Each is a thin call into the module that owns the rule.
-// Java: entity/actor/Npc.java (setTitle), ai/AbstractAI.java (setIntentionFollow, stopFollow),
-//       mechanics/skill/BuffInfo.java, entity/instancezone/Instance.java
 
 use l2_data::stats::AbnormalType;
 use l2_util::ObjectId;

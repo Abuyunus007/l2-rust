@@ -1,7 +1,5 @@
 //! Quest 702: A Trap for Revenge (Plenos, Engineer Lekon and Tenius at the Keucereus Alliance
 //! Base; the Drakes of Gracia).
-// Java: dist/game/data/scripts/quests/Q00702_ATrapForRevenge/Q00702_ATrapForRevenge.java
-//
 // Pattern: a repeatable quest with items traded between three NPCs. Drake's Flesh (cond 2) is
 // sold to Plenos or turned into Rotten Blood by Tenius; Lekon makes the bait; the Variant Drake
 // Wing Horns that the bait brings out are sold or opened for a random reward.
@@ -176,7 +174,6 @@ impl Script for Q00702ATrapForRevenge {
         if ctx.get_random_party_member_cond(killer, 2).is_none() {
             return;
         }
-        // NOTE(java-quirk): the items go to the killer, not to the party member drawn.
         let chance = ctx.get_random(1000);
         let double = |limit: i32| if chance < limit { 2 } else { 1 };
         match npc.id {

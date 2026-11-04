@@ -1,8 +1,5 @@
 //! The effect handlers: the [`EffectHandler`] trait (Java `AbstractEffect`'s hooks) and the
 //! [`EffectRegistry`] (Java `EffectHandler` + `EffectMasterHandler`), name to constructor.
-// Java: mechanics/effects/{AbstractEffect,EffectFlag,EffectType}.java
-// Java: handler/EffectHandler.java, dist/game/data/scripts/handlers/EffectMasterHandler.java
-//
 // Java builds one `AbstractEffect` object per `<effect>` of every skill level when the skills load
 // (`AbstractEffect.createEffect`) and shares it between every `BuffInfo` of that skill. Here the
 // templates stay plain data in `l2-data`; the world builds the handler of a template the first
@@ -14,7 +11,6 @@
 //    implements [`EffectHandler`] (only the hooks the Java class overrides).
 // 2. One `registry.register("JavaName", ctor)` line in `effects/handlers/mod.rs`
 //    (`register_all`). That replaces the [`Unported`] stand-in of the name.
-// 3. The `// Java:` comment names the handler class.
 
 use std::collections::HashMap;
 use std::fmt;
@@ -124,8 +120,6 @@ impl EffectCx<'_> {
     }
 
     /// Java `AbstractEffect.getTicksMultiplier()`: `(ticks * EFFECT_TICK_RATIO) / 1000f`.
-    // NOTE(java-quirk): `ticks * EFFECT_TICK_RATIO` is a `long`, divided by a `float`: the
-    // quotient is a float, widened to double by the return type.
     pub fn ticks_multiplier(&self, world: &World) -> f64 {
         let product = i64::from(self.effect.ticks) * world.settings.effects.effect_tick_ratio;
         f64::from(product as f32 / 1000.0_f32)
@@ -418,7 +412,6 @@ const JAVA_EFFECTS: &[JavaEffect] = {
         ("TargetMe", false, T::None, S::Always),
         ("TargetMeProbability", true, T::None, S::Always),
         ("Teleport", true, T::Teleport, S::Always),
-        // Java: `canStart` = `GeoEngine.canSeeTarget(effected, effector)`; the effect is instant,
         // so `applyEffectScope` never asks it.
         ("TeleportToTarget", true, T::TeleportToTarget, S::Always),
         ("ThrowUp", true, T::None, S::Always),

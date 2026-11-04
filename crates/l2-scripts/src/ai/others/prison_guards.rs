@@ -1,5 +1,4 @@
 //! The Prison Guards of the Race Event: a stamp for those with the event timer, stone for the rest.
-// Java: dist/game/data/scripts/ai/others/PrisonGuards.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

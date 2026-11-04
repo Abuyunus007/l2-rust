@@ -1,5 +1,4 @@
 //! Porta and Perum pull a far-away attacker next to them with Summon Party Member.
-// Java: dist/game/data/scripts/ai/areas/CrumaTower/SummonPc.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey, TeleportTarget};
@@ -62,8 +61,6 @@ impl Script for SummonPc {
                 if can_cast(ctx, npc) {
                     ctx.cast_skill(npc, attacker, SUMMON_PC);
                 }
-                // NOTE(java-quirk): the same condition is tested and the skill cast a second time;
-                // only this second cast sets `attacked`.
                 if can_cast(ctx, npc) {
                     ctx.cast_skill(npc, attacker, SUMMON_PC);
                     ctx.world_mut()
@@ -92,8 +89,6 @@ impl Script for SummonPc {
         skill: SkillKey,
     ) {
         if skill.id == SUMMON_PC.id && !ctx.is_dead(npc.object_id) && attacked(ctx, npc) {
-            // NOTE(java-quirk): Java dereferences `player` here; a cast on a non-player target
-            // throws and leaves `attacked` set.
             let Some(player) = player else {
                 return;
             };

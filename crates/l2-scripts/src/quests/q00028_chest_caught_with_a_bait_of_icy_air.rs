@@ -1,12 +1,7 @@
 //! Quest 28: Chest Caught with a Bait of Icy Air (Ofulle in the Fishing Village, the bait quest of the icy air).
-// Java: dist/game/data/scripts/quests/Q00028_ChestCaughtWithABaitOfIcyAir/Q00028_ChestCaughtWithABaitOfIcyAir.java
-//
 // Pattern: a fishing chest hand-over (`docs/design/scripts.md`, "Quest patterns"): Ofulle starts
 // the quest once O'Fulle's Special Bait (Q00051) is done, takes the yellow treasure box for
 // Kiki's letter, and Kiki pays the elven ring. One-time: `exit_quest(ctx, false, true)`.
-//
-// NOTE(java-quirk): an event that is not handled is still shown back as its page (the Java
-// `htmltext = event` default), so the quest answers every event it gets.
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED};
@@ -55,7 +50,6 @@ impl Script for Q00028ChestCaughtWithABaitOfIcyAir {
         _npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        // Java: `htmltext = event` for every case, also when there is no quest state.
         let Some(player) = player else {
             return Some(event.to_owned());
         };
@@ -92,7 +86,6 @@ impl Script for Q00028ChestCaughtWithABaitOfIcyAir {
         match qs.state(ctx) {
             COMPLETED => htmltext = ctx.get_already_completed_msg(player),
             CREATED => {
-                // Java: `player.getQuestState(Q00051...)` completed and level 36 (on Ofulle only).
                 if npc.id == OFULLE {
                     htmltext = "31572-02.htm".to_owned();
                     let bait_done = ctx

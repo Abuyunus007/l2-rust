@@ -1,6 +1,4 @@
 //! Quest 157: Recover Smuggled Goods (Wilford sends the player after Giant Toads for adamantite ore).
-// Java: dist/game/data/scripts/quests/Q00157_RecoverSmuggledGoods/Q00157_RecoverSmuggledGoods.java
-//
 // Pattern: a kill count with a drop chance up to a limit (`docs/design/scripts.md`, "Kills,
 // drops and parties"): every Giant Toad drops the ore with a 4-in-10 roll until 20 are in hand,
 // then cond 2 is set. The start NPC gives the buckler and ends the quest (one-time).

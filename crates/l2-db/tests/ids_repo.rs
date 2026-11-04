@@ -20,7 +20,6 @@ const SCHEMA: [&str; 5] = [
     l2_db::game_sql!("messages"),
 ];
 
-/// The Rust range of D-39 (`l2_world::RUST_FIRST_OBJECT_ID`..=`RUST_LAST_OBJECT_ID`).
 const RUST_FIRST: i32 = 0x6000_0000;
 const RUST_LAST: i32 = 0x7FFF_FFFF;
 

@@ -1,10 +1,5 @@
 //! One game client connection before it enters the world: protocol check, key exchange,
 //! authentication against the login server and the character list.
-// Java: org/l2jmobius/gameserver/network/GameClient.java (state, close, onDisconnection)
-// Java: org/l2jmobius/gameserver/network/clientpackets/ProtocolVersion.java
-// Java: org/l2jmobius/gameserver/network/clientpackets/AuthLogin.java
-// Java: org/l2jmobius/gameserver/LoginServerThread.java (PlayerAuthResponse -> CharSelectionInfo)
-//
 // Design (docs/design/world-loop.md): everything before the world (this file and the character
 // screen) runs in the connection task and may use the database. Once a character is in the world,
 // its in-game packets become `WorldCommand::Input` (M2-ENTER-01).
@@ -119,7 +114,6 @@ impl ClientSession {
         &self.characters
     }
 
-    // Java: ProtocolVersion.runImpl
     fn on_protocol_version(&mut self, packet: ProtocolVersion, ctl: &mut Control<'_>) {
         if packet.version == -2 {
             // "This is just a ping attempt from the new C2 client."
@@ -127,13 +121,10 @@ impl ClientSession {
             return;
         }
         if self.key_sent {
-            // NOTE(java-quirk): Java would generate a new key and send another KeyPacket, which
-            // desynchronises the cipher. A client never does this; ignore it.
             debug!("Repeated ProtocolVersion from {}", self.ip);
             return;
         }
         self.key_sent = true;
-        // Java: client.enableCrypt() — 8 random bytes plus the fixed tail. With
         // PacketEncryption off no cipher is installed and the key is only announced.
         let mut random = [0u8; 8];
         for b in &mut random {
@@ -161,20 +152,17 @@ impl ClientSession {
             self.protocol_ok = true;
             ctl.send(reply.to_bytes());
         } else {
-            // Java: LOGGER_ACCOUNTING.warning + client.close(KeyPacket(.., 0))
             warn!("Wrong protocol version {} from {}.", packet.version, self.ip);
             ctl.send_and_close(reply.to_bytes());
         }
     }
 
-    // Java: AuthLogin.runImpl + LoginServerThread (PlayerAuthResponse)
     async fn on_auth_login(&mut self, packet: AuthLogin, ctl: &mut Control<'_>) {
         if packet.login_name.is_empty() || !self.protocol_ok {
             ctl.close();
             return;
         }
         if self.account.is_some() {
-            // Java: "Avoid potential exploits." A second AuthLogin is ignored.
             return;
         }
         let key = SessionKey {
@@ -185,7 +173,6 @@ impl ClientSession {
         };
         let account = packet.login_name;
         if !self.ctx.gate.auth_player(&account, key).await {
-            // Java: a duplicate login on this server closes right away (close(null)); a refused
             // session key sends LoginFail(SYSTEM_ERROR_LOGIN_LATER) first. The link answers both
             // with `false` and already sent PlayerLogout for the refusal.
             // NOTE: the link answers a duplicate login with `false` as well; Java closes that one
@@ -199,7 +186,6 @@ impl ClientSession {
             );
             return;
         }
-        // Java: setConnectionState(AUTHENTICATED), setSessionId, new CharSelectionInfo(...)
         self.state = ConnectionState::Authenticated;
         self.account = Some(account.clone());
         self.session_key = Some(key);
@@ -219,7 +205,6 @@ impl ClientSession {
 
     /// Loads the account's characters and sends `CharSelectionInfo`. `active` picks the
     /// highlighted slot; `None` lets the most recently used character win (Java `_activeId = -1`).
-    // Java: new CharSelectionInfo(account, playOkID1[, activeId]) + client.setCharSelection
     pub async fn send_character_list(&mut self, ctl: &mut Control<'_>, active: Option<usize>) {
         if let Some((characters, packet)) = self.load_character_list(active).await {
             ctl.send(packet.to_bytes());
@@ -272,19 +257,16 @@ impl ClientSession {
         }
     }
 
-    // Java: Logout.runImpl with no player: client.disconnect()
     fn on_logout_without_player(&mut self, ctl: &mut Control<'_>) {
         ctl.close();
     }
 }
 
 impl FrameHandler for ClientSession {
-    // Java: GameClient.onConnected (only logs)
     async fn on_connect(&mut self, _ctl: &mut Control<'_>) {
         debug!("Client connected: {}", self.ip);
     }
 
-    // Java: GamePacketHandler.handle
     async fn on_frame(&mut self, body: Vec<u8>, ctl: &mut Control<'_>) {
         let mut reader = PacketReader::new(&body);
         let Ok(opcode) = reader.u8() else {
@@ -336,7 +318,6 @@ impl FrameHandler for ClientSession {
         }
     }
 
-    // Java: GameClient.onDisconnection
     async fn on_disconnect(&mut self) {
         debug!("Client disconnected: {}", self.ip);
         let Some(account) = self.account.clone() else {

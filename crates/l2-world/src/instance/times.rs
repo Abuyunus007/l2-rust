@@ -1,14 +1,4 @@
 //! Re-entry times (`character_instance_time`): when a character may enter an instance zone again.
-// Java: managers/InstanceManager.java (getInstanceTime, getAllInstanceTimes, setInstanceTime,
-//       deleteInstanceTime, restoreInstanceTimes)
-// Java: dist/game/data/scripts/handlers/chat/commands/user/InstanceZone.java (`/instancezone`)
-//
-// Java reads a character's rows the first time something asks for them and keeps them in
-// `_playerTimes`. Here the session reads them at `CharacterSelect` (D-15: no database in a tick,
-// `PlayerProfile::instance_times`) and the world takes them when the character enters. The rows
-// that are over are deleted then, as `restoreInstanceTimes` does. Every change is written at
-// once through the outbox ([`InstanceTimeWrite`]). The rows are the character's own, so they are
-// written side by side with the Java game server as usual (D-53).
 
 use std::collections::BTreeMap;
 

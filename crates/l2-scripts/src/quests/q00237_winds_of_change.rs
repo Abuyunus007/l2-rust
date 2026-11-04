@@ -1,8 +1,6 @@
 //! Quest 237: Winds of Change (Flauen in the Hot Springs Village sends the characters of level 82
 //! and up with a letter through Iason, Roman, Morelyn and Doskozer to Helvetica or Athenia, who
 //! pay with the Vicinity of Fos or the Support Certificate).
-// Java: dist/game/data/scripts/quests/Q00237_WindsOfChange/Q00237_WindsOfChange.java
-//
 // Pattern: a delivery chain over six NPCs with the cond as the step (`docs/design/scripts.md`,
 // "Quest patterns"), two end NPCs that each pay and end the quest. The reward events of the two
 // end NPCs do not check the cond (Java): kept as they are.
@@ -118,7 +116,6 @@ impl Script for Q00237WindsOfChange {
                     None
                 }
             }
-            // NOTE(java-quirk): the reward of Helvetica does not check the cond.
             "32641-02.html" => {
                 ctx.give_adena(player, 213876, true);
                 ctx.give_items(player, VICINITY_OF_FOS, 1);
@@ -126,7 +123,6 @@ impl Script for Q00237WindsOfChange {
                 qs.exit_quest(ctx, false, true);
                 Some(event.to_owned())
             }
-            // NOTE(java-quirk): the reward of Athenia does not check the cond either.
             "32643-02.html" => {
                 ctx.give_adena(player, 213876, true);
                 ctx.give_items(player, SUPPORT_CERTIFICATE, 1);

@@ -1,6 +1,4 @@
 //! The `lottery` table: the draws of the Lucky Lottery (`AllowLottery`).
-// Java: org/l2jmobius/gameserver/managers/games/LotteryManager.java (the statements)
-//
 // Same layout as bbs_favorites.rs: Java's SQL, one method per statement. The table is called
 // `lottery` (the card says `games`; that is what Java's older versions named it, the SQL file of
 // this datapack creates `lottery`). `id` is always 1 in Java.
@@ -10,19 +8,13 @@ use sqlx::FromRow;
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: LotteryManager.INSERT_LOTTERY
 const INSERT_LOTTERY: &str = "INSERT INTO lottery(id, idnr, enddate, prize, newprize) VALUES (?, ?, ?, ?, ?)";
-// Java: LotteryManager.UPDATE_PRICE
 const UPDATE_PRICE: &str = "UPDATE lottery SET prize=?, newprize=? WHERE id = 1 AND idnr = ?";
-// Java: LotteryManager.UPDATE_LOTTERY
 const UPDATE_LOTTERY: &str = "UPDATE lottery SET finished=1, prize=?, newprize=?, number1=?, number2=?, prize1=?, prize2=?, prize3=? WHERE id=1 AND idnr=?";
-// Java: LotteryManager.SELECT_LAST_LOTTERY
 const SELECT_LAST_LOTTERY: &str =
     "SELECT idnr, prize, newprize, enddate, finished FROM lottery WHERE id = 1 ORDER BY idnr DESC LIMIT 1";
-// Java: LotteryManager.SELECT_LOTTERY_ITEM
 const SELECT_LOTTERY_ITEM: &str =
     "SELECT enchant_level, custom_type2 FROM items WHERE item_id = 4442 AND custom_type1 = ?";
-// Java: LotteryManager.SELECT_LOTTERY_TICKET, for every draw at once (the world keeps the rows
 // and looks a ticket up in them).
 const SELECT_LOTTERY_RESULTS: &str =
     "SELECT idnr, number1, number2, prize1, prize2, prize3 FROM lottery WHERE id = 1";

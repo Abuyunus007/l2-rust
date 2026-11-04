@@ -1,7 +1,5 @@
 //! `CastleChamberlain`: the lord's steward (tax rate, treasury, doors and traps, functions,
 //! the siege list, the manor link, the dawn tickets).
-// Java: dist/game/data/scripts/ai/others/CastleChamberlain/CastleChamberlain.java and its pages
-//
 // The `onNpcManorBypass` listener of the chamberlain is `manor/npc.rs` (M7-MANOR-01); this is
 // `onEvent` (`Script CastleChamberlain <event>`).
 
@@ -88,7 +86,6 @@ const STATIC_PAGES: [&str; 5] = [
     "manor-help-04.html",
 ];
 
-/// Whether the event acts on the castle's row, so that the castle is read again first (D-50).
 pub(super) fn needs_reread(event: &str) -> bool {
     !words(event).first().is_some_and(|w| STATIC_PAGES.contains(w))
 }
@@ -540,7 +537,6 @@ impl World {
                     None => 0,
                 };
                 let limit = self.chamberlain_tax_limit();
-                // NOTE(java-quirk): only the upper limit is checked; a negative rate is accepted.
                 if tax > limit {
                     self.castle_script_send_packet(
                         SCRIPT,
@@ -602,7 +598,6 @@ impl World {
                 if amount > 0 && amount < self.settings.ground.max_adena {
                     if self.adena_of(player) >= amount {
                         self.script_take_items(player, l2_data::item::ADENA_ID, amount);
-                        // A player's own deposit: written (D-51).
                         self.castle_add_to_treasury_no_tax(castle, amount);
                     } else {
                         self.send(
@@ -622,8 +617,6 @@ impl World {
                     None => 0,
                 };
                 let treasury = self.castle(castle).map_or(0, |c| c.treasury);
-                // NOTE(java-quirk): a negative amount passes this check; it adds that much to the
-                // treasury and gives the player nothing (`giveItems` ignores a count below 1).
                 if amount <= treasury {
                     self.castle_add_to_treasury_no_tax(castle, amount.wrapping_neg());
                     self.script_give_items(player, l2_data::item::ADENA_ID, amount);
@@ -976,8 +969,6 @@ impl World {
         let price = self.chamberlain_door_upgrade_price(kind, level);
         // `for (i = 0; i <= st.countTokens(); i++) doors[i] = Integer.parseInt(st.nextToken())`
         // with `doors = new int[2]`: the count shrinks as the tokens are read.
-        // NOTE(java-quirk): four or more door ids throw before anything changed; none at all
-        // throws `NoSuchElementException`.
         let rest = &args[2..];
         let mut doors = [0_i32; 2];
         let mut index = 0;

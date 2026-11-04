@@ -1,6 +1,4 @@
 //! Quest 13: Parcel Delivery (Fundin in Rune hands a parcel to Vulcan, for a level 74 character).
-// Java: dist/game/data/scripts/quests/Q00013_ParcelDelivery/Q00013_ParcelDelivery.java
-//
 // Pattern: a single delivery to one NPC (`docs/design/scripts.md`, "Quest patterns"): the start
 // NPC gives the package on the start event, and the receiver pays the reward items when the
 // package is in hand. One-time: `exit_quest(ctx, false, true)`.
@@ -48,8 +46,6 @@ impl Script for Q00013ParcelDelivery {
         _npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        // NOTE(java-quirk): without a quest state `onEvent` returns the event itself (not null),
-        // so the event's page is shown anyway.
         let Some(player) = player else {
             return Some(event.to_owned());
         };

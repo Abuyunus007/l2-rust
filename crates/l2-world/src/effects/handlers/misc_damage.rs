@@ -1,8 +1,5 @@
 //! `StaticDamage`, and the two party effects `RebalanceHP` and `TransferDamage` (the party side is
 //! `party/buffs.rs`).
-// Java: dist/game/data/scripts/handlers/skill/effects/StaticDamage.java
-// Java: dist/game/data/scripts/handlers/skill/effects/RebalanceHP.java
-// Java: dist/game/data/scripts/handlers/skill/effects/TransferDamage.java
 
 use l2_data::skill::EffectTemplate;
 

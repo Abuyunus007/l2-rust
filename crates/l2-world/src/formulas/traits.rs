@@ -1,6 +1,5 @@
 //! Trait and attribute (element) bonuses for skills.
 //!
-//! Java: `mechanics/stats/Formulas.java` `calcGeneralTraitBonus`, `calcWeaponTraitBonus`,
 //! `calcAttributeBonus(attacker, target, skill)`.
 //! The normal-attack versions (`calc_attack_trait_bonus`, `calc_attribute_bonus`) live in
 //! [`damage`](super::damage); this file adds the parts a skill reads.

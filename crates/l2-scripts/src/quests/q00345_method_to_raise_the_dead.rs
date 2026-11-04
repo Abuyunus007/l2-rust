@@ -1,6 +1,4 @@
 //! Quest 345: Method to Raise the Dead (Dorothy in Gludio, Xenovia, Orpheus and the medium jar).
-// Java: dist/game/data/scripts/quests/Q00345_MethodToRaiseTheDead/Q00345_MethodToRaiseTheDead.java
-//
 // Pattern: a kill drop of five bone kinds (a repeat of a kind becomes a useless piece), a
 // one-time payment, and a memo state per step. The medium jar rolls the ending (`memoStateEx 1`
 // to 3); Dorothy pays for it. Q00351 reads this quest's state (`player.getQuestState`).

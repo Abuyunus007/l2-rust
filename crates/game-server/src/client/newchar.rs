@@ -1,13 +1,5 @@
 //! Everything a new character is made of, worked out without touching the database: the stat
 //! numbers, the starting items and what is equipped, the skills, the shortcut bar and macros.
-// Java: org/l2jmobius/gameserver/network/clientpackets/CharacterCreate.java (initNewChar)
-// Java: org/l2jmobius/gameserver/entity/actor/Player.java (create, createDb, storeMe, deleteMe)
-// Java: entity/itemcontainer/{ItemContainer,Inventory,PlayerInventory}.java (addItem, equipItem,
-// Java: setPaperdollItem), managers/ItemManager.java (createItem), entity/item/instance/Item.java
-// Java: mechanics/stats/{Formulas,BaseStat}.java + functions/formulas/FuncMax{Hp,Mp,Cp}Mul.java
-// Java: data/xml/{InitialShortcutData,SkillTreeData}.java,
-// Java: entity/actor/holders/player/{Shortcuts,MacroList}.java
-//
 // Java builds the character in memory and writes it in pieces while it does (INSERT characters,
 // then an item row whenever an item is equipped, a skill row per `addSkill`, a shortcut row per
 // `registerShortcut`, and at the end `storeMe` + `deleteMe` rewrite the rest). The Java game
@@ -146,7 +138,6 @@ impl StatBonus {
 /// What the equipped starting items add to max MP: `<stats><stat type="maxMp">` of the item
 /// files (`DocumentItem` makes it an `add` function of order 0, which runs before
 /// `FuncMaxMpMul`). Nothing else of an item's `<stats>` touches max HP, MP or CP in Java.
-// Java: util/DocumentItem.java (the `stats` branch)
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ItemMaxMp {
     add: HashMap<i32, f64>,
@@ -824,7 +815,6 @@ fn available_auto_get_skills(
 ///
 /// `char_id` is the id taken for the character itself (Java takes it in the `Player`
 /// constructor); the item ids come from `ids`.
-// Java: Player.create, CharacterCreate.runImpl (after the checks), initNewChar, Player.storeMe
 pub fn build_plan(
     ctx: &PlanContext<'_>,
     request: &CreateRequest<'_>,
@@ -867,7 +857,6 @@ pub fn build_plan(
     let create_date = CalendarDate::from_unix_millis_utc(now_ms + l2_util::time::local_offset_millis(now_ms));
     let sex = i32::from(request.is_female);
     let title_color = 0x00EC_F9A2; // PlayerAppearance.DEFAULT_TITLE_COLOR
-    // Java: `Player.getAccessLevel()` is the master level under EverybodyHasAdminRights, else
     // the default 0 a new Player gets (`CharacterCreate` never sets one). The INSERT and the
     // update below both write it.
     let access_level = if config.general.everybody_has_admin_rights {
@@ -900,10 +889,7 @@ pub fn build_plan(
         race: race_ordinal,
         class_id: class,
         delete_time: 0,
-        // NOTE(java-quirk): `hasDwarvenCraft()` is asked before any skill exists and
-        // `UPDATE_CHARACTER` has no `cancraft`, so the column stays 0 even for a dwarf.
         can_craft: false,
-        // NOTE(java-quirk): a new Player has a null title until initNewChar sets one.
         title: None,
         title_color,
         access_level,

@@ -1,6 +1,4 @@
 //! Quest 288: Handle With Care (Ankumi in the Town of Gludin sends level 82 players after the seer Ugoros).
-// Java: dist/game/data/scripts/quests/Q00288_HandleWithCare/Q00288_HandleWithCare.java
-//
 // Pattern: a kill quest that ends with a choice of reward (`docs/design/scripts.md`, "Quest
 // patterns"): the seer Ugoros drops a lizard scale (middle grade first); Ankumi trades the scale
 // for one reward picked by a roll of ten, a high grade scale also brings a holy crystal.
@@ -121,8 +119,6 @@ impl Script for Q00288HandleWithCare {
             && qs.is_cond(ctx, 1)
             && ctx.check_if_in_range(ctx.alt_party_range(), npc.object_id, killer, false)
         {
-            // NOTE(java-quirk): the high grade scale is only ever given from cond 1, which the
-            // middle grade scale has already moved to cond 2; Java has the same order.
             if !ctx.has_quest_items(killer, MIDDLE_GRADE_LIZARD_SCALE) {
                 ctx.give_items(killer, MIDDLE_GRADE_LIZARD_SCALE, 1);
                 ctx.play_sound(killer, QuestSound::ItemsoundQuestItemget);

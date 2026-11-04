@@ -1,6 +1,5 @@
 //! Maps `(connection state, opcode)` to a client packet.
 //!
-//! Java: `gameserver/network/GamePacketHandler.java`. Which packet is accepted in which state
 //! comes from the generated tables ([`ClientOpcode::connection_states`] and
 //! [`ExClientOpcode::connection_states`]), so this file only lists the packets that already have
 //! a struct. Adding a packet = one new [`ClientPacket`] variant + one match arm.
@@ -1506,7 +1505,6 @@ mod tests {
             decode(InGame, 0x39, &[0x99, 0x04, 0, 0, 2, 0, 0, 0, 1]).unwrap(),
             Some(ClientPacket::RequestMagicSkillUse(RequestMagicSkillUse {
                 magic_id: 0x499,
-                // Java: any non-zero int is "pressed" for ctrl and any non-zero byte for shift.
                 ctrl_pressed: true,
                 shift_pressed: true,
             }))

@@ -1,13 +1,5 @@
 //! Champion monsters (`Custom/ChampionMonsters.ini`): a monster that spawns with a chance as a
 //! stronger "champion" with better rewards.
-// Java: config/custom/ChampionMonstersConfig.java, entity/spawns/Spawn.java (`initializeNpc`),
-//       entity/actor/Attackable.java (`setChampion`, `isChampion`, `useVitalityRate`,
-//       `calculateRewards`), entity/actor/Creature.java (`reduceCurrentHp`),
-//       entity/actor/stat/CreatureStat.java (attack and speed: `stats/creature_stat.rs`),
-//       mechanics/stats/Formulas.java (`calcHpRegen`), ai/AttackableAI.java (`ChampionPassive`),
-//       entity/actor/templates/NpcTemplate.java (the drops: `rewards/drop.rs`),
-//       mechanics/script/Quest.java (`giveItemRandomly`), network/serverpackets/AbstractNpcInfo.java
-//
 // Where each effect lives, for the reviewer:
 // - the roll and the flag (`Npc::champion`): here, called from `npc.rs` (`initialize_npc`,
 //   `spawn_npc_at`);
@@ -184,8 +176,6 @@ impl World {
     }
 
     /// The part of `NpcInfo.getTeam()` a champion adds: `setTeam(RED)` when `ChampionAura` is on.
-    // NOTE(java-quirk): Java's `setChampion` writes the NPC's one team field, so it also resets a
-    // team another feature gave a monster; here the other feature's team wins.
     pub(crate) fn champion_team(&self, id: ObjectId) -> u8 {
         if self.is_champion(id) && self.custom.settings.champion.show_aura {
             TEAM_RED

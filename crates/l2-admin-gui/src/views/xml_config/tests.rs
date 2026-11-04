@@ -305,7 +305,6 @@ fn dynamic_exp_rates_read_back_as_floats() {
     };
     assert_eq!(form.set_range(1, 40, 2.5, 1.5), 40);
     let text = render(file.form.as_form(), &file.original).unwrap();
-    // Java: `parseInteger(attrs, "level")`, `parseFloat(attrs, "exp")`, `parseFloat(attrs, "sp")`.
     let doc = XmlDoc::parse(&text).unwrap();
     let rows = doc.children_named(0, "dynamic");
     assert_eq!(rows.len(), 87);

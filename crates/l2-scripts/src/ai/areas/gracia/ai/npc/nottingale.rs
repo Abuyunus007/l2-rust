@@ -1,5 +1,4 @@
 //! Mage Nottingale, the guide of Gracia: radar markers to the air ship docks and hunting grounds.
-// Java: dist/game/data/scripts/ai/areas/Gracia/AI/NPC/Nottingale/Nottingale.java
 
 use l2_protocol_game::server::RadarControl;
 use l2_util::ObjectId;
@@ -13,9 +12,6 @@ const NOTTINGALE: i32 = 32627;
 const GOOD_DAY_TO_FLY: &str = "Q10273_GoodDayToFly";
 
 /// Java `RADARS.get(key)`: `new RadarControl(0, a, b, c, d)`.
-// NOTE(java-quirk): the entries pass four numbers after the 0 to a five-argument constructor
-// `(showRadar, type, x, y, z)`, so the type is the x coordinate and the others are shifted. Ported
-// as they are.
 fn radar(key: i32) -> Option<RadarControl> {
     let (radar_type, x, y, z) = match key {
         2 => (-184545, 243120, 1581, 2),

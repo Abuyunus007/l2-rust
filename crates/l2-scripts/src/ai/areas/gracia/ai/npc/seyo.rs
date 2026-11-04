@@ -1,5 +1,4 @@
 //! Seyo, the gambler of the Seed of Annihilation: Spirit Stone Fragments for luck.
-// Java: dist/game/data/scripts/ai/areas/Gracia/AI/NPC/Seyo/Seyo.java
 
 use std::collections::HashMap;
 

@@ -1,6 +1,5 @@
 //! Enchant scrolls, support items, the success chances per enchant level, and the element stones.
 //!
-//! Java: `gameserver/data/xml/{EnchantItemData,EnchantItemGroupsData,ElementalAttributeData}.java`,
 //! `gameserver/entity/item/enchant/*.java`, `gameserver/data/holders/{ElementalItemHolder,
 //! RangeChanceHolder}.java`, `gameserver/entity/item/enums/ElementalItemType.java` and the
 //! constants of `gameserver/entity/item/holders/Elementals.java`.
@@ -62,7 +61,6 @@ pub mod elementals {
     pub const ARMOR_VALUES: [i32; 14] = [0, 12, 30, 60, 72, 90, 120, 132, 150, 180, 192, 210, 240, i32::MAX];
 
     /// Java `Elementals.getOppositeElement(element)` on a `byte`.
-    // NOTE(java-quirk): `-1 % 2` is `-1` in Java (and Rust), so `NONE` is "odd" and gives `-2`.
     pub fn opposite_element(element: i32) -> i32 {
         i32::from(
             (if element % 2 == 0 {
@@ -333,7 +331,6 @@ impl EnchantItemGroups {
             };
             for item in rate.items {
                 if let Some(slot) = item.slot {
-                    // Java: `BodyPart.fromName(..).getMask()` throws for an unknown name.
                     let part = BodyPart::from_name(&slot)
                         .ok_or_else(|| DataError::Invalid(format!("unknown body part \"{slot}\"")))?;
                     rate_group.slot |= part.mask();
@@ -586,7 +583,6 @@ impl EnchantScroll {
             return EnchantOdds::Error;
         }
         let chance = self.chance(groups, target);
-        // NOTE(java-quirk): Java compares with `== -1`, so another negative chance would go on.
         if chance == -1.0 {
             return EnchantOdds::Error;
         }
@@ -1353,7 +1349,6 @@ mod tests {
         assert_eq!(opposite_element(WATER), FIRE);
         assert_eq!(opposite_element(HOLY), DARK);
         assert_eq!(opposite_element(DARK), HOLY);
-        // NOTE(java-quirk): `-1 % 2 == -1`.
         assert_eq!(opposite_element(NONE), -2);
         assert_eq!(opposite_element(-2), -1);
         assert_eq!(element_name(WIND), "Wind");

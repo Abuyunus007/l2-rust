@@ -1,7 +1,4 @@
 //! Java `Quest.addSpawn`: an NPC a script places, with no respawn.
-// Java: mechanics/script/Quest.java (addSpawn(summoner, npcId, x, y, z, heading, randomOffset,
-//       despawnDelay, isSummonSpawn, instanceId))
-// Java: entity/Spawn.java (doSpawn, stopRespawn), entity/actor/Npc.java (scheduleDespawn)
 
 use l2_util::ObjectId;
 use tracing::{error, warn};

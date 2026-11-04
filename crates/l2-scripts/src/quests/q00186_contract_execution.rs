@@ -1,5 +1,4 @@
 //! Quest 186: Contract Execution (Lorain, Maestro Nikola and Blueprint Seller Luka; the Leto Lizardmen).
-// Java: dist/game/data/scripts/quests/Q00186_ContractExecution/Q00186_ContractExecution.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, QuestSound, STARTED};

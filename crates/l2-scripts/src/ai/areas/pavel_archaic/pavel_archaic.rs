@@ -1,5 +1,4 @@
 //! The golems of Pavel Archaic leave two more golems behind when they die.
-// Java: dist/game/data/scripts/ai/areas/PavelArchaic/PavelArchaic.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

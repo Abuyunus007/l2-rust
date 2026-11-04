@@ -1,7 +1,5 @@
 //! Anais, the Divine Burner raid: every quarter of her HP a burner lights, a Grail Ward comes out
 //! of it and hunts the target, and explodes after 20 seconds.
-// Java: dist/game/data/scripts/ai/bosses/Anais/Anais.java
-//
 // The fields of the Java class are `AnaisState` (`ctx.state`); the NPCs in them are ids.
 
 use l2_util::ObjectId;
@@ -75,8 +73,6 @@ impl Script for Anais {
                     let target = ctx.world().target_of(npc.object_id);
                     let next_target = target.filter(|t| ctx.world().player(*t).is_some());
                     ctx.state::<AnaisState>().next_target = next_target;
-                    // NOTE(java-quirk): `_divineBurners.get(_pot)` throws once `_pot` has run past
-                    // the list (the timer task dies); nothing happens here either.
                     let b = ctx.state::<AnaisState>().divine_burners.get(pot).copied()?;
                     ctx.state::<AnaisState>().pot += 1;
                     set_display_effect(ctx, b, 1);
@@ -158,7 +154,6 @@ impl Script for Anais {
 
 /// Java `burnerOnAttack(pot, anais)`.
 fn burner_on_attack(ctx: &mut ScriptCtx<'_>, pot: usize, anais: ScriptNpc) {
-    // NOTE(java-quirk): a burner that has not spawned makes `get(pot)` throw; nothing happens.
     let Some(npc) = ctx.state::<AnaisState>().divine_burners.get(pot).copied() else {
         return;
     };

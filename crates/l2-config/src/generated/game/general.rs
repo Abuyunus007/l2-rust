@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/GeneralConfig.java
 
 use crate::IniFile;
 /// Settings of `config/General.ini` (Java: `GeneralConfig`).

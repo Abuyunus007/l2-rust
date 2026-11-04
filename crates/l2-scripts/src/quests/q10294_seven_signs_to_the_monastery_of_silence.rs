@@ -1,6 +1,4 @@
 //! Quest 10294: Seven Signs, To the Monastery of Silence (Elcadia, Eris, the reading desks of the Monastery of Silence).
-// Java: dist/game/data/scripts/quests/Q10294_SevenSignsToTheMonasteryOfSilence/Q10294_SevenSignsToTheMonasteryOfSilence.java
-//
 // Pattern: a delivery chain by condition, with the four right books of the reading desks
 // (`good1`..`good4`, one per desk and set by the desk's own page). Each right book shows an
 // effect on its desk (`setDisplayEffect(1)`), a spawn or a buff, and the fourth one

@@ -1,7 +1,5 @@
 //! Quest 103: Spirit of Craftsman (Karoyd, a dark elf, sends the letter through Cecon and Harne,
 //! the monsters give the bones and the soul catcher, and the steelbender's head ends it).
-// Java: dist/game/data/scripts/quests/Q00103_SpiritOfCraftsman/Q00103_SpiritOfCraftsman.java
-//
 // Pattern: a monster drop chain where the kill goes to a random party member (`onKill` uses the
 // member's state and player, `getRandomPartyMemberState`), with the NewbieGuide memo as in
 // quest 104.

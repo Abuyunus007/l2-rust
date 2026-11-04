@@ -1,7 +1,6 @@
 //! The stat functions of an item template: the `<stats>` block, the automatic enchant functions
 //! and the base elements that elemental stats set.
 //!
-//! Java: the `stats` branch of `util/DocumentItem.java`, `ItemTemplate.attach(FuncTemplate)` and
 //! `ItemTemplate.setElementals`, `entity/item/holders/Elementals.java` (the element ids).
 
 use super::{ArmorType, ItemKind, ItemTemplate, TYPE1_WEAPON_RING_EARRING_NECKLACE, TYPE2_ACCESSORY};
@@ -117,9 +116,6 @@ pub(super) fn apply_stats_node(item: &mut ItemTemplate, node: &XmlNode) -> Resul
     }
 
     // "Enable enchant functions."
-    // NOTE(java-quirk): Java guards this with `hasFunction(FuncEnchant.class)`, which compares the
-    // class of a `FuncTemplate` with `FuncEnchant` and so is always false. A second `<stats>`
-    // block of the same item therefore adds the enchant functions again; kept.
     match &item.kind {
         ItemKind::Armor(armor) => {
             let stat = if armor.armor_type == ArmorType::Shield {

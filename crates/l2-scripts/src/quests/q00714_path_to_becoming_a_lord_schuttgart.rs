@@ -1,5 +1,4 @@
 //! Quest 714: Path to Becoming a Lord - Schuttgart (August sends the castle's lord after the golems).
-// Java: dist/game/data/scripts/quests/Q00714_PathToBecomingALordSchuttgart/Q00714_PathToBecomingALordSchuttgart.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

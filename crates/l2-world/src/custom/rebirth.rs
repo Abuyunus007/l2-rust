@@ -1,19 +1,5 @@
 //! `Rebirth.ini`: a character at the minimum level pays an item and starts again at level 1 and
 //! its base class; every rebirth hands out tokens that buy a few skills from a configured pool.
-// Java: managers/RebirthManager.java, config/custom/RebirthConfig.java,
-// Java: dist/game/data/scripts/handlers/bypass/npc/Rebirth.java, entity/actor/Player.java
-// Java: (`rewardSkills` and `regiveTemporarySkills` call `grantRebirthSkills`)
-//
-// # How it differs from Java (D-15, D-39)
-// - Java reads `rebirth_system` with a blocking query every time it needs the count or the
-//   skills. The session reads the row once when the character loads (`PlayerProfile::rebirth`);
-//   the world keeps it up to date and writes every change as a [`RebirthWrite`] through the
-//   outbox, in the statements Java uses. The row belongs to one character, so it is written even
-//   side by side with a Java server (D-39).
-// - Java aborts the rebirth when the first statement fails ("could not be completed due to a
-//   database error"). The write is asynchronous here: a failure is only logged by the
-//   persistence task.
-// - Java's two "operation in progress" guards cannot be hit: the world runs one command at a time.
 
 use std::collections::{BTreeSet, HashMap};
 
@@ -530,9 +516,6 @@ impl World {
             );
             return false;
         };
-        // NOTE(java-quirk): `Inventory.destroyItem` sends no `InventoryUpdate` (only
-        // `Player.destroyItem` does), so the client shows the old count until the next update
-        // of that item or the next login.
         self.destroy_inventory_item(player, object_id, amount);
         true
     }

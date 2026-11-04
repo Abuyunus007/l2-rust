@@ -1,26 +1,15 @@
 //! The fishing championship tables: `fishing_championship` (the ranking) and the one
 //! `global_variables` row it keeps (`fishChampionshipEnd`).
-// Java: org/l2jmobius/gameserver/managers/FishingChampionshipManager.java (SELECT, DELETE,
-//       INSERT, restoreData, shutdown)
-// Java: org/l2jmobius/gameserver/managers/GlobalVariablesManager.java (INSERT_QUERY)
-//
-// D-39: the Java game server reads and rewrites the same rows. The server reads them at startup,
-// and writes them only when the owner allows it (`FishingChampionshipDatabaseWrites`, D-49).
 
 use sqlx::FromRow;
 
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: FishingChampionshipManager.SELECT
 const SELECT_ROWS: &str = "SELECT `player_name`, `fish_length`, `rewarded` FROM fishing_championship";
-// Java: FishingChampionshipManager.DELETE
 const DELETE_ROWS: &str = "DELETE FROM fishing_championship";
-// Java: FishingChampionshipManager.INSERT
 const INSERT_ROW: &str = "INSERT INTO fishing_championship(player_name,fish_length,rewarded) VALUES (?,?,?)";
-// Java: GlobalVariablesManager.SELECT_QUERY, for the one variable the manager reads.
 const SELECT_VARIABLE: &str = "SELECT `value` FROM global_variables WHERE `var` = ?";
-// Java: GlobalVariablesManager.INSERT_QUERY
 const REPLACE_VARIABLE: &str = "REPLACE INTO global_variables (var, value) VALUES (?, ?)";
 
 /// The name of the global variable that holds the end of the championship period.

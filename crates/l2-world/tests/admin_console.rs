@@ -2,7 +2,6 @@
 
 //! The console GM of G-03: the admin GUI runs `//commands` as a virtual GM called "GUI" and gets
 //! the system messages back as text.
-//! Java: handler/AdminCommandHandler.java, scripts/handlers/chat/commands/admin/{AdminKick,
 //! AdminPunishment,AdminAnnouncements,AdminShutdown,AdminServerInfo}.java, gameserver/Shutdown.java.
 
 use std::sync::{Arc, Mutex, mpsc};
@@ -464,7 +463,6 @@ fn abort_stops_the_countdown() {
     s.console("server_shutdown 120");
     s.run(2_000);
     let lines = s.console("server_abort");
-    // NOTE(java-quirk): the mode is already ABORT when Java builds the text.
     assert_eq!(
         lines,
         ["[announcement] Server aborts aborting and continues normal operation!"]

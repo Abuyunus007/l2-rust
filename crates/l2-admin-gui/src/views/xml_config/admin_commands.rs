@@ -1,7 +1,6 @@
 //! `AdminCommands.xml`: which access level may run which `//` command, and which commands ask
 //! for a confirmation.
 //!
-//! Java: `data/xml/AdminData.java` (`<admin>`), `data/holders/AccessRight.java` (`accessLevel`
 //! default 100, `confirmDlg` default false). The commands themselves are fixed (a handler must
 //! exist for each), so the form edits their level and confirmation only; it neither adds nor
 //! deletes a command.
@@ -127,7 +126,6 @@ impl XmlForm for AdminCommandsForm {
             if command.trim().is_empty() {
                 issues.push(Issue::error(row, "command", "a command needs a name"));
             } else if count.get(command).copied().unwrap_or(0) > 1 {
-                // NOTE(java-quirk): Java keeps the last of a repeated command (LinkedHashMap.put).
                 issues.push(Issue::warning(
                     row,
                     "command",

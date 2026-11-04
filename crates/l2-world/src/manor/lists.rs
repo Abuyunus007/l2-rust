@@ -1,6 +1,5 @@
 //! The production and the procurement of the castles: the lists of both periods, their costs,
 //! the lord's next period, the sales' updates, `storeMe` and `resetManorData`.
-// Java: managers/CastleManorManager.java
 
 use super::{CropProcure, ManorProcureRow, ManorProductionRow, ManorWrite, SeedProduction};
 use crate::outbox::PersistCommand;
@@ -191,9 +190,6 @@ impl World {
         self.manor_write(ManorWrite::UpdateCurrentProcure { castle_id, amounts });
     }
 
-    /// Java `resetManorData(castleId)`: a castle that lost its owner loses its manor. The rows go
-    /// with the owner change (`SiegeDatabaseWrites`, D-51) and only with `AltManorSaveAllActions`
-    /// (otherwise the next `storeMe` writes the empty lists).
     pub fn manor_reset_data(&mut self, castle_id: i32) {
         if !self.manor.settings.allow_manor {
             return;

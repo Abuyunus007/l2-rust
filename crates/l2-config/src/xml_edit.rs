@@ -1,6 +1,5 @@
 //! In-place editor for the XML config files (`AccessLevels.xml`, `SiegeSchedule.xml`, ...).
 //!
-//! Java: none (tooling). The servers read these files with their own loaders; this module only
 //! changes them without rewriting them. A normal XML writer would lose the comments, the tabs,
 //! the attribute order and the line endings, so it is not used (card G-08, same idea as
 //! [`crate::ini_edit`] for `.ini` files).

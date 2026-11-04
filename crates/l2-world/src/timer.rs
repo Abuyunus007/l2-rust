@@ -41,7 +41,10 @@ pub enum TimerKind {
     AttackStanceCheck,
     /// Java `UseItem`'s `ThreadPool.schedule(() -> player.useEquippableItem(item, false), ...)`:
     /// an item used during an attack is put on (or off) when the attack animation ends.
-    EquipAfterAttack { player: ObjectId, item: ObjectId },
+    EquipAfterAttack {
+        player: ObjectId,
+        item: ObjectId,
+    },
     /// Java `Player.broadcastCharInfo`'s 100 ms task.
     CharInfo(ObjectId),
     /// Java `Player.sendSkillList`'s 300 ms task.
@@ -62,7 +65,10 @@ pub enum TimerKind {
     MinionRespawn(ObjectId),
     /// Java `SpawnGroupTaskManager`: a spawn group materialises the unit it reserved when one of
     /// its units died (`group` and `entry` are indices into the spawn data).
-    GroupSpawn { group: usize, entry: usize },
+    GroupSpawn {
+        group: usize,
+        entry: usize,
+    },
     /// Java `ResetOwner` (`ItemManager.createItem`): the loot privilege of a dropped item ends.
     ItemOwnerReset(ObjectId),
     /// Java `DropProtection.run()`: the 15 second pickup protection of a dropped item ends.
@@ -157,8 +163,6 @@ pub enum TimerKind {
     /// The quest timers of the castle NPCs (the mass gatekeeper, the envoys), see
     /// `residence/npc/`.
     ResidenceNpc(crate::residence::npc::ResidenceNpcTimer),
-    /// The Territory War tasks (the start and end countdowns, the channel, the online reward,
-    /// the side by side re-read, the mercenary captains' shout), see `territory/`.
     Territory(crate::territory::TerritoryTimer),
     /// The grand boss store, the raid boss respawns and the weekly raid points reset, see `boss/`.
     Boss(crate::boss::BossTimer),

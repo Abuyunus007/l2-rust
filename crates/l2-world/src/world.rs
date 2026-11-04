@@ -322,7 +322,6 @@ impl World {
 
     /// Installs the configuration values the world reads. Call before players enter.
     pub fn set_settings(&mut self, settings: WorldSettings) {
-        // Java: `WorldRegion._active` starts as `GRIDS_ALWAYS_ON`. Settings are installed before
         // anything spawns, so the grid is still empty here.
         if self.regions.len() == 0 {
             self.regions = RegionGrid::new(settings.grids_always_on);
@@ -344,7 +343,6 @@ impl World {
     }
 
     /// Sets the time between two autosaves of a player; applies from the next (re)schedule.
-    // Java: PlayerAutoSaveTaskManager polls once a second, so shorter intervals are not honoured
     // there either; callers clamp to one second.
     pub fn set_autosave_interval(&mut self, interval: Duration) {
         self.autosave_ticks = TimerWheel::duration_to_ticks(interval);
@@ -512,7 +510,6 @@ impl World {
             WorldCommand::BossReread { result, then } => self.on_boss_reread(result, then),
             WorldCommand::TransmogLoaded { player, result } => self.on_transmog_loaded(player, result),
             WorldCommand::BirthdayGiftsLoaded { result } => self.on_birthday_gifts_loaded(result),
-            // Java: CustomMailManager, ChangePasswordResponse, CharacterSelect (M9-C06)
             WorldCommand::CustomMailLoaded { result } => self.on_custom_mail_loaded(result),
             WorldCommand::PasswordChangeResponse { character, text } => {
                 self.on_change_password_response(&character, &text);
@@ -595,10 +592,7 @@ impl World {
                 self.seven_signs_shutdown();
                 // Java Shutdown: "Save Cursed Weapons data before closing."
                 self.save_cursed_weapons();
-                // Java Shutdown: "Olympiad System: Data saved" (D-53: only with the switch).
                 self.olympiad_shutdown();
-                // Java Shutdown: `ScriptManager.save()` and `GlobalVariablesManager.storeMe()`
-                // (D-54: the global variables only with the switch, S-API-01).
                 self.scripts_shutdown();
                 self.stopped = true;
                 done();
@@ -619,14 +613,10 @@ impl World {
             self.sweep_statuses();
             self.sweep_effects();
         }
-        // Java: MovementTaskManager.
         self.update_movement();
         self.update_vehicles();
-        // Java: AttackableThinkTaskManager.
         self.think_attackables();
-        // Java: CreatureSeeTaskManager (S-API-03).
         self.update_seen_creatures();
-        // Java: GameTimeTaskManager checks every 100 ms (two world ticks).
         if self.tick % 2 == 0 {
             self.update_game_clock();
         }
@@ -652,12 +642,10 @@ impl World {
             // Java also adds or removes the Dark Elves' Shadow Sense skill here (with a system
             // message): skills and their effects are M5.
             self.set_night(night);
-            // Java: `ON_DAY_NIGHT_CHANGE` (S-API-03).
             self.script_on_day_night_change(night);
         }
     }
 
-    // Java: EnterWorld.runImpl (the world part; the packets are in `enter.rs`)
     fn enter(&mut self, session: SessionId, data: PlayerData, sink: Box<dyn PacketSink>, ip: Option<IpAddr>) {
         if self.sessions.contains_key(&session) {
             warn!("{session:?} tried to enter the world twice; ignored.");
@@ -683,7 +671,6 @@ impl World {
             return;
         }
         if self.players.contains_key(&id) {
-            // Java: the old instance is disconnected (e.g. a stale session after a crash).
             warn!(
                 "Character {} is already in the world; removing the old instance.",
                 data.name
@@ -720,7 +707,6 @@ impl World {
         self.sessions.insert(session, id);
         self.player_sessions.insert(id, session);
         self.sinks.insert(id, sink);
-        // Java: Player.load -> PlayerAutoSaveTaskManager.add
         self.schedule_autosave(id);
         self.outbox.ls_event(LsEvent::PlayerInGame { account });
         self.on_entered(id);
@@ -748,17 +734,14 @@ impl World {
                 text,
                 target,
             } => self.on_say(id, chat_type, text, target),
-            // Java: RequestNetPing -> NetPing(GameTimeTaskManager.getGameTime())
             ClientInput::NetPing => {
                 let game_time = game_time_minutes(unix_ms_now());
                 self.send(id, &NetPing { game_time });
             }
-            // Java: RequestSkillCoolTime -> SkillCoolTime(player)
             ClientInput::SkillCoolTime => {
                 let packet = self.skill_cool_time(id);
                 self.send(id, &packet);
             }
-            // Java: RequestKeyMapping -> ExUISetting(player) when StoreCharUiSettings is on.
             ClientInput::KeyMapping => {
                 if let Some(player) = self.players.get(&id)
                     && let Some(packet) = crate::enter::ui_setting(&player.data, &self.settings)
@@ -769,12 +752,9 @@ impl World {
             input @ (ClientInput::MoveTo { .. }
             | ClientInput::ValidatePosition { .. }
             | ClientInput::CannotMoveAnymore { .. }) => self.on_movement_input(id, input),
-            // Java: Appearing -> onTeleported (when teleporting), then updateUserInfo
             ClientInput::Appearing => self.on_appearing(id),
-            // Java: Action, RequestTargetCanceld, RequestBypassToServer, RequestLinkHtml
             ClientInput::Action { object_id, action_id } => self.on_action(id, object_id, action_id),
             ClientInput::TargetCanceled { unselect } => self.on_target_canceled(id, unselect),
-            // Java: DlgAnswer
             ClientInput::DlgAnswer {
                 message_id,
                 answer,
@@ -784,9 +764,7 @@ impl World {
             ClientInput::LinkHtml { link } => self.on_link_html(id, &link),
             ClientInput::BuildCmd { command } => self.on_build_cmd(id, &command),
             ClientInput::UserCommand { id: command } => self.on_user_command(id, command),
-            // Java: AttackRequest (the origin and the shift flag are never used)
             ClientInput::AttackRequest { object_id, .. } => self.on_attack_request(id, object_id),
-            // Java: UseItem, RequestUnEquipItem, RequestDestroyItem, RequestDropItem, RequestItemList
             ClientInput::UseItem {
                 object_id,
                 ctrl_pressed,
@@ -803,7 +781,6 @@ impl World {
                 z,
             } => self.on_request_drop_item(id, object_id, count, x, y, z),
             ClientInput::ItemList => self.on_request_item_list(id),
-            // Java: TradeRequest, AnswerTradeRequest, AddTradeItem, TradeDone
             ClientInput::TradeRequest { object_id } => self.on_trade_request(id, object_id),
             ClientInput::AnswerTradeRequest { response } => self.on_answer_trade_request(id, response),
             ClientInput::AddTradeItem {
@@ -812,29 +789,20 @@ impl World {
                 count,
             } => self.on_add_trade_item(id, trade_id, object_id, count),
             ClientInput::TradeDone { response } => self.on_trade_done(id, response),
-            // Java: MultiSellChoose
             ClientInput::MultiSellChoose {
                 list_id,
                 entry_id,
                 amount,
             } => self.on_multisell_choose(id, list_id, entry_id, amount),
-            // Java: RequestActionUse (store actions), RequestPrivateStore*, SetPrivateStore*
             ClientInput::Store(input) => self.on_store_input(id, input),
-            // Java: RequestHenna*
             ClientInput::Henna(input) => self.on_henna_input(id, input),
-            // Java: RequestInfoItemAuction, RequestBidItemAuction
             ClientInput::ItemAuction(input) => self.on_item_auction_input(id, input),
-            // Java: RequestBookMarkSlotInfo, RequestSaveBookMarkSlot, ... (L-04)
             ClientInput::Bookmark(input) => self.on_bookmark_input(id, input),
-            // Java: RequestExShowContactList, RequestExAddContactToContactList, ... (L-04)
             ClientInput::Contacts(input) => self.on_contacts_input(id, input),
-            // Java: RequestCursedWeaponList, RequestCursedWeaponLocation
             ClientInput::Cursed(input) => self.on_cursed_input(id, input),
-            // Java: ObserverReturn, RequestOlympiadObserverEnd, RequestOlympiadMatchList,
             // RequestExOlympiadMatchListRefresh (M8-OLY-01)
             ClientInput::Olympiad(input) => self.on_olympiad_input(id, input),
             ClientInput::Minigame(input) => self.on_minigame_input(id, input),
-            // Java: RequestGetOnVehicle, RequestGetOffVehicle, RequestMoveToLocationInVehicle,
             // CannotMoveAnymoreInVehicle, MoveToLocationAirShip, MoveToLocationInAirShip
             ClientInput::Vehicle(input) => self.on_vehicle_input(id, input),
             ClientInput::AcquireSkillInfo {
@@ -848,17 +816,14 @@ impl World {
                 skill_type,
                 sub_type,
             } => self.on_request_acquire_skill(id, skill_id, level, skill_type, sub_type),
-            // Java: RequestMagicSkillUse
             ClientInput::MagicSkillUse {
                 magic_id,
                 ctrl_pressed,
                 shift_pressed,
             } => self.on_request_magic_skill_use(id, magic_id, ctrl_pressed, shift_pressed),
-            // Java: RequestAutoSoulShot
             ClientInput::AutoSoulShot { item_id, shot_type } => {
                 self.on_request_auto_soul_shot(id, item_id, shot_type)
             }
-            // Java: RequestShortcutReg
             ClientInput::ShortcutReg {
                 type_id,
                 slot,
@@ -866,39 +831,30 @@ impl World {
                 level,
                 character_type,
             } => self.on_request_shortcut_reg(id, type_id, slot, shortcut_id, level, character_type),
-            // Java: RequestShortcutDel
             ClientInput::ShortcutDel { slot } => self.on_request_shortcut_del(id, slot),
-            // Java: RequestRestartPoint
             ClientInput::RestartPoint { point_type } => self.on_request_restart_point(id, point_type),
-            // Java: RequestVoteNew
             ClientInput::VoteNew { target_id } => self.on_request_vote_new(id, target_id),
-            // Java: RequestActionUse (the summon actions, `summon/actions.rs`)
             ClientInput::ActionUse {
                 action_id,
                 ctrl_pressed,
                 shift_pressed,
             } => self.on_action_use(id, action_id, ctrl_pressed, shift_pressed),
-            // Java: AnswerCoupleAction (`actions.rs`)
             ClientInput::AnswerCoupleAction {
                 action_id,
                 answer,
                 object_id,
             } => self.on_answer_couple_action(id, action_id, answer, object_id),
             ClientInput::Clan(input) => self.on_clan_input(id, input),
-            // Java: RequestPetGetItem, RequestGiveItemToPet, RequestGetItemFromPet,
             // RequestPetUseItem, RequestChangePetName (`summon/pet_items.rs`)
             ClientInput::Pet(input) => self.on_pet_input(id, input),
-            // Java: RequestBuyItem, RequestSellItem, RequestRefundItem, RequestBuySellUIClose
             ClientInput::Shop(input) => self.on_shop_input(id, input),
             ClientInput::Warehouse(input) => self.on_warehouse_input(id, input),
             ClientInput::Fort(input) => self.on_fort_input(id, input),
-            // Java: RequestJoinDominionWar, RequestDominionInfo (M7-TW-01)
             ClientInput::Territory(input) => self.on_territory_input(id, input),
             // L-02: macros, crystallize, wear shop, item links, key mapping, ...
             ClientInput::Leftover(input) => self.on_leftover_input(id, input),
             ClientInput::Manor(input) => self.on_manor_input(id, input),
             ClientInput::Craft(input) => self.on_craft_input(id, input),
-            // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
             // RequestOustPartyMember, RequestChangePartyLeader
             ClientInput::JoinParty {
                 name,
@@ -906,19 +862,16 @@ impl World {
             } => self.on_request_join_party(id, &name, distribution_type_id),
             ClientInput::AnswerJoinParty { response } => self.on_request_answer_join_party(id, response),
             ClientInput::WithdrawParty => self.on_request_withdrawal_party(id),
-            // Java: RequestPartyMatchConfig, RequestPartyMatchList, RequestPartyMatchDetail,
             // RequestOustFromPartyRoom, RequestDismissPartyRoom, RequestWithdrawPartyRoom,
             // RequestAskJoinPartyRoom, AnswerJoinPartyRoom, RequestListPartyMatchingWaitingRoom,
             // RequestExitPartyMatchingWaitingRoom (L-03)
             ClientInput::PartyRoom(input) => self.on_party_room_input(id, input),
-            // Java: RequestPartyLootModification, AnswerPartyLootModification
             ClientInput::PartyLootModification { distribution_type_id } => {
                 self.on_request_party_loot_modification(id, distribution_type_id)
             }
             ClientInput::AnswerPartyLootModification { answer } => {
                 self.on_answer_party_loot_modification(id, answer)
             }
-            // Java: RequestGiveNickName, RequestChangeNicknameColor, RequestResetNickname
             ClientInput::GiveNickName { target, title } => {
                 self.on_request_give_nick_name(id, &target, &title)
             }
@@ -928,13 +881,11 @@ impl World {
                 item_object_id,
             } => self.on_request_change_nickname_color(id, color_num, &title, item_object_id),
             ClientInput::ResetNickname => self.on_request_reset_nickname(id),
-            // Java: RequestGmList, RequestGMCommand
             ClientInput::GmCommand { target_name, command } => {
                 self.on_request_gm_command(id, &target_name, command)
             }
             ClientInput::OustPartyMember { name } => self.on_request_oust_party_member(id, &name),
             ClientInput::ChangePartyLeader { name } => self.on_request_change_party_leader(id, &name),
-            // Java: RequestExAskJoinMPCC, RequestExAcceptJoinMPCC, RequestExOustFromMPCC,
             // RequestExMPCCShowPartyMembersInfo
             ClientInput::AskJoinMpcc { name } => self.on_request_ex_ask_join_mpcc(id, &name),
             ClientInput::AcceptJoinMpcc { response } => self.on_request_ex_accept_join_mpcc(id, response),
@@ -942,13 +893,11 @@ impl World {
             ClientInput::MpccShowPartyMembersInfo { party_leader_id } => {
                 self.on_request_ex_mpcc_show_party_members_info(id, party_leader_id)
             }
-            // Java: RequestDuelStart, RequestDuelAnswerStart, RequestDuelSurrender
             ClientInput::DuelStart { name, party_duel } => self.on_request_duel_start(id, &name, party_duel),
             ClientInput::DuelAnswerStart { party_duel, response } => {
                 self.on_request_duel_answer_start(id, party_duel, response)
             }
             ClientInput::DuelSurrender => self.do_duel_surrender(id),
-            // Java: RequestFriendInvite, RequestAnswerFriendInvite, RequestFriendList,
             // RequestFriendDel, RequestSendFriendMsg, RequestBlock
             ClientInput::FriendInvite { name } => self.on_request_friend_invite(id, &name),
             ClientInput::AnswerFriendInvite { response } => {
@@ -966,28 +915,19 @@ impl World {
                 self.on_request_send_friend_msg(id, &message, &receiver)
             }
             ClientInput::Block { kind, name } => self.on_request_block(id, kind, name.as_deref()),
-            // Java: RequestShowBoard, RequestBBSwrite (S-HAND-01, `community_board/`)
             ClientInput::ShowBoard => self.on_request_show_board(id),
             ClientInput::BbsWrite { url, args } => self.on_request_bbs_write(id, &url, &args),
             ClientInput::Mail(input) => self.on_mail_input(id, input),
-            // Java: RequestEnchantItem and the other enchant window packets
             ClientInput::Enchant(input) => self.on_enchant_input(id, input),
-            // Java: RequestRefine and the other augmentation window packets
             ClientInput::Augment(input) => self.on_augment_input(id, input),
-            // Java: RequestExFishRanking
             ClientInput::FishRanking => self.on_request_ex_fish_ranking(id),
-            // Java: RequestGetBossRecord
             ClientInput::GetBossRecord { boss_id } => self.on_request_get_boss_record(id, boss_id),
-            // Java: RequestSiegeInfo, RequestSiegeAttackerList, RequestSiegeDefenderList,
             // RequestJoinSiege, RequestConfirmSiegeWaitingList, RequestSetCastleSiegeTime
             ClientInput::Siege(input) => self.on_siege_input(id, input),
-            // Java: RequestAllAgitInfo
             ClientInput::AllAgitInfo => self.on_request_all_agit_info(id),
             ClientInput::Petition(input) => self.on_petition_input(id, input),
-            // Java: RequestSSQStatus (M8-SS-01)
             ClientInput::SsqStatus { page } => self.on_request_ssq_status(id, page),
             ClientInput::SeedPhase => self.on_request_seed_phase(id),
-            // Java: RequestQuestList, RequestQuestAbort, RequestTutorial* (S-API-01)
             ClientInput::Quest(input) => self.on_quest_input(id, input),
             ClientInput::SnoopQuit { snoop_id } => self.on_snoop_quit(id, snoop_id),
             ClientInput::Other { opcode, ex_opcode } => {
@@ -998,7 +938,6 @@ impl World {
 
     fn on_timer(&mut self, kind: TimerKind) {
         match kind {
-            // Java: PlayerAutoSaveTaskManager.run -> Player.autoSave, then due again after
             // CHAR_DATA_STORE_INTERVAL. A player who left has no timer any more.
             TimerKind::Autosave(id) => {
                 // Java `autoSave`: `storeRecommendations(false)`, written with the same snapshot.
@@ -1014,16 +953,13 @@ impl World {
             TimerKind::TeleportWatchdog(id) => self.on_teleport_watchdog(id),
             TimerKind::InventoryUpdate(id) => self.on_inventory_update_timer(id),
             TimerKind::Follow(id) => self.on_follow_timer(id),
-            // Java: HitTask -> Creature.onHitTimer
             TimerKind::Hit(task) => self.on_hit_task(task),
-            // Java: getAI().notifyActionReadyToAct() after an attack
             TimerKind::ReadyToAct(id) => {
                 if self.objects.contains_key(&id) {
                     self.notify_action_ready_to_act(id);
                 }
             }
             TimerKind::AttackStanceCheck => self.on_attack_stance_check(),
-            // Java: UseItem's delayed useEquippableItem(item, false)
             TimerKind::EquipAfterAttack { player, item } => {
                 if self.players.contains_key(&player) {
                     self.use_equippable_item(player, item, false);
@@ -1036,118 +972,72 @@ impl World {
             TimerKind::ItemList(id) => self.on_item_list_timer(id),
             TimerKind::Regeneration(id) => self.on_regeneration_timer(id),
             TimerKind::SelfStatusUpdate(id) => self.on_self_update_timer(id),
-            // Java: DecayTaskManager, RespawnTaskManager, SpawnGroupTaskManager
             TimerKind::Decay(id) => self.on_decay_timer(id),
             TimerKind::Respawn(id) => self.on_respawn_timer(id),
-            // Java: MinionList.MinionRespawnTask
             TimerKind::MinionRespawn(id) => self.on_minion_respawn_timer(id),
             TimerKind::GroupSpawn { group, entry } => self.on_group_spawn_timer(group, entry),
-            // Java: ItemManager.ResetOwner, DropProtection, ItemsAutoDestroyTaskManager,
             // ItemsOnGroundManager
             TimerKind::ItemOwnerReset(id) => self.on_item_owner_reset(id),
             TimerKind::ItemDropProtection(id) => self.on_item_drop_protection_end(id),
             TimerKind::ItemsAutoDestroy => self.on_items_auto_destroy(),
             TimerKind::SaveGroundItems => self.on_save_ground_items_timer(),
-            // Java: RandomAnimationTaskManager.run (for one NPC)
             TimerKind::RandomAnimation(id) => self.on_random_animation_timer(id),
-            // Java: VitalityTask, Nevit.AdventTask, Nevit.NevitEffectEnd, RecoBonusTaskEnd
             TimerKind::Vitality(id) => self.on_vitality_timer(id),
             TimerKind::NevitAdvent(id) => self.on_nevit_advent_timer(id),
             TimerKind::NevitEffectEnd(id) => self.on_nevit_effect_end(id),
             TimerKind::NevitHourglassEnd(id) => self.on_nevit_hourglass_end(id),
-            // Java: RecoGiveTask, DailyResetManager.onReset
             TimerKind::RecoGive(id) => self.on_reco_give_timer(id),
             TimerKind::DailyReset => self.on_daily_reset_timer(),
-            // Java: BotReportTable.ResetPointTask
             TimerKind::BotReportReset => self.on_bot_report_reset_timer(),
-            // Java: BuffFinishTask, EffectTickTask, EffectList's icon task,
             // Player.updateAndBroadcastStatus
             TimerKind::BuffFinish(id) => self.on_buff_finish_timer(id),
             TimerKind::EffectTick(task) => self.on_effect_tick(task),
             TimerKind::EffectIcons(id) => self.on_effect_icons_timer(id),
             TimerKind::UpdateAndBroadcastStatus(id) => self.on_update_and_broadcast_status_timer(id),
-            // Java: MagicUseTask, QueuedMagicUseTask and the delayed steps of a cast
             TimerKind::Cast(timer) => self.on_cast_timer(timer),
             TimerKind::Control(timer) => self.on_control_timer(timer),
-            // Java: Party's position broadcast task
             TimerKind::PartyPosition(party) => self.on_party_position_timer(party),
-            // Java: Party.finishLootRequest(false) after 15 s
             TimerKind::PartyLootRequest(party) => self.on_party_loot_request_timer(party),
-            // Java: CommandChannelTimer.run
             TimerKind::CommandChannelTimer(raid) => self.on_command_channel_timer(raid),
-            // Java: PunishmentTask.run, IllegalPlayerActionTask, TeleportTask
             TimerKind::Punishment(timer) => self.on_punishment_timer(timer),
-            // Java: Servitor.run, SummonAI.run, Summon.updateAbnormalEffect's task
             TimerKind::Summon(timer) => self.on_summon_timer(timer),
-            // Java: ClanTable.scheduleRemoveClan, updateClanRanks, RequestPartner.clear
             TimerKind::Clan(timer) => self.on_clan_timer(timer),
-            // Java: PvpFlagTaskManager.run (for one player)
             TimerKind::PvpFlag(id) => self.on_pvp_flag_timer(id),
-            // Java: FakePlayerChatManager.manageChat's ThreadPool.schedule
             TimerKind::FakePlayerChat(key) => self.on_fake_player_chat_timer(key),
-            // Java: PcCafePointsManager.giveRetailPcCafePont
             TimerKind::PcCafe(id) => self.on_pc_cafe_timer(id),
-            // Java: PremiumManager, AutoPotionTaskManager, AutoPlayTaskManager, AutoUseTaskManager
             TimerKind::CustomPlay(timer) => self.on_custom_play_timer(timer),
-            // Java: BuyListTaskManager, InventoryEnableTask
             TimerKind::Shop(timer) => self.on_shop_timer(timer),
-            // Java: Duel.ScheduleStartDuelTask, ScheduleDuelTask, ScheduleEndDuelTask
             TimerKind::Duel(timer) => self.on_duel_timer(timer),
-            // Java: MessageDeletionTaskManager.run
             TimerKind::Mail(timer) => self.on_mail_timer(timer),
             TimerKind::Residence(timer) => self.on_residence_timer(timer),
-            // Java: Siege.ScheduleStartSiegeTask, ScheduleEndSiegeTask, FameTask, ...
             TimerKind::Siege(timer) => self.on_siege_timer(timer),
-            // Java: DamageZone.ApplyDamage
             TimerKind::Zone(timer) => self.on_zone_timer(timer),
-            // Java: WaterTask, the falling damage task of Player.isFalling
             TimerKind::Water(timer) => self.on_water_timer(timer),
             TimerKind::Manor(timer) => self.on_manor_timer(timer),
             TimerKind::ClanHall(timer) => self.on_clan_hall_timer(timer),
             TimerKind::Craft(timer) => self.on_craft_timer(timer),
-            // Java: LookingForFishTask, Fishing.run, FishingChampionshipManager's tasks
             TimerKind::Fishing(timer) => self.on_fishing_timer(timer),
-            // Java: PetFeedTask, DismountTask, RentPetTask
             TimerKind::Mount(timer) => self.on_mount_timer(timer),
             TimerKind::Fort(timer) => self.on_fort_timer(timer),
-            // Java: the quest timers of CastleTeleporter and CastleAmbassador
             TimerKind::ResidenceNpc(timer) => self.on_residence_npc_timer(timer),
-            // Java: TerritoryWarManager's tasks, MercenaryCaptain's "say" timer (M7-TW-01)
             TimerKind::Territory(timer) => self.on_territory_timer(timer),
-            // Java: GrandBossManager's store, RaidBossSpawnManager's SpawnSchedule, the raid points reset
             TimerKind::Boss(timer) => self.on_boss_timer(timer),
             TimerKind::Cursed(timer) => self.on_cursed_timer(timer),
-            // Java: Olympiad's tasks, OlympiadGameManager, OlympiadGameTask (M8-OLY-01)
             TimerKind::Olympiad(timer) => self.on_olympiad_timer(timer),
-            // Java: Vehicle's engine, monitor and ControllableAirShip's tasks, AirShipController's
             TimerKind::Vehicle(timer) => self.on_vehicle_timer(timer),
-            // Java: RequestPreviewItem.RemoveWearItemsTask (L-02)
             TimerKind::Leftover(timer) => self.on_leftover_timer(timer),
-            // Java: Shutdown's counter, AutoAnnouncement, AdminDebug's tasks
             TimerKind::Admin(timer) => self.on_admin_timer(timer),
-            // Java: ItemAuctionInstance.ScheduleAuctionTask (L-05)
             TimerKind::ItemAuction(timer) => self.on_item_auction_timer(timer),
-            // Java: LotteryManager's tasks (S-HAND-03)
             TimerKind::Lottery(timer) => self.on_lottery_timer(timer),
-            // Java: Instance.CheckTimeUp, TimeUp and notifyDeath's eject task
             TimerKind::Instance(timer) => self.on_instance_timer(timer),
-            // Java: WalkingManager's start, repeat and arrival tasks
             TimerKind::Walking(timer) => self.on_walking_timer(timer),
-            // Java: Wedding.EscapeFinalizer
             TimerKind::Wedding(timer) => self.on_wedding_timer(timer),
-            // Java: CustomMailManager, CaptchaManager (M9-C06)
             TimerKind::CustomMisc(timer) => self.on_custom_misc_timer(timer),
-            // Java: Unstuck.EscapeFinalizer (S-HAND-02)
             TimerKind::ScriptHandler(timer) => self.on_script_handler_timer(timer),
-            // Java: the ThreadPool tasks of the minigames (M8-GAMES-01)
             TimerKind::Minigame(timer) => self.on_minigame_timer(timer),
-            // Java: SevenSignsPeriodChange, DailyResetManager.onSave, AutoSpawner, AutoDespawner
             TimerKind::SevenSigns(timer) => self.on_seven_signs_timer(timer),
-            // Java: the ThreadPool tasks of Decoy and Trap (S-HAND-04)
             TimerKind::DecoyTrap(timer) => self.on_decoy_trap_timer(timer),
-            // Java: DropSearchBoard's `_bbs_npc_trace` task (S-HAND-04)
             TimerKind::Board(timer) => self.on_board_timer(timer),
-            // Java: QuestTimer, the delayed OnAttackableKill, Npc.scheduleDespawn (S-API-01)
             TimerKind::Script(timer) => self.on_script_timer(timer),
         }
     }

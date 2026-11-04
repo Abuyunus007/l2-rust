@@ -1,6 +1,4 @@
 //! `DynamicExpRates.xml`: an exp and sp rate per player level (used when any rate is not 1).
-//!
-//! Java: `data/xml/DynamicExpRateData.java` (`<dynamic level exp sp>`, floats).
 
 use std::collections::HashMap;
 

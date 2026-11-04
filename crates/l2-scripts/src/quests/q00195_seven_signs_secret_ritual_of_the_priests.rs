@@ -1,5 +1,4 @@
 //! Quest 195: Seven Signs, Secret Ritual of the Priests (Claudia Athebaldt, John, Raymond, Iason Heine).
-// Java: dist/game/data/scripts/quests/Q00195_SevenSignsSecretRitualOfThePriests/Q00195_SevenSignsSecretRitualOfThePriests.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED};

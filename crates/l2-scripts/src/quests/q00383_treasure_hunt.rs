@@ -1,6 +1,4 @@
 //! Quest 383: Treasure Hunt (Espen, the pirate's chest opened with a thief key).
-// Java: dist/game/data/scripts/quests/Q00383_TreasureHunt/Q00383_TreasureHunt.java
-//
 // Pattern: a repeatable quest whose reward is four independent rolls (armor, dye, jewel, score);
 // every roll that gives nothing adds adena.
 

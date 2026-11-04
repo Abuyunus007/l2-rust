@@ -1,17 +1,5 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
-//! Castle sieges (M7-SIEGE-01): the schedule, the registrations and their re-read (D-50), a GM
-//! test siege end to end (D-51), the owner change in the middle, the headquarters, the siege
-//! kills, the siege zone, the restart points, the mercenary tickets, the guards, the door
-//! upgrades and the `SiegeDatabaseWrites` switch.
-//! Java: mechanics/siege/{Siege,Castle}.java, managers/{SiegeManager,SiegeGuardManager,
-//! MercTicketManager}.java, entity/actor/instance/{SiegeFlag,ControlTower,FlameTower,Artefact,
-//! Defender}.java, entity/zone/type/SiegeZone.java, network/clientpackets/{RequestJoinSiege,
-//! RequestConfirmSiegeWaitingList,RequestSetCastleSiegeTime,RequestRestartPoint}.java,
-//! network/serverpackets/{SiegeInfo,SiegeDefenderList,Die}.java,
-//! handlers/items/MercTicket.java, handlers/chat/commands/admin/AdminSiege.java. The expected
-//! values come from the Java code named in each test.
-
 use std::sync::{Arc, Mutex};
 
 use l2_data::skill::EnchantSkillGroups;
@@ -474,7 +462,6 @@ impl Scene {
         self.take();
     }
 
-    /// Answers the last registration re-read the world asked for (D-50).
     fn answer_reread(&mut self, out: &[Out], rows: Vec<SiegeClanRecord>) {
         let then = reread_requests(out).pop().expect("a re-read request").1;
         self.world.handle(WorldCommand::ResidenceReread {
@@ -721,9 +708,6 @@ fn a_past_siege_date_moves_to_the_next_sunday_and_is_saved() {
 
 // ---------------------------------------------------------------------------------- registration
 
-/// `RequestJoinSiege`: the registrations are read again first (D-50); the attacker is saved
-/// (`INSERT INTO siege_clans`, only with the switch) and the player gets `SiegeInfo`. A failed
-/// read refuses the request.
 #[test]
 fn joining_reads_the_registrations_again_and_saves_the_attacker() {
     let mut s = Scene::new(LIONS, NEXT_SIEGE);
@@ -961,9 +945,6 @@ fn the_lord_approves_a_waiting_defender() {
 
 // ---------------------------------------------------------------------------------- the siege
 
-/// A GM test siege without `SiegeDatabaseWrites` (D-51): `//add_attacker`, `//startsiege`, the
-/// participants' siege state and the siege zone, the towers, then `//endsiege` with the
-/// defender's victory. No global row is written.
 #[test]
 fn a_gm_test_siege_runs_end_to_end() {
     let mut s = Scene::new(LIONS, NEXT_SIEGE);
@@ -1051,8 +1032,6 @@ fn a_gm_test_siege_runs_end_to_end() {
     );
     // `increaseBloodAllianceCount`: `BloodAllianceReward` (1), in this world only.
     assert_eq!(s.world.clan(LIONS).unwrap().blood_alliance_count, 1);
-    // NOTE(java-quirk): `_formerOwner` is only set by an owner change, so a castle that kept
-    // its owner since the start gives `TakeCastlePoints` (1500), not `CastleDefendedPoints`.
     assert_eq!(s.world.clan(LIONS).unwrap().reputation_score, 1500);
     // Everybody leaves the siege; the towers go; the lists are empty; the zone is off.
     assert_eq!(s.world.siege_state_of(ObjectId(P3)), 0);

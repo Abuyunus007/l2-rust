@@ -1351,7 +1351,6 @@ impl Rig {
             "the creation point of the datapack"
         );
         let char_id = created.object_id;
-        // Java: Logout at the character screen disconnects.
         assert!(game.logout().await.is_empty());
         self.wait_until_out_of_game(account).await;
         char_id

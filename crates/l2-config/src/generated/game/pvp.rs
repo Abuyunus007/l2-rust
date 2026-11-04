@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/PvpConfig.java
 
 use crate::IniFile;
 /// Settings of `config/PVP.ini` (Java: `PvpConfig`).

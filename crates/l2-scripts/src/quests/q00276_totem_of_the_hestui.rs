@@ -1,6 +1,4 @@
 //! Quest 276: Totem of the Hestui (Tanapi in the Orc Village sends the orcs after the kasha bears and their totem).
-// Java: dist/game/data/scripts/quests/Q00276_TotemOfTheHestui/Q00276_TotemOfTheHestui.java
-//
 // Pattern: a spawn chain (`docs/design/scripts.md`, "Quest patterns"): a kasha bear drops parasites,
 // and with a chance that grows with the parasites in the bag a totem spawns at the killer (the
 // parasites go). Killing the totem gives the crystal and cond 2; Tanapi pays two rewards and ends

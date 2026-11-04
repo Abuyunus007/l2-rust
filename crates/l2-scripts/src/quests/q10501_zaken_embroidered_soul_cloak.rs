@@ -1,6 +1,4 @@
 //! Quest 10501: Zaken Embroidered Soul Cloak (Olf Adams in the Gludin Harbor area, Zaken).
-// Java: dist/game/data/scripts/quests/Q10501_ZakenEmbroideredSoulCloak/Q10501_ZakenEmbroideredSoulCloak.java
-//
 // Pattern: a kill-count quest with a party (`docs/design/scripts.md`, "Kills, drops and
 // parties"): `on_kill` runs `actionForEachPlayer` for the killer's party and command channel;
 // each member gets 1..3 fragments (the last ones up to 20) and the NPC gives the cloak.

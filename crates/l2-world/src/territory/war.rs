@@ -1,10 +1,6 @@
 //! The war period: the next war date, the start and end tasks with their messages, the war
 //! itself (the castle and fortress zones, the war NPCs, the wards), the players' war state, the
 //! battlefield channel and the online reward.
-// Java: managers/TerritoryWarManager.java (setNextTWDate, setTWStartTimeInMillis,
-//       ScheduleStartTWTask, ScheduleEndTWTask, closeTerritoryChannelTask,
-//       RewardOnlineParticipants, startTerritoryWar, endTerritoryWar, updatePlayerTWStateFlags,
-//       announceToParticipants, Territory.changeNPCsSpawn, territoryCatapultDestroyed)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
@@ -126,8 +122,6 @@ impl World {
             self.territory.reward_task =
                 Some(self.schedule_territory_timer(TerritoryTimer::RewardOnline, 60_000));
         }
-        // NOTE(java-quirk): a start date more than `WarLength` in the past arms nothing; the
-        // schedule stays stopped until a GM or a restart sets a new date.
     }
 
     // ------------------------------------------------------------------ ScheduleEndTWTask
@@ -400,8 +394,6 @@ impl World {
                 } else {
                     warn!("TerritoryWarManager: Fort missing! FortId: {fort_id}");
                 }
-                // NOTE(java-quirk): `t.getHQ().deleteMe()` leaves the territory's `_territoryHQ`
-                // set, so the next war's outpost condition still finds it.
                 if let Some(hq) = self.territory.territories.get(castle_id).and_then(|t| t.hq) {
                     self.delete_npc(hq);
                 }
@@ -436,8 +428,6 @@ impl World {
             self.delete_npc(flag);
         }
         self.territory.clan_flags.clear();
-        // NOTE(java-quirk): the rows of the registrations go, the lists in memory stay (until a
-        // restart, or here the next read of the rows).
         let clans: Vec<(i32, i32)> = self
             .territory
             .registered_clans

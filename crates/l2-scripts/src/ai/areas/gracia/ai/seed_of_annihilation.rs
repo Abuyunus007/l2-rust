@@ -1,7 +1,5 @@
 //! The Seed of Annihilation: the weekly buff of its three regions, the elite monsters with their
 //! minions, the Annihilation Furnaces and the guarded teleport zones.
-// Java: dist/game/data/scripts/ai/areas/Gracia/AI/SeedOfAnnihilation/SeedOfAnnihilation.java
-//
 // The Strength / Agility / Wisdom buff of each region is a skill of its effect zone (60006 to
 // 60008, `EffectZone.addSkill` / `clearSkills`, S-AI-07).
 
@@ -81,9 +79,6 @@ struct SeedState {
 /// Java `getNextSeedsStatusChangeTime()` on the local wall clock (D-48): the Monday of this week
 /// at 13:00:00 (plus the milliseconds of now), a week later if that has passed. Returned in epoch
 /// milliseconds.
-// NOTE(java-quirk): `Calendar.set(DAY_OF_WEEK, MONDAY)` picks the Monday of the week as the JVM's
-// locale numbers it. The first day of the week is taken as Sunday here (the `en_US` default), so
-// a Sunday gets the Monday after it; the milliseconds of now stay in the result.
 fn next_seeds_status_change_time(now_ms: i64) -> i64 {
     let offset = local_offset_millis(now_ms);
     let local = now_ms + offset;

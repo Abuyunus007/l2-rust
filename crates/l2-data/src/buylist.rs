@@ -2,7 +2,6 @@
 //! (`data/MerchantPriceConfig.xml`): what a merchant sells, for how much, and which base tax its
 //! town adds.
 //!
-//! Java: `gameserver/data/xml/BuyListData.java`, `gameserver/mechanics/buylist/{BuyListHolder,
 //! Product}.java`, `gameserver/data/MerchantPriceConfigTable.java`. Data: `data/buylists/*.xml`
 //! (`xsd/buylist.xsd`), `data/MerchantPriceConfig.xml`.
 //!
@@ -13,10 +12,6 @@
 //! The list id is the file name (`0000382.xml` is list 382); only files named `<digits>.xml` are
 //! read (`BuyListData.isValidXmlFile`). The `custom` folder is read after the main one when
 //! `CustomBuyListLoad` is on, so a custom list with the same id replaces the shipped one.
-//!
-//! NOTE(java-quirk): Java checks the `CorrectPrices` rule while it reads the document, so it only
-//! sees the `<npcs>` that stand *before* the `<item>` in the file. All shipped lists put `<npcs>`
-//! first; a list without `<npcs>` (or with them after the items) never gets its prices corrected.
 
 use std::collections::{BTreeMap, HashSet};
 use std::path::Path;
@@ -213,7 +208,6 @@ impl BuyLists {
             Ok(list) => {
                 self.lists.insert(list.id, list);
             }
-            // Java: the exception aborts the document, so the list is not stored at all.
             Err(e) => warn!("Failed to load buyList data from xml File:{name}: {e}"),
         }
     }
@@ -577,7 +571,6 @@ mod tests {
 
     #[test]
     fn correct_prices_raises_a_price_below_the_sell_price_only_after_npcs() {
-        // Java: sell price = reference price / 2 = 50; the rule needs the `<npcs>` to be read.
         let after = r#"<list><item id="2509" price="10" /><npcs><npc>1</npc></npcs></list>"#;
         let before = r#"<list><npcs><npc>1</npc></npcs><item id="2509" price="10" /></list>"#;
         let lists = BuyLists::from_xml(

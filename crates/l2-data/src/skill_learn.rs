@@ -1,6 +1,5 @@
 //! Which classes each NPC teaches skills to.
 //!
-//! Java: `gameserver/data/xml/SkillLearnData.java` (parsing) and `NpcData.loadNpcsSkillLearn`
 //! (copies the list into the NPC template as `getTeachInfo`), `NpcTemplate.canTeach`.
 //! Data: `data/SkillLearn.xml`.
 

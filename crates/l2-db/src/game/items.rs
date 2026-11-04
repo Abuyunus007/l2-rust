@@ -1,12 +1,6 @@
 //! The `items` table, the augmentation rows of `item_attributes` and the element rows of
 //! `item_elementals`: what an inventory, warehouse, pet or the paperdoll restores, and what an
 //! item writes when it changes.
-// Java: org/l2jmobius/gameserver/entity/item/instance/Item.java (restoreFromDb, insertIntoDb,
-// Java: updateInDb, removeFromDb, restoreAttributes, updateItemAttributes, updateItemElements,
-// Java: clearElementAttr, removeAugmentation),
-// Java: entity/itemcontainer/ItemContainer.restore, Inventory.restore,
-// Java: PlayerInventory.restoreVisibleInventory, entity/item/enums/ItemLocation.java
-//
 // Same layout as characters.rs: verbatim SQL constants, one method per statement, row and write
 // structs that mirror the Java parameter lists.
 
@@ -16,40 +10,24 @@ use super::sql_number::SqlNumber;
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: ItemContainer.restore
 const SELECT_ITEMS_OF_LOCATION: &str = "SELECT object_id, item_id, count, enchant_level, loc, loc_data, custom_type1, custom_type2, mana_left, time FROM items WHERE owner_id=? AND (loc=?)";
-// Java: Inventory.restore
 const SELECT_ITEMS_OF_INVENTORY: &str = "SELECT object_id, item_id, count, enchant_level, loc, loc_data, custom_type1, custom_type2, mana_left, time FROM items WHERE owner_id=? AND (loc=? OR loc=?) ORDER BY loc_data";
-// Java: PlayerInventory.restoreVisibleInventory
 const SELECT_PAPERDOLL_ITEMS: &str =
     "SELECT object_id,item_id,loc_data,enchant_level FROM items WHERE owner_id=? AND loc='PAPERDOLL'";
-// Java: Item.insertIntoDb
 const INSERT_ITEM: &str = "INSERT INTO items (owner_id,item_id,count,loc,loc_data,enchant_level,object_id,custom_type1,custom_type2,mana_left,time) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
-// Java: Item.updateInDb
 const UPDATE_ITEM: &str = "UPDATE items SET owner_id=?,count=?,loc=?,loc_data=?,enchant_level=?,custom_type1=?,custom_type2=?,mana_left=?,time=? WHERE object_id = ?";
-// Java: Item.removeFromDb
 const DELETE_ITEM: &str = "DELETE FROM items WHERE object_id = ?";
-// Java: LongTimeEvent.destroyItemsOnEnd
 const DELETE_ITEMS_OF_ITEM_ID: &str = "DELETE FROM items WHERE item_id=?";
-// Java: Item.removeFromDb, Item.removeAugmentation
 const DELETE_ITEM_ATTRIBUTES: &str = "DELETE FROM item_attributes WHERE itemId = ?";
-// Java: Item.removeFromDb, Item.updateItemElements, Item.clearElementAttr (element -1)
 const DELETE_ITEM_ELEMENTALS: &str = "DELETE FROM item_elementals WHERE itemId = ?";
-// Java: Item.clearElementAttr (one element)
 const DELETE_ITEM_ELEMENTAL: &str = "DELETE FROM item_elementals WHERE itemId = ? AND elemType = ?";
-// Java: Item.removeFromDb
 const DELETE_ITEM_VARIABLES: &str = "DELETE FROM item_variables WHERE id = ?";
-// Java: Item.updateItemElements
 const INSERT_ITEM_ELEMENTAL: &str = "INSERT INTO item_elementals VALUES(?,?,?)";
-// Java: Item.restoreAttributes
 const SELECT_ITEM_ELEMENTALS: &str = "SELECT elemType,elemValue FROM item_elementals WHERE itemId=?";
-// Java: Item.restoreAttributes, for every item of an owner at once (the rows `restoreAttributes`
 // reads one item at a time, here in the order of the primary key).
 const SELECT_AUGMENTATIONS_OF_OWNER: &str = "SELECT a.itemId, a.augAttributes FROM item_attributes a INNER JOIN items i ON i.object_id=a.itemId WHERE i.owner_id=?";
 const SELECT_ELEMENTALS_OF_OWNER: &str = "SELECT e.itemId, e.elemType, e.elemValue FROM item_elementals e INNER JOIN items i ON i.object_id=e.itemId WHERE i.owner_id=? ORDER BY e.itemId, e.elemType";
-// Java: Item.updateItemAttributes
 const REPLACE_ITEM_ATTRIBUTES: &str = "REPLACE INTO item_attributes VALUES(?,?)";
-// Java: Item.restoreAttributes
 const SELECT_ITEM_AUGMENTATION: &str = "SELECT augAttributes FROM item_attributes WHERE itemId=?";
 
 /// Where an item is kept: the `items.loc` column stores the Java `ItemLocation` name.
@@ -297,7 +275,6 @@ impl ItemRepository {
 
     /// Every row of `items` with this item id, whoever owns it. The event items an event removes
     /// when it ends (nothing happens when there is none).
-    // Java: LongTimeEvent.destroyItemsOnEnd
     pub async fn delete_items_of_item_id(&self, item_id: i32) -> Result<()> {
         sqlx::query(DELETE_ITEMS_OF_ITEM_ID)
             .bind(item_id)
@@ -307,7 +284,6 @@ impl ItemRepository {
     }
 
     /// The items of one location of the owner (warehouses, pets, freight, ...).
-    // Java: ItemContainer.restore
     pub async fn items_of_location(&self, owner_id: i32, location: ItemLocation) -> Result<Vec<ItemRow>> {
         let rows = sqlx::query_as::<_, ItemDbRow>(SELECT_ITEMS_OF_LOCATION)
             .bind(owner_id)
@@ -319,7 +295,6 @@ impl ItemRepository {
 
     /// The owner's inventory items: the `base` location and the `equip` location together,
     /// ordered by `loc_data` (the Java inventory passes INVENTORY and PAPERDOLL).
-    // Java: Inventory.restore
     pub async fn inventory_items(
         &self,
         owner_id: i32,
@@ -336,7 +311,6 @@ impl ItemRepository {
     }
 
     /// The equipped items of the owner, for the character selection screen.
-    // Java: PlayerInventory.restoreVisibleInventory
     pub async fn paperdoll_items(&self, owner_id: i32) -> Result<Vec<PaperdollItemRow>> {
         let rows = sqlx::query_as::<_, PaperdollItemRow>(SELECT_PAPERDOLL_ITEMS)
             .bind(owner_id)
@@ -346,7 +320,6 @@ impl ItemRepository {
     }
 
     /// Inserts a new item row. Fails on a duplicate `object_id` (primary key).
-    // Java: Item.insertIntoDb
     pub async fn insert_item(&self, item: &NewItem) -> Result<()> {
         sqlx::query(INSERT_ITEM)
             .bind(item.owner_id)
@@ -366,7 +339,6 @@ impl ItemRepository {
     }
 
     /// Writes the item's current values.
-    // Java: Item.updateInDb
     pub async fn update_item(&self, object_id: i32, item: &ItemUpdate) -> Result<()> {
         sqlx::query(UPDATE_ITEM)
             .bind(item.owner_id)
@@ -385,7 +357,6 @@ impl ItemRepository {
     }
 
     /// Deletes the item and its augmentation, element and variable rows, in Java's order.
-    // Java: Item.removeFromDb
     pub async fn delete_item(&self, object_id: i32) -> Result<()> {
         // Java runs all four statements on one connection.
         let mut conn = self.pool.acquire().await?;
@@ -409,7 +380,6 @@ impl ItemRepository {
     }
 
     /// Sets the augmentation of the item (`REPLACE`, so it also covers a second augment).
-    // Java: Item.updateItemAttributes
     pub async fn set_augmentation(&self, object_id: i32, augmentation_id: i32) -> Result<()> {
         sqlx::query(REPLACE_ITEM_ATTRIBUTES)
             .bind(object_id)
@@ -421,7 +391,6 @@ impl ItemRepository {
 
     /// The stored augmentation id of the item, `None` when there is no row. Java treats -1 as
     /// "no augmentation"; the caller checks that.
-    // Java: Item.restoreAttributes
     pub async fn augmentation_of(&self, object_id: i32) -> Result<Option<i32>> {
         let aug = sqlx::query_scalar::<_, i32>(SELECT_ITEM_AUGMENTATION)
             .bind(object_id)
@@ -432,7 +401,6 @@ impl ItemRepository {
 
     /// The element rows of the item in primary key order (`elemType` ascending), including the
     /// rows Java skips (`elemType` -1 or `elemValue` -1; the caller checks).
-    // Java: Item.restoreAttributes
     pub async fn elementals_of(&self, object_id: i32) -> Result<Vec<ItemElementalRow>> {
         let rows = sqlx::query_as::<_, ItemElementalRow>(SELECT_ITEM_ELEMENTALS)
             .bind(object_id)
@@ -442,7 +410,6 @@ impl ItemRepository {
     }
 
     /// The augmentation rows of every item of the owner, whatever its location.
-    // Java: Item.restoreAttributes (all items of an owner in one query)
     pub async fn augmentations_of_owner(&self, owner_id: i32) -> Result<Vec<OwnerAugmentationRow>> {
         let rows = sqlx::query_as::<_, OwnerAugmentationRow>(SELECT_AUGMENTATIONS_OF_OWNER)
             .bind(owner_id)
@@ -453,7 +420,6 @@ impl ItemRepository {
 
     /// The element rows of every item of the owner, whatever its location, ordered by item and
     /// element.
-    // Java: Item.restoreAttributes (all items of an owner in one query)
     pub async fn elementals_of_owner(&self, owner_id: i32) -> Result<Vec<OwnerElementalRow>> {
         let rows = sqlx::query_as::<_, OwnerElementalRow>(SELECT_ELEMENTALS_OF_OWNER)
             .bind(owner_id)
@@ -464,7 +430,6 @@ impl ItemRepository {
 
     /// Writes the item's elements: all its rows are deleted, then one row is inserted per
     /// element (an empty list only deletes).
-    // Java: Item.updateItemElements
     pub async fn replace_elementals(&self, object_id: i32, elementals: &[ItemElementalRow]) -> Result<()> {
         let mut conn = self.pool.acquire().await?;
         sqlx::query(DELETE_ITEM_ELEMENTALS)
@@ -483,7 +448,6 @@ impl ItemRepository {
     }
 
     /// Removes one element of the item, or all of them for `elem_type` -1.
-    // Java: Item.clearElementAttr
     pub async fn delete_elemental(&self, object_id: i32, elem_type: i8) -> Result<()> {
         if elem_type == -1 {
             sqlx::query(DELETE_ITEM_ELEMENTALS)
@@ -501,7 +465,6 @@ impl ItemRepository {
     }
 
     /// Removes the augmentation row of the item.
-    // Java: Item.removeAugmentation
     pub async fn delete_augmentation(&self, object_id: i32) -> Result<()> {
         sqlx::query(DELETE_ITEM_ATTRIBUTES)
             .bind(object_id)

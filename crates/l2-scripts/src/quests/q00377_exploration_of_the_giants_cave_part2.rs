@@ -1,6 +1,4 @@
 //! Quest 377: Exploration of the Giants' Cave Part 2 (Expedition Leader Sobling, lower Giant's Cave).
-// Java: dist/game/data/scripts/quests/Q00377_ExplorationOfTheGiantsCavePart2/Q00377_ExplorationOfTheGiantsCavePart2.java
-//
 // Pattern: a repeatable kill-count quest like Q00376 (`docs/design/scripts.md`, "Quest patterns"):
 // the kill goes to a random started party member (`random_party_member_state` with state -1),
 // the Titan book drops with no limit. The lesser giants drop two or three books on a roll, the

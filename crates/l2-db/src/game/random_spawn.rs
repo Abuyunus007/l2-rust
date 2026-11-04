@@ -1,13 +1,11 @@
 //! The `random_spawn` and `random_spawn_loc` tables: the groups of `AutoSpawnHandler` (the
 //! Mammon NPCs, the Seven Signs preachers and crests, ...) and their places. Read only.
-// Java: org/l2jmobius/gameserver/entity/spawns/AutoSpawnHandler.java (restoreSpawnData)
 
 use sqlx::FromRow;
 
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: AutoSpawnHandler.restoreSpawnData
 const SELECT_GROUPS: &str = "SELECT * FROM random_spawn ORDER BY groupId ASC";
 const SELECT_LOCATIONS: &str = "SELECT * FROM random_spawn_loc WHERE groupId=?";
 

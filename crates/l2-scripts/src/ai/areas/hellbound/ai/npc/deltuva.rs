@@ -1,5 +1,4 @@
 //! Deltuva, who sends the players who finished Matras' Curiosity to the Tower of Naia.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/NPC/Deltuva/Deltuva.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

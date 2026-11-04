@@ -1,6 +1,4 @@
 //! The `Sweeper` effect: the spoiler takes the SPOIL items of a dead monster.
-// Java: dist/game/data/scripts/handlers/skill/effects/Sweeper.java
-// Java: entity/actor/Player.java (addItem with `ItemProcessType.SWEEP`)
 
 use l2_data::skill::EffectTemplate;
 

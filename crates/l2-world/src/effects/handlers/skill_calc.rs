@@ -3,9 +3,6 @@
 //! (.., skill)`, `calcBlowSuccess`, `calcPhysicalSkillEvasion`, `calcMagicDam`, `calcManaDam`,
 //! `calcMagicAffected` and `calcDamageReflected` read from the creatures, and the messages Java
 //! sends from inside them.
-// Java: mechanics/stats/Formulas.java (the methods above)
-// Java: entity/actor/stat/CreatureStat.java (getMCriticalHit)
-//
 // The numbers are M5-FORM-02's pure functions (`crate::formulas`, checked against Java vectors);
 // this file only fills their inputs, the way `combat/hit.rs` does for a normal attack. Every draw
 // goes through the world RNG in Java's order.
@@ -282,8 +279,6 @@ impl World {
                 skill_power,
                 critical_damage: a.calc_stat(Stat::CriticalDamage, 1.0, Some(target), Some(&ctx)),
                 critical_damage_pos: a.calc_stat(Stat::CriticalDamagePos, 1.0, Some(target), Some(&ctx)),
-                // NOTE(java-quirk): the defence critical damage is asked without the skill here
-                // (the blow formulas pass it).
                 defence_critical_damage: t.calc_stat(Stat::DefenceCriticalDamage, 1.0, Some(target), None),
                 critical_damage_add: a.calc_stat(Stat::CriticalDamageAdd, 0.0, Some(target), Some(&ctx)),
                 defence_critical_damage_add: t.calc_stat(
@@ -771,8 +766,6 @@ impl World {
             })
         };
         self.reduce_current_hp_by_skill(attacker, counter, Some(target), skill);
-        // NOTE(java-quirk): Java's own TODO says the counter should repeat once per effect of the
-        // skill; it is simply doubled on a critical hit.
         if crit {
             self.reduce_current_hp_by_skill(attacker, counter, Some(target), skill);
         }

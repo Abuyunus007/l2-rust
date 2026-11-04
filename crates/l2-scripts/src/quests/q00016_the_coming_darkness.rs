@@ -1,13 +1,8 @@
 //! Quest 16: The Coming Darkness (the Hierarch and five evil altars, for a level 62 character).
-// Java: dist/game/data/scripts/quests/Q00016_TheComingDarkness/Q00016_TheComingDarkness.java
-//
 // Pattern: an ordered visit to five NPCs with a crystal per altar (`docs/design/scripts.md`,
 // "Quest patterns"): the Hierarch gives five crystals, each altar takes one when it is the next
 // altar in order (cond = altar index), and the Hierarch pays the exp at cond 6. One-time:
 // `exit_quest(ctx, false, true)`.
-//
-// NOTE(java-quirk): the Java TODO says the altars' AI is incomplete (the original quest is not
-// retail-like yet). Only the quest's own steps are ported here.
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED};
@@ -66,8 +61,6 @@ impl Script for Q00016TheComingDarkness {
         _npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        // NOTE(java-quirk): without a quest state `onEvent` returns the event itself (not null),
-        // so the event's page is shown anyway.
         let Some(player) = player else {
             return Some(event.to_owned());
         };
@@ -94,7 +87,6 @@ impl Script for Q00016TheComingDarkness {
     }
 
     fn on_talk(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId) -> Option<String> {
-        // Java: `player.getQuestState(Q00017...)`: a Light and Darkness state that is not
         // completed keeps the Hierarch's answer on the "come back later" page.
         if let Some(qs2) = ctx.player_quest_state(player, LIGHT_AND_DARKNESS)
             && !qs2.is_completed()

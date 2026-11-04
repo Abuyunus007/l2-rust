@@ -1,7 +1,3 @@
-//! Combat, death and item packets against byte layouts worked out by hand from the Java
-//! `writeImpl` / `readImpl` code, round trips, and the recorded Java game server sessions
-//! (`fixtures/captures`, or `L2_CAPTURE_DIR`).
-//!
 //! The expected bytes are built with an independent little-endian builder (not the crate's
 //! `PacketWriter`), so a mistake in the crate's encoder cannot hide behind the same mistake here.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
@@ -73,7 +69,6 @@ fn hit_flags_are_the_java_bits() {
 
 #[test]
 fn attack_with_one_hit_layout() {
-    // Java: attacker id, the first hit (target, damage, flags byte), attacker position, the short
     // 0 (no more hits), target position.
     let attack = Attack {
         attacker_id: ATTACKER,
@@ -162,7 +157,6 @@ fn auto_attack_start_and_stop_layout() {
 
 #[test]
 fn die_writes_the_six_flags_in_java_order() {
-    // Java: object id, canTeleport, hideout, castle, siege HQ, sweepable, fixed res, fortress.
     let die = Die {
         object_id: ATTACKER,
         can_teleport: true,
@@ -280,7 +274,6 @@ fn change_wait_type_layout() {
 
 #[test]
 fn ex_use_shared_group_item_sends_seconds() {
-    // Java: remaining time (a long, in ms) is cast to int after the division, so only the low 32
     // bits of the seconds reach the wire.
     let packet = ExUseSharedGroupItem::new(1061, 32, (1i64 << 32) * 1000 + 7000, 60_000);
     assert_eq!(packet.remaining_secs, 7);

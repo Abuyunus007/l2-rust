@@ -1,6 +1,4 @@
 //! Heavy Medals: Cat Roy and Cat Winnie swap glittering medals for badges on a coin toss.
-// Java: dist/game/data/scripts/events/HeavyMedal/HeavyMedal.java
-// Java: dist/game/data/scripts/events/HeavyMedal/config.xml
 
 use l2_util::ObjectId;
 use l2_world::script::QuestSound;

@@ -6,7 +6,6 @@
 //! packets and their order (against Java's `Creature.doDie`, `Playable.doDie`, `Player.doDie`,
 //! `Npc.onDecay`, `Spawn.decreaseCount`, `RequestRestartPoint`) and the timing of the corpse
 //! and the respawn on the world's 50 ms ticks.
-//! Java: entity/actor/{Creature,Playable,Player,Npc,Attackable}.java, entity/spawns/Spawn.java,
 //! taskmanagers/{DecayTaskManager,RespawnTaskManager}.java, network/clientpackets/RequestRestartPoint.java
 
 use std::path::PathBuf;

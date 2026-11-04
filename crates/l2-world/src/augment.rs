@@ -1,14 +1,5 @@
 //! Augmentation: the life stone windows, the "Augment" button, rolling a new augmentation and
 //! taking one off again (M6-AUGMENT-01).
-// Java: network/clientpackets/{AbstractRefinePacket,RequestConfirmTargetItem,RequestConfirmRefinerItem,
-//       RequestConfirmGemStone,RequestRefine,RequestConfirmCancelItem,RequestRefineCancel}.java
-// Java: data/AugmentationData.java (the rolling; the tables are `l2_data::augment`)
-// Java: dist/game/data/scripts/handlers/bypass/npc/Augment.java
-// Java: network/serverpackets/{ExShowVariationMakeWindow,ExShowVariationCancelWindow,
-//       ExPutItemResultForVariationMake,ExPutIntensiveResultForVariationMake,
-//       ExPutCommissionResultForVariationMake,ExVariationResult,ExPutItemResultForVariationCancel,
-//       ExVariationCancelResult}.java
-//
 // # Model
 // An augmentation is the `i32` in `ItemData::augmentation` (`effects/item_extras.rs`) and the
 // `item_attributes` row it writes. What its two option ids give the wearer is applied by the
@@ -419,9 +410,6 @@ pub fn generate_random_augmentation(
 
 /// Java's `s > r` loop of the retail tables: walks the candidates and keeps the last one visited
 /// while the running sum is still above the roll.
-// NOTE(java-quirk): the loop never leaves early and the running sum is a `float` that shrinks by
-// `chance * 100` at each visited entry, so the entries are not weighted by their own chance the
-// way a cumulative table would be. The sum and the products are `f32`, as in Java.
 fn pick_retail(rng: &mut WorldRng, candidates: &[&AugmentationChance]) -> i32 {
     let r = rng.below(10000);
     let mut s: f32 = 10000.0;
@@ -1158,8 +1146,6 @@ impl World {
             };
             generate_random_augmentation(rng, &tables, &settings, roll, &option_has_skill)
         });
-        // NOTE(java-quirk): where Java's roll throws (an empty skill list of the skill map) the
-        // life stone and the gemstones are already used up and the player hears nothing.
         let Some(augmentation) = augmentation else {
             warn!(
                 "RequestRefine: no augmentation could be rolled for life stone {}",
@@ -1212,7 +1198,6 @@ impl World {
             self.send(id, &SystemMessage::new(SystemMessageId::ThisIsNotASuitableItem));
             return;
         }
-        // Java: "TODO: S84 TOP price 3.2M". Any other item type is not augmentable.
         let Some(price) = removal_price(
             template.crystal_type,
             template.crystal_count_at(item.enchant_level),
@@ -1224,7 +1209,6 @@ impl World {
             &ExPutItemResultForVariationCancel {
                 item_object_id: object_id,
                 item_id: template.display_id,
-                // NOTE(java-quirk): `(short) augmentationId` is sign extended.
                 aug1: i32::from(augmentation as i16),
                 aug2: augmentation >> 16,
                 price,
@@ -1267,8 +1251,6 @@ impl World {
         };
 
         // try to reduce the players adena
-        // NOTE(java-quirk): `reduceAdena(.., true)` already says "not enough adena", and the packet
-        // says it again.
         if !self.reduce_adena(id, price, true) {
             self.send(id, &ExVariationCancelResult { result: 0 });
             self.send(id, &SystemMessage::new(SystemMessageId::YouDoNotHaveEnoughAdena));

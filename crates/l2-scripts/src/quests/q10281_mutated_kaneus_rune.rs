@@ -1,5 +1,4 @@
 //! Quest 10281: Mutated Kaneus - Rune (Mathias sends the party after White Allosce).
-// Java: dist/game/data/scripts/quests/Q10281_MutatedKaneusRune/Q10281_MutatedKaneusRune.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, QuestSound, STARTED};

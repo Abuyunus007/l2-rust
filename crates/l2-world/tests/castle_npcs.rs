@@ -1,14 +1,5 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
-//! The castle NPCs (M7-NPC-01): the chamberlain, the siege manager, the mercenary manager and the
-//! mercenary captain, the vault keeper, the mass gatekeeper, the blacksmith, the court magician,
-//! the fortress envoys and the castle doormen, with the re-read of the castle before the
-//! chamberlain acts (D-50) and the `SiegeDatabaseWrites` switch (D-51).
-//! Java: dist/game/data/scripts/ai/others/{CastleChamberlain,CastleSiegeManager,
-//! CastleMercenaryManager,CastleWarehouse,CastleTeleporter,CastleBlacksmith,CastleCourtMagician,
-//! CastleAmbassador,MercenaryCaptain}/*.java, entity/actor/instance/{CastleDoorman,Doorman}.java.
-//! The expected values come from the Java code named in each test.
-
 use std::collections::BTreeMap;
 use std::sync::{Arc, Mutex};
 
@@ -933,8 +924,6 @@ impl Scene {
         self.world.castle(GLUDIO).unwrap()
     }
 
-    /// Answers the last castle re-read the world asked for with the castle as it is now, after
-    /// `change` (Sieghardt changed something).
     fn answer_castle(&mut self, out: &[Out], change: impl FnOnce(&mut CastleRecord)) {
         let then = reread_requests(out).pop().expect("a re-read request");
         let castle = self.castle().clone();
@@ -969,8 +958,6 @@ impl Scene {
         });
     }
 
-    /// A vault keeper command; "Receive" and the count page read the castle again first, and the
-    /// answer carries the owner's proofs of alliance as `blood` (D-50).
     fn warehouse(&mut self, player: i32, event: &str, blood: Option<i32>) {
         self.take();
         self.script(player, "CastleWarehouse", event);
@@ -1286,9 +1273,6 @@ fn the_chamberlain_greets_the_owners_and_strangers() {
     assert_eq!(last_page(&s.take(), GM), format!("HOME {} P9", npc.0));
 }
 
-/// A link of the page that needs no row of the castle answers at once; the rest asks for the
-/// castle to be read again first (D-50) and does nothing until the answer; a failed read refuses
-/// the command.
 #[test]
 fn the_chamberlain_reads_the_castle_again_before_it_acts() {
     let mut s = Scene::new();
@@ -1310,7 +1294,6 @@ fn the_chamberlain_reads_the_castle_again_before_it_acts() {
         then,
     });
     assert!(pages_to(&s.take(), P1).is_empty());
-    // Sieghardt gave the castle away in the meantime: the old lord is a stranger.
     s.chamberlain(P1, "manage_tax");
     let asked = s.take();
     s.answer_castle(&asked, |c| c.owner_id = 0);
@@ -1389,7 +1372,6 @@ fn the_treasury_takes_deposits_and_gives_withdrawals() {
     let out = s.chamberlain_fresh(P1, "deposit 20000000");
     assert!(message_ids(&out, P1).contains(&SystemMessageId::YouDoNotHaveEnoughAdena));
     assert_eq!(s.castle().treasury, 735_567);
-    // NOTE(java-quirk): a negative withdrawal puts adena into the treasury for nothing.
     s.chamberlain_fresh(P1, "withdraw -1000");
     assert_eq!(s.castle().treasury, 736_567);
     assert_eq!(s.adena(P1), 10_499_000);
@@ -1457,7 +1439,6 @@ fn the_doors_are_upgraded_for_adena() {
         .destroy_item_by_item_id(ObjectId(P1), ADENA, 5_000_000, false);
     let out = s.chamberlain_fresh(P1, "upgrade_doors_confirm 1 5 19210001 19210002");
     assert_eq!(last_page(&out, P1), "chamberlain-09");
-    // NOTE(java-quirk): four door ids throw before anything is taken.
     let before = s.adena(P1);
     s.chamberlain_fresh(P1, "upgrade_doors_confirm 1 3 19210001 19210002 1 2");
     assert_eq!(s.adena(P1), before);
@@ -1805,8 +1786,6 @@ fn the_mercenary_manager_answers_the_lord() {
     assert_eq!(last_page(&s.take(), P1), "mercmanager");
     s.script(P1, "CastleMercenaryManager", "mercmanager-01.html");
     assert_eq!(last_page(&s.take(), P1), "mercmanager-01");
-    // NOTE(java-quirk): "aden" and "rune" are compared case sensitive; the castle is "Gludio"
-    // anyway, so the general page with the feud name (1001000 + castle id) comes.
     s.script(P1, "CastleMercenaryManager", "limit");
     assert_eq!(last_page(&s.take(), P1), "LIMIT 1001001");
     // `buy` with a list the buy lists do not have: nothing but `ActionFailed`.
@@ -1874,16 +1853,12 @@ fn the_vault_keeper_hands_out_the_blood_alliance_items() {
     assert!(pages_to(&s.take(), P1).is_empty());
 }
 
-/// D-50: the proofs of alliance are read again before they are shown or handed out, because the
-/// Java game server adds to them at the end of its sieges. The fresh count is what counts (the
-/// same proofs are never given twice), and a failed read gives nothing.
 #[test]
 fn the_vault_keeper_reads_the_blood_alliance_count_again() {
     let mut s = Scene::build(3);
     s.enter_all();
     s.talk(P1, WAREHOUSE);
     s.take();
-    // Sieghardt's siege added two: the page and the handout show five.
     s.warehouse(P1, "warehouse-04.html", Some(5));
     assert_eq!(last_page(&s.take(), P1), "BLOOD 5 %objectId%");
     s.warehouse(P1, "Receive", Some(5));
@@ -1895,7 +1870,6 @@ fn the_vault_keeper_reads_the_blood_alliance_count_again() {
             count: 0
         })
     );
-    // Sieghardt's lord took them in the meantime: this world says 5, the row says 0.
     let mut stale = Scene::build(5);
     stale.enter_all();
     stale.talk(P1, WAREHOUSE);

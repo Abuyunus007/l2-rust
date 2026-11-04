@@ -1,22 +1,6 @@
 //! The vitality system: the points a player has (0 to 20000, shown in `UserInfo`), the level they
 //! make (0 to 4), the exp and SP multiplier of that level, the points a kill uses up and the
 //! points a rest in a peace zone or a time offline gives back.
-// Java: entity/actor/stat/PlayerStat.java (updateVitalityLevel, setVitalityPoints,
-//       updateVitalityPoints, getVitalityMultiplier, getVitalityLevel)
-// Java: entity/actor/Attackable.java (getVitalityPoints, useVitalityRate)
-// Java: entity/actor/instance/{RaidBoss,GrandBoss}.java (getVitalityPoints, useVitalityRate)
-// Java: entity/actor/tasks/player/VitalityTask.java, entity/actor/Player.java (startVitalityTask)
-// Java: network/clientpackets/EnterWorld.java (RecoverVitalityOnReconnect)
-//
-// # Where the points live
-// Java keeps `_vitalityPoints` as a `float` in `PlayerStat` and writes `(int) points` to
-// `characters.vitality_points` with every store. Here the float and the level are in
-// [`PlayerVitality`] (`ExpWorld::vitality`), created from the profile when the player first needs
-// them (Java `Player.restore` -> `setVitalityPoints(value, true)`), and the whole-number part is
-// mirrored into `PlayerProfile::vitality_points` after every change. That mirror is what `UserInfo`
-// shows and what the persistence task writes, so the Java GS reads exactly the number it would
-// have stored itself (D-39).
-//
 // # What is left out
 // - Parties (`Party.distributeXpAndSp`): there are none. The kill share is the single-player
 //   branch of `Attackable.calculateRewards`.
@@ -300,8 +284,6 @@ impl World {
     pub(crate) fn kill_vitality_points(&self, npc: ObjectId, level: i32, damage: i64) -> f32 {
         let base = self.attackable_vitality_points(npc, level, damage);
         match self.npcs.get(&npc).map(|n| n.class) {
-            // NOTE(java-quirk): a raid or grand boss negates the (negative) cost and divides it by
-            // 100, so killing one gives a little vitality instead of using it up.
             Some(NpcClass::RaidBoss | NpcClass::GrandBoss) => -base / 100.0,
             _ => base,
         }
@@ -325,7 +307,6 @@ impl World {
             .get(&npc)
             .and_then(|n| self.npc_world.template(n.npc_id))
             .map_or(0.0, |t| t.base_hp_max);
-        // Java: a `float` expression, `(baseHpMax * 9 * level * level) / (100 * expReward)`.
         let divider: f32 = if npc_level > 0 && exp_reward > 0 {
             (base_hp_max * 9.0 * npc_level as f32 * npc_level as f32)
                 / (100i64.wrapping_mul(exp_reward) as f32)
@@ -410,7 +391,6 @@ impl World {
         let Some(last_access) = self.players.get(&id).map(|p| p.data.profile.last_access) else {
             return;
         };
-        // Java: `(RATE * (System.currentTimeMillis() - getLastAccess())) / 60000` in `float`.
         let points =
             (settings.rate_recovery_on_reconnect * now_ms.wrapping_sub(last_access) as f32) / 60_000.0;
         if points > 0.0 {

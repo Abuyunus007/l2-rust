@@ -68,7 +68,6 @@ fn check_round_trip<P: Encode + Decode + PartialEq + std::fmt::Debug>(
 
 #[test]
 fn my_target_selected_layout() {
-    // Java: objectId, colour as a short, constant int 0. Same bytes as a recorded packet
     // (`b9 c8a00010 0300 00000000`), colour 3 = level 40 minus level 37.
     let packet = MyTargetSelected::new(0x1000_A0C8, 40, 37, true);
     assert_eq!(packet.color, 3);
@@ -101,7 +100,6 @@ fn target_selected_layout() {
         y: 20,
         z: 300,
     };
-    // Java: object, target, x, y, z, constant 0.
     let expected = Bytes::default()
         .byte(0x23)
         .int(1)
@@ -138,7 +136,6 @@ fn target_unselected_layout_matches_a_recorded_packet() {
 
 #[test]
 fn action_failed_is_the_opcode_alone() {
-    // Java: ServerPackets.ACTION_FAIL.writeId only.
     check_round_trip(&ActionFailed, &[0x1F], 1);
 }
 
@@ -147,7 +144,6 @@ fn npc_html_message_wraps_a_fragment() {
     let packet = NpcHtmlMessage::new(0x1234, "<a>").unwrap();
     assert_eq!(packet.html, "<html><body><a></body></html>");
     assert_eq!(packet.item_id, 0);
-    // Java: objectId, html string, item id.
     let expected = Bytes::default()
         .byte(0x19)
         .int(0x1234)
@@ -173,12 +169,10 @@ fn npc_html_item_window_keeps_the_item_id() {
 
 #[test]
 fn npc_html_keeps_file_references_and_wraps_case_sensitively() {
-    // Java: `..\L2` file references are passed on unchanged.
     assert_eq!(
         NpcHtmlMessage::new(1, "..\\L2Text\\x.htm").unwrap().html,
         "..\\L2Text\\x.htm"
     );
-    // NOTE(java-quirk): Java's `contains("<html")` is case sensitive, so `<HTML>` gets wrapped.
     assert_eq!(
         NpcHtmlMessage::new(1, "<HTML>x</HTML>").unwrap().html,
         "<html><body><HTML>x</HTML></body></html>"
@@ -201,7 +195,6 @@ fn npc_html_limit_counts_utf16_units() {
     assert!(packet.html.starts_with("<html><body>"));
     assert!(packet.html.ends_with("</body></html>"));
     // One letter and 8600 emoji are 17201 units: cut to 17200 units, not wrapped. The cut lands
-    // inside the last pair, which becomes U+FFFD (NOTE(java-quirk) on prepare_html).
     let too_long = format!("a{}", "\u{1F600}".repeat(8_600));
     let packet = NpcHtmlMessage::new(1, &too_long).unwrap();
     assert_eq!(packet.html.encode_utf16().count(), 17_200);
@@ -250,7 +243,6 @@ fn social_action_layout() {
 
 #[test]
 fn chair_sit_layout() {
-    // Java: the player's object id, then the static object id of the chair.
     let packet = l2_protocol_game::server::ChairSit {
         object_id: 0x1000_0010,
         static_object_id: 24_190_001,
@@ -323,7 +315,6 @@ fn door_status_update_layout() {
         current_hp: 500,
         max_hp: 1000,
     };
-    // Java: object, !isOpen (1 = closed), damage, isEnemy, id, current hp, max hp.
     let expected = Bytes::default()
         .byte(0x4D)
         .int(1)
@@ -340,7 +331,6 @@ fn door_status_update_layout() {
 #[test]
 fn static_object_info_for_a_static_object() {
     let packet = StaticObjectInfo::static_object(7, 0x1000_0010, 3);
-    // Java: type 0, targetable, mesh, closed 0, enemy 0, hp 0, hp bar off, damage grade 0.
     let expected = Bytes::default()
         .byte(0x9F)
         .int(7)
@@ -451,7 +441,6 @@ fn request_target_canceld_layout() {
 
 #[test]
 fn dlg_answer_layout() {
-    // Java: DlgAnswer reads messageId, answer and requesterId (three ints).
     let yes = DlgAnswer {
         message_id: 1510,
         answer: 1,

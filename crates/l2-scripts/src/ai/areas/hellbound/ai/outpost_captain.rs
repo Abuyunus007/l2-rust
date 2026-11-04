@@ -1,5 +1,4 @@
 //! The Outpost Captain: his death opens the door of the outpost and moves Hellbound to level 9.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/OutpostCaptain.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

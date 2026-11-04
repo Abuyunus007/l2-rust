@@ -1,6 +1,4 @@
 //! Quest 287: Figuring It Out! (Laki in the Rune area trades the tanta lizardmen's vials for Moirai and Icarus gear).
-// Java: dist/game/data/scripts/quests/Q00287_FiguringItOut/Q00287_FiguringItOut.java
-//
 // Pattern: a repeatable collect quest with a party drop (`docs/design/scripts.md`, "Quest
 // patterns"): the tanta lizardmen drop vials of tanta blood with a chance per monster; Laki gives
 // one random item of a table for 100 vials (Moirai) or 500 vials (Icarus). The quest needs the
@@ -133,8 +131,6 @@ impl Script for Q00287FiguringItOut {
     }
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, _is_summon: bool) {
-        // NOTE(java-quirk): Java only checks that some party member is at cond 1 (`partyMember`
-        // is never used again); the vial goes to the killer.
         if ctx.get_random_party_member_cond(killer, 1).is_none() {
             return;
         }

@@ -1,18 +1,9 @@
 //! The two fortress scripts: `FortressSiegeManager` (the suspicious merchant who registers a clan
 //! for the siege) and `FortressArcherCaptain`.
-// Java: dist/game/data/scripts/ai/others/FortressSiegeManager/FortressSiegeManager.java
-// Java: dist/game/data/scripts/ai/others/FortressArcherCaptain/FortressArcherCaptain.java
-// Java: mechanics/script/Quest.java (showResult, showHtmlFile, getHtm)
-// Java: entity/actor/Player.java (processScriptEvent)
-//
 // D-05: the script API comes last, so these two are built in like `ClanMaster` (`clan/
 // master_script.rs`): the `Script` bypass hands the command to [`World::fort_script_event`],
 // the first click on the NPC to [`World::fort_script_first_talk`]. The pages are the script's
 // own (`data/scripts/ai/others/<Name>/*.html`).
-//
-// Registering and cancelling read the fortress's registrations again before they act (D-50), so
-// the clan list this world holds is the one the database has (a registration made on this
-// world without a row stays, see `FortSiegeClan::written`).
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{ActionFailed, NpcHtmlMessage, SystemMessage, SystemMessageParam};
@@ -173,7 +164,6 @@ impl World {
             _ => return true,
         };
         match self.npc_fort(npc) {
-            // D-50: the registrations are read again first.
             Some(fort) => self.fort_request_siege_reread(fort, then),
             None => warn!("{player}: the siege manager {npc} stands at no fortress."),
         }
@@ -232,8 +222,6 @@ impl World {
         if level < min_level {
             return Some(Reply::Page("FortressSiegeManager-04.html"));
         }
-        // NOTE(java-quirk): `npc.getCastle().getResidenceId()` fails for an NPC that has no
-        // castle; nothing is shown then.
         let castle = self.npc_castle(npc)?.0;
         let state = self.fort(fort).map_or(0, |f| f.state);
         if clan_castle == castle && state == 2 {

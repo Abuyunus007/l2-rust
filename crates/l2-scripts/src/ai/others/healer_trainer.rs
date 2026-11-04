@@ -1,5 +1,4 @@
 //! Trainer healers: Cardinals, Eva's Saints and Shillien Saints learn and cleanse transfer skills.
-// Java: dist/game/data/scripts/ai/others/HealerTrainer/HealerTrainer.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_util::ObjectId;

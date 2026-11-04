@@ -1,7 +1,4 @@
 //! The Valentine Event: Miss Queen hands out the cake recipe.
-// Java: dist/game/data/scripts/events/TheValentineEvent/TheValentineEvent.java
-// Java: dist/game/data/scripts/events/TheValentineEvent/config.xml
-//
 // The reference port of a seasonal event: a `LongTimeEvent` (`long_time_event.rs`) whose
 // `config.xml` is the `CONFIG` constant and whose script is plain NPC talk.
 
@@ -138,8 +135,6 @@ impl Script for TheValentineEvent {
         let player = player?;
         let mut htmltext = Some(event.to_owned());
         if event.eq_ignore_ascii_case("4301-3.htm") {
-            // NOTE(java-quirk): nothing ever sets `COMPLETED`, so the recipe can be asked for again
-            // and again.
             if ctx
                 .player_variable(player, COMPLETED)
                 .is_some_and(|v| v.eq_ignore_ascii_case("true"))

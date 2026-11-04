@@ -1,13 +1,10 @@
 //! Quest 648: An Ice Merchant's Dream (Rafforty in the Town of Aden, the ice shelf of the Hot
 //! Springs' Ice Shelf; the frost monsters drop silver ice crystals, the shelf enchants them into
 //! black ice crystals, and the crystals sell for adena).
-// Java: dist/game/data/scripts/quests/Q00648_AnIceMerchantsDream/Q00648_AnIceMerchantsDream.java
-//
 // Pattern: a kill drop per monster (two drops for some: the crystal, and the hemocyte when the
 // other quest Q00115 is done), a state-free sell of the crystals, and a small enchant game on the
 // ice shelf whose numbers are quest variables (`ex`). The quest reads Q00115 by name through
 // `player_quest_state` (read only).
-// NOTE(java-quirk): the Java `ex` variable is an int in the quest's own row (`getInt`/`set`).
 
 use l2_util::ObjectId;
 use l2_world::script::{CREATED, QuestSound, STARTED};
@@ -212,7 +209,6 @@ impl Script for Q00648AnIceMerchantsDream {
     ) -> Option<String> {
         let player = player?;
         let qs = ctx.get_quest_state(player, false)?;
-        // Java: `player.getQuestState(Q00115)`, read only; `None` when there is no such state.
         let q115_open = ctx
             .player_quest_state(player, THE_OTHER_SIDE_OF_TRUTH)
             .is_some_and(|q| !q.is_completed());

@@ -1,13 +1,5 @@
 //! NPCs in the world: spawning what the spawn files describe, `NpcInfo` for the players who see
 //! them, and taking them out again. No AI, no respawn, no combat (M4).
-// Java: org/l2jmobius/gameserver/data/xml/SpawnData.java (the startup part: counts, logs)
-// Java: org/l2jmobius/gameserver/entity/spawns/{Spawn,SpawnGroup,SpawnGroupEntry}.java
-// Java: org/l2jmobius/gameserver/managers/DayNightSpawnManager.java
-// Java: org/l2jmobius/gameserver/entity/actor/holders/npc/MinionList.java (spawnMinions,
-//       initializeNpc; the rest of the list is `ai/minions.rs`)
-// Java: org/l2jmobius/gameserver/entity/actor/Npc.java (constructor, sendInfo, deleteMe)
-// Java: org/l2jmobius/gameserver/network/serverpackets/AbstractNpcInfo.java (NpcInfo)
-//
 // What is read where: the spawn *description* (`SpawnData`: fixed spawns, groups, territories)
 // and the NPC templates come from `l2-data` and are handed over with `World::set_npc_data`;
 // the loader already did Java's file parsing. This module does what Java does when the loaded
@@ -84,8 +76,6 @@ impl NpcClass {
     /// then `getConstructor(NpcTemplate.class)`). `None` when Java's `Spawn` constructor throws:
     /// there is no such class, or its constructor takes more than the template (pets,
     /// servitors, decoys, traps, effect points, tamed beasts, UC towers).
-    // NOTE(java-quirk): that makes `Spawn.doSpawn`'s own Pet/Decoy/Trap check dead code; such
-    // spawns are never created or registered, and never counted.
     pub fn from_type(npc_type: &str) -> Option<Self> {
         Some(match npc_type {
             "Monster" | "Chest" | "EventMonster" | "FeedableBeast" | "RiftInvader" | "FestivalMonster" => {
@@ -662,7 +652,6 @@ impl World {
                 return None;
             };
             (x, y, z) = (point.x, point.y, point.z);
-            // NOTE(java-quirk): a territory spawn forgets the heading of the XML (setHeading(-1)).
             heading = -1;
             territory_high_z = territory.shape().map(l2_data::spawn::TerritoryShape::high_z);
         } else if spawn.location.x == 0 && spawn.location.y == 0 {
@@ -715,8 +704,6 @@ impl World {
         if class.is_monster() && !template.flying && !in_water {
             let geo_z = height(x, y, z);
             let dz = f64::from(z) - f64::from(geo_z);
-            // NOTE(java-quirk): Java passes `squared = true` to calculateDistance, so the "300"
-            // is a squared distance: Z is only corrected when it is less than ~17 off.
             if dz * dz < 300.0 {
                 z = geo_z;
             }
@@ -975,7 +962,6 @@ impl World {
                 max_mp: 0.0,
                 cur_cp: 0.0,
                 max_cp: 0.0,
-                // Java: `_calculators = NPC_STD_CALCULATOR`.
                 calculators: self.npc_calculators(),
                 skills: Vec::new(),
             },
@@ -1120,7 +1106,6 @@ impl World {
     /// `new AbstractNpcInfo.NpcInfo(npc, viewer)`: what `viewer` is told when `subject` comes
     /// into view. `None` for a decayed NPC (Java writes nothing), an unknown template and a fake
     /// player (`FakePlayerInfo`, `World::fake_player_info`).
-    // Java: Npc.sendInfo sends ServerObjectInfo instead when getRunSpeed() == 0; the template
     // loader never lets a speed reach 0, so that packet is not ported.
     pub fn npc_info(&self, subject: ObjectId, viewer: ObjectId) -> Option<NpcInfo> {
         let npc = self.npcs.get(&subject)?;

@@ -1,5 +1,4 @@
 //! The 2nd class transfer of artisans to warsmiths (Kusto, Flutter, Vergara, Ferris, Roman, Noel, Lombert, Newyear).
-// Java: dist/game/data/scripts/village_master/DwarfBlacksmithChange2/DwarfBlacksmithChange2.java
 
 use l2_util::ObjectId;
 use l2_world::subclass::CategoryType;

@@ -1,5 +1,4 @@
 //! The `FindPvP` NPC bypass: the NPC sends the player to the busiest flagged player.
-// Java: dist/game/data/scripts/handlers/bypass/npc/FindPvP.java
 
 use std::collections::BTreeMap;
 

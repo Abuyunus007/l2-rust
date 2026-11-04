@@ -1,6 +1,4 @@
 //! Quest 406: Path of the Elven Knight (Master Sorius and Blacksmith Kluto).
-// Java: dist/game/data/scripts/quests/Q00406_PathOfTheElvenKnight/Q00406_PathOfTheElvenKnight.java
-//
 // Pattern: a kill chain with drop chances up to a limit (`docs/design/scripts.md`, "Quest
 // patterns"): topaz pieces from six monsters, emerald pieces from Ol Mahum Novices (only with
 // Kluto's memo), then Kluto's box and Sorius' reward.

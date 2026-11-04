@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/DelevelManagerConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/DelevelManager.ini` (Java: `DelevelManagerConfig`).

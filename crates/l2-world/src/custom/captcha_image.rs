@@ -1,8 +1,5 @@
 //! The picture of the captcha: five letters on a dark background with circles, as a DXT1 `.dds`
 //! file for the `PledgeCrest` packet.
-// Java: gameserver/mechanics/captcha/Captcha.java (`generateCaptcha`)
-// Java: gameserver/util/DDSConverter.java (`convertToDxt1NoTransparency`, `buildHeaderDxt1`)
-//
 // The DXT1 conversion is Java's, step by step (the colour distance is measured in the 5/6/5 bit
 // components without scaling them back, which makes the choice of the two end colours differ from
 // a textbook encoder). The picture itself cannot be Java's: Java draws a TrueType font (Comic

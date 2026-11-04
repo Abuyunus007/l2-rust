@@ -1,7 +1,4 @@
 //! `RequestSellItem`: selling items to a merchant, into the refund list.
-// Java: network/clientpackets/RequestSellItem.java
-// Java: entity/itemcontainer/{ItemContainer,PlayerRefund}.java (transferItem, addItem)
-// Java: entity/actor/Player.java (checkItemManipulation)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::client::{RequestSellItem, SellItemEntry};
@@ -46,8 +43,6 @@ impl World {
 
     /// Java `PlayerRefund.addItem(Item)`: the item joins the list; with more than 12 the first
     /// one is destroyed.
-    // NOTE(java-quirk): Java removes `_items.stream().findFirst()` of a hash set, i.e. an item of
-    // no particular age (it can be the one just added). The oldest one goes here.
     fn refund_add(&mut self, id: ObjectId, item: ItemData) {
         let Some(player) = self.players.get_mut(&id) else {
             return;

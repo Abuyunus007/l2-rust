@@ -1,7 +1,5 @@
 //! Avant-Garde: the sub-class certification skills (learning and cancelling them) and the
 //! transformation skills and scrolls.
-// Java: dist/game/data/scripts/ai/others/AvantGarde/AvantGarde.java
-//
 // # Left out, with the system that brings it
 // - `addAcquireSkillId` / `onAcquireSkill` (`ON_PLAYER_SKILL_LEARN` of the trainer): the engine
 //   has no such listener yet, so the list is not shown again after a skill is learned (the
@@ -49,7 +47,6 @@ impl AvantGarde {
     fn cancel_certifications(ctx: &mut ScriptCtx<'_>, player: ObjectId) -> Option<String> {
         let htmltext;
         // `getQuestState(SubClassSkills)`, else `newQuestState(player)`.
-        // NOTE(java-quirk): without the script Java throws (`getScript(...)` is null).
         ctx.quest_state_of(SUB_CLASS_SKILLS, player, true)?;
         let max_subclass = ctx.world().max_subclass();
         let var = |ctx: &ScriptCtx<'_>, name: &str| {
@@ -202,7 +199,6 @@ impl Script for AvantGarde {
                 if !can_transform(ctx, player) {
                     htmltext = Some("32323-04.html".to_owned());
                 }
-                // NOTE(java-quirk): the page above is overwritten by the next checks.
                 if ctx.world().is_subclass_active(player) {
                     htmltext = Some("32323-08.html".to_owned());
                 } else {

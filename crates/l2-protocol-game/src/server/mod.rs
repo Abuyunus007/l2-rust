@@ -11,8 +11,7 @@ use crate::generated::opcodes::ServerOpcode;
 
 /// Declares a server packet that is nothing but a list of ints, longs and strings in a row (the
 /// field types of [`crate::client::WireField`]). Same result as writing the struct, the `OPCODE`
-/// const and the `Encode`/`Decode` impls by hand (see `skills.rs`). Put the `// Java:` line above
-/// the invocation.
+/// const and the `Encode`/`Decode` impls by hand (see `skills.rs`).
 macro_rules! server_packet {
     ($(#[$meta:meta])* $name:ident, $op:ident { $($(#[$fmeta:meta])* $field:ident: $ty:ty),* $(,)? }) => {
         $(#[$meta])*
@@ -322,9 +321,6 @@ pub(crate) fn read_count(r: &mut PacketReader, field: &'static str) -> Result<us
 
 /// Writes a server packet's id the way Java `ServerPackets.writeId` does: the id byte, then the
 /// `u16` ex id for ex packets (id byte `0xFE`).
-///
-/// NOTE(java-quirk): Java writes the ex id only when it is greater than 0, so `ExDummy`
-/// (`0xFE`, ex id 0) is the single byte `0xFE`.
 pub fn write_opcode(w: &mut PacketWriter, opcode: ServerOpcode) {
     w.u8(opcode.id());
     match opcode.ex_id() {

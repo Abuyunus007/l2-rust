@@ -1,9 +1,4 @@
 //! Java's seed managers: the stage of the Seed of Destruction and of the Seed of Infinity.
-// Java: gameserver/managers/SeedOfInfinityManager.java, SeedOfDestructionManager.java
-//
-// The managers keep their state in `global_variables` (`SoDState`, `SoI_stage`, ...), which the
-// scripts read through the context (D-54: in memory, written only with `CycleDatabaseWrites`).
-//
 // Java's managers are singletons of the core; here they are two scripts without NPCs,
 // [`SeedOfDestructionManager`] and [`SeedOfInfinityManager`], so their timers (the end of the
 // Seed of Destruction's stage 2, the closing of the Seed of Infinity) are quest timers on the
@@ -17,15 +12,6 @@
 // | `SeedOfInfinityManager.notifyEkimusKill()` | [`SOI_NOTIFY_EKIMUS_KILL`] |
 // | `SeedOfInfinityManager.notifyHoEDefSuccess()` | [`SOI_NOTIFY_HOE_DEF_SUCCESS`] |
 // | `SeedOfInfinityManager.setCurrentStage(stage)` | `"setCurrentStage <stage>"` |
-//
-// # Side by side (D-54)
-// Every event that changes a stage first re-reads the manager's rows
-// (`ctx.reread_global_variables`) and decides on the rows the Java GS wrote; with
-// `CycleDatabaseWrites` on the copy is the truth and the decision runs at once (queued).
-//
-// NOTE: a stage the Java GS changed is only seen at the next decision; this server does not open
-// the Seed of Infinity's door or start its closing timer for a stage 3 it re-read (Java's
-// constructor does it only at startup, which `on_load` ports).
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
@@ -219,9 +205,6 @@ impl SeedOfDestructionManager {
     }
 
     /// Java `setSoDState(value, doSave)`.
-    // NOTE: Java keeps the state in fields and writes the variables in `saveData`; here the
-    // variables are the fields, so `doSave` false changes them in memory as well (they are
-    // written with the other global variables, D-54).
     fn set_sod_state(ctx: &mut ScriptCtx<'_>, value: i32, _do_save: bool) {
         info!("SeedOfDestructionManager: New Seed of Destruction state -> {value}.");
         let now = ctx.now_ms();

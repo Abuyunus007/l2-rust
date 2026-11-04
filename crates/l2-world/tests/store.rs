@@ -1068,9 +1068,6 @@ fn paying_with_every_adena_loses_it_like_in_java() {
     s.open_sell_store(false);
     s.world.player_mut(B).unwrap().data.items[0].count = 500;
     s.buy(B, A, &[(SWORD_OBJ, 1, 500)]);
-    // NOTE(java-quirk): `playerInventory.getAdenaInstance()` is null once the adena is used up and
-    // `playerIU.addItem(null)` throws a NullPointerException: the adena is gone, the seller is
-    // not paid and nothing moves.
     assert_eq!(s.adena(B), 0);
     assert_eq!(s.adena(A), 10);
     assert!(s.items_of(A).contains(&(SWORD_OBJ, SWORD, 1)));
@@ -1124,8 +1121,6 @@ fn a_line_asking_for_more_than_listed_gets_what_is_listed() {
 
 #[test]
 fn nothing_is_counted_for_weight_and_slots_of_a_purchase() {
-    // NOTE(java-quirk): a buy request has no item id, so the weight and the slots are never
-    // counted: a customer who is 20 below the weight limit still receives the 50 weight sword.
     let mut s = Scene::market();
     s.open_sell_store(false);
     let max_load = i64::from(s.world.stats(B).unwrap().max_load());

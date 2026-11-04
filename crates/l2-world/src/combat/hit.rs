@@ -1,11 +1,5 @@
 //! The formulas of one normal hit with their inputs taken from the stat engine: what
 //! `Formulas.calcHitMiss/calcShldUse/calcCrit/calcPhysDam/calcAtkBreak` read from the creatures.
-// Java: mechanics/stats/Formulas.java (calcHitMiss, calcShldUse, calcCrit, calcPhysDam,
-//       calcAttackTraitBonus, calcAttributeBonus, calcAtkBreak)
-// Java: entity/actor/enums/creature/Position.java (getPosition), interfaces/ILocational.java
-//       (isBehind, isInFrontOf)
-// Java: entity/actor/Creature.java (doAttackHitSimple: the order of the four calls)
-//
 // The formulas themselves are M4-FORM-01's pure functions (`crate::formulas`); this file only fills
 // their inputs. Every function takes the RNG as an argument (`impl Rnd`), so the Java vectors of
 // M4-JV-01 replay through the very code the attack uses (`tests/combat.rs`).

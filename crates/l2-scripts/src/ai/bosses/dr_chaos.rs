@@ -1,7 +1,5 @@
 //! Doctor Chaos and the Chaos Golem: the paranoia countdown that the visitors run down, the
 //! transformation cinematic, the golem's 30 minute leash and the 36 +- 24 hour respawn.
-// Java: dist/game/data/scripts/ai/bosses/DrChaos/DrChaos.java
-//
 // The Java constructor is `on_load`; the instance fields are `DrChaosState` (`ctx.state`). The
 // status of the grand boss row 25512: 0 normal (the doctor), 1 crazy (the golem), 2 dead.
 //
@@ -167,8 +165,6 @@ impl Script for DrChaos {
                     ctx.world_mut()
                         .set_grand_boss_status(CHAOS_GOLEM_NPC_ID, STATUS_NORMAL);
 
-                    // NOTE(java-quirk): the timer is cancelled for the new doctor, not for the
-                    // golem it was started with; the golem's own timer ends with `deleteMe`.
                     ctx.cancel_quest_timer(EVENT_GOLEM_DESPAWN, chaos, None);
                     ctx.cancel_quest_timers(EVENT_DISTANCE_CHECK);
 

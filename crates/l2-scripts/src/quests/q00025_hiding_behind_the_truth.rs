@@ -1,6 +1,4 @@
 //! Quest 25: Hiding Behind the Truth (Benedict, Agripel, the wizard, Lidia's maid, three bookshelves, a coffin).
-// Java: dist/game/data/scripts/quests/Q00025_HidingBehindTheTruth/Q00025_HidingBehindTheTruth.java
-//
 // Pattern: a long memo-state chain (`docs/design/scripts.md`, "Quest patterns"). The Java NPC
 // variables `Q00025` (the player who is fighting a Triol pawn at a bookshelf; the bookshelf a pawn
 // came from) live in `ctx.state`, keyed by object id.
@@ -104,7 +102,6 @@ impl Script for Q00025HidingBehindTheTruth {
         npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        // Java: a null player makes `getNoQuestMsg(player)` / the quest state throw.
         let player = player?;
         let qs = ctx.get_quest_state(player, false);
         let mut htmltext = ctx.get_no_quest_msg(player);
@@ -117,8 +114,6 @@ impl Script for Q00025HidingBehindTheTruth {
                 htmltext = event.to_owned();
             }
             _ => {
-                // NOTE(java-quirk): every other branch uses `qs` unchecked; without a quest state
-                // Java throws a NullPointerException, which `notifyEvent` swallows (null).
                 let qs = qs?;
                 match event {
                     "31349-03.html" => {
@@ -401,7 +396,6 @@ impl Script for Q00025HidingBehindTheTruth {
         _skill: Option<SkillKey>,
     ) {
         if ctx.npc_current_hp(npc) <= 0.30 * f64::from(ctx.npc_max_hp(npc)) {
-            // NOTE(java-quirk): `qs` is used unchecked; without a quest state Java throws here.
             let Some(qs) = ctx.get_quest_state(attacker, false) else {
                 return;
             };

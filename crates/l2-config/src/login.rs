@@ -1,6 +1,4 @@
 //! `Server.ini` of the login server, and loading of the whole login config set.
-// Java: org/l2jmobius/loginserver/config/LoginConfig.java
-//
 // REFERENCE PATTERN for the generated game configs (M2): one struct per Java config class, one
 // field per Java constant (snake_case), a `/// Key: ..., default ...` doc line per field, and a
 // `from_ini(&IniFile)` constructor with one getter call per field, in Java's order.

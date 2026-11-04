@@ -1,10 +1,5 @@
 //! Members coming and going: a player entering and leaving the world, joining and leaving a
 //! clan, and the change of the clan leader.
-// Java: entity/actor/Player.java (restore: the clan part, setClan, deleteMe: the clan part)
-// Java: network/clientpackets/EnterWorld.java (the clan block, notifyClanMembers,
-//       notifySponsorOrApprentice, the clan notice, the dismissal message)
-// Java: entity/clan/Clan.java (addClanMember, removeClanMember, setNewLeader)
-// Java: entity/clan/ClanMember.java (setPlayer, saveApprenticeAndSponsor)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::pledge::{PledgeShowMemberListDeleteAll, PledgeShowMemberListUpdate};
@@ -29,14 +24,6 @@ impl World {
     /// Java `Player.restore`, the clan part: the expired join and create penalties are dropped,
     /// the clan is looked up (`ClanTable.getClan`), and the rank, privileges and pledge class
     /// are set.
-    ///
-    /// Side by side (D-39) the Java game server may have made the clan, or the membership, after
-    /// this server loaded its clans. The session read the character's clan from the database at
-    /// `CharacterSelect` (`PlayerProfile::clan_record`): an unknown clan is added to the table and
-    /// a member the table misses is added to the clan, then Java's restore goes on. When the clan
-    /// cannot be found even so (the read failed, the row is gone), the player is clanless here but
-    /// the row's clan columns and title stay as they are (`PlayerClanState::keep_stored`) instead
-    /// of Java's `setClan(null)`, which would write `clanid = 0`.
     pub(crate) fn clan_restore_player(&mut self, id: ObjectId) {
         let now = unix_ms_now();
         let Some(player) = self.players.get_mut(&id) else {
@@ -483,9 +470,6 @@ impl World {
             self.remove_clan_residential_skills(clan_id, object_id);
             self.send_skill_list(object_id);
             self.leave_clan_state(object_id);
-            // NOTE(java-quirk): "Players leaving from clan academy have no penalty" reads
-            // `exMember.getPledgeType()`, which asks the player, whose type `setClan(null)` has
-            // just set to 0: an online academy member gets the penalty too.
             if let Some(s) = self.player_clan_state_mut(object_id) {
                 s.clan_join_expiry_time = clan_join_expiry_time;
             }

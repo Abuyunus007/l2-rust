@@ -1,9 +1,4 @@
 //! The handlers that hold a creature in place: stun, sleep, root, paralysis and petrification.
-// Java: dist/game/data/scripts/handlers/skill/effects/Stun.java
-// Java: dist/game/data/scripts/handlers/skill/effects/Sleep.java
-// Java: dist/game/data/scripts/handlers/skill/effects/Root.java
-// Java: dist/game/data/scripts/handlers/skill/effects/Paralyze.java
-// Java: dist/game/data/scripts/handlers/skill/effects/Petrification.java
 
 use l2_data::skill::EffectTemplate;
 

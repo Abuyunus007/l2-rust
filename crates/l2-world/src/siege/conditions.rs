@@ -1,8 +1,5 @@
 //! The skill conditions of the sieges: who may build a headquarters, engrave the artefact or
 //! summon a siege golem, and the `siegeZone` / `siegeSide` conditions.
-// Java: mechanics/conditions/{ConditionPlayerCanCreateBase,ConditionPlayerCanTakeCastle,
-//       ConditionPlayerCanSummonSiegeGolem,ConditionSiegeZone,ConditionPlayerSiegeSide}.java
-// Java: mechanics/sevensigns/SevenSigns.java (checkSummonConditions)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
@@ -158,7 +155,6 @@ impl World {
 
     /// Java `ConditionPlayerCanTakeFort.testImpl`: a living clan leader attacking the fortress he
     /// stands in, within 200 of the fortress's flag pole. The player hears why not.
-    // Java: mechanics/conditions/ConditionPlayerCanTakeFort.java
     pub fn cond_can_take_fort(
         &self,
         player: ObjectId,
@@ -278,8 +274,6 @@ impl World {
 
     /// Java `ConditionPlayerCanResurrect.testImpl`: `canResurrect` of the target (the caster hears
     /// why not). A skill with an affect range always passes ("Need skill rework").
-    // NOTE(java-quirk): in a castle siege in progress every branch refuses, so only the Blessed
-    // Scroll of Battlefield Resurrection (2393) brings a player back there.
     pub fn cond_can_resurrect(
         &self,
         effector: ObjectId,

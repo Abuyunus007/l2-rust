@@ -1,5 +1,4 @@
 //! Dragon Vortex AI: a Large Dragon Bone calls one of the raid bosses of the Dragon Valley.
-// Java: dist/game/data/scripts/ai/areas/DragonValley/DragonVortex/DragonVortex.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
@@ -92,9 +91,6 @@ impl Script for DragonVortex {
                         ctx.world_mut()
                             .npc_variables_mut(npc.object_id)
                             .set_bool(I_QUEST0, true);
-                        // NOTE(java-quirk): a Vortex at none of the four places has no `loc`;
-                        // Java's `addSpawn(raid, null, ..)` throws and the timer below is never
-                        // started, which `?` keeps.
                         let (lx, ly, lz) = loc?;
                         ctx.add_spawn(raid, lx, ly, lz, 0, false, 0, 0);
                         ctx.start_quest_timer("CANSPAWN", 60_000, Some(npc), None, false);

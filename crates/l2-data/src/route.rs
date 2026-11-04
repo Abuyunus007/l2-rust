@@ -1,6 +1,5 @@
 //! The NPC walking routes: `data/Routes.xml` (M8-MISC-01).
 //!
-//! Java: `managers/WalkingManager.java` (`load`, `parseDocument`), `data/holders/NpcRoutesHolder.java`,
 //! `entity/actor/holders/npc/{WalkRoute,WalkNode}.java`. The routes are immutable; which NPC
 //! walks where, and how far it got, is the world's (`l2_world::walking`).
 
@@ -56,9 +55,6 @@ pub struct WalkRoute {
     pub nodes: Vec<WalkNode>,
     /// `repeatWalk()`: the `repeat` attribute, and a style that exists (`REPEAT_MIN..=REPEAT_MAX`,
     /// that is back, cycle and conveyor; the `random` style is 3 and is not "supported" here).
-    // NOTE(java-quirk): `WalkRoute` only accepts the repeat types 0 to 2, so `repeat="true"` with
-    // `repeatStyle="random"` gives `repeatWalk() == false`. The random style still picks a random
-    // node at every step (`WalkInfo.calculateNextNode` tests the style before `repeatWalk`).
     pub repeat_walk: bool,
     /// `getRepeatType()`.
     pub repeat_type: i8,
@@ -136,8 +132,6 @@ impl Routes {
                 }
             }
             if nodes.is_empty() {
-                // NOTE(java-quirk): `new WalkRoute` throws for an empty node list and Java loses
-                // the rest of the file; here only this route is skipped.
                 warn!("{}: route '{}' has no points; skipped.", Self::LOADER, raw.name);
                 continue;
             }

@@ -1,9 +1,5 @@
 //! What the damage effects share: `reduceCurrentHp` with a skill and as damage over time, the
 //! attack break after a hit.
-// Java: entity/actor/Creature.java (reduceCurrentHp (3 overloads), reduceCurrentHpByDOT)
-// Java: entity/actor/Player.java, entity/actor/Attackable.java (reduceCurrentHp)
-// Java: entity/actor/status/{CreatureStatus,PlayerStatus,NpcStatus}.java (reduceHp)
-//
 // `combat/damage.rs` and `status.rs` hold the reduceHp of an auto attack (not a damage over time,
 // no skill). A skill hit goes through them as well; what only the effects need is here, so those
 // files stay as they are: a damage over time (`isDOT`), the HP consumption of a toggle and the

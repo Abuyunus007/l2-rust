@@ -1,6 +1,4 @@
 //! Quest 418: Path of the Artisan (Silvera starts it for the dwarven fighters; the Boogle Ratmen).
-// Java: dist/game/data/scripts/quests/Q00418_PathOfTheArtisan/Q00418_PathOfTheArtisan.java
-//
 // Pattern: a class-restricted quest (`player_class_id`), kill counts of two monsters with a drop
 // chance and a limit, a memo state per branch of the story (`memoState`), and a reward that is
 // given by the last NPC of the branch (`exitQuest(false, true)`, one-time).

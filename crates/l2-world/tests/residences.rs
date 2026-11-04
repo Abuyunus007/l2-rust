@@ -1,15 +1,5 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
-//! Residences (M7-RES-01): loading castles, fortresses and clan halls like Java's managers, the
-//! owners on the clans, the residential skills, the circlets, the castle tax and treasury, the
-//! function fees, the clan hall zone's `AgitDecoInfo`, the `SiegeDatabaseWrites` switch (D-51) and
-//! the re-reads at `CharacterSelect` and on demand (D-50).
-//! Java: managers/{CastleManager,FortManager}.java, mechanics/siege/{Castle,Fort}.java,
-//! entity/residences/{AbstractResidence,ClanHall,AuctionableHall}.java, data/sql/ClanHallTable.java,
-//! entity/zone/type/ClanHallZone.java, network/serverpackets/AgitDecoInfo.java,
-//! network/clientpackets/{EnterWorld,RequestAnswerJoinPledge}.java, entity/clan/Clan.java
-//! (removeClanMember). The expected values come from the Java code named in each test.
-
 use std::sync::{Arc, Mutex};
 
 use l2_data::skill::EnchantSkillGroups;
@@ -567,8 +557,6 @@ fn loading_installs_owners_zones_and_flag_poles_like_java() {
             .len(),
         2
     );
-    // Hall 37: its clan is gone, so `free()` from the constructor. NOTE(java-quirk): the row gets
-    // `paidUntil` 0 and `paid` 0, the hall keeps the row's values.
     let h37 = s.world.clan_hall(ClanHallId(37)).unwrap();
     assert_eq!(h37.owner_id, 0);
     assert!(h37.is_free && h37.paid());
@@ -988,8 +976,6 @@ fn buying_a_function_writes_its_row() {
     );
 }
 
-/// NOTE(java-quirk): a higher lease makes a new function object (end time -1); the old object
-/// keeps its fee task, charges the clan warehouse and writes its row over the new one.
 #[test]
 fn a_replaced_function_keeps_charging_like_java() {
     let mut s = Scene::new();
@@ -1157,8 +1143,6 @@ fn a_fortress_changes_hands() {
 
 // ---------------------------------------------------------------------------------- re-reads
 
-/// D-50, D-51: at `CharacterSelect` the session read the clan's residences; the world follows the
-/// database (another castle, a lost fortress, a new hall).
 #[test]
 fn the_character_select_read_moves_the_clan_to_what_the_database_says() {
     let mut s = Scene::new();

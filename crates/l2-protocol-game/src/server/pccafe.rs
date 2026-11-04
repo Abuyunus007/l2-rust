@@ -1,13 +1,10 @@
 //! The PC cafe packet: `ExPCCafePointInfo`.
-//!
-//! Java: `gameserver/network/serverpackets/ExPCCafePointInfo.java`.
 
 use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/ExPCCafePointInfo.java
 /// The PC cafe points of the player and the change that just happened (`EX_PC_CAFE_POINT_INFO`).
 /// The fields are what goes on the wire; [`ExPcCafePointInfo::new`] fills them like Java's
 /// `ExPCCafePointInfo(points, pointsToAdd, time)`.

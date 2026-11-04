@@ -1,5 +1,4 @@
 //! The `ServitorShare` effect: part of the caster's stats goes to its servitor while it lasts.
-// Java: dist/game/data/scripts/handlers/skill/effects/ServitorShare.java
 
 use l2_data::Stat;
 use l2_data::skill::EffectTemplate;

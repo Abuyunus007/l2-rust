@@ -1,6 +1,4 @@
 //! Raid boss and grand boss spawn / defeat announcements (`Custom/BossAnnouncements.ini`).
-// Java: config/custom/BossAnnouncementsConfig.java, entity/actor/Creature.java (`onSpawn`, `doDie`),
-//       entity/World.java (`broadcastToAllOnlinePlayers`, `broadcastToAllOnlinePlayersOnScreen`)
 
 use std::collections::BTreeSet;
 
@@ -95,8 +93,6 @@ impl World {
         let Some(template) = self.npc_world.template(npc.npc_id) else {
             return;
         };
-        // NOTE(java-quirk): Java's grand boss branch reads the same exclusion sets (named after
-        // raid bosses) as the raid boss branch.
         if excluded.contains(&npc.npc_id) {
             return;
         }

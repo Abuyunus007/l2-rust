@@ -1,6 +1,4 @@
 //! Quest 136: More Than Meets the Eye (Hardin, Errickin and Clayton; ghosts' ectoplasm, jaguar crystals).
-// Java: dist/game/data/scripts/quests/Q00136_MoreThanMeetsTheEye/Q00136_MoreThanMeetsTheEye.java
-//
 // Pattern: kills of the killer's own quest (no party), an item stack that moves the cond at its
 // limit (`give_item` below is Java's private `giveItem`), and a "talked" variable on Hardin.
 
@@ -125,8 +123,6 @@ impl Script for Q00136MoreThanMeetsTheEye {
                     1
                 };
             let index = (npc_id - GHOST1) as usize;
-            // NOTE(java-quirk): a hit of the extra chance gives one more ectoplasm before the
-            // regular `giveItem`, so a kill can give up to `count + 1`.
             if ctx.get_random(1000) < CHANCES[index]
                 && ctx.get_quest_items_count(killer, ECTOPLASM) + count < ECTOPLASM_COUNT
             {
@@ -333,7 +329,6 @@ mod tests {
         // Errickin takes them: with 35 or more he takes all and answers 05 (no stabilized one).
         assert!(t.quest_page(1, errickin).contains("30701-05.html"));
         assert_eq!(t.count(1, ECTOPLASM), 0);
-        // NOTE(java-quirk): with fewer than 35 he hands out the stabilized ectoplasm instead.
         t.world
             .run_as_script(NAME, |ctx| ctx.give_items(Oid(1), ECTOPLASM, 3));
         assert!(t.quest_page(1, errickin).contains("30701-06.html"));

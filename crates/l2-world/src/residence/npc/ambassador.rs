@@ -1,17 +1,8 @@
 //! `CastleAmbassador`: the special envoy a castle sends to a fortress it can take under its wing.
-// Java: dist/game/data/scripts/ai/others/CastleAmbassador/CastleAmbassador.java
-// Java: mechanics/siege/Fort.java (setFortState, getCastleByAmbassador, getCastleIdByAmbassador,
-//       isBorderFortress; the fortress side is `fort/spawns.rs` and `residence/fort.rs`)
-// Java: entity/actor/Npc.java (broadcastEvent, deleteMe -> onDecay -> stopQuestTimers)
-//
 // The envoys stand at a fortress that has an owner and no decision (`Fort.spawnSpecialEnvoys`).
 // The owner chooses a contract with the castle of the envoy (`signed`) or independence
 // (`rejected`); after an hour without a choice the fortress becomes independent and the envoys
 // leave.
-//
-// D-50/D-51: the fortress row is read again before the owner's choice is acted on (Sieghardt runs
-// the fortress sieges, which reset the state). The choice is a player's action and is written;
-// the decision of the timer is a fortress job (`Writes::Job`).
 
 use l2_util::ObjectId;
 use tracing::warn;
@@ -94,7 +85,6 @@ impl World {
         npc: ObjectId,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        // The owner's choice reads the fortress again first (D-50).
         if matches!(event, "signed" | "rejected")
             && let Some(player) = player
             && let Ok(fort) = self.envoy_fort(npc)

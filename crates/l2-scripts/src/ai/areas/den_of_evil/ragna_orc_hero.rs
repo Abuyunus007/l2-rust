@@ -1,5 +1,4 @@
 //! The Ragna Orc Hero calls its private minions when it spawns.
-// Java: dist/game/data/scripts/ai/areas/DenOfEvil/RagnaOrcHero.java
 
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
 

@@ -1,9 +1,6 @@
 //! The stat engine: per-creature calculators, the standard formula functions, the functions of
 //! equipped items, condition evaluation and the stat getters every packet reads.
 //! Design: `docs/design/m4-combat.md` ("Stat engine rules").
-// Java: mechanics/stats/{Calculator,Stat,BaseStat,Formulas}.java, mechanics/stats/functions/**,
-//       mechanics/conditions/*, entity/actor/stat/{CreatureStat,PlayableStat,PlayerStat,NpcStat}.java
-//
 // # How it fits together
 // - Every creature has a [`Calculators`] value in its `CreatureCore`: for each [`Stat`] an
 //   ordered list of [`Func`]s (Java's `Calculator[]`, indexed by `Stat.ordinal()`). Players get
@@ -142,9 +139,6 @@ impl BaseStatBonus {
     }
 
     /// Java `BaseStat.X.calcBonus(actor)`: the multiplier of `stat` at `value`.
-    // NOTE(java-quirk): Java indexes the array with the raw stat value, so a stat of 100 or more
-    // (or below 0) throws `ArrayIndexOutOfBoundsException` in the middle of the calculation. Here
-    // such a value reads as 0.0, the value of an unlisted entry.
     pub fn bonus(&self, stat: BaseStat, value: i32) -> f64 {
         let Some(tables) = &self.tables else {
             return 1.0;
@@ -268,8 +262,6 @@ impl ClassBalance {
     pub const CLASSES: usize = 137;
 
     /// The entry of `class_id`; 1.0 outside the array.
-    // NOTE(java-quirk): Java throws `ArrayIndexOutOfBoundsException` for a class id outside the
-    // array; no H5 class id is.
     pub(crate) fn of(table: &[f32], class_id: i32) -> f32 {
         usize::try_from(class_id)
             .ok()

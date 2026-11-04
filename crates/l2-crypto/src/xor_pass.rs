@@ -1,6 +1,5 @@
 //! `NewCrypt.encXORPass`: the rolling XOR the login server applies to the `Init` packet.
 //!
-//! Java: commons/crypt/NewCrypt.java. Words are little-endian `i32`; the key is added with Java's
 //! wrapping `int` arithmetic.
 
 use crate::CryptoError;

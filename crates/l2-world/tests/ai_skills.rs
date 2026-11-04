@@ -11,8 +11,6 @@
 //!
 //! The chances and orders are those of Java's `AttackableAI`; the world RNG is seeded, and the
 //! scenarios run until the thing happens (they do not depend on a particular draw).
-//!
-//! Java: ai/AttackableAI.java, data/xml/NpcData.java, entity/actor/Npc.java (hasSkillChance).
 
 use std::sync::{Arc, Mutex};
 

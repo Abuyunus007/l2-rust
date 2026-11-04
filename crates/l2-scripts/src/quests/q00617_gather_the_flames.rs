@@ -1,13 +1,9 @@
 //! Quest 617: Gather the Flames (Hilda and Vulcan in the Town of Gludin area, Rooney in the Hot
 //! Springs area; the lava monsters drop torches, 1000 of them buy a random recipe, 1200 buy the
 //! recipe the character picks).
-// Java: dist/game/data/scripts/quests/Q00617_GatherTheFlames/Q00617_GatherTheFlames.java
-//
 // Pattern: a repeatable kill that drops one or two torches to a random member at cond 1 (the
 // roll is per mille), and the trade of torches for a reward with a count check and a
 // "no quest" answer when it is short. Two NPCs start the quest.
-// NOTE(java-quirk): the events that fail their check answer the no-quest page, and an event
-// with no quest state gives the no-quest page too (not null, as in most quests).
 
 use l2_util::ObjectId;
 use l2_world::script::{CREATED, QuestSound};

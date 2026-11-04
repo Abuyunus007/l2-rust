@@ -1,9 +1,6 @@
 //! The passive effects that open equipment slots or change the expertise penalty:
 //! `TalismanSlot`, `EnableCloak` and `CrystalGradeModify`. Their values are read by the player's
 //! `UserInfo`, the inventory and the expertise check through `CreatureControl`.
-// Java: dist/game/data/scripts/handlers/skill/effects/TalismanSlot.java
-// Java: dist/game/data/scripts/handlers/skill/effects/EnableCloak.java
-// Java: dist/game/data/scripts/handlers/skill/effects/CrystalGradeModify.java
 
 use l2_data::skill::EffectTemplate;
 

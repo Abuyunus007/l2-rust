@@ -1,6 +1,5 @@
 //! Experience needed per level, and the highest player and pet levels.
 //!
-//! Java: `gameserver/data/xml/ExperienceData.java` and the `MaximumPlayerLevel` part of
 //! `config/PlayerConfig.java`.
 //! Data: `data/stats/players/experience.xml` (`xsd/experience.xsd`).
 //!
@@ -62,11 +61,9 @@ impl ExperienceTable {
     }
 
     fn add(&mut self, doc: RawTable) -> Result<(), DataError> {
-        // Java: _maxLevel = maxLevel + 1, capped at PLAYER_MAXIMUM_LEVEL.
         let level_limit = usize::try_from(doc.max_level + 1)
             .map_err(|_| DataError::Invalid(format!("negative maxLevel {}", doc.max_level)))?
             .min(PLAYER_MAXIMUM_LEVEL);
-        // Java: _maxPetLevel = maxPetLevel + 1, but never above _maxLevel + 1.
         let pet_limit = usize::try_from(doc.max_pet_level + 1)
             .map_err(|_| DataError::Invalid(format!("negative maxPetLevel {}", doc.max_pet_level)))?
             .min(level_limit + 1);
@@ -162,7 +159,6 @@ mod tests {
 
     #[test]
     fn pet_level_is_capped_by_the_player_level() {
-        // Java: _maxPetLevel = 51, capped at _maxLevel + 1 = 5, so the highest pet level is 4.
         let xml = XML.replace("maxPetLevel=\"2\"", "maxPetLevel=\"50\"");
         let table = ExperienceTable::from_xml(&xml).unwrap();
         assert_eq!(table.max_pet_level(), Some(4));

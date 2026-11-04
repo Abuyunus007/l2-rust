@@ -1,5 +1,4 @@
 //! Quest 10273: Good Day to Fly (Lekon teaches the Aura Bird transformation after five Vulture Rider kills).
-// Java: dist/game/data/scripts/quests/Q10273_GoodDayToFly/Q10273_GoodDayToFly.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, QuestSound};

@@ -1,7 +1,5 @@
 //! Servers view: the supervisor's processes (state, PID, uptime, last exit code) with
 //! Start/Stop/Restart, and the login server's game server table.
-//!
-//! Java: `loginserver/ui/Gui.java` (the game server columns of the login server's window).
 
 use std::collections::{HashMap, VecDeque};
 use std::time::{Duration, Instant};

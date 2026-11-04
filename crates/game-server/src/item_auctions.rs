@@ -1,12 +1,5 @@
 //! The item auctions at startup: `data/ItemAuctions.xml`, the `item_auction` rows and the settings
 //! (L-05).
-// Java: managers/ItemAuctionManager.java (constructor)
-// Java: entity/item/auction/ItemAuctionInstance.java (constructor, loadAuction: the reads)
-//
-// Only reads here (D-15, D-39): the world writes through `PersistCommand::ItemAuction`. The checks
-// of the rows (`startingTime >= endingTime`, an unknown item, an invalid state, an expired
-// auction) are the world's (`World::load_item_auctions`), so one function judges the rows of the
-// start and of a re-read.
 
 use std::collections::BTreeSet;
 use std::path::Path;
@@ -84,7 +77,6 @@ pub async fn load_item_auctions(
     for instance in &instances {
         match read_instance_records(&repo, instance.id).await {
             Ok(records) => auctions.extend(records),
-            // Java: "Failed loading auctions." and the constructor returns.
             Err(e) => error!("ItemAuctionInstance: Failed loading auctions: {e}"),
         }
     }

@@ -1,6 +1,4 @@
 //! The clan master script of the village masters: the clan commands' pages.
-// Java: dist/game/data/scripts/village_master/ClanMaster/ClanMaster.java
-//
 // A village master's page links to `bypass -h Script ClanMaster` (`onTalk`: `9000-01.htm`); the
 // pages after it send `bypass Script ClanMaster <page>.htm` (`onEvent`). The commands on those
 // pages (`npc_<id>_create_clan ...`) are the world's `clan/village_master.rs`.

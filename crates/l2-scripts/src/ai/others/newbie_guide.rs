@@ -1,7 +1,5 @@
 //! The Newbie Guides of the starting villages, Gludin and Gludio, and the Adventurers' Guide: the
 //! beginner buffs, the coupons, the village teleports and the tutorial's guide missions.
-// Java: dist/game/data/scripts/ai/others/NewbieGuide/NewbieGuide.java
-//
 // The six `eventGuide...` functions of Java (one `switch` per guide, every `case` a radar and a
 // page) are the tables below, generated from the Java `switch`es case by case; `talkGuide` is the
 // Java text with its repeated blocks (`switch (race)` radars, reward tiers, the memo bookkeeping)
@@ -648,7 +646,6 @@ impl Script for NewbieGuide {
                 return teleport_request(ctx, talker, npc, -1);
             }
 
-            // NOTE(java-quirk): `Integer.parseInt` throws for a bad number; nothing happens here.
             return teleport_request(ctx, talker, npc, tel[1].parse().ok()?);
         }
 
@@ -1007,10 +1004,7 @@ fn talk_guide(ctx: &mut ScriptCtx<'_>, talker: ObjectId, npc: ScriptNpc, tutoria
             }
         } else if level < 10 {
             let memo = ctx.get_nr_memo_state(qs, GUIDE_MISSION);
-            // NOTE(java-quirk): the second test divides `% 10000` by 100, not by 1000.
             if (memo % 1000) / 100 == 1 && (memo % 10000) / 100 == 1 {
-                // NOTE(java-quirk): the Orc radar of this copy has a positive x, and the Kamael
-                // radar is the Dwarf's.
                 hmltext = talker_race_radar(
                     ctx,
                     talker,

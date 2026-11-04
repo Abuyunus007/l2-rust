@@ -1,8 +1,5 @@
 //! `Player.addSubClass`, `modifySubClass` and `setActiveClass` (the two halves of the switch, see
 //! the module notes of `subclass/`).
-// Java: entity/actor/Player.java (addSubClass, modifySubClass, setActiveClass, setClassTemplate,
-//       rewardSkills, regiveTemporarySkills, restoreDeathPenaltyBuffLevel, restoreRecipeBook)
-// Java: entity/actor/holders/player/{SubClassHolder,Shortcuts}.java (restoreMe)
 
 use l2_data::ClassId;
 use l2_protocol_game::server::SocialAction;
@@ -541,8 +538,6 @@ impl World {
             return;
         };
         for &recipe_id in recipes {
-            // NOTE(java-quirk): an unknown recipe throws in `registerDwarvenRecipeList` and the
-            // catch ends the read, so the recipes after it stay out of the book.
             if data.get(recipe_id).is_none() {
                 warn!("Could not restore recipe book data: unknown recipe {recipe_id}.");
                 break;

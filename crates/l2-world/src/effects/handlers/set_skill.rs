@@ -1,6 +1,5 @@
 //! The `SetSkill` effect: the player learns the skill `skillId` at `skillLevel` (the skill list is
 //! sent again).
-// Java: dist/game/data/scripts/handlers/skill/effects/SetSkill.java
 
 use l2_data::skill::EffectTemplate;
 

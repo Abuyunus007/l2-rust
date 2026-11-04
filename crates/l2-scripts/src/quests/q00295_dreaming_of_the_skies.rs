@@ -1,6 +1,4 @@
 //! Quest 295: Dreaming of the Skies (Arin in the Dwarven village, Magical Weavers).
-// Java: dist/game/data/scripts/quests/Q00295_DreamingOfTheSkies/Q00295_DreamingOfTheSkies.java
-//
 // Pattern: a kill-count quest with a drop chance (`docs/design/scripts.md`, "Quest patterns"):
 // `on_kill` gives the quest item with `give_item_randomly` up to a limit and moves to cond 2 when
 // the limit is reached; the NPC rewards and ends the quest (repeatable).

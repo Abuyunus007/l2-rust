@@ -1,11 +1,5 @@
 //! The quest journal and the tutorial window: `QuestList`, the quest states read at
 //! `CharacterSelect`, and the client requests of the journal and the tutorial.
-// Java: network/serverpackets/QuestList.java
-// Java: network/clientpackets/{RequestQuestList,RequestQuestAbort,RequestTutorialLinkHtml,
-//       RequestTutorialPassCmdToServer,RequestTutorialQuestionMark,RequestTutorialClientEvent}.java
-// Java: network/serverpackets/{NpcQuestHtmlMessage,TutorialShowHtml,TutorialCloseHtml}.java
-//       (runImpl: the html action cache of their scope)
-// Java: mechanics/script/Quest.java (playerEnter)
 
 use l2_protocol_game::server::enterworld::{QuestList, QuestListEntry};
 use l2_protocol_game::server::{NpcQuestHtmlMessage, TutorialCloseHtml, TutorialShowHtml};
@@ -53,8 +47,6 @@ impl World {
                 None => 0,
                 Some(qs) => {
                     let states = qs.get_int(COMPLETED_STATE_FLAGS_VAR);
-                    // NOTE(java-quirk): the flags `setCond` writes have the sign bit set, so they
-                    // are never `> 0` and the condition goes out instead.
                     if states > 0 { states } else { qs.cond() }
                 }
             };
@@ -130,15 +122,10 @@ impl World {
         let mut aborted = false;
         for (name, value) in &load.states {
             let Some(script) = self.scripts.by_name(name) else {
-                // NOTE(D-39): Java deletes the rows of an unknown quest with
-                // `AutoDeleteInvalidQuestData`. This server does not have every script yet, so an
-                // unknown name is a quest the Java game server owns: its rows are never deleted.
                 debug!("Unknown quest {name} for {id}");
                 continue;
             };
             let Some(value) = value else {
-                // NOTE(java-quirk): `State.getStateId(null)` throws; Java logs "could not insert
-                // char quest" and reads nothing more.
                 warn!("could not insert char quest: {name} of {id} has no state");
                 aborted = true;
                 break;
@@ -161,8 +148,6 @@ impl World {
                 }
             }
         }
-        // NOTE(java-quirk): Java ends with `player.processScriptEvent(name, "enter")` for every
-        // script; with no NPC in reach at login it never reaches a script, so it is left out.
         self.scripts.players.insert(id, quests);
     }
 

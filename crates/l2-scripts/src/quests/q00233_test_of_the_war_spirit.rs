@@ -1,7 +1,5 @@
 //! Quest 233: Test of the War Spirit (the Orc Shaman's second class change: Seer Somak, Priestess
 //! Vivyan, Trader Sarien, Seers Racoy, Manakia and Pekiron, Shadow Orim and Ancestor Martankus).
-// Java: dist/game/data/scripts/quests/Q00233_TestOfTheWarSpirit/Q00233_TestOfTheWarSpirit.java
-//
 // Pattern: four "remains" are assembled from monster drops in parallel (no memo state), then
 // the Tamlin orc heads; the reward is given by an event of the last NPC.
 

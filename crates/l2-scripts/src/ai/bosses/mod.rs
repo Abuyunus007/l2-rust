@@ -2,7 +2,6 @@
 //!
 //! One module per script, sorted by name; one `add` line per script in [`register`], in the
 //! same order (Java's load order is the folder listing).
-//!
 pub mod anais;
 pub mod antharas;
 pub mod baium;

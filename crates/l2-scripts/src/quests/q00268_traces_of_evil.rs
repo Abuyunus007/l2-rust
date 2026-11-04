@@ -1,6 +1,4 @@
 //! Quest 268: Traces of Evil (Kunai in the Dark Elven area sends the player after the kasha spiders).
-// Java: dist/game/data/scripts/quests/Q00268_TracesOfEvil/Q00268_TracesOfEvil.java
-//
 // Pattern: a kill-count quest (`docs/design/scripts.md`, "Quest patterns"): every kasha spider
 // gives one venom while cond 1 lasts; the 30th sets cond 2 and the NPC pays and ends the quest.
 
@@ -99,8 +97,6 @@ impl Script for Q00268TracesOfEvil {
                     .to_owned();
                 }
                 2 => {
-                    // NOTE(java-quirk): with fewer than 30 venoms the page stays the default
-                    // "no quest" message (Java's `htmltext` is not changed in that branch).
                     if ctx.get_quest_items_count(player, CONTAMINATED_KASHA_SPIDER_VENOM) >= 30 {
                         ctx.give_adena(player, 2474, true);
                         ctx.add_exp_and_sp(player, 8738, 409);

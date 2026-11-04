@@ -1,5 +1,4 @@
 //! Asyatei, the Soul Trader of Seed of Infinity: his page depends on the Mark of Keucereus.
-// Java: dist/game/data/scripts/ai/others/SoulTrader/SoulTrader.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

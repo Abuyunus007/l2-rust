@@ -1,6 +1,4 @@
 //! The invulnerability commands: `//invul` (the GM) and `//setinvul` (the target player).
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminInvul.java
-//
 // The flag is `Creature.setInvul`; the damage code reads `World::is_invul` (`status.rs`), which
 // is Java's `isInvul()`, so a teleporting character is invulnerable as well.
 //
@@ -36,8 +34,6 @@ fn admin_invul(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
 
 /// Java `AdminInvul.toggleInvul(target, admin)`.
 fn toggle_invul(world: &mut World, target: ObjectId, admin: ObjectId) {
-    // NOTE(java-quirk): Java reads `isInvul()` (which includes the teleporting state) and writes
-    // `_isInvul`, so toggling a teleporting character leaves the flag on.
     let invul = !world.is_invul(target);
     world.set_invul(target, invul);
 

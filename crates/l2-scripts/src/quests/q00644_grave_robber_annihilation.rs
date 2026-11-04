@@ -1,7 +1,5 @@
 //! Quest 644: Grave Robber Annihilation (Karuda in the Ruins of Batur; the grave robbers drop
 //! orc goods, 120 of them buy one of six materials).
-// Java: dist/game/data/scripts/quests/Q00644_GraveRobberAnnihilation/Q00644_GraveRobberAnnihilation.java
-//
 // Pattern: a party kill count (the member at cond 1 counts three times) with a drop limit: the
 // `giveItemRandomly` that reaches the limit moves the quest to cond 2, and the reward is one
 // material chosen from the page (`REWARDS`), then the quest ends.

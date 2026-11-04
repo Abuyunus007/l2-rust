@@ -1,8 +1,5 @@
 //! `MercenaryCaptain`: the captain of the Territory War mercenaries of a castle (striders for
 //! territory badges, the elite mercenary multisells, the registration window).
-// Java: dist/game/data/scripts/ai/others/MercenaryCaptain/MercenaryCaptain.java
-// Java: network/serverpackets/ExShowDominionRegistry.java
-//
 // The captains stand where the Territory War puts them (`territory/`, M7-TW-01): the war spawns
 // them with the town NPCs of an owned territory, starts their hourly shout
 // (`startQuestTimer("say", DELAY, spawn.getNpc(), null, true)`, which calls

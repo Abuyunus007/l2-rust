@@ -1,6 +1,4 @@
 //! Quest 379: Fantasy Wine (Guard Harlan in the Town of Oren: eucalyptus leaves and stones of chill).
-// Java: dist/game/data/scripts/quests/Q00379_FantasyWine/Q00379_FantasyWine.java
-//
 // Pattern: two drops with a limit (`docs/design/scripts.md`, "Quest patterns"): the leaves come
 // from the Enku Orc Champion, the stones from the Enku Orc Shaman, each up to its count; the kill
 // that completes both sets cond 2. The reward is one of three wines, picked at random.

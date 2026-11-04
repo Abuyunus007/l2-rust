@@ -1,8 +1,4 @@
 //! The stat getters every creature has, over a read-only view of the world.
-// Java: entity/actor/stat/CreatureStat.java (calcStat and the getters)
-// Java: entity/actor/templates/CreatureTemplate.java (the base values and their defaults)
-// Java: entity/actor/Creature.java (getLevelMod, getAttackType, getMaxLoad, getBonusWeightPenalty)
-//
 // Java's `CreatureStat` / `PlayableStat` / `PlayerStat` / `NpcStat` / `DoorStat` subclasses are
 // one view here: a getter that a subclass overrides asks `self.who` which kind of creature it is.
 // The player-only parts are in `player_stat.rs`, the NPC-only parts in `npc_stat.rs`; a door
@@ -131,7 +127,6 @@ impl Base {
             m_atk_spd: t.m_atk_spd,
             crit_rate: t.crit_rate,
             atk_range: t.atk_range,
-            // Java: baseFlyRunSpd / baseFlyWalkSpd fall back to the ground speeds.
             speeds: [
                 t.run_speed,
                 t.walk_speed,
@@ -737,8 +732,6 @@ impl<'w> StatView<'w> {
             && let Some(t) = self.other(t)
             && let Some(tp) = t.player()
         {
-            // NOTE(java-quirk): Java uses the PvE tables here even though the target is a
-            // playable, and the target's class (not the defender's).
             let cb = &s.class_balance;
             let table = if skill.magic {
                 &cb.pve_magical_skill_defence
@@ -817,8 +810,6 @@ impl<'w> StatView<'w> {
 
     /// Java `getMCriticalHit(target, skill)`.
     pub fn m_critical_hit(&self, target: Option<ObjectId>, skill: Option<&CalcSkill>) -> i32 {
-        // NOTE(java-quirk): `(int) calcStat(MCRITICAL_RATE, 1, ...) * 10`: the calculation
-        // starts at 1, not at the template's `baseMCritRate`, and the cast comes before the * 10.
         let mut value = (self.calc_stat(Stat::McriticalRate, 1.0, target, skill) as i32).wrapping_mul(10);
         if let (Some(_), Some(t), Some(p)) = (skill, target, self.player()) {
             let cb = &self.settings().class_balance;
@@ -851,9 +842,6 @@ impl<'w> StatView<'w> {
 
     /// Java `getPhysicalAttackRange()`.
     pub fn physical_attack_range(&self) -> i32 {
-        // NOTE(java-quirk): with any weapon, the fists of an unarmed player included, the base is
-        // 0 and the range comes from the weapon's `pAtkRange` function alone; the fists are never
-        // equipped, so an unarmed player has range 0.
         let base = if self.transformation().is_some() {
             // `Transform.getBaseAttackRange`: the template's, else the class template's.
             self.transform_template()
@@ -895,8 +883,6 @@ impl<'w> StatView<'w> {
     }
 
     /// Java `getRunSpeed()`.
-    // NOTE(java-quirk): in water the base is `getSwimRunSpeed()`, which already went through
-    // `MOVE_SPEED`, so the speed functions (the DEX bonus) apply twice.
     pub fn run_speed(&self) -> f64 {
         let base = if self.in_water() {
             self.swim_run_speed()

@@ -1,37 +1,24 @@
 //! The manor tables: `castle_manor_production` (the seeds a castle sells) and
 //! `castle_manor_procure` (the crops it buys), each with a current and a next period (M7-MANOR-01).
-// Java: org/l2jmobius/gameserver/managers/CastleManorManager.java (loadDb, storeMe,
-//       setNextSeedProduction, setNextCropProcure, updateCurrentProduction,
-//       updateCurrentProcure, resetManorData)
-//
-// Same layout as residences.rs: verbatim SQL, one method per statement. D-39: the Java game server
-// reads and writes the same rows (it rewrites both tables whole in `storeMe`). The world decides
-// which writes go out (D-49, D-51).
 
 use sqlx::FromRow;
 
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: CastleManorManager.loadDb
 const SELECT_PRODUCTION: &str = "SELECT * FROM castle_manor_production WHERE castle_id=?";
 const SELECT_PROCURE: &str = "SELECT * FROM castle_manor_procure WHERE castle_id=?";
-// Java: CastleManorManager.INSERT_PRODUCT, INSERT_CROP
 const INSERT_PRODUCT: &str = "INSERT INTO castle_manor_production VALUES (?, ?, ?, ?, ?, ?)";
 const INSERT_CROP: &str = "INSERT INTO castle_manor_procure VALUES (?, ?, ?, ?, ?, ?, ?)";
-// Java: CastleManorManager.storeMe
 const DELETE_ALL_PRODUCTION: &str = "DELETE FROM castle_manor_production";
 const DELETE_ALL_PROCURE: &str = "DELETE FROM castle_manor_procure";
-// Java: CastleManorManager.setNextSeedProduction, setNextCropProcure
 const DELETE_NEXT_PRODUCTION: &str =
     "DELETE FROM castle_manor_production WHERE castle_id = ? AND next_period = 1";
 const DELETE_NEXT_PROCURE: &str = "DELETE FROM castle_manor_procure WHERE castle_id = ? AND next_period = 1";
-// Java: CastleManorManager.updateCurrentProduction, updateCurrentProcure
 const UPDATE_PRODUCTION_AMOUNT: &str =
     "UPDATE castle_manor_production SET amount = ? WHERE castle_id = ? AND seed_id = ? AND next_period = 0";
 const UPDATE_PROCURE_AMOUNT: &str =
     "UPDATE castle_manor_procure SET amount = ? WHERE castle_id = ? AND crop_id = ? AND next_period = 0";
-// Java: CastleManorManager.resetManorData
 const DELETE_CASTLE_PRODUCTION: &str = "DELETE FROM castle_manor_production WHERE castle_id = ?";
 const DELETE_CASTLE_PROCURE: &str = "DELETE FROM castle_manor_procure WHERE castle_id = ?";
 
@@ -124,7 +111,6 @@ impl ManorRepository {
     }
 
     /// The seeds a castle sells, both periods, in the database's order.
-    // Java: CastleManorManager.loadDb (stProduction)
     pub async fn production(&self, castle_id: i32) -> Result<Vec<ProductionRow>> {
         let rows = sqlx::query_as::<_, ProductionDbRow>(SELECT_PRODUCTION)
             .bind(castle_id)
@@ -134,7 +120,6 @@ impl ManorRepository {
     }
 
     /// The crops a castle buys, both periods, in the database's order.
-    // Java: CastleManorManager.loadDb (stProcure)
     pub async fn procure(&self, castle_id: i32) -> Result<Vec<ProcureRow>> {
         let rows = sqlx::query_as::<_, ProcureDbRow>(SELECT_PROCURE)
             .bind(castle_id)
@@ -146,7 +131,6 @@ impl ManorRepository {
     /// Java `storeMe`: both tables are emptied and written again, every row with its period.
     /// Java runs the statements one by one on one connection; one transaction leaves the same
     /// rows and never half of them.
-    // Java: CastleManorManager.storeMe
     pub async fn store_all(&self, production: &[ProductionRow], procure: &[ProcureRow]) -> Result<()> {
         let mut tx = self.pool.begin().await?;
         sqlx::query(DELETE_ALL_PRODUCTION).execute(&mut *tx).await?;
@@ -163,7 +147,6 @@ impl ManorRepository {
 
     /// Java `setNextSeedProduction` (with `ALT_MANOR_SAVE_ALL_ACTIONS`): the castle's next-period
     /// rows go, the new list is written.
-    // Java: CastleManorManager.setNextSeedProduction
     pub async fn replace_next_production(&self, castle_id: i32, list: &[ProductionRow]) -> Result<()> {
         let mut tx = self.pool.begin().await?;
         sqlx::query(DELETE_NEXT_PRODUCTION)
@@ -178,7 +161,6 @@ impl ManorRepository {
     }
 
     /// Java `setNextCropProcure` (with `ALT_MANOR_SAVE_ALL_ACTIONS`).
-    // Java: CastleManorManager.setNextCropProcure
     pub async fn replace_next_procure(&self, castle_id: i32, list: &[ProcureRow]) -> Result<()> {
         let mut tx = self.pool.begin().await?;
         sqlx::query(DELETE_NEXT_PROCURE)
@@ -194,7 +176,6 @@ impl ManorRepository {
 
     /// Java `updateCurrentProduction`: the amounts left of the current period (`(seed id,
     /// amount)`).
-    // Java: CastleManorManager.updateCurrentProduction
     pub async fn update_current_production(&self, castle_id: i32, amounts: &[(i32, i64)]) -> Result<()> {
         for (seed_id, amount) in amounts {
             sqlx::query(UPDATE_PRODUCTION_AMOUNT)
@@ -208,7 +189,6 @@ impl ManorRepository {
     }
 
     /// Java `updateCurrentProcure`: the amounts left of the current period (`(crop id, amount)`).
-    // Java: CastleManorManager.updateCurrentProcure
     pub async fn update_current_procure(&self, castle_id: i32, amounts: &[(i32, i64)]) -> Result<()> {
         for (crop_id, amount) in amounts {
             sqlx::query(UPDATE_PROCURE_AMOUNT)
@@ -222,7 +202,6 @@ impl ManorRepository {
     }
 
     /// Java `resetManorData(castleId)` (with `ALT_MANOR_SAVE_ALL_ACTIONS`): every row of the castle.
-    // Java: CastleManorManager.resetManorData
     pub async fn delete_castle(&self, castle_id: i32) -> Result<()> {
         sqlx::query(DELETE_CASTLE_PRODUCTION)
             .bind(castle_id)

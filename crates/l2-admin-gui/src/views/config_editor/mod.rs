@@ -2,7 +2,6 @@
 //! one control per key, with the comment lines as help, the Java default and a reset button
 //! (cards G-05, G-07).
 //!
-//! Java: none (tooling). Keys, comments, defaults and the in-place writer are `l2_config`
 //! (`ini_edit`, `defaults`); only the changed lines are rewritten, so comments, order and line
 //! endings stay. [`FileState`] holds the rules and has no egui in it, so it is tested directly.
 //! The view only draws it.

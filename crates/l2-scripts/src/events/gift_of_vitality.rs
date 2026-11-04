@@ -1,6 +1,4 @@
 //! Gift of Vitality: Steve Shyagel casts the vitality gift and the newbie memories buffs.
-// Java: dist/game/data/scripts/events/GiftOfVitality/GiftOfVitality.java
-// Java: dist/game/data/scripts/events/GiftOfVitality/config.xml
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};

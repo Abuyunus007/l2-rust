@@ -2,7 +2,6 @@
 
 //! The door admin commands (`admin/door.rs`): `//open`, `//close`, `//openall`, `//closeall` and
 //! `//showdoors` with a GM and two doors in view.
-//! Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminDoorControl.java
 
 use std::sync::{Arc, Mutex};
 

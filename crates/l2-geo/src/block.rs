@@ -1,6 +1,5 @@
 //! Block views and their queries.
 //!
-//! Java: `gameserver/geoengine/geodata/IBlock.java`, `blocks/FlatBlock.java`,
 //! `blocks/ComplexBlock.java`, `blocks/MultilayerBlock.java`.
 //!
 //! A block is 8 x 8 cells. The data lives inside [`crate::Region`] in compact arrays; a
@@ -103,9 +102,6 @@ impl BlockRef<'_> {
             Self::Complex { cells } => cell_height(cells[cell_index(geo_x, geo_y)]),
             Self::Multilayer { .. } => {
                 let nearest = cell_height(self.nearest_layer(geo_x, geo_y, world_z));
-                // NOTE(java-quirk): a nearest layer more than 1000 above world_z is treated as
-                // "a different floor" and replaced by the next lower layer, so for multilayer
-                // cells this is not always the closest layer.
                 if nearest - world_z > 1000 {
                     return self.next_lower_z(geo_x, geo_y, world_z);
                 }

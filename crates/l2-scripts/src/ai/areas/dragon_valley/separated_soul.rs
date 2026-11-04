@@ -1,6 +1,5 @@
 //! Separated Soul teleport AI: the souls of the Dragon Valley send characters of level 80 or more
 //! across the valley and the Lair of Antharas, and synthesise the Antharas' Blood Crystal.
-// Java: dist/game/data/scripts/ai/areas/DragonValley/SeparatedSoul/SeparatedSoul.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

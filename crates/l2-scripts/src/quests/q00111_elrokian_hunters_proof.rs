@@ -1,6 +1,4 @@
 //! Quest 111: Elrokian Hunter's Proof (Marquez, Mushika, Asamah, Kirikachin on the Primeval Isle).
-// Java: dist/game/data/scripts/quests/Q00111_ElrokianHuntersProof/Q00111_ElrokianHuntersProof.java
-//
 // Pattern: a memo-state chain (`setMemoState`) with a table of monsters -> (item, chance, memo
 // state), kills for a random started party member, and a reward with items, adena and exp.
 
@@ -27,8 +25,6 @@ const PRACTICE_ELROKIAN_TRAP: i32 = 8773;
 // Misc
 const MIN_LEVEL: i32 = 75;
 
-/// Java `MOBS_DROP_CHANCES`: `(npc id, item, chance, count)`. NOTE(java-quirk): the holder's count
-/// is not an amount here, it is the memo state in which the monster drops.
 #[rustfmt::skip]
 const MOBS_DROP_CHANCES: [(i32, i32, f64, i32); 20] = [
     (22196, DIARY_FRAGMENT, 0.51, 4),

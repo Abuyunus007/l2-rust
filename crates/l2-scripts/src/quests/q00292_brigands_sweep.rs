@@ -1,6 +1,4 @@
 //! Quest 292: Brigands Sweep (Spiron in the Dwarven Village buys the goblin necklaces and pendants).
-// Java: dist/game/data/scripts/quests/Q00292_BrigandsSweep/Q00292_BrigandsSweep.java
-//
 // Pattern: a repeatable collect quest with a second item chain (`docs/design/scripts.md`, "Quest
 // patterns"): the goblins drop necklaces, pendants and lord pendants (six rolls out of ten) and,
 // on the fifth roll, a suspicious memo while the player has no contract. Three memos turn into one

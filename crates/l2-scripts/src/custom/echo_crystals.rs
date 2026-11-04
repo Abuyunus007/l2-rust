@@ -1,5 +1,4 @@
 //! The Echo Crystal exchange: a score for a crystal, 200 adena.
-// Java: dist/game/data/scripts/custom/EchoCrystals/EchoCrystals.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

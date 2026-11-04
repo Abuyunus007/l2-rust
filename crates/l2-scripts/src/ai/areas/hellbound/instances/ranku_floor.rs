@@ -1,5 +1,4 @@
 //! Ranku's floor of the Tower of Infinitum (the 10th floor, instance 143).
-// Java: dist/game/data/scripts/ai/areas/Hellbound/Instances/RankuFloor/RankuFloor.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

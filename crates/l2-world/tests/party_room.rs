@@ -523,7 +523,6 @@ fn dismissing_closes_the_room_for_everybody() {
     create_room(&mut s, P1, "Room", 1, 80);
     join_room(&mut s, P2, 1);
     s.log.take();
-    // NOTE(java-quirk): Java does not check that the sender owns the room: Bravo closes it.
     room_input(&mut s, P2, PartyRoomInput::Dismiss { room_id: 1 });
     let sent = s.log.take();
     assert_eq!(s.world.party_room_count(), 0);
@@ -1025,7 +1024,6 @@ fn reset_nickname() {
     s.input(P1, ClientInput::ResetNickname);
     let sent = s.log.take();
     assert_eq!(s.player(P1).data.title, "");
-    // NOTE(java-quirk): the colour is 0xFFFF77, not the default title colour.
     assert_eq!(s.player(P1).data.profile.title_color, 0x00FF_FF77);
     // `broadcastTitleInfo`: UserInfo to the player, NicknameChanged to everybody.
     assert_eq!(

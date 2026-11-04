@@ -3,7 +3,6 @@
 //! The bot report button (M6-FU-09): `RequestActionUse` 65, the checks of `reportBot`, the report
 //! points, the punishments by report count and the daily reset. The expected values come from the
 //! Java code named in each test.
-//! Java: data/BotReportTable.java, network/clientpackets/RequestActionUse.java (case 65).
 
 use std::collections::BTreeMap;
 use std::net::IpAddr;
@@ -520,7 +519,6 @@ fn clans_at_war_cannot_report_each_other() {
     assert!(reported);
 }
 
-/// NOTE(java-quirk): the starting exp is never set, so only exp 0 counts as "not acquired any exp".
 #[test]
 fn a_character_without_exp_is_not_reported() {
     let mut s = Scene::new(enabled());

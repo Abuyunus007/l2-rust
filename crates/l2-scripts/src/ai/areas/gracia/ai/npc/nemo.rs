@@ -1,6 +1,5 @@
 //! Nemo, the Great Magician of Oren in the Seed of Annihilation: the Maguen Plasma Collector and a
 //! practice Maguen.
-// Java: dist/game/data/scripts/ai/areas/Gracia/AI/NPC/Nemo/Nemo.java
 
 use std::collections::{HashMap, HashSet};
 
@@ -24,9 +23,6 @@ const MAXIMUM_MAGUEN: i32 = 18; // Maximum maguens in one time
 struct NemoState {
     script_value: HashMap<ObjectId, i32>,
     /// Players with `getVariables().getInt("TEST_MAGUEN", 0) == 1`.
-    // NOTE(java-quirk): Java stores this in the player's variables, which survive a logout; a
-    // player who leaves during the practice stays blocked there. Here it is forgotten with the
-    // server (the player variables are not in the world yet).
     practicing: HashSet<ObjectId>,
     /// Maguen -> the Nemo that summoned it.
     spawned_npc: HashMap<ObjectId, ObjectId>,

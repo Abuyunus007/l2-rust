@@ -1,6 +1,4 @@
 //! Quest 151: Cure for Fever (Elias sends the player to kill spiders, then Yohanes for medicine).
-// Java: dist/game/data/scripts/quests/Q00151_CureForFever/Q00151_CureForFever.java
-//
 // Pattern: a kill quest with a drop chance and a delivery chain. A spider drops the poison sac
 // on a 1-in-5 roll (`getRandom(5) == 0`) until cond 2; Yohanes swaps the sac for the medicine
 // (cond 3); Elias pays and ends the quest (one-time). The Newbie Guide's memo is counted and the

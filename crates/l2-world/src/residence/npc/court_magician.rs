@@ -1,7 +1,5 @@
 //! `CastleCourtMagician`: the court magician of a castle (talismans for the knight's epaulettes,
 //! the squad skills, the teleport to the clan leader's Clan Gate).
-// Java: dist/game/data/scripts/ai/others/CastleCourtMagician/CastleCourtMagician.java
-// Java: dist/game/data/scripts/handlers/skill/effects/CallPc.java (checkSummonTargetStatus)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
@@ -131,8 +129,6 @@ impl World {
         if self.inventory_item_count(player, EPAULETTE) < 10 {
             return Some("courtmagician-06.html".to_owned());
         }
-        // NOTE(java-quirk): `getSize() == getInventoryLimit()`; an inventory over its limit
-        // passes.
         let size = self.players.get(&player).map_or(0, |p| {
             p.data
                 .items

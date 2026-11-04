@@ -1,8 +1,6 @@
 //! Quest 257: The Guard Is Busy (Gilbert in the Gludio guard post sends the characters of level 6
 //! and up to kill the orcs and werewolves of the Gludio area for their amulets, necklaces and
 //! fangs).
-// Java: dist/game/data/scripts/quests/Q00257_TheGuardIsBusy/Q00257_TheGuardIsBusy.java
-//
 // Pattern: a repeatable kill count with a random drop table per monster (`MobDrop`: a roll per
 // entry until one drops, `docs/design/scripts.md`, "Kills, drops and parties"), a trade of the
 // items at the end, the rookie shots and the newbie guide's memo.

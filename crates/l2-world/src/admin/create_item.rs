@@ -1,7 +1,5 @@
 //! The item admin commands: `//itemcreate` (the menu), `//create_item`, `//create_coin`,
 //! `//give_item_target`, `//give_item_to_all`, `//delete_item` and `//use_item`.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminCreateItem.java
-//
 // Items are made by `World::inventory_add_item_by_id`, Java's `Inventory.addItem` (stacking, the
 // `ADDED` / `MODIFIED` flag, the update packets; no overflow drop, no herb skip, as Java's admin
 // commands get). The database rows follow the item list.

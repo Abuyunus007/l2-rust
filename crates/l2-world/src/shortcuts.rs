@@ -1,10 +1,5 @@
 //! The shortcut bar: `RequestShortcutReg`, `RequestShortcutDel`, and the deletions other code
 //! causes (a destroyed item, a removed skill).
-// Java: network/clientpackets/{RequestShortcutReg,RequestShortcutDel}.java
-// Java: network/serverpackets/{ShortcutRegister,ShortcutInit}.java
-// Java: entity/actor/holders/player/{Shortcuts,Shortcut}.java
-// Java: entity/actor/Player.java (registerShortcut, deleteShortcut, removeSkill)
-//
 // # Where a shortcut lives
 // `PlayerData.shortcuts` (one `ShortcutData` per `character_shortcuts` row of the active class).
 // Java keeps them in a map keyed by `slot + page * 12`; here a key is "the shortcut whose
@@ -111,8 +106,6 @@ impl World {
             level,
         };
         let group = self.register_shortcut(id, shortcut).unwrap_or(-1);
-        // NOTE(java-quirk): the packet goes out even when `registerShortcut` refused an item that
-        // is not in the inventory; the client then shows an item shortcut with group -1.
         self.send(id, &shortcut_register_packet(&shortcut, character_type, group));
     }
 
@@ -137,9 +130,6 @@ impl World {
     /// The group is only used for the packet: Java also keeps it in the `Shortcut`, and a later
     /// `ShortcutInit` writes it, but `ShortcutData` has no field for it, so the list recomputes it
     /// the way `restoreMe` does (the template's group for etc items, -1 for the rest).
-    // NOTE(java-quirk): `Shortcuts.registerShortcut` takes the group of any item from its template
-    // (0 for most weapons and armor), `restoreMe` only of etc items (-1 for the rest). The client
-    // does not seem to care.
     pub(crate) fn register_shortcut(&mut self, id: ObjectId, shortcut: ShortcutData) -> Option<i32> {
         let group = if shortcut.kind == TYPE_ITEM {
             let object_id = ObjectId(shortcut.shortcut_id);

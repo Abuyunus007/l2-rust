@@ -1,12 +1,6 @@
 //! Clans: the clan table, members, sub pledges, ranks and privileges, clan level, reputation,
 //! the clan notice and the clan window packets (M6-CLAN-01), crests, alliances and clan wars
 //! (M6-CLAN-02).
-// Java: entity/clan/{Clan,ClanMember,ClanPrivileges,ClanAccess,ClanInfo}.java
-// Java: data/sql/ClanTable.java
-// Java: network/clientpackets/{RequestJoinPledge,RequestAnswerJoinPledge,RequestWithdrawalPledge,
-//       RequestOustPledgeMember,RequestPledge*}.java
-// Java: entity/actor/instance/VillageMaster.java (the clan commands of the village masters)
-// Java: network/holders/RequestPartner.java
 // Java (M6-CLAN-02): data/sql/CrestTable.java, entity/clan/Crest.java (`crest.rs`);
 //       entity/clan/Clan.java alliance parts, network/clientpackets/{RequestJoinAlly,...}.java
 //       (`alliance.rs`); data/sql/ClanTable.java wars, network/clientpackets/*PledgeWar*.java
@@ -21,14 +15,6 @@
 // statement ([`ClanWrite`]); the clan columns of an online member's `characters` row are written
 // by the normal store (`PlayerProfile::clan`, Java `storeCharBase`).
 //
-// # Side by side with the Java game server (D-39, D-49)
-// Both servers keep the clans in memory and write the same rows. A change made on one server is
-// seen by the other at its next start (design note). The jobs that write many rows on their own
-// (the dissolution of a clan whose time ran out, the Wednesday leader change, the start-up
-// alliance check and the shutdown save of every clan) run their database part only with
-// `ClanMaintenanceDatabaseWrites = True` in `config/SideBySide.ini` (D-49); without it the world
-// changes its own state and leaves the rows to the Java game server, and at shutdown only the
-// clans this server changed are saved.
 //
 // # Left to other cards
 // - Crests, alliances, clan wars (M6-CLAN-02): their packets reach `ClanInput::NotPorted`; the
@@ -75,8 +61,6 @@ pub use model::{
 };
 pub use request::{RequestPacket, RequestPartner};
 
-/// The configuration values the clan code reads (`Player.ini`, `Feature.ini`, `Server.ini`,
-/// `SideBySide.ini`).
 #[derive(Clone)]
 pub struct ClanSettings {
     /// `DaysBeforeJoinAClan`.
@@ -875,7 +859,6 @@ impl World {
 
 /// Java `int days * 86400000`: an int product, so it wraps for 25 days and more.
 pub(crate) fn java_int_days_ms(days: i32) -> i64 {
-    // NOTE(java-quirk): `PlayerConfig.ALT_CLAN_..._DAYS * 86400000` is computed in `int`.
     i64::from(days.wrapping_mul(86_400_000))
 }
 

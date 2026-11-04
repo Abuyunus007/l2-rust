@@ -1,7 +1,5 @@
 //! Quest 182: New Recruits (Kekropus in the Kamael village sends non-Kamael to the Menacing
 //! Machine in Nornil's Garden).
-// Java: dist/game/data/scripts/quests/Q00182_NewRecruits/Q00182_NewRecruits.java
-//
 // Pattern: a race- and class-restricted quest (`docs/design/scripts.md`, "Quest patterns"):
 // `ctx.player_race(p)` against `race::*` and `ctx.player_class_level(p)` (Java
 // `getPlayerClass().level()`, 0 = no class change yet) decide the first page. The reward is the
@@ -63,8 +61,6 @@ impl Script for Q00182NewRecruits {
                 qs.exit_quest(ctx, false, true);
             }
         }
-        // NOTE(java-quirk): the event is the page whatever happened, so the reward pages can be
-        // asked for again after the quest is done (with no second reward).
         htmltext
     }
 

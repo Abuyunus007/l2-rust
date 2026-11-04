@@ -1,7 +1,5 @@
 //! Quest 335: The Song of the Hunter (Grey sets two tests for a hunter's license, then Tor hands
 //! out the requests of the hunter's circles and Cybellin turns a blood crystal into adena).
-// Java: dist/game/data/scripts/quests/Q00335_TheSongOfTheHunter/Q00335_TheSongOfTheHunter.java
-//
 // Pattern: a repeatable quest driven by tables (`REWARDS`, `DROPLIST`), a memo state that packs
 // five list entries of 5 bits, and an html page with `<?replyN?>` markers
 // (`docs/design/scripts.md`, "Quest patterns": kill count with a drop chance).
@@ -918,7 +916,6 @@ const REQUESTS: [i32; 42] = [
 ];
 
 /// The first circle requests of the `30744-09.html` test.
-// NOTE(java-quirk): Java adds FIRST_CIRCLE_REQUEST_4C twice and leaves out 5C.
 const FIRST_CIRCLE_SUM: [i32; 21] = [
     FIRST_CIRCLE_REQUEST_1C,
     FIRST_CIRCLE_REQUEST_2C,
@@ -961,7 +958,6 @@ const BLOOD_CRYSTALS: [i32; 10] = [
 const CRYSTAL_ADENA: [i64; 9] = [3400, 6800, 13600, 27200, 54400, 108800, 217600, 435200, 870400];
 
 /// The requests of `30745-10a.html`..`30745-14f.html` and the page that hands each out.
-// NOTE(java-quirk): there is no case for `30745-13h.html`, so the Tsunami Shard request (8C) cannot be taken.
 const REQUEST_PAGES: [(&str, i32); 38] = [
     ("30745-10a.html", FIRST_CIRCLE_REQUEST_1C),
     ("30745-10b.html", FIRST_CIRCLE_REQUEST_2C),
@@ -1017,7 +1013,6 @@ fn drop_amount(ctx: &mut ScriptCtx<'_>, amount: i64) -> i64 {
         return amount;
     }
     if ctx.state::<SongState>().talon_amount == 0 {
-        // NOTE(java-quirk): the roll is made once when the class loads, not for each kill.
         let rolled = if ctx.get_random(100) < 60 { 2 } else { 1 };
         ctx.state::<SongState>().talon_amount = rolled;
     }
@@ -1036,7 +1031,6 @@ fn link(id: i32) -> String {
         Some((page, label)) => {
             format!("<a action=\"bypass -h Script {NAME} {page}\">{label}</a><br>")
         }
-        // Java: `html.replace(.., null)` throws on a missing entry.
         None => String::new(),
     }
 }
@@ -1155,7 +1149,6 @@ fn spawn_filcher(
         && ctx.get_random(20) < 2
     {
         spawn_near(ctx, GREMLIN_FILCHER, npc);
-        // NOTE(java-quirk): Java sends a `CreatureSay` built from the NPC; it is shown as speech.
         ctx.broadcast_npc_say(
             npc,
             ChatType::NpcGeneral,

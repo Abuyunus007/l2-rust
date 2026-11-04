@@ -1,5 +1,4 @@
 //! Amaskari's and his prisoners' chat and some skill usage.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/Amaskari.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

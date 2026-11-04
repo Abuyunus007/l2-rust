@@ -1,7 +1,5 @@
 //! `DropSearchBoard`: search an item by name, list the NPCs that drop it, trace an NPC on the
 //! radar.
-// Java: dist/game/data/scripts/handlers/bypass/communityboard/DropSearchBoard.java
-//
 // The index is Java's `DROP_INDEX_CACHE`, built once from all NPC templates (Java builds it in the
 // constructor at start-up; here on the first command, the templates never change after start).
 // The rates are the ones `NpcViewMod` shows (`script_handlers/npc_view.rs`); the premium system is
@@ -309,7 +307,6 @@ impl World {
             pages += 1;
         }
         let start = (i64::from(page) - 1) * 14;
-        // NOTE(java-quirk): `end` is inclusive, so a page shows up to 15 rows.
         let end = (size - 1).min(start + 14);
         let mut builder = String::new();
         let mut index = start;

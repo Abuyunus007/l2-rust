@@ -1,27 +1,16 @@
 //! The `underground_coliseum` table (the best team of each arena) and the two
 //! `global_variables` rows of the battle period (M8-GAMES-01).
-// Java: managers/games/UndergroundColiseumManager.java (restoreBestTeams, saveBestTeam,
-//       generateNewDate)
-// Java: managers/GlobalVariablesManager.java (SELECT_QUERY by variable, INSERT_QUERY)
-//
-// Same layout as fishing.rs: verbatim SQL, one method per statement. D-39, D-53: the Java game
-// server writes the same rows; the world decides which writes go out (`CycleDatabaseWrites`).
 
 use sqlx::FromRow;
 
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: UndergroundColiseumManager.restoreBestTeams
 const SELECT_ALL: &str = "SELECT * FROM underground_coliseum ORDER BY arenaId";
-// Java: UndergroundColiseumManager.saveBestTeam (new)
 const INSERT_TEAM: &str = "INSERT INTO underground_coliseum (`arenaId`, `leader`, `wins`) VALUES (?,?,?) ";
-// Java: UndergroundColiseumManager.saveBestTeam (existing). The first parameter is bound with
 // `setInt(1, team.getArenaId())`, so the leader column gets the arena id.
 const UPDATE_TEAM: &str = "UPDATE underground_coliseum SET leader = ?, wins = ?  WHERE arenaId = ?";
-// Java: GlobalVariablesManager.SELECT_QUERY, for one variable.
 const SELECT_VARIABLE: &str = "SELECT `value` FROM global_variables WHERE `var` = ?";
-// Java: GlobalVariablesManager.INSERT_QUERY
 const REPLACE_VARIABLE: &str = "REPLACE INTO global_variables (var, value) VALUES (?, ?)";
 
 /// A row of `underground_coliseum`.

@@ -1,6 +1,4 @@
 //! The egui window: connection fields, the two schema check boxes, Install, progress and log.
-// Java: org/l2jmobius/tools/DatabaseInstaller.java (`gui`, `installDatabase`)
-//
 // The installation runs on its own thread with a small tokio runtime. It talks to the window
 // through a channel; its questions (database exists, statement failed) are events with a reply
 // channel, and the worker blocks until the window answers.

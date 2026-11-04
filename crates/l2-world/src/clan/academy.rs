@@ -1,8 +1,4 @@
 //! The clan academy: the graduation of a member who completes the 2nd class transfer.
-// Java: entity/actor/Player.java (setPlayerClass: the `_lvlJoinedAcademy` block)
-// Java: config/FeatureConfig.java (`CompleteAcademyMinPoints`, `CompleteAcademyMaxPoints`)
-// Java: data/xml/CategoryData.java (`THIRD_CLASS_GROUP`)
-//
 // # What is where
 // - Joining the academy (level 40 or lower, no 2nd class, `lvl_joined_academy`, power grade 9):
 //   `handlers.rs` (`RequestJoinPledge`, `RequestAnswerJoinPledge`), M6-CLAN-01.

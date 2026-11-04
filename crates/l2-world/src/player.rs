@@ -1,6 +1,5 @@
 //! Players and the data shared by every creature (D-17: data structs, no inheritance).
 //!
-//! Java: `entity/actor/Creature.java`, `Playable.java`, `Player.java`. Only what M2 needs is
 //! here; later milestones add fields (effects, AI state…).
 
 use std::collections::BTreeMap;
@@ -128,11 +127,6 @@ pub struct MacroData {
     pub commands: Vec<MacroCmdData>,
 }
 
-/// The part of a character that lives in tables the Java game server also owns (D-39): values the
-/// enter-world packets show, read from them at load. The persistence task writes back only what
-/// the world models: `vitality_points`, the Nevit variables and the hourglass time
-/// (`variables_changed`, `variables_removed`, `reco_store`, M4-VIT-01), `exp_before_death` and the
-/// saved buffs (`effects_to_store`, M5-SAVE-01); everything else only travels database -> world.
 #[derive(Debug, Clone, PartialEq)]
 pub struct PlayerProfile {
     /// `characters.fame`.
@@ -224,10 +218,6 @@ pub struct PlayerProfile {
     /// and the clan values of `Player`, see `clan/`. `None`: a snapshot that does not carry them
     /// (the store keeps the row's values); the world fills it when the player enters.
     pub clan: Option<crate::clan::PlayerClanState>,
-    /// The character's clan as the session read it at `CharacterSelect` (`clanid` of the row),
-    /// `None` without a clan or when the read failed. The world installs it when its clan table
-    /// does not know the clan (one the Java game server made after this server started, D-39);
-    /// it is taken at enter world, so snapshots never carry it.
     pub clan_record: Option<Box<crate::clan::ClanRecord>>,
     /// The private warehouse, the freight and the other characters of the account as the session
     /// read them (M6-WH-01). The world takes them when the player is created
@@ -243,10 +233,6 @@ pub struct PlayerProfile {
     /// `None` when the read failed. The world replaces its copies of these messages when the
     /// player enters (`mail/refresh.rs`) and takes it, so snapshots never carry it.
     pub mail_refresh: Option<Box<crate::mail::MailRefresh>>,
-    /// The residences of the character's clan as the session read them at `CharacterSelect`
-    /// (M7-RES-01, D-50, D-51): `None` without a clan or when the read failed. The world applies
-    /// them when the player enters (`residence/refresh.rs`) and takes it, so snapshots never carry
-    /// it.
     pub residence_refresh: Option<Box<crate::residence::ResidenceRefresh>>,
     /// The recipe book and the manufacture shop rows as the session read them (M6-CRAFT-01). The
     /// world takes them when the player is created ([`Player::from_data`]), so snapshots never

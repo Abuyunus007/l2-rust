@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/ChatModerationConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/ChatModeration.ini` (Java: `ChatModerationConfig`).

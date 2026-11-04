@@ -1,5 +1,4 @@
 //! Quest 722: For the Sake of the Territory - Innadril.
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/Q00722_ForTheSakeOfTheTerritoryInnadril.java
 
 use l2_protocol_game::NpcStringId;
 

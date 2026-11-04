@@ -1,7 +1,6 @@
 //! The game-traffic stream cipher (`Encryption`) and the game session key generator
 //! (`BlowFishKeygen`).
 //!
-//! Java: gameserver/network/Encryption.java, gameserver/network/BlowFishKeygen.java.
 //!
 //! The cipher is a running XOR over each packet, keyed by a 16-byte session key whose bytes 8..11
 //! hold a little-endian rolling offset. After every packet the offset grows by the packet size, so
@@ -35,9 +34,6 @@ impl GameCipher {
 
     /// Encrypts `buf` in place and advances the outbound offset by `buf.len()`.
     pub fn encrypt(&mut self, buf: &mut [u8]) {
-        // NOTE(java-quirk): the first call only enables the cipher. That packet goes out in clear
-        // and the key does not move. The flag is shared with `decrypt`, so enabling via encrypt
-        // also enables decrypt.
         if !self.enabled {
             self.enabled = true;
             return;

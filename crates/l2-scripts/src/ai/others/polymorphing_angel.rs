@@ -1,5 +1,4 @@
 //! A killed Angel turns into the next one.
-// Java: dist/game/data/scripts/ai/others/PolymorphingAngel.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

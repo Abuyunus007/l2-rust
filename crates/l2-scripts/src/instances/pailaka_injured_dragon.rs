@@ -1,7 +1,5 @@
 //! Pailaka Injured Dragon (the Varka Silenos Barracks), instance 45: Latana, the walls of Varka
 //! and the cinematics.
-// Java: dist/game/data/scripts/instances/PailakaInjuredDragon/PailakaInjuredDragon.java
-//
 // Java keeps flags on the NPCs (`npc.getVariables()`, `npc.getScriptValue()`); here they are the
 // script's state by object id ([`NpcVars`]).
 //

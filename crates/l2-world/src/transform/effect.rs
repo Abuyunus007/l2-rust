@@ -1,6 +1,5 @@
 //! The `Transformation` effect: the buff turns a player into the form `id`; when the buff ends
 //! (death, running out, `TransformDispel`), the player is itself again.
-// Java: dist/game/data/scripts/handlers/skill/effects/Transformation.java
 
 use l2_data::skill::{EffectTemplate, ParamValue};
 

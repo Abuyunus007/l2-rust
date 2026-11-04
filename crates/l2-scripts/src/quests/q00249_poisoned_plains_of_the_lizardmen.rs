@@ -1,7 +1,5 @@
 //! Quest 249: Poisoned Plains of the Lizardmen (Mouen sends the player to Johnny, who has the
 //! investigators' reports on the Plains of the Lizardmen).
-// Java: dist/game/data/scripts/quests/Q00249_PoisonedPlainsOfTheLizardmen/Q00249_PoisonedPlainsOfTheLizardmen.java
-//
 // Pattern: a level-restricted, one-time quest with adena and exp reward and no items
 // (`docs/design/scripts.md`, "Quest patterns"): `exit_quest(ctx, false, true)` at the reward.
 
@@ -44,7 +42,6 @@ impl Script for Q00249PoisonedPlainsOfTheLizardmen {
         let player = player?;
         let htmltext = Some(event.to_owned());
         let Some(qs) = ctx.get_quest_state(player, false) else {
-            // NOTE(java-quirk): Java returns the event as the page when there is no state too.
             return htmltext;
         };
         // Java reads `npc.getId()` without a null check (a bypass always has the NPC).
@@ -83,7 +80,6 @@ impl Script for Q00249PoisonedPlainsOfTheLizardmen {
                 _ => {}
             }
         } else if npc.id == JOHNNY {
-            // NOTE(java-quirk): see the test below, the cond of a finished quest stays set.
             if qs.is_cond(ctx, 1) {
                 htmltext = "32744-01.htm".to_owned();
             } else if qs.is_completed(ctx) {
@@ -166,8 +162,6 @@ mod tests {
             ]
         );
 
-        // NOTE(java-quirk): `exitQuest(false)` keeps `_cond` in memory (Java only clears `_vars`),
-        // so Johnny still shows the cond 1 page until the character logs in again.
         assert!(t.quest_page(1, johnny).contains("32744-01.htm"));
         assert!(t.quest_page(1, mouen).contains("30196-05.htm"));
     }

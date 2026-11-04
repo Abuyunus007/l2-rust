@@ -1,17 +1,9 @@
 //! Quest 21: Hidden Truth (the Mysterious Wizard, a tombstone, the ghost of von Hellmann and his page, a broken bookshelf).
-// Java: dist/game/data/scripts/quests/Q00021_HiddenTruth/Q00021_HiddenTruth.java
-//
 // Pattern: a ghost story with a moving NPC (`docs/design/scripts.md`, "Quest patterns"): the
 // tombstone wakes the ghost (cond 2), the ghost sends its page along a route (cond 3), the page
 // walks back and the bookshelf gives the cross of Einhasad (cond 6). The three priests Agripel,
 // Benedict and Dominic each check off one of their flags (cond 7), and Innocentin pays the reward.
 // One-time: `exit_quest(ctx, false, true)`.
-//
-// NOTE(java-quirk): the route-finished DESPAWN timer is started without a player, and Java's
-// `getQuestState(null, ..)` throws there, which `notifyEvent` catches: the page is never
-// despawned by that timer (only the talk path despawns it).
-// The page walks the datapack route `rune_ghost1b` through `World::walking_start_moving`; the
-// unit tests have no walker data, so they call the route-finished hook themselves.
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;
@@ -97,8 +89,6 @@ impl Script for Q00021HiddenTruth {
         npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        // NOTE(java-quirk): a timer without a player (the route's DESPAWN) makes Java's
-        // `getQuestState(null, false)` throw, and `notifyEvent` swallows it: nothing runs.
         let player = player?;
         let qs = ctx.get_quest_state(player, false)?;
 
@@ -131,7 +121,6 @@ impl Script for Q00021HiddenTruth {
                     htmltext = Some("31523-04.html".to_owned());
                     ctx.play_sound(player, QuestSound::SkillsoundHorror02);
                 } else {
-                    // Java: `addSpawn(GHOST, GHOST_LOC, false, 0)` and its "Who awoke me?".
                     if let Some(ghost) = ctx.add_spawn(
                         GHOST_OF_VON_HELLMAN,
                         GHOST_LOC.0,
@@ -153,7 +142,6 @@ impl Script for Q00021HiddenTruth {
             }
             "31524-06.html" => {
                 if ctx.state::<HiddenTruthState>().page_count < 5 {
-                    // Java: the page, its script value (the player), its NPC say and its route.
                     if let Some(page) = ctx.add_spawn(
                         GHOST_OF_VON_HELLMANS_PAGE,
                         PAGE_LOC.0,
@@ -238,7 +226,6 @@ impl Script for Q00021HiddenTruth {
                     if ctx.state::<HiddenTruthState>().page_spawned {
                         htmltext = "31524-07b.html".to_owned();
                     } else if ctx.state::<HiddenTruthState>().page_count < 5 {
-                        // Java: `addSpawn(PAGE, PAGE_LOC, true, 0)`: the page walks for this player.
                         if let Some(page) = ctx.add_spawn(
                             GHOST_OF_VON_HELLMANS_PAGE,
                             PAGE_LOC.0,
@@ -356,14 +343,12 @@ impl Script for Q00021HiddenTruth {
     }
 
     fn on_creature_see(&self, ctx: &mut ScriptCtx<'_>, _npc: ScriptNpc, creature: ObjectId) {
-        // Java: `creature.isPlayer()`.
         if ctx.world().player(creature).is_some() {
             ctx.play_sound(creature, QuestSound::Horror01);
         }
     }
 
     fn on_route_finished(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
-        // Java: `World.getPlayer(npc.getScriptValue()).getQuestState(getName())`.
         let player = ObjectId(ctx.get_script_value(npc));
         if ctx.player_quest_state(player, NAME).is_some() {
             ctx.start_quest_timer("DESPAWN", 15_000, Some(npc), None, false);

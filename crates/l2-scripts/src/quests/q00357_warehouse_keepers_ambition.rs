@@ -1,6 +1,4 @@
 //! Quest 357: Warehouse Keeper's Ambition (Warehouse Keeper Silva, Jades in the Enchanted Valley).
-// Java: dist/game/data/scripts/quests/Q00357_WarehouseKeepersAmbition/Q00357_WarehouseKeepersAmbition.java
-//
 // Pattern: a repeatable kill-count quest with a drop chance (`docs/design/scripts.md`, "Quest
 // patterns"): the jades drop with no limit to a random started party member, the NPC pays for
 // them (a bonus from 100 jades) and the player chooses to go on or to quit.
@@ -88,8 +86,6 @@ impl Script for Q00357WarehouseKeepersAmbition {
                 "30686-11.html" => {
                     let crystal_count = ctx.get_quest_items_count(player, JADE_CRYSTAL);
                     if crystal_count > 0 {
-                        // NOTE(java-quirk): quitting pays the 40500 bonus from 100 jades, but not
-                        // the 13500 that "Receive reward" adds below 100.
                         let bonus = if crystal_count >= 100 { 40500 } else { 0 };
                         ctx.give_adena(player, crystal_count * 425 + bonus, true);
                         ctx.take_items(player, JADE_CRYSTAL, -1);

@@ -1,6 +1,4 @@
 //! The movie holder: `Quest.playMovie` and `EndScenePlayer` (S-API-03).
-// Java: entity/actor/holders/player/MovieHolder.java, entity/actor/Player.java (playMovie,
-//       stopMovie, getMovieHolder), network/clientpackets/EndScenePlayer.java
 
 use l2_protocol_game::server::ExStartScenePlayer;
 use l2_util::ObjectId;

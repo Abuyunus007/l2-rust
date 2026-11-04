@@ -1,5 +1,4 @@
 //! The slaves of Hellbound: when their master falls they thank the players and walk away.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/Slaves.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;
@@ -38,8 +37,6 @@ impl Script for Slaves {
     }
 
     fn on_spawn(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
-        // NOTE(java-quirk): `enableMinions(level < 5)` sets a field nothing reads in this
-        // version, so the minions spawn at every level.
         ctx.world_mut().set_on_kill_delay(npc.object_id, 1000);
     }
 

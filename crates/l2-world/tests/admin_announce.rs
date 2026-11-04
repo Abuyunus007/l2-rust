@@ -1,7 +1,6 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
 //! The announcements, the petition system, the packet forge and `//debug` of M7-ADMIN-10.
-//! Java: dist/game/data/scripts/handlers/chat/commands/admin/{AdminAnnouncements,AdminPetition,
 //! AdminPForge,AdminDebug}.java, managers/PetitionManager.java, data/sql/AnnouncementsTable.java,
 //! mechanics/announce/*.java.
 
@@ -885,7 +884,6 @@ fn force_peti_opens_a_consultation_with_the_target() {
         system_to(&out, GM)[1].id,
         SystemMessageId::StartingPetitionConsultationWithC1
     );
-    // NOTE(java-quirk): the text starts with the last letter of the command.
     s.cmd(GM, "view_petitions");
     let page = html_to(&s.log.take(), GM).remove(0);
     // The petition is in process: no buttons, the GM's name instead, and the type 9.
@@ -968,7 +966,6 @@ fn the_forge_pages() {
         texts_to(&s.log.take(), GM),
         ["Usage: //forge_values opcode1[ opcode2[ opcode3]] ;[ format]"]
     );
-    // NOTE(java-quirk): a word is accepted as a second op code.
     s.cmd(GM, "forge_values 1 abc");
     assert_eq!(
         html_to(&s.log.take(), GM)[0],

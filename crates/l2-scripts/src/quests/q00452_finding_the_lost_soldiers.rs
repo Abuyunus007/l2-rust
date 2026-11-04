@@ -1,6 +1,4 @@
 //! Quest 452: Finding the Lost Soldiers (Jakan; the soldier corpses give the dog tags).
-// Java: dist/game/data/scripts/quests/Q00452_FindingtheLostSoldiers/Q00452_FindingtheLostSoldiers.java
-//
 // Pattern: talk NPCs that are not the start NPC. Each corpse is searched once (`on_event` gets the
 // corpse, `deleteMe`) and moves the quest to cond 2; the start NPC pays out (daily quest).
 

@@ -1,12 +1,4 @@
 //! The effect engine: what skills leave on a creature. Design: `docs/design/m5-skills.md`.
-// Java: entity/actor/holders/creature/EffectList.java (see `list.rs`)
-// Java: mechanics/skill/{BuffInfo,BuffFinishTask}.java (see `buff_info.rs`)
-// Java: mechanics/skill/Skill.java (applyEffects, applyEffectScope, activateSkill; `apply.rs`)
-// Java: mechanics/effects/{AbstractEffect,EffectFlag,EffectType,EffectTickTask}.java and the
-//       handler registry (`registry.rs`, `handlers/`)
-// Java: entity/actor/Creature.java (getEffectList, stopAllEffects*, the abnormal visual effects,
-//       isAffected, addInvulAgainst / isInvulAgainst)
-//
 // # How it fits together
 // - Every creature that has effects has one [`EffectList`] in `World::effects` (a side table by
 //   object id, like `statuses`). It holds Java's six queues of [`BuffInfo`]s (buffs, triggered,

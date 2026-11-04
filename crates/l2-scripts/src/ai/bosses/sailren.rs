@@ -1,8 +1,6 @@
 //! Sailren, the Primeval Isle raid: Shilen's Stone Statue takes a party in with a Gazkh, three
 //! Velociraptors, a Pterosaur and a Tyrannosaurus come first, then Sailren with his cinematic;
 //! one hour after his death the lair opens again.
-// Java: dist/game/data/scripts/ai/bosses/Sailren/Sailren.java
-//
 // The Java constructor is `setup` (the listeners) and `on_load` (the respawn row); the `static`
 // fields are `SailrenState` (`ctx.state`). Java disables the script when the zone 70049 is not
 // there: `enabled` does the same.
@@ -119,7 +117,6 @@ impl Script for Sailren {
         "ai/bosses/Sailren"
     }
 
-    /// Java: the zone must exist; otherwise the AI is disabled cleanly.
     fn enabled(&self, world: &World) -> bool {
         let found = world.zone_by_id(SAILREN_ZONE_ID, SAILREN_ZONE_TYPE).is_some();
         if !found {
@@ -389,7 +386,6 @@ fn handle_enter_event(
                 st.last_attack_time = now;
             }
 
-            // Java: `npc` is dereferenced for every member; a null one throws.
             let npc = npc?;
             for member in ctx.world().party_members(party) {
                 if crate::ai::areas::gracia::util::distance_3d(ctx, member, npc.object_id)

@@ -1,11 +1,6 @@
 //! The `Player` / `Npc` calls the quest ports make beyond `Quest`'s helpers (S-PILOT-01): race
 //! and class of a player, the NPC's script value and busy flag, the class change of the sagas,
 //! the state Java scripts share through a `static` field of their base class.
-// Java: entity/actor/Player.java (getRace, getPlayerClass, getBaseClass, isMageClass,
-//       setPlayerClass, setBaseClass, broadcastUserInfo)
-// Java: entity/actor/Npc.java (get/set/isScriptValue, setBusy, isBusy, dropItem)
-// Java: entity/actor/enums/creature/Race.java, entity/actor/enums/player/PlayerClass.java
-//
 // The race and class values are Java's ints (`Race.ordinal()`, `PlayerClass.getId()`): a port
 // compares `ctx.player_race(p) == race::DARK_ELF` where Java has `player.getRace() == Race.DARK_ELF`
 // and `ctx.player_class_id(p) == player_class::ORC_MAGE` for `getPlayerClass() == ORC_MAGE`.

@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/DualboxCheckConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/DualboxCheck.ini` (Java: `DualboxCheckConfig`).

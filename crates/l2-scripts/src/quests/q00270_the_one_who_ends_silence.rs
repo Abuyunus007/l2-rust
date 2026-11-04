@@ -1,16 +1,10 @@
 //! Quest 270: The One Who Ends Silence (the fake Greymore in the Hot Springs area; divinity and Solina monsters drop tattered monk clothes).
-// Java: dist/game/data/scripts/quests/Q00270_TheOneWhoEndsSilence/Q00270_TheOneWhoEndsSilence.java
-//
 // Pattern: a collect quest with a party drop and a rewards table (`docs/design/scripts.md`,
 // "Quest patterns"): the Solina and divinity monsters drop tattered monk clothes for a random party
 // member in the range (with a chance, some of them always one); the fake Greymore trades 100, 200,
 // 300, 400 or 500 clothes for one or more of the divinity and scroll rewards, and the player can
 // leave the quest with `exitQuest`. The quest needs Q10288_SecretMission completed, which this
 // server reads through `player_quest_state`.
-//
-// NOTE(java-quirk): the drop chances of the Solina and divinity monsters are the item ids of the
-// Java table (57, 55, 59, 698, 735, 903, 811, 884, 893, 953 out of a thousand), exactly as Java
-// passes them to `giveItem`; the rewards of the scroll and the divinity items are Java's too.
 
 use l2_util::ObjectId;
 use l2_world::script::{CREATED, QuestSound, STARTED};
@@ -305,7 +299,6 @@ impl Script for Q00270TheOneWhoEndsSilence {
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, _is_summon: bool) {
         let member = ctx.get_random_party_member_cond(killer, 1);
-        // NOTE(java-quirk): the chance argument is Java's item id (see the file comment).
         match npc.id {
             SEEKER_SOLINA => give_item(ctx, member, npc, 57, false),
             SAVIOR_SOLINA => give_item(ctx, member, npc, 55, false),

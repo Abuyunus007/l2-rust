@@ -1,6 +1,5 @@
 //! The settings of the custom monster features (M9-C01): `Custom/ChampionMonsters.ini`,
 //! `Custom/BossAnnouncements.ini` and `Custom/NpcStatMultipliers.ini`, from the generated config.
-// Java: config/custom/{ChampionMonstersConfig,BossAnnouncementsConfig,NpcStatMultipliersConfig}.java
 
 use std::path::Path;
 

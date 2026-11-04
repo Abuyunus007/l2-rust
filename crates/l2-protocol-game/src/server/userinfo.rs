@@ -15,7 +15,6 @@ use crate::generated::opcodes::ServerOpcode;
 const WEAPON_EQUIPPED: i32 = 40;
 const NO_WEAPON: i32 = 20;
 
-// Java: gameserver/network/serverpackets/UserInfo.java
 #[derive(Debug, Clone, PartialEq, Default)]
 pub struct UserInfo {
     /// `getX()`, `getY()`, `getZ()`.
@@ -38,7 +37,6 @@ pub struct UserInfo {
     pub level: i32,
     /// `getExp()`.
     pub exp: i64,
-    /// Java: `(float) (exp - expForLevel(level)) / (expForLevel(level + 1) - expForLevel(level))`
     /// widened to double; compute it with [`super::exp_percent`].
     pub exp_percent: f64,
     /// `getSTR()`.
@@ -275,8 +273,6 @@ impl Encode for UserInfo {
         w.i32(self.p_atk).i32(self.p_atk_spd).i32(self.p_def);
         w.i32(self.evasion).i32(self.accuracy).i32(self.critical);
         w.i32(self.m_atk).i32(self.m_atk_spd);
-        // NOTE(java-quirk): the physical attack speed is written a second time here, after the
-        // magic attack speed (Java calls `getPAtkSpd()` twice).
         w.i32(self.p_atk_spd).i32(self.m_def);
         w.i32(self.pvp_flag).i32(self.karma);
         w.i32(self.run_speed)
@@ -304,7 +300,6 @@ impl Encode for UserInfo {
             .u8(self.private_store_type)
             .bool(self.has_dwarven_craft);
         w.i32(self.pk_kills).i32(self.pvp_kills);
-        // Java: `writeShort(cubics.size())`, the low 16 bits of the count.
         w.u16(self.cubics.len() as u16);
         for &cubic in &self.cubics {
             w.i16(cubic);

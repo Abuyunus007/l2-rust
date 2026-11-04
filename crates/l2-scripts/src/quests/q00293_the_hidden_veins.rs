@@ -1,6 +1,4 @@
 //! Quest 293: The Hidden Veins (Filaur in the Dwarven Village buys the chrysolite ore and the hidden ore maps).
-// Java: dist/game/data/scripts/quests/Q00293_TheHiddenVeins/Q00293_TheHiddenVeins.java
-//
 // Pattern: a collect quest that ends with a trade (`docs/design/scripts.md`, "Quest patterns"): the
 // lizardman-like kasha monsters drop chrysolite ore (half of the rolls) or a torn map fragment (rare);
 // Chichirin trades four fragments for a hidden ore map; Filaur pays for the ore and the maps and

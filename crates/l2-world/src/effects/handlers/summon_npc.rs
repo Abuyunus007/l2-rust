@@ -1,5 +1,4 @@
 //! The `SummonNpc` effect: a decoy, or an NPC that despawns after a while.
-// Java: dist/game/data/scripts/handlers/skill/effects/SummonNpc.java
 
 use l2_data::skill::EffectTemplate;
 use tracing::warn;

@@ -1,7 +1,5 @@
 //! `MailManager`: the table of mails, who has what in the inbox and outbox, and the changes with
 //! their rows.
-// Java: managers/MailManager.java, network/holders/MailMessage.java (markAsRead,
-// Java: setDeletedBySender, setDeletedByReceiver, removeAttachments)
 
 use l2_protocol_game::server::ExNoticePostArrived;
 use l2_util::ObjectId;
@@ -42,7 +40,6 @@ impl World {
     }
 
     /// Java `MailManager.hasUnreadPost(player)`.
-    // NOTE(java-quirk): a mail the receiver deleted without reading it still counts.
     pub fn mail_has_unread_post(&self, receiver: ObjectId) -> bool {
         self.mail
             .messages

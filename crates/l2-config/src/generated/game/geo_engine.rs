@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/GeoEngineConfig.java
 
 use crate::IniFile;
 /// Settings of `config/GeoEngine.ini` (Java: `GeoEngineConfig`).

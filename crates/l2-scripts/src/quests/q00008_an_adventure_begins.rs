@@ -1,6 +1,4 @@
 //! Quest 8: An Adventure Begins (Jasmine in Talking Island sends a dark elf to Roselyn and Harne).
-// Java: dist/game/data/scripts/quests/Q00008_AnAdventureBegins/Q00008_AnAdventureBegins.java
-//
 // Pattern: a delivery chain (`docs/design/scripts.md`, "Quest patterns"): Jasmine starts it,
 // Roselyn hands out the note (cond 2), Harne takes it (cond 3), and Jasmine pays the reward
 // items. One-time: `exit_quest(ctx, false, true)`.

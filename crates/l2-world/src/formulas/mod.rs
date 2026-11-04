@@ -5,7 +5,6 @@
 //! (effect landing, skill mastery, abnormal time), [`heal`] (the Heal effect's amount) and
 //! [`traits`] (trait and element bonuses of skills).
 //!
-//! Java: `gameserver/mechanics/stats/Formulas.java` (+ `HitConditionBonusData.getConditionBonus`,
 //! `Creature.calculateTimeBetweenAttacks` / `calculateReuseTime` / `getRandomDamageMultiplier`).
 //!
 //! # The pattern (copy it for the formulas of later cards)
@@ -24,7 +23,6 @@
 //! - Every random draw goes through the [`Rnd`] trait in Java's order, so a recorded sequence
 //!   of draws (the `rnd` lists of `crates/l2-testkit/vectors/formulas_*.json`) replays exactly.
 //!   The world's seedable RNG ([`WorldRng`](crate::WorldRng)) implements [`Rnd`].
-//! - Quirks stay: marked `// NOTE(java-quirk):`.
 //!
 //! Tests: unit tests next to each function, and `tests/formula_vectors.rs` (normal attacks) and
 //! `tests/skill_formula_vectors.rs` (skills) for the Java vectors.

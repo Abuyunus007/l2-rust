@@ -1,10 +1,6 @@
 //! The admin words of the script systems: `//show_quests`, `//quest_info` (S-API-03),
 //! `//quest_reload`, `//script_load`, `//script_unload`, `//charquestmenu`, `//setcharquest`
 //! and `//reload quest` (S-ADMIN-08).
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminQuest.java
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminShowQuests.java
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminReload.java (`quest`)
-//
 // # Reload and load with compiled-in scripts (D-16)
 // Java recompiles the script file. A Rust script is compiled in, so `//quest_reload` is
 // unload-then-load of the same code (`World::reload_script`): `onSave`, the timers and the
@@ -164,7 +160,6 @@ fn admin_quest_info(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
         items = format!("{}:{}", quest_items.len(), &items[2..]);
     }
     let mut timers = String::new();
-    // Java: `_questTimers` is a `HashMap` of lists by name; the `break` leaves one list only.
     let mut by_timer_name: BTreeMap<String, Vec<_>> = BTreeMap::new();
     for (name, npc, player, repeating) in world.quest_timers_of(script) {
         by_timer_name
@@ -295,7 +290,6 @@ fn admin_script_unload(world: &mut World, gm: ObjectId, command: &str) -> Outcom
     let mut st = Tokens::new(command);
     st.next_token();
     let Some(script) = st.next_token() else {
-        // NOTE(java-quirk): the usage text names `//script_load`.
         world.send_sys_message(gm, "Usage: //script_load path/to/script.java");
         return Ok(());
     };
@@ -334,7 +328,6 @@ pub(crate) fn reload_quest(world: &mut World, gm: ObjectId, value: Option<&str>)
         if let Some(id) = world.scripts.by_name(value) {
             world.reload_script(id);
         }
-        // NOTE(java-quirk): the broadcast does not depend on the script being found.
         world.broadcast_message_to_gms(&format!("{gm_name}: Reloaded Quest Name:{value}."));
     }
     Ok(())
@@ -667,8 +660,6 @@ fn set_quest_var(
             }
             "CC" => {
                 let qs = new_quest_state(world, target, &quest)?;
-                // NOTE(java-quirk): the fresh state is `CREATED`, and `exitQuest` does nothing
-                // for a quest that is not started, so "Create & Complete" only creates it.
                 qs.exit_quest(&mut ScriptCtx::new(world, qs.script), false, false);
                 send_quest_update(world, target, qs.script);
                 val[0] = Some(world.scripts.name_of(qs.script).to_owned());

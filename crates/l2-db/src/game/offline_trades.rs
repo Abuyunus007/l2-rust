@@ -1,34 +1,20 @@
 //! The `character_offline_trade` and `character_offline_trade_items` tables: the shops of the
 //! characters that stay in the world without a client (offline trade).
-// Java: org/l2jmobius/gameserver/data/sql/OfflineTraderTable.java (SAVE_OFFLINE_STATUS, SAVE_ITEMS,
-// Java: CLEAR_OFFLINE_TABLE*, LOAD_OFFLINE_STATUS, LOAD_OFFLINE_ITEMS)
-//
-// Same layout as characters.rs: verbatim SQL, one method per statement. The Rust game server
-// touches these tables only with `OfflineTradeDatabaseWrites = True` in `SideBySide.ini` (D-39,
-// D-52: the Java game server restores the rows at its next start).
 
 use sqlx::FromRow;
 
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: OfflineTraderTable.SAVE_OFFLINE_STATUS
 const SAVE_OFFLINE_STATUS: &str =
     "INSERT INTO character_offline_trade (`charId`,`time`,`type`,`title`) VALUES (?,?,?,?)";
-// Java: OfflineTraderTable.SAVE_ITEMS
 const SAVE_ITEMS: &str =
     "INSERT INTO character_offline_trade_items (`charId`,`item`,`count`,`price`) VALUES (?,?,?,?)";
-// Java: OfflineTraderTable.CLEAR_OFFLINE_TABLE
 const CLEAR_OFFLINE_TABLE: &str = "DELETE FROM character_offline_trade";
-// Java: OfflineTraderTable.CLEAR_OFFLINE_TABLE_PLAYER
 const CLEAR_OFFLINE_TABLE_PLAYER: &str = "DELETE FROM character_offline_trade WHERE `charId`=?";
-// Java: OfflineTraderTable.CLEAR_OFFLINE_TABLE_ITEMS
 const CLEAR_OFFLINE_TABLE_ITEMS: &str = "DELETE FROM character_offline_trade_items";
-// Java: OfflineTraderTable.CLEAR_OFFLINE_TABLE_ITEMS_PLAYER
 const CLEAR_OFFLINE_TABLE_ITEMS_PLAYER: &str = "DELETE FROM character_offline_trade_items WHERE `charId`=?";
-// Java: OfflineTraderTable.LOAD_OFFLINE_STATUS
 const LOAD_OFFLINE_STATUS: &str = "SELECT * FROM character_offline_trade";
-// Java: OfflineTraderTable.LOAD_OFFLINE_ITEMS
 const LOAD_OFFLINE_ITEMS: &str = "SELECT * FROM character_offline_trade_items WHERE `charId`=?";
 
 /// A row of `character_offline_trade`.
@@ -72,7 +58,6 @@ impl OfflineTradeRepository {
     }
 
     /// `DELETE FROM character_offline_trade` and `DELETE FROM character_offline_trade_items`.
-    // Java: OfflineTraderTable.storeOffliners (the two statements it starts with)
     pub async fn clear_all(&self) -> Result<()> {
         sqlx::query(CLEAR_OFFLINE_TABLE).execute(&self.pool).await?;
         sqlx::query(CLEAR_OFFLINE_TABLE_ITEMS).execute(&self.pool).await?;
@@ -80,7 +65,6 @@ impl OfflineTradeRepository {
     }
 
     /// `DELETE FROM character_offline_trade_items WHERE charId=?`.
-    // Java: OfflineTraderTable.onTransaction, removeTrader
     pub async fn clear_player_items(&self, char_id: i32) -> Result<()> {
         sqlx::query(CLEAR_OFFLINE_TABLE_ITEMS_PLAYER)
             .bind(char_id)
@@ -90,7 +74,6 @@ impl OfflineTradeRepository {
     }
 
     /// `DELETE FROM character_offline_trade WHERE charId=?`.
-    // Java: OfflineTraderTable.onTransaction, removeTrader
     pub async fn clear_player_status(&self, char_id: i32) -> Result<()> {
         sqlx::query(CLEAR_OFFLINE_TABLE_PLAYER)
             .bind(char_id)
@@ -100,7 +83,6 @@ impl OfflineTradeRepository {
     }
 
     /// `INSERT INTO character_offline_trade_items (charId,item,count,price) VALUES (?,?,?,?)`.
-    // Java: OfflineTraderTable.SAVE_ITEMS
     pub async fn insert_item(&self, char_id: i32, item: i32, count: i64, price: i64) -> Result<()> {
         sqlx::query(SAVE_ITEMS)
             .bind(char_id)
@@ -113,7 +95,6 @@ impl OfflineTradeRepository {
     }
 
     /// `INSERT INTO character_offline_trade (charId,time,type,title) VALUES (?,?,?,?)`.
-    // Java: OfflineTraderTable.SAVE_OFFLINE_STATUS
     pub async fn insert_status(
         &self,
         char_id: i32,
@@ -132,7 +113,6 @@ impl OfflineTradeRepository {
     }
 
     /// Every shop in the table (the rows `restoreOfflineTraders` walks).
-    // Java: OfflineTraderTable.restoreOfflineTraders (LOAD_OFFLINE_STATUS)
     pub async fn load_status(&self) -> Result<Vec<OfflineTradeStatusRow>> {
         Ok(sqlx::query_as::<_, OfflineTradeStatusRow>(LOAD_OFFLINE_STATUS)
             .fetch_all(&self.pool)
@@ -140,7 +120,6 @@ impl OfflineTradeRepository {
     }
 
     /// The lines of one shop, in the order the rows come back.
-    // Java: OfflineTraderTable.restoreOfflineTraders (LOAD_OFFLINE_ITEMS)
     pub async fn load_items(&self, char_id: i32) -> Result<Vec<OfflineTradeItemRow>> {
         Ok(sqlx::query_as::<_, OfflineTradeItemRow>(LOAD_OFFLINE_ITEMS)
             .bind(char_id)

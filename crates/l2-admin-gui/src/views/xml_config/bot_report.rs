@@ -1,7 +1,6 @@
 //! `BotReportPunishments.xml`: the skill a reported player gets at a number of reports, and the
 //! system message he sees.
 //!
-//! Java: `data/BotReportTable.java` (`PunishmentsLoader`): `neededReportCount`, `skillId`,
 //! `skillLevel` (default 1) and `sysMessageId` (optional). A negative count is a range: the
 //! punishment applies from that many reports up. Rust loader:
 //! `game-server/src/world_data.rs` (`bot_report_punishments_from_xml`).
@@ -78,8 +77,6 @@ impl XmlForm for BotReportForm {
                 None => issues.push(Issue::error(row, "neededReportCount", "must be a whole number")),
                 Some(0) => issues.push(Issue::error(row, "neededReportCount", "must not be 0")),
                 Some(c) if count.get(&c).copied().unwrap_or(0) > 1 => {
-                    // NOTE(java-quirk): the punishments are a map by count; a repeated count
-                    // replaces the earlier one.
                     issues.push(Issue::error(
                         row,
                         "neededReportCount",

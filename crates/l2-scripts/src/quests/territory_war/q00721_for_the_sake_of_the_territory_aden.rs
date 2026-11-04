@@ -1,5 +1,4 @@
 //! Quest 721: For the Sake of the Territory - Aden.
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/Q00721_ForTheSakeOfTheTerritoryAden.java
 
 use l2_protocol_game::NpcStringId;
 

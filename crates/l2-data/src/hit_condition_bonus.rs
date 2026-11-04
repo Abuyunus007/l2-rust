@@ -1,6 +1,5 @@
 //! Hit condition bonus: the percentage an attack gains or loses from height, side, night and rain.
 //!
-//! Java: `gameserver/data/xml/HitConditionBonusData.java`. The formula (`getConditionBonus`)
 //! belongs to the combat formulas (M4), it is not here.
 //! Data: `data/stats/hitConditionBonus.xml` (`xsd/hitConditionBonus.xsd`).
 

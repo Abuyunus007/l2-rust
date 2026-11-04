@@ -1,6 +1,5 @@
 //! Castle Dungeon instance zone: the prison manager of a castle lets its clan's party fight three
 //! raid bosses in a row.
-// Java: dist/game/data/scripts/instances/CastleDungeon/CastleDungeon.java
 
 use l2_util::ObjectId;
 use l2_world::residence::FortId;
@@ -117,8 +116,6 @@ impl Script for CastleDungeon {
             return Some("36403-01.html".to_owned());
         }
 
-        // NOTE(java-quirk): Java would throw on an NPC without a castle (and `showError`);
-        // here nothing happens.
         let castle = ctx.world().npc_castle(npc.object_id)?;
         if ctx.world().is_castle_siege_in_progress(castle) {
             return Some("36403-04.html".to_owned());

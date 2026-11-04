@@ -1,7 +1,5 @@
 //! The petition commands of the GMs: `//view_petitions`, `//view_petition`, `//accept_petition`,
 //! `//reject_petition`, `//reset_petitions` and `//force_peti`.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminPetition.java
-//
 // The queue and the packets are in `petition.rs`.
 
 use l2_protocol_game::SystemMessageId;
@@ -85,8 +83,6 @@ fn admin_petition(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
             world.send(gm, &SystemMessage::new(SystemMessageId::ThatIsAnIncorrectTarget));
             return Ok(());
         };
-        // NOTE(java-quirk): `command.substring(15)` starts one character too early: the text
-        // begins with the last letter of the command ("i text").
         let Some(text) = command.get(15..) else {
             world.send_sys_message(gm, "Usage: //force_peti text");
             return Ok(());

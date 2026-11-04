@@ -1,12 +1,5 @@
 //! Targets and clicks: `Action`, `RequestTargetCanceld`, `Player.setTarget` and what a click on an
 //! NPC, a player, a door or a sign does.
-// Java: network/clientpackets/{Action,RequestTargetCanceld}.java
-// Java: entity/actor/Player.java (setTarget), entity/actor/Creature.java (setTarget)
-// Java: entity/WorldObject.java (onAction, onActionShift)
-// Java: dist/game/data/scripts/handlers/actions/click/{NpcClick,PlayerClick,DoorClick,
-//       StaticObjectClick}.java
-// Java: entity/World.java (removeVisibleObject, switchRegion: the targets they clear)
-//
 // # What is left out, with the system that brings it
 // - Observer mode, the bot-penalty effect, spawn
 //   protection (`onActionRequest`): none of them exist yet.
@@ -433,11 +426,9 @@ impl World {
         match self.objects.get(&obj).map(|e| e.kind) {
             Some(ObjectKind::Npc) => self.npc_click(player, obj, interact),
             Some(ObjectKind::Player) => self.player_click(player, obj, interact),
-            // Java: SummonClick
             Some(ObjectKind::Summon) => self.summon_click(player, obj, interact),
             Some(ObjectKind::Door) => self.door_click(player, obj, interact),
             Some(ObjectKind::StaticObject) => self.static_object_click(player, obj, interact),
-            // Java: ItemClick
             Some(ObjectKind::Item) => self.item_click(player, obj),
             // A fence has no click handler.
             _ => {}

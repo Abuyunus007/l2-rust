@@ -4,7 +4,6 @@
 //! commands, invitations, withdrawal and expulsion, ranks and privileges, the leader change,
 //! the clan level, sub pledges, the dissolution, the notice, the clan target handlers and the
 //! clan conditions.
-//! Java: entity/clan/{Clan,ClanMember}.java, data/sql/ClanTable.java,
 //! entity/actor/instance/VillageMaster.java, network/clientpackets/{RequestJoinPledge,
 //! RequestAnswerJoinPledge,RequestWithdrawalPledge,RequestOustPledgeMember,RequestPledge*}.java,
 //! network/clientpackets/EnterWorld.java (the clan block), Player.restore / deleteMe,
@@ -737,9 +736,6 @@ fn a_member_entering_sees_the_clan_window_and_the_others_are_told() {
 fn an_unknown_clan_leaves_the_row_alone() {
     let mut s = Scene::new();
     s.load(vec![lions(5, vec![member(P1, 1, 0)])]);
-    // Clan 777 is unknown and the session found no row for it; P3 says it is in clan 500, which
-    // does not list it, and its read failed. D-39: both are clanless here, but nothing of their
-    // rows changes (Java's `setClan(null)` would write `clanid = 0` and clear the title).
     for (id, clan_id) in [(P2, 777), (P3, CLAN)] {
         let mut data = member_data(id, clan_id, 5, 0);
         data.title = "Old title".to_owned();
@@ -773,7 +769,6 @@ fn an_unknown_clan_leaves_the_row_alone() {
 fn a_clan_made_on_the_java_server_is_added_at_login() {
     let mut s = Scene::new();
     s.load(vec![lions(5, vec![member(P1, 1, 0)])]);
-    // The Java game server made clan 600 with P4 as its leader after this server started.
     let mut data = member_data(P4, 600, 0, 0);
     data.profile.clan_record = Some(Box::new(ClanRecord {
         clan_id: 600,
@@ -798,7 +793,6 @@ fn a_clan_made_on_the_java_server_is_added_at_login() {
     let all = &decoded::<PledgeShowMemberListAll>(&out, P4, "PLEDGE_SHOW_MEMBER_LIST_ALL")[0];
     assert_eq!((all.clan_id, all.clan_name.as_str()), (600, "Tigers"));
 
-    // P2 joined the Lions on the Java game server: the clan here does not list it yet.
     let mut data = member_data(P2, CLAN, 5, 0);
     data.profile.clan_record = Some(Box::new(lions(5, vec![member(P1, 1, 0), member(P2, 5, 0)])));
     s.enter(data);
@@ -1471,7 +1465,6 @@ fn rank_privileges_reach_the_members_of_the_rank() {
     s.clan_input(P2, ClanInput::PledgePowerGradeList);
     let list = &decoded::<PledgePowerGradeList>(&s.take(), P2, "PLEDGE_POWER_GRADE_LIST")[0];
     let ranks: Vec<(i32, i32)> = list.privs.iter().map(|p| (p.rank, p.privileges)).collect();
-    // NOTE(java-quirk): Java writes `getParty()` (0) where the privileges would be.
     assert_eq!(ranks, (1..10).map(|r| (r, 0)).collect::<Vec<_>>());
 }
 
@@ -1674,8 +1667,6 @@ fn a_leader_change_gives_the_new_leaders_rank_every_privilege() {
     let out = s.take();
     assert_eq!(s.clan().leader, Some(ObjectId(P2)));
     assert!(s.world.is_clan_leader(ObjectId(P2)) && !s.world.is_clan_leader(ObjectId(P1)));
-    // NOTE(java-quirk): `newLeader.getClanPrivileges().enableAll()` on the rank's own object: rank
-    // 5 has every privilege now.
     assert_eq!(s.clan().rank_privs(5), 0x00FF_FFFF);
     assert_eq!(s.world.clan_privileges_of(ObjectId(P1)), 0);
     for id in [P1, P2] {
@@ -1859,8 +1850,6 @@ fn level_six_costs_reputation_and_needs_members() {
         ids_to(&out, P1)
             .contains(&SystemMessageId::NowThatYourClanLevelIsAboveLevel5ItCanAccumulateClanReputationPoints)
     );
-    // NOTE(java-quirk): `changeLevel` does not compute the pledge classes again: the leader stays
-    // class 4 (of level 5) until it logs in again.
     assert_eq!(s.world.pledge_class_of(ObjectId(P1)), 4);
     // The reputation is written with the next `updateClanInDB` (here: the shutdown save of a
     // changed clan).
@@ -2023,8 +2012,6 @@ fn a_dissolution_waits_and_then_deletes_the_rows() {
         "{writes:?}"
     );
     s.vm_command(P1, "dissolve_clan");
-    // NOTE(java-quirk): the time is `now + 0 days`, so it is not in the future any more and the
-    // request can be repeated; the first timer decides.
     s.take();
     s.run_ms(299_000);
     assert!(s.world.clan(CLAN).is_some());

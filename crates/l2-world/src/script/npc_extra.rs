@@ -1,13 +1,5 @@
 //! What scripts attach to an NPC: `getVariables()`, the script value, `setLethalable` and the
 //! over-hit values of an attackable (S-API-04).
-// Java: entity/actor/Npc.java (getVariables, hasVariables, _scriptValue, getScriptValue,
-//       setScriptValue, isScriptValue), mechanics/variables/NpcVariables.java,
-//       AbstractVariables.java
-// Java: entity/actor/Creature.java (_lethalable, setLethalable, isLethalable)
-// Java: entity/actor/Attackable.java (_overhit, _overhitDamage, _overhitAttacker, overhitEnabled,
-//       setOverhitValues, isOverhit, getOverhitAttacker, getOverhitDamage, clearAggroList,
-//       calculateOverhitExp)
-//
 // The values live in the script engine's world state, by NPC object id, and go away with the NPC
 // (`script_on_npc_decay`, Java's `Npc.deleteMe`). A script that only needs a value of its own
 // uses `ctx.state`; this is for the values Java keeps on the NPC, which other code reads too

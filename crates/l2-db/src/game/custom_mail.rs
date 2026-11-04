@@ -1,7 +1,5 @@
 //! The `custom_mail` table: mails a server owner queues by hand (or from a web tool) for a
 //! character, read and deleted by `CustomMailManager`.
-// Java: org/l2jmobius/gameserver/managers/CustomMailManager.java (READ_SQL, DELETE_SQL)
-//
 // The rows are per receiver: the server that has the receiver online sends the mail and deletes
 // the row, so two servers on one database do not send it twice.
 
@@ -10,11 +8,9 @@ use sqlx::FromRow;
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: CustomMailManager.READ_SQL. `date` is read as text because it is the key of the delete
 // (Java binds `rs.getString("date")` back), whatever the column's time zone handling does.
 const READ_ALL: &str =
     "SELECT CAST(`date` AS CHAR) AS date, receiver, subject, message, items FROM custom_mail";
-// Java: CustomMailManager.DELETE_SQL
 const DELETE_ENTRY: &str = "DELETE FROM custom_mail WHERE date=? AND receiver=?";
 
 /// One row of `custom_mail`.

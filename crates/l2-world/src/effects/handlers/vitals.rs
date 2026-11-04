@@ -1,7 +1,5 @@
 //! What the HP, MP and CP handlers share: reading a creature's vitals and the "restored"
 //! messages.
-// Java: the repeated code of dist/game/data/scripts/handlers/skill/effects/{Heal,HealPercent,
-//       ManaHeal,CpHeal,...}.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};

@@ -1,6 +1,4 @@
 //! Quest 422: Repent Your Sins (Black Judge; the penitent's manacles and the PK kills to repent).
-// Java: dist/game/data/scripts/quests/Q00422_RepentYourSins/Q00422_RepentYourSins.java
-//
 // Pattern: the quest walks through memo states (the step of the quest, `memoState`) and a memo
 // value of its own (the level of the manacles' owner, `memoStateEx` 1). Each step is a talk with
 // one NPC, and the kills of the step's monster give the quest items. The end is a roll of the
@@ -147,7 +145,6 @@ impl Script for Q00422RepentYourSins {
                 }
             }
             "30981-15t.html" => {
-                // Java: the manacles in the inventory; its enchant level is the pet level.
                 let pet_item = ctx.has_quest_items(player, PENITENTS_MANACLES);
                 let pet_level = ctx.get_enchant_level(player, PENITENTS_MANACLES);
                 let memo = qs.get_memo_state(ctx);
@@ -408,7 +405,6 @@ fn black_judge_page(ctx: &mut ScriptCtx<'_>, player: ObjectId, qs: Qs) -> Option
     {
         Some("30981-10.html")
     } else if ctx.has_quest_items(player, PENITENTS_MANACLES) {
-        // Java: the manacles' enchant level (0 without the item) against the memo value + 1.
         let pet_level = ctx.get_enchant_level(player, PENITENTS_MANACLES);
         if pet_level < qs.get_memo_state_ex(ctx, 1) + 1 {
             Some("30981-12.html")
@@ -570,7 +566,6 @@ mod tests {
     #[test]
     fn a_low_level_character_takes_the_skulls_from_the_wererats() {
         let (mut t, judge, katari) = setup();
-        // Java: the accept link is on the page for a character with PK kills (02); 01 has none.
         let mut data = player_data(1, 15, vec![]);
         data.pk_kills = 3;
         t.enter_with(data);

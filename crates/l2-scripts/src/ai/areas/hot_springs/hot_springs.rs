@@ -1,5 +1,4 @@
 //! The monsters of the Hot Springs pass their diseases on to whoever hits them.
-// Java: dist/game/data/scripts/ai/areas/HotSprings/HotSprings.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};

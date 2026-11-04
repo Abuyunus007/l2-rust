@@ -1,10 +1,6 @@
 //! `SummonAI`: a summon follows its owner, attacks and casts on command, and steps aside when it
 //! is hit next to its owner. Through the M4 intention machine (`ai/mod.rs`), which calls in here
 //! for a summon where Java's `SummonAI` overrides `CreatureAI`.
-// Java: ai/SummonAI.java, ai/PlayableAI.java (the summon's view: `asPlayer()` is the owner)
-// Java: ai/CreatureAI.java (setIntentionFollow, checkTargetLost's summon branch)
-// Java: entity/actor/Summon.java (setFollowStatus, followOwner, setImmobilized)
-//
 // NOTE: Java's `SummonAI` refuses the follow and attack intentions when the pathfinding is on
 // and `PathFinding.findPath(...)` (a synchronous search) finds no path. Path searches run on the
 // path workers here (D-14) and the world has no searcher of its own, so that refusal is left out:

@@ -1,25 +1,12 @@
 //! Server control: the login server switches (`//server_gm_only`, ...) and the shutdown
 //! countdown (`//server_shutdown`, `//server_restart`, `//server_abort`).
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/{AdminLogin,AdminShutdown}.java
-// Java: gameserver/Shutdown.java, gameserver/LoginServerThread.java (setServerStatus,
-// Java: setMaxPlayer, sendServerStatus, sendServerType, getStatusString)
-//
 // # What the world keeps
 // The world mirrors the three values the Java `LoginServerThread` keeps for the pages (the list
 // status, the maximum player count, the registered name) and tells the login server link about
 // every change through the outbox (`LsEvent`). The name comes back from the link
 // (`WorldCommand::LoginServerRegistered`).
 //
-// # The shutdown
-// Kain only stops itself: when the countdown is over the world asks the process to stop
-// (`ControlRequest::Shutdown`), which is the same graceful stop the supervisor's `shutdown`
-// request uses. It never touches the Java game server (D-38, D-39).
 //
-// NOTE(java-quirk): `Shutdown` keeps `_secondsShut` and `_shutdownMode` in statics. A second
-// `startShutdown` while a countdown runs makes Java run two counter threads on the same statics
-// (they count down twice as fast and send every message twice, unless the old one happens to see
-// `ABORT` in the instant between `abort()` and the constructor). Here a new countdown replaces
-// the running one.
 //
 // Left out:
 // - `PrecautionaryRestartManager.restartEnabled()/restartAborted()` (`PrecautionaryRestartEnabled`
@@ -114,8 +101,6 @@ impl Default for AdminSettings {
 pub(crate) struct LsMirror {
     /// `_serverName`: `None` (Java `null`) until the login server registered the game server.
     pub(crate) server_name: Option<String>,
-    /// `_status`. NOTE(java-quirk): Java never sets it at the registration, so it reads `Auto`
-    /// even when the server starts GM only.
     pub(crate) status: i32,
     /// `_maxPlayer`.
     pub(crate) max_players: i32,
@@ -382,8 +367,6 @@ fn admin_login(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
             match parse_int(mode) {
                 Ok(age) => {
                     if world.admin.ctl.settings.server_list_age != age {
-                        // NOTE(java-quirk): Java stores the age into `SERVER_LIST_TYPE`, and
-                        // never into `SERVER_LIST_AGE`, so the same age is "changed" again.
                         world.admin.ctl.settings.server_list_type = age;
                         world.ls_send_server_status(ls_status::ATTRIBUTE_AGE, age);
                         world.send_sys_message(gm, &format!("Server Age changed to {age}"));
@@ -577,7 +560,6 @@ impl World {
         if state.counter_exists {
             // `_counterInstance.abort()`: the counter notices at its next step.
             state.mode = ShutdownMode::Abort;
-            // NOTE(java-quirk): the mode is already `ABORT` here, so the text says "aborting".
             let text = format!(
                 "Server aborts {} and continues normal operation!",
                 ShutdownMode::Abort.text()

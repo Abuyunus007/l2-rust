@@ -1,6 +1,5 @@
 //! The XML loading pattern every datapack loader copies.
 //!
-//! Java: `org/l2jmobius/commons/util/IXmlReader.java`
 //!
 //! # The pattern
 //! A loader is one module with three parts:
@@ -22,10 +21,6 @@
 //! Java does not reject them: it reads only the nodes it knows (schema validation errors are printed
 //! by the XML parser but do not stop loading). serde ignores unknown elements and attributes by
 //! default, so raw structs simply must not use `deny_unknown_fields`.
-//!
-//! NOTE(java-quirk): Java checks the root element is named `list` (or whatever the loader looks for)
-//! and silently loads nothing otherwise. serde does not look at the root name, so a wrong root name
-//! is only noticed when required fields are missing.
 
 use std::path::{Path, PathBuf};
 

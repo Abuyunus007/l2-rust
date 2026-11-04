@@ -1,11 +1,6 @@
 //! Cursed weapons (M8-CURSED-01): Zariche and Akamanah. The drop from a monster, the pickup that
 //! binds the weapon to a player, the form and the passive skill of the owner, the kill count, the
 //! life timer, the drop on the owner's death and the end of the weapon.
-// Java: managers/CursedWeaponsManager.java
-// Java: entity/actor/holders/player/CursedWeapon.java
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminCursedWeapons.java
-// Java: network/clientpackets/RequestCursedWeaponList.java, RequestCursedWeaponLocation.java
-//
 // # How it fits together
 // - [`CursedWorld`] (in `World::cursed`) holds the settings and one [`CursedWeapon`] per entry of
 //   `CursedWeapons.xml`, in the order of Java's `HashMap`. A weapon's state is the item it is
@@ -18,16 +13,6 @@
 //   `//cw_reload`.
 // - `packets.rs`: `RequestCursedWeaponList` and `RequestCursedWeaponLocation`.
 //
-// # Side by side (D-39, D-53)
-// The cursed weapon and its item are global: the Java game server keeps the same `cursed_weapons`
-// rows. With `CycleDatabaseWrites = False` this server
-// - never drops a cursed weapon from a monster (the drop chance check is skipped),
-// - treats the rows of the table as "not on this server": they are not read, and no row of the
-//   table is written or removed (a weapon a GM gives out with `//cw_add` lives in memory only),
-// - leaves a cursed weapon item a character carries into this server alone (Java's enter-world
-//   rule that destroys one would delete the item row Sieghardt's owner still needs).
-// The per-character rows (`items`, `characters.karma`) of a weapon that ends while its owner is
-// offline are written as Java does.
 //
 // # Left out, with the system that brings it
 // - `//cw_reload` (and `//reload cw`) re-reads `CursedWeapons.xml` and the table in Java; this
@@ -78,11 +63,13 @@ pub struct CursedLoad {
 /// A write for the persistence task (`PersistCommand::Cursed`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CursedWrite {
-    /// Java `CursedWeapon.saveData`: `DELETE FROM cursed_weapons WHERE itemId = ?`, then (when the
-    /// weapon is held, `row` is `Some`) the `INSERT`. Only sent with `CycleDatabaseWrites` (D-53).
-    Save { item_id: i32, row: Option<CursedRow> },
-    /// Java `CursedWeaponsManager.removeFromDb`. Only sent with `CycleDatabaseWrites` (D-53).
-    Remove { item_id: i32 },
+    Save {
+        item_id: i32,
+        row: Option<CursedRow>,
+    },
+    Remove {
+        item_id: i32,
+    },
     /// Java `CursedWeapon.endOfLife` for an owner who is offline: `DELETE FROM items WHERE
     /// owner_id=? AND item_id=?`, then `UPDATE characters SET karma=?, pkkills=? WHERE charId=?`.
     /// The character's own rows, so they are written whatever the switch says.
@@ -175,8 +162,6 @@ impl CursedWeapon {
     }
 
     /// Java `getLevel()`.
-    // NOTE(java-quirk): `stageKills` 0 divides by zero in Java (an `ArithmeticException`); the
-    // level is 0 here.
     pub fn level(&self) -> i32 {
         if self.nb_kills > self.stage_kills.wrapping_mul(self.skill_max_level) {
             return self.skill_max_level;

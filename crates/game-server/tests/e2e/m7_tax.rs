@@ -42,7 +42,6 @@ fn with_tax(price: i64) -> i64 {
 }
 
 pub async fn play<H: Harness>(h: &mut H) -> Played {
-    // The lord first: the world learns that the Lions own Gludio when he enters (D-50, D-51).
     h.enter(Who::Lord).await;
     let entered = h.enter(Who::Raider).await;
     let smith = all::<NpcInfo>(&entered, "NPC_INFO")

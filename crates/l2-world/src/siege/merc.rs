@@ -1,12 +1,6 @@
 //! Mercenary tickets: the castle lord places a ticket on the castle grounds, which hires a
 //! mercenary for the next siege (a `castle_siege_guards` row) and lies there as an item until the
 //! siege starts or the lord picks it up again.
-// Java: managers/MercTicketManager.java
-// Java: dist/game/data/scripts/handlers/items/MercTicket.java
-// Java: dist/game/data/scripts/handlers/actions/click/ItemClick.java (the castle lord rule)
-// Java: network/clientpackets/RequestPetGetItem.java (no tickets for pets)
-// Java: entity/item/instance/Item.java (pickupMe: removeTicket)
-// Java: mechanics/sevensigns/SevenSigns.java (checkIsDawnPostingTicket, checkIsRookiePostingTicket)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
@@ -56,8 +50,6 @@ const MAX_MERC_PER_TYPE: [i32; 9] = [10, 15, 10, 10, 20, 20, 20, 20, 20];
 pub const MERCS_MAX_PER_CASTLE: [i32; 9] = [100, 150, 200, 300, 400, 400, 400, 400, 400];
 
 /// Java `MercTicketManager.getTicketCastleId(itemId)`: the castle of a ticket, -1 for none.
-// NOTE(java-quirk): the check of the last two tickets reads Gludio's (6295, 6296) for every castle,
-// so those two answer castle 1 and the last two tickets of the other castles answer -1.
 pub fn ticket_castle_id(item_id: i32) -> i32 {
     for i in 0..9 {
         for i2 in (0..50).step_by(10) {
@@ -133,7 +125,6 @@ impl World {
             .copied()
             .collect();
         let mut placed = [0_i32; 20];
-        // NOTE(java-quirk): the start index of the search is kept from the last row with a castle.
         let mut start = 0;
         for row in rows {
             let castle = self.castle_at(row.x, row.y, row.z);

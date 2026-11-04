@@ -1,5 +1,4 @@
 //! Kintaijin teleports a party into the Stakato Nest once "I'm the Only One You Can Trust" is done.
-// Java: dist/game/data/scripts/ai/areas/StakatoNest/StakatoNestTeleporter/StakatoNestTeleporter.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
@@ -46,10 +45,6 @@ impl Script for StakatoNestTeleporter {
         let player = player?;
         if let Some(&(x, y, z)) = LOCS.get(index) {
             let members = ctx.world().party_members_of(player);
-            // NOTE(java-quirk): the player is a member of the party too, so it is teleported with
-            // the random offset first and then, below, without it. The distance is read after
-            // the members before it were teleported: once the player moved, the members listed
-            // after it are too far away and stay.
             for member in members {
                 if ctx.distance_3d(member, player).is_some_and(|d| d < 1000.0) {
                     ctx.teleport_player(member, x, y, z, 0, true);

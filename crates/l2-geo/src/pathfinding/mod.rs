@@ -1,6 +1,5 @@
 //! Pathfinding on the geodata cells (`PathFinding = 2`) and the worker pool that runs it.
 //!
-//! Java: `gameserver/geoengine/pathfinding/{PathFinding,NodeBuffer,GeoLocation}.java` and
 //! `config/GeoEngineConfig.java` (buffers, weights).
 //!
 //! * [`PathFinder`] is `PathFinding.findPath` for one thread. Java keeps the `NodeBuffer`s in a
@@ -144,9 +143,6 @@ pub enum PathError {
 #[derive(Clone, Debug, PartialEq)]
 pub struct PathOptions {
     /// Map sizes (cells per side) of the buffers, ascending. From `PathFindBuffers`.
-    ///
-    /// NOTE(java-quirk): Java parses only the part before the `x` of `100x6`. The count (`6`) is
-    /// never used: buffers are allocated lazily, one per size class per thread.
     pub buffer_sizes: Vec<usize>,
     /// `LowWeight`: cost of a step on open, flat ground.
     pub low_weight: f32,

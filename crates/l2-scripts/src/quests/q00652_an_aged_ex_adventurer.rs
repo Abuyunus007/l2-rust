@@ -1,6 +1,4 @@
 //! Quest 652: An Aged Ex-Adventurer (Tantan, the old adventurer out of Soulshots, and his daughter-in-law Sara in Oren).
-// Java: dist/game/data/scripts/quests/Q00652_AnAgedExAdventurer/Q00652_AnAgedExAdventurer.java
-//
 // Pattern: a level-gated quest that takes 100 Soulshots on start (`take_items`) and deletes the
 // start NPC. The reward is a random choice (`get_random(10) <= 4`) between an enchant scroll with
 // adena and adena alone.

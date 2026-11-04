@@ -1,6 +1,4 @@
 //! Quest 122: Ominous News (Seer Moira in the village, Karuda on the western path).
-// Java: dist/game/data/scripts/quests/Q00122_OminousNews/Q00122_OminousNews.java
-//
 // Pattern: the same as Q00121 (a start NPC, a second NPC, a reward with adena and exp). The
 // `on_event` echoes every event, like Java `return event`.
 

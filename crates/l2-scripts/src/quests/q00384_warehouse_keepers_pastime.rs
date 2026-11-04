@@ -1,6 +1,4 @@
 //! Quest 384: Warehouse Keeper's Pastime (Cliff and Baxt play bingo for Irongate medals).
-// Java: dist/game/data/scripts/quests/Q00384_WarehouseKeepersPastime/Q00384_WarehouseKeepersPastime.java
-//
 // Pattern: events are numbers sent by html links; the bingo board is two strings in the quest
 // variables (`numbers`: the shuffled 1..9, `selected`: "? ? 5 ? ..."); the pages are read from the
 // html files and their `<?CellN?>` / `<?FontColorN?>` placeholders are filled.
@@ -436,8 +434,6 @@ impl Script for Q00384WarehouseKeepersPastime {
                     ctx.play_sound(player, QuestSound::ItemsoundQuestMiddle);
                     return Some("30182-05.htm".to_owned());
                 }
-                // NOTE(java-quirk): `Integer.parseInt(event)` throws on any other text; here it
-                // shows nothing.
                 let ask: i32 = event.parse().ok()?;
                 match ask {
                     4 => Some("30182-02.htm".to_owned()),

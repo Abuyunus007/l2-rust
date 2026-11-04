@@ -1,6 +1,4 @@
 //! Quest 376: Exploration of the Giants' Cave Part 1 (Expedition Leader Sobling, Upper Giant's Cave).
-// Java: dist/game/data/scripts/quests/Q00376_ExplorationOfTheGiantsCavePart1/Q00376_ExplorationOfTheGiantsCavePart1.java
-//
 // Pattern: a repeatable kill-count quest (`docs/design/scripts.md`, "Quest patterns"): the kill
 // goes to a random started party member (`random_party_member_state` with state -1), a parchment
 // drop with no limit, the player quits or goes on. The reward is the NPC's multisell list

@@ -1,7 +1,4 @@
 //! `GameServerAuth`: the registration decision, and saving a new server in the database.
-// Java: org/l2jmobius/loginserver/network/gameserverpackets/receive/GameServerAuth.java (`handleRegProcess`)
-// Java: org/l2jmobius/loginserver/data/GameServerTable.java (`registerServerOnDB`)
-//
 // The decision is a plain function of the table, the config switch and the packet, so every
 // branch is tested without a socket. Java decides and mutates in several steps; here the whole
 // decision runs under one lock of the table, which only closes the small races Java has
@@ -41,7 +38,6 @@ impl GameServerTable {
     /// reason code to send before closing the link.
     ///
     /// `accept_new` is `AcceptNewGameServer`.
-    // Java: GameServerAuth.handleRegProcess
     pub fn register_game_server(
         &self,
         accept_new: bool,
@@ -75,10 +71,6 @@ impl GameServerTable {
             return Ok(Self::registration(&registered, desired_id, true));
         };
 
-        // NOTE(java-quirk): the raw bytes from the game server are compared with the registered
-        // bytes. A hex id read from the database is always minimal (no redundant leading 0x00 or
-        // 0xFF), so a game server that sends a longer form of the same number is "wrong" after the
-        // login server restarted.
         if known.hex_id == request.hex_id {
             if known.authed {
                 info!(
@@ -186,17 +178,11 @@ impl GameServerStore for LoginRepository {
 
 /// Saves a newly registered server. Like Java, a failure is only logged: the server stays
 /// registered and authed for this session and is registered again on its next start.
-// Java: GameServerTable.registerServerOnDB
 pub async fn save_new_server<S: GameServerStore>(store: &S, registration: &Registration) {
-    // NOTE(java-quirk): Java binds `getExternalHost()` as it is. When no entry of the server's
-    // address list covers 0.0.0.0 that is `null`, the NOT NULL `host` column refuses it, and
-    // nothing is saved.
     let Some(host) = registration.external_host.as_deref() else {
         error!("Error while saving gameserver! (no external host: no address entry covers 0.0.0.0)");
         return;
     };
-    // NOTE(java-quirk): `new BigInteger(new byte[0])` throws in Java, so a game server that sent an
-    // empty hex id is never saved either.
     let hex_id = match hex_to_string(&registration.hex_id) {
         Ok(text) => text,
         Err(error) => {
@@ -442,7 +428,6 @@ pub(crate) mod tests {
 
     #[tokio::test]
     async fn hex_id_with_a_leading_zero_byte_does_not_survive_the_database() {
-        // NOTE(java-quirk) in the code under test: the game server sends 00 12 34 56 ...
         let sent = [0x00, 0x12, 0x34, 0x56];
         let table = table();
         let (link, _far) = test_link(1).await;
@@ -512,7 +497,6 @@ pub(crate) mod tests {
         let mut row = GameServerInfo::new(1, vec![1]);
         row.status = ServerStatus::Good;
         row.set_down(ServerStatus::GmOnly);
-        // NOTE(java-quirk) under test: GM-only login server wins over DOWN.
         assert_eq!(row.status, ServerStatus::GmOnly);
         row.set_down(ServerStatus::Normal);
         assert_eq!(row.status, ServerStatus::Down);

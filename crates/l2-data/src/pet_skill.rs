@@ -1,6 +1,5 @@
 //! The skills of summons and pets by NPC id, from `data/PetSkillData.xml`.
 //!
-//! Java: `gameserver/data/xml/PetSkillData.java`. Data: `data/PetSkillData.xml`,
 //! `xsd/PetSkillData.xsd`.
 //!
 //! Every `<skill npcId=".." skillId=".." skillLevel=".."/>` gives the NPC a skill; level 0 means
@@ -8,10 +7,6 @@
 //! (`SkillData.getSkill(skillId, skillLevel == 0 ? 1 : skillLevel)`), logging the others, and keys
 //! the entries of one NPC by `getSkillHashCode(skillId, skillLevel + 1)`, so a repeated
 //! `(skillId, skillLevel)` is kept once.
-//!
-//! NOTE(java-quirk): Java walks the entries of one NPC in `HashMap` order; here they stay in file
-//! order. The order only matters for an NPC that lists the same skill both with level 0 and with
-//! a fixed level, which the shipped file never does.
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -58,7 +53,6 @@ impl PetSkillData {
         Ok(table)
     }
 
-    // Java: PetSkillData.parseDocument
     fn add_document(&mut self, doc: RawFile, skill_exists: &dyn Fn(i32, i32) -> bool) {
         for child in doc.children {
             let RawChild::Skill(raw) = child else { continue };

@@ -1,5 +1,4 @@
 //! The `RefuelAirship` effect: the fuel of the air ship the caster rides goes up.
-// Java: dist/game/data/scripts/handlers/skill/effects/RefuelAirship.java
 
 use l2_data::skill::EffectTemplate;
 

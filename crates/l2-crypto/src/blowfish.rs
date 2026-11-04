@@ -1,6 +1,5 @@
 //! L2's Blowfish: standard Blowfish with **little-endian** 32-bit words (ECB, no padding).
 //!
-//! Java: commons/crypt/BlowfishEngine.java (`bytesTo32bits`/`bits32ToBytes` are little-endian and
 //! the output is written `xr` first, which is what the `blowfish` crate's `BlowfishLE` does,
 //! D-24). The S-boxes and key schedule come from that crate; the Java vectors in
 //! `crypto_blowfish.json` and `crypto_newcrypt.json` prove they match.

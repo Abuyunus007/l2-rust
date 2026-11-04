@@ -1,15 +1,8 @@
 //! `config/Custom/DualboxCheck.ini`: how many connections one IP address may have in the game,
 //! in the Olympiad, in an event and in the offline play (Java `AntiFeedManager`).
-// Java: gameserver/managers/AntiFeedManager.java (the event counters, `tryAddClient`,
-//       `removeClient`, `onDisconnect`, `getLimit`)
-// Java: network/clientpackets/CharacterSelect.java (the `GAME_ID` check and the page it shows)
-// Java: network/Disconnection.java (`AntiFeedManager.onDisconnect`)
-//
 // The counters are keyed by Java's `String.hashCode()` of the client's address, like Java, so two
 // addresses with the same hash share a counter. The whitelist of the config is keyed by
 // `InetAddress.hashCode()` (the address as a number), a different number for the same address.
-// NOTE(java-quirk): so a whitelist entry never matches an address (only by a hash collision) and
-// `DualboxCheckWhitelist` has no effect in Java; it is the same here.
 //
 // The other owners of an event id call the `anti_feed_*` methods: `OLYMPIAD_ID` is used by the
 // Olympiad registration (`olympiad/`), `L2EVENT_ID` by the event scripts and `OFFLINE_PLAY` by the
@@ -200,7 +193,6 @@ impl World {
                         .get_mut(&event_id)
                         .and_then(|e| e.get_mut(&hash))
                 {
-                    // NOTE(java-quirk): `decrementAndGet()` without removing the entry at 0.
                     *count -= 1;
                 }
             } else {

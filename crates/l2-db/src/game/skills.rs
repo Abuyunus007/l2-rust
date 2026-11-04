@@ -1,10 +1,5 @@
 //! The `character_skills` and `character_skills_save` tables: the skills a character knows per
 //! class index, and the buffs and reuse timers that survive a logout.
-// Java: org/l2jmobius/gameserver/entity/actor/Player.java (RESTORE_SKILLS_FOR_CHAR,
-// Java: UPDATE_CHARACTER_SKILL_LEVEL, ADD_NEW_SKILLS, DELETE_SKILL_FROM_CHAR, DELETE_CHAR_SKILLS,
-// Java: ADD_SKILL_SAVE, RESTORE_SKILL_SAVE, DELETE_SKILL_SAVE; restoreSkills, storeSkill,
-// Java: storeSkills, removeSkill, storeEffect, restoreEffects)
-//
 // Same layout as characters.rs: verbatim SQL, one method per statement.
 
 use sqlx::FromRow;
@@ -12,24 +7,16 @@ use sqlx::FromRow;
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: Player.RESTORE_SKILLS_FOR_CHAR
 const SELECT_SKILLS: &str =
     "SELECT skill_id,skill_level FROM character_skills WHERE charId=? AND class_index=?";
-// Java: Player.UPDATE_CHARACTER_SKILL_LEVEL
 const UPDATE_SKILL_LEVEL: &str =
     "UPDATE character_skills SET skill_level=? WHERE skill_id=? AND charId=? AND class_index=?";
-// Java: Player.ADD_NEW_SKILLS
 const REPLACE_SKILL: &str =
     "REPLACE INTO character_skills (charId,skill_id,skill_level,class_index) VALUES (?,?,?,?)";
-// Java: Player.DELETE_SKILL_FROM_CHAR
 const DELETE_SKILL: &str = "DELETE FROM character_skills WHERE skill_id=? AND charId=? AND class_index=?";
-// Java: Player.DELETE_CHAR_SKILLS
 const DELETE_CLASS_SKILLS: &str = "DELETE FROM character_skills WHERE charId=? AND class_index=?";
-// Java: Player.ADD_SKILL_SAVE
 const REPLACE_SKILL_SAVE: &str = "REPLACE INTO character_skills_save (charId,skill_id,skill_level,remaining_time,reuse_delay,systime,restore_type,class_index,buff_index) VALUES (?,?,?,?,?,?,?,?,?)";
-// Java: Player.RESTORE_SKILL_SAVE
 const SELECT_SKILL_SAVE: &str = "SELECT skill_id,skill_level,remaining_time, reuse_delay, systime, restore_type FROM character_skills_save WHERE charId=? AND class_index=? ORDER BY buff_index ASC";
-// Java: Player.DELETE_SKILL_SAVE
 const DELETE_SKILL_SAVE: &str = "DELETE FROM character_skills_save WHERE charId=? AND class_index=?";
 
 /// A skill and its level, one row of `character_skills`.
@@ -90,7 +77,6 @@ impl SkillRepository {
     }
 
     /// The skills of one class index.
-    // Java: Player.restoreSkills
     pub async fn skills_of(&self, char_id: i32, class_index: i32) -> Result<Vec<SkillLevel>> {
         let rows = sqlx::query_as::<_, SkillLevel>(SELECT_SKILLS)
             .bind(char_id)
@@ -101,7 +87,6 @@ impl SkillRepository {
     }
 
     /// Sets the level of a skill the character already has.
-    // Java: Player.storeSkill (old and new skill)
     pub async fn update_skill_level(
         &self,
         char_id: i32,
@@ -121,7 +106,6 @@ impl SkillRepository {
 
     /// Adds or replaces skills (`REPLACE`). One row is `Player.storeSkill`; a list is
     /// `Player.storeSkills`, run on one connection like Java's batch.
-    // Java: Player.storeSkill (new skill), Player.storeSkills
     pub async fn replace_skills(&self, char_id: i32, class_index: i32, skills: &[SkillLevel]) -> Result<()> {
         if skills.is_empty() {
             return Ok(());
@@ -140,7 +124,6 @@ impl SkillRepository {
     }
 
     /// Removes one skill of the character.
-    // Java: Player.removeSkill
     pub async fn delete_skill(&self, char_id: i32, class_index: i32, skill_id: i32) -> Result<()> {
         sqlx::query(DELETE_SKILL)
             .bind(skill_id)
@@ -152,7 +135,6 @@ impl SkillRepository {
     }
 
     /// Removes every skill of one class index (subclass deletion).
-    // Java: Player.modifySubClass (DELETE_CHAR_SKILLS)
     pub async fn delete_class_skills(&self, char_id: i32, class_index: i32) -> Result<()> {
         sqlx::query(DELETE_CLASS_SKILLS)
             .bind(char_id)
@@ -163,7 +145,6 @@ impl SkillRepository {
     }
 
     /// The saved buffs and reuse timers of one class index, in buff order.
-    // Java: Player.restoreEffects
     pub async fn skill_effects_of(&self, char_id: i32, class_index: i32) -> Result<Vec<SkillSaveRow>> {
         let rows = sqlx::query_as::<_, SkillSaveRow>(SELECT_SKILL_SAVE)
             .bind(char_id)
@@ -174,7 +155,6 @@ impl SkillRepository {
     }
 
     /// Removes the saved effects of one class index.
-    // Java: Player.storeEffect (before the new rows), Player.restoreEffects (after reading)
     pub async fn delete_skill_effects(&self, char_id: i32, class_index: i32) -> Result<()> {
         sqlx::query(DELETE_SKILL_SAVE)
             .bind(char_id)
@@ -185,7 +165,6 @@ impl SkillRepository {
     }
 
     /// Saves effects and reuse timers (`REPLACE`), on one connection like Java's batch.
-    // Java: Player.storeEffect
     pub async fn add_skill_effects(
         &self,
         char_id: i32,

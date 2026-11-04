@@ -1,6 +1,4 @@
 //! Quest 261: Collector's Dream (Alshupes in the Talking Island area collects spider legs).
-// Java: dist/game/data/scripts/quests/Q00261_CollectorsDream/Q00261_CollectorsDream.java
-//
 // Pattern: a kill-count quest with a drop limit (`docs/design/scripts.md`, "Quest patterns"): the
 // spiders drop spider legs in the party range until 8 are in, the 8th sets cond 2; Alshupes pays
 // adena and experience, moves the Newbie Guide's mission on and ends the quest.

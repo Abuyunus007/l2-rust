@@ -1,10 +1,6 @@
 //! Turning a player into a form and back: `Player.transform`, `untransform`,
 //! `Creature.stopTransformation`, `Transform.onTransform` / `onUntransform` / `onLevelUp` and the
 //! transformation part of `Player.sendSkillList`.
-// Java: entity/actor/Player.java (transform, untransform, sendSkillList, addTransformSkill,
-//       removeAllTransformSkills), entity/actor/Creature.java (stopTransformation),
-//       entity/actor/transform/Transform.java (onTransform, onUntransform, onLevelUp),
-//       data/xml/TransformData.java (transformPlayer)
 
 use std::sync::Arc;
 
@@ -154,7 +150,6 @@ impl World {
             if !allowed.is_empty() {
                 self.set_inventory_block(id, allowed, 1);
             }
-            // NOTE(java-quirk): a form with both lists keeps the second block only.
             if !not_allowed.is_empty() {
                 self.set_inventory_block(id, not_allowed, 2);
             }

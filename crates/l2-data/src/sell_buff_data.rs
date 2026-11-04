@@ -1,6 +1,5 @@
 //! The skills a player may put up for sale in the buff shop.
 //!
-//! Java: `gameserver/managers/SellBuffsManager.java` (`parseDocument`).
 //! Data: `data/SellBuffData.xml` (`xsd/SellBuffData.xsd`).
 
 use std::collections::BTreeSet;

@@ -1,14 +1,4 @@
 //! Party matching rooms: the rooms, the waiting list and their client packets.
-// Java: entity/groups/matching/{PartyMatchRoom,PartyMatchRoomList,PartyMatchWaitingList}.java
-// Java: entity/actor/Player.java (`_partyroom`, `isPartyWaiting`, `isInPartyMatchRoom`, `deleteMe`)
-// Java: network/clientpackets/{RequestPartyMatchConfig,RequestPartyMatchList,RequestPartyMatchDetail,
-//       RequestOustFromPartyRoom,RequestDismissPartyRoom,RequestWithdrawPartyRoom,
-//       RequestAskJoinPartyRoom,AnswerJoinPartyRoom,RequestListPartyMatchingWaitingRoom,
-//       RequestExitPartyMatchingWaitingRoom}.java
-// Java: network/serverpackets/{PartyMatchDetail,ExPartyRoomMember,ExManagePartyRoomMember,
-//       ExClosePartyRoom,ExAskJoinPartyRoom,ListPartyWating,ExListPartyMatchingWaitingRoom}.java
-// Java: dist/game/data/scripts/handlers/chat/channels/ChatPartyMatchRoom.java
-//
 // # Shape
 // Java keeps three singletons: the room list (`id -> PartyMatchRoom`, rooms hold `Player`s), the
 // waiting list (a set of `Player`s) and `Player._partyroom` (the id of the room, 0 = none). Here
@@ -17,14 +7,6 @@
 //
 // The rooms live in memory only: Java stores nothing of them.
 //
-// # Quirks kept (marked `NOTE(java-quirk)` where they happen)
-// - Nothing checks who may change a room: `RequestPartyMatchList` with a room id edits any room
-//   and `RequestDismissPartyRoom` closes any room.
-// - A room has no member limit check when somebody joins; `max_members` is only shown.
-// - `ListPartyWating` deletes the rooms that are empty, whose owner left or whose owner points at
-//   another room, while it builds the list.
-// - A player can be in two rooms (creating a room does not leave the old one); `_partyroom` holds
-//   the last one.
 //
 // # Left out
 // - `MPCC` rooms (`RequestExManageMpccRoom` ...): Java has no handler for their packets.
@@ -251,8 +233,6 @@ impl World {
     }
 
     /// Java `new ListPartyWating(player, auto, location, limit)` and its `writeImpl`: the rooms
-    /// that fit the filters. NOTE(java-quirk): building the list deletes the rooms that are
-    /// empty, whose owner is offline or whose owner has another `_partyroom`.
     fn list_party_waiting(&mut self, player: ObjectId, location: i32, limit: i32) -> ListPartyWaiting {
         let level = self.players.get(&player).map_or(0, |p| p.core.level);
         let mut rooms = Vec::new();
@@ -326,9 +306,6 @@ impl World {
             return;
         };
         // Remove new leader, move him to the first position, add the old leader as a normal member.
-        // NOTE(java-quirk): `_members.remove(newLeader)` takes the first match; when the new leader
-        // already is the owner, `set(0, ...)` overwrites the member behind him and the owner is
-        // listed twice, and with no other member `set(0, ...)` throws and the room stays empty.
         if let Some(pos) = room.members.iter().position(|m| *m == new_leader) {
             room.members.remove(pos);
         }
@@ -597,7 +574,6 @@ impl World {
         title: String,
     ) {
         if room_id > 0 {
-            // NOTE(java-quirk): any player can change any room by its id.
             let Some(room) = self.party.matching.rooms.get_mut(&room_id) else {
                 return;
             };
@@ -668,8 +644,6 @@ impl World {
         // Remove from the waiting list.
         self.party.matching.waiting.retain(|p| *p != player);
         self.set_party_room(player, room_id);
-        // NOTE(java-quirk): no member limit is checked and the member list sent to the joiner does
-        // not hold the joiner yet.
         self.send(player, &self.room_info_packet(&room));
         self.send(player, &self.room_members_packet(&room, 0));
         let name = self
@@ -743,7 +717,6 @@ impl World {
 
     /// Java `RequestDismissPartyRoom.runImpl`.
     fn on_request_dismiss_party_room(&mut self, room_id: i32) {
-        // NOTE(java-quirk): nobody checks that the sender owns the room.
         if self.party.matching.rooms.contains_key(&room_id) {
             self.delete_party_room(room_id);
         }
@@ -808,8 +781,6 @@ impl World {
         // If the answer is positive, join the room of the requester.
         if answer == 1 && !self.is_request_expired(partner) {
             let room_id = self.party_room_of(partner);
-            // NOTE(java-quirk): a requester without a room ends the packet here, the request
-            // stays open.
             if !self.party.matching.rooms.contains_key(&room_id) {
                 return;
             }

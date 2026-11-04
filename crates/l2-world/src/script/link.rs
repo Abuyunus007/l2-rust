@@ -1,9 +1,5 @@
 //! The `Script` bypass of the engine's scripts: the quest window of an NPC, the quest chooser,
 //! and `bypass Script <name> <event>` (Java `Player.processScriptEvent`).
-// Java: dist/game/data/scripts/handlers/bypass/npc/ScriptLink.java (showQuestWindow,
-//       showQuestChooseWindow, getQuestsForTalk)
-// Java: entity/actor/Player.java (processScriptEvent)
-//
 // The handler itself (`script_link_handler`) is `clan/master_script.rs`, which also knows the
 // built-in village master scripts; it asks the engine first.
 
@@ -106,8 +102,6 @@ impl World {
             return;
         };
         let mut condition_meet = false;
-        // NOTE(java-quirk): Java collects the quests in a `HashSet`, so the chooser lists them in
-        // hash order; here they come in the order found (talk states, then start NPC).
         let mut options: Vec<ScriptId> = Vec::new();
         // `getQuestsForTalk`: the quests with an `ON_NPC_TALK` listener the player has a state of.
         let talk: Vec<ScriptId> = self.scripts.listeners.of(EventKind::NpcTalk, n.id).to_vec();
@@ -214,7 +208,6 @@ impl World {
                         "03"
                     }
                 }
-                // NOTE(java-quirk): an unknown state keeps the text of the quest before it.
                 Some(_) => "",
             };
             sb.push_str(&format!(

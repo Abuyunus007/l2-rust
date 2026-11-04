@@ -1,9 +1,5 @@
 //! The switches of the custom scripts of `data/scripts/custom` and the admin words of the Java
 //! `Event` scripts (M9-C07).
-// Java: config/custom/DelevelManagerConfig.java, NoblessMasterConfig.java, TransmogConfig.java
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminEvents.java
-// Java: mechanics/script/Event.java
-//
 // The scripts (`l2-scripts/src/custom`) read these settings through `World::custom_script_settings`;
 // the game server fills them from the ini files and from the `config.xml` of each event folder
 // (`<schedule pattern="..."/>`) before the scripts are installed.
@@ -213,7 +209,6 @@ fn admin_events(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     } else if command.starts_with("admin_event_stop") {
         match found {
             Some((_, false, _)) => {
-                // NOTE(java-quirk): the stop word prints the usage of the start word.
                 world.send_sys_message(gm, "Usage: //event_start <eventname>");
             }
             Some((id, true, script)) => {

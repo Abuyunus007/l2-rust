@@ -1,6 +1,4 @@
 //! Quest 312: Take Advantage of the Crisis! (Filaur in the Dark Elven village, the Lunatic mobs).
-// Java: dist/game/data/scripts/quests/Q00312_TakeAdvantageOfTheCrisis/Q00312_TakeAdvantageOfTheCrisis.java
-//
 // Pattern: a party kill, a random member at cond N (`docs/design/scripts.md`, "Quest patterns"),
 // with the fragment going to the member drawn. The NPC has no reward: the quest ends with the
 // player's own choice (`30535-11.html`), which also takes the fragments.

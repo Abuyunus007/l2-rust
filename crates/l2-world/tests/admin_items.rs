@@ -2,7 +2,6 @@
 
 //! The GM's own inventory admin commands: `//destroy_items`, `//destroy_all_items` (`admin/
 //! destroy_items.rs`), and the GM shop words `//gmshop` and `//buy` (`admin/gm_shop.rs`).
-//! Java: dist/game/data/scripts/handlers/chat/commands/admin/{AdminDestroyItems,AdminShop}.java
 
 use std::path::Path;
 use std::sync::{Arc, Mutex};

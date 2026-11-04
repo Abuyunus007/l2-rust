@@ -1,6 +1,4 @@
 //! Quest 35: Find Glittering Jewelry (Ellie and Felton in the Talking Island).
-// Java: dist/game/data/scripts/quests/Q00035_FindGlitteringJewelry/Q00035_FindGlitteringJewelry.java
-//
 // Pattern: a kill-count chain with a party-member check (`docs/design/scripts.md`, "Quest
 // patterns"): the alligators give rough jewels to the killer at cond 2 with a 50% roll, and the
 // member at cond 2 moves on to cond 3 when the tenth comes in.

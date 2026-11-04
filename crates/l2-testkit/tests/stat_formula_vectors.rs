@@ -566,7 +566,6 @@ fn formulas_crit_shape() {
         check_draws(c);
         let limit = f(&c["intermediate"], "limit");
         let draw: f64 = s(&c["rnd"][0], "returned").parse().unwrap();
-        // Java: (defence-adjusted rate) > Rnd.get(1000)
         assert_eq!(c["result"].as_bool().unwrap(), limit > draw, "{}", s(c, "id"));
     }
 }

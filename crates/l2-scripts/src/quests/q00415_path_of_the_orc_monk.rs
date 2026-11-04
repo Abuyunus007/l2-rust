@@ -1,6 +1,4 @@
 //! Quest 415: Path of the Orc Monk (Gantaki, Kasman, Rosheek, Toruku, Moira and Aren).
-// Java: dist/game/data/scripts/quests/Q00415_PathOfTheOrcMonk/Q00415_PathOfTheOrcMonk.java
-//
 // Pattern: leather pouches. Each pouch is filled by killing a monster that drops the same item
 // (up to four), the fourth kill turns the pouch into its "full" form, and the next NPC swaps the
 // full pouch for the next one. Monsters count only for a player who hit them first, with fists

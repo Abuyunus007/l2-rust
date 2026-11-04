@@ -1,5 +1,4 @@
 //! The Hellbound Remnants cannot die, but the holy water frees their souls.
-// Java: dist/game/data/scripts/ai/others/Remnants.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};

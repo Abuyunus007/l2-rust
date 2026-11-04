@@ -1,7 +1,5 @@
 //! Quest 61: Law Enforcement (Liane the Inspector's trainee, Kekropus and Eindburgh in the Town
 //! of Schuttgart; the Judicator class is the reward).
-// Java: dist/game/data/scripts/quests/Q00061_LawEnforcement/Q00061_LawEnforcement.java
-//
 // Pattern: a story quest with the memo state as its step (`docs/design/scripts.md`, "Quest
 // patterns"): the memo state counts the talks with Kekropus and Eindburgh, the page each NPC
 // shows follows the memo state, and the reward is a class change to Judicator with 26000 adena.
@@ -126,7 +124,6 @@ impl Script for Q00061LawEnforcement {
         } else if qs.state(ctx) == CREATED {
             if ctx.player_level(player) >= MIN_LEVEL {
                 if ctx.player_class_id(player) == player_class::INSPECTOR {
-                    // Java: `getHtm(player, "32222-01.htm").replace("%name%", player.getName())`.
                     let name = ctx.player_name(player);
                     return ctx
                         .get_htm(player, "32222-01.htm")

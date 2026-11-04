@@ -1,5 +1,4 @@
 //! The `Sow` effect: the seed of the player's Sowing skill is planted in the monster.
-// Java: dist/game/data/scripts/handlers/skill/effects/Sow.java
 // The rules (and `Attackable.setSeeded`) are `manor/farming.rs`.
 
 use l2_data::skill::EffectTemplate;

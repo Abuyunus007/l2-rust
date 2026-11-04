@@ -1,6 +1,4 @@
 //! Quest 405: Path of the Cleric (Zigaunt, Gallint, Vivyan, Trader Simplon, Guard Praga, Lionel).
-// Java: dist/game/data/scripts/quests/Q00405_PathOfTheCleric/Q00405_PathOfTheCleric.java
-//
 // Pattern: a delivery chain through six NPCs, each handing out or taking one item and setting
 // the cond when the set is complete (`docs/design/scripts.md`, "Quest patterns"). The pendant of
 // the mother comes from a ruin zombie kill.

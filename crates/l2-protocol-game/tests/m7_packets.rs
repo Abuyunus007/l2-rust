@@ -168,7 +168,6 @@ mod siege {
     #[test]
     fn attacker_list_counts_a_clan_the_table_does_not_know() {
         // Java skips the record of a clan that `ClanTable` does not know, but the count still
-        // includes it (NOTE(java-quirk)): two entries, one record.
         let packet = SiegeAttackerList {
             residence_id: 21,
             clans: vec![None, Some(clan(100, "Alpha", "Lead", 9, 55, "Ally", 8))],
@@ -299,8 +298,6 @@ mod siege {
 
     #[test]
     fn siege_info_with_an_owner_id_and_no_clan_writes_no_owner_block() {
-        // NOTE(java-quirk): Java writes no owner block when the owner id names no clan, so the
-        // packet is shorter. Only the encoder is checked: the decoder reads a block there.
         let packet = SiegeInfo {
             residence_id: 21,
             viewer_is_owner_leader: false,
@@ -637,7 +634,6 @@ mod manor_server {
     #[test]
     fn manor_list_layout() {
         use l2_protocol_game::server::manor::ExSendManorList;
-        // Java: ExSendManorList.writeImpl: the count, then the id and the lower case name.
         let packet = ExSendManorList {
             castles: vec![(1, "gludio".to_owned()), (2, "dion".to_owned())],
         };
@@ -656,7 +652,6 @@ mod manor_server {
     #[test]
     fn buy_list_seed_layout() {
         use l2_protocol_game::server::manor::{BuyListSeed, SeedForSale};
-        // Java: BuyListSeed.writeImpl: money, manor id, a short count, then one item row per seed.
         let packet = BuyListSeed {
             money: 5000,
             manor_id: 3,
@@ -1262,7 +1257,6 @@ mod clan_hall {
 
     #[test]
     fn clan_hall_list_matches_java_layout() {
-        // Java: count, then per hall the id, the owner clan, its leader and `grade < 1` as an int.
         let packet = ExShowAgitInfo {
             halls: vec![
                 AgitInfo {

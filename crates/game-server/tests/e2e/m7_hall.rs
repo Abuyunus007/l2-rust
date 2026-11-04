@@ -64,7 +64,6 @@ async fn follow<H: Harness>(h: &mut H, who: Who, page: &NpcHtmlMessage, command:
 }
 
 pub async fn play<H: Harness>(h: &mut H) -> Played {
-    // The clan and its warehouse come from the tables at CharacterSelect (D-50).
     let entered = h.enter(Who::Raider).await;
     let npcs = all::<NpcInfo>(&entered, "NPC_INFO");
     let npc_of = |template: i32| {
@@ -135,8 +134,6 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
         &placed,
         SystemMessageId::YourBidHasBeenSuccessfullyPlaced
     ));
-    // The adena of the bid comes out of the clan warehouse (read again first, D-50); the bid and
-    // the clan's mark are the player's own rows.
     let rows_bid = h.rows().await;
     assert_eq!(rows_bid.adena_of(WOLVES), m7_seed::WOLVES_WAREHOUSE_ADENA - BID);
     assert_eq!(

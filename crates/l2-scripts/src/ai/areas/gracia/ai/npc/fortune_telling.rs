@@ -1,5 +1,4 @@
 //! Fortune-Teller Mine: 1000 adena for a line of fortune.
-// Java: dist/game/data/scripts/ai/areas/Gracia/AI/NPC/FortuneTelling/FortuneTelling.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
@@ -29,8 +28,6 @@ impl Script for FortuneTelling {
         s.add_talk_id(&[MINE]);
     }
 
-    // NOTE(java-quirk): `onTalk` is only reached through the quest window, which lists the quests of
-    // ids 1 to 19999; this script has id -1, so no click of a player gets here. Ported as it is.
     fn on_talk(&self, ctx: &mut ScriptCtx<'_>, _npc: ScriptNpc, player: ObjectId) -> Option<String> {
         if ctx.world().adena_of(player) < COST {
             Some("lowadena.htm".to_owned())

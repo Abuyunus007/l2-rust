@@ -1,5 +1,4 @@
 //! The `CallSkill` effect: the caster triggers another skill on the target.
-// Java: dist/game/data/scripts/handlers/skill/effects/CallSkill.java
 
 use l2_data::skill::EffectTemplate;
 

@@ -6,7 +6,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::{read_count, write_opcode};
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/ExConfirmAddingContact.java
 /// The answer to adding a contact (`EX_CONFIRM_ADDING_POST_FRIEND`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExConfirmAddingContact {
@@ -43,7 +42,6 @@ pub struct FriendListExtendedEntry {
     pub level: i32,
 }
 
-// Java: gameserver/network/serverpackets/FriendListExtended.java
 /// The friend list with class and level (`FRIEND_LIST`, not the `L2_FRIEND_LIST` of the normal
 /// friend list).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]

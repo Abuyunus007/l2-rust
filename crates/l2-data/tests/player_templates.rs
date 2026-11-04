@@ -80,7 +80,6 @@ fn class_list_names_and_parents() {
     let list = &pack.class_list;
     assert_eq!(list.get_by_id(0).unwrap().name, "Human Fighter");
     assert_eq!(list.get_by_id(0).unwrap().parent, None);
-    // NOTE(java-quirk): parent class 0 is dropped by Java (`parentClassId > 0`).
     assert_eq!(list.get_by_id(1).unwrap().parent, None);
     assert_eq!(list.get_by_id(2).unwrap().parent, Some(ClassId(1)));
     assert_eq!(list.get_by_id(136).unwrap().parent, Some(ClassId(135)));

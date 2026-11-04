@@ -1,9 +1,5 @@
 //! The siege zone of a fortress: whether it is active, what entering and leaving it does to a
 //! player, and the players inside.
-// Java: entity/zone/type/SiegeZone.java (onEnter, onExit, updateZoneStatusForCharactersInside,
-//       banishForeigners, isActive, setActive)
-// Java: entity/actor/Player.java (isRegisteredOnThisSiegeField)
-//
 // SiegeZone is one Java class for castles, fortresses and conquerable halls; its `fortId` parameter
 // ties a zone to a fortress. This module handles the zones of fortresses only (M7-SIEGE-01 owns
 // the castle ones and their `onEnter` / `onExit` hooks in `zones.rs` call this for a `fortId`
@@ -163,9 +159,6 @@ impl World {
     /// The start of `Player.deleteMe` for the fortress code: `SiegeZone.onPlayerLogoutInside`,
     /// the combat flag, the siege state and the fame task.
     pub(crate) fn fort_player_leaving(&mut self, player: ObjectId) {
-        // NOTE(java-quirk): `onPlayerLogoutInside` compares the player's clan id with the id of
-        // the sieged fortress, which are never equal: whoever logs out inside the zone of a
-        // fortress is brought to the nearest town.
         let inside: Vec<i32> = self
             .players
             .get(&player)

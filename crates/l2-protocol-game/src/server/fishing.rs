@@ -8,7 +8,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/ExFishingStart.java
 /// The line is cast (`EX_FISHING_START`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExFishingStart {
@@ -62,7 +61,6 @@ impl Decode for ExFishingStart {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExFishingStartCombat.java
 /// A fish took the bait (`EX_FISHING_START_COMBAT`). Java's constructor takes
 /// `(creature, time, hp, mode, lureType, deceptiveMode)`; the fields are in the order it writes.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -105,7 +103,6 @@ impl Decode for ExFishingStartCombat {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExFishingHpRegen.java
 /// The fish's HP, once a second and after every pump or reel (`EX_FISHING_HP_REGEN`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExFishingHpRegen {
@@ -155,7 +152,6 @@ impl Decode for ExFishingHpRegen {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExFishingEnd.java
 /// The fishing is over (`EX_FISHING_END`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExFishingEnd {

@@ -1,6 +1,4 @@
 //! Quest 269: Invention Ambition (Inventor Maru in the Gludin area buys the energy ores).
-// Java: dist/game/data/scripts/quests/Q00269_InventionAmbition/Q00269_InventionAmbition.java
-//
 // Pattern: a repeatable collect quest with a party drop (`docs/design/scripts.md`, "Quest
 // patterns"): a random started party member gets an energy ore from the northern and kerope
 // monsters with a drop chance; Maru pays per ore, with a bonus from 10 ores, and takes them all.

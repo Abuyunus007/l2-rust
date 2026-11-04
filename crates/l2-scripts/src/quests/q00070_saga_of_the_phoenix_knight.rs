@@ -1,6 +1,4 @@
 //! Quest 70: Saga of the Phoenix Knight (Paladin -> Phoenix Knight).
-// Java: dist/game/data/scripts/quests/Q00070_SagaOfThePhoenixKnight/Q00070_SagaOfThePhoenixKnight.java
-//
 // Pattern: a saga (`docs/design/scripts.md`, "Quest patterns"): the Java class only fills the
 // fields of `AbstractSagaQuest`; here that is a `SagaData` constant and one `saga_quest!` line.
 // Copy this file for the other 33 sagas, the arrays in Java's order.

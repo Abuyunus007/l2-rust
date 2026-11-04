@@ -1,5 +1,4 @@
 //! Weaver Olf: unseals the Sealed Magic Pins, Pouches, Rune Clips and Ornaments for adena.
-// Java: dist/game/data/scripts/ai/others/WeaverOlf/WeaverOlf.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;
@@ -71,8 +70,6 @@ impl Script for WeaverOlf {
         player: Option<ObjectId>,
     ) -> Option<String> {
         if event.contains("_grade_") {
-            // NOTE(java-quirk): Java parses the first character and indexes the tables with it; a
-            // bad character or index throws, and nothing happens here.
             let grade = usize::try_from(event.chars().next()?.to_digit(10)?).ok()?;
             let (price, item_ids) = if event.ends_with("_pin") {
                 (*UNSEAL_PRICE.get(grade)?, PINS.get(grade)?)
@@ -92,7 +89,6 @@ impl Script for WeaverOlf {
             let player = player?;
 
             if ctx.has_quest_items(player, item_ids[0]) {
-                // NOTE(java-quirk): `>` and not `>=`: a player with exactly the price is refused.
                 if ctx.adena_of(player) > price {
                     ctx.take_items(player, ADENA_ID, price);
                     ctx.take_items(player, item_ids[0], 1);

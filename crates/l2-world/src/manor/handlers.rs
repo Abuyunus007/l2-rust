@@ -1,7 +1,5 @@
 //! The manor's client packets: the manor list, the lord's seed and crop settings, the seed
 //! purchase and the crop sale.
-// Java: network/clientpackets/{RequestManorList,RequestSetSeed,RequestSetCrop,RequestBuySeed,
-//       RequestProcureCropList}.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::client::{RequestBuySeed, RequestProcureCropList, RequestSetCrop, RequestSetSeed};
@@ -263,7 +261,6 @@ impl World {
                 debug!("{id}: RequestBuySeed for the unknown item {}", item.item_id);
                 return;
             };
-            // NOTE(java-quirk): `int += long` narrows the sum.
             total_weight = (i64::from(total_weight)
                 .wrapping_add(item.count.wrapping_mul(i64::from(template.weight))))
                 as i32;
@@ -299,8 +296,6 @@ impl World {
                 continue;
             };
             // Take Adena and decrease seed amount.
-            // NOTE(java-quirk): the amount is decreased before the adena is taken; when the adena
-            // is short the seeds stay gone.
             let decreased = self
                 .manor_seed_product_mut(manor_id, item.item_id, false)
                 .is_some_and(|sp| sp.decrease_amount(item.count));
@@ -315,7 +310,6 @@ impl World {
 
         // Adding to treasury for Manor Castle.
         if total_price > 0 {
-            // The treasury is the castle's own row: it follows the tax income (D-51).
             self.castle_add_to_treasury_no_tax(CastleId(manor_id), total_price);
             self.send(
                 id,
@@ -394,7 +388,6 @@ impl World {
                 debug!("{id}: a reward without a template: {reward_id}");
                 return;
             };
-            // NOTE(java-quirk): `int += long` narrows the sum.
             weight =
                 (i64::from(weight).wrapping_add(crop.count.wrapping_mul(i64::from(template.weight)))) as i32;
             if !template.stackable {
@@ -466,8 +459,6 @@ impl World {
                 continue;
             }
 
-            // NOTE(java-quirk): the crop's amount is taken first; when the fee or the item cannot
-            // be taken the amount stays gone.
             let decreased = self
                 .manor_crop_procure_mut(crop.manor_id, crop.item_id, false)
                 .is_some_and(|cp| cp.decrease_amount(crop.count));

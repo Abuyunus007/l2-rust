@@ -1,7 +1,5 @@
 //! Quest 641: Attack Sailren! (Shilen's Stone Statue in the Gludin/Dragon Valley area; the
 //! velociraptors and the pterosaur drop the Gazkh fragments).
-// Java: dist/game/data/scripts/quests/Q00641_AttackSailren/Q00641_AttackSailren.java
-//
 // Pattern: a party kill count with a random member at cond 2 (`getRandomPartyMember(player, 1)`),
 // and the start gate of another quest (Q00126 completed) read through `player_quest_state`.
 
@@ -61,7 +59,6 @@ impl Script for Q00641AttackSailren {
     ) -> Option<String> {
         let player = player?;
         let Some(qs) = ctx.get_quest_state(player, false) else {
-            // NOTE(java-quirk): without a state the no-quest page is the answer, not null.
             return Some(ctx.get_no_quest_msg(player));
         };
         match event {

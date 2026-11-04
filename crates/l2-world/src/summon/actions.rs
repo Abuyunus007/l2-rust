@@ -1,11 +1,5 @@
 //! What a player tells its summon: the summon actions of `RequestActionUse`, the summon's skills
 //! (`useMagic`), the attack checks (`canAttack`) and the click on a summon.
-// Java: network/clientpackets/RequestActionUse.java (the common checks, the summon actions,
-//       useSkill, canControl, validateSummon)
-// Java: entity/actor/Summon.java (useMagic, canAttack, doCast, PASSIVE_SUMMONS)
-// Java: data/xml/PetSkillData.java (getAvailableLevel)
-// Java: dist/game/data/scripts/handlers/actions/click/SummonClick.java
-//
 // The player's own actions (sit, walk, socials, couple actions) are `actions.rs`; the stores are
 // `trade/store.rs`. The manufacture and mount actions are `craft/shop.rs` and `mount.rs`; the airship
 // actions are `vehicle/input.rs`; the bot report action belongs to its own system and is logged as
@@ -402,7 +396,6 @@ impl World {
             && ((check_pet && self.is_pet(summon)) || self.is_servitor(summon))
         {
             if self.is_pet(summon) && self.pet_is_uncontrollable(summon) {
-                // NOTE(java-quirk): the message is the siege war status window one.
                 self.send_system(
                     player,
                     SystemMessageId::OnlyAClanLeaderThatIsANoblesseCanViewTheSiegeWarStatusWindowDuringASiegeWar,
@@ -428,8 +421,6 @@ impl World {
 
     /// Java `RequestActionUse.canControl(player, summon)`.
     fn can_control(&self, player: ObjectId, summon: ObjectId) -> bool {
-        // NOTE(java-quirk): the switch stance skill goes through here too, so a baby pet in the
-        // auxiliary mode cannot be switched back with the button (`switchMode()` is never reached).
         if self.is_baby_pet(summon) && !self.baby_is_in_support_mode(summon) {
             self.send_system(player, SystemMessageId::APetOnAuxiliaryModeCannotUseSkills);
             return false;

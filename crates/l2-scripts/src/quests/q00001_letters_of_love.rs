@@ -1,6 +1,4 @@
 //! Quest 1: Letters of Love (Darin, Roxxy and Baulro in Talking Island).
-// Java: dist/game/data/scripts/quests/Q00001_LettersOfLove/Q00001_LettersOfLove.java
-//
 // The reference port of a quest for the batch workers (`docs/design/scripts.md`): constants as
 // in Java, `setup` = the constructor, `on_event` / `on_talk` line by line.
 

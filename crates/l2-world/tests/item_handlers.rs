@@ -546,7 +546,6 @@ fn a_potion_in_reuse_tells_the_time_left_and_is_kept() {
     assert_eq!(s.count_of(1060), 2);
     let all = messages(&sent);
     assert_eq!(all.len(), 1, "{all:?}");
-    // Java: remaining 6900 ms: "There are $s2 second(s) remaining in $s1's re-use time".
     assert_eq!(
         all[0].id,
         SystemMessageId::ThereAreS2SecondSRemainingInS1SReUseTime

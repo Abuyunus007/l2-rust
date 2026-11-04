@@ -8,7 +8,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/ExColosseumFenceInfo.java
 /// Shows one fence piece (`EX_COLOSSEUM_FENCE_INFO`). A fence with `height > 1` sends one packet
 /// for the fence object and one per extra height id.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -54,7 +53,6 @@ impl Decode for ExColosseumFenceInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/OnEventTrigger.java
 /// Switches a client-side effect emitter on or off (`EVENT_TRIGGER`); doors with an `emitter_id`
 /// send it with `enabled = !open`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

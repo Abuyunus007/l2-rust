@@ -1,6 +1,4 @@
 //! Quest 998: Fallen Angel Select (Warehouse Chief Natools lets the player choose Dawn or Dusk).
-// Java: dist/game/data/scripts/quests/Q00998_FallenAngelSelect/Q00998_FallenAngelSelect.java
-//
 // A custom quest (`setCustom(true)`): `startQuest` does nothing for it. It starts the Dawn or
 // Dusk quest of the player by name and completes itself.
 
@@ -80,9 +78,6 @@ impl Script for Q00998FallenAngelSelect {
             return Some(ctx.get_no_quest_msg(player));
         }
 
-        // NOTE(java-quirk): Java calls `qs.isCompleted()` on the state of Q00141 without a null
-        // check (it throws when the player has no state; `&&` is short-circuit at the level).
-        // Here a missing state reads as not completed.
         let level_ok = ctx.player_level(player) >= MIN_LEVEL;
         let shadow_fox_done = ctx
             .player_quest_state(player, Q00141)

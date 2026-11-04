@@ -1,7 +1,5 @@
 //! One game server connection as the rest of the login server sees it: the framing cipher and
 //! the [`GsLink`] handle.
-// Java: org/l2jmobius/loginserver/GameServerThread.java (`sendPacket`, `kickPlayer`,
-//       `requestCharacters`, `changePasswordResponse`, the account set)
 
 use std::collections::HashSet;
 use std::net::IpAddr;
@@ -43,7 +41,6 @@ impl FrameCipher for LinkFrameCipher {
 /// A live link to a game server. Shared (`Arc`) between the connection task and the
 /// `GameServerInfo` of the server it belongs to; other tasks use it to send packets and to ask
 /// which accounts are on that game server.
-// Java: GameServerThread
 #[derive(Debug)]
 pub struct GsLink {
     /// Unique per connection, so a link can be recognised again (`PartialEq`).
@@ -97,21 +94,18 @@ impl GsLink {
         self.connection.is_closed()
     }
 
-    // Java: GameServerThread.kickPlayer
     pub fn kick_player(&self, account: &str) {
         self.send(&KickPlayer {
             account: account.to_owned(),
         });
     }
 
-    // Java: GameServerThread.requestCharacters
     pub fn request_characters(&self, account: &str) {
         self.send(&RequestCharacters {
             account: account.to_owned(),
         });
     }
 
-    // Java: GameServerThread.changePasswordResponse
     pub fn change_password_response(&self, character_name: &str, message: &str) {
         self.send(&ChangePasswordResponse {
             character_name: character_name.to_owned(),
@@ -119,18 +113,15 @@ impl GsLink {
         });
     }
 
-    // Java: GameServerThread.hasAccountOnGameServer
     pub fn has_account(&self, account: &str) -> bool {
         lock(&self.accounts).contains(account)
     }
 
-    // Java: GameServerThread.getPlayerCount
     pub fn player_count(&self) -> usize {
         lock(&self.accounts).len()
     }
 
     /// Adds an account to the game server's online set.
-    // Java: GameServerThread.addAccountOnGameServer
     // Java also drops the account from the login server's list of authed clients in there. The
     // link does not know that list, so `gs::handlers::add_account_on_game_server` does both.
     pub fn add_account(&self, account: &str) {
@@ -138,7 +129,6 @@ impl GsLink {
     }
 
     /// Removes an account from the online set.
-    // Java: GameServerThread.removeAccountOnGameServer
     // See `add_account`: `gs::handlers::remove_account_on_game_server` does both steps.
     pub fn remove_account(&self, account: &str) {
         lock(&self.accounts).remove(account);

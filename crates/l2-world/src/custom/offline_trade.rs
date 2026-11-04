@@ -1,16 +1,5 @@
 //! The custom parts of `config/Custom/OfflineTrade.ini` that `trade/offline.rs` (M6-FU-14) left
 //! out: the voiced command `.offline` (`EnableOfflineCommand`) and `OfflineAbnormalEffect`.
-// Java: dist/game/data/scripts/handlers/chat/commands/voiced/Offline.java
-// Java: network/clientpackets/DlgAnswer.java (the `OFFLINE_TRADE` branch)
-// Java: data/sql/OfflineTraderTable.java (enteredOfflineMode: the abnormal effect)
-// Java: config/custom/OfflineTradeConfig.java
-//
-// # Left out
-// - `OfflineDisconnectSameAccount` (`CharSelectionInfo`): the character list of the account is
-//   built outside the world. In the side by side mode (D-52) the account stays on this server
-//   while a trader sells and a login of the account kicks the trader, which is the same result.
-// - The restore of a trader (`restoreOfflineTraders`) does not give the abnormal effect back: the
-//   effect is a visual only and the restore does not run side by side.
 
 use l2_data::skill::AbnormalVisualEffect;
 use l2_protocol_game::SystemMessageId;

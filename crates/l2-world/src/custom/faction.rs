@@ -1,9 +1,4 @@
 //! The faction system (Good against Evil), `config/Custom/FactionSystem.ini` (M9-C04).
-// Java: config/custom/FactionSystemConfig.java, entity/actor/Player.java (`_isGood`, `_isEvil`,
-// Java: setGood, setEvil), entity/World.java (`_allGoodPlayers`, `_allEvilPlayers`),
-// Java: data/xml/MapRegionData.java (respawn at the base), network/clientpackets/EnterWorld.java,
-// Java: network/clientpackets/CharacterSelect.java (the balance check)
-//
 // A player's faction is `characters.faction` (0 none, 1 good, 2 evil), kept in
 // `PlayerProfile::faction`. Java's two player lists are the players of the world with that value,
 // so they are counted from the player map. The selection itself (the NPC, the html pages) is the

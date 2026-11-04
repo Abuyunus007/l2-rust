@@ -1,8 +1,5 @@
 //! The subnet and host lists of `AuthRequest`: which address the login server shows to which
 //! client network.
-// Java: org/l2jmobius/gameserver/config/ServerConfig.java (`IPConfigData`)
-// Java: dist/game/config/default-ipconfig.xml
-//
 // The login server answers a client with the host whose subnet contains the client's address,
 // first match wins (`GameServerInfo.getServerAddress`), so the order of the pairs matters.
 
@@ -32,7 +29,6 @@ pub struct IpConfig {
 impl IpConfig {
     /// Reads `ipconfig.xml` from `config_dir`; without the file Java configures itself from
     /// the network interfaces ([`IpConfig::automatic`]).
-    // Java: IPConfigData.load
     pub fn load(config_dir: &Path) -> Self {
         let path = config_dir.join(IPCONFIG_FILE);
         if !path.is_file() {
@@ -43,7 +39,6 @@ impl IpConfig {
         match std::fs::read(&path) {
             Ok(bytes) => Self::parse(&String::from_utf8_lossy(&bytes)),
             Err(e) => {
-                // Java: `IXmlReader.parseFile` logs the failure and leaves the lists empty.
                 warn!("Could not read file {}: {e}", path.display());
                 Self::from_lists(Vec::new(), Vec::new())
             }
@@ -52,7 +47,6 @@ impl IpConfig {
 
     /// The manual configuration: one `<define subnet=".." address=".."/>` per network, then
     /// the `address` of `<gameserver>` for everybody else (`0.0.0.0/0`).
-    // Java: IPConfigData.parseDocument
     pub fn parse(xml: &str) -> Self {
         let mut lists = Lists::default();
         let mut reader = Reader::from_str(xml);
@@ -84,7 +78,6 @@ impl IpConfig {
                 }
                 Ok(_) => {}
                 Err(e) => {
-                    // Java: the parse exception is logged and `parseDocument` never runs.
                     warn!("Could not parse {IPCONFIG_FILE}: {e}");
                     lists = Lists::default();
                     break;

@@ -92,8 +92,6 @@ async fn starts_reaches_ready_and_shuts_down_with_exit_code_0() {
     assert_eq!(hexid.server_id, 7);
     assert_eq!(l2_db::hex_to_string(&hexid.hex_id).unwrap(), SAMPLE_HEXID);
 
-    // The pool really talks to the database, and the startup did not change anything in it:
-    // D-39, no cleanup queries.
     let rows: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM itemsonground")
         .fetch_one(&state.pool)
         .await

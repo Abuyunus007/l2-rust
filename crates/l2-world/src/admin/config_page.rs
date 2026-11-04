@@ -1,6 +1,5 @@
 //! `//config_server` and `//setconfig`: the rates and the element enchant chances that the GM
 //! page changes while the server runs.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminAdmin.java (showConfigPage and
 // the `admin_setconfig` branch)
 //
 // The values live in the world's settings (`WorldSettings`), which only these keys change at run

@@ -808,7 +808,6 @@ fn area_corpse_mob_starts_at_the_dead_target() {
         "",
     );
 
-    // NOTE(java-quirk): other corpses fail `checkForAreaOffensiveSkills` (dead), living mobs pass.
     let r = s.cast(&sk, ME, false, Some(corpse));
     assert_eq!(set_of(&r), set(&[corpse, alive_near]));
     assert_eq!(s.cast(&sk, ME, true, Some(corpse)).targets, vec![corpse]);
@@ -861,8 +860,6 @@ fn front_area_turns_the_caster_towards_the_origin_before_it_looks() {
 
     let r = s.cast(&sk, ME, false, Some(t));
     assert_eq!(r.caster_heading, Some(heading_from_points(X, Y, X, Y + 300)));
-    // NOTE(java-quirk): the new heading is used at once, so the mob to the north is "in front"
-    // and the one to the east (the old facing) is on the side.
     assert_eq!(set_of(&r), set(&[t, north]));
     assert!(!r.targets.contains(&east));
     // onlyFirst returns before the heading is set.
@@ -924,7 +921,6 @@ fn aura_friendly_has_no_range_test() {
     let mut s = Scene::new();
     s.me();
     s.player(P2, 100, 0);
-    // NOTE(java-quirk): the affect range is not used, everything in the surrounding regions counts.
     s.player(P3, 1_000, 0);
     s.enter(P4, 0, 5, (X + 100, Y + 20, Z));
     let monster = s.npc(9001, 50, 0);
@@ -964,7 +960,6 @@ fn ground_uses_the_skill_world_position() {
     let r = s.world.skill_target_list(&sk, ME, false, None, &ctx);
     assert_eq!(set_of(&r), set(&[a, b]));
 
-    // NOTE(java-quirk): the affect limit never limits.
     let limited = skill(
         "GROUND",
         &format!("<affectRange>150</affectRange><affectLimit>1-0</affectLimit>{NEGATIVE}"),
@@ -1092,7 +1087,6 @@ fn corpse_clan_of_an_npc_checks_the_limit_without_the_zero_test() {
         "",
     );
     assert_eq!(set_of(&s.cast(&sk, caster, false, None)), set(&[caster, orc]));
-    // NOTE(java-quirk): a limit of 0 means "none", not "unlimited", for this handler.
     let zero = skill("CORPSE_CLAN", "<castRange>500</castRange>", "");
     assert_eq!(s.cast(&zero, caster, false, None).targets, vec![caster]);
 }
@@ -1147,7 +1141,6 @@ fn target_party_without_a_party_is_the_target() {
         assert_eq!((r.targets, r.messages), (vec![], incorrect()), "{target:?}");
     }
     s.world.set_target(ME, Some(mob));
-    // NOTE(java-quirk): `getTarget().asPlayer()` is null for a mob: NullPointerException.
     let r = s.cast(&sk, ME, false, Some(P2));
     assert!(r.targets.is_empty());
     assert_eq!(r.messages, vec![TargetMessage::Text(NOT_HANDLED_TEXT)]);

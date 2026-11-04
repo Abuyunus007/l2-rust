@@ -3,7 +3,6 @@
 //! Clan skills and the academy (M6-CLAN-03): the skills the members get, the reputation switch,
 //! the clan trainer's lists, `RequestAcquireSkillInfo` / `RequestAcquireSkill` for the clan and
 //! squad skills, the `clan_skills` rows and the academy graduation.
-//! Java: entity/clan/Clan.java (addNewSkill, addSkillEffects, removeSkillEffects, skillsStatus,
 //! isLearnableSubSkill, isLearnableSubPledgeSkill), data/xml/SkillTreeData.java,
 //! entity/actor/instance/VillageMaster.java (showPledgeSkillList),
 //! network/clientpackets/{RequestAcquireSkill,RequestAcquireSkillInfo}.java,

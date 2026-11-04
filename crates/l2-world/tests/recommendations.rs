@@ -6,7 +6,6 @@
 //! The expected numbers and messages are worked out by hand from the Java sources named in
 //! `rewards/recommendations.rs`. Every clock is pinned: the daily reset is scheduled with
 //! `start_daily_reset_task_at` and a fixed "now", never the wall clock.
-//! Java: network/clientpackets/RequestVoteNew.java, entity/actor/tasks/player/RecoGiveTask.java,
 //! managers/DailyResetManager.java
 
 use std::sync::{Arc, Mutex};
@@ -170,7 +169,6 @@ impl Scene {
         Self::with_db_writes(nevit_enabled)
     }
 
-    /// `daily_reset_database_writes` is `DailyResetDatabaseWrites` of `SideBySide.ini`.
     fn with_db_writes(nevit_enabled: bool) -> Self {
         let log = Log::default();
         let mut world = World::new(WorldRng::from_seed(7), Box::new(RecOutbox(log.clone())));

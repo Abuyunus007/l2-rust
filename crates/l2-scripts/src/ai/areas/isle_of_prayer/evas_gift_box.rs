@@ -1,5 +1,4 @@
 //! Eva's Gift Box drops coral and crystal for a character with the Kiss of Eva.
-// Java: dist/game/data/scripts/ai/areas/IsleOfPrayer/EvasGiftBox.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

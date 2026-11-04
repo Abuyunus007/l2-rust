@@ -1,11 +1,5 @@
 //! The skill target handlers: `Skill.getTargetList(creature, onlyFirst, target)` and the 34
 //! `ITargetTypeHandler`s it dispatches to.
-// Java: mechanics/skill/Skill.java (getTargetList, getFirstOfTargetList,
-//       checkForAreaOffensiveSkills, addSummon, addCharacter)
-// Java: handler/ITargetTypeHandler.java, handler/TargetHandler.java
-// Java: dist/game/data/scripts/handlers/skill/targets/*.java (one `Targeting::<handler>` each)
-// Java: entity/actor/Player.java (checkPvpSkill), util/LocationUtil.java (checkIfInRange)
-//
 // # Shape
 // Targeting only reads the world. Java's handlers also *send* messages to the caster and, in
 // `FrontArea`, turn it towards the origin; here both are returned in a [`TargetResult`] and the
@@ -744,7 +738,6 @@ impl<R: Rnd> Targeting<'_, R> {
 
     // ------------------------------------------------------------------ area / aura
 
-    // Java: Area.java
     fn area(&mut self) {
         if self.bad_area_target() {
             self.out.incorrect_target();
@@ -784,7 +777,6 @@ impl<R: Rnd> Targeting<'_, R> {
         }
     }
 
-    // Java: AreaCorpseMob.java
     fn area_corpse_mob(&mut self) {
         let Some(target) = self.target.filter(|t| self.attackable(*t) && self.dead(*t)) else {
             self.out.incorrect_target();
@@ -806,11 +798,7 @@ impl<R: Rnd> Targeting<'_, R> {
         }
     }
 
-    // Java: AreaFriendly.java
     fn area_friendly(&mut self) {
-        // NOTE(java-quirk): `creature.asPlayer()` is null for an NPC caster and `checkTarget`
-        // (`canSeeTarget(null, ...)`) or `player.sendPacket` throws: the catch in
-        // `Skill.getTargetList` ends it.
         if !self.caster_is_player() {
             self.not_handled();
             return;
@@ -821,7 +809,6 @@ impl<R: Rnd> Targeting<'_, R> {
             return;
         }
         if self.only_first {
-            // NOTE(java-quirk): a null target is added to the list as is; here it is left out.
             if let Some(target) = self.target {
                 self.push(target);
             }
@@ -887,7 +874,6 @@ impl<R: Rnd> Targeting<'_, R> {
         true
     }
 
-    // Java: AreaSummon.java
     fn area_summon(&mut self) {
         // `creature.isPlayer() ? creature.asPlayer().getSummon() : null`: a live servitor.
         let summon = if self.caster_is_player() {
@@ -921,7 +907,6 @@ impl<R: Rnd> Targeting<'_, R> {
         }
     }
 
-    // Java: Aura.java
     fn aura(&mut self) {
         let src_in_arena = self.src_in_arena();
         for obj in self
@@ -951,7 +936,6 @@ impl<R: Rnd> Targeting<'_, R> {
         }
     }
 
-    // Java: AuraCorpseMob.java
     fn aura_corpse_mob(&mut self) {
         let max_targets = self.affect_limit();
         for obj in self
@@ -973,7 +957,6 @@ impl<R: Rnd> Targeting<'_, R> {
         }
     }
 
-    // Java: AuraFriendly.java
     fn aura_friendly(&mut self) {
         let max_targets = self.affect_limit();
         // `World.forEachVisibleObject(player, ...)` returns at once for a null player (NPC caster).
@@ -981,7 +964,6 @@ impl<R: Rnd> Targeting<'_, R> {
             return;
         }
         let player = self.caster;
-        // NOTE(java-quirk): no range test: everything in the surrounding regions is a candidate.
         for obj in self.w.visible_creatures(player) {
             if obj == self.caster || !self.friendly_aura_target(player, obj) {
                 continue;
@@ -1026,12 +1008,10 @@ impl<R: Rnd> Targeting<'_, R> {
         true
     }
 
-    // Java: BehindArea.java
     fn behind_area(&mut self) {
         self.directional_area(false);
     }
 
-    // Java: FrontArea.java
     fn front_area(&mut self) {
         self.directional_area(true);
     }
@@ -1092,12 +1072,10 @@ impl<R: Rnd> Targeting<'_, R> {
         }
     }
 
-    // Java: BehindAura.java
     fn behind_aura(&mut self) {
         self.directional_aura(false);
     }
 
-    // Java: FrontAura.java
     fn front_aura(&mut self) {
         self.directional_aura(true);
     }
@@ -1147,7 +1125,6 @@ impl<R: Rnd> Targeting<'_, R> {
         }
     }
 
-    // Java: Clan.java
     fn clan(&mut self) {
         if self.playable(self.caster) {
             // `creature.asPlayer()`: a summon casts for its owner.
@@ -1213,7 +1190,6 @@ impl<R: Rnd> Targeting<'_, R> {
         }
     }
 
-    // Java: ClanMember.java
     fn clan_member(&mut self) {
         if !self.w.is_npc(self.caster) {
             return;
@@ -1239,7 +1215,6 @@ impl<R: Rnd> Targeting<'_, R> {
         }
     }
 
-    // Java: CommandChannel.java
     fn command_channel(&mut self) {
         // `creature.asPlayer()`.
         let Some(player) = self.w.acting_player(self.caster) else {
@@ -1267,8 +1242,6 @@ impl<R: Rnd> Targeting<'_, R> {
             }
             if self.w.skill_add_character(self.caster, member, radius, false) {
                 self.push(member);
-                // NOTE(java-quirk): no `maxTargets > 0` test, so an affect limit of 0 stops the
-                // list after the first member.
                 if self.size_at_least(max_targets) {
                     break;
                 }
@@ -1276,7 +1249,6 @@ impl<R: Rnd> Targeting<'_, R> {
         }
     }
 
-    // Java: CorpseClan.java
     fn corpse_clan(&mut self) {
         if self.caster_is_player() {
             // `isInOlympiadMode()` returns just the player (M8-OLY-01).
@@ -1333,8 +1305,6 @@ impl<R: Rnd> Targeting<'_, R> {
                 .visible_creatures_in_range(self.caster, self.skill.cast_range)
             {
                 if self.w.is_npc(other) && self.w.npc_in_my_clan(self.caster, other) {
-                    // NOTE(java-quirk): unlike `Clan`, no `maxTargets > 0` test: an affect limit
-                    // of 0 stops after the caster.
                     let max_targets = self.affect_limit();
                     if self.size_at_least(max_targets) {
                         break;
@@ -1347,7 +1317,6 @@ impl<R: Rnd> Targeting<'_, R> {
 
     // ------------------------------------------------------------------ single targets
 
-    // Java: CorpseMob.java
     fn corpse_mob(&mut self) {
         let Some(target) = self.target.filter(|t| self.attackable(*t) && self.dead(*t)) else {
             self.out.incorrect_target();
@@ -1368,7 +1337,6 @@ impl<R: Rnd> Targeting<'_, R> {
         self.push(target);
     }
 
-    // Java: EnemySummon.java
     fn enemy_summon(&mut self) {
         let Some(target) = self.target.filter(|t| self.w.is_summon(*t)) else {
             return;
@@ -1392,24 +1360,19 @@ impl<R: Rnd> Targeting<'_, R> {
         // M6 (DUEL-01): both in the same duel.
     }
 
-    // Java: FlagPole.java
     fn flag_pole(&mut self) {
         if !self.caster_is_player() {
             return;
         }
-        // NOTE(java-quirk): `singletonList(target)` even when target is null; here it is left out.
         if let Some(target) = self.target {
             self.push(target);
         }
     }
 
-    // Java: Ground.java
     fn ground(&mut self) {
         let max_targets = self.affect_limit();
         let src_in_arena = self.src_in_arena();
         let candidates = self.w.visible_creatures(self.caster);
-        // NOTE(java-quirk): `player.getCurrentSkillWorldPosition()` is dereferenced for every
-        // candidate; an NPC caster (no player) or a missing ground point throws on the first one.
         if !candidates.is_empty() && (!self.caster_is_player() || self.ctx.ground.is_none()) {
             self.not_handled();
             return;
@@ -1432,8 +1395,6 @@ impl<R: Rnd> Targeting<'_, R> {
                     continue;
                 }
                 self.push(character);
-                // NOTE(java-quirk): the limit test sits after the add and only `return`s from the
-                // lambda, so it never limits anything.
                 let _ = self.limit_reached(max_targets);
             }
         }
@@ -1442,7 +1403,6 @@ impl<R: Rnd> Targeting<'_, R> {
         }
     }
 
-    // Java: Holy.java
     fn holy(&mut self) {
         // `target.isArtefact()`: the castle artefact NPCs.
         let artefact = self.target.filter(|t| {
@@ -1455,7 +1415,6 @@ impl<R: Rnd> Targeting<'_, R> {
         }
     }
 
-    // Java: One.java
     fn one(&mut self) {
         // Check for null target or any other invalid target.
         let Some(target) = self
@@ -1468,7 +1427,6 @@ impl<R: Rnd> Targeting<'_, R> {
         self.push(target);
     }
 
-    // Java: OwnerPet.java
     fn owner_pet(&mut self) {
         // When the caster is a summon, its live owner.
         if let Some(owner) = self.w.summon_owner(self.caster)
@@ -1479,7 +1437,6 @@ impl<R: Rnd> Targeting<'_, R> {
         }
     }
 
-    // Java: Party.java
     fn party(&mut self) {
         self.push(self.caster);
         if self.only_first {
@@ -1515,7 +1472,6 @@ impl<R: Rnd> Targeting<'_, R> {
         }
     }
 
-    // Java: PartyClan.java
     fn party_clan(&mut self) {
         if !self.caster_is_player() {
             return;
@@ -1580,7 +1536,6 @@ impl<R: Rnd> Targeting<'_, R> {
         }
     }
 
-    // Java: PartyMember.java
     fn party_member(&mut self) {
         let Some(target) = self.target else {
             self.out.incorrect_target();
@@ -1600,7 +1555,6 @@ impl<R: Rnd> Targeting<'_, R> {
         }
     }
 
-    // Java: PartyNotMe.java
     fn party_not_me(&mut self) {
         let Some(party) = self.w.party_of(self.caster) else {
             return;
@@ -1622,7 +1576,6 @@ impl<R: Rnd> Targeting<'_, R> {
         }
     }
 
-    // Java: PartyOther.java
     fn party_other(&mut self) {
         if let Some(target) = self
             .target
@@ -1656,7 +1609,6 @@ impl<R: Rnd> Targeting<'_, R> {
         self.out.incorrect_target();
     }
 
-    // Java: PcBody.java
     fn pc_body(&mut self) {
         if let Some(target) = self.target.filter(|t| self.dead(*t)) {
             // A dead pet (`targetPet`) is a valid body too.
@@ -1688,7 +1640,6 @@ impl<R: Rnd> Targeting<'_, R> {
         self.out.incorrect_target();
     }
 
-    // Java: Pet.java
     fn pet(&mut self) {
         if self.caster_is_player()
             && let Some(summon) = self.w.summon_of(self.caster).filter(|s| self.w.is_pet(*s))
@@ -1697,12 +1648,10 @@ impl<R: Rnd> Targeting<'_, R> {
         }
     }
 
-    // Java: Self.java
     fn self_target(&mut self) {
         self.push(self.caster);
     }
 
-    // Java: Servitor.java
     fn servitor(&mut self) {
         if self.caster_is_player()
             && let Some(summon) = self.w.summon_of(self.caster).filter(|s| self.w.is_servitor(*s))
@@ -1711,7 +1660,6 @@ impl<R: Rnd> Targeting<'_, R> {
         }
     }
 
-    // Java: Summon.java
     fn summon(&mut self) {
         if self.caster_is_player()
             && let Some(summon) = self.w.summon_of(self.caster)
@@ -1720,15 +1668,12 @@ impl<R: Rnd> Targeting<'_, R> {
         }
     }
 
-    // Java: TargetParty.java
     fn target_party(&mut self) {
         // Check for null target or any other invalid target.
         let Some(target) = self.target.filter(|t| !self.dead(*t) && *t != self.caster) else {
             self.out.incorrect_target();
             return;
         };
-        // NOTE(java-quirk): Java reads `creature.getTarget().asPlayer()` (the selected object,
-        // not the `target` argument); a non-player there is a NullPointerException.
         let selected = if self.caster_is_player() {
             self.w.target_of(self.caster)
         } else {
@@ -1758,7 +1703,6 @@ impl<R: Rnd> Targeting<'_, R> {
         }
     }
 
-    // Java: Unlockable.java
     fn unlockable(&mut self) {
         let valid = self.target.filter(|t| {
             self.w.is_door(*t)

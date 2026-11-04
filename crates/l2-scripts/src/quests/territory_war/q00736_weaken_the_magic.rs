@@ -1,5 +1,4 @@
 //! Quest 736: Weaken the magic!
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/Q00736_WeakenTheMagic.java
 
 use l2_protocol_game::NpcStringId;
 

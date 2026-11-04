@@ -1,13 +1,6 @@
 //! The parts of Java's `PlayerClass` enum that skill learning reads: the constant name, the parent
 //! (`getParent`), mage or fighter (`isMage`), the depth in the class tree (`level`) and
 //! `equalsOrChildOf`.
-//!
-//! Java: `gameserver/entity/actor/enums/player/PlayerClass.java`.
-//!
-//! NOTE(java-quirk): the enum's parents are not always the ones `classList.xml` names (Bladedancer
-//! and Elemental Master differ), and skill trees take their own parent chain from
-//! `skillTrees/*.xml`. Skill learning (`NpcTemplate.canTeach`, the `SkillList` bypass) uses the
-//! enum, so this table is a copy of the enum, not of the class list.
 
 use crate::class_list::ClassId;
 

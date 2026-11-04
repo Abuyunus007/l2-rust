@@ -1,6 +1,5 @@
 //! Ice Queen's Castle instance zone, template 137: Freya's forced defeat for
 //! `Q10285_MeetingSirra`.
-// Java: dist/game/data/scripts/instances/IceQueensCastle/IceQueensCastle.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::SystemMessageId;
@@ -87,7 +86,6 @@ impl Script for IceQueensCastle {
             }
             "TIMER_SCENE_21" => {
                 if let Some(npc) = npc {
-                    // NOTE(java-quirk): `playMovie(null, ..)` would throw without a player.
                     let player = player?;
                     ctx.play_movie(player, SC_BOSS_FREYA_FORCED_DEFEAT);
                     ctx.start_quest_timer("TIMER_PC_LEAVE", 24000, None, Some(player), false);
@@ -100,7 +98,6 @@ impl Script for IceQueensCastle {
                 if let Some(qs) = qs {
                     qs.set_memo_state(ctx, 3);
                     qs.set_cond(ctx, 10, true);
-                    // NOTE(java-quirk): `getPlayerWorld(player)` is dereferenced unchecked.
                     let instance_id = ctx.world().player_instance_world(player).map(|w| w.instance_id)?;
                     if let Some(world) = ctx.world_mut().instance_world_mut(instance_id) {
                         world.remove_allowed(player);

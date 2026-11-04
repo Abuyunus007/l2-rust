@@ -1,7 +1,5 @@
 //! Quest 42: Help the Uncle! (Pet Manager Waters at the Talking Island, Sophya the Uncle's
 //! sister in the Gludio side; the eye destroyers give the map pieces).
-// Java: dist/game/data/scripts/quests/Q00042_HelpTheUncle/Q00042_HelpTheUncle.java
-//
 // Pattern: a kill-count quest with a delivery chain (`docs/design/scripts.md`, "Quest patterns"):
 // the trident starts the hunt, thirty map pieces make the map, and the map goes to Sophya for the
 // ticket at the end.

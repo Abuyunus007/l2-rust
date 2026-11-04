@@ -1,20 +1,12 @@
 //! The `buylists` table: the stock and the next restock time of the limited products of NPC
 //! buy lists.
-// Java: org/l2jmobius/gameserver/data/xml/BuyListData.java (the `SELECT * FROM buylists`),
-//       org/l2jmobius/gameserver/mechanics/buylist/Product.java (save)
-//
-// D-39: the Java game server writes and reads the same rows. The Rust server only reads the
-// table at startup and upserts the row of a product when its stock changes, with Java's
-// statement.
 
 use sqlx::FromRow;
 
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: BuyListData.load
 const SELECT_BUYLISTS: &str = "SELECT * FROM `buylists`";
-// Java: Product.save
 const SAVE_PRODUCT: &str = "INSERT INTO `buylists`(`buylist_id`, `item_id`, `count`, `next_restock_time`) VALUES(?, ?, ?, ?) ON DUPLICATE KEY UPDATE `count` = ?, `next_restock_time` = ?";
 
 /// One row of `buylists`.

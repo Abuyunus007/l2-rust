@@ -1,8 +1,6 @@
 //! The clan hall words of the GM panel: `//clanhall <id>` (the hall's page), `//clanhallset`,
 //! `//clanhalldel`, `//clanhallopendoors`, `//clanhallclosedoors` and `//clanhallteleportself`.
 //! `//clanhall` alone shows the castle select page, as `//siege` does.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminSiege.java (the clan hall part)
-//
 // The conquerable halls' words are `//chsiege_*` (AdminCHSiege, M7-CHSIEGE-01), not these.
 // `//clanhallset` of an auctionable hall deletes the hall's auction, through
 // `clanhall/auction.rs` (`clan_hall_delete_auction`).

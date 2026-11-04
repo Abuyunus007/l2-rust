@@ -1,6 +1,5 @@
 //! `//augment <item id> <option id>`: the equipped item of the target (or the GM) gets the
 //! augmentation option, replacing any it had.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminAugment.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;
@@ -53,7 +52,6 @@ fn admin_augment(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
         world.send_sys_message(gm, &format!("No option with id {}", split[2]));
         return Ok(());
     };
-    // Java: `removeAugmentation()` when augmented, then `setAugmentation(new Augmentation(id))`.
     if world.is_item_augmented(item) {
         world.set_item_augmentation(item, None);
     }

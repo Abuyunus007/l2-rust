@@ -1,11 +1,5 @@
 //! Fortresses: the fortress table, the owner, the flag pole, the supply level and the state.
 //! The siege, the spawns and `FortUpdater` are `fort/` (M7-FORT-01).
-// Java: managers/FortManager.java
-// Java: mechanics/siege/Fort.java (setOwner, removeOwner, updateOwnerInDB, setOwnerClan,
-//       setVisibleFlag, raiseSupplyLeveL, setSupplyLeveL, saveFortVariables, setFortState,
-//       updateClansReputation, getOwnedTime, checkIfInZone, getDistance)
-// Java: entity/actor/Npc.java (getFort)
-//
 // The siege of a fortress, `FortUpdater`, the fort spawns (merchants, commanders, envoys) and the
 // castle contracts are `fort/` (M7-FORT-01); this file calls them where Java's `Fort` does.
 
@@ -312,8 +306,6 @@ impl World {
         }
         self.fort_spawn_special_envoys(id);
         // If clan have already fortress, remove it.
-        // NOTE(java-quirk): a clan that already owns this fortress loses it here and gets it back
-        // below.
         if self.clan(clan_id).is_some_and(|c| c.fort_id > 0)
             && let Some(other) = self.fort_by_owner(clan_id)
         {

@@ -1,5 +1,4 @@
 //! Java `OlympiadManager`: the waiting lists of the classed, non-classed and team matches.
-// Java: mechanics/olympiad/OlympiadManager.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};

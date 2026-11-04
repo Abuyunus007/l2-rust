@@ -1,6 +1,3 @@
-//! `UserInfo` and `ItemList` against byte layouts worked out by hand from the Java `writeImpl`
-//! code, and against recorded Java game server sessions when `L2_CAPTURE_DIR` is set.
-//!
 //! The expected bytes are built with a tiny writer of their own (not the crate's
 //! `PacketWriter`), listing the fields in the order of the Java source, so a mistake in the
 //! crate's encoder cannot hide behind the same mistake in the test.

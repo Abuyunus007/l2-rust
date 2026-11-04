@@ -1,6 +1,5 @@
 //! The `DispelAll` effect: every buff, dance, toggle and debuff of the creature goes (and comes
 //! back later when `CancelReturn` is on).
-// Java: dist/game/data/scripts/handlers/skill/effects/DispelAll.java
 
 use l2_data::skill::EffectTemplate;
 

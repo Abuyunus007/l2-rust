@@ -1,10 +1,5 @@
 //! The Hall of Erosion (defence): a command channel keeps the Seeds of Life alive for twenty
 //! minutes against Ekimus' undead, for `Q00697_DefendTheHallOfErosion`.
-// Java: dist/game/data/scripts/ai/areas/Gracia/instances/HallOfErosionDefence/HallOfErosionDefence.java
-//
-// NOTE(java-quirk): Java's `onKillByMob` and `conquestConclusion` (the failed defence) are never
-// called (`onKillByMob` overrides nothing), and the script never calls
-// `SeedOfInfinityManager.notifyHoEDefSuccess()`: they are not ported.
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::SystemMessageId;
@@ -134,9 +129,6 @@ struct HedWorld {
 }
 
 /// The script's fields and its worlds.
-// NOTE(java-quirk): `conquestEnded`, `tumorRespawnTime`, `tumorKillCount` and `soulwagonSpawned`
-// are fields of the script (and `seedKills` a static), shared by every instance: the Ravenous Soul
-// Devourer comes once per server run, at the fourth tumor killed in any instance.
 struct State {
     worlds: Worlds<HedWorld>,
     conquest_ended: bool,
@@ -270,7 +262,6 @@ impl HallOfErosionDefence {
 
     fn run_tumors(ctx: &mut ScriptCtx<'_>, instance_id: i32) {
         for spawn in &ROOMS_MOBS {
-            // NOTE(java-quirk): the list is made new for every row, so it keeps the last spawn only.
             let spawned = common::spawn_with_respawn(ctx, spawn, instance_id);
             hed(ctx, instance_id).npc_list = spawned;
         }
@@ -407,8 +398,6 @@ impl HallOfErosionDefence {
                 }
             }
             "TumorRevival" => {
-                // NOTE(java-quirk): the task takes `world.deadTumor` when it runs, the last
-                // tumor that died in the instance, not the one whose death started it.
                 let Some(dead_tumor) = state(ctx).worlds.get(&instance_id).and_then(|w| w.dead_tumor) else {
                     return true;
                 };
@@ -511,9 +500,6 @@ impl Script for HallOfErosionDefence {
         }
 
         if npc.id == SEED {
-            // NOTE(java-quirk): `((QuestGuard) npc).setPassive(true)`: the Unstable Seed of
-            // Generation is a `Folk`, the cast throws and the rest of `onSpawn` does not run (it
-            // does nothing for the seed anyway).
             return;
         }
 

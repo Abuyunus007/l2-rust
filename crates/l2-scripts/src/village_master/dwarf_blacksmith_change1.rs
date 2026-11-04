@@ -1,5 +1,4 @@
 //! The 1st class transfer of dwarven fighters to artisans (Tapoy, Mendio, Opix, Bolin).
-// Java: dist/game/data/scripts/village_master/DwarfBlacksmithChange1/DwarfBlacksmithChange1.java
 
 use l2_util::ObjectId;
 use l2_world::subclass::CategoryType;

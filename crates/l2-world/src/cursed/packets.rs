@@ -1,6 +1,4 @@
 //! `RequestCursedWeaponList` and `RequestCursedWeaponLocation`.
-// Java: network/clientpackets/RequestCursedWeaponList.java
-// Java: network/clientpackets/RequestCursedWeaponLocation.java
 
 use l2_protocol_game::server::{CursedWeaponLocation, ExCursedWeaponList, ExCursedWeaponLocation};
 use l2_util::ObjectId;

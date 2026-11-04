@@ -1,6 +1,4 @@
 //! Quest 286: Fabulous Feathers (Erinu in the Hunters Village sends the player after the Shady Muertos).
-// Java: dist/game/data/scripts/quests/Q00286_FabulousFeathers/Q00286_FabulousFeathers.java
-//
 // Pattern: a party kill quest (`docs/design/scripts.md`, "Quest patterns"): a Shady Muertos
 // drops a commander's feather for a random party member in cond 1, the 80th feather (limit)
 // sets that member to cond 2; the NPC pays adena and ends the quest (repeatable).

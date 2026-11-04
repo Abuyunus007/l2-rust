@@ -1,6 +1,5 @@
 //! The 2nd class transfer of dark elves (Brecson, Medown, Angus, Andromeda, Oltran, Xairakin,
 //! Samael, Tifaren, Drizzit, Helminter).
-// Java: dist/game/data/scripts/village_master/DarkElfChange2/DarkElfChange2.java
 
 use l2_util::ObjectId;
 use l2_world::subclass::{ClassId, Race};
@@ -150,8 +149,6 @@ impl Script for DarkElfChange2 {
         player: Option<ObjectId>,
     ) -> Option<String> {
         if is_numeric(event) {
-            // NOTE(java-quirk): an index past `CLASSES` (or past `int`) throws in Java; the script
-            // error page goes to a GM only, so a player sees nothing.
             let class = CLASSES.get(event.parse::<usize>().ok()?)?;
             let player = player?;
             let cid = class_of(ctx, player);

@@ -1,8 +1,6 @@
 //! The clan skill admin commands: `//add_clan_skill <skill_id> <level>` gives one clan skill to the
 //! clan of the targeted clan leader, `//give_clan_skills` and `//give_all_clan_skills [squad]` give
 //! every clan skill the clan's level allows.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminSkill.java (adminGiveClanSkills,
-// Java: adminAddClanSkill), data/xml/SkillTreeData.java (getMaxPledgeSkills)
 
 use std::collections::BTreeMap;
 

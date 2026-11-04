@@ -1,7 +1,5 @@
 //! Rabbits event: invisible chests at Fantasy Isle that players find and open with the skills of
 //! the Rabbit transformation.
-// Java: dist/game/data/scripts/custom/events/Rabbits/Rabbits.java
-//
 // Off by default: the shipped `config.xml` schedules nothing, so the event only runs when a GM
 // starts it (`//event_start Rabbits`).
 
@@ -94,8 +92,6 @@ impl Script for Rabbits {
     fn event_start(&self, ctx: &mut ScriptCtx<'_>, event_maker: Option<ObjectId>) -> bool {
         // Don't start event if it is active.
         if ctx.state::<RabbitsState>().is_active {
-            // NOTE(java-quirk): Java calls `eventMaker.sendMessage` unchecked: a scheduled start
-            // (no maker) while the event runs is a NullPointerException.
             if let Some(maker) = event_maker {
                 ctx.world()
                     .send_message(maker, "Event Rabbits is already started!");
@@ -124,8 +120,6 @@ impl Script for Rabbits {
         // Spawn Chests
         for _ in 0..=TOTAL_CHEST_COUNT {
             let x = ctx.get_random_range(-60_653, -58_772);
-            // NOTE(java-quirk): the range is written the wrong way round, and `Rnd.get(origin,
-            // bound)` answers `origin` for it: every chest stands at y -55830.
             let y = ctx.get_random_range(-55_830, -58_146);
             record_spawn(ctx, CHEST, x, y, -2030, 0, false, EVENT_TIME * 60_000);
         }
@@ -264,7 +258,6 @@ impl Script for Rabbits {
 fn drop_item(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, droplist: &[[i32; 4]]) {
     let chance = ctx.get_random(100);
     for drop in droplist {
-        // NOTE(java-quirk): `>` here, `>=` in Elpies: the chance 0 entry is reached by no roll.
         if chance > drop[1] {
             let count = ctx.get_random_range(drop[2], drop[3]);
             ctx.drop_item(npc, Some(player), drop[0], i64::from(count));

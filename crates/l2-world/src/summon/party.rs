@@ -1,10 +1,5 @@
 //! A summon in its owner's party: the pet window of the other members, the summon block of
 //! `PartySmallWindowAll` and the summon's `PartySpelled`.
-// Java: network/serverpackets/{ExPartyPetWindowAdd,ExPartyPetWindowUpdate,
-//       ExPartyPetWindowDelete,PartySmallWindowAll}.java
-// Java: entity/actor/Summon.java (onSpawn, updateAndBroadcastStatus, unSummon, deleteMe: the
-//       `broadcastToPartyMembers(owner, ...)` lines)
-// Java: entity/actor/holders/creature/EffectList.java (updateEffectIcons, the summon branch)
 
 use l2_protocol_game::server::{
     EffectIcon, ExPartyPetWindowAdd, ExPartyPetWindowDelete, ExPartyPetWindowUpdate, PartyPetWindow,

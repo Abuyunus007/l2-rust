@@ -1,6 +1,4 @@
 //! Quest 31: Secret Buried in the Swamp (Abercrombie in the Gludin Village, four forgotten monuments and a dwarf corpse).
-// Java: dist/game/data/scripts/quests/Q00031_SecretBuriedInTheSwamp/Q00031_SecretBuriedInTheSwamp.java
-//
 // Pattern: an ordered visit to several NPCs (`docs/design/scripts.md`, "Quest patterns"): the
 // dwarf corpse gives Krorin's journal (cond 2), Abercrombie takes it (cond 3), the four
 // monuments are visited in order (cond 4 to 7, the monument's index + 3 is the cond it needs),
@@ -87,7 +85,6 @@ impl Script for Q00031SecretBuriedInTheSwamp {
                 }
             }
             "31661-02.html" | "31662-02.html" | "31663-02.html" | "31664-02.html" => {
-                // Java: `npc.getId()`; an event with no NPC cannot match a monument.
                 if let Some(npc) = npc
                     && let Some(index) = MONUMENTS.iter().position(|&m| m == npc.id)
                     && qs.is_cond(ctx, index as i32 + 3)

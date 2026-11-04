@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/PasswordChangeConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/PasswordChange.ini` (Java: `PasswordChangeConfig`).

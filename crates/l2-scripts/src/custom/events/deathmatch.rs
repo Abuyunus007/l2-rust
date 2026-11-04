@@ -1,7 +1,5 @@
 //! Deathmatch event: everybody fights everybody in the Coliseum for three minutes, the player
 //! with the most kills wins a million adena.
-// Java: dist/game/data/scripts/custom/events/Deathmatch/Deathmatch.java
-//
 // Off by default: the shipped `config.xml` schedules nothing, so the event only runs when a GM
 // starts it (`//event_start Deathmatch`).
 
@@ -66,8 +64,6 @@ impl Script for Deathmatch {
         s.add_talk_id(&[MANAGER]);
         s.add_first_talk_id(&[MANAGER]);
         s.set_on_player_logout();
-        // NOTE(java-quirk): the Java constructor registers no zone: its `onExitZone` is never
-        // called.
     }
 
     fn on_load(&self, ctx: &mut ScriptCtx<'_>) {
@@ -241,8 +237,6 @@ impl Script for Deathmatch {
                 }
 
                 // `Collections.max(PLAYER_SCORES.entrySet(), comparingByValue())`: the first of
-                // the highest scores; NOTE(java-quirk): an empty map throws and ends the task,
-                // so the scoreboard and the teleport out never follow.
                 let scores = ctx.state::<DeathmatchState>().player_scores.clone();
                 let mut winner: Option<(ObjectId, i32)> = None;
                 for (player, score) in scores {
@@ -317,7 +311,6 @@ impl Script for Deathmatch {
         if event.starts_with("KickPlayer")
             && let Some(player) = player
         {
-            // NOTE(java-quirk): without a world Java throws a NullPointerException here.
             let world = ctx.state::<DeathmatchState>().pvp_world?;
             if ctx.world().instance_id_of(player) == world {
                 if event.contains("Warning") {
@@ -554,8 +547,6 @@ fn reset_activity_timers(ctx: &mut ScriptCtx<'_>, player: ObjectId) {
     let Some(world) = ctx.state::<DeathmatchState>().pvp_world else {
         return;
     };
-    // NOTE(java-quirk): `PVP_WORLD.getDoor(BLUE_DOOR_ID)` is null without the template's doors
-    // (a NullPointerException); no door counts as closed here.
     let open = ctx.world().is_instance_door_open(world, BLUE_DOOR_ID);
     ctx.start_quest_timer(
         &kick,

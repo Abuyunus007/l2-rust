@@ -3,11 +3,6 @@
 //! them to the world at the start, or the way the session hands a clan to the world at
 //! `CharacterSelect`) and the `INSERT` statements the real game server finds in its throwaway
 //! database.
-//!
-//! The residences (castle, fortress, hall, auction) are in the database before the game server
-//! starts. The clans come later, after the characters exist (their ids are made by the game
-//! server): a clan the world does not know is read at `CharacterSelect` with the residences it
-//! owns (D-50, D-51), which is the path this test wants to see.
 
 use l2_world::clanhall::{AuctionBidRecord, AuctionRecord};
 use l2_world::fort::{FortSiegeFortLoad, FortSiegeGuardRecord, FortSiegeLoad, FortSpawnRecord};

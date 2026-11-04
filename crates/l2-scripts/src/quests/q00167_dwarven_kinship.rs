@@ -1,6 +1,4 @@
 //! Quest 167: Dwarven Kinship (Carlon sends the player's letter to Haprock, then Norman).
-// Java: dist/game/data/scripts/quests/Q00167_DwarvenKinship/Q00167_DwarvenKinship.java
-//
 // Pattern: a delivery chain over three NPCs. The start NPC hands out the letter; Haprock either
 // pays for it at once (cond 1, `exitQuest(false, true)`) or swaps it for Norman's letter and
 // moves to cond 2; Norman pays and ends the quest (one-time).

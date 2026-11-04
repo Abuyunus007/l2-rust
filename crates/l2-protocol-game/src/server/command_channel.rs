@@ -7,7 +7,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::{read_count, write_opcode};
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/ExOpenMPCC.java
 /// Opens the command channel window (`EX_OPEN_MPCC`). No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExOpenMpcc;
@@ -28,7 +27,6 @@ impl Decode for ExOpenMpcc {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExCloseMPCC.java
 /// Closes the command channel window (`EX_CLOSE_MPCC`). No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExCloseMpcc;
@@ -49,7 +47,6 @@ impl Decode for ExCloseMpcc {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExAskJoinMPCC.java
 /// Asks a party leader to join the command channel of `requestor_name` (`EX_ASK_JOIN_MPCC`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExAskJoinMpcc {
@@ -75,7 +72,6 @@ impl Decode for ExAskJoinMpcc {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExMPCCPartyInfoUpdate.java
 /// A party joined (`mode` 1) or left (`mode` 0) the channel (`EX_MPCC_PARTY_INFO_UPDATE`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExMpccPartyInfoUpdate {
@@ -120,7 +116,6 @@ pub struct MpccMember {
     pub class_id: i32,
 }
 
-// Java: gameserver/network/serverpackets/ExMPCCShowPartyMemberInfo.java
 /// The members of one party of the channel (`EX_MPCC_SHOW_PARTY_MEMBER_INFO`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExMpccShowPartyMemberInfo {
@@ -164,7 +159,6 @@ pub struct MpccPartyEntry {
     pub member_count: i32,
 }
 
-// Java: gameserver/network/serverpackets/ExMultiPartyCommandChannelInfo.java
 /// The channel window's content (`EX_MULTI_PARTY_COMMAND_CHANNEL_INFO`), the answer of the
 /// `/channelinfo` user command.
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -1,7 +1,5 @@
 //! The Olympiad words of the admin page: `//checkolympiad`, `//saveolymp` and `//endolympiad`
 //! (M8-ADMIN-07).
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminAdmin.java
-//
 // `//sethero` and `//givehero` are `olympiad/hero.rs` (M8-HERO-01).
 
 use l2_protocol_game::server::NpcHtmlMessage;
@@ -153,8 +151,6 @@ mod tests {
             "1 day, 2 hours, 3 minutes"
         );
         assert_eq!(minutes_only(61_000), "1 minute");
-        // NOTE(java-quirk): the regex needs a space in front, so a text that starts with the
-        // unit (a span under a minute) keeps it.
         assert_eq!(minutes_only(1_000), "1 second");
         assert_eq!(minutes_only(0), "0 milliseconds");
     }

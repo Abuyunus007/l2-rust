@@ -1,6 +1,4 @@
 //! Quest 274: Skirmish with the Werewolves (Brukurse in the Orc Village sends the orcs after the Maraku werewolves).
-// Java: dist/game/data/scripts/quests/Q00274_SkirmishWithTheWerewolves/Q00274_SkirmishWithTheWerewolves.java
-//
 // Pattern: a kill-count quest with a rare second drop (`docs/design/scripts.md`, "Quest patterns"):
 // every Maraku werewolf gives a head, 5% of the time also a totem; the 40th head sets cond 2 and
 // Brukurse pays for the heads and the totems and ends the quest. Only players who own a necklace

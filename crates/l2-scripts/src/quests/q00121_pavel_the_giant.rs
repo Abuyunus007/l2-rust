@@ -1,6 +1,4 @@
 //! Quest 121: Pavel the Giant (Newyear at the Blacksmith's, Yumi at the Pavel Ruins barracks).
-// Java: dist/game/data/scripts/quests/Q00121_PavelTheGiant/Q00121_PavelTheGiant.java
-//
 // Pattern: a start NPC that sends the player to a second NPC, a reward with exp and sp, and an
 // `on_event` that echoes every event (Java `return event`).
 

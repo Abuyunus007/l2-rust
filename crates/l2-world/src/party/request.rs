@@ -1,8 +1,6 @@
 //! The pending invitation of a party (Java `Party.setPendingInvitation` and
 //! `isInvitationRequestExpired`). The request between two players (`getActiveRequester`,
 //! `onTransactionRequest` ...) is `trade/request.rs`, shared with trade, friend and duel requests.
-// Java: entity/groups/Party.java (setPendingInvitation, isInvitationRequestExpired)
-//
 // Java compares the timeout with the game tick counter whenever somebody asks; no task fires at
 // the end of the 15 seconds. The same is done here, so the pending invitation has no timer on the
 // wheel: there is nothing to run when it ends.

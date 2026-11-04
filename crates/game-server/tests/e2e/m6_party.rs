@@ -267,7 +267,6 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
 pub fn assert_played(played: &Played) {
     let (a, b) = (&played.left_a, &played.left_b);
     // Exp and SP: the 6 SP the message shows are 7 in the store.
-    // NOTE(java-quirk): `PlayerStat.addExpAndSp` shows `(long) addToSp` and adds `Math.round`.
     for left in [a, b] {
         assert_eq!((left.level, left.exp, left.sp), (1, 55, 7));
     }
@@ -282,7 +281,6 @@ pub fn assert_played(played: &Played) {
     );
     assert_eq!(a.count_of(m4_data::RAT_TAIL_ID), 1);
     assert_eq!(b.count_of(m4_data::RAT_TAIL_ID), 0);
-    // D-39: the item the game made has an id of the Rust range.
     assert!(
         played.tail_object_id >= l2_world::RUST_FIRST_OBJECT_ID,
         "{}",

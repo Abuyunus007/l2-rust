@@ -1,6 +1,4 @@
 //! Quest 33: Make a Pair of Dress Shoes (Woodley in the Town of Gludin sends a 60th level character to Leikar and Ian).
-// Java: dist/game/data/scripts/quests/Q00033_MakeAPairOfDressShoes/Q00033_MakeAPairOfDressShoes.java
-//
 // Pattern: a crafting errand that pays in adena (`docs/design/scripts.md`, "Quest patterns"):
 // Leikar starts the material hunt (cond 2), Woodley checks the leather, thread and adena and
 // takes the adena for the first payment (cond 4), Ian takes the second payment (cond 5), and
@@ -70,8 +68,6 @@ impl Script for Q00033MakeAPairOfDressShoes {
                     && ctx.get_quest_items_count(player, ADENA) >= ADENA_COUNT2
                 {
                     ctx.take_items(player, LEATHER, LEATHER_COUNT);
-                    // NOTE(java-quirk): Java takes `LEATHER_COUNT` (200) threads here, not
-                    // `THREAD_COUNT` (600), so 400 threads stay with the player.
                     ctx.take_items(player, THREAD, LEATHER_COUNT);
                     ctx.take_items(player, ADENA, ADENA_COUNT2);
                     qs.set_cond(ctx, 4, true);

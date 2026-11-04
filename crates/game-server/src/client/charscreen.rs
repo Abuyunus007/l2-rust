@@ -1,10 +1,5 @@
 //! The character screen: `NewCharacter`, `CharacterCreate`, `CharacterDelete`, `CharacterRestore`,
 //! `CharacterSelect` and `RequestGotoLobby`.
-// Java: org/l2jmobius/gameserver/network/clientpackets/{NewCharacter,CharacterCreate,CharacterDelete,
-// Java: CharacterRestore,CharacterSelect,RequestGotoLobby}.java
-// Java: org/l2jmobius/gameserver/network/GameClient.java (markToDeleteChar, restore, getCharSelection)
-// Java: org/l2jmobius/gameserver/entity/actor/Player.java (create)
-//
 // What a new character is made of is worked out in [`super::newchar`]; this module checks the
 // request like Java, stores the rows through a [`CharScreenStore`] (the database in the server,
 // a fake in tests) and answers the client.
@@ -176,8 +171,6 @@ impl DbCharScreen {
             if delete_days == 0 {
                 self.characters.delete_character(char_id, delete_wedding).await?;
             } else {
-                // NOTE(java-quirk): `DELETE_DAYS * 86400000` is an int product in Java and
-                // overflows from 25 days up.
                 let span = i64::from(delete_days.wrapping_mul(MILLIS_PER_DAY));
                 self.characters.set_delete_time(char_id, now_ms + span).await?;
             }
@@ -253,7 +246,6 @@ impl CharScreenStore for DbCharScreen {
 /// The name checks of `CharacterCreate` that need only the config: letters and digits (Java
 /// `StringUtil.isAlphaNumeric`), then the `CnameTemplate` pattern (Java
 /// `CHARNAME_TEMPLATE_PATTERN.matcher(name).matches()`).
-// Java: CharacterCreate.runImpl (the name checks)
 pub fn is_valid_char_name(config: &GameConfig, name: &str) -> bool {
     is_alpha_numeric(name) && config.manual.server.charname_template.is_match(name)
 }
@@ -359,7 +351,6 @@ impl CharScreen {
     }
 
     /// The templates of `NewCharacter`.
-    // Java: NewCharacter.runImpl + NewCharacterSuccess.addChar
     pub fn new_character_templates(&self) -> NewCharacterSuccess {
         new_character_templates(&self.datapack)
     }
@@ -377,7 +368,6 @@ impl CharScreen {
 
 /// The eleven starting templates in Java's order. A missing template is left out (Java keeps the
 /// `null` in its list and skips it while writing, which breaks the count the client reads).
-// Java: NewCharacter.runImpl
 pub fn new_character_templates(datapack: &Datapack) -> NewCharacterSuccess {
     let templates = NEW_CHARACTER_CLASSES
         .iter()
@@ -404,15 +394,12 @@ pub fn new_character_templates(datapack: &Datapack) -> NewCharacterSuccess {
 
 /// The checks of `CharacterCreate.runImpl` that need no database. `Err` is the `CharCreateFail`
 /// reason.
-// Java: CharacterCreate.runImpl (before the synchronized block)
 pub fn check_request(screen: &CharScreen, packet: &CharacterCreate, client: &str) -> Result<(), i32> {
     let name = packet.name.as_str();
     let length = name.encode_utf16().count();
     if length == 0 || length > 16 {
         return Err(CharCreateFail::REASON_16_ENG_CHARS);
     }
-    // NOTE(java-quirk): with `ForbiddenNames` empty the list is `[""]` and every name contains
-    // the empty string, so no name is accepted. The shipped Player.ini lists real names.
     let lower = name.to_lowercase();
     if screen
         .config
@@ -457,7 +444,6 @@ pub fn check_request(screen: &CharScreen, packet: &CharacterCreate, client: &str
 
 /// Java `CharacterCreate.runImpl` from the `synchronized` block on, until the character exists in
 /// the database. Returns the plan that was stored.
-// Java: CharacterCreate.runImpl, Player.create, initNewChar
 pub async fn create_character(
     screen: &CharScreen,
     account: &str,
@@ -540,7 +526,6 @@ pub async fn create_character(
 pub fn game_time_minutes(now_ms: i64) -> i32 {
     const TICKS_PER_IG_DAY: i64 = 144_000;
     let ticks = now_ms.rem_euclid(86_400_000) / 100;
-    // Java: `(ticks % TICKS_PER_IG_DAY) / MILLIS_IN_TICK`, then `% (24 * 60)` when written.
     i32::try_from(((ticks % TICKS_PER_IG_DAY) / 100) % (24 * 60)).unwrap_or(0)
 }
 
@@ -569,7 +554,6 @@ impl ClientSession {
             Ok(plan) => {
                 info!("Created new character {} for account '{account}'.", plan.char_id);
                 ctl.send(CharCreateOk.to_bytes());
-                // Java: `client.setCharSelection(new CharSelectionInfo(...).getCharInfo())` loads the
                 // list again but does not send it; the client asks with RequestGotoLobby.
                 if let Some((characters, _)) = self.load_character_list(None).await {
                     self.characters = characters;
@@ -714,7 +698,6 @@ impl ClientSession {
         if !self.can_select_character(ctl).await {
             return;
         }
-        // Java: `SecondaryAuthData.isEnabled() && !isAuthed()` opens the password dialog.
         if self.secondary_blocks_select(ctl) {
             return;
         }
@@ -743,10 +726,8 @@ impl ClientSession {
         let Some(account) = self.account.clone() else {
             return;
         };
-        // Java: "Disconnect offline trader." The trader of the character is stored and removed
         // before the character is read, so the read sees what the shop sold (M6-FU-14).
         self.release_offline_trader(info.entry.object_id).await;
-        // Java: `DualboxCheckMaxOfflinePlay(Premium)PerIP` of the character that was just released,
         // then `DualboxCheckMaxPlayersPerIP` (M9-C06, M9-L01): over the limit the client gets a page
         // and does not select the character.
         if let Some(page) = self
@@ -764,7 +745,6 @@ impl ClientSession {
             }
             return;
         }
-        // Java: `client.load(slot)`. A character that cannot be loaded is not selected; Java
         // logs it and sends nothing.
         let player = match ctx.loader.load_player(&account, info.entry.object_id).await {
             Ok(player) => player,
@@ -838,7 +818,6 @@ impl ClientSession {
             }
             .to_bytes(),
         );
-        // Java: `Player.load` queued `sendSkillList()`, which reaches the client right after
         // `CharSelected` (the Java capture shows it there).
         ctl.send(l2_world::enter::skill_list(&player, &*ctx.data).to_bytes());
         // The world takes it over at `EnterWorld`.

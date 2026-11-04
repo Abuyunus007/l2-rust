@@ -1,5 +1,4 @@
 //! The Legend Orc buffer blesses every player that comes into its sight.
-// Java: dist/game/data/scripts/ai/areas/CryptsOfDisgrace/LegendOrcBuff.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};

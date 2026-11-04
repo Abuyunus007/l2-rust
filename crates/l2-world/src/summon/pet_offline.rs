@@ -1,8 +1,5 @@
 //! A dead pet whose corpse decays while its owner is offline (M6-FU-09): the pet's items go back
 //! to the owner, the collar is destroyed and the `pets` row goes, in the database.
-// Java: entity/actor/instance/Pet.java (deleteMe, destroyControlItem)
-// Java: entity/itemcontainer/{PetInventory.transferItemsToOwner,ItemContainer.transferItem,destroyItem}.java
-//
 // # Why this exists
 // A dead pet stays when its owner logs out (`Player.deleteMe` only unsummons a living one). Java's
 // `Summon` keeps a reference to its `Player` object, which stays in memory after the logout, so
@@ -47,9 +44,6 @@ impl World {
         });
     }
 
-    /// `WorldCommand::OfflinePetRowsLoaded`: `transferItemsToOwner`, `destroyControlItem` and
-    /// `DELETE FROM pets` on the rows. A failed read changes nothing at all (D-50: no guessing
-    /// from memory), so the collar, its items and its row stay as they were.
     pub(crate) fn on_offline_pet_rows_loaded(
         &mut self,
         owner: ObjectId,

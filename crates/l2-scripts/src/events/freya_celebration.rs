@@ -1,6 +1,4 @@
 //! Freya Celebration: Freya takes an Adena for a potion and thanks the casters of the gift skills.
-// Java: dist/game/data/scripts/events/FreyaCelebration/FreyaCelebration.java
-// Java: dist/game/data/scripts/events/FreyaCelebration/config.xml
 
 use l2_protocol_game::server::{ChatType, SystemMessage, SystemMessageParam};
 use l2_protocol_game::{NpcStringId, SystemMessageId};

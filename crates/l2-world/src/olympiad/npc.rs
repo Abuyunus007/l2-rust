@@ -1,10 +1,5 @@
 //! The Olympiad NPC pages and bypasses (`OlympiadManagerLink`, `OlympiadObservation`), the
 //! buffer's chat window and `/olympiadstat`.
-// Java: dist/game/data/scripts/handlers/bypass/npc/{OlympiadManagerLink,OlympiadObservation}.java
-// Java: dist/game/data/scripts/handlers/chat/commands/user/OlympiadStat.java
-// Java: entity/actor/instance/OlympiadManager.java (showChatWindow(player, val, suffix))
-// Java: entity/actor/Npc.java (showChatWindow: the buffer 36402)
-// Java: network/clientpackets/RequestBypassToServer.java (`_olympiad?command`)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{
@@ -363,8 +358,6 @@ impl World {
                 }
                 self.remove_player_variable(player, UNCLAIMED_OLYMPIAD_PASSES_VAR);
                 if reread {
-                    // The row the Java game server wrote goes now, before the items are handed
-                    // out, so neither server hands them out again.
                     self.outbox.persist(PersistCommand::PlayerVariables {
                         owner: player,
                         upserts: Vec::new(),
@@ -388,8 +381,6 @@ impl World {
             .persist(PersistCommand::OlympiadRereadRequest { request, then });
     }
 
-    /// The answer of an Olympiad read (D-15, D-50): a failed read shows nothing and hands nothing
-    /// out.
     pub(crate) fn on_olympiad_reread(
         &mut self,
         result: Result<OlympiadRereadRows, ()>,
@@ -471,7 +462,6 @@ impl World {
                 state.buff_count = buff_count;
             }
             self.olympiad_buff_cast(npc, player, skill_id, level);
-            // NOTE(java-quirk): `skill.applyEffects(player, player)`: the player is the effector.
             self.apply_effects(player, player, SkillKey::new(skill_id, level));
             if let Some(summon) = self.summon_of(player) {
                 self.olympiad_buff_cast(npc, summon, skill_id, level);

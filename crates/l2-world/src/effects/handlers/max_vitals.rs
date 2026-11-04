@@ -1,6 +1,4 @@
 //! The effects that raise the maximum HP or CP: `MaxHp` and `MaxCp`.
-// Java: dist/game/data/scripts/handlers/skill/effects/MaxHp.java
-// Java: dist/game/data/scripts/handlers/skill/effects/MaxCp.java
 
 use l2_data::skill::EffectTemplate;
 use l2_data::{FuncKind, Stat};
@@ -168,7 +166,6 @@ impl EffectHandler for MaxCp {
         self.0.on_start(world, cx);
     }
 
-    // NOTE(java-quirk): unlike `MaxHp`, the current CP is not pulled down to the new maximum.
     fn on_exit(&self, world: &mut World, cx: &EffectCx<'_>) {
         world.remove_stats_owner(cx.effected, MaxVital::owner(cx), false);
     }

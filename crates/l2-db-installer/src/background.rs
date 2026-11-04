@@ -1,7 +1,5 @@
 //! The installation on its own thread, for any egui window (the installer's own and the admin GUI's
 //! setup wizard).
-// Java: org/l2jmobius/tools/DatabaseInstaller.java (`installDatabase`)
-//
 // The worker runs [`installer::run`] on a small tokio runtime and talks to the window through a
 // channel of [`Event`]s. Its questions (database exists, statement failed) are events that carry a
 // reply channel; the worker blocks until the window answers. Nothing here touches a database

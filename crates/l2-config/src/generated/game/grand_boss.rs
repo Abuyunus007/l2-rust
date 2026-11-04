@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/GrandBossConfig.java
 
 use crate::IniFile;
 /// Settings of `config/GrandBoss.ini` (Java: `GrandBossConfig`).

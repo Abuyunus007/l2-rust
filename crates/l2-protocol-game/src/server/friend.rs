@@ -9,7 +9,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/FriendAddRequest.java
 /// The invited character gets the request (`FRIEND_ADD_REQUEST`). The client shows the dialog
 /// with the requestor's name; the trailing int is always 0 in Java.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -37,7 +36,6 @@ impl Decode for FriendAddRequest {
     }
 }
 
-// Java: gameserver/network/serverpackets/FriendPacket.java
 /// A friend was added or removed (`L2_FRIEND`, `0x76`): the chat-with-friends window updates one
 /// entry.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -81,7 +79,6 @@ impl Decode for FriendPacket {
     }
 }
 
-// Java: gameserver/network/serverpackets/FriendStatusPacket.java
 /// A friend logged in or out (`L2_FRIEND_STATUS`, `0x77`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FriendStatusPacket {
@@ -116,7 +113,6 @@ impl Decode for FriendStatusPacket {
     }
 }
 
-// Java: gameserver/network/serverpackets/L2FriendSay.java
 /// A private message from a friend (`L2_FRIEND_SAY`, `0x78`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct L2FriendSay {
@@ -134,7 +130,6 @@ impl L2FriendSay {
 impl Encode for L2FriendSay {
     fn encode(&self, w: &mut PacketWriter) {
         write_opcode(w, Self::OPCODE);
-        // Java: `writeInt(0); // ??`
         w.i32(0)
             .string(&self.receiver)
             .string(&self.sender)
@@ -181,7 +176,6 @@ mod tests {
 
     #[test]
     fn friend_packet_writes_javas_layout() {
-        // Java: 1 for an added friend, 3 for a removed one; the object id when online, else 0.
         let online = FriendPacket {
             added: true,
             object_id: 0x6000_0001,

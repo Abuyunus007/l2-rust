@@ -1,6 +1,5 @@
 //! The html cache: every `.htm` / `.html` file of the datapack, read once at startup.
 //!
-//! Java: `gameserver/cache/HtmCache.java`.
 //!
 //! # What Java does, and what is kept
 //! * Java walks the **whole datapack root** (`ServerConfig.DATAPACK_ROOT`, the `dist/game` folder),
@@ -88,7 +87,6 @@ impl HtmCache {
     /// Java `loadFile(new File(DATAPACK_ROOT, path))` as `//loadhtml` uses it: the text of one html
     /// file read from the disk now (comments, tabs and newlines removed), `None` when `path` is not
     /// a file or its name does not end in `.htm` or `.html`.
-    // NOTE(java-quirk): Java also puts the text into its cache; this returns it only.
     pub fn read_file(root: &Path, path: &str) -> Option<String> {
         let file = root.join(path);
         if !file.is_file() || !is_html_name(&file) {
@@ -202,7 +200,6 @@ fn collect_html_files(dir: &Path, out: &mut Vec<PathBuf>) {
 
 /// Java `loadFile` with `GeneralConfig.CHECK_HTML_ENCODING`: non ASCII text is reported, except
 /// under `data/lang`, where the translations may use other characters.
-// Java: gameserver/cache/HtmCache.java:140
 fn warns_about_encoding(key: &str, text: &str, check_encoding: bool) -> bool {
     check_encoding && !key.starts_with("data/lang") && !text.is_ascii()
 }
@@ -226,9 +223,6 @@ fn datapack_key(root: &Path, file: &Path) -> Option<String> {
 }
 
 /// Java `loadFile` text handling: UTF-8 decode, comment removal, tab and newline removal.
-///
-/// NOTE(java-quirk): the comment regex `(?s)<!--.*?-->` has no nesting, so `<!-- a <!-- b -->`
-/// removes everything up to the first `-->`. The same happens here.
 pub(crate) fn process_html(raw: &[u8]) -> String {
     let text = String::from_utf8_lossy(raw);
     let without_comments = remove_comments(&text);

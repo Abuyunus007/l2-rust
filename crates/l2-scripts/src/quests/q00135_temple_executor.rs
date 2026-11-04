@@ -1,6 +1,4 @@
 //! Quest 135: Temple Executor (Shegfield, Pano, Alex and Sonin; three kinds of loot, three credentials).
-// Java: dist/game/data/scripts/quests/Q00135_TempleExecutor/Q00135_TempleExecutor.java
-//
 // Pattern: party kills (`get_random_party_member_cond`) fill three item stacks one after the other
 // (cargo, crystals, maps); the NPCs swap them for credentials. Items are counted on the killer.
 
@@ -114,7 +112,6 @@ impl Script for Q00135TempleExecutor {
             return;
         };
         if ctx.get_random(1000) < chance {
-            // NOTE(java-quirk): the loot is counted and given on the killer, not the member.
             if ctx.get_quest_items_count(player, STOLEN_CARGO) < ITEM_COUNT {
                 ctx.give_items(player, STOLEN_CARGO, 1);
             } else if ctx.get_quest_items_count(player, HATE_CRYSTAL) < ITEM_COUNT {

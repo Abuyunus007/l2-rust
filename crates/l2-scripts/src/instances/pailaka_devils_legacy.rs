@@ -1,6 +1,4 @@
 //! Pailaka Devil's Legacy (Devil's Isle), instance 44: Lematan, his followers and the powder kegs.
-// Java: dist/game/data/scripts/instances/PailakaDevilsLegacy/PailakaDevilsLegacy.java
-//
 // Java keeps Lematan and the follower list as objects in the `InstanceWorld` parameters
 // (`world.setParameter("lematanNpc", npc)`); here the parameters are strings, so the NPCs are
 // object ids ("lematanNpc": one id, "followerslist": ids separated by commas).
@@ -109,8 +107,6 @@ impl Script for PailakaDevilsLegacy {
             let player = player?;
             let qs = ctx.quest_state_of(Q00129, player, false);
             enter_instance(ctx, player);
-            // NOTE(java-quirk): `qs` is null for a player without the quest and Java throws here
-            // (after he was already put into the instance).
             let qs = qs?;
             if qs.is_cond(ctx, 1) {
                 qs.set_cond(ctx, 2, true);
@@ -227,9 +223,6 @@ impl Script for PailakaDevilsLegacy {
                 }
                 "TELEPORT" => {
                     if let Some(player) = player {
-                        // NOTE(java-quirk): `player.teleToLocation(TELEPORT)` takes the instance id of
-                        // the `Location`, which is 0: the player lands at the entry point of the open
-                        // world, not inside the instance.
                         ctx.world_mut().tele_to_location(
                             player,
                             TeleportTarget::at(TELEPORT.0, TELEPORT.1, TELEPORT.2).with_instance(0),
@@ -842,7 +835,6 @@ mod tests {
         });
         assert_eq!(t.world.quest_timer_count(), 1);
         t.ticks(21);
-        // NOTE(java-quirk): instance 0.
         assert_eq!(t.world.instance_id_of(Oid(1)), 0);
         let (x, y, _) = t.world.position_of(Oid(1)).unwrap();
         assert_eq!((x, y), (TELEPORT.0, TELEPORT.1));

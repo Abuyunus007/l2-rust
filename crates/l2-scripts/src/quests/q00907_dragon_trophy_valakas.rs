@@ -1,5 +1,4 @@
 //! Quest 907: Dragon Trophy - Valakas (Klein sends the party after Valakas, 30 medals after the kill).
-// Java: dist/game/data/scripts/quests/Q00907_DragonTrophyValakas/Q00907_DragonTrophyValakas.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, QuestSound, QuestType, STARTED};

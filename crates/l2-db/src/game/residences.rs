@@ -1,22 +1,6 @@
 //! The residence tables: `castle`, `castle_functions`, `fort`, `fort_functions`, `clanhall`,
 //! `clanhall_functions`, `siegable_clanhall`, the `hasCastle` column of `clan_data` and the circlet
 //! rows of `items` (M7-RES-01).
-// Java: org/l2jmobius/gameserver/managers/CastleManager.java (loadInstances, removeCirclet)
-// Java: org/l2jmobius/gameserver/mechanics/siege/Castle.java (load, loadFunctions, removeFunction,
-//       CastleFunction.dbSave, addToTreasuryNoTax, setTaxPercent, updateShowNpcCrest,
-//       setTicketBuyCount, updateOwnerInDB)
-// Java: org/l2jmobius/gameserver/managers/FortManager.java (loadInstances)
-// Java: org/l2jmobius/gameserver/mechanics/siege/Fort.java (load, loadFunctions, removeFunction,
-//       FortFunction.dbSave, saveFortVariables, updateOwnerInDB, setFortState)
-// Java: org/l2jmobius/gameserver/data/sql/ClanHallTable.java (load)
-// Java: org/l2jmobius/gameserver/entity/residences/{ClanHall,AuctionableHall}.java (loadFunctions,
-//       removeFunction, ClanHallFunction.dbSave, updateDb)
-// Java: org/l2jmobius/gameserver/managers/CHSiegeManager.java (loadClanHalls)
-// Java: org/l2jmobius/gameserver/mechanics/siege/clanhalls/SiegableHall.java (updateDb)
-//
-// Same layout as clans.rs: verbatim SQL, one method per statement. D-39: the Java game server
-// reads and writes the same rows. The three `*_by_owner` reads are Rust-only: the re-read of a
-// clan's residences at `CharacterSelect` (D-50, D-51).
 
 use sqlx::FromRow;
 
@@ -24,61 +8,43 @@ use super::sql_number::SqlNumber;
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: CastleManager.loadInstances
 const SELECT_CASTLE_IDS: &str = "SELECT id FROM castle ORDER BY id";
-// Java: Castle.load (ps1, ps2)
 const SELECT_CASTLE: &str = "SELECT * FROM castle WHERE id = ?";
 const SELECT_CASTLE_OWNER: &str = "SELECT clan_id FROM clan_data WHERE hasCastle = ?";
-// Rust-only (D-50): the count `CastleWarehouse` hands out.
 const SELECT_BLOOD_ALLIANCE_COUNT: &str = "SELECT blood_alliance_count FROM clan_data WHERE clan_id = ?";
-// Java: Castle.loadFunctions, CastleFunction.dbSave, Castle.removeFunction
 const SELECT_CASTLE_FUNCTIONS: &str = "SELECT * FROM castle_functions WHERE castle_id = ?";
 const REPLACE_CASTLE_FUNCTION: &str =
     "REPLACE INTO castle_functions (castle_id, type, lvl, lease, rate, endTime) VALUES (?,?,?,?,?,?)";
 const DELETE_CASTLE_FUNCTION: &str = "DELETE FROM castle_functions WHERE castle_id=? AND type=?";
-// Java: Castle.addToTreasuryNoTax, setTaxPercent, updateShowNpcCrest, setTicketBuyCount
 const UPDATE_CASTLE_TREASURY: &str = "UPDATE castle SET treasury = ? WHERE id = ?";
 const UPDATE_CASTLE_TAX_PERCENT: &str = "UPDATE castle SET taxPercent = ? WHERE id = ?";
 const UPDATE_CASTLE_SHOW_NPC_CREST: &str = "UPDATE castle SET showNpcCrest = ? WHERE id = ?";
 const UPDATE_CASTLE_TICKET_BUY_COUNT: &str = "UPDATE castle SET ticketBuyCount = ? WHERE id = ?";
-// Java: Castle.updateOwnerInDB (two statements)
 const CLEAR_CASTLE_OWNER: &str = "UPDATE clan_data SET hasCastle = 0 WHERE hasCastle = ?";
 const SET_CASTLE_OWNER: &str = "UPDATE clan_data SET hasCastle = ? WHERE clan_id = ?";
-// Java: CastleManager.removeCirclet (an offline member)
 const DELETE_CIRCLETS: &str = "DELETE FROM items WHERE owner_id = ? and item_id = ?";
 
-// Java: FortManager.loadInstances, Fort.load
 const SELECT_FORT_IDS: &str = "SELECT id FROM fort ORDER BY id";
 const SELECT_FORT: &str = "SELECT * FROM fort WHERE id = ?";
-// Rust-only (D-51): the fortresses of one clan.
 const SELECT_FORTS_OF_OWNER: &str = "SELECT * FROM fort WHERE owner = ?";
-// Java: Fort.loadFunctions, FortFunction.dbSave, Fort.removeFunction
 const SELECT_FORT_FUNCTIONS: &str = "SELECT * FROM fort_functions WHERE fort_id = ?";
 const REPLACE_FORT_FUNCTION: &str =
     "REPLACE INTO fort_functions (fort_id, type, lvl, lease, rate, endTime) VALUES (?,?,?,?,?,?)";
 const DELETE_FORT_FUNCTION: &str = "DELETE FROM fort_functions WHERE fort_id=? AND type=?";
-// Java: Fort.saveFortVariables, updateOwnerInDB, setFortState
 const UPDATE_FORT_SUPPLY_LEVEL: &str = "UPDATE fort SET supplyLvL=? WHERE id = ?";
 const UPDATE_FORT_OWNER: &str = "UPDATE fort SET owner=?,lastOwnedTime=?,state=?,castleId=? WHERE id = ?";
 const UPDATE_FORT_STATE: &str = "UPDATE fort SET state=?,castleId=? WHERE id = ?";
 
-// Java: ClanHallTable.load
 const SELECT_CLAN_HALLS: &str = "SELECT * FROM clanhall ORDER BY id";
-// Rust-only (D-51): the halls of one clan.
 const SELECT_CLAN_HALLS_OF_OWNER: &str = "SELECT * FROM clanhall WHERE ownerId = ?";
-// Java: ClanHall.loadFunctions, ClanHallFunction.dbSave, ClanHall.removeFunction
 const SELECT_CLAN_HALL_FUNCTIONS: &str = "SELECT * FROM clanhall_functions WHERE hall_id = ?";
 const REPLACE_CLAN_HALL_FUNCTION: &str =
     "REPLACE INTO clanhall_functions (hall_id, type, lvl, lease, rate, endTime) VALUES (?,?,?,?,?,?)";
 const DELETE_CLAN_HALL_FUNCTION: &str = "DELETE FROM clanhall_functions WHERE hall_id=? AND type=?";
-// Java: AuctionableHall.updateDb
 const UPDATE_CLAN_HALL: &str = "UPDATE clanhall SET ownerId=?, paidUntil=?, paid=? WHERE id=?";
 
-// Java: CHSiegeManager.SQL_LOAD_HALLS
 const SELECT_SIEGABLE_HALLS: &str = "SELECT * FROM siegable_clanhall";
-// Rust-only (D-51): the conquerable halls of one clan.
 const SELECT_SIEGABLE_HALLS_OF_OWNER: &str = "SELECT * FROM siegable_clanhall WHERE ownerId = ?";
-// Java: SiegableHall.SQL_SAVE
 const UPDATE_SIEGABLE_HALL: &str = "UPDATE siegable_clanhall SET ownerId=?, nextSiege=? WHERE clanHallId=?";
 
 /// Which of the three function tables (`castle_functions`, `fort_functions`,
@@ -331,7 +297,6 @@ impl ResidenceRepository {
 
     // ------------------------------------------------------------------------------ castles
 
-    // Java: CastleManager.loadInstances
     pub async fn castle_ids(&self) -> Result<Vec<i32>> {
         let ids = sqlx::query_scalar::<_, i32>(SELECT_CASTLE_IDS)
             .fetch_all(&self.pool)
@@ -341,7 +306,6 @@ impl ResidenceRepository {
 
     /// The `castle` row; Java loops over the result, so `None` leaves every field at its start
     /// value.
-    // Java: Castle.load (ps1)
     pub async fn castle(&self, castle_id: i32) -> Result<Option<CastleRow>> {
         let row = sqlx::query_as::<_, CastleDbRow>(SELECT_CASTLE)
             .bind(castle_id)
@@ -351,7 +315,6 @@ impl ResidenceRepository {
     }
 
     /// The clans whose `hasCastle` is the castle, in the database's order (Java keeps the last).
-    // Java: Castle.load (ps2)
     pub async fn castle_owner_ids(&self, castle_id: i32) -> Result<Vec<i32>> {
         let ids = sqlx::query_scalar::<_, i32>(SELECT_CASTLE_OWNER)
             .bind(castle_id)
@@ -360,8 +323,6 @@ impl ResidenceRepository {
         Ok(ids)
     }
 
-    /// Rust-only (D-50): the clan's proofs of alliance as the table has them (`None` for no such
-    /// clan). The Java game server adds to them at the end of its sieges.
     pub async fn blood_alliance_count(&self, clan_id: i32) -> Result<Option<i32>> {
         let count = sqlx::query_scalar::<_, u16>(SELECT_BLOOD_ALLIANCE_COUNT)
             .bind(clan_id)
@@ -370,7 +331,6 @@ impl ResidenceRepository {
         Ok(count.map(i32::from))
     }
 
-    // Java: Castle.addToTreasuryNoTax
     pub async fn update_castle_treasury(&self, castle_id: i32, treasury: i64) -> Result<()> {
         sqlx::query(UPDATE_CASTLE_TREASURY)
             .bind(treasury)
@@ -380,7 +340,6 @@ impl ResidenceRepository {
         Ok(())
     }
 
-    // Java: Castle.setTaxPercent
     pub async fn update_castle_tax_percent(&self, castle_id: i32, tax_percent: i32) -> Result<()> {
         sqlx::query(UPDATE_CASTLE_TAX_PERCENT)
             .bind(tax_percent)
@@ -390,7 +349,6 @@ impl ResidenceRepository {
         Ok(())
     }
 
-    // Java: Castle.updateShowNpcCrest
     pub async fn update_castle_show_npc_crest(&self, castle_id: i32, show: bool) -> Result<()> {
         sqlx::query(UPDATE_CASTLE_SHOW_NPC_CREST)
             .bind(bool_text(show))
@@ -400,7 +358,6 @@ impl ResidenceRepository {
         Ok(())
     }
 
-    // Java: Castle.setTicketBuyCount
     pub async fn update_castle_ticket_buy_count(&self, castle_id: i32, count: i32) -> Result<()> {
         sqlx::query(UPDATE_CASTLE_TICKET_BUY_COUNT)
             .bind(count)
@@ -412,7 +369,6 @@ impl ResidenceRepository {
 
     /// The castle's old owner loses `hasCastle`, then the new one (0 for none) gets it. Java runs
     /// the two statements on their own (no transaction); so does this.
-    // Java: Castle.updateOwnerInDB
     pub async fn update_castle_owner(&self, castle_id: i32, clan_id: i32) -> Result<()> {
         sqlx::query(CLEAR_CASTLE_OWNER)
             .bind(castle_id)
@@ -427,7 +383,6 @@ impl ResidenceRepository {
     }
 
     /// The circlets of an offline clan member.
-    // Java: CastleManager.removeCirclet
     pub async fn delete_circlets(&self, owner_id: i32, item_id: i32) -> Result<()> {
         sqlx::query(DELETE_CIRCLETS)
             .bind(owner_id)
@@ -439,7 +394,6 @@ impl ResidenceRepository {
 
     // ------------------------------------------------------------------------------ forts
 
-    // Java: FortManager.loadInstances
     pub async fn fort_ids(&self) -> Result<Vec<i32>> {
         let ids = sqlx::query_scalar::<_, i32>(SELECT_FORT_IDS)
             .fetch_all(&self.pool)
@@ -447,7 +401,6 @@ impl ResidenceRepository {
         Ok(ids)
     }
 
-    // Java: Fort.load
     pub async fn fort(&self, fort_id: i32) -> Result<Option<FortRow>> {
         let row = sqlx::query_as::<_, FortDbRow>(SELECT_FORT)
             .bind(fort_id)
@@ -456,8 +409,6 @@ impl ResidenceRepository {
         Ok(row.map(FortRow::from))
     }
 
-    /// Rust-only (D-51): the fortresses a clan owns by the table (the re-read at
-    /// `CharacterSelect`).
     pub async fn forts_of_owner(&self, clan_id: i32) -> Result<Vec<FortRow>> {
         let rows = sqlx::query_as::<_, FortDbRow>(SELECT_FORTS_OF_OWNER)
             .bind(clan_id)
@@ -466,7 +417,6 @@ impl ResidenceRepository {
         Ok(rows.into_iter().map(FortRow::from).collect())
     }
 
-    // Java: Fort.saveFortVariables
     pub async fn update_fort_supply_level(&self, fort_id: i32, level: i32) -> Result<()> {
         sqlx::query(UPDATE_FORT_SUPPLY_LEVEL)
             .bind(level)
@@ -477,7 +427,6 @@ impl ResidenceRepository {
     }
 
     /// Java binds `state` and `castleId` as 0.
-    // Java: Fort.updateOwnerInDB
     pub async fn update_fort_owner(&self, fort_id: i32, owner: i32, last_owned_time: i64) -> Result<()> {
         sqlx::query(UPDATE_FORT_OWNER)
             .bind(owner)
@@ -490,7 +439,6 @@ impl ResidenceRepository {
         Ok(())
     }
 
-    // Java: Fort.setFortState
     pub async fn update_fort_state(&self, fort_id: i32, state: i32, castle_id: i32) -> Result<()> {
         sqlx::query(UPDATE_FORT_STATE)
             .bind(state)
@@ -503,7 +451,6 @@ impl ResidenceRepository {
 
     // ------------------------------------------------------------------------------ clan halls
 
-    // Java: ClanHallTable.load
     pub async fn clan_halls(&self) -> Result<Vec<ClanHallRow>> {
         let rows = sqlx::query_as::<_, ClanHallDbRow>(SELECT_CLAN_HALLS)
             .fetch_all(&self.pool)
@@ -511,7 +458,6 @@ impl ResidenceRepository {
         Ok(rows.into_iter().map(ClanHallRow::from).collect())
     }
 
-    /// Rust-only (D-51): the halls a clan owns by the table.
     pub async fn clan_halls_of_owner(&self, clan_id: i32) -> Result<Vec<ClanHallRow>> {
         let rows = sqlx::query_as::<_, ClanHallDbRow>(SELECT_CLAN_HALLS_OF_OWNER)
             .bind(clan_id)
@@ -520,7 +466,6 @@ impl ResidenceRepository {
         Ok(rows.into_iter().map(ClanHallRow::from).collect())
     }
 
-    // Java: AuctionableHall.updateDb
     pub async fn update_clan_hall(
         &self,
         hall_id: i32,
@@ -538,7 +483,6 @@ impl ResidenceRepository {
         Ok(())
     }
 
-    // Java: CHSiegeManager.loadClanHalls
     pub async fn siegable_halls(&self) -> Result<Vec<SiegableHallRow>> {
         let rows = sqlx::query_as::<_, SiegableHallRow>(SELECT_SIEGABLE_HALLS)
             .fetch_all(&self.pool)
@@ -546,7 +490,6 @@ impl ResidenceRepository {
         Ok(rows)
     }
 
-    /// Rust-only (D-51): the conquerable halls a clan owns by the table.
     pub async fn siegable_halls_of_owner(&self, clan_id: i32) -> Result<Vec<SiegableHallRow>> {
         let rows = sqlx::query_as::<_, SiegableHallRow>(SELECT_SIEGABLE_HALLS_OF_OWNER)
             .bind(clan_id)
@@ -555,7 +498,6 @@ impl ResidenceRepository {
         Ok(rows)
     }
 
-    // Java: SiegableHall.updateDb
     pub async fn update_siegable_hall(&self, hall_id: i32, owner_id: i32, next_siege: i64) -> Result<()> {
         sqlx::query(UPDATE_SIEGABLE_HALL)
             .bind(owner_id)
@@ -568,7 +510,6 @@ impl ResidenceRepository {
 
     // ------------------------------------------------------------------------------ functions
 
-    // Java: Castle.loadFunctions, Fort.loadFunctions, ClanHall.loadFunctions
     pub async fn functions(&self, table: FunctionTable, residence_id: i32) -> Result<Vec<FunctionRow>> {
         let sql = match table {
             FunctionTable::Castle => SELECT_CASTLE_FUNCTIONS,
@@ -582,7 +523,6 @@ impl ResidenceRepository {
         Ok(rows.into_iter().map(FunctionRow::from).collect())
     }
 
-    // Java: CastleFunction.dbSave, FortFunction.dbSave, ClanHallFunction.dbSave
     pub async fn save_function(&self, save: &FunctionSave) -> Result<()> {
         let sql = match save.table {
             FunctionTable::Castle => REPLACE_CASTLE_FUNCTION,
@@ -601,7 +541,6 @@ impl ResidenceRepository {
         Ok(())
     }
 
-    // Java: Castle.removeFunction, Fort.removeFunction, ClanHall.removeFunction
     pub async fn delete_function(
         &self,
         table: FunctionTable,

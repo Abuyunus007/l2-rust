@@ -1,6 +1,4 @@
 //! Quest 280: The Food Chain (Bixon in the Town of Aden sells the keltir and wolf teeth).
-// Java: dist/game/data/scripts/quests/Q00280_TheFoodChain/Q00280_TheFoodChain.java
-//
 // Pattern: a repeatable collect quest with a graded drop (`docs/design/scripts.md`, "Quest
 // patterns"): the keltirs drop grey keltir teeth and the black wolves black wolf teeth, one to four
 // a kill by a roll of a thousand. Bixon buys the teeth at 2 adena each, or, with 25 teeth, gives

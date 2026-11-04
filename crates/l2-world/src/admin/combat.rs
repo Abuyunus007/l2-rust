@@ -1,6 +1,4 @@
 //! The admin commands that hurt or revive: `//res`, `//res_monster`, `//kill`, `//kill_monster`.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/{AdminRes,AdminKill}.java
-//
 // `//kill` is a real death (M4-DEATH-01): the target loses `maxHp + 1` (a player `maxHp + maxCp +
 // 1`) through `reduceCurrentHp`, so the death chain of `death.rs` runs, the corpse and the rewards
 // hooks included. `//res` is `doResurrect`: a dead creature comes back, a player gets back the exp
@@ -158,8 +156,6 @@ fn do_resurrect(world: &mut World, target: ObjectId) -> Outcome {
 
 // ----------------------------------------------------------------------------------- AdminKill
 
-/// Java `AdminKill.onCommand`. NOTE(java-quirk): `//kill_monster` is the same command as `//kill`,
-/// it also kills players.
 fn admin_kill(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     let mut st = Tokens::spaces(command);
     st.next_token(); // skip command
@@ -222,7 +218,6 @@ fn kill_in_range(world: &mut World, gm: ObjectId, center: ObjectId, radius: i32)
 fn kill(world: &mut World, gm: ObjectId, target: ObjectId) {
     let amount = match world.objects.get(&target).map(|e| e.kind) {
         Some(ObjectKind::Player) => {
-            // Java: `stopAllEffects()` for a player that is not a GM (e.g. the invincibility effect).
             if !world.is_gm(target) {
                 world.stop_all_effects(target);
             }
@@ -236,7 +231,6 @@ fn kill(world: &mut World, gm: ObjectId, target: ObjectId) {
                 return;
             };
             let amount = f64::from(view.max_hp()) + 1.0;
-            // Java: an invulnerable NPC is made mortal for the hit, and invulnerable again after it.
             let was_invul = world.is_invul(target);
             if was_invul {
                 world.set_invul(target, false);

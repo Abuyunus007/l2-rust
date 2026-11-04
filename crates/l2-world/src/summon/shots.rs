@@ -1,9 +1,5 @@
 //! The shots of a summon: the beast shot item handlers, the summon's own recharge and the
 //! automatic use of beast shots.
-// Java: dist/game/data/scripts/handlers/items/{BeastSoulShot,BeastSpiritShot}.java
-// Java: entity/actor/Summon.java (rechargeShots, isChargedShot, setChargedShot)
-// Java: network/clientpackets/RequestAutoSoulShot.java (the beast shot branch)
-//
 // The charge of a summon is the summon's own mask (`Summon._shotsMask`): the shot table keys it by
 // the summon's object id, as it does for NPCs (`inventory/handlers/shots.rs`).
 
@@ -98,7 +94,6 @@ impl World {
             }
             return false;
         }
-        // NOTE(java-quirk): both handlers say "Your pet uses spiritshot.", the soulshot one too.
         self.send(owner, &SystemMessage::new(SystemMessageId::YourPetUsesSpiritshot));
         self.set_charged_shot(summon, shot, true);
         // `activeOwner.broadcastSkillPacket(new MagicSkillUse(summon, summon, ...), activeOwner)`:
@@ -200,7 +195,6 @@ impl World {
             .get(item.item_id)
             .and_then(|t| t.etc())
             .and_then(|e| e.handler.clone());
-        // NOTE(java-quirk): "not enough" is the soulshot message for both kinds.
         let per_hit = if handler.as_deref() == Some("BeastSoulShot") {
             self.soul_shots_per_hit(summon)
         } else {

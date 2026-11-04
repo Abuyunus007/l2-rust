@@ -8,7 +8,6 @@
 //! test, not off this code: `managers/DuelManager.java`,
 //! `entity/actor/holders/player/Duel.java`, `network/clientpackets/RequestDuel*.java`,
 //! `entity/actor/status/PlayerStatus.java`.
-//! Java: managers/DuelManager.java, entity/actor/holders/player/Duel.java
 
 mod party_scene;
 
@@ -1184,7 +1183,6 @@ fn leaving_the_party_in_a_party_duel() {
     for who in [P1, P2, P3, P4] {
         assert!(!in_duel(&s, who), "{who:#x}");
     }
-    // NOTE(java-quirk): the team colours stay.
     assert_eq!(s.world.team_of(id(P3)), 2);
     // The watch task finds no duelists: cancelled, cleaned up, nothing said.
     s.log.take();

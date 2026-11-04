@@ -1,8 +1,6 @@
 //! Valakas, the Fire Dragon: the dormant boss hidden near its lair, the encounter start after the
 //! waiting time, the spawn and death movies, the regeneration and skill rotation, the inactivity
 //! reset and the respawn cycle on the `GrandBossManager` state.
-// Java: dist/game/data/scripts/ai/bosses/Valakas/Valakas.java
-//
 // The Java fields are `ValakasState` (`ctx.state`). The constructor is `on_load`. Statuses: 0
 // dormant (hidden, entry open), 1 waiting (a player entered, the movie is pending), 2 fighting,
 // 3 dead. The entry itself (status 1 and the `VALAKAS_START_ENCOUNTER` timer) is
@@ -166,7 +164,6 @@ impl Script for Valakas {
     /// The constructor's second half.
     fn on_load(&self, ctx: &mut ScriptCtx<'_>) {
         let Some(info) = ctx.world().grand_boss_info(VALAKAS).cloned() else {
-            // Java: `getStatSet` answers null and the constructor throws.
             tracing::warn!("Valakas: no grandboss_data row for {VALAKAS}, the script does not start.");
             return;
         };
@@ -193,8 +190,6 @@ impl Script for Valakas {
             ctx.world_mut().add_grand_boss(VALAKAS, valakas.object_id);
             ctx.world_mut()
                 .set_current_hp_mp(valakas.object_id, current_hp, current_mp);
-            // NOTE(java-quirk): the teleport below spawns Valakas again (`Attackable.onSpawn`:
-            // `setWalking()`), so a dormant or waiting Valakas walks after all.
             ctx.world_mut().set_running(valakas.object_id, true);
             if status == STATUS_FIGHTING {
                 let now = ctx.now_ms();

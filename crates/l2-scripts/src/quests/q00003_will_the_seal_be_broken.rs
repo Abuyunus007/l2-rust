@@ -1,6 +1,4 @@
 //! Quest 3: Will the Seal be Broken? (Talloth in Dark Elven Village sends a dark elf out to hunt monsters).
-// Java: dist/game/data/scripts/quests/Q00003_WillTheSealBeBroken/Q00003_WillTheSealBeBroken.java
-//
 // Pattern: a kill chain with one item per monster kind (`docs/design/scripts.md`, "Quest
 // patterns"): the drawn party member gets the item for the kill, and their quest goes to cond 2
 // when all three kinds are in. Then the start NPC gives the reward (one-time).

@@ -1,10 +1,6 @@
 //! Auto potions (`config/Custom/AutoPotions.ini`, `AutoPotionsEnabled`, off by default): a player
 //! who typed `.apon` drinks a CP, HP and MP potion from the lists of the file once a second when a
 //! vital falls under its percentage.
-// Java: taskmanagers/AutoPotionTaskManager.java
-// Java: config/custom/AutoPotionsConfig.java
-// Java: dist/game/data/scripts/handlers/chat/commands/voiced/AutoPotion.java
-//
 // Java's lists are `HashSet<Integer>`s, so the potions are tried in the order of the hash table,
 // not in the order of the file (`1540,1539,1061,1060` is walked as 1539, 1540, 1060, 1061). The
 // settings keep the file order and [`super::java_hash_set_order`] gives Java's.
@@ -125,8 +121,6 @@ impl World {
     pub(crate) fn on_auto_potion_timer(&mut self) {
         self.auto_potion.timer = None;
         let settings = self.auto_potion.settings.clone();
-        // NOTE(java-quirk): Java walks a `HashSet<Player>` (identity hash order); the world walks
-        // the object ids in order (D-13).
         let ids: Vec<ObjectId> = self.auto_potion.players.iter().copied().collect();
         for id in ids {
             if !self.players.contains_key(&id)

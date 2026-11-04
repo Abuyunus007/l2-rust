@@ -1,6 +1,5 @@
 //! Item packets: the shared item-info writer and `ItemList`.
 //!
-//! Java: `AbstractItemPacket` (the writer helpers), `AbstractInventoryUpdate` (the entry list)
 //! and `ItemList`. Later inventory packets (`InventoryUpdate`, `PetItemList`, warehouse, ...)
 //! reuse [`write_item`] / [`read_item`], [`write_item_updates`] and [`write_inventory_block`].
 //!
@@ -13,7 +12,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/entity/item/holders/ItemInfo.java (the fields `writeItem` reads)
 /// One item as the client sees it. All shorts are the low 16 bits of Java ints.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ItemInfo {
@@ -138,7 +136,6 @@ pub fn read_item(r: &mut PacketReader) -> Result<ItemInfo, PacketError> {
     })
 }
 
-// Java: gameserver/network/serverpackets/AbstractInventoryUpdate.java (`writeItems`)
 /// One entry of an inventory update: what happened to the item, then the item.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ItemUpdate {
@@ -148,12 +145,7 @@ pub struct ItemUpdate {
 }
 
 /// Java `AbstractInventoryUpdate.writeItems`: a `u16` count, then change + item per entry.
-///
-/// NOTE(java-quirk): Java keeps the entries in a `HashMap<objectId, ItemInfo>`, so an item
-/// appears once and the order is the map's iteration order. The caller passes the entries in the
-/// order it wants and must not repeat an object id.
 pub fn write_item_updates(w: &mut PacketWriter, updates: &[ItemUpdate]) {
-    // Java: `writeShort(size)`, the low 16 bits of the count.
     w.u16(updates.len() as u16);
     for update in updates {
         w.i16(update.change);
@@ -173,7 +165,6 @@ pub fn read_item_updates(r: &mut PacketReader) -> Result<Vec<ItemUpdate>, Packet
     Ok(updates)
 }
 
-// Java: AbstractItemPacket.writeInventoryBlock (the PlayerInventory block fields)
 /// Items the client may not use (`PlayerInventory.getBlockItems()` and `getBlockMode()`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InventoryBlock {
@@ -213,7 +204,6 @@ pub fn read_inventory_block(r: &mut PacketReader) -> Result<Option<InventoryBloc
     Ok(Some(InventoryBlock { mode, items }))
 }
 
-// Java: gameserver/network/serverpackets/ItemList.java
 /// The inventory window contents, without quest items (`ExQuestItemList` carries those; Java
 /// sends it from `ItemList.runImpl`, which is the caller's job).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -257,7 +247,6 @@ impl Decode for ItemList {
     }
 }
 
-// Java: gameserver/network/serverpackets/InventoryUpdate.java
 /// Changes to the inventory (`INVENTORY_UPDATE`): the entries of [`write_item_updates`].
 ///
 /// Java keeps the entries in a `HashMap<objectId, ItemInfo>`; the caller passes them in the order

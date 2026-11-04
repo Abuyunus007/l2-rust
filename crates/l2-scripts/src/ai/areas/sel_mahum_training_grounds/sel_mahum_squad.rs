@@ -1,7 +1,5 @@
 //! Sel Mahum Training Ground AI for squads and chefs: the chef feeds the squads around the camp
 //! fire, the squad leaders walk to the fire and eat or sleep there.
-// Java: dist/game/data/scripts/ai/areas/SelMahumTrainingGrounds/SelMahumSquad.java
-//
 // `setWalking` / `setRunning` are the engine's `set_walking` / `set_running` (S-API-05).
 // `broadcastSay(.., 1250)` (radius) is the plain `broadcast_npc_say`.
 
@@ -325,7 +323,6 @@ impl Script for SelMahumSquad {
             "SCE_SOUP_FAILURE" => {
                 if leader {
                     // TODO (Java): use it in quest 289.
-                    // NOTE(java-quirk): `reference.getObjectId()` throws without a reference.
                     set_var(ctx, receiver, "FULL_BARREL_REWARDING_PLAYER", reference?.0);
                     ctx.start_quest_timer("reset_full_bottle_prize", 180_000, Some(receiver), None, false);
                 }
@@ -488,8 +485,6 @@ mod tests {
             assert_eq!(var_int(ctx, chef, "INVUL_REMOVE_TIMER_STARTED"), 1);
         });
         t.wait_ms(1_100);
-        // NOTE(java-quirk): `healPlayer` finds INVUL_REMOVE_TIMER_STARTED == 1 at once, so it
-        // takes the "stop" branch: BUSY_STATE and the flag go and `chef_set_invul` is cancelled.
         run(&mut t, |ctx| {
             let chef = ctx.script_npc(chef).unwrap();
             assert_eq!(var_int(ctx, chef, "BUSY_STATE"), 0);

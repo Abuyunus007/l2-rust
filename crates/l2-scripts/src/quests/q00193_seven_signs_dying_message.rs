@@ -1,6 +1,4 @@
 //! Quest 193: Seven Signs, Dying Message (Hollint, Cain, Eric and Sir Gustav Athebaldt).
-// Java: dist/game/data/scripts/quests/Q00193_SevenSignsDyingMessage/Q00193_SevenSignsDyingMessage.java
-//
 // Pattern: like Q00198 (a fight against Shilen's Evil Thoughts that Cain heals by timer, the
 // `isBusy` field in `ctx.state`), a movie at cond 3 and the reward from another NPC.
 
@@ -226,8 +224,6 @@ impl Script for Q00193SevenSignsDyingMessage {
             None => false,
         };
         if in_range {
-            // NOTE(java-quirk): the sculpture and the sound go to the killer, the cond to the
-            // member drawn.
             ctx.give_items(player, SCULPTURE_OF_DOUBT, 1);
             ctx.play_sound(player, QuestSound::ItemsoundQuestFinish);
             if let Some(qs) = qs {

@@ -1,10 +1,6 @@
 //! `AutoSpawnHandler`: the NPCs of `random_spawn` that come and go on a timer (the Mammon
 //! merchants, the Seven Signs preachers, orators and crests, Lilith and Anakim, a few quest NPCs),
 //! and `SevenSigns.spawnSevenSignsNPC`, which turns the Seven Signs ones on and off.
-// Java: entity/spawns/AutoSpawnHandler.java (registerSpawn, setSpawnActive, AutoSpawner,
-//       AutoDespawner, getAutoSpawnInstance, getAutoSpawnInstances)
-// Java: mechanics/sevensigns/SevenSigns.java (spawnSevenSignsNPC)
-//
 // The groups are read once at start (`restoreSpawnData`, read only). A registered group is
 // active at once, like Java: its first spawn comes after the initial delay (30 seconds by
 // default). Then `spawnSevenSignsNPC` turns the Seven Signs groups off again where the state says
@@ -423,8 +419,6 @@ impl World {
 
     /// Java `SevenSigns.spawnSevenSignsNPC()`: the Mammon NPCs, Lilith or Anakim, the crests, the
     /// orators and the preachers as the period and the seals say.
-    // NOTE(java-quirk): Java throws a NullPointerException where a group is missing from
-    // `random_spawn` (the Mammon merchant, blacksmith, Lilith, Anakim); here it is skipped.
     pub fn spawn_seven_signs_npc(&mut self) {
         let merchant = self.auto_spawn_first(MAMMON_MERCHANT_ID);
         let blacksmith = self.auto_spawn_first(MAMMON_BLACKSMITH_ID);

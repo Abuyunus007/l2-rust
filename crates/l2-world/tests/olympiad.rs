@@ -1,8 +1,5 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
-//! The Grand Olympiad (M8-OLY-01): a classed and a non-classed match from the registration to the
-//! points, a spectator, the period end with `CycleDatabaseWrites` on, and the same with it off.
-//!
 //! The expected behaviour is read off the Java sources, not off this code:
 //! `mechanics/olympiad/{Olympiad,OlympiadManager,OlympiadGameManager,OlympiadGameTask,
 //! AbstractOlympiadGame,OlympiadGameNormal}.java`, `entity/zone/type/OlympiadStadiumZone.java`,
@@ -390,7 +387,6 @@ fn a_classed_match_runs_from_the_registration_to_the_points() {
     assert_eq!(s.inventory_count(two, 57), 0);
     // `cleanEffects`: the loser is alive again and both are healed.
     assert!(!s.world.is_dead(id(two)));
-    // The match row (written whatever `CycleDatabaseWrites` says); no global write.
     let writes = olympiad_writes(&s);
     assert_eq!(writes.len(), 1);
     match &writes[0] {

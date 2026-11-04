@@ -1,7 +1,6 @@
 //! The skill document parser: one `<skill>` element becomes one [`SkillTemplate`] per level and
 //! per enchant level.
 //!
-//! Java: `util/DocumentSkill.java` (`parseSkill`, `parseTable`'s use, `makeSkills`, the enchant
 //! route loops, `parseInlineLevelTable`) and `util/DocumentBase.java` (`parseTemplate`,
 //! `attachEffect`, `parseBeanSet`, `parseElementValue`, `getValue`, `getTableValue`).
 //!
@@ -299,7 +298,6 @@ impl<'a> SkillDoc<'a> {
         let Some(first) = value.chars().next() else {
             return;
         };
-        // NOTE(java-quirk): `Character.isDigit` also accepts non ASCII digits; the datapack has none.
         if first == '#' || first == '-' || first.is_ascii_digit() {
             set.set_str(name, &self.value_for_level(value, level));
         } else {
@@ -430,8 +428,6 @@ impl<'a> SkillDoc<'a> {
             route_sets.push(route_levels);
         }
 
-        // `makeSkills`. NOTE(java-quirk): when one constructor throws, Java logs it and the list
-        // shifts, so the next `currentSkills.get(i)` fails and ends the file. Same result here.
         let mut skills = Vec::with_capacity(last + route_counts.iter().sum::<usize>());
         for set in sets.iter().chain(route_sets.iter().flatten()) {
             match SkillTemplate::from_set(set, self.options) {
@@ -507,8 +503,6 @@ impl<'a> SkillDoc<'a> {
     fn attach_conditions(&self, n: &XmlNode, skill: &mut SkillTemplate) -> Result<()> {
         let resolve = |name: &str| Some(self.table_current(name));
         let parser = ConditionParser::new(self.file, &resolve);
-        // NOTE(java-quirk): Java attaches a `null` when the block holds no recognised condition
-        // (and the cast check would throw); such a block is dropped here.
         if let Some(condition) = parser.parse_conditions_block(n)? {
             skill.pre_conditions.push(condition);
         }
@@ -527,9 +521,6 @@ impl<'a> SkillDoc<'a> {
         let resolve = |name: &str| Some(self.table_current(name));
         let parser = ConditionParser::new(self.file, &resolve);
 
-        // NOTE(java-quirk): `node.getFirstChild()` is tested without skipping text nodes. With the
-        // usual indentation the first child is whitespace, so a `<conditions>` block is not the
-        // template condition, and the loop below has no case for it: it is ignored.
         let mut attach_cond: Option<Arc<Condition>> = None;
         let mut start = 0;
         if !node.leading_text
@@ -636,10 +627,6 @@ impl<'a> SkillDoc<'a> {
 }
 
 /// Which branch of the "take it from the plain list" loop of an enchant route runs for `kind`.
-///
-/// NOTE(java-quirk): copy-paste differences in `DocumentSkill`: route 2 has no `startEffects`
-/// branch at all, and route 7 guards its `startEffects` branch with `!foundChannelingEffects`
-/// instead of `!foundStartEffects`.
 fn fallback_applies(route: usize, kind: Kind, found: &[bool; 8]) -> bool {
     match kind {
         Kind::Start => match route {

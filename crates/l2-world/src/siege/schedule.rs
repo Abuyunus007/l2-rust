@@ -1,11 +1,4 @@
 //! The siege schedule: the next siege date, the start and end tasks, the registration period.
-// Java: mechanics/siege/Siege.java (ScheduleStartSiegeTask, ScheduleEndSiegeTask, startAutoTask,
-//       correctSiegeDateTime, setNextSiegeDate, saveSiegeDate, saveCastleSiege,
-//       endTimeRegistration)
-// Java: managers/CastleManager.java (registerSiegeDate, getSiegeDates)
-// Java: network/serverpackets/SiegeInfo.java (the hours of `SiegeHourList`)
-// Java: network/clientpackets/RequestSetCastleSiegeTime.java (isSiegeTimeValid)
-//
 // # Calendars
 // Java computes the dates with `Calendar.getInstance()` in the JVM's zone (D-48). The functions
 // here take the offset of that zone as a function of the UTC time, so tests can fix it. A week
@@ -85,8 +78,6 @@ pub fn siege_hour_times(siege_date: i64, hours: &[i32], offset_at: &dyn Fn(i64) 
 
 /// Java `RequestSetCastleSiegeTime.isSiegeTimeValid`: the chosen time is one of the hours of
 /// `SiegeHourList` on the siege day.
-// NOTE(java-quirk): Java compares `Calendar.HOUR` (the 12 hour clock), so 4:00 matches 16:00 of
-// the list, and it never compares the milliseconds.
 pub(crate) fn is_siege_time_valid(
     siege_date: i64,
     chosen: i64,
@@ -181,8 +172,6 @@ impl World {
         i32::try_from(count).unwrap_or(i32::MAX)
     }
 
-    /// Java `Siege.saveSiegeDate()`: the start task is armed again (1 s) when there is one, and
-    /// the dates are written (D-51: only with `SiegeDatabaseWrites`).
     pub(crate) fn siege_save_siege_date(&mut self, id: CastleId) {
         let old = self.castle_siege(id).and_then(|s| s.start_timer);
         if let Some(old) = old {

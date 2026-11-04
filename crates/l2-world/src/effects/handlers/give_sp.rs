@@ -1,6 +1,5 @@
 //! The `GiveSp` effect: the caster gets `sp` skill points (no exp), when both sides are players and
 //! the target is alive.
-// Java: dist/game/data/scripts/handlers/skill/effects/GiveSp.java
 
 use l2_data::skill::EffectTemplate;
 

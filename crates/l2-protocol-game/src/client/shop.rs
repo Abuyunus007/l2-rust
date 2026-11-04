@@ -46,7 +46,6 @@ pub struct BuyItemEntry {
     pub count: i64,
 }
 
-// Java: gameserver/network/clientpackets/RequestBuyItem.java
 /// The player buys from a merchant's list (`REQUEST_BUY_ITEM`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestBuyItem {
@@ -92,7 +91,6 @@ pub struct SellItemEntry {
     pub count: i64,
 }
 
-// Java: gameserver/network/clientpackets/RequestSellItem.java
 /// The player sells items to a merchant (`REQUEST_SELL_ITEM`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestSellItem {
@@ -137,7 +135,6 @@ impl Decode for RequestSellItem {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestRefundItem.java
 /// The player takes back items it sold (`0xD0 0x0075`, an ex packet). Each entry is the index in
 /// the refund list the last `ExBuySellList` showed.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -172,7 +169,6 @@ impl Decode for RequestRefundItem {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestBuySellUIClose.java
 /// The player closed the shop window (`0xD0 0x0076`, an ex packet). No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestBuySellUIClose;

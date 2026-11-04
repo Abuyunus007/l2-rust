@@ -1,7 +1,5 @@
 //! The expiry of mails: every 10 seconds the mails whose time ran out are deleted and their
 //! attachments go back to the sender.
-// Java: taskmanagers/MessageDeletionTaskManager.java, entity/itemcontainer/Mail.java (returnToWh,
-// Java: deleteMe)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;

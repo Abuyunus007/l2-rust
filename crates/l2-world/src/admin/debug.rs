@@ -1,6 +1,4 @@
 //! `//debug`: the debug menu and the packet, door, geodata and movement switches.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminDebug.java
-//
 // Doors and geodata run the commands `//showdoors` and `//geogrid` again every time the GM has
 // moved 15 units; movement draws the path of the walk the GM is on with `ExServerPrimitive`
 // lines. The Java tasks are `ThreadPool.scheduleAtFixedRate`; here they are timers of the wheel
@@ -425,8 +423,6 @@ fn set_movement_debugging(world: &mut World, gm: ObjectId, enabled: bool) {
         }
     } else if let Some(running) = world.admin.ctl.debug.movement.remove(&gm) {
         world.timers.cancel(running.timer);
-        // NOTE(java-quirk): Java forgets the place with `PLAYER_MOVE_LOCATIONS.remove`; the
-        // running record held it here.
         world.debug_schedule(DebugTimer::ClearMoveLine(gm), GEO_DELAY_MS + 100);
     }
     world.send_sys_message(

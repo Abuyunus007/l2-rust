@@ -1,6 +1,4 @@
 //! Quest 609: Magical Power of Water, Part 1 (Wahkan, Asefa and Udan's Box; the Varka monsters).
-// Java: dist/game/data/scripts/quests/Q00609_MagicalPowerOfWaterPart1/Q00609_MagicalPowerOfWaterPart1.java
-//
 // Pattern: a monster-triggered quest. Attacking the Varka monsters at cond 2 once calls Udan's
 // eye (a spawn at the monster that casts the gaze on the attacker and despawns after 10 s); the
 // Asefa's spell dispels it. The box gives the stolen green totem.

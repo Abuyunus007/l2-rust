@@ -1,9 +1,4 @@
 //! The small NPC bypasses `BuyShadowItem`, `Wear`, `ReceivePremium` and `voice`.
-// Java: dist/game/data/scripts/handlers/bypass/npc/BuyShadowItem.java
-// Java: dist/game/data/scripts/handlers/bypass/npc/Wear.java
-// Java: dist/game/data/scripts/handlers/bypass/npc/ReceivePremium.java
-// Java: dist/game/data/scripts/handlers/bypass/npc/VoiceCommand.java
-// Java: network/serverpackets/ShopPreviewList.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{ActionFailed, ShopPreviewList, ShopPreviewProduct, SystemMessage};
@@ -37,7 +32,6 @@ fn buy_shadow_item_handler(
         return false;
     };
     let level = world.players.get(&player).map_or(1, |p| p.core.level);
-    // NOTE(java-quirk): the four `if`s cover every level, so the page is always set.
     let file = if level < 40 {
         "data/html/common/shadow_item-lowlevel.htm"
     } else if level < 46 {

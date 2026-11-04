@@ -1,5 +1,4 @@
 //! Andreas Van Halter raid AI: balcony cleanup -> door swap -> ritual cinematic -> boss combat.
-// Java: dist/game/data/scripts/ai/areas/PaganTemple/AndreasVanHalter.java
 
 use l2_protocol_game::server::{PlaySound, SocialAction, SpecialCamera};
 use l2_util::ObjectId;

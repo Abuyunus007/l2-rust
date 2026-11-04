@@ -1,9 +1,3 @@
-//! The GM commands of the conquerable hall sieges: `//chsiege_startSiege`, `_endsSiege`,
-//! `_setSiegeDate`, `_addAttacker`, `_removeAttacker`, `_clearAttackers`, `_listAttackers` and
-//! `_forwardSiege`, and the page they all end with (`siegablehall.htm`). A GM starts a test siege
-//! with them (D-51).
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminCHSiege.java
-//
 // `admin_chsiege_siegablehall` (the page of a hall) is on the castle list page of `//siege`.
 // `Clan Hall` words of `AdminSiege` (`//clanhall...`) are `admin/clanhall.rs` (M7-ADMIN-06).
 
@@ -193,7 +187,6 @@ fn set_siege_date(world: &mut World, gm: ObjectId, hall: ClanHallId, parts: &[&s
     let min = parse_int(hour[1]);
     let now = world.siege_now_ms();
     let offset = world.siege_offset_at(now);
-    // NOTE(java-quirk): January is refused (`month <= 0`), and "March 29" is (`month == 2`).
     if (month == 2 && d > 28)
         || d > 31
         || d <= 0

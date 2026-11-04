@@ -1,6 +1,4 @@
 //! Quest 141: Shadow Fox - 3 (Natools wants thirty reports of the predecessors).
-// Java: dist/game/data/scripts/quests/Q00141_ShadowFoxPart3/Q00141_ShadowFoxPart3.java
-//
 // Pattern: a party kill count at cond 2 (`getRandomPartyMember(player, 2)`) and a `talk` memo that
 // picks the page at cond 3. The reward hands the player over to Q00998_FallenAngelSelect.
 

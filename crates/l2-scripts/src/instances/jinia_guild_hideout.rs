@@ -1,7 +1,6 @@
 //! The shared body of `JiniaGuildHideout1..4`: Rafforty sends a player of the Sirra quest chain
 //! into the hideout instance. The four Java scripts differ in the quest, the condition on it and
 //! the template only.
-// Java: dist/game/data/scripts/instances/JiniaGuildHideout{1,2,3,4}/JiniaGuildHideout{1..4}.java
 
 use l2_util::ObjectId;
 use l2_world::{ScriptCtx, ScriptNpc, ScriptSetup, TeleportTarget};

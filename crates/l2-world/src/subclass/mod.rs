@@ -1,14 +1,6 @@
 //! Subclasses: the `character_subclasses` rows of a character, adding, replacing and switching a
 //! class (`Player.addSubClass`, `modifySubClass`, `setActiveClass`) and the `Subclass` bypass of
 //! the village masters.
-// Java: entity/actor/Player.java (addSubClass, modifySubClass, setActiveClass, setClassTemplate,
-//       isSubClassActive, getTotalSubClasses, getBaseClass, restoreSubClassData, storeCharSub,
-//       storeCharBase's base exp/level/sp, canLogout, isAllowedToEnchantSkills)
-// Java: entity/actor/holders/player/SubClassHolder.java
-// Java: entity/actor/stat/PlayerStat.java (getBaseExp/getBaseLevel/getBaseSp, setExp/setLevel of
-//       an active subclass)
-// Java: entity/actor/instance/VillageMaster*.java (the `Subclass` bypass, `village_master.rs`)
-//
 // # Where the values live
 // `PlayerData::level`/`exp`/`sp` (and `CreatureCore::level`) are always the values of the active
 // class, like Java's `PlayerStat` getters, which read the active `SubClassHolder`. The holders sit
@@ -188,8 +180,6 @@ pub enum SubclassWrite {
     Delete {
         char_id: i32,
         class_index: i32,
-        /// NOTE(java-quirk): the slots where the *active* class wears a dye (`getHenna(slot)`),
-        /// whatever the class index being deleted wears.
         henna_slots: Vec<i32>,
     },
 }

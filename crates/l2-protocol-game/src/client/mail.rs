@@ -14,7 +14,6 @@ use crate::generated::opcodes::ExClientOpcode;
 /// Bytes per attached item in `RequestSendPost`: an int object id and a long count.
 pub const ATTACHMENT_BATCH_LENGTH: i32 = 12;
 
-// Java: gameserver/network/clientpackets/RequestPostItemList.java
 client_unit_packet!(
     /// The player opens the "attach items" window of a new mail (`REQUEST_POST_ITEM_LIST`,
     /// `0xD0` 0x0065).
@@ -22,21 +21,18 @@ client_unit_packet!(
     ex RequestPostItemList
 );
 
-// Java: gameserver/network/clientpackets/RequestReceivedPostList.java
 client_unit_packet!(
     /// The player opens the inbox (`REQUEST_RECEIVED_POST_LIST`, `0xD0` 0x0067).
     RequestReceivedPostList,
     ex RequestReceivedPostList
 );
 
-// Java: gameserver/network/clientpackets/RequestSentPostList.java
 client_unit_packet!(
     /// The player opens the outbox (`REQUEST_SENT_POST_LIST`, `0xD0` 0x006C).
     RequestSentPostList,
     ex RequestSentPostList
 );
 
-// Java: gameserver/network/clientpackets/RequestReceivedPost.java
 client_packet!(
     /// The player opens a mail of the inbox (`REQUEST_RECEIVED_POST`, `0xD0` 0x0069).
     RequestReceivedPost,
@@ -45,7 +41,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestSentPost.java
 client_packet!(
     /// The player opens a mail of the outbox (`REQUEST_SENT_POST`, `0xD0` 0x006E).
     RequestSentPost,
@@ -54,7 +49,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestPostAttachment.java
 client_packet!(
     /// The player takes the attachments of a mail it received (`REQUEST_POST_ATTACHMENT`,
     /// `0xD0` 0x006A).
@@ -64,7 +58,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestRejectPostAttachment.java
 client_packet!(
     /// The player sends the attachments of a mail it received back
     /// (`REQUEST_REJECT_POST_ATTACHMENT`, `0xD0` 0x006B).
@@ -74,7 +67,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestCancelPostAttachment.java
 client_packet!(
     /// The sender takes back a mail whose attachments the receiver has not taken
     /// (`REQUEST_CANCEL_SENT_POST`, `0xD0` 0x006F; the Java class is `RequestCancelPostAttachment`).
@@ -92,13 +84,7 @@ pub struct PostAttachment {
     pub count: i64,
 }
 
-// Java: gameserver/network/clientpackets/RequestSendPost.java
 /// The player sends a mail (`REQUEST_SEND_POST`, `0xD0` 0x0066).
-///
-/// NOTE(java-quirk): `readImpl` returns early on a bad item count, a length that does not fit or
-/// an item below 1, and `runImpl` still sends the mail, without attachments. That is `items:
-/// None` with `req_adena` 0 here (a negative `req_adena` also drops the items but keeps the
-/// value, and the handler then returns). A count above `MaxItemInPacket` is the world's check.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestSendPost {
     /// The name of the receiver.
@@ -198,7 +184,6 @@ fn write_message_ids(w: &mut PacketWriter, ids: &Option<Vec<i32>>) {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestDeleteReceivedPost.java
 /// The player deletes mails of the inbox (`REQUEST_DELETE_RECEIVED_POST`, `0xD0` 0x0068).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestDeleteReceivedPost {
@@ -225,7 +210,6 @@ impl Decode for RequestDeleteReceivedPost {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestDeleteSentPost.java
 /// The player deletes mails of the outbox (`REQUEST_DELETE_SENT_POST`, `0xD0` 0x006D).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestDeleteSentPost {

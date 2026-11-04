@@ -2,7 +2,6 @@
 //! condition trees. Nothing here is evaluated; `l2-world` (M4-STAT-01) turns these into
 //! calculators and tests conditions against the world.
 //!
-//! Java: `mechanics/stats/Stat.java`, `mechanics/stats/functions/{FuncTemplate,StatFunction}.java`,
 //! `mechanics/conditions/*`, and the parsing half of `util/DocumentBase.java`.
 //! Design: `docs/design/m4-combat.md`.
 //!

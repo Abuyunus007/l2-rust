@@ -1,11 +1,5 @@
 //! The Seven Signs tables: `seven_signs` (one row per registered character) and
 //! `seven_signs_status` (the one row `id = 0` of the cycle), M8-SS-01.
-// Java: org/l2jmobius/gameserver/mechanics/sevensigns/SevenSigns.java (LOAD_DATA, LOAD_STATUS,
-//       INSERT_PLAYER, UPDATE_PLAYER, UPDATE_STATUS)
-//
-// Same layout as manor.rs: verbatim SQL, one method per statement. D-39: the Java game server
-// reads and writes the same rows; the world decides which writes go out (D-53: the status row and
-// the whole-table saves only with `CycleDatabaseWrites`).
 
 use sqlx::FromRow;
 
@@ -13,22 +7,14 @@ use super::sql_number::SqlNumber;
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: SevenSigns.LOAD_DATA
 const LOAD_DATA: &str = "SELECT charId, cabal, seal, red_stones, green_stones, blue_stones, ancient_adena_amount, contribution_score FROM seven_signs";
-// The one row of LOAD_DATA a character select reads again (D-50).
 const LOAD_PLAYER: &str = "SELECT charId, cabal, seal, red_stones, green_stones, blue_stones, ancient_adena_amount, contribution_score FROM seven_signs WHERE charId=?";
-// Java: SevenSigns.LOAD_STATUS
 const LOAD_STATUS: &str = "SELECT * FROM seven_signs_status WHERE id=0";
-// Java: SevenSigns.INSERT_PLAYER
 const INSERT_PLAYER: &str = "INSERT INTO seven_signs (charId, cabal, seal) VALUES (?,?,?)";
-// Java: SevenSigns.UPDATE_PLAYER
 const UPDATE_PLAYER: &str = "UPDATE seven_signs SET cabal=?, seal=?, red_stones=?, green_stones=?, blue_stones=?, ancient_adena_amount=?, contribution_score=? WHERE charId=?";
-// Java: SevenSigns.UPDATE_STATUS
 const UPDATE_STATUS: &str = "UPDATE seven_signs_status SET current_cycle=?, active_period=?, previous_winner=?, dawn_stone_score=?, dawn_festival_score=?, dusk_stone_score=?, dusk_festival_score=?, avarice_owner=?, gnosis_owner=?, strife_owner=?, avarice_dawn_score=?, gnosis_dawn_score=?, strife_dawn_score=?, avarice_dusk_score=?, gnosis_dusk_score=?, strife_dusk_score=?, festival_cycle=?, accumulated_bonus0=?, accumulated_bonus1=?, accumulated_bonus2=?,accumulated_bonus3=?, accumulated_bonus4=?, date=? WHERE id=0";
 
-// Java: SevenSignsFestival.restoreFestivalData
 const LOAD_FESTIVAL: &str = "SELECT festivalId, cabal, cycle, date, score, members FROM seven_signs_festival";
-// Java: SevenSignsFestival.saveFestivalData
 const REPLACE_FESTIVAL: &str =
     "REPLACE INTO seven_signs_festival (festivalId, cabal, cycle, date, score, members) VALUES (?,?,?,?,?,?)";
 
@@ -188,7 +174,6 @@ impl SevenSignsRepository {
     }
 
     /// Every `seven_signs` row, in the database's order.
-    // Java: SevenSigns.restoreSevenSignsData (LOAD_DATA)
     pub async fn load_all(&self) -> Result<Vec<SevenSignsRow>> {
         let rows = sqlx::query_as::<_, SevenSignsDbRow>(LOAD_DATA)
             .fetch_all(&self.pool)
@@ -206,7 +191,6 @@ impl SevenSignsRepository {
     }
 
     /// The status row; `None` when the table has no `id = 0` row (Java leaves its defaults).
-    // Java: SevenSigns.restoreSevenSignsData (LOAD_STATUS, `while (rs.next())`: the last row wins)
     pub async fn load_status(&self) -> Result<Option<SevenSignsStatusRow>> {
         let rows = sqlx::query_as::<_, SevenSignsStatusDbRow>(LOAD_STATUS)
             .fetch_all(&self.pool)
@@ -215,7 +199,6 @@ impl SevenSignsRepository {
     }
 
     /// Every `seven_signs_festival` row.
-    // Java: SevenSignsFestival.restoreFestivalData
     pub async fn load_festival(&self) -> Result<Vec<FestivalRow>> {
         Ok(sqlx::query_as::<_, FestivalRow>(LOAD_FESTIVAL)
             .fetch_all(&self.pool)
@@ -223,7 +206,6 @@ impl SevenSignsRepository {
     }
 
     /// Every festival row of the world (`REPLACE INTO`, one batch in Java, one transaction here).
-    // Java: SevenSignsFestival.saveFestivalData (REPLACE_FESTIVAL, addBatch)
     pub async fn replace_festival(&self, rows: &[FestivalRow]) -> Result<()> {
         let mut tx = self.pool.begin().await?;
         for row in rows {
@@ -242,7 +224,6 @@ impl SevenSignsRepository {
     }
 
     /// A new member (only the three columns, the others keep their defaults).
-    // Java: SevenSigns.setPlayerInfo (INSERT_PLAYER)
     pub async fn insert_player(&self, char_id: i32, cabal: &str, seal: i32) -> Result<()> {
         sqlx::query(INSERT_PLAYER)
             .bind(char_id)
@@ -254,7 +235,6 @@ impl SevenSignsRepository {
     }
 
     /// One member's row.
-    // Java: SevenSigns.saveSevenSignsData(objectId) (UPDATE_PLAYER)
     pub async fn update_player(&self, row: &SevenSignsRow) -> Result<()> {
         bind_update(sqlx::query(UPDATE_PLAYER), row)
             .execute(&self.pool)
@@ -263,7 +243,6 @@ impl SevenSignsRepository {
     }
 
     /// Every member's row. Java sends one batch; one transaction writes the same rows.
-    // Java: SevenSigns.saveSevenSignsData() (UPDATE_PLAYER, addBatch)
     pub async fn update_all_players(&self, rows: &[SevenSignsRow]) -> Result<()> {
         let mut tx = self.pool.begin().await?;
         for row in rows {
@@ -276,7 +255,6 @@ impl SevenSignsRepository {
     }
 
     /// The status row.
-    // Java: SevenSigns.saveSevenSignsStatus (UPDATE_STATUS)
     pub async fn update_status(&self, s: &SevenSignsStatusRow) -> Result<()> {
         let mut q = sqlx::query(UPDATE_STATUS)
             .bind(s.current_cycle)

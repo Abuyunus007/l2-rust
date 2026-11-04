@@ -8,7 +8,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ClientOpcode;
 
-// Java: gameserver/network/clientpackets/RequestFriendInvite.java
 /// The player asks another character to become a friend (`REQUEST_FRIEND_INVITE`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestFriendInvite {
@@ -33,7 +32,6 @@ impl Decode for RequestFriendInvite {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestAnswerFriendInvite.java
 /// The invited player answers the friend request (`REQUEST_ANSWER_FRIEND_INVITE`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestAnswerFriendInvite {
@@ -58,7 +56,6 @@ impl Decode for RequestAnswerFriendInvite {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestFriendList.java
 /// The player opens the friend list window (`REQUEST_FRIEND_LIST`). No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestFriendList;
@@ -79,7 +76,6 @@ impl Decode for RequestFriendList {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestFriendDel.java
 /// The player removes a friend (`REQUEST_FRIEND_DEL`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestFriendDel {
@@ -104,7 +100,6 @@ impl Decode for RequestFriendDel {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestSendFriendMsg.java
 /// A private message to a friend (`REQUEST_SEND_FRIEND_MSG`): the text first, then the receiver.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestSendFriendMsg {
@@ -132,7 +127,6 @@ impl Decode for RequestSendFriendMsg {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestBlock.java
 /// The block list window and the `/block`, `/unblock`, `/allblock`, `/allunblock` and
 /// `/blocklist` commands (`REQUEST_BLOCK`).
 #[derive(Debug, Clone, PartialEq, Eq)]

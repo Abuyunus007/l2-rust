@@ -359,7 +359,6 @@ fn registering_an_item() {
     assert_eq!(s.bar(), [sc(3, 0, 1, POTION_OBJ.0, 0)]);
 }
 
-/// NOTE(java-quirk): a weapon gets the template's group, 0 (the list of `restoreMe` would say -1).
 #[test]
 fn an_item_without_a_group_shows_zero_in_the_register_packet() {
     let mut s = Scene::new(vec![]);
@@ -375,8 +374,6 @@ fn an_item_without_a_group_shows_zero_in_the_register_packet() {
     );
 }
 
-/// NOTE(java-quirk): an item that is not there is not stored, but the client is still sent the
-/// register packet (with group -1).
 #[test]
 fn an_unknown_item_is_refused_but_the_packet_is_sent() {
     let mut s = Scene::new(vec![]);
@@ -454,8 +451,6 @@ fn the_page_has_to_be_between_0_and_10() {
     assert_eq!(s.bar().len(), 1);
 }
 
-/// NOTE(java-quirk): `-5 % 12` is -5 and `-5 / 12` is 0 in Java, so a wire slot of -5 is slot -5
-/// of page 0, and the packet shows it as -5 again.
 #[test]
 fn a_small_negative_slot_passes_like_in_java() {
     let mut s = Scene::new(vec![]);

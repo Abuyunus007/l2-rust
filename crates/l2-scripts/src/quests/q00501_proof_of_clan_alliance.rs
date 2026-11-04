@@ -1,7 +1,5 @@
 //! Quest 501: Proof of Clan Alliance (the clan leader's alliance manifesto: loyalty symbols, a
 //! poison, herbs and Athrea's boxes).
-// Java: dist/game/data/scripts/quests/Q00501_ProofOfClanAlliance/Q00501_ProofOfClanAlliance.java
-//
 // Pattern: a clan quest. The leader starts it and keeps the memo state; the clan members work on
 // the leader's quest state (`getLeaderQuestState`) while holding their own state for the symbols.
 // Athrea spawns sixteen boxes (summoned NPCs) and counts the kills in its script value.

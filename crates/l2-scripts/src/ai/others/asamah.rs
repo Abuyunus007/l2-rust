@@ -1,6 +1,4 @@
 //! Asamah, the Elrokian hunter of the Primeval Isle: a first-talk NPC script.
-// Java: dist/game/data/scripts/ai/others/Asamah/Asamah.java
-//
 // The reference port of an NPC script for the batch workers (`docs/design/scripts.md`): it reads
 // another quest's state by name, as Java's `player.getQuestState(Q00111_....class.getSimpleName())`.
 

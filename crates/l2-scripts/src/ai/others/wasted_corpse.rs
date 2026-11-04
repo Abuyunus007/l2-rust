@@ -1,5 +1,4 @@
 //! The Corpse of Deadman dies as soon as it spawns.
-// Java: dist/game/data/scripts/ai/others/WastedCorpse.java
 
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
 

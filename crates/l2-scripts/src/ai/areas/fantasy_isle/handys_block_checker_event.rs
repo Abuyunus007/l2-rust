@@ -1,6 +1,4 @@
 //! Handy's Block Checker Event: the registration at the arena managers.
-// Java: dist/game/data/scripts/ai/areas/FantasyIsle/HandysBlockCheckerEvent.java
-//
 // The body of `onFirstTalk` (the capacity and "being prepared" answers, the team list, the ready
 // question) is the world's `minigame/block_checker.rs`, which also runs the event.
 

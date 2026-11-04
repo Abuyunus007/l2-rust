@@ -1,5 +1,4 @@
 //! Quest 169: Offspring of Nightmares (Vlasty in the Dark Elven Village, Dark Horrors).
-// Java: dist/game/data/scripts/quests/Q00169_OffspringOfNightmares/Q00169_OffspringOfNightmares.java
 
 use l2_protocol_game::NpcStringId;
 use l2_util::ObjectId;

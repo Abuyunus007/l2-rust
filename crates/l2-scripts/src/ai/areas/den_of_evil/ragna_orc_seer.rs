@@ -1,5 +1,4 @@
 //! The Ragna Orc Seer calls its private minions when it spawns.
-// Java: dist/game/data/scripts/ai/areas/DenOfEvil/RagnaOrcSeer.java
 
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
 

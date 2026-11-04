@@ -1,7 +1,5 @@
 //! Quest 646: Signs of Revolt (Torrant in the Beacon Tower; no longer available since Gracia
 //! Epilogue).
-// Java: dist/game/data/scripts/quests/Q00646_SignsOfRevolt/Q00646_SignsOfRevolt.java
-//
 // Pattern: like Q00639, the start NPC ends the quest; the page depends on the level only.
 
 use l2_util::ObjectId;
@@ -35,7 +33,6 @@ impl Script for Q00646SignsOfRevolt {
     }
 
     fn on_talk(&self, ctx: &mut ScriptCtx<'_>, _npc: ScriptNpc, player: ObjectId) -> Option<String> {
-        // Java: `getQuestState(player, true)` then `qs.exitQuest(true)` (no sound).
         let qs = ctx.get_quest_state(player, true)?;
         qs.exit_quest(ctx, true, false);
         let page = if ctx.player_level(player) >= MIN_LEVEL {

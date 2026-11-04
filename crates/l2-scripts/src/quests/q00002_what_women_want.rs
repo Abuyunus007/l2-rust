@@ -1,6 +1,4 @@
 //! Quest 2: What Women Want (Arujien in Talking Island sends a letter chain to Mirabel, Herbiel and Greenis).
-// Java: dist/game/data/scripts/quests/Q00002_WhatWomenWant/Q00002_WhatWomenWant.java
-//
 // Pattern: a delivery chain (`docs/design/scripts.md`, "Quest patterns"): the start NPC hands out
 // the first letter, each NPC swaps one letter for the next, and the quest ends at the start NPC
 // (a reward branch on the Newbie Guide, and one on the `30223-09.html` link).

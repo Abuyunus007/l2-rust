@@ -1,6 +1,5 @@
 //! `SystemMessage`: a message id from the generated table plus its typed parameters.
 //!
-//! Java: `gameserver/network/serverpackets/SystemMessage.java`. The text itself is never sent,
 //! the client looks it up by id and fills the `$s1`, `$c1`, ... slots with the parameters.
 
 use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
@@ -141,7 +140,6 @@ impl SystemMessageParam {
     }
 }
 
-// Java: gameserver/network/serverpackets/SystemMessage.java
 /// A system message: the id and the parameters in the order Java adds them.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SystemMessage {
@@ -198,7 +196,6 @@ impl Encode for SystemMessage {
     }
 }
 
-// Java: gameserver/network/serverpackets/ConfirmDlg.java
 /// A yes/no question (`CONFIRM_DLG`): a system message with its parameters, a time limit and the
 /// id of whoever asks. The answer comes back as `DlgAnswer` with the same message id.
 #[derive(Debug, Clone, PartialEq, Eq)]

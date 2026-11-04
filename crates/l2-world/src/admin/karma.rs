@@ -1,6 +1,5 @@
 //! The karma, pk and pvp admin commands: `//nokarma`, `//setkarma <karma>`, `//setpk <count>`,
 //! `//setpvp <count>` and `//set_pvp_flag`, on the target.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminEditChar.java (admin_nokarma,
 // admin_setkarma, setTargetKarma, admin_setpk, admin_setpvp, admin_set_pvp_flag)
 //
 // # Left out, with the system that brings it

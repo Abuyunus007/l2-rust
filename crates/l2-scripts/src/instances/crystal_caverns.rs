@@ -1,7 +1,5 @@
 //! Crystal Caverns (instance 10): the Emerald Square, the Steam Corridor, the Coral Garden, the
 //! bosses Tears, Darnel, Kechi and Baylor, and the Oracles that take the party between them.
-// Java: dist/game/data/scripts/instances/CrystalCaverns/CrystalCaverns.java
-//
 // Java keeps the progress in `CCWorld extends InstanceWorld`; here the status is the engine
 // `InstanceWorld`'s and the rest is the script's state by instance id ([`CcWorld`]).
 //
@@ -1144,8 +1142,6 @@ impl Script for CrystalCaverns {
                     id,
                 ) {
                     ctx.state::<State>().npc_instance.insert(trap.object_id, id);
-                    // NOTE(java-quirk): `Trap.broadcastPacket` only reaches who can see the trap,
-                    // and nobody has detected it yet, so the shout is heard by nobody.
                     ctx.broadcast_npc_say(
                         trap,
                         ChatType::NpcShout,
@@ -1627,9 +1623,6 @@ fn social_action(ctx: &ScriptCtx<'_>, npc: ScriptNpc, action_id: i32) {
 
 /// `npc.broadcastPacket(new SpecialCamera(npc, force, angle1, angle2, time, range, duration, relYaw,
 /// relPitch, isWide, relAngle))`, the numbers in that order.
-///
-/// NOTE(java-quirk): the 11-argument constructor passes `duration` and `range` on in swapped
-/// places, so the packet's duration is the `range` argument and the `duration` argument is lost.
 fn special_camera(ctx: &ScriptCtx<'_>, npc: ScriptNpc, a: [i32; 10]) {
     ctx.world().broadcast_packet(
         npc.object_id,

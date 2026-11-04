@@ -1,9 +1,3 @@
-//! The GM siege commands: `//siege [castle]`, `//add_attacker`, `//add_defender`, `//add_guard`,
-//! `//list_siege_clans`, `//clear_siege_list`, `//move_defenders`, `//spawn_doors`,
-//! `//startsiege`, `//endsiege`, `//setsiegetime`, `//setcastle`, `//removecastle`. A GM starts a
-//! test siege with them (D-51).
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminSiege.java (the castle part)
-//
 // The clan hall words of `AdminSiege` (`//clanhall...`) are in `admin/clanhall.rs` (M7-ADMIN-06),
 // the conquerable hall sieges' in `admin/chsiege.rs` (M7-CHSIEGE-01); the castle list page already
 // lists the halls.

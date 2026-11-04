@@ -1,14 +1,5 @@
 //! Exp, SP and levels: the exp part of `Attackable.calculateRewards`, `addExpAndSp`, levelling up
 //! (and down), the skills a level brings, and the exp a death costs.
-// Java: entity/actor/Attackable.java (calculateRewards, getMainDamageDealer, calculateExpAndSp)
-// Java: entity/actor/Npc.java (getExpReward, getSpReward)
-// Java: entity/actor/stat/PlayableStat.java (addExp, removeExp, addLevel, addSp)
-// Java: entity/actor/stat/PlayerStat.java (addExp, addExpAndSp, addLevel, addSp, getExpBonusMultiplier)
-// Java: entity/actor/Player.java (rewardSkills, giveAvailableAutoGetSkills, checkPlayerSkills,
-//       calculateDeathExpPenalty, restoreExp, isLucky)
-// Java: data/xml/{ExperienceData,ExperienceLossData,KarmaLossData,SkillTreeData}.java
-// Java: mechanics/stats/Formulas.java (calculateKarmaLost)
-//
 // # What is here
 // A player gets exp and SP from a monster in `World::reward_exp_and_sp`, which `calculate_rewards`
 // (`death.rs`) calls after the drops. Everything below it is the chain of Java's stat classes:
@@ -239,8 +230,6 @@ impl World {
         let max_diff = self.settings.exp.monster_exp_max_level_difference;
         let (mut xp, mut sp) = (0.0, 0.0);
         if level_diff < max_diff && level_diff > -max_diff {
-            // NOTE(java-quirk): `(getExpReward(charLevel) * damage) / totalDamage` is a `long`
-            // division, so the share is cut to whole points before it becomes a double.
             let share = |reward: i64| {
                 reward
                     .wrapping_mul(damage)
@@ -357,9 +346,6 @@ impl World {
             let add_sp = view.calc_stat(Stat::ExpspRate, sp, None, None) as i32;
             // Premium rates: `addExp *= PREMIUM_RATE_XP` (M9-C02, `custom/premium.rs`).
             let (add_exp, add_sp) = self.premium_exp_sp(attacker, add_exp, add_sp);
-            // NOTE(java-quirk): `useVitalityRate()` is the `useBonuses` flag, so a raid boss kill
-            // (`RaidbossUseVitality = False` in the shipped config) gets no bonus of any kind,
-            // not even the `BONUS_EXP` skills.
             let use_vitality = self.use_vitality_rate(dying);
             self.add_exp_and_sp(attacker, add_exp as f64, f64::from(add_sp), use_vitality);
             if add_exp > 0 && use_vitality {
@@ -402,8 +388,6 @@ impl World {
                 .position_of(member)
                 .is_some_and(|p| distance_3d(at, p) < range);
             let level = self.core_of(member).map_or(0, |c| c.level);
-            // NOTE(java-quirk): a member's own level decides whether the level is raised, but the
-            // value taken is the command channel's level.
             let raised = match channel {
                 Some(channel) if level > party_level => self.command_channel_level(channel),
                 _ if level > party_level => level,
@@ -432,8 +416,6 @@ impl World {
             1.0
         };
         // Calculate Exp and SP rewards.
-        // NOTE(java-quirk): `calculateExpAndSp` already takes `partyDmg / totalDamage` of the
-        // reward, and `partyMul` takes the same share once more.
         let (exp, sp) = self.calculate_exp_and_sp(dying, party_level, party_damage, total_damage);
         // `CHAMPION_ENABLE && _champion` (`custom/champion.rs`).
         let (mut exp, mut sp) = self.champion_exp_sp(dying, exp, sp);
@@ -548,8 +530,6 @@ impl World {
                     .with(SystemMessageParam::LongNumber(final_sp))
                     .with(SystemMessageParam::LongNumber(java_round(add_to_sp - base_sp)))
             } else {
-                // NOTE(java-quirk): this message shows the truncated value, the one above the
-                // rounded one.
                 SystemMessage::new(SystemMessageId::YouHaveEarnedS1ExperienceAndS2Sp)
                     .with(SystemMessageParam::LongNumber(add_to_exp as i64))
                     .with(SystemMessageParam::LongNumber(add_to_sp as i64))
@@ -731,7 +711,6 @@ impl World {
         }
 
         if send_message {
-            // Java: `YOUR_EXPERIENCE_HAS_DECREASED_BY_S1` and `YOUR_SP_HAS_DECREASED_BY_S1`, both
             // sent even when one of the two amounts is 0.
             self.send(
                 id,
@@ -790,8 +769,6 @@ impl World {
         };
         let exp = player.data.exp;
         let current = player.core.level;
-        // NOTE(java-quirk): when no level's exp is above the player's, Java keeps the minimum
-        // level 1 (the loop never sets another).
         let mut level = 1;
         for tmp in 1..=max_level {
             if self.exp_for_level(tmp).is_some_and(|needed| exp >= needed) {
@@ -858,8 +835,6 @@ impl World {
         let Some(max_level) = self.java_max_level() else {
             return;
         };
-        // NOTE(java-quirk): an active subclass takes `value`, not the capped level, into its
-        // holder, which keeps it between `BaseSubclassLevel` and its maximum (S-SUB-01).
         let level = if self.is_subclass_active(id) {
             self.subclass_clamp_level(value)
         } else {
@@ -1053,9 +1028,6 @@ impl World {
     }
 
     /// Java `Player.removeSkill(skill, true)`: the skill goes, its row is deleted.
-    // NOTE(java-quirk): the shortcuts of the skill go whether or not the skill was known
-    // (`Player.removeSkill` deletes them for any non-null `Skill`); there is no `ShortCutDelete`
-    // packet, `deleteShortcut` resends the list.
     pub(crate) fn forget_skill(&mut self, id: ObjectId, skill_id: i32, writes: &mut SkillWrites) {
         let removed = self.remove_skill(id, skill_id, true);
         self.delete_skill_shortcuts(id, skill_id);

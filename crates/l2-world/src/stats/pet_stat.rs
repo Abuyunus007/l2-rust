@@ -1,8 +1,5 @@
 //! The pet-only parts of the stat getters: the numbers of the pet's level row, hunger and
 //! starvation.
-// Java: entity/actor/stat/PetStat.java
-// Java: entity/actor/instance/Pet.java (getRunSpeed, getWalkSpeed, getMovementSpeedMultiplier,
-//       getSkillLevel)
 
 use l2_data::PetLevelData;
 

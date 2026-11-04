@@ -1,6 +1,4 @@
 //! The Sin Eater servitor: it complains about everything.
-// Java: dist/game/data/scripts/ai/others/Servitors/SinEater.java
-//
 // Java registers `addSummonSpawnId` / `addSummonTalkId` and `@RegisterEvent` listeners for the
 // summon. Its spawn is `on_summon_spawn` (S-API-05); the summon is an NPC object of the world
 // here, so its death is the per-id creature death, and the attack and talk listeners are global

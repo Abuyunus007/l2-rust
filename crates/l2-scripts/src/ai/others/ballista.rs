@@ -1,5 +1,4 @@
 //! The fortress Ballistas: a Ballista Bomb cast at one destroys it and pays the clan reputation.
-// Java: dist/game/data/scripts/ai/others/Ballista.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_util::ObjectId;

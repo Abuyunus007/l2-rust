@@ -1,11 +1,5 @@
 //! A player's inventory: equipping, unequipping, destroying and dropping items, the paperdoll
 //! rules and the packets and database rows that follow them (M4-INV-01).
-// Java: network/clientpackets/{UseItem,RequestUnEquipItem,RequestDestroyItem,RequestItemList,
-//       RequestDropItem}.java
-// Java: entity/itemcontainer/{Inventory,PlayerInventory,ItemContainer}.java
-// Java: entity/item/instance/Item.java (setItemLocation, updateDatabase)
-// Java: entity/actor/Player.java (useEquippableItem, refreshOverloaded, checkItemRestriction)
-//
 // # How it fits together
 // The items of a player are `PlayerData::items` (one row per item, `loc`/`loc_data` as in the
 // `items` table), so the paperdoll is not a second structure: slot `n` is the item with

@@ -1,9 +1,6 @@
 //! The games of a stadium: `OlympiadGameNormal` (the classed and non-classed 1 vs 1 matches) and
 //! `OlympiadGameTeams` (3 vs 3), with their participants, the removals, the points and the
 //! result.
-// Java: mechanics/olympiad/{AbstractOlympiadGame,OlympiadGameNormal,OlympiadGameClassed,
-//       OlympiadGameNonClassed,OlympiadGameTeams,Participant,OlympiadInfo,CompetitionType}.java
-//
 // A game is stored in its stadium's task (`Stadium::task::game`) and refers to its players by
 // object id. Java's `Participant` keeps a `Player` reference that `updatePlayer()` refreshes;
 // here [`Participant::player`] is the id of that reference: set when the game is made, refreshed
@@ -1394,8 +1391,6 @@ impl World {
                 self.update_noble_stat(par.object_id, weekly, 1);
             }
             self.broadcast_result(index, tie, winside, list1, list2);
-            // NOTE(java-quirk): every crash result, a win included, ends with one more event per
-            // fighter that names no winner.
             self.script_match_result(game.kind, None, &one);
             self.script_match_result(game.kind, None, &two);
             return;
@@ -1424,7 +1419,6 @@ impl World {
         let two_online = two_player.is_some_and(|p| self.olympiad_online(p));
 
         if !one_online && !two_online {
-            // NOTE(java-quirk): no points move and the result names no tie.
             self.update_noble_stat(one.object_id, NobleStat::Drawn, 1);
             self.update_noble_stat(two.object_id, NobleStat::Drawn, 1);
             self.tie_message(index);
@@ -1523,7 +1517,6 @@ impl World {
                     let points = current / divider;
                     let val = (current / 3).min(max_points);
                     self.remove_points_from_participant(index, par, val);
-                    // NOTE(java-quirk): the "current points" are the divided points minus the loss.
                     list1.push(self.result_entry(par, damage_one, points - val, -val));
                 }
                 winside = 2;
@@ -1637,7 +1630,6 @@ impl World {
                 for (i, par) in two.iter().enumerate().rev() {
                     self.update_noble_stat(par.object_id, NobleStat::Lost, 1);
                     self.remove_points_from_participant(index, par, points_two[i]);
-                    // NOTE(java-quirk): the second team's entries show the first team's points.
                     let Some(&shown) = points_one.get(i) else {
                         warn!(
                             "Exception on validateWinner(): java.lang.ArrayIndexOutOfBoundsException: Index {i}"

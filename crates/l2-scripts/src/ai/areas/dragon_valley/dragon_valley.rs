@@ -1,6 +1,5 @@
 //! Dragon Valley AI: the Necromancer's ghosts, the Drakos' assassins, the herbs of spoiled
 //! monsters and the party's Morale Boost.
-// Java: dist/game/data/scripts/ai/areas/DragonValley/DragonValley.java
 
 use l2_util::ObjectId;
 use l2_world::script::player_class;
@@ -120,8 +119,6 @@ fn manage_morale_boost(ctx: &mut ScriptCtx<'_>, player: ObjectId, npc: ScriptNpc
                     .distance_3d(npc.object_id, *member)
                     .is_some_and(|d| d < MIN_DISTANCE)
             {
-                // NOTE(java-quirk): `CLASS_POINTS.get(..)` of a class that is not in the map
-                // would throw (unboxing null); every third-profession class is in it.
                 points += class_points(ctx.player_class_id(*member)).unwrap_or(0.0);
             }
         }

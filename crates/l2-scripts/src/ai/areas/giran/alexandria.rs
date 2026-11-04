@@ -1,5 +1,4 @@
 //! Alexandria, the Giran agathion seller: a pile of items for a random Little Angel or Devil.
-// Java: dist/game/data/scripts/ai/areas/Giran/Alexandria/Alexandria.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

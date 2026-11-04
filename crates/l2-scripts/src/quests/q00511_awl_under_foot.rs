@@ -1,6 +1,4 @@
 //! Quest 511: Awl Under Foot (the fortress wardens send a party into a dungeon of three raids).
-// Java: dist/game/data/scripts/quests/Q00511_AwlUnderFoot/Q00511_AwlUnderFoot.java
-//
 // Pattern: an old-style instance quest (like Kamaloka, `instances/kamaloka.rs`): the quest makes
 // the dynamic instance and its `InstanceWorld`, remembers which worlds are its own (Java's
 // `FAUWorld`) in the script state, and spawns the raids with quest timers.

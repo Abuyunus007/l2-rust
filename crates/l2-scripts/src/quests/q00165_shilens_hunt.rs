@@ -1,6 +1,4 @@
 //! Quest 165: Shilen's Hunt (Nelsya sends the Dark Elves after the wolves and keltirs for bezoars).
-// Java: dist/game/data/scripts/quests/Q00165_ShilensHunt/Q00165_ShilensHunt.java
-//
 // Pattern: a kill count with a drop chance up to a limit, per monster: a monster drops a bezoar
 // when `getRandom(3)` is below its chance (`MONSTERS`). The 13th bezoar sets cond 2 (no sound),
 // the start NPC gives the potions and ends the quest. Dark Elves only (race gate).

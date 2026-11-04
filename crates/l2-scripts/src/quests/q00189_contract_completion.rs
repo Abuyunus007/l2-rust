@@ -1,5 +1,4 @@
 //! Quest 189: Contract Completion (Blueprint Seller Luka, Lorain, Shegfield and Kusto).
-// Java: dist/game/data/scripts/quests/Q00189_ContractCompletion/Q00189_ContractCompletion.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED};

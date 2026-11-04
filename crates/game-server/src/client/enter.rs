@@ -1,10 +1,6 @@
 //! Entering the world from the connection's side: loading the character at `CharacterSelect`,
 //! `EnterWorld`, the in-game packets, `RequestRestart`, and the [`PacketSink`] that connects the
 //! world thread to the connection.
-// Java: network/clientpackets/{CharacterSelect,EnterWorld,Logout,RequestRestart,Say2}.java
-// Java: network/GameClient.java (load), network/Disconnection.java
-// Java: entity/actor/Player.java (restore: the character, items, skills, macros, shortcuts...)
-//
 // Design (docs/design/world-loop.md): the database is read here, in the connection task, before
 // the character enters the world (D-15). The world never sees a database. Once the world has the
 // character, every in-game packet becomes a `WorldCommand::Input`, and everything the world wants
@@ -78,7 +74,6 @@ pub trait PlayerLoader: Send + Sync + 'static {
     ) -> BoxFuture<'a, Result<PlayerData, LoadError>>;
 }
 
-/// [`PlayerLoader`] on the game database. Only reads (D-39).
 pub struct DbPlayerLoader {
     characters: CharacterRepository,
     items: ItemRepository,
@@ -144,7 +139,6 @@ impl DbPlayerLoader {
         self
     }
 
-    // Java: Player.restore
     async fn load(&self, account: &str, char_id: i32) -> Result<PlayerData, LoadError> {
         let row = self
             .characters
@@ -156,7 +150,6 @@ impl DbPlayerLoader {
         }
         let mut data = player_from_row(&row);
 
-        // Java: restoreSubClassData. A subclass that is active shows its own level, exp and sp
         // (`PlayerStat.getLevel` etc.); one that does not exist is dropped for the base class.
         // Every subclass becomes a holder of the profile (S-SUB-01); the base class values wait
         // there while a subclass is active.
@@ -197,7 +190,6 @@ impl DbPlayerLoader {
             }
         }
 
-        // Java: getInventory().restore() (INVENTORY and PAPERDOLL)
         for r in self
             .items
             .inventory_items(char_id, ItemLocation::Inventory, ItemLocation::Paperdoll)
@@ -218,7 +210,6 @@ impl DbPlayerLoader {
             });
         }
 
-        // Java: PetInventory.restore (PET and PET_EQUIP rows of the owner). Java reads them when
         // the pet spawns; they ride with the inventory here, and only the pet code looks at them.
         for r in self
             .items
@@ -240,7 +231,6 @@ impl DbPlayerLoader {
             });
         }
 
-        // Java: Item.restoreFromDb -> restoreAttributes (item_attributes, item_elementals). Java
         // catches a failed read and logs it; the items then have no augmentation or elements.
         if let Err(e) =
             crate::persist::restore_item_attributes(&self.items, char_id, data.items.iter_mut()).await
@@ -251,16 +241,13 @@ impl DbPlayerLoader {
             );
         }
 
-        // Java: getWarehouse().restore(), getFreight().restore(), and the other characters of the
         // account (`_chars`) with their freight, which `RequestPackageSend` adds to. Java catches
         // a failed read ("Could not restore container") and goes on with an empty container.
         data.profile.warehouse = self.load_warehouses(char_id, &data.account).await;
 
-        // Java: Player.load -> restoreRecipeBook(true) and (with `StoreRecipeShopList`)
         // restoreRecipeShopList(). A failed read is logged and the character goes on without.
         data.profile.recipes = self.load_recipes(char_id).await;
 
-        // Java: restoreSkills
         let mut skills = self.skills.skills_of(char_id, class_index).await?;
         skills.sort_by_key(|s| s.skill_id);
         data.skills = skills
@@ -271,7 +258,6 @@ impl DbPlayerLoader {
             })
             .collect();
 
-        // Java: restoreEffects reads the buffs of the last logout at EnterWorld. They are kept on
         // the profile until the world enters the character, and the rows stay in the table until
         // the next store replaces them (see `persist.rs`).
         data.profile.class_index = class_index;
@@ -283,7 +269,6 @@ impl DbPlayerLoader {
             .map(saved_effect_of)
             .collect();
 
-        // Java: Servitor.restoreEffects reads these rows when a servitor of the same skill spawns.
         // They are read here for the active class index and kept by the world as its view of the
         // table (`summon/servitor.rs`).
         data.profile.summon_effects = self
@@ -299,7 +284,6 @@ impl DbPlayerLoader {
             })
             .collect();
 
-        // Java: Pet.restore and Pet.restoreEffects read these rows when a pet spawns. They are
         // read here for the collars the character holds, and kept by the world as its view of the
         // tables (`summon/pet.rs`). A failed read is logged and leaves the pets new, like a
         // missing row.
@@ -319,9 +303,6 @@ impl DbPlayerLoader {
             Err(e) => warn!("Could not restore pet effect data for {}: {e}", data.name),
         }
 
-        // Java: restoreItemReuse reads the item reuse timers at load. Like the buffs they stay in
-        // the table until the next store replaces them (this loader only reads, D-39). Java
-        // catches a failed read and logs it, so does this.
         data.profile.item_reuse_to_restore = match self.item_reuse.item_reuse_of(char_id).await {
             Ok(rows) => rows.iter().map(saved_item_reuse_of).collect(),
             Err(e) => {
@@ -330,7 +311,6 @@ impl DbPlayerLoader {
             }
         };
 
-        // Java: getMacros().restoreMe()
         data.profile.macros = self
             .macros
             .macros_of(char_id)
@@ -346,7 +326,6 @@ impl DbPlayerLoader {
             })
             .collect();
 
-        // Java: restoreShortcuts (the active class index)
         data.shortcuts = self
             .shortcuts
             .shortcuts_of(char_id, class_index)
@@ -361,7 +340,6 @@ impl DbPlayerLoader {
             })
             .collect();
 
-        // Java: Player.restoreFriendList (relation 0) and BlockList's loadList (relation 1). Like Java,
         // a read that fails is logged and the list starts empty.
         data.profile.friends = match self.friends.friends_of(char_id).await {
             Ok(rows) => rows.into_iter().map(friend_entry_of).collect(),
@@ -378,10 +356,8 @@ impl DbPlayerLoader {
             }
         };
 
-        // Java: restoreHenna (the active class index, like the skills and shortcuts)
         data.profile.hennas = henna_slots(&self.hennas.hennas_of(char_id, class_index).await?);
 
-        // Java: restoreTeleportBookmark and ContactList.restore. Like Java, a read that fails is
         // logged and the list starts empty.
         data.profile.bookmarks = match self.bookmarks.bookmarks_of(char_id).await {
             Ok(rows) => bookmarks_of_rows(rows),
@@ -398,7 +374,6 @@ impl DbPlayerLoader {
             }
         };
 
-        // Java: RebirthManager.getCount / getSelectedSkills (read on demand there, here once at
         // the load). A failed read is logged and the character counts as never reborn.
         if self.rebirth_enabled {
             match self.rebirth.rebirth_of(char_id).await {
@@ -407,7 +382,6 @@ impl DbPlayerLoader {
             }
         }
 
-        // Java: Player.loadRecommendations (called from `checkRecoBonusTask` at EnterWorld)
         match self.reco.reco_bonus_of(char_id).await? {
             Some(reco) => {
                 data.profile.recom_have = reco.rec_have;
@@ -417,17 +391,14 @@ impl DbPlayerLoader {
             None => data.profile.recom_time_left_ms = DEFAULT_RECO_TIME_LEFT_MS,
         }
 
-        // Java: Player.restore (`createDate`, for `/mybirthday`). A failed read keeps Java's
         // default (the creation of the object).
         match self.characters.create_date_of(char_id).await {
             Ok(date) => data.profile.create_date = date.map(|d| (d.year, d.month, d.day)),
             Err(e) => warn!("Could not read the create date of {}: {e}", data.name),
         }
 
-        // Java: PlayerVariables.restoreMe
         data.profile.variables = self.variables.variables_of(char_id).await?.into_iter().collect();
 
-        // Java: InstanceManager.restoreInstanceTimes (the first time the re-entry times are asked
         // for; here before the character enters, D-15). The world deletes the rows that are over
         // (M8-INST-01). Java logs a failed read and goes on without them.
         data.profile.instance_times = match self.instance_times.instance_times_of(char_id).await {
@@ -441,7 +412,6 @@ impl DbPlayerLoader {
             }
         };
 
-        // Java: Quest.playerEnter (from EnterWorld; here before the character enters, D-15): the
         // quest states and variables (S-API-01). Java logs a failed read and goes on without
         // them.
         data.profile.quests = match load_quests(&self.quests, char_id).await {
@@ -452,18 +422,11 @@ impl DbPlayerLoader {
             }
         };
 
-        // Java: ClanTable.getClan(clanid). Side by side (D-39) the Java game server may have made
-        // the clan or the membership after this server loaded its clans: the clan is read here
-        // (the startup queries) and the world adds it when its table does not know it. A failed
-        // read leaves the row's clan columns alone in the world.
         let clan_id = data.profile.clan.map_or(0, |c| c.clan_id);
         if clan_id > 0 {
             match crate::persist::load_clan(&self.clans, clan_id).await {
                 Ok(mut record) => {
                     record.warehouse = crate::persist::load_clan_warehouse(&self.items, clan_id).await;
-                    // The clan's castle, fortresses and halls as the database has them now
-                    // (M7-RES-01, D-50, D-51: the Java GS runs the real sieges). A failed read
-                    // leaves the world's residences alone.
                     if let Some(castle_id) = record.data.as_ref().map(|d| d.castle_id) {
                         match crate::persist::load_residence_refresh(&self.residences, clan_id, castle_id)
                             .await
@@ -481,11 +444,6 @@ impl DbPlayerLoader {
             }
         }
 
-        // The character's mails with their attachments (M6-SYNC-01). Side by side (D-39) the Java
-        // game server may have received, read, deleted or paid out mails since this server loaded
-        // `messages` at its start; the world replaces its copies of exactly these messages when the
-        // player enters. A failed read leaves the world's copies alone (the attachments are read
-        // again before they are handed out).
         match crate::persist::load_mail_of_character(&self.messages, &self.items, char_id).await {
             Ok(refresh) => data.profile.mail_refresh = Some(Box::new(refresh)),
             Err(e) => warn!("Could not read the mails of {}: {e}", data.name),
@@ -507,7 +465,6 @@ impl DbPlayerLoader {
 }
 
 impl DbPlayerLoader {
-    // Java: Player.restoreRecipeBook, Player.restoreRecipeShopList
     async fn load_recipes(&self, char_id: i32) -> RecipeLoad {
         let mut load = RecipeLoad::default();
         match self.recipes.recipes_of(char_id).await {
@@ -531,7 +488,6 @@ impl DbPlayerLoader {
         load
     }
 
-    // Java: Player.load (the account's other characters), Player.getWarehouse().restore() and
     // getFreight().restore(), ItemContainer.restore
     async fn load_warehouses(&self, char_id: i32, account: &str) -> WarehouseLoad {
         use crate::persist::load_container_items;
@@ -647,7 +603,6 @@ fn contact_names_of_rows(rows: Vec<ContactLink>, own_id: i32, own_name: &str) ->
 /// outside slots 1 to 3 is skipped, and so is a symbol of 0 (or NULL, which Java reads as 0).
 /// The slot keeps its 0 then, which is an empty slot. A dye id the datapack does not know is
 /// kept here and dropped when the world uses it.
-// Java: Player.restoreHenna
 pub(crate) fn henna_slots(rows: &[HennaRow]) -> [i32; 3] {
     let mut slots = [0; 3];
     for row in rows {
@@ -667,7 +622,6 @@ pub(crate) fn henna_slots(rows: &[HennaRow]) -> [i32; 3] {
 
 /// The columns of the `characters` row as a [`PlayerData`] without items, skills, shortcuts and
 /// the other tables.
-// Java: Player.restore (the first query)
 pub fn player_from_row(row: &CharacterRow) -> PlayerData {
     let base_class = i32::from(row.base_class);
     let active_class = i32::from(row.classid.unwrap_or(0));
@@ -707,7 +661,6 @@ pub fn player_from_row(row: &CharacterRow) -> PlayerData {
         shortcuts: Vec::new(),
         profile: PlayerProfile {
             fame: u32_i32(row.fame),
-            // Java: `rset.getInt("nobless") == 1`
             noble: row.nobless == 1,
             title_color: i32::try_from(row.title_color).unwrap_or(l2_world::DEFAULT_TITLE_COLOR),
             // Java `setVitalityPoints`: `clamp(value, MIN_VITALITY_POINTS, MAX_VITALITY_POINTS)`
@@ -748,8 +701,6 @@ fn friend_entry_of(link: FriendLink) -> FriendEntry {
 }
 
 /// The clan columns of a `characters` row (Java `Player.restore`: `getInt` / `getLong`).
-// Java: Player.restore (wantspeace, clan_join_expiry_time, clan_create_expiry_time, power_grade,
-//       subpledge, apprentice, sponsor, lvl_joined_academy, clanid)
 fn clan_state_of(row: &CharacterRow) -> l2_world::PlayerClanState {
     let u32_i32 = |v: u32| i32::try_from(v).unwrap_or(i32::MAX);
     let u64_i64 = |v: u64| i64::try_from(v).unwrap_or(i64::MAX);
@@ -898,10 +849,6 @@ pub fn parse_macro_commands(text: &str) -> Vec<MacroCmdData> {
 }
 
 /// Java `CharacterSelect.runImpl`: "Restore player location." The variable is `x;y;z`.
-///
-/// NOTE: Java removes the variable (and its row) right away; this server never deletes rows of
-/// the Java game server, so the row stays and the Java server applies it again at its next
-/// login.
 pub fn apply_restore_location(data: &mut PlayerData) {
     let Some(text) = data.profile.variables.get(RESTORE_LOCATION) else {
         return;
@@ -970,7 +917,6 @@ impl ClientSession {
     /// Java `EnterWorld.runImpl`: the character the session loaded enters the world.
     pub(super) fn on_enter_world(&mut self, packet: &EnterWorld, ctl: &mut Control<'_>) {
         let Some(player) = self.pending.take() else {
-            // Java: "EnterWorld failed! player returned 'null'." and LeaveWorld.
             warn!("EnterWorld without a selected character from {}.", self.ip);
             ctl.send_and_close(LeaveWorld.to_bytes());
             return;
@@ -1066,7 +1012,6 @@ impl ClientSession {
             ClientPacket::RequestLinkHtml(p) => ClientInput::LinkHtml { link: p.link },
             ClientPacket::SendBypassBuildCmd(p) => ClientInput::BuildCmd { command: p.command },
             ClientPacket::BypassUserCmd(p) => ClientInput::UserCommand { id: p.command },
-            // Java: AttackRequest (opcodes ATTACK and ATTACK_REQUEST)
             ClientPacket::AttackRequest(p) => ClientInput::AttackRequest {
                 object_id: p.object_id,
                 attack_id: p.attack_id,
@@ -1090,7 +1035,6 @@ impl ClientSession {
                 z: p.z,
             },
             ClientPacket::RequestItemList(_) => ClientInput::ItemList,
-            // Java: TradeRequest, AnswerTradeRequest, AddTradeItem, TradeDone
             ClientPacket::TradeRequest(p) => ClientInput::TradeRequest {
                 object_id: p.object_id,
             },
@@ -1101,13 +1045,11 @@ impl ClientSession {
                 count: p.count,
             },
             ClientPacket::TradeDone(p) => ClientInput::TradeDone { response: p.response },
-            // Java: MultiSellChoose
             ClientPacket::MultiSellChoose(p) => ClientInput::MultiSellChoose {
                 list_id: p.list_id,
                 entry_id: p.entry_id,
                 amount: p.amount,
             },
-            // Java: RequestActionUse (the store actions 10, 28 and 61; the other actions go to
             // `ClientInput::ActionUse` below), RequestPrivateStore*, SetPrivateStore*
             ClientPacket::RequestActionUse(p) if matches!(p.action_id, 10 | 28 | 61) => {
                 ClientInput::Store(StoreInput::ActionUse {
@@ -1142,18 +1084,15 @@ impl ClientSession {
                 store_player_id: p.store_player_id,
                 items: p.items,
             }),
-            // Java: RequestMagicSkillUse
             ClientPacket::RequestMagicSkillUse(p) => ClientInput::MagicSkillUse {
                 magic_id: p.magic_id,
                 ctrl_pressed: p.ctrl_pressed,
                 shift_pressed: p.shift_pressed,
             },
-            // Java: RequestAutoSoulShot
             ClientPacket::RequestAutoSoulShot(p) => ClientInput::AutoSoulShot {
                 item_id: p.item_id,
                 shot_type: p.shot_type,
             },
-            // Java: RequestShortcutReg, RequestShortcutDel
             ClientPacket::RequestShortCutReg(p) => ClientInput::ShortcutReg {
                 type_id: p.type_id,
                 slot: p.slot,
@@ -1162,7 +1101,6 @@ impl ClientSession {
                 character_type: p.character_type,
             },
             ClientPacket::RequestShortCutDel(p) => ClientInput::ShortcutDel { slot: p.slot },
-            // Java: RequestHennaItemList, RequestHennaItemInfo, RequestHennaEquip,
             // RequestHennaRemoveList, RequestHennaItemRemoveInfo, RequestHennaRemove
             ClientPacket::RequestHennaItemList(_) => ClientInput::Henna(HennaInput::ItemList),
             ClientPacket::RequestHennaItemInfo(p) => ClientInput::Henna(HennaInput::ItemInfo {
@@ -1178,7 +1116,6 @@ impl ClientSession {
             ClientPacket::RequestHennaRemove(p) => ClientInput::Henna(HennaInput::Remove {
                 symbol_id: p.symbol_id,
             }),
-            // Java: RequestInfoItemAuction, RequestBidItemAuction (L-05)
             ClientPacket::RequestInfoItemAuction(p) => {
                 ClientInput::ItemAuction(l2_world::ItemAuctionInput::Info {
                     instance_id: p.instance_id,
@@ -1190,7 +1127,6 @@ impl ClientSession {
                     bid: p.bid,
                 })
             }
-            // Java: RequestBookMarkSlotInfo, RequestSaveBookMarkSlot, RequestModifyBookMarkSlot,
             // RequestDeleteBookMarkSlot, RequestTeleportBookMark, RequestChangeBookMarkSlot
             ClientPacket::RequestBookMarkSlotInfo(_) => ClientInput::Bookmark(BookmarkInput::SlotInfo),
             ClientPacket::RequestSaveBookMarkSlot(p) => ClientInput::Bookmark(BookmarkInput::Save {
@@ -1211,7 +1147,6 @@ impl ClientSession {
                 ClientInput::Bookmark(BookmarkInput::Teleport { id: p.id })
             }
             ClientPacket::RequestChangeBookMarkSlot(_) => ClientInput::Bookmark(BookmarkInput::ChangeSlot),
-            // Java: RequestExShowContactList, RequestExAddContactToContactList,
             // RequestExDeleteContactFromContactList, RequestExFriendListExtended
             ClientPacket::RequestExShowContactList(_) => ClientInput::Contacts(ContactsInput::Show),
             ClientPacket::RequestExAddContactToContactList(p) => {
@@ -1223,13 +1158,10 @@ impl ClientSession {
             ClientPacket::RequestExFriendListExtended(_) => {
                 ClientInput::Contacts(ContactsInput::FriendListExtended)
             }
-            // Java: RequestPCCafeCouponUse only logs the code ("C5: RequestPCCafeCouponUse: S: ...").
             ClientPacket::RequestPCCafeCouponUse(p) => {
                 debug!("C5: RequestPCCafeCouponUse: S: {}", p.coupon);
                 return true;
             }
-            // Java: RequestCursedWeaponList, RequestCursedWeaponLocation (M8-CURSED-01)
-            // Java: RequestGetOnVehicle, RequestGetOffVehicle, RequestMoveToLocationInVehicle,
             // CannotMoveAnymoreInVehicle, MoveToLocationAirShip, MoveToLocationInAirShip
             // (M8-VEHICLE-01)
             ClientPacket::RequestGetOnVehicle(p) => ClientInput::Vehicle(VehicleInput::GetOn {
@@ -1272,7 +1204,6 @@ impl ClientSession {
             }),
             ClientPacket::RequestCursedWeaponList(_) => ClientInput::Cursed(CursedInput::List),
             ClientPacket::RequestCursedWeaponLocation(_) => ClientInput::Cursed(CursedInput::Location),
-            // Java: ObserverReturn, RequestOlympiadObserverEnd, RequestOlympiadMatchList,
             // RequestExOlympiadMatchListRefresh (M8-OLY-01)
             ClientPacket::ObserverReturn(_) => ClientInput::Olympiad(l2_world::OlympiadInput::ObserverReturn),
             ClientPacket::RequestOlympiadObserverEnd(_) => {
@@ -1284,7 +1215,6 @@ impl ClientSession {
             ClientPacket::RequestExOlympiadMatchListRefresh(_) => {
                 ClientInput::Olympiad(l2_world::OlympiadInput::MatchListRefresh)
             }
-            // Java: RequestExCubeGameChangeTeam, RequestExCubeGameReadyAnswer (M8-GAMES-01)
             ClientPacket::RequestExCubeGameChangeTeam(p) => {
                 ClientInput::Minigame(MinigameInput::CubeChangeTeam {
                     arena: p.arena,
@@ -1308,21 +1238,17 @@ impl ClientSession {
                 skill_type: p.skill_type,
                 sub_type: p.sub_type,
             },
-            // Java: RequestRestartPoint
             ClientPacket::RequestRestartPoint(p) => ClientInput::RestartPoint {
                 point_type: p.requested_point_type,
             },
-            // Java: RequestVoteNew
             ClientPacket::RequestVoteNew(p) => ClientInput::VoteNew {
                 target_id: p.target_id,
             },
-            // Java: RequestActionUse (M6-SUMMON-01: the summon actions)
             ClientPacket::RequestActionUse(p) => ClientInput::ActionUse {
                 action_id: p.action_id,
                 ctrl_pressed: p.ctrl_pressed,
                 shift_pressed: p.shift_pressed,
             },
-            // Java: RequestPetGetItem, RequestGetItemFromPet, RequestGiveItemToPet,
             // RequestPetUseItem, RequestChangePetName (M6-PET-01)
             ClientPacket::RequestPetGetItem(p) => ClientInput::Pet(PetInput::GetItem {
                 object_id: p.object_id,
@@ -1339,13 +1265,11 @@ impl ClientSession {
                 object_id: p.object_id,
             }),
             ClientPacket::RequestChangePetName(p) => ClientInput::Pet(PetInput::ChangeName { name: p.name }),
-            // Java: AnswerCoupleAction
             ClientPacket::AnswerCoupleAction(p) => ClientInput::AnswerCoupleAction {
                 action_id: p.action_id,
                 answer: p.answer,
                 object_id: p.object_id,
             },
-            // Java: RequestJoinPledge ... RequestPledgeSetAcademyMaster (M6-CLAN-01)
             packet @ (ClientPacket::RequestJoinPledge(_)
             | ClientPacket::RequestAnswerJoinPledge(_)
             | ClientPacket::RequestWithdrawalPledge(_)
@@ -1379,7 +1303,6 @@ impl ClientSession {
             | ClientPacket::RequestDismissAlly(_)
             | ClientPacket::RequestAllyCrest(_)
             | ClientPacket::RequestAllyInfo(_)) => ClientInput::Clan(clan_input(packet)),
-            // Java: SendWareHouseDepositList, SendWareHouseWithDrawList, RequestPackageSend,
             // RequestPackageSendableItemList (M6-WH-01)
             packet @ (ClientPacket::SendWareHouseDepositList(_)
             | ClientPacket::SendWareHouseWithDrawList(_)
@@ -1387,7 +1310,6 @@ impl ClientSession {
             | ClientPacket::RequestPackageSendableItemList(_)) => {
                 ClientInput::Warehouse(warehouse_input(packet))
             }
-            // Java: RequestManorList, RequestSetSeed, RequestSetCrop, RequestBuySeed,
             // RequestProcureCropList (M7-MANOR-01)
             ClientPacket::RequestManorList(_) => ClientInput::Manor(l2_world::ManorInput::ManorList),
             ClientPacket::RequestSetSeed(p) => ClientInput::Manor(l2_world::ManorInput::SetSeed(p)),
@@ -1396,7 +1318,6 @@ impl ClientSession {
             ClientPacket::RequestProcureCropList(p) => {
                 ClientInput::Manor(l2_world::ManorInput::ProcureCropList(p))
             }
-            // Java: RequestRecipeBookOpen, RequestRecipeBookDestroy, RequestRecipeItemMakeInfo,
             // RequestRecipeItemMakeSelf, RequestRecipeShop* (M6-CRAFT-01)
             ClientPacket::RequestRecipeBookOpen(p) => ClientInput::Craft(CraftInput::BookOpen(p)),
             ClientPacket::RequestRecipeBookDestroy(p) => ClientInput::Craft(CraftInput::BookDestroy(p)),
@@ -1408,7 +1329,6 @@ impl ClientSession {
             ClientPacket::RequestRecipeShopMakeInfo(p) => ClientInput::Craft(CraftInput::ShopMakeInfo(p)),
             ClientPacket::RequestRecipeShopMakeItem(p) => ClientInput::Craft(CraftInput::ShopMakeItem(p)),
             ClientPacket::RequestRecipeShopManagePrev(_) => ClientInput::Craft(CraftInput::ShopManagePrev),
-            // Java: RequestJoinParty, RequestAnswerJoinParty, RequestWithDrawalParty,
             // RequestOustPartyMember, RequestChangePartyLeader
             ClientPacket::RequestJoinParty(p) => ClientInput::JoinParty {
                 name: p.name,
@@ -1416,7 +1336,6 @@ impl ClientSession {
             },
             ClientPacket::RequestAnswerJoinParty(p) => ClientInput::AnswerJoinParty { response: p.response },
             ClientPacket::RequestWithDrawalParty(_) => ClientInput::WithdrawParty,
-            // Java: the party matching room packets, the loot rule vote, the nickname packets,
             // RequestGmList, RequestGMCommand (L-03)
             ClientPacket::RequestPartyMatchConfig(p) => ClientInput::PartyRoom(PartyRoomInput::Config {
                 auto: p.auto,
@@ -1483,7 +1402,6 @@ impl ClientSession {
             },
             ClientPacket::RequestOustPartyMember(p) => ClientInput::OustPartyMember { name: p.name },
             ClientPacket::RequestChangePartyLeader(p) => ClientInput::ChangePartyLeader { name: p.name },
-            // Java: RequestExAskJoinMPCC, RequestExAcceptJoinMPCC, RequestExOustFromMPCC,
             // RequestExMPCCShowPartyMembersInfo
             ClientPacket::RequestExAskJoinMpcc(p) => ClientInput::AskJoinMpcc { name: p.name },
             ClientPacket::RequestExAcceptJoinMpcc(p) => ClientInput::AcceptJoinMpcc { response: p.response },
@@ -1491,12 +1409,10 @@ impl ClientSession {
             ClientPacket::RequestExMpccShowPartyMembersInfo(p) => ClientInput::MpccShowPartyMembersInfo {
                 party_leader_id: p.party_leader_id,
             },
-            // Java: RequestBuyItem, RequestSellItem, RequestRefundItem, RequestBuySellUIClose
             ClientPacket::RequestBuyItem(p) => ClientInput::Shop(l2_world::ShopInput::Buy(p)),
             ClientPacket::RequestSellItem(p) => ClientInput::Shop(l2_world::ShopInput::Sell(p)),
             ClientPacket::RequestRefundItem(p) => ClientInput::Shop(l2_world::ShopInput::Refund(p)),
             ClientPacket::RequestBuySellUIClose(_) => ClientInput::Shop(l2_world::ShopInput::UiClose),
-            // Java: RequestPostItemList, RequestSendPost, RequestReceivedPostList, RequestReceivedPost,
             // RequestSentPostList, RequestSentPost, RequestPostAttachment, RequestRejectPostAttachment,
             // RequestCancelPostAttachment, RequestDeleteReceivedPost, RequestDeleteSentPost (M6-MAIL-01)
             ClientPacket::RequestPostItemList(_) => ClientInput::Mail(MailInput::PostItemList),
@@ -1522,7 +1438,6 @@ impl ClientSession {
             ClientPacket::RequestDeleteSentPost(p) => {
                 ClientInput::Mail(MailInput::DeleteSentPost { msg_ids: p.msg_ids })
             }
-            // Java: RequestDuelStart, RequestDuelAnswerStart, RequestDuelSurrender
             ClientPacket::RequestDuelStart(p) => ClientInput::DuelStart {
                 name: p.player,
                 party_duel: p.party_duel,
@@ -1532,18 +1447,14 @@ impl ClientSession {
                 response: p.response,
             },
             ClientPacket::RequestDuelSurrender(_) => ClientInput::DuelSurrender,
-            // Java: RequestExFishRanking
             ClientPacket::RequestExFishRanking(_) => ClientInput::FishRanking,
-            // Java: RequestGetBossRecord (M8-BOSS-01)
             ClientPacket::RequestGetBossRecord(p) => ClientInput::GetBossRecord { boss_id: p.boss_id },
-            // Java: RequestAllFortressInfo, RequestFortressSiegeInfo, RequestFortressMapInfo
             // (M7-FORT-01)
             ClientPacket::RequestAllFortressInfo(_) => ClientInput::Fort(FortInput::AllFortressInfo),
             ClientPacket::RequestFortressSiegeInfo(_) => ClientInput::Fort(FortInput::FortressSiegeInfo),
             ClientPacket::RequestFortressMapInfo(p) => ClientInput::Fort(FortInput::FortressMapInfo {
                 fortress_id: p.fortress_id,
             }),
-            // Java: RequestJoinDominionWar, RequestDominionInfo (M7-TW-01)
             ClientPacket::RequestJoinDominionWar(p) => {
                 ClientInput::Territory(l2_world::TerritoryInput::JoinDominionWar {
                     territory_id: p.territory_id,
@@ -1554,9 +1465,7 @@ impl ClientSession {
             ClientPacket::RequestDominionInfo(_) => {
                 ClientInput::Territory(l2_world::TerritoryInput::DominionInfo)
             }
-            // Java: RequestAllAgitInfo
             ClientPacket::RequestAllAgitInfo(_) => ClientInput::AllAgitInfo,
-            // Java: RequestPetition, RequestPetitionCancel, RequestPetitionFeedback, SnoopQuit
             // (M7-ADMIN-10)
             ClientPacket::RequestPetition(p) => ClientInput::Petition(l2_world::PetitionInput::Submit {
                 content: p.content,
@@ -1589,7 +1498,6 @@ impl ClientSession {
                 kind: p.kind,
                 name: p.name,
             },
-            // Java: RequestEnchantItem, RequestExTryToPutEnchantTargetItem,
             // RequestExTryToPutEnchantSupportItem, RequestExCancelEnchantItem,
             // RequestExEnchantItemAttribute, RequestExRemoveItemAttribute
             ClientPacket::RequestEnchantItem(p) => ClientInput::Enchant(EnchantInput::Enchant {
@@ -1618,7 +1526,6 @@ impl ClientSession {
                     element: p.element,
                 })
             }
-            // Java: RequestExEnchantSkillInfo, RequestExEnchantSkillInfoDetail, RequestExEnchantSkill,
             // RequestExEnchantSkillSafe, RequestExEnchantSkillUntrain, RequestExEnchantSkillRouteChange
             ClientPacket::RequestExEnchantSkillInfo(p) => ClientInput::Enchant(EnchantInput::SkillInfo {
                 skill_id: p.skill_id,
@@ -1653,7 +1560,6 @@ impl ClientSession {
                     skill_level: p.skill_level,
                 })
             }
-            // Java: RequestConfirmTargetItem, RequestConfirmRefinerItem, RequestConfirmGemStone,
             // RequestRefine, RequestConfirmCancelItem, RequestRefineCancel
             ClientPacket::RequestConfirmTargetItem(p) => {
                 ClientInput::Augment(AugmentInput::ConfirmTargetItem {
@@ -1686,7 +1592,6 @@ impl ClientSession {
             ClientPacket::RequestRefineCancel(p) => ClientInput::Augment(AugmentInput::RefineCancel {
                 target_item_object_id: p.target_item_object_id,
             }),
-            // Java: RequestSiegeInfo, RequestSiegeAttackerList, RequestSiegeDefenderList,
             // RequestJoinSiege, RequestConfirmSiegeWaitingList, RequestSetCastleSiegeTime
             // (M7-SIEGE-01)
             ClientPacket::RequestSiegeInfo(_) => ClientInput::Siege(l2_world::SiegeInput::SiegeInfo),
@@ -1719,7 +1624,6 @@ impl ClientSession {
                     time: p.time,
                 })
             }
-            // Java: RequestMakeMacro, RequestDeleteMacro, RequestCrystallizeItem, RequestPreviewItem,
             // RequestExRqItemLink, RequestSaveKeyMapping, RequestSaveInventoryOrder,
             // RequestShowMiniMap, RequestRecordInfo, StartRotating, FinishRotating,
             // RequestSkillList, RequestDispel, RequestExMagicSkillUseGround (L-02)
@@ -1739,11 +1643,8 @@ impl ClientSession {
                 ClientInput::Leftover(LeftoverInput::SaveInventoryOrder(p.order))
             }
             ClientPacket::RequestShowMiniMap(_) => ClientInput::Leftover(LeftoverInput::ShowMiniMap),
-            // Java: RequestSSQStatus (M8-SS-01)
             ClientPacket::RequestSsqStatus(p) => ClientInput::SsqStatus { page: p.page },
-            // Java: RequestSeedPhase (S-API-05)
             ClientPacket::RequestSeedPhase(_) => ClientInput::SeedPhase,
-            // Java: RequestQuestList, RequestQuestAbort, RequestTutorial* (S-API-01)
             ClientPacket::RequestQuestList(_) => ClientInput::Quest(QuestInput::List),
             ClientPacket::RequestQuestAbort(p) => {
                 ClientInput::Quest(QuestInput::Abort { quest_id: p.quest_id })
@@ -1760,7 +1661,6 @@ impl ClientSession {
             ClientPacket::RequestTutorialClientEvent(p) => {
                 ClientInput::Quest(QuestInput::TutorialClientEvent { event_id: p.event_id })
             }
-            // Java: EndScenePlayer (S-API-03)
             ClientPacket::EndScenePlayer(p) => {
                 ClientInput::Quest(QuestInput::EndScene { movie_id: p.movie_id })
             }
@@ -1843,7 +1743,6 @@ impl ClientSession {
             );
         }
         self.in_world_object = None;
-        // Java: `client.setConnectionState(AUTHENTICATED)`, `RestartResponse`, `CharSelectionInfo`.
         // The world queued the RestartResponse; the list follows through the same queue so the
         // order on the wire is the order of sending.
         self.state = ConnectionState::Authenticated;
@@ -2081,8 +1980,6 @@ mod tests {
             (update.apprentice, update.sponsor, update.lvl_joined_academy),
             (7, 8, 20)
         );
-        // ... and keeps the row's values for a snapshot without them, or for a player whose clan
-        // was not found (D-39: never `clanid = 0` for a clan of the Java game server).
         p.profile.clan = Some(l2_world::PlayerClanState {
             keep_stored: true,
             ..l2_world::PlayerClanState::default()
@@ -2331,9 +2228,6 @@ mod tests {
         Some((db, pool))
     }
 
-    /// The loader reads the character's clan (D-39: the Java game server may have made it after
-    /// this server loaded its clans); a clan id without a `clan_data` row gives a record without
-    /// data, which the world treats as "keep the row".
     #[tokio::test]
     async fn the_loader_reads_the_clan_of_the_character() {
         let Some((db, pool)) = loader_setup().await else {

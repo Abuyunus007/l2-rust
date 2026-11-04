@@ -1,10 +1,5 @@
 //! The pet manager's work: the exchange of wolf collars, the evolution of a pet into the stronger
 //! one and the restore of a pet from the collar of its evolved form (M6-FU-14).
-// Java: entity/actor/instance/PetManager.java (onBypassFeedback, exchange, doEvolve, doRestore,
-//       EvolveFeedWait, EvolveFinalizer)
-// Java: entity/actor/instance/Pet.java (spawnPet, destroyControlItem(owner, evolve))
-// Java: entity/actor/instance/ClanHallDoorman.java (the evolve commands, `clanhall/doorman.rs`)
-//
 // `doEvolve` and `doRestore` are static in Java and called by the pet managers and by the clan
 // hall doorman of the halls with the evolve function: [`World::pet_do_evolve`] and
 // [`World::pet_do_restore`] take the NPC the player talks to for the packets.

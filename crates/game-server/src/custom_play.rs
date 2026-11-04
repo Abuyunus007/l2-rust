@@ -1,9 +1,6 @@
 //! The settings of the custom features of M9-C02 (`config/Custom/PremiumSystem.ini`,
 //! `AutoPotions.ini`, `AutoPlay.ini`, `OfflinePlay.ini` and the custom keys of `OfflineTrade.ini`),
 //! built from the config the way the Java `*Config.load()` methods read them.
-// Java: config/custom/{PremiumSystemConfig,AutoPotionsConfig,AutoPlayConfig,OfflinePlayConfig,
-//       OfflineTradeConfig}.java
-//
 // The generated structs hold the plain keys; the lists and maps (`Map<Integer, Float>`,
 // `Set<Integer>`, `List<AbnormalVisualEffect>`, the hexadecimal colour) are read from the ini
 // again here.

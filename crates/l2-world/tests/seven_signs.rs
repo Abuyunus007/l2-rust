@@ -1,11 +1,5 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
-//! The Seven Signs (M8-SS-01): joining a cabal at a priest, contributing seal stones, the period
-//! changes with `CycleDatabaseWrites` on and off, the seals' effects (the necropolis gatekeeper,
-//! the siege golem, the Mammon auto spawn) and the D-50 re-read of the record. The expected values
-//! are read off the Java sources (`SevenSigns.java`, `SignsPriest.java`, `DawnPriest.java`,
-//! `DungeonGatekeeper.java`, `AutoSpawnHandler.java`, `RequestSSQStatus.java`), not off the code.
-
 use std::sync::{Arc, Mutex};
 
 use l2_data::{
@@ -638,9 +632,6 @@ fn the_winners_collect_their_ancient_adena() {
 
 // ---------------------------------------------------------------------------------- the cycle
 
-/// Two Dawn members both chose Avarice and the Dawn lead: at the end of the competition the Dawn
-/// take the Seal of Avarice (100% >= 35%), Gnosis and Strife stay unclaimed. With
-/// `CycleDatabaseWrites = True` the whole table and the status row are written.
 fn dawn_wins() -> (SevenSignsStatus, Vec<SignsPlayer>) {
     let mut status = competition();
     status.dawn_stone_score = 100.0;

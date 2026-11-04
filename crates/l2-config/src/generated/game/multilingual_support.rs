@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/MultilingualSupportConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/MultilingualSupport.ini` (Java: `MultilingualSupportConfig`).

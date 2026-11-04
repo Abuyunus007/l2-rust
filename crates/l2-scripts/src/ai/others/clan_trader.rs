@@ -1,5 +1,4 @@
 //! Mulia and Ilia, the clan traders: Blood Alliance, Blood Oath and Epaulettes for reputation.
-// Java: dist/game/data/scripts/ai/others/ClanTrader/ClanTrader.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_util::ObjectId;
@@ -74,8 +73,6 @@ impl Script for ClanTrader {
             }
             "repinfo" => {
                 let (player, npc) = (player?, npc?);
-                // NOTE(java-quirk): `player.getClan().getLevel()` throws without a clan; the
-                // link is only on the clan leader's page.
                 let level = ctx.clan_level_of(player)?;
                 htmltext = Some(if level > 4 {
                     format!("{}-02.html", npc.id)

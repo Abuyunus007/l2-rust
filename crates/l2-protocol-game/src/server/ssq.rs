@@ -262,7 +262,6 @@ pub enum SsqStatusBody {
     Predicted(SsqPredicted),
 }
 
-// Java: gameserver/network/serverpackets/SSQStatus.java
 /// One page of the Seven Signs status (`SSQ_STATUS`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SsqStatus {
@@ -383,7 +382,6 @@ fn seal_page(view: &SevenSignsView) -> SsqSeals {
     for seal in 1..=3usize {
         let dawn_proportion = view.dawn_proportion[seal];
         let dusk_proportion = view.dusk_proportion[seal];
-        // Java: a cabal without members shows 0%, the other one is a share of its members.
         let dusk_percent = if view.total_dusk_members == 0 {
             0
         } else {
@@ -485,7 +483,6 @@ impl Encode for SsqStatus {
                 write_score(w, &cycle.dawn);
             }
             SsqStatusBody::Festivals(festivals) => {
-                // Java: `writeShort(1)`, then the festival count as a byte.
                 w.i16(1).u8(festivals.len() as u8);
                 for (index, festival) in festivals.iter().enumerate() {
                     w.u8((index + 1) as u8)
@@ -594,12 +591,10 @@ pub struct SeedMapEntry {
     pub x: i32,
     pub y: i32,
     pub z: i32,
-    /// Java: `2770 + SoDState` for the Seed of Destruction, `stage + 2765` for the Seed of
     /// Infinity.
     pub state: i32,
 }
 
-// Java: gameserver/network/serverpackets/ExShowSeedMapInfo.java
 /// The two Seed entrances on the map (`EX_SHOW_SEED_MAP_INFO`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExShowSeedMapInfo {

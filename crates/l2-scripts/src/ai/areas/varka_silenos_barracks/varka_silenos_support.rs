@@ -1,6 +1,5 @@
 //! The NPCs of the Varka Silenos Barracks: what they say and sell follows the character's
 //! Mark of Varka's Alliance.
-// Java: dist/game/data/scripts/ai/areas/VarkaSilenosBarracks/VarkaSilenosSupport/VarkaSilenosSupport.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};

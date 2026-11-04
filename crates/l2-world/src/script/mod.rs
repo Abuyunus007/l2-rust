@@ -1,25 +1,5 @@
 //! The script engine (S-API-01): Java's `Quest` / `Script` model for the compiled-in scripts of
 //! `l2-scripts` (D-05, D-16). Porting guide: `docs/design/scripts.md`.
-// Java: mechanics/script/{Quest,QuestState,QuestTimer,QuestSound,State,QuestType,Script}.java
-// Java: mechanics/events/{EventDispatcher,ListenersContainer,EventType}.java
-// Java: managers/{ScriptManager,GlobalVariablesManager}.java
-//
-// # Pieces
-// - [`Script`] (`api.rs`): the trait a ported script implements; [`ScriptSetup`] (`setup.rs`)
-//   is what its constructor registers.
-// - [`ScriptRegistry`]: the list of scripts the game server hands the world at startup
-//   ([`World::install_scripts`]); the order is the registration order of the listeners.
-// - [`ScriptCtx`] (`ctx.rs`): the `&mut World` a hook runs with, plus the helpers of Java's
-//   `Quest` (`giveItems`, `takeItems`, `showHtmlFile`, ...).
-// - [`Qs`] (`qs.rs`): a handle on a player's quest state (Java `QuestState`); its methods
-//   write `character_quests` through the outbox (D-15) and send `QuestList`.
-// - `notify.rs`: the world hooks call `World::script_*`; the events Java sends with
-//   `notifyEventAsync` wait in a queue that runs after the current command or tick.
-// - `timers.rs`: `startQuestTimer` on the timer wheel (D-12).
-// - `link.rs`: the `Script` bypass, the quest window and the quest chooser.
-// - `packets.rs`: `QuestList`, `RequestQuestList`, `RequestQuestAbort`, the tutorial packets.
-// - `globals.rs`: `GlobalVariablesManager` with the D-54 switch.
-//
 // # Left out, with the card that brings it
 // - `TimerExecutor` / `onTimerEvent` (the newer timers of seven scripts): later script cards.
 // - `ON_PLAYER_BYPASS`, `ON_PLAYER_PRESS_TUTORIAL_MARK` (script listeners of the player): the
@@ -119,8 +99,6 @@ impl ScriptRegistry {
     }
 }
 
-/// The values of `Rates.ini` and `General.ini` the script helpers read, and the D-54 switch.
-/// `Default` is Java's default of each key.
 #[derive(Debug, Clone, PartialEq)]
 pub struct ScriptSettings {
     /// `RatesConfig.RATE_QUEST_REWARD` (`RateQuestReward`).
@@ -143,9 +121,6 @@ pub struct ScriptSettings {
     pub rate_quest_reward_material: f32,
     /// `RatesConfig.QUEST_ITEM_DROP_AMOUNT_MULTIPLIER` (`QuestItemDropAmountMultiplier`).
     pub quest_item_drop_amount_multiplier: f32,
-    /// `GeneralConfig.AUTODELETE_INVALID_QUEST_DATA` (`AutoDeleteInvalidQuestData`). Read, but
-    /// see `World::script_player_enter`: rows of scripts this server does not have are never
-    /// deleted (D-39).
     pub autodelete_invalid_quest_data: bool,
     /// `FeatureConfig.BLOODALLIANCE_POINTS` (`BloodAlliancePoints`, ClanTrader; S-AI-05).
     pub bloodalliance_points: i32,
@@ -512,7 +487,6 @@ impl World {
         self.load_script(id);
     }
 
-    /// The script settings (`Rates.ini`, `General.ini`, `SideBySide.ini`).
     pub fn set_script_settings(&mut self, settings: ScriptSettings) {
         self.scripts.settings = settings;
     }
@@ -538,8 +512,6 @@ impl World {
         self.scripts.players.get(&player)
     }
 
-    /// Java `ScriptManager.save()`: every script's `onSave`, then (with the D-54 switch) the
-    /// global variables (`GlobalVariablesManager.storeMe` of `Shutdown`).
     pub(crate) fn scripts_shutdown(&mut self) {
         for id in self.scripts.ids().collect::<Vec<_>>() {
             if let Some(script) = self.scripts.script(id) {

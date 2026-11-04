@@ -1,6 +1,5 @@
 //! The Test of the Summoner: a servitor killed by one of the quest monsters turns the crystals
 //! of the master from starting/in progress to defeat.
-// Java: dist/game/data/scripts/ai/others/Servitors/Servitors.java
 
 use l2_util::ObjectId;
 use l2_world::{QuestSound, Script, ScriptCtx, ScriptSetup};
@@ -73,8 +72,6 @@ impl Script for Servitors {
                 .is_some()
                 && ctx.has_quest_items(master, CRYSTAL_OF_INPROGRESS_3RD)
             {
-                // NOTE(java-quirk): `MONSTERS.get(killer.getId())` is null for any other NPC and
-                // Java throws; nothing happens here.
                 let Some((starting, in_progress, defeat)) = crystals(killer.id) else {
                     return;
                 };

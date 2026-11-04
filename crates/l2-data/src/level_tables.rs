@@ -1,6 +1,5 @@
 //! Two per-level tables of the player stats: the exp lost at death and the karma modifier.
 //!
-//! Java: `gameserver/data/xml/ExperienceLossData.java` and `gameserver/data/xml/KarmaLossData.java`.
 //! Data: `data/stats/players/experienceLoss.xml` (`xsd/experienceLoss.xsd`) and
 //! `data/stats/players/karmaLoss.xml` (`xsd/karmaLoss.xsd`).
 //!
@@ -30,7 +29,6 @@ impl Default for LevelValues {
 
 impl LevelValues {
     fn set(&mut self, level: i32, value: f64) {
-        // Java: `if (level >= PLAYER_MAXIMUM_LEVEL) return;`. A negative level would throw there.
         if let Ok(level) = usize::try_from(level)
             && let Some(slot) = self.0.get_mut(level)
         {

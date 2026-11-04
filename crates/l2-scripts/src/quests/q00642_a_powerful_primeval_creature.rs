@@ -1,7 +1,5 @@
 //! Quest 642: A Powerful Primeval Creature (Dinn in the Ruins of Dion area; the dinosaurs of the
 //! Dinosaur Tracks drop tissues and the ancient eggs drop the dinosaur eggs; 5000 adena a tissue).
-// Java: dist/game/data/scripts/quests/Q00642_APowerfulPrimevalCreature/Q00642_APowerfulPrimevalCreature.java
-//
 // Pattern: a party kill with a drop chance per monster (a random started member, counted three
 // times), the tissues paid out per piece (`giveAdena` with the rates), and the exit that pays
 // what is left.

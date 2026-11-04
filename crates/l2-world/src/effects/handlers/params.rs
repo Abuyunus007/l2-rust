@@ -1,6 +1,5 @@
 //! The parameter readers of the effect constructors: Java `StatSet.getInt(key, default)` and its
 //! siblings. A value that does not parse makes the constructor fail, as Java's `getInt` throws.
-// Java: gameserver/util/StatSet.java (getInt, getLong, getFloat, getDouble, getBoolean, getString)
 
 use l2_data::skill::{EffectTemplate, ParamValue};
 

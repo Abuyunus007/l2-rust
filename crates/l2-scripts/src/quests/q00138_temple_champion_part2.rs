@@ -1,6 +1,4 @@
 //! Quest 138: Temple Champion - 2 (Sylvain, Pupina, Angus and Sla; recommendations and 10 relics).
-// Java: dist/game/data/scripts/quests/Q00138_TempleChampionPart2/Q00138_TempleChampionPart2.java
-//
 // Pattern: like Q00137, a chain of four NPCs that echoes every event (Java `return event`);
 // the start page depends on Q00137 being completed.
 
@@ -132,7 +130,6 @@ impl Script for Q00138TempleChampionPart2 {
         let mut htmltext = ctx.get_no_quest_msg(player);
         match npc.id {
             SYLVAIN => match qs.get_cond(ctx) {
-                // NOTE(java-quirk): cond 1 answers with the start page `30070-02.htm`.
                 1 => htmltext = "30070-02.htm".to_owned(),
                 2..=6 => htmltext = "30070-03.html".to_owned(),
                 7 => htmltext = "30070-04.html".to_owned(),

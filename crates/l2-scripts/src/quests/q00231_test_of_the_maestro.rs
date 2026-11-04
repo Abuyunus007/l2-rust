@@ -1,8 +1,6 @@
 //! Quest 231: Test of the Maestro (the Artisan's second class change: Iron Gates Lockirin and the
 //! Dwarven Village's Golden Wheels, Silver Scales, Bronze Keys, Gray Pillar, Black Anvils, Master
 //! Toma, Chief Croto, Jailer Dubabah and Researcher Lorain).
-// Java: dist/game/data/scripts/quests/Q00231_TestOfTheMaestro/Q00231_TestOfTheMaestro.java
-//
 // Pattern: a long chain on the memo state (`setMemoState`, `isMemoState`) with items collected
 // from monsters (`onKill`, ten of each) and a teleport with a timed spawn (`startQuestTimer`).
 

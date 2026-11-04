@@ -1,8 +1,6 @@
 //! Orfen, the Pagan Temple grand boss: the row restored at start, the nest teleports by HP, the
 //! paralysis pull, Raikel Leos minions and their six-minute respawns, Riba Iren heals and the
 //! respawn cycle.
-// Java: dist/game/data/scripts/ai/bosses/Orfen/Orfen.java
-//
 // The Java constructor is `on_load`; the static fields are `OrfenState` (`ctx.state`). Statuses: 0
 // alive, 1 dead.
 //
@@ -115,7 +113,6 @@ impl Script for Orfen {
         ctx.state::<OrfenState>().zone = zone;
 
         let Some(info) = ctx.world().grand_boss_info(ORFEN_NPC_ID).cloned() else {
-            // Java: `getStatSet` answers null and the constructor throws.
             warn!("Orfen: no grandboss_data row for {ORFEN_NPC_ID}, the script does not start.");
             return;
         };
@@ -164,7 +161,6 @@ impl Script for Orfen {
             EVENT_CHECK_ORFEN_POSITION => {
                 let npc = npc?;
                 let Some(zone) = ctx.state::<OrfenState>().zone else {
-                    // Java: `ZONE` is null and the timer task throws.
                     warn!("Orfen: no boss zone holds the nest, the position check does nothing.");
                     return None;
                 };
@@ -376,9 +372,6 @@ impl Script for Orfen {
         } else if (ctx.world().grand_boss_status(ORFEN_NPC_ID) == Some(STATUS_ALIVE))
             && (npc_id == RAIKEL_LEOS_NPC_ID)
         {
-            // NOTE(java-quirk): `setup` registers `addKillId(ORFEN_NPC_ID)` only, so this branch
-            // never runs; and its timer would be bound to the corpse, which `Npc.onDecay()` stops
-            // long before the six minutes. Ported as it is.
             ctx.state::<OrfenState>().minions.retain(|m| *m != npc.object_id);
             ctx.start_quest_timer(
                 EVENT_SPAWN_MINION,
@@ -756,8 +749,6 @@ mod tests {
         let at = xy(&t, minion);
         assert!(t.world.do_die(minion, Some(Oid(1))));
         run_ms(&mut t, 2_600);
-        // NOTE(java-quirk): Java registers `addKillId(ORFEN_NPC_ID)` only, so `onKill` never sees
-        // a Raikel Leos and no respawn timer starts.
         assert!(!has_timer(&mut t, EVENT_SPAWN_MINION, Some(minion)));
         assert_eq!(live_minions(&t).len(), 3);
         // The event itself, fired with a corpse, spawns one where it fell.

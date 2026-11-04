@@ -1,6 +1,4 @@
 //! Quest 386: Stolen Dignity (Romp plays the same bingo as Q384, for weapon parts).
-// Java: dist/game/data/scripts/quests/Q00386_StolenDignity/Q00386_StolenDignity.java
-//
 // Pattern: as Q00384 (numbered events, bingo board in the quest variables, pages filled from the
 // html files); the board helpers are shared with it (`q00384_warehouse_keepers_pastime`).
 
@@ -21,7 +19,6 @@ const Q_STOLEN_INF_ORE: i32 = 6363;
 
 /// Java's `onKill` switch: monster, the roll's range (100 or 1000) and the chance.
 const ORE_DROPS: [(i32, i32, i32); 26] = [
-    // NOTE(java-quirk): Java compares `getRandom(1000) < 20.200001`, which is a roll of 0..=20.
     (20670, 1000, 21),  // CRIMSON_DRAKE
     (20671, 1000, 211), // KADIOS
     (20954, 1000, 184), // HUNGRY_CORPSE
@@ -180,11 +177,8 @@ impl Script for Q00386StolenDignity {
         if event.contains(".html") {
             return Some(event.to_owned());
         }
-        // NOTE(java-quirk): `Integer.parseInt(event)` throws on any other text; here it shows nothing.
         let ask: i32 = event.parse().ok()?;
         match ask {
-            // NOTE(java-quirk): the page files are 30843-09a.htm and 30843-09.html; Java names
-            // them the other way round.
             3 => Some("30843-09a.html".to_owned()),
             5 => Some("30843-03.html".to_owned()),
             6 => {

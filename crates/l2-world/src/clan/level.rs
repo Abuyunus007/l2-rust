@@ -1,7 +1,4 @@
 //! Clan level, reputation, sub pledges, rank privileges and the clan notice.
-// Java: entity/clan/Clan.java (levelUpClan, changeLevel, addReputationScore,
-//       takeReputationScore, setReputationScore, createSubPledge, setRankPrivs, storeNotice,
-//       setNotice, setNoticeEnabled)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::visibility::status;
@@ -314,8 +311,6 @@ impl World {
         let clan = self.clan(clan_id)?;
         let pledge_type = clan.available_pledge_types(pledge_type_value);
         if pledge_type == 0 {
-            // NOTE(java-quirk): `pledgeType == SUBUNIT_ACADEMY` is tested after `pledgeType == 0`,
-            // so the academy message is never sent.
             if pledge_type == SUBUNIT_ACADEMY {
                 self.send(
                     player,
@@ -420,8 +415,6 @@ impl World {
 
     /// Java `Clan.storeNotice(notice, enabled)`.
     fn store_clan_notice(&mut self, clan_id: i32, notice: &str, enabled: bool) {
-        // NOTE(java-quirk): a notice longer than `MAX_NOTICE_LENGTH` is cut to one character less
-        // (`substring(0, MAX_NOTICE_LENGTH - 1)`), in UTF-16 units.
         let units: Vec<u16> = notice.encode_utf16().collect();
         let notice = if units.len() > MAX_NOTICE_LENGTH {
             String::from_utf16_lossy(&units[..MAX_NOTICE_LENGTH - 1])

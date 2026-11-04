@@ -4,7 +4,6 @@
 //! order for each repeat style, says the words of a node, waits `100 ms + delay` there, comes
 //! back to its route after a fight stopped it, and a route's target NPC never wanders by itself.
 //! Also the event drops (`EventDropManager`).
-//! Java: managers/WalkingManager.java, entity/actor/holders/npc/WalkInfo.java,
 //! managers/EventDropManager.java.
 
 use std::sync::{Arc, Mutex};

@@ -1,10 +1,5 @@
 //! Decoys and skill traps: the two creature kinds `SummonNpc` ("Decoy" branch) and `SummonTrap`
 //! (and the script API `addTrap`) put into the world.
-// Java: entity/actor/instance/{Decoy,Trap}.java
-// Java: entity/actor/tasks/npc/trap/{TrapTask,TrapTriggerTask,TrapUnsummonTask}.java
-// Java: dist/game/data/scripts/handlers/skill/effects/{SummonNpc,SummonTrap,TrapDetect,TrapRemove}.java
-// Java: dist/game/data/scripts/handlers/actions/click/{DecoyClick,TrapClick}.java
-//
 // # How they sit in the world (D-17)
 // Both are entries of `World::npcs` and `ObjectKind::Npc`, told apart by [`NpcClass::Decoy`] and
 // [`NpcClass::Trap`] (neither can be made from a spawn: `NpcClass::from_type` answers `None`).
@@ -222,9 +217,6 @@ impl World {
 impl World {
     /// `SummonNpc.onStart`'s default case: a `Spawn` of the NPC at the player (shifted by 20 to 50
     /// when `randomOffset`), that does not respawn and is deleted after `despawn_delay`.
-    // NOTE(java-quirk): `npcCount` is only checked, one NPC is made. `Spawn.doSpawn` has no instance
-    // set, so the NPC is in the normal world also when the player is in an instance. The spawn
-    // animation (`isSummonSpawn`) and the NPC's title (its own name) are not modelled.
     pub(crate) fn summon_npc_effect_spawn(
         &mut self,
         player: ObjectId,

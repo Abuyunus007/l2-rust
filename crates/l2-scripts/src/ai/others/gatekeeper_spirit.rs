@@ -1,5 +1,4 @@
 //! The Gatekeeper Spirits of the Lilith and Anakim chambers (Seven Signs, Seal of Avarice).
-// Java: dist/game/data/scripts/ai/others/GatekeeperSpirit/GatekeeperSpirit.java
 
 use l2_util::ObjectId;
 use l2_world::sevensigns::{CABAL_DAWN, CABAL_DUSK, SEAL_AVARICE};

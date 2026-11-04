@@ -1,5 +1,4 @@
 //! Bernarde, the native of Hellbound who trades Darion's Badges for Holy Water.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/NPC/Bernarde/Bernarde.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

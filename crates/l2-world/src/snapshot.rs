@@ -1,8 +1,4 @@
 //! What the world hands to the persistence task for one player.
-// Java: Player.storeCharBase (the `onlinetime` part), PlayerAutoSaveTaskManager
-//
-// Only data the persistence task is allowed to write travels in a [`PlayerData`]: the columns
-// and tables M2 models (D-39: the Java game server shares the database).
 
 use crate::player::{Player, PlayerData};
 use crate::world::TICK;

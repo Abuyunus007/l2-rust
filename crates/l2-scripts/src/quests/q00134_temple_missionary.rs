@@ -1,6 +1,4 @@
 //! Quest 134: Temple Missionary (Glyvka and Rouke; fragments, tools and three reports).
-// Java: dist/game/data/scripts/quests/Q00134_TempleMissionary/Q00134_TempleMissionary.java
-//
 // Pattern: party kills (`get_random_party_member_cond`) that drop a fragment, turn a tool into a
 // traitor spawn, and the traitor drops the reports. Items are counted on the killer (Java quirk).
 
@@ -113,7 +111,6 @@ impl Script for Q00134TempleMissionary {
 
         let qs = ctx.get_quest_state(member, false);
         if npc.id == CRUMA_MARSHLANDS_TRAITOR {
-            // NOTE(java-quirk): the reports are counted and given on the killer, not the member.
             ctx.give_items(player, GIANTS_TECHNOLOGY_REPORT, 1);
             if ctx.get_quest_items_count(player, GIANTS_TECHNOLOGY_REPORT) >= REPORT_COUNT {
                 if let Some(qs) = qs {

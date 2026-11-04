@@ -1,6 +1,5 @@
 //! A small `StatSet`: the typed key/value bag Java's `NpcData` fills and `NpcTemplate` reads.
 //!
-//! Java: `gameserver/util/StatSet.java` and the `parseInteger`/`parseDouble`/`parseBoolean` helpers
 //! of `commons/util/IXmlReader.java`.
 //!
 //! Porting the loader through the same bag (instead of straight into struct fields) keeps Java's

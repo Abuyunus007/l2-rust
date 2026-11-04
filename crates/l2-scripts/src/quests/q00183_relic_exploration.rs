@@ -1,5 +1,4 @@
 //! Quest 183: Relic Exploration (Head Blacksmith Kusto, Researcher Lorain and Maestro Nikola).
-// Java: dist/game/data/scripts/quests/Q00183_RelicExploration/Q00183_RelicExploration.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED};
@@ -81,7 +80,6 @@ impl Script for Q00183RelicExploration {
                 }
             }
             "Contract" => {
-                // Java: the other quest's state is `null` and its script is installed; the
                 // event goes to that script (`notifyEvent`, its page is shown by the engine).
                 let qs184 = ctx.player_quest_state(player, ART_OF_PERSUASION).is_some();
                 let qs185 = ctx.player_quest_state(player, NIKOLAS_COOPERATION).is_some();

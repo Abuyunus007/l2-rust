@@ -2,7 +2,6 @@
 
 //! The effect, menu, teleport, GM-tool, camera, page, message, vitality, augment, element and clan
 //! skill admin commands of M7-ADMIN-08, with a fake GM and two fake players in view of each other.
-//! Java: scripts/handlers/chat/commands/admin/{AdminEffects,AdminMenu,AdminTeleport,AdminSkill,
 //! AdminBuffs,AdminSuperHaste,AdminGmSpeed,AdminHide,AdminTarget,AdminTargetSay,AdminCamera,
 //! AdminHtml,AdminHelp,AdminMessages,AdminElement,AdminVitality,AdminAugment}.java.
 //!

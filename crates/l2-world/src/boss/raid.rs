@@ -1,11 +1,6 @@
 //! Java `managers/RaidBossSpawnManager.java` and the `doDie` of `RaidBoss` / `GrandBoss`: the raid
 //! boss spawn list (`raidboss_spawnlist`), the respawn times, the status of each boss and the
 //! raid points a kill gives.
-//
-// A raid boss is spawned from its row at start (`spawn_raid_bosses`), or scheduled when its
-// `respawn_time` is in the future. Its death sets the respawn time and a [`BossTimer::RaidSpawn`]
-// timer (Java `SpawnSchedule`); the timer spawns it again. The rows are written only with
-// `CycleDatabaseWrites` (D-53, see the module comment of `boss`).
 
 use std::collections::{BTreeMap, HashMap};
 
@@ -119,8 +114,6 @@ impl World {
 
         for row in rows {
             if self.npc_world.template(row.boss_id).is_none() {
-                // NOTE(java-quirk): `new Spawn(id)` throws for an unknown template and the catch
-                // is outside the loop, so Java drops this row and every one after it.
                 warn!(
                     "RaidBossSpawnManager: Error while initializing RaidBossSpawnManager: no template {}",
                     row.boss_id
@@ -253,7 +246,6 @@ impl World {
     /// Java `SpawnSchedule.run()`: the boss is spawned again.
     pub(crate) fn on_raid_spawn_timer(&mut self, boss_id: i32) {
         let Some(spawn) = self.boss.raid.spawns.get(&boss_id).copied() else {
-            // Java: `_spawns.get(bossId).doSpawn()` throws a NullPointerException.
             self.boss.raid.schedules.remove(&boss_id);
             return;
         };
@@ -419,8 +411,6 @@ impl World {
             current_hp: base_hp,
             current_mp: base_mp,
         };
-        // NOTE(java-quirk): `setRespawnMinDelay(43200)` and `setRespawnMaxDelay(129600)` are
-        // meant as seconds (12 and 36 hours) but the fields hold milliseconds: 43 to 130 seconds.
         self.raid_add_new_spawn(&data, 43_200, 129_600, 0, base_hp, base_mp, permanent);
         if !permanent || respawn_time <= 0 {
             self.raid_stop_respawn(boss_id);
@@ -429,8 +419,6 @@ impl World {
 
     /// Java `AdminTeleport` `admin_recall_npc` for a `RaidBoss` with a spawn: the spawn is deleted
     /// (with its row) and a new one is made at the GM's place with the boss's current HP and MP.
-    // NOTE(java-quirk): `deleteSpawn` does not delete the NPC, so the old boss stays in the world
-    // next to the new one.
     pub(crate) fn admin_recall_raid_boss(&mut self, npc: ObjectId, gm: ObjectId) {
         let Some(boss_id) = self.npcs.get(&npc).map(|n| n.npc_id) else {
             return;

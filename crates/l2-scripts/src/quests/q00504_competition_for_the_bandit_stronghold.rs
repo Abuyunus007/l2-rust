@@ -1,6 +1,4 @@
 //! Quest 504: Competition for the Bandit Stronghold (Messenger, the clan hall siege of the Bandit Stronghold).
-// Java: dist/game/data/scripts/quests/Q00504_CompetitionForTheBanditStronghold/Q00504_CompetitionForTheBanditStronghold.java
-//
 // Pattern: a kill-count quest (`on_kill` gives the amulet, cond 2 at 30) with a repeatable end and
 // a start that depends on the siege of a clan hall (`CHSiegeManager`, hall 35).
 

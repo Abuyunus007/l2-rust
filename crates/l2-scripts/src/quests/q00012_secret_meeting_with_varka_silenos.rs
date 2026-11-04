@@ -1,6 +1,4 @@
 //! Quest 12: Secret Meeting With Varka Silenos (Cadmon, Helmut and Naran in the Varka Silenos Village).
-// Java: dist/game/data/scripts/quests/Q00012_SecretMeetingWithVarkaSilenos/Q00012_SecretMeetingWithVarkaSilenos.java
-//
 // Pattern: the Varka twin of Q00011 (`docs/design/scripts.md`, "Quest patterns"): Cadmon starts
 // it, Helmut gives the box (cond 2), and Naran takes the box for the reward. One-time:
 // `exit_quest(ctx, false, true)`.
@@ -49,8 +47,6 @@ impl Script for Q00012SecretMeetingWithVarkaSilenos {
         _npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        // NOTE(java-quirk): without a quest state `onEvent` returns the event itself (not null),
-        // so the event's page is shown anyway.
         let Some(player) = player else {
             return Some(event.to_owned());
         };

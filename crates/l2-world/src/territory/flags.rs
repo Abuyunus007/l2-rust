@@ -1,11 +1,5 @@
 //! The outposts and flags of the war: `OutpostCreate`, `OutpostDestroy`, `TakeTerritoryFlag`,
 //! the `canCreateOutpost` condition, and what a siege flag of the war is (no siege, no talking).
-// Java: dist/game/data/scripts/handlers/skill/effects/{OutpostCreate,OutpostDestroy,
-//       TakeTerritoryFlag}.java
-// Java: mechanics/conditions/ConditionPlayerCanCreateOutpost.java
-// Java: entity/actor/instance/SiegeFlag.java (the `isTWInProgress()` branch of the constructor,
-//       `doDie`'s `removeClanFlag`)
-// Java: managers/TerritoryWarManager.java (setHQForClan, addClanFlag, removeClanFlag)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;
@@ -107,8 +101,6 @@ impl World {
     }
 
     /// `SiegeFlag.doDie` of a flag of the war: `removeClanFlag(_clan)`.
-    // NOTE(java-quirk): it removes the clan's `TakeTerritoryFlag` flag from the list whichever
-    // flag of the clan died (an outpost or a headquarters of the war too); the flag itself stays.
     pub(crate) fn territory_remove_clan_flag(&mut self, clan_id: i32) {
         self.territory.clan_flags.remove(&clan_id);
     }

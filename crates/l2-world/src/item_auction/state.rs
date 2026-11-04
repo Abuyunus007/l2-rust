@@ -1,8 +1,5 @@
 //! The load, the current and the next auction of an instance, the state timer and the end of an
 //! auction.
-// Java: managers/ItemAuctionManager.java
-// Java: entity/item/auction/ItemAuctionInstance.java
-// Java: entity/item/auction/AuctionItem.java (createNewItemInstance)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
@@ -213,8 +210,6 @@ impl World {
         });
     }
 
-    /// Java `checkAndSetCurrentAndNextAuction()`. `announce` logs the schedule line at info level
-    /// (the load); the re-reads of the side by side mode log it at debug level.
     pub(crate) fn check_and_set_current_and_next_auction(&mut self, instance_id: i32, announce: bool) {
         let now = unix_ms_now();
         let Some(instance) = self.item_auctions.instances.get(&instance_id) else {
@@ -316,7 +311,6 @@ impl World {
             }
             _ => {
                 let (Some(next), Some(next_start)) = (next, next_start) else {
-                    // Off: the Java game server has not made the next auction yet.
                     debug!("ItemAuctionInstance: instance {instance_id} has no auction to schedule.");
                     return;
                 };
@@ -615,8 +609,6 @@ impl World {
         item
     }
 
-    /// Java `PlayerWarehouse.addItem(BUY, item, null, null)`: a stackable item joins the stack the
-    /// warehouse has, anything else is added. The rows go out as item rows (D-39).
     fn item_auction_add_to_warehouse(&mut self, player: ObjectId, mut item: ItemData) {
         let container = ContainerRef::Private(player);
         let owner_id = player.0;

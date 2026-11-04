@@ -1,6 +1,4 @@
 //! Quest 265: Bonds of Slavery (Kristin in the Dark Elven area buys the imp shackles).
-// Java: dist/game/data/scripts/quests/Q00265_BondsOfSlavery/Q00265_BondsOfSlavery.java
-//
 // Pattern: a repeatable collect quest (`docs/design/scripts.md`, "Quest patterns"): imps drop
 // shackles on a roll of ten; Kristin pays per shackle, with a bonus from 10 shackles, takes them
 // all and gives a beginner's shot pack once (level below 25, one-time flag 57). The Newbie Guide's

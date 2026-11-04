@@ -2,7 +2,6 @@
 
 //! The admin side of the bosses (M8-BOSS-01): `//grandboss*` and the raid boss branches of
 //! `//spawn`, `//delete` and `//recall_npc`.
-//! Java: dist/game/data/scripts/handlers/chat/commands/admin/{AdminGrandBoss,AdminSpawn,
 //! AdminDelete,AdminTeleport}.java
 
 use std::path::Path;
@@ -373,9 +372,6 @@ fn spawn_of_a_raid_boss_goes_through_the_manager() {
     assert_eq!(raids(&s, RAID).len(), 1);
 }
 
-/// NOTE(java-quirk): `setRespawnMinDelay(43200)` and `setRespawnMaxDelay(129600)` are
-/// milliseconds, so a GM's raid boss is back after 43 to 130 seconds; a boss spawned with
-/// `//spawn_once` (not permanent) had `stopRespawn()` called and never comes back.
 #[test]
 fn a_gm_raid_boss_respawns_in_seconds_and_a_spawn_once_never() {
     let mut s = setup(BossSettings::default());
@@ -432,7 +428,6 @@ fn delete_of_a_raid_boss_removes_the_spawn_and_its_row() {
 // ------------------------------------------------------------------------------ //recall_npc
 
 /// `//recall_npc` of a raid boss: the spawn and its row are replaced by a spawn at the GM with
-/// the boss's HP and MP. NOTE(java-quirk): the old boss is not removed from the world.
 #[test]
 fn recall_npc_of_a_raid_boss_makes_a_new_spawn_at_the_gm() {
     let mut s = setup(writes_on());
@@ -490,8 +485,6 @@ fn grandboss_without_an_id_shows_the_menu() {
     assert_eq!((page[0].npc_obj_id, page[0].item_id), (0, 1));
 }
 
-/// `//grandboss <id>` reads the row first (D-50) and shows the page when the answer is in: status
-/// text, colour, the respawn time (only while the boss is dead) and the players in the zone.
 #[test]
 fn grandboss_page_shows_the_state_read_from_the_database() {
     let mut s = setup(BossSettings::default());

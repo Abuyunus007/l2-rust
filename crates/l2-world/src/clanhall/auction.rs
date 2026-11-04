@@ -1,25 +1,10 @@
 //! Clan hall auctions: the auction list, bids, cancelling and the end of an auction.
-// Java: entity/residences/ClanHallAuction.java
-// Java: managers/ClanHallAuctionManager.java (load, getAuction, getAuctionIndex, initNPC)
-// Java: data/sql/ClanHallTable.java (load: `initNPC` for a free hall without auction)
-// Java: entity/clan/Clan.java (setAuctionBiddedAt)
-//
 // # How it runs here
 // Java keeps every auction as an object with its own `AutoEndTask`; here the manager's list holds
 // the auctions, a timer names an auction by its key (the hall's auction id is the same for every
 // auction of a hall, a key tells two auctions of one hall apart).
 //
-// # Shared rows (D-50)
-// Bidding, cancelling and ending change rows the Java game server may have changed (a bid of
-// another clan, the end date, the auction itself). So each of these asks the persistence task to
-// read the auction again first (`ResidenceReadKind::Auction`) and goes on with the rows it gets
-// (`ResidenceReadThen::Auction*`). Adena taken from the clan warehouse is read again too
-// (`PendingClanWindow::Auction*`, M6-SYNC-01). A read that fails refuses the action.
 //
-// # Side by side (D-51)
-// The end of an auction and `initNPC` are jobs: their rows (and the adena they give back) go out
-// only with `SiegeDatabaseWrites`. A clan's own bid, cancel or sale is written like any player
-// action.
 //
 // # Where this differs from Java
 // - NOTE: Java's `AutoEndTask` of an auction that was removed from the list (`cancelAuction`)
@@ -378,8 +363,6 @@ impl World {
         key
     }
 
-    /// Java `ClanHallAuctionManager.initNPC(id)`: the hall's NPC auction (a job: the row goes out
-    /// only with `SiegeDatabaseWrites`).
     pub(crate) fn clan_hall_init_npc_auction(&mut self, hall_id: i32) {
         let Some((_, name, starting_bid, end_date)) =
             ITEM_INIT_DATA.iter().find(|entry| entry.0 == hall_id).copied()
@@ -473,8 +456,6 @@ impl World {
         }
     }
 
-    /// Java `AutoEndTask.run()` -> `endAuction()`: waits for the halls (3 s), then reads the
-    /// auction again (D-50) before it decides.
     pub(crate) fn on_auction_auto_end(&mut self, key: u64) {
         self.clanhall.auction_timers.remove(&key);
         let Some(id) = self.auction_by_key(key).map(|a| a.id) else {
@@ -488,8 +469,6 @@ impl World {
         self.request_auction_reread(id, ResidenceReadThen::AuctionEnd(key));
     }
 
-    /// Asks the persistence task for the `auction` row and bids of a hall's auction; the answer
-    /// goes on with `then` (D-50).
     pub(crate) fn request_auction_reread(&mut self, auction_id: i32, then: ResidenceReadThen) {
         self.request_auction_rows(auction_id, ResidenceReadKind::Auction, then);
     }
@@ -532,10 +511,6 @@ impl World {
         }
     }
 
-    /// Every `auction` row read again (the auctioneer's list, M7-FU-03): the auctions the
-    /// database has replace this world's copies, new ones are added, and an auction whose row is
-    /// gone is dropped when its row is expected there (a player's sale always; the NPC auction of
-    /// a free hall only with `SiegeDatabaseWrites`, else Kain never wrote it).
     pub(crate) fn apply_all_auction_rows(&mut self, records: &[AuctionRecord]) {
         for record in records {
             self.apply_auction_rows(record.id, Some(record));
@@ -587,12 +562,10 @@ impl World {
     /// The rows are in: Java `endAuction()` on the fresh auction.
     fn auction_end_after_read(&mut self, key: u64) {
         let Some(end_date) = self.auction_by_key(key).map(|a| a.end_date) else {
-            // The Java game server ended it (or cancelled it) already.
             return;
         };
         let now = unix_ms_now();
         if end_date > now {
-            // The Java game server moved the end on.
             self.schedule_auction_end(key, end_date - now);
             return;
         }
@@ -613,8 +586,6 @@ impl World {
         }
         if highest_id == 0 && seller_id > 0 {
             // If seller haven't sell ClanHall, auction removed, THIS MUST BE CONFIRMED
-            // NOTE(java-quirk): only the list entry goes; the `auction` row stays until the
-            // next restart reads it again.
             self.remove_auction(key);
             return;
         }
@@ -661,9 +632,6 @@ impl World {
         self.auction_write(AuctionWrite::AuctionDelete { item_id });
     }
 
-    /// Java `ClanHallAuctionManager.getAuction(auctionId).deleteAuctionFromDB()` (the `//clanhallset`
-    /// word of AdminSiege): the auction with this id leaves the list and its row is deleted (D-51:
-    /// the row only with `SiegeDatabaseWrites`). Nothing happens without such an auction.
     pub(crate) fn clan_hall_delete_auction(&mut self, auction_id: i32) {
         let Some((key, item_id)) = self
             .clanhall
@@ -791,7 +759,6 @@ impl World {
         false
     }
 
-    /// The auction is read again: next the clan warehouse of the bidder is read again (D-50).
     pub(crate) fn auction_bid_after_read(&mut self, player: ObjectId, auction_id: i32, bid: i64) {
         let clan_id = self.clan_id_of(player);
         if self.clan_hall_auction(auction_id).is_none() || clan_id == 0 {
@@ -913,7 +880,6 @@ impl World {
 
     // ------------------------------------------------------------------ cancelling
 
-    /// The auction is read again: next the clan warehouse of the bidder is read again (D-50).
     pub(crate) fn auction_cancel_bid_after_read(&mut self, player: ObjectId, auction_id: i32) {
         let clan_id = self.clan_id_of(player);
         if clan_id == 0 || self.clan_hall_auction(auction_id).is_none() {
@@ -1009,8 +975,6 @@ impl World {
         let mut auction = pending;
         auction.key = key;
         self.clanhall.auctions.push(auction);
-        // NOTE(java-quirk): `confirmAuction` does not start the end task; the auction ends
-        // after the next restart, which reads it and runs `startAutoTask`.
         self.auction_write(AuctionWrite::AuctionInsert(Box::new(record)));
     }
 }

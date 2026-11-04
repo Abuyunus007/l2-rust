@@ -1,5 +1,4 @@
 //! Varka Silenos and Ketra Orcs: killing one of the other side lowers the alliance.
-// Java: dist/game/data/scripts/ai/others/VarkaKetra.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

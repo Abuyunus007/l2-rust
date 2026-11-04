@@ -1,14 +1,6 @@
 //! Offline trade: a player who logs out with a private store open stays in the world without a
 //! client, the store keeps selling, and the shops can be written to the database so the next start
 //! brings them back (M6-FU-14).
-// Java: data/sql/OfflineTraderTable.java (enteredOfflineMode, offlineMode, onTransaction,
-//       removeTrader, storeOffliners, restoreOfflineTraders)
-// Java: config/custom/OfflineTradeConfig.java
-// Java: entity/actor/Player.java (setPrivateStoreType's OFFLINE_DISCONNECT_FINISHED branch)
-// Java: entity/actor/status/PlayerStatus.java (OFFLINE_MODE_NO_DAMAGE)
-// Java: network/clientpackets/{Logout,RequestRestart,EnterWorld,RequestPrivateStoreBuy,
-//       RequestPrivateStoreSell,CharacterSelect}.java, Shutdown.java, GameServer.java
-//
 // # Model
 // A player "without a client" (Java `getClient() == null || isDetached()`) is a player in
 // `World::players` that has no entry in `World::sinks`; the rest of the world already reads it so
@@ -254,7 +246,6 @@ impl World {
             PrivateStoreType::Sell | PrivateStoreType::PackageSell | PrivateStoreType::Buy => {
                 s.offline_trade_enable
             }
-            // NOTE(java-quirk): a workshop needs `OfflineTradeEnable`, not `OfflineCraftEnable`.
             PrivateStoreType::Manufacture => s.offline_trade_enable,
             _ => s.offline_craft_enable && self.is_crafting(id),
         };
@@ -544,8 +535,6 @@ impl World {
             return false;
         }
         let store = self.private_store_type(id);
-        // NOTE(java-quirk): a package sale is not in the list, a workshop needs `OfflineCraftEnable`
-        // here (and `OfflineTradeEnable` to be allowed to stay).
         (s.offline_trade_enable && matches!(store, PrivateStoreType::Sell | PrivateStoreType::Buy))
             || (s.offline_craft_enable && (self.is_crafting(id) || store == PrivateStoreType::Manufacture))
     }

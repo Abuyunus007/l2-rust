@@ -1,9 +1,5 @@
 //! The stock of limited products and their restock: Java `Product` (count, `decreaseCount`,
 //! `restock`, `save`), `BuyListData.load`'s database half and `BuyListTaskManager`.
-// Java: mechanics/buylist/Product.java
-// Java: data/xml/BuyListData.java (load)
-// Java: taskmanagers/BuyListTaskManager.java
-//
 // Java creates the task manager the first time something asks for it: the first `save()` or
 // `decreaseCount`, or the loading of a row with a restock time. Its two tasks then run for ever.
 // Here the 60 s scan is armed at that point and re-armed every run; the 50 ms task that restocks
@@ -149,11 +145,6 @@ impl World {
     }
 
     /// Java `Product.restartRestockTask(nextRestockTime)`.
-    // NOTE(java-quirk): `BuyListTaskManager.update(this, remainTime)` stores the time that is *left*
-    // where the manager expects the time it is *due*, so the product looks long overdue and the
-    // next scan restocks it (and its row gets a `next_restock_time` of 0 then). A product that
-    // was still waiting when the server stopped is therefore restocked within a minute of the
-    // start. The same value is what the next `save()` writes as the restock time.
     fn restart_restock_task(&mut self, key: Key, next_restock_time: i64) {
         let remain = next_restock_time.wrapping_sub(self.shop_now_ms());
         if remain > 0 {

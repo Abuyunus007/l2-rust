@@ -1,5 +1,4 @@
 //! Rapidus and Scipio, the fame managers: fame for PK points or clan reputation.
-// Java: dist/game/data/scripts/ai/others/FameManager/FameManager.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_util::ObjectId;

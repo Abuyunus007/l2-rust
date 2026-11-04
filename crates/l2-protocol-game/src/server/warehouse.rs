@@ -21,7 +21,6 @@ pub const WH_TYPE_FREIGHT: i16 = 1;
 
 /// `SortedWareHouseWithdrawalList.PRIVATE`.
 pub const SORTED_WH_TYPE_PRIVATE: i16 = 1;
-/// `SortedWareHouseWithdrawalList.CLAN`. NOTE(java-quirk): not the 4 of the unsorted list.
 pub const SORTED_WH_TYPE_CLAN: i16 = 2;
 /// `SortedWareHouseWithdrawalList.CASTLE` ("not sure" in Java).
 pub const SORTED_WH_TYPE_CASTLE: i16 = 3;
@@ -30,7 +29,6 @@ pub const SORTED_WH_TYPE_FREIGHT: i16 = 4;
 
 fn write_item_list(w: &mut PacketWriter, wh_type: i16, player_adena: i64, items: &[ItemInfo]) {
     w.i16(wh_type).i64(player_adena);
-    // Java: `writeShort(size)`, the low 16 bits of the count.
     w.u16(items.len() as u16);
     for item in items {
         write_item(w, item);
@@ -52,7 +50,6 @@ fn read_item_list(r: &mut PacketReader) -> Result<(i16, i64, Vec<ItemInfo>), Pac
     Ok((wh_type, player_adena, items))
 }
 
-// Java: gameserver/network/serverpackets/WareHouseDepositList.java
 /// The deposit window: what the player can put into the warehouse (`WAREHOUSE_DEPOSIT_LIST`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WareHouseDepositList {
@@ -84,7 +81,6 @@ impl Decode for WareHouseDepositList {
     }
 }
 
-// Java: gameserver/network/serverpackets/WareHouseWithdrawalList.java
 /// The withdraw window: what the warehouse or the freight holds (`WAREHOUSE_WITHDRAW_LIST`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct WareHouseWithdrawalList {
@@ -116,8 +112,6 @@ impl Decode for WareHouseWithdrawalList {
     }
 }
 
-// Java: gameserver/network/serverpackets/SortedWareHouseWithdrawalList.java
-// Java: gameserver/entity/item/WarehouseItem.java
 /// One item of the sorted withdraw list: the fields of Java's `WarehouseItem`, in the order
 /// `SortedWareHouseWithdrawalList.writeImpl` writes them. The bytes are those of [`ItemInfo`] (the
 /// "equipped" short is a constant 0), but the values come from a `WarehouseItem`, which differs
@@ -141,8 +135,6 @@ pub struct SortedWarehouseItem {
     pub augmentation: i32,
     /// `getMana()`.
     pub mana: i32,
-    /// `isTimeLimitedItem() ? remaining seconds : -1`. NOTE(java-quirk): -1, where `ItemInfo`
-    /// shows -9999 for an item without a lifetime.
     pub time: i32,
     pub attack_element_type: i16,
     pub attack_element_power: i16,
@@ -247,7 +239,6 @@ impl Decode for SortedWareHouseWithdrawalList {
     }
 }
 
-// Java: gameserver/network/serverpackets/PackageToList.java
 /// The characters of the account a package can go to (`PACKAGE_TO_LIST`): `(object id, name)` in
 /// the order of Java's `LinkedHashMap`.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -281,7 +272,6 @@ impl Decode for PackageToList {
     }
 }
 
-// Java: gameserver/network/serverpackets/PackageSendableList.java
 /// The items the player can send to the character `player_object_id` (`PACKAGE_SENDABLE_LIST`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PackageSendableList {

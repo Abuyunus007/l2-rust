@@ -9,7 +9,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ClientOpcode;
 
-// Java: gameserver/network/clientpackets/UseItem.java
 /// Use an item from the inventory (`USE_ITEM`). `ctrl_pressed` is the ctrl key while the item is
 /// used.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -41,7 +40,6 @@ impl Decode for UseItem {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestUnEquipItem.java
 /// Take off the item in a paperdoll slot (`REQUEST_UN_EQUIP_ITEM`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestUnEquipItem {
@@ -69,7 +67,6 @@ impl Decode for RequestUnEquipItem {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestDropItem.java
 /// Drop `count` of an inventory item at a position on the ground (`REQUEST_DROP_ITEM`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestDropItem {
@@ -107,7 +104,6 @@ impl Decode for RequestDropItem {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestDestroyItem.java
 /// Destroy `count` of an inventory item (`REQUEST_DESTROY_ITEM`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestDestroyItem {
@@ -135,7 +131,6 @@ impl Decode for RequestDestroyItem {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestItemList.java
 /// Asks for the whole inventory (`REQUEST_ITEM_LIST`). The packet has no fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestItemList;

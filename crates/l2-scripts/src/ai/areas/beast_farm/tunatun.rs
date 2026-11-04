@@ -1,5 +1,4 @@
 //! Tunatun, the beast herder of the Beast Farm: hands out the Beast Handler's Whip.
-// Java: dist/game/data/scripts/ai/areas/BeastFarm/Tunatun/Tunatun.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

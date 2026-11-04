@@ -1,10 +1,5 @@
 //! The Dimensional Rift (M8-FEST-01): the rooms and their monsters, a party entering the rift, the
 //! jumps from room to room, the boss room, and the leader's NPC commands.
-// Java: managers/DimensionalRiftManager.java
-// Java: mechanics/sevensigns/{DimensionalRift,DimensionalRiftRoom}.java
-// Java: entity/actor/instance/RiftInvader.java
-// Java: dist/game/data/scripts/handlers/bypass/npc/Rift.java
-//
 // # Shape
 // - The rooms are the rows of `dimensional_rift` (read at start, never written) and the monsters
 //   are `data/DimensionalRift.xml`; each monster is a runtime spawn of its room.
@@ -442,7 +437,6 @@ impl World {
             self.rift_show_html_file(player, &format!("{RIFT_HTML}NotInWaitingRoom.htm"), npc);
             return;
         }
-        // NOTE(java-quirk): `getNeededItems` throws for a type outside 1..6; the bypass is cut.
         let Some(count) = self.rift_needed_items(kind) else {
             warn!("Rift: bad area type {kind}");
             return;
@@ -456,7 +450,6 @@ impl World {
         }
         for member in &members {
             if !self.destroy_item_by_item_id(*member, DIMENSIONAL_FRAGMENT_ITEM_ID, i64::from(count), false) {
-                // NOTE(java-quirk): the members before this one have paid already.
                 self.rift_show_html_count(player, &format!("{RIFT_HTML}NoFragments.htm"), npc, count);
                 return;
             }

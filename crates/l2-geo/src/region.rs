@@ -1,6 +1,5 @@
 //! Region model, the null region and the loaded set of regions.
 //!
-//! Java: `gameserver/geoengine/geodata/regions/Region.java`, `regions/NullRegion.java`,
 //! `IRegion.java`, and the region table / file loading in `geoengine/GeoEngine.java`.
 //!
 //! A region is 256 x 256 blocks of 8 x 8 cells (2048 x 2048 cells). Blocks are stored in the file
@@ -252,14 +251,8 @@ impl Region {
 
     /// `Region.setNearestNswe`: opens the directions `nswe` of the cell (nearest layer to
     /// `world_z` in a multilayer block).
-    ///
-    /// NOTE(java-quirk): `ComplexBlock` / `MultilayerBlock.setNearestNswe` only write when *none*
-    /// of the bits of `nswe` is open yet (`(current & nswe) == 0`); asking for two directions of
-    /// which one is open already changes nothing.
     pub fn set_nearest_nswe(&mut self, geo_x: i32, geo_y: i32, world_z: i32, nswe: u8) {
         // Flat block cells are enabled by default on all directions.
-        // NOTE(java-quirk): Java has the `convertFlatToComplex` call commented out here, so a flat
-        // block stays flat.
         if self.block(geo_x, geo_y).block_type() == BlockType::Flat {
             return;
         }
@@ -283,11 +276,6 @@ impl Region {
     }
 
     /// `Region.convertFlatToComplex`: 64 cells of the flat height, all directions open.
-    ///
-    /// NOTE(java-quirk): the height is shifted into the cell word without the `0xFFF0` mask and
-    /// without a range check (`(short) (height << 1) | NSWE_ALL`), so a height that is not a
-    /// multiple of 8 is rounded down to one (100 becomes 96, -7 becomes -8) and a height outside
-    /// -16384..16383 wraps (20000 becomes -12768).
     fn convert_flat_to_complex(&mut self, index: usize, height: i16) {
         let word = ((i32::from(height) << 1) as u16) | u16::from(NSWE_ALL);
         let complex_index = (self.complex.len() / BLOCK_CELLS) as u32;

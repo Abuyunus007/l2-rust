@@ -1,5 +1,4 @@
 //! Budenka, the caravan guide of Hellbound's native village.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/NPC/Budenka/Budenka.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

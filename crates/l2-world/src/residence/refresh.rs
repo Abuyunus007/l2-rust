@@ -1,19 +1,3 @@
-//! Reading residences again (D-50, D-51): the residences of a character's clan at
-//! `CharacterSelect`, and any residence on demand before a card acts on it.
-//
-// Sieghardt (the Java GS) runs the real sieges, auctions and rents while this server runs, so an
-// owner, a tax rate or a treasury in this world can be old. Two ways bring them up to date, both
-// without waiting in a tick (D-15):
-// - The session reads the residences of the character's clan at `CharacterSelect` (the clan's
-//   `hasCastle` and that castle's row, the fortresses and halls whose owner is the clan) into
-//   `PlayerProfile::residence_refresh`; `on_entered` applies it before the clan block of
-//   `EnterWorld` hands out the residential skills.
-// - A card that acts on a residence (a chamberlain page, the treasury, a registration) asks
-//   [`World::request_residence_reread`]; the persistence task reads the rows and answers with
-//   `WorldCommand::ResidenceReread`, and [`World::on_residence_reread`] applies them and goes on
-//   with what the card named in [`ResidenceReadThen`]. A failed read changes nothing and refuses
-//   the follow-up (D-50: never fall back to memory).
-//
 // Applying a read changes this world only (no row is written): owners move, the clans' castle,
 // fortress and hall ids follow, online members of a clan that gained or lost a castle or
 // fortress get or lose the residential skills (with a new `SkillList`) and every clan concerned
@@ -118,7 +102,6 @@ pub enum ResidenceReadThen {
     AuctionCancelBid { player: ObjectId, auction_id: i32 },
     /// The owner of the hall cancels its auction (M7-CH-01).
     AuctionCancel { player: ObjectId, auction_id: i32 },
-    /// The auctioneer's `list` bypass waits for the fresh auction rows (M7-FU-03, D-50).
     AuctionList {
         npc: ObjectId,
         player: ObjectId,
@@ -212,8 +195,6 @@ impl World {
 
     // ------------------------------------------------------------------ on demand
 
-    /// Asks the persistence task to read a residence again; the answer comes back as
-    /// `WorldCommand::ResidenceReread` and goes on with `then` (D-50, D-15).
     pub fn request_residence_reread(&mut self, residence: ResidenceRef, then: ResidenceReadThen) {
         let kind = match residence {
             // The registrations of a flag war or Rainbow Springs are in their own tables.
@@ -323,7 +304,6 @@ impl World {
         self.clear_residence_functions(ResidenceRef::Castle(id));
         if owner != 0 {
             self.load_residence_functions(ResidenceRef::Castle(id), &record.functions);
-            // M7-NPC-01 (D-50): the proofs of alliance the vault keeper hands out.
             if let Some(count) = record.owner_blood_alliance_count
                 && let Some(clan) = self.clan_mut(owner)
             {

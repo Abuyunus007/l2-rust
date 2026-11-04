@@ -1,8 +1,6 @@
 //! Quest 226: Test of the Healer (Priest Bandellos in Talking Island: the Cleric, Oracle and
 //! Knight second class change, through Perrin, Father Gupu, Windy, Saint Kristina and the Lero
 //! Lizardmen).
-// Java: dist/game/data/scripts/quests/Q00226_TestOfTheHealer/Q00226_TestOfTheHealer.java
-//
 // Pattern: the test chain of the "Test of ..." quests (see Q00222) with a long memo state, monsters
 // that spawn helpers at the NPC (`addSpawn(npc, id, npc, ..)`), a random orphan girl and a
 // trader's price of 100000 adena (`takeItems(ADENA, 100000)`).

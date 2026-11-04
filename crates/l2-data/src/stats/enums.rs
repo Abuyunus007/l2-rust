@@ -1,7 +1,6 @@
 //! Name-only enums the condition parser needs: the values are validated like Java's
 //! `Enum.valueOf` (exact, case sensitive) and kept as typed values for the stat engine.
 //!
-//! Java: `mechanics/skill/AbnormalType.java`, `data/enums/CategoryType.java`,
 //! `entity/actor/enums/creature/InstanceType.java`, `entity/actor/enums/player/PlayerState.java`.
 //! Variant names are Rust style; `name()` is the Java constant. Declaration order is Java's.
 //! The Java `Race` is [`crate::npc::NpcRace`].

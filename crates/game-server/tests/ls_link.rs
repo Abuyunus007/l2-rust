@@ -259,7 +259,6 @@ impl Rig {
         let config_dir = tempfile::tempdir().unwrap();
         let (link, task) = spawn_link(params(server.address(), config_dir.path(), None), characters);
         let (mut conn, auth) = server.accept_and_register(3).await;
-        // What the Java game server sends right after `AuthResponse`.
         conn.expect_status().await;
         until(|| link.status().registered).await;
         Self {
@@ -310,7 +309,6 @@ async fn a_new_game_server_registers_with_a_generated_secret_and_saves_hexid_txt
         server_name: "Kain".to_owned(),
     })
     .await;
-    // Java: no brackets, the configured type, status auto, age (as attribute 5, see the module).
     assert_eq!(
         conn.expect_status().await,
         vec![
@@ -566,7 +564,6 @@ async fn request_characters_is_answered_from_the_character_source() {
             account: "hero".to_owned(),
         })
         .await;
-    // Java: every row counts, only those with a delete time are listed.
     assert_eq!(
         rig.conn.next().await,
         GsPacket::ReplyCharacters(ReplyCharacters {

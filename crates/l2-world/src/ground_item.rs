@@ -1,13 +1,5 @@
 //! Items on the ground: `Item.dropMe` / `pickupMe` / `decayMe`, the drop protection and loot owner
 //! timers, `ItemsAutoDestroyTaskManager` and `ItemsOnGroundManager` (M4-DROP-01).
-// Java: entity/item/instance/Item.java (dropMe, pickupMe, sendInfo, decayMe, setOwnerId,
-//       setProtected, getDropTime)
-// Java: entity/item/holders/DropProtection.java
-// Java: managers/ItemManager.java (createItem's loot privilege, ResetOwner)
-// Java: taskmanagers/ItemsAutoDestroyTaskManager.java
-// Java: managers/ItemsOnGroundManager.java
-// Java: entity/actor/Npc.java (dropItem)
-//
 // # Model
 // A ground item is a world object of kind [`ObjectKind::Item`](crate::ObjectKind): its row in
 // [`GroundWorld::items`] holds what Java keeps in the `Item` while it lies there (the item row as
@@ -260,8 +252,6 @@ impl World {
         }
     }
 
-    /// Takes an object id from the id factory (D-39: the Rust range). `None` without a factory or
-    /// when the range is used up.
     pub(crate) fn allocate_item_id(&self) -> Option<ObjectId> {
         let Some(ids) = self.npc_world.ids.as_ref() else {
             tracing::debug!("No id factory installed: a new item cannot be created.");
@@ -640,7 +630,6 @@ impl World {
         let mut count = 0;
         for row in rows {
             let Some(template) = templates.as_deref().and_then(|t| t.get(row.item_id)) else {
-                // Java: `new Item(...)` throws and the rest of the table is lost.
                 warn!(
                     "ItemsOnGroundManager: item {} of row {} is unknown; row skipped.",
                     row.item_id, row.object_id.0
@@ -671,8 +660,6 @@ impl World {
             }
             count += 1;
             // Add to ItemsAutoDestroy only items not protected.
-            // NOTE(java-quirk): `ItemsAutoDestroyTaskManager.addItem` sets the drop time to now,
-            // so the clock of a saved item starts again at every server start.
             if !settings.is_protected_item(template.id)
                 && row.drop_time > -1
                 && ((settings.autodestroy_item_after > 0 && !template.ex_immediate_effect)

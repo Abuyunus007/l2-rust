@@ -1,8 +1,6 @@
 //! The transformation admin commands: `//transform <id>`, `//untransform`, `//transform_menu`, and
 //! the purple maned horse and jet bike of `//ride_horse` and `//ride_bike`, the mounts of
 //! `//ride_wyvern`, `//ride_strider` and `//ride_wolf`, with `//unride`.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminTransform.java
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminRide.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;
@@ -201,9 +199,6 @@ fn admin_unride(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
     if world.transformation_id(player) == PURPLE_MANED_HORSE_TRANSFORMATION_ID {
         world.untransform(player);
     }
-    // Java: a second `if`, then `else dismount()`.
-    // NOTE(java-quirk): after the horse left, the second `if` is false and `dismount()` runs for
-    // a player who is not mounted (it still sends `Ride` and the user info).
     if world.transformation_id(player) == JET_BIKE_TRANSFORMATION_ID {
         world.untransform(player);
     } else {

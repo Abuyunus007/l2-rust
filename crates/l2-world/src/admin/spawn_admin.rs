@@ -2,8 +2,6 @@
 //! switch (`//spawnday`, `//spawnnight`), `//circlespawn`, `//topspawncount`, the NPC index pages
 //! (`//show_npcs`, `//npc_index`, `//spawn_index`), `//unspawnall`, and the debug print
 //! (`//spawn_debug_menu`, `//spawn_debug_print`, `//spawn_debug_print_menu`).
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminSpawn.java
-//
 // `//respawnall` and `//spawn_reload` delete every NPC and read the spawn files again: the game
 // server task reads them (`ControlRequest::ReloadSpawns`, D-15) and the world installs the new
 // spawn list when `WorldCommand::SpawnsReloaded` comes back, then spawns it like at the start.
@@ -355,10 +353,6 @@ fn admin_respawnall(world: &mut World, _gm: ObjectId, _command: &str) -> Outcome
 
 /// Java `admin_spawn_misc` and `admin_spawnmisc` (exactly these words): every NPC template gets one
 /// immobile NPC without core AI in the GM misc room, 200 units apart, and the GM goes there.
-// NOTE(java-quirk): the room is spawned at the same place for every call; a second call adds a
-// second set of NPCs. Templates whose display id is another id, grand bosses and fake players are
-// skipped. A minion a monster brought along is `decayMe`d in Java (hidden, still existing); here
-// it is deleted.
 fn admin_spawn_misc(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     if command != "admin_spawn_misc" && command != "admin_spawnmisc" {
         return Ok(());

@@ -1,6 +1,4 @@
 //! Quest 364: Jovial Accordion (Barbado in the Town of Gludin).
-// Java: dist/game/data/scripts/quests/Q00364_JovialAccordion/Q00364_JovialAccordion.java
-//
 // Pattern: a repeatable delivery quest with random chests. The memo state is the stage:
 // 1 = Swan to visit, 2 = chest keys given, 3/4 = one/two stolen goods delivered, 5 = done.
 
@@ -169,8 +167,6 @@ impl Script for Q00364JovialAccordion {
                     2 | 3 => {
                         if ctx.has_at_least_one_quest_item(player, &all_items) {
                             htmltext = "30957-03.html".to_owned();
-                        // NOTE(java-quirk): Java's `hasQuestItems(player, a, b, c, d)` is "has all
-                        // four", so this branch is true unless the player holds all four items.
                         } else if !ctx.has_all_quest_items(player, &all_items) {
                             if qs.is_memo_state(ctx, 2) {
                                 ctx.play_sound(player, QuestSound::ItemsoundQuestGiveup);

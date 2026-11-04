@@ -1,9 +1,5 @@
 //! The damage that does not come from an attack formula: `DamOverTime`, `DamOverTimePercent`,
 //! `ManaDamOverTime` and `CpDamPercent`.
-// Java: dist/game/data/scripts/handlers/skill/effects/DamOverTime.java
-// Java: dist/game/data/scripts/handlers/skill/effects/DamOverTimePercent.java
-// Java: dist/game/data/scripts/handlers/skill/effects/ManaDamOverTime.java
-// Java: dist/game/data/scripts/handlers/skill/effects/CpDamPercent.java
 
 use l2_data::skill::EffectTemplate;
 use l2_protocol_game::SystemMessageId;

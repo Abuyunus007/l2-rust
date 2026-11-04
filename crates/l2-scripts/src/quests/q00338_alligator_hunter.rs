@@ -1,6 +1,4 @@
 //! Quest 338: Alligator Hunter (Enverun in Heine, alligators on Alligator Island).
-// Java: dist/game/data/scripts/quests/Q00338_AlligatorHunter/Q00338_AlligatorHunter.java
-//
 // Pattern: a kill-drop quest with a second pelt chance; the trader pays per pelt and the quest
 // stays open (repeatable) until the player quits.
 

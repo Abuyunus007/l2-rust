@@ -1,5 +1,4 @@
 //! Monsters that see players in silent move.
-// Java: dist/game/data/scripts/ai/others/SeeThroughSilentMove.java
 
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
 

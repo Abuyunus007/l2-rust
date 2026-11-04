@@ -1,6 +1,4 @@
 //! Quest 358: Illegitimate Child of the Goddess (Grand Master Oltlin, Falibati and Trives).
-// Java: dist/game/data/scripts/quests/Q00358_IllegitimateChildOfTheGoddess/Q00358_IllegitimateChildOfTheGoddess.java
-//
 // Pattern: a kill-count quest with a drop chance per monster up to a limit, and a random reward
 // (`docs/design/scripts.md`, "Quest patterns"): `on_kill` gives the snake scales with
 // `give_item_randomly` and moves the random cond-1 party member to cond 2 at the limit.
@@ -85,8 +83,6 @@ impl Script for Q00358IllegitimateChildOfTheGoddess {
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, _is_summon: bool) {
         let qs = ctx.random_party_member_state(killer, 1, 3, Some(npc));
-        // NOTE(java-quirk): the scale goes to the killer, the cond 2 to the random party member
-        // at cond 1 (`giveItemRandomly(player, ..)` next to `qs.setCond(2, true)`).
         let chance = MOBS.iter().find(|(id, _)| *id == npc.id).map_or(0.0, |(_, c)| *c);
         if let Some(qs) = qs
             && ctx.give_item_randomly(

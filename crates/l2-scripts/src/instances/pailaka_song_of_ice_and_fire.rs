@@ -1,5 +1,4 @@
 //! Pailaka Song of Ice and Fire (the Forgotten Temple), instance 43.
-// Java: dist/game/data/scripts/instances/PailakaSongOfIceAndFire/PailakaSongOfIceAndFire.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

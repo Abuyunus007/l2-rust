@@ -1,5 +1,4 @@
 //! Quest 906: The Call of Valakas (Klein gives the Valakas scroll after the Lavasaurus Alpha kill a day).
-// Java: dist/game/data/scripts/quests/Q00906_TheCallOfValakas/Q00906_TheCallOfValakas.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, QuestSound, QuestType, STARTED};

@@ -1084,7 +1084,6 @@ fn chameleon_rest_is_relax_with_silent_move() {
     assert!(s.world.is_sitting(ME));
     assert!(s.world.is_affected(ME, effect_flag::RELAXING));
     assert!(s.world.is_affected(ME, effect_flag::SILENT_MOVE));
-    // NOTE(java-quirk): no HP check, so it stays while sitting.
     s.run(3_000);
     assert!(s.world.is_affected_by_skill(ME, 9140));
     // Standing up stops the relaxing effects.

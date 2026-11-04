@@ -1,21 +1,14 @@
 //! The transmog tables: `character_transmogs` (the appearance collection of a character or of
 //! an account) and the `transmogId` rows of `item_variables` (`Transmog.ini`, M9-C07).
-// Java: dist/game/data/scripts/custom/Transmog/Transmog.java (LOAD_SQL, SAVE_SQL)
-// Java: mechanics/variables/ItemVariables.java (UPSERT_QUERY, DELETE_QUERY)
 
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: Transmog.LOAD_SQL
 const SELECT_COLLECTION: &str = "SELECT itemId FROM character_transmogs WHERE owner=? ORDER BY itemId ASC;";
-// Java: Transmog.SAVE_SQL
 const REPLACE_COLLECTION: &str = "REPLACE INTO character_transmogs (owner,itemId) VALUE (?,?)";
-// Java: ItemVariables.UPSERT_QUERY
 const UPSERT_VARIABLE: &str =
     "INSERT INTO item_variables (id, var, val) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE val = VALUES(val)";
-// Java: ItemVariables.SELECT_QUERY, for the one variable
 const SELECT_ITEM_TRANSMOG: &str = "SELECT val FROM item_variables WHERE id = ? AND var = 'transmogId'";
-// Java: ItemVariables.DELETE_QUERY
 const DELETE_VARIABLE: &str = "DELETE FROM item_variables WHERE id = ? AND var = ?";
 
 /// `ItemVariables.TRANSMOG_ID`.
@@ -59,7 +52,6 @@ impl TransmogRepository {
     }
 
     /// The `transmogId` of each of the items that has one, as `(object id, transmog id)`.
-    // Java: `new ItemVariables(objectId).getInt(TRANSMOG_ID, 0)`, for the items of one inventory.
     pub async fn load_item_transmogs(&self, object_ids: &[i32]) -> Result<Vec<(i32, i32)>> {
         let mut out = Vec::new();
         for object_id in object_ids {

@@ -701,8 +701,6 @@ fn detail_checks_the_levels_like_java() {
     });
     assert!(low.sent().is_empty());
 
-    // NOTE(java-quirk): a normal enchant detail for a step the player is not at (the check
-    // `playerSkillLevel != reqSkillLevel` is for the route change only) is answered.
     s.input(EnchantInput::SkillInfoDetail {
         kind: 0,
         skill_id: SKILL,
@@ -759,7 +757,6 @@ fn a_successful_enchant_takes_the_costs_and_writes_the_row() {
     assert_eq!(s.count_of(NORMAL_BOOK), 0);
     // The other books stay.
     assert_eq!(s.count_of(SAFE_BOOK), 1);
-    // The `character_skills` row of the enchanted level (D-39).
     assert_eq!(s.persisted.skill_changes(), vec![(vec![(SKILL, 101)], vec![])]);
 
     assert_eq!(results(&sent, ME), vec![true]);

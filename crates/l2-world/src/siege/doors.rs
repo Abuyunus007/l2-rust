@@ -2,13 +2,6 @@
 //! respawn at the start and the end of a siege (weaker after an owner change), who may attack
 //! them, the damage they take (walls only from siege weapons), their destruction, the defenders a
 //! hit door calls, and the upgrades a castle loses with its owner during a siege.
-// Java: mechanics/siege/Castle.java (spawnDoor, setDoorUpgrade, loadDoorUpgrade,
-//       removeDoorUpgrade, removeUpgrade)
-// Java: entity/actor/instance/Door.java (isAutoAttackable, isEnemy, getCastle, getFort,
-//       reduceCurrentHp, reduceCurrentHpByDOT, doDie)
-// Java: entity/actor/stat/DoorStat.java (getMaxHp, setUpgradeHpRatio)
-// Java: ai/DoorAI.java (notifyActionAttacked)
-//
 // A door is a creature of the stat engine and of `status.rs` (see `door.rs`); the generic attack,
 // skill and death code reaches the door parts here: `reduce_current_hp` hands a door to
 // [`World::door_reduce_current_hp`], `do_die` to [`World::door_do_die`], `notify_action_attacked`
@@ -119,8 +112,6 @@ impl World {
         };
         let in_instance = self.objects.get(&door).is_some_and(|e| e.instance_id != 0);
         if is_wall && !in_instance {
-            // NOTE(java-quirk): Java calls `attacker.isServitor()` without a null check, so a hit
-            // without an attacker throws there; here it does nothing either.
             let Some(attacker) = attacker else {
                 return;
             };

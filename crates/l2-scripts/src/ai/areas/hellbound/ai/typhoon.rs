@@ -1,5 +1,4 @@
 //! Typhoon's Gust.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/Typhoon.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};

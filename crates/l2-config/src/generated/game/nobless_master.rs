@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/NoblessMasterConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/NoblessMaster.ini` (Java: `NoblessMasterConfig`).

@@ -1,5 +1,4 @@
 //! The trap effects: `SummonTrap`, `TrapDetect` and `TrapRemove`.
-// Java: dist/game/data/scripts/handlers/skill/effects/{SummonTrap,TrapDetect,TrapRemove}.java
 
 use l2_data::skill::EffectTemplate;
 use tracing::warn;

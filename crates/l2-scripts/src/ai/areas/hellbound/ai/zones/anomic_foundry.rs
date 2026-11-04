@@ -1,6 +1,5 @@
 //! The Anomic Foundry: Laborers call their guards, the Evil spirits spawn while the Laborers
 //! live and die.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/Zones/AnomicFoundry/AnomicFoundry.java
 
 use std::collections::HashMap;
 
@@ -138,8 +137,6 @@ impl Script for AnomicFoundry {
         _player: Option<ObjectId>,
     ) -> Option<String> {
         if event.eq_ignore_ascii_case("make_spawn_1") {
-            // NOTE(java-quirk): below level 10 the timer is not started again, so the spawns
-            // never come back until the script is loaded again.
             if engine::level(ctx) >= 10 {
                 let idx = ctx.get_random(3) as usize;
                 if ctx.state::<AnomicFoundryState>().spawned[idx] < SPAWNS[idx].5 {

@@ -1,9 +1,6 @@
 //! The landing rolls the instant status effects use (`Confuse`, `Bluff`, `SkillTurning`,
 //! `TargetCancel`): `Formulas.calcProbability`, with the attribute and trait bonuses it reads,
 //! and the trait inputs of a normal hit.
-// Java: mechanics/stats/Formulas.java (calcProbability, calcAttributeBonus, calcGeneralTraitBonus,
-//       calcWeaponTraitBonus, calcAttackTraitBonus)
-//
 // NOTE: M5-FORM-02 ports the skill formulas as pure functions over plain inputs. These three
 // world-side functions only fill the inputs of the status effects from the stat engine and the
 // trait tables; when FORM-02 is merged they may call its functions instead of repeating the

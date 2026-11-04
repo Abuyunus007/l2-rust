@@ -1,7 +1,6 @@
 //! The by-topic layout of the config editor: topics on the left, the settings of the chosen topic
 //! (from several files) on the right (card G-07).
 //!
-//! Java: none (tooling). Which key belongs to which topic is `l2_config::topics`; this file only
 //! indexes the loaded files by it ([`TopicIndex`], no egui, tested) and draws the result.
 
 use l2_config::topics::{Topic, topic_of};

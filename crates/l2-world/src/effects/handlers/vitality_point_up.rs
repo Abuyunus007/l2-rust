@@ -1,6 +1,5 @@
 //! The `VitalityPointUp` effect: the target's vitality points go up by `value` (no rates), and its
 //! user info is sent again.
-// Java: dist/game/data/scripts/handlers/skill/effects/VitalityPointUp.java
 
 use l2_data::skill::EffectTemplate;
 

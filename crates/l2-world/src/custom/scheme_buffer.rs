@@ -1,21 +1,7 @@
 //! The scheme buffer NPC (`SchemeBuffer.ini`): saved buff schemes, manual casting and auto-buffs.
-// Java: gameserver/entity/actor/instance/SchemeBuffer.java (the NPC type `SchemeBuffer`)
-// Java: gameserver/data/SchemeBufferTable.java (the schemes of the players, `buffer_schemes`)
-// Java: gameserver/config/custom/SchemeBufferConfig.java
-//
 // There is no switch: the feature exists when an NPC of type `SchemeBuffer` is in the world (the
 // shipped one, id 50008, is in `stats/npcs/custom/` and has no spawn unless the owner adds one),
 // so nothing changes for a server that has none.
-//
-// # Where things live
-// - The skill list (`data/SchemeBufferSkills.xml`) is `l2_data::SchemeBufferSkills`, handed in
-//   with [`World::set_scheme_buffer`].
-// - The schemes of the players are [`SchemeTable`] (Java `_schemesTable`), loaded from
-//   `buffer_schemes` at start-up ([`World::load_buffer_schemes`]) and kept in memory.
-// - A change of a player's schemes sends the player's rows to the persistence task
-//   (`PersistCommand::BufferSchemes`, D-15). NOTE: Java rewrites the whole table (`TRUNCATE`) at
-//   shutdown only; that is a global write which would erase the rows the other game server keeps
-//   (D-39), so this server replaces the rows of the one player whose scheme changed.
 
 use std::collections::BTreeMap;
 use std::sync::Arc;

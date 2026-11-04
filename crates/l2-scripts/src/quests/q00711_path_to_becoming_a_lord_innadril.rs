@@ -1,7 +1,5 @@
 //! Quest 711: Path to Becoming a Lord - Innadril (Chamberlain Neurath and Iason Heine, the
 //! Innadril castle lord).
-// Java: dist/game/data/scripts/quests/Q00711_PathToBecomingALordInnadril/Q00711_PathToBecomingALordInnadril.java
-//
 // Pattern: a lord quest with a confidant (`isLordAvailable`: the lord is online, is not the
 // talker, the talker is in the lord's clan and the lord's cond is the expected one). The
 // confidant agrees with Neurath (lord cond 3) and Iason Heine (lord cond 4); the lord then kills
@@ -103,8 +101,6 @@ impl Script for Q00711PathToBecomingALordInnadril {
         player: Option<ObjectId>,
     ) -> Option<String> {
         let player = player?;
-        // NOTE(java-quirk): this onEvent has no "Castle has no lord." answer; Java reads
-        // `castle.getOwner().getLeader()` at once and throws without an owner: no page.
         innadril_lord_clan(ctx)?;
         let lord = castle_owner(ctx);
         let qs = ctx.get_quest_state(player, false);

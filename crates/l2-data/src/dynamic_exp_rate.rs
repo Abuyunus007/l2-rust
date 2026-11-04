@@ -1,7 +1,6 @@
 //! `config/DynamicExpRates.xml`: an exp and an sp rate per player level, used instead of `RateXp`
 //! and `RateSp` as soon as one level has a rate other than 1.
 //!
-//! Java: `gameserver/data/xml/DynamicExpRateData.java`. Read by `Npc.getExpReward(level)` and
 //! `Npc.getSpReward(level)` (`l2_world::rewards::exp`), which `Attackable.calculateExpAndSp` and
 //! `Attackable.getVitalityPoints` call with the level of the player.
 //!
@@ -59,7 +58,6 @@ impl DynamicExpRates {
     ///
     /// `maximum_level` is `PlayerConfig.PLAYER_MAXIMUM_LEVEL` after its `++`
     /// (`MaximumPlayerLevel + 1`); the Java arrays have one more slot than that.
-    // Java: DynamicExpRateData.load
     pub fn load(config_dir: &Path, maximum_level: i32) -> Self {
         let path = config_dir.join(FILE);
         let xml = match std::fs::read(&path) {
@@ -91,7 +89,6 @@ impl DynamicExpRates {
     ///
     /// An `Err` is where Java throws (a missing or bad attribute, a level outside the arrays) and
     /// `parseFile` logs it: `_enabled` is then never set, so the rates stay disabled.
-    // Java: DynamicExpRateData.parseDocument
     pub fn from_xml(xml: &str, maximum_level: i32) -> Result<Self, String> {
         // `new float[PLAYER_MAXIMUM_LEVEL + 1]` filled with 1.
         let size = usize::try_from(maximum_level.saturating_add(1)).unwrap_or(0);
@@ -156,7 +153,6 @@ fn required(element: &BytesStart<'_>, key: &str) -> Result<String, String> {
 }
 
 /// Java `Float.valueOf(text)` for the plain decimal forms (whitespace around is trimmed).
-// NOTE(java-quirk): Java also accepts a trailing `f`/`d` and hex floats; no shipped file uses them.
 fn parse_float(text: &str) -> Result<f32, String> {
     text.trim()
         .parse::<f32>()

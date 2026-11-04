@@ -1,19 +1,5 @@
 //! Transmog (`Transmog.ini`): an equipped item shows the look of another item the player owned.
 //! The appearance collection of a player, the transmog id of an item and what the packets show.
-// Java: dist/game/data/scripts/custom/Transmog/Transmog.java (the collection)
-// Java: entity/item/instance/Item.java (`getTransmogId`, `setTransmogId`, `removeTransmog`)
-// Java: entity/itemcontainer/Inventory.java (`getPaperdollItemDisplayId`)
-//
-// # How it fits in
-// - The collection (`PLAYER_TRANSMOGS`) and the transmog ids of the items (`item_variables`,
-//   `transmogId`) live here, by object id. They are read when the player enters the world: the
-//   world asks the persistence task (`PersistCommand::TransmogLoadRequest`, D-15) and gets
-//   `WorldCommand::TransmogLoaded` back, then shows the look to everybody.
-// - The writes are per-player rows (D-39): the collection is stored when the player leaves
-//   (`character_transmogs`, owner = account name with `TransmogShareAccount`, else the object id),
-//   a transmog id as soon as it changes (`item_variables`).
-// - The script (`l2-scripts/src/custom/transmog.rs`) is the NPC and the menu; the look in
-//   `UserInfo` / `CharInfo` is `World::transmog_display_id`.
 
 use std::collections::BTreeMap;
 

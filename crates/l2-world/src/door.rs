@@ -2,13 +2,6 @@
 //! with Java's packets, open / close state owned by the world, and the `DynamicObstacles` the
 //! geoengine asks (in the world thread over the world's tables, for path workers as an immutable
 //! [`DoorSnapshot`]).
-// Java: org/l2jmobius/gameserver/entity/actor/instance/Door.java (state, sendInfo,
-//       broadcastStatusUpdate, openMe, closeMe, manageGroupOpen, notifyChildEvent)
-// Java: org/l2jmobius/gameserver/entity/actor/instance/Fence.java, StaticObject.java
-// Java: org/l2jmobius/gameserver/data/xml/DoorData.java (makeDoor, checkIfDoorsBetween),
-//       FenceData.java (spawnFence, checkIfFenceBetween), StaticObjectData.java (addObject)
-// Java: org/l2jmobius/gameserver/entity/WorldRegion.java (_doors, _fences)
-//
 // Object ids: Java takes a fresh id from `IdManager` for every door, fence (plus one per extra
 // height piece) and static object, so they come from the Rust `IdFactory` here. The ids the
 // client knows them by (`Door.getId()`, `StaticObject.getId()`) are the template ids.
@@ -91,7 +84,6 @@ pub struct Door {
 }
 
 impl Door {
-    // Java: Door constructor + DoorData.makeDoor (`setCurrentHp(getMaxHp())`)
     pub fn new(object_id: ObjectId, template: Arc<DoorTemplate>) -> Self {
         // `getMaxHp()` with the standard door calculators: nothing changes MAX_HP, so it is
         // `(int) baseHpMax`.
@@ -174,8 +166,6 @@ impl Door {
 
     /// The filter of `DoorData.checkIfDoorsBetween`: closed, alive, collision on and a first
     /// node that is not at x = 0.
-    // NOTE(java-quirk): `getX(0) == 0` skips a door whose first node has x = 0; Java uses it as
-    // "no geometry". No shipped door has such a node.
     fn blocks(&self) -> bool {
         !(self.dead || self.open || !self.template.check_collision || self.template.node_x[0] == 0)
     }
@@ -403,9 +393,6 @@ fn fence_blocks(fence: &FenceShape, from: Location, to: Location) -> bool {
         && z < fence.z.wrapping_add(FENCE_MAX_Z_DIFF)
 }
 
-// Java: FenceData.crossLinePart
-// NOTE(java-quirk): the crossing counts when its x is inside the fence's x range *or* its y is
-// inside the y range, not both; together with the early-outs above this is what Java does.
 #[allow(clippy::too_many_arguments)]
 fn cross_line_part(
     x1: f64,
@@ -427,7 +414,6 @@ fn cross_line_part(
     (x_cross <= x_max && x_cross >= x_min) || (y_cross <= y_max && y_cross >= y_min)
 }
 
-// Java: FenceData.intersection (the intersection of two infinite lines)
 #[allow(clippy::too_many_arguments)]
 fn intersection(
     x1: f64,
@@ -472,7 +458,6 @@ impl WorldObstacles<'_> {
 }
 
 impl DynamicObstacles for WorldObstacles<'_> {
-    // Java: DoorData.checkIfDoorsBetween
     fn doors_between(&self, from: Location, to: Location, instance_id: i32, double_face_check: bool) -> bool {
         let blocking = |id: ObjectId| {
             let Some(door) = self.doors.get(&id) else {
@@ -496,7 +481,6 @@ impl DynamicObstacles for WorldObstacles<'_> {
         self.regions.doors(region).any(blocking)
     }
 
-    // Java: FenceData.checkIfFenceBetween
     fn fence_between(&self, from: Location, to: Location, instance_id: i32) -> bool {
         let Some(region) = region_of(from.x, from.y, from.z) else {
             return false;
@@ -601,7 +585,6 @@ impl World {
     /// Java `DoorData.makeDoor` for every door of `Doors.xml`, in file order: a `Door` with a
     /// fresh object id, its group registered, full hp, spawned at its position. Returns how many
     /// were spawned (Java prints the number of distinct door ids at load time).
-    // Java: Door.startTimerOpen for `OPEN_BY_TIME` doors is not armed (see the module notes).
     pub fn spawn_doors(&mut self, templates: &DoorTemplates, ids: &IdFactory) -> Result<usize, IdError> {
         let mut spawned = 0;
         for template in templates.iter() {
@@ -818,7 +801,6 @@ impl World {
         if !door.open {
             self.set_door_open(id, true);
             self.broadcast_door_status(id);
-            // Java: startAutoCloseTask() (see the module notes).
         }
     }
 
@@ -919,7 +901,6 @@ impl World {
         self.broadcast_packet(id, &packet);
     }
 
-    // Java: Door.setOpen
     fn set_door_open(&mut self, id: ObjectId, open: bool) {
         let Some(door) = self.doors.get_mut(&id) else {
             return;
@@ -935,7 +916,6 @@ impl World {
         }
     }
 
-    // Java: Door.notifyChildEvent
     fn notify_child_event(&mut self, id: ObjectId, open: bool) {
         let Some(door) = self.doors.get(&id) else {
             return;
@@ -952,7 +932,6 @@ impl World {
         }
     }
 
-    // Java: Door.manageGroupOpen
     fn manage_group_open(&mut self, id: ObjectId, open: bool, group: &str) {
         let members: Vec<i32> = self
             .door_index
@@ -969,7 +948,6 @@ impl World {
                 self.broadcast_door_status(door);
             }
         }
-        // Java: the first door of the group starts the auto close task when opening.
     }
 
     /// Java `Door.getSiblingDoor`: a door of the same world. Doors in an instance look in the
@@ -1039,8 +1017,6 @@ impl World {
             length: fence.length,
         };
         self.send(viewer, &piece(fence.object_id));
-        // NOTE(java-quirk): every height piece is sent at the fence's own z, so the pieces do not
-        // stack; the client decides what to draw from the ids.
         for height_id in &fence.height_fences {
             self.send(viewer, &piece(*height_id));
         }

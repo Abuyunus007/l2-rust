@@ -1,5 +1,4 @@
 //! `EnemyCharge`: the caster rushes to its target.
-// Java: dist/game/data/scripts/handlers/skill/effects/EnemyCharge.java
 
 use l2_data::skill::{EffectTemplate, FlyType};
 use l2_geo::Location;

@@ -1,7 +1,5 @@
 //! Quest 232: Test of the Lord (the Orc Shaman's second class change: Flame Lord Kakai, the
 //! tribe chiefs, Seer Somak and Manakia, Trader Jakal, Blacksmith Sumari and Ancestor Martankus).
-// Java: dist/game/data/scripts/quests/Q00232_TestOfTheLord/Q00232_TestOfTheLord.java
-//
 // Pattern: five ordeals run in parallel on quest items (no memo state), then Martankus' charm;
 // the last NPC summons the First Orc with `addSpawn(npc, ...)` (the summoner's list).
 

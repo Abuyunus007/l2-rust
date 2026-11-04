@@ -1,13 +1,6 @@
 //! The skill side of `AttackableAI`: the AI skill lists of an NPC template (`AISkillScope`), the
 //! chance rules, and every place where the think loop casts (buffs while active, suicide, heal,
 //! resurrection, short and long range skills, the immobilised branch, `thinkCast`).
-// Java: ai/AttackableAI.java (thinkActive/thinkAttack skill parts, cast, tryCast,
-//       checkSkillCastConditions, effectTargetReconsider, skillTargetReconsider, thinkCast,
-//       allowsParameterizedCast)
-// Java: ai/CreatureAI.java (canAura, canAOE, canParty, isParty)
-// Java: data/xml/NpcData.java (the skill list -> AISkillScope lists)
-// Java: entity/actor/Npc.java (hasSkillChance, isInMyClan), util/LocationUtil.java (checkIfInRange)
-//
 // # How the AI casts
 // An NPC casts through the casting entry points of `skills/cast.rs`, the way Java's AI does:
 // `npc.setTarget(target)` is [`World::set_npc_target`] and `npc.doCast(skill)` is
@@ -133,8 +126,6 @@ fn short_or_long(skill: &SkillTemplate) -> AiSkillScope {
 }
 
 /// `StatSet.getInt(key, default)` of an NPC parameter (`Integer.parseInt`, no trimming).
-// NOTE(java-quirk): a value that is no integer makes Java throw out of the think; here it reads as
-// the default.
 fn param_int(params: &BTreeMap<String, NpcParam>, key: &str, default: i32) -> i32 {
     match params.get(key) {
         Some(NpcParam::Text(text)) => text.parse().unwrap_or(default),
@@ -485,7 +476,6 @@ impl World {
                 return cancast;
             }
             if is_area(target_type) {
-                // NOTE(java-quirk): `cancast` starts `true` and the loop only ever sets it `true`.
                 return true;
             }
             return false;
@@ -563,8 +553,6 @@ impl World {
 
                 // If there is nearby Target with aggro, start going on random target that is
                 // attackable.
-                // NOTE(java-quirk): `range` is whatever the loop above computed last, 0 when
-                // nobody attacked the NPC.
                 for obj in self.ai_visible_creatures_in_range(actor, range) {
                     if self.is_dead(obj) || !self.can_see_target(actor, obj) {
                         continue;
@@ -1284,8 +1272,6 @@ impl World {
                 continue;
             }
             if skill.target_type == TargetType::One {
-                // NOTE(java-quirk): this branch looks for a clan member that is *dead* (`obj
-                // .isDead()`), the `cast(skill)` heal looks for a living one.
                 let range = skill.cast_range + collision;
                 let mut found = None;
                 for obj in self.ai_visible_attackables_in_range(id, range) {

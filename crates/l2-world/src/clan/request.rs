@@ -1,14 +1,8 @@
 //! Java `RequestPartner`: the invitation between two players that waits for an answer (a clan
 //! invitation here; alliances and friends use it too).
-// Java: network/holders/RequestPartner.java
-//
 // Java keeps one `RequestPartner` per player with the partner and the request packet; the
 // invitation ends with the answer (`onRequestResponse`) or 15 seconds later. Here the state of
 // every player with a request lives in `ClanWorld::requests`, the partner by id.
-//
-// NOTE(java-quirk): `setOnRequestTimer` schedules `clear` 15 seconds later and never cancels it,
-// so the timer of an earlier request also clears a newer one. The timers here are not cancelled
-// either.
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};

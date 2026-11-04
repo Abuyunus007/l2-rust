@@ -1,7 +1,4 @@
 //! The `buffer_schemes` table: the saved buff schemes of the scheme buffer NPC.
-// Java: gameserver/data/SchemeBufferTable.java (LOAD_SCHEMES, INSERT_SCHEME; DELETE_SCHEMES is the
-// Java: whole-table `TRUNCATE`, which this server never runs, see `replace_schemes_of`)
-//
 // Same layout as bbs_favorites.rs: the Java SQL, one method per statement.
 
 use sqlx::FromRow;
@@ -9,9 +6,7 @@ use sqlx::FromRow;
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: SchemeBufferTable.LOAD_SCHEMES
 const LOAD_SCHEMES: &str = "SELECT `object_id`, `scheme_name`, `skills` FROM `buffer_schemes`";
-// Java: SchemeBufferTable.INSERT_SCHEME
 const INSERT_SCHEME: &str = "INSERT INTO buffer_schemes (object_id, scheme_name, skills) VALUES (?,?,?)";
 // The per-player form of Java's `DELETE_SCHEMES` (`TRUNCATE TABLE buffer_schemes`).
 const DELETE_SCHEMES_OF: &str = "DELETE FROM buffer_schemes WHERE object_id=?";
@@ -47,9 +42,6 @@ impl BufferSchemeRepository {
     }
 
     /// Replaces the schemes of one character: its rows go, the given `(name, skills)` come.
-    // NOTE: Java saves the whole table (`TRUNCATE` then a batch of inserts) at shutdown. That would
-    // erase the rows the other game server wrote while both share the database (D-39), so this
-    // server writes the rows of the one character that changed a scheme.
     pub async fn replace_schemes_of(&self, object_id: i32, schemes: &[(String, String)]) -> Result<()> {
         let mut tx = self.pool.begin().await?;
         sqlx::query(DELETE_SCHEMES_OF)

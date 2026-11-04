@@ -2,7 +2,6 @@
 
 //! The M8-ADMIN-07 words: `//checkolympiad`, `//saveolymp`, `//endolympiad`, `//mammon_find` and
 //! `//mammon_respawn`.
-//! Java: dist/game/data/scripts/handlers/chat/commands/admin/{AdminAdmin,AdminMammon}.java
 
 use std::sync::{Arc, Mutex};
 

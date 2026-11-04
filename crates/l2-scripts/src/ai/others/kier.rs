@@ -1,5 +1,4 @@
 //! Kier, the Ice Merchant's helper: a first-talk NPC script reading two quests.
-// Java: dist/game/data/scripts/ai/others/Kier/Kier.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

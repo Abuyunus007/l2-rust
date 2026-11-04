@@ -1,22 +1,13 @@
 //! The `punishments` table: bans, chat bans, party bans and jail terms of the punishment
 //! manager.
-// Java: managers/PunishmentManager.java (load), mechanics/punishment/PunishmentTask.java
-// Java: (INSERT_QUERY, UPDATE_QUERY)
-//
-// Same layout as variables.rs: verbatim SQL, one method per statement. D-39: the Java game server
-// reads and writes the same rows, so the Rust one writes exactly what `PunishmentTask` writes: an
-// `INSERT` when a punishment starts and an `UPDATE` of `expiration` to the time it ended.
 
 use sqlx::FromRow;
 
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: PunishmentManager.load
 const SELECT_ALL: &str = "SELECT * FROM punishments";
-// Java: PunishmentTask.INSERT_QUERY
 const INSERT_PUNISHMENT: &str = "INSERT INTO punishments (`key`, `affect`, `type`, `expiration`, `reason`, `punishedBy`) VALUES (?, ?, ?, ?, ?, ?)";
-// Java: PunishmentTask.UPDATE_QUERY
 const UPDATE_EXPIRATION: &str = "UPDATE punishments SET expiration = ? WHERE id = ?";
 
 /// A row of `punishments`.
@@ -61,7 +52,6 @@ impl PunishmentRepository {
     }
 
     /// Every stored punishment, expired ones included (the manager counts them).
-    // Java: PunishmentManager.load
     pub async fn load_all(&self) -> Result<Vec<PunishmentRow>> {
         let rows = sqlx::query_as::<_, PunishmentRow>(SELECT_ALL)
             .fetch_all(&self.pool)
@@ -70,7 +60,6 @@ impl PunishmentRepository {
     }
 
     /// Stores a new punishment and returns the id the database gave it.
-    // Java: PunishmentTask.onStart (INSERT_QUERY with RETURN_GENERATED_KEYS)
     pub async fn insert(&self, punishment: &NewPunishment) -> Result<u64> {
         let result = sqlx::query(INSERT_PUNISHMENT)
             .bind(&punishment.key)
@@ -85,7 +74,6 @@ impl PunishmentRepository {
     }
 
     /// Marks a punishment as ended: its expiration becomes `ended_at`.
-    // Java: PunishmentTask.onEnd (UPDATE_QUERY)
     pub async fn update_expiration(&self, id: u32, ended_at: i64) -> Result<()> {
         sqlx::query(UPDATE_EXPIRATION)
             .bind(ended_at)

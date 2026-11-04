@@ -1,8 +1,6 @@
 //! Seer Ugoros, the Pa'agrio Temple's Tanta prophet: the gatekeeper Batracos takes one pass and
 //! sends a single player in, Ugoros eats Abyss Weed to heal, and the killer's "Handle With Care"
 //! quest gets the scale that matches how the fight went.
-// Java: dist/game/data/scripts/ai/bosses/SeerUgoros/SeerUgoros.java
-//
 // The `static` fields of the Java class are `UgorosState` (`ctx.state`); the NPCs and the attacker
 // in them are ids.
 //
@@ -151,8 +149,6 @@ impl Script for SeerUgoros {
             }
             "ugoros_attack" => {
                 if let Some(attacker) = ctx.state::<UgorosState>().attacker {
-                    // NOTE(java-quirk): Java throws on a null `_ugoros` here (the target is
-                    // changed on it first); the event does nothing then.
                     let ugoros = ctx
                         .state::<UgorosState>()
                         .ugoros
@@ -383,7 +379,6 @@ fn think(ctx: &mut ScriptCtx<'_>) {
             // Dummy, just wait.
         } else if ctx.get_random(10) < 6 {
             ctx.state::<UgorosState>().weed = None;
-            // NOTE(java-quirk): a null `_ugoros` makes Java throw here, ending the task run.
             let Some(ugoros) = ugoros else {
                 return;
             };

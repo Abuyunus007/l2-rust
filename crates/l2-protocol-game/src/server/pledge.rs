@@ -13,15 +13,7 @@ use crate::generated::opcodes::ServerOpcode;
 // Joining a clan
 // ---------------------------------------------------------------------------------------------
 
-// Java: gameserver/network/serverpackets/AskJoinPledge.java
 /// A player is invited into a clan (`ASK_JOIN_PLEDGE`).
-///
-/// NOTE(java-quirk): the layout depends on the values. The sub pledge name is written only when
-/// it is not null, as the sub pledge name when `pledge_type > 0` and as the clan name otherwise;
-/// the type is written only when it is not 0; the clan name always ends the packet. Decoding has
-/// no marker to go by, so it tries the shapes Java can produce and takes the one that uses every
-/// byte, encodes back to the same bytes and has a pledge type the game knows. A sub pledge name with `pledge_type <= 0` is not
-/// kept on the wire (the clan name replaces it), so it decodes as the clan name.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AskJoinPledge {
     pub requestor_object_id: i32,
@@ -131,7 +123,6 @@ server_packet!(
 // Clan info and crests
 // ---------------------------------------------------------------------------------------------
 
-// Java: gameserver/network/serverpackets/PledgeInfo.java
 server_packet!(
     /// The name of a clan and of its alliance, the answer to `RequestPledgeInfo`
     /// (`PLEDGE_INFO`).
@@ -154,7 +145,6 @@ fn write_crest_data(w: &mut PacketWriter, data: &[u8]) {
     w.i32(data.len() as i32).bytes(data);
 }
 
-// Java: gameserver/network/serverpackets/PledgeCrest.java
 /// A clan crest image (`PLEDGE_CREST`). `data` is empty when the crest does not exist.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PledgeCrest {
@@ -183,7 +173,6 @@ impl Decode for PledgeCrest {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExPledgeEmblem.java
 /// A large clan crest (`EX_PLEDGE_EMBLEM`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExPledgeEmblem {
@@ -198,7 +187,7 @@ impl ExPledgeEmblem {
 impl Encode for ExPledgeEmblem {
     fn encode(&self, w: &mut PacketWriter) {
         write_opcode(w, Self::OPCODE);
-        w.i32(0).i32(self.crest_id); // Java: the first int is a constant 0
+        w.i32(0).i32(self.crest_id);
         write_crest_data(w, &self.data);
     }
 }
@@ -213,7 +202,6 @@ impl Decode for ExPledgeEmblem {
     }
 }
 
-// Java: gameserver/network/serverpackets/AllyCrest.java
 /// An alliance crest image (`ALLIANCE_CREST`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AllyCrest {
@@ -304,15 +292,11 @@ fn write_members(w: &mut PacketWriter, members: &[PledgeMember]) {
     }
 }
 
-// Java: gameserver/network/serverpackets/PledgeShowMemberListAll.java
 /// The clan window: the clan's data and the members of one unit (`PLEDGE_SHOW_MEMBER_LIST_ALL`).
 ///
 /// Java sends the main clan in this packet and the sub pledges as separate
 /// `PledgeReceiveSubPledgeCreated` and `PledgeShowMemberListAdd` packets, then refreshes the
 /// player's user info; the caller does those.
-///
-/// NOTE(java-quirk): `writeImpl` always writes `0` for both `main_or_subpledge` and
-/// `pledge_type` (a FIXME in the source says retail sends the packet once per sub pledge).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PledgeShowMemberListAll {
     pub main_or_subpledge: i32,
@@ -360,7 +344,7 @@ impl Encode for PledgeShowMemberListAll {
             .string(&self.ally_name)
             .i32(self.ally_crest_id)
             .i32(i32::from(self.at_war))
-            .i32(0); // Java: "Territory castle ID"
+            .i32(0);
         write_members(w, &self.members);
     }
 }
@@ -414,7 +398,6 @@ pub struct PledgeMemberOnline {
     pub pledge_type: i32,
 }
 
-// Java: gameserver/network/serverpackets/PledgeShowMemberListUpdate.java
 /// One member changed (`PLEDGE_SHOW_MEMBER_LIST_UPDATE`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PledgeShowMemberListUpdate {
@@ -425,7 +408,6 @@ pub struct PledgeShowMemberListUpdate {
     pub race: i32,
     /// `None` writes `0, 0` ("when going offline send as 0").
     pub online: Option<PledgeMemberOnline>,
-    /// Java: only set for the academy.
     pub has_sponsor: bool,
 }
 
@@ -473,7 +455,6 @@ impl Decode for PledgeShowMemberListUpdate {
     }
 }
 
-// Java: gameserver/network/serverpackets/PledgeShowMemberListAdd.java
 /// A member joined, or a sub pledge member is listed (`PLEDGE_SHOW_MEMBER_LIST_ADD`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PledgeShowMemberListAdd {
@@ -518,7 +499,6 @@ impl Decode for PledgeShowMemberListAdd {
     }
 }
 
-// Java: gameserver/network/serverpackets/PledgeShowMemberListDelete.java
 server_packet!(
     /// A member left the clan (`PLEDGE_SHOW_MEMBER_LIST_DELETE`).
     PledgeShowMemberListDelete,
@@ -527,14 +507,12 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/PledgeShowMemberListDeleteAll.java
 server_unit_packet!(
     /// The player's clan is gone (`PLEDGE_SHOW_MEMBER_LIST_DELETE_ALL`).
     PledgeShowMemberListDeleteAll,
     PledgeShowMemberListDeleteAll
 );
 
-// Java: gameserver/network/serverpackets/PledgeReceiveMemberInfo.java
 server_packet!(
     /// The details of one member (`PLEDGE_RECEIVE_MEMBER_INFO`).
     PledgeReceiveMemberInfo,
@@ -550,7 +528,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/PledgeReceivePowerInfo.java
 server_packet!(
     /// The rank and privileges of one member (`PLEDGE_RECEIVE_POWER_INFO`).
     PledgeReceivePowerInfo,
@@ -561,7 +538,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/PledgeReceiveSubPledgeCreated.java
 /// A sub pledge exists (`PLEDGE_RECEIVE_SUB_PLEDGE_CREATED`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PledgeReceiveSubPledgeCreated {
@@ -594,7 +570,6 @@ impl Decode for PledgeReceiveSubPledgeCreated {
     }
 }
 
-// Java: gameserver/network/serverpackets/PledgeShowInfoUpdate.java
 /// The clan's numbers changed (`PLEDGE_SHOW_INFO_UPDATE`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PledgeShowInfoUpdate {
@@ -664,7 +639,6 @@ impl Decode for PledgeShowInfoUpdate {
     }
 }
 
-// Java: gameserver/network/serverpackets/PledgeStatusChanged.java
 /// The ids of the clan changed (`PLEDGE_STATUS_CHANGED`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct PledgeStatusChanged {
@@ -704,7 +678,6 @@ impl Decode for PledgeStatusChanged {
     }
 }
 
-// Java: gameserver/network/serverpackets/GMViewPledgeInfo.java
 /// What a GM sees of a clan (`GM_VIEW_PLEDGE_INFO`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GmViewPledgeInfo {
@@ -752,7 +725,7 @@ impl Encode for GmViewPledgeInfo {
             .string(&self.ally_name)
             .i32(self.ally_crest_id)
             .i32(i32::from(self.at_war))
-            .i32(0); // Java: "T3 Unknown"
+            .i32(0);
         write_members(w, &self.members);
     }
 }
@@ -810,7 +783,6 @@ pub struct RankPrivileges {
     pub privileges: i32,
 }
 
-// Java: gameserver/network/serverpackets/PledgePowerGradeList.java
 /// The privileges of every rank (`PLEDGE_POWER_GRADE_LIST`).
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct PledgePowerGradeList {
@@ -845,11 +817,7 @@ impl Decode for PledgePowerGradeList {
     }
 }
 
-// Java: gameserver/network/serverpackets/ManagePledgePower.java
 /// The privileges of one rank (`MANAGE_PLEDGE_POWER`).
-///
-/// NOTE(java-quirk): Java writes this packet only when the `action` it was built with is `1`; for
-/// any other action `writeImpl` writes nothing. Whoever sends it checks the action.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ManagePledgePower {
     pub privileges: i32,
@@ -888,7 +856,6 @@ pub struct PledgeSkillEntry {
     pub display_level: i32,
 }
 
-// Java: gameserver/network/serverpackets/PledgeSkillList.java
 /// The clan skills and the sub pledge skills (`PLEDGE_SKILL_LIST`).
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct PledgeSkillList {
@@ -936,7 +903,6 @@ impl Decode for PledgeSkillList {
     }
 }
 
-// Java: gameserver/network/serverpackets/PledgeSkillListAdd.java
 server_packet!(
     /// The clan learned a skill (`PLEDGE_SKILL_LIST_ADD`).
     PledgeSkillListAdd,
@@ -946,7 +912,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/ExSubPledgeSkillAdd.java
 server_packet!(
     /// A sub pledge learned a skill (`EX_SUB_PLEDGE_SKILL_ADD`).
     ExSubPledgeSkillAdd,
@@ -961,12 +926,7 @@ server_packet!(
 // Wars
 // ---------------------------------------------------------------------------------------------
 
-// Java: gameserver/network/serverpackets/PledgeReceiveWarList.java
 /// The wars of the clan (`PLEDGE_RECEIVE_WAR_LIST`).
-///
-/// NOTE(java-quirk): the count on the wire is the size of the clan's war list, but Java skips
-/// the clans it cannot find, so fewer rows than the count can follow. `list_size` is the written
-/// count and `clan_names` the rows; the decoder reads rows until the packet ends.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PledgeReceiveWarList {
     /// 0 declared wars, 1 under attack.
@@ -1007,7 +967,6 @@ impl Decode for PledgeReceiveWarList {
     }
 }
 
-// Java: gameserver/network/serverpackets/StartPledgeWar.java
 server_packet!(
     /// A clan declared war on yours (`START_PLEDGE_WAR`).
     StartPledgeWar,
@@ -1017,7 +976,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/StopPledgeWar.java
 server_packet!(
     /// A war ended (`STOP_PLEDGE_WAR`).
     StopPledgeWar,
@@ -1027,7 +985,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/SurrenderPledgeWar.java
 server_packet!(
     /// A clan surrendered (`SURRENDER_PLEDGE_WAR`).
     SurrenderPledgeWar,
@@ -1041,7 +998,6 @@ server_packet!(
 // Alliances
 // ---------------------------------------------------------------------------------------------
 
-// Java: gameserver/network/serverpackets/AskJoinAlly.java
 server_packet!(
     /// A clan leader is invited into an alliance (`ASK_JOIN_ALLIANCE`).
     AskJoinAlly,
@@ -1063,7 +1019,6 @@ pub struct AllianceClanInfo {
     pub online: i32,
 }
 
-// Java: gameserver/network/serverpackets/AllianceInfo.java
 /// The alliance window (`ALLIANCE_INFO`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AllianceInfo {

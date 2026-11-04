@@ -1,6 +1,4 @@
 //! Quest 411: Path of the Assassin (Triskel, Guard Leikan and Arkenia).
-// Java: dist/game/data/scripts/quests/Q00411_PathOfTheAssassin/Q00411_PathOfTheAssassin.java
-//
 // Pattern: a delivery chain through three NPCs with a kill step in the middle (moonstone beast
 // molars, then the quest monster Calpico's tears), as in `docs/design/scripts.md`, "Quest patterns".
 

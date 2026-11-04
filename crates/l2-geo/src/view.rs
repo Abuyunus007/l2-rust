@@ -1,7 +1,6 @@
 //! Cell layers and debug pictures of a region: what `l2-geotool render` draws and what the admin
 //! GUI geodata viewer shows. The rules live here once, so both tools colour the same way.
 //!
-//! Java: none (tooling). The layer count follows `tools/analysis/geocmp.py`: one layer per flat or
 //! complex cell, `n` per multilayer cell. Game logic does not use this module; it only reads
 //! [`Region`]s.
 //!

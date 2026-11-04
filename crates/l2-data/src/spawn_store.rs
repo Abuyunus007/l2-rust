@@ -1,7 +1,5 @@
 //! The spawn file the admin spawn commands write: one xml per map tile in `data/spawns/Others/`,
 //! with one `<npc>` line per spawn, in the format Java writes it.
-// Java: gameserver/data/xml/SpawnData.java (addNewSpawn)
-//
 // Lines end with `\n` (Java uses the platform's separator; the repo keeps LF). The tile numbers
 // come from `World.WORLD_X_MIN`/`WORLD_Y_MIN` and `TILE_X_MIN`/`TILE_Y_MIN`.
 

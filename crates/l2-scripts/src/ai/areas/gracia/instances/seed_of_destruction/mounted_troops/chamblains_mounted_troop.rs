@@ -1,5 +1,4 @@
 //! Gracia SoD Chamblains Mounted Troop instance (template 123).
-// Java: dist/game/data/scripts/ai/areas/Gracia/instances/SeedOfDestruction/MountedTroops/ChamblainsMountedTroop.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

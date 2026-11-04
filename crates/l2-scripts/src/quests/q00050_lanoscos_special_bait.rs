@@ -1,7 +1,5 @@
 //! Quest 50: Lanosco's Special Bait (Lanosco in the Fishing Village; the singing winds give the
 //! essence of wind).
-// Java: dist/game/data/scripts/quests/Q00050_LanoscosSpecialBait/Q00050_LanoscosSpecialBait.java
-//
 // Pattern: a kill-count quest with a drop chance up to a limit (`docs/design/scripts.md`, "Quest
 // patterns"): the singing winds drop the essence with 33% to the party member at cond 1, and the
 // hundredth essence moves that member on to cond 2. The fishing lures come back with the essence.

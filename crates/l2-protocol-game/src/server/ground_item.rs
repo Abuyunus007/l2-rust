@@ -9,7 +9,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/SpawnItem.java
 /// An item on the ground, seen by the nearby players (`SPAWN_ITEM`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SpawnItem {
@@ -19,7 +18,6 @@ pub struct SpawnItem {
     pub x: i32,
     pub y: i32,
     pub z: i32,
-    /// Java: "Only show item count if it is a stackable item". The count is always written; this
     /// flag only tells the client whether to show it.
     pub stackable: bool,
     pub count: i64,
@@ -39,7 +37,6 @@ impl Encode for SpawnItem {
             .i32(self.z)
             .i32(i32::from(self.stackable))
             .i64(self.count);
-        // Java: two constant 0 ints (`c2` and an unknown one).
         w.i32(0).i32(0);
     }
 }
@@ -66,7 +63,6 @@ impl Decode for SpawnItem {
     }
 }
 
-// Java: gameserver/network/serverpackets/DropItem.java
 /// A player dropped an item on the ground (`DROP_ITEM`). Same item fields as [`SpawnItem`], plus
 /// the id of the player who dropped it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -127,7 +123,6 @@ impl Decode for DropItem {
     }
 }
 
-// Java: gameserver/network/serverpackets/GetItem.java
 /// A player picked an item up from the ground (`GET_ITEM`). Java sends the item's position with
 /// it, the position the item had on the ground.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

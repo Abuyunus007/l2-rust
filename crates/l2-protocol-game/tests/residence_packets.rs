@@ -6,7 +6,6 @@
 use l2_net::{Decode, Encode, PacketReader};
 use l2_protocol_game::server::AgitDecoInfo;
 
-// Java: AgitDecoInfo.writeImpl: AGIT_DECO_INFO (0xFD), the hall id, then twelve bytes: fireplace,
 // carpet, statue (= carpet), chandelier, mirror, crystal (0), curtain, magic curtain, flag twice,
 // front platform, item create.
 #[test]

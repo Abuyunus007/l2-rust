@@ -1,5 +1,4 @@
 //! Quest 552: Olympiad Veteran (five matches of each Olympiad kind, daily).
-// Java: dist/game/data/scripts/quests/Q00552_OlympiadVeteran/Q00552_OlympiadVeteran.java
 
 use l2_util::ObjectId;
 use l2_world::script::{CREATED, QuestType};
@@ -107,7 +106,6 @@ impl Script for Q00552OlympiadVeteran {
         loser: i32,
         competition_type: i32,
     ) {
-        // NOTE(java-quirk): an offline winner ends the method, so the loser is not counted then.
         if let Some(winner) = winner {
             let player = ObjectId(winner);
             if ctx.world().player(player).is_none() {

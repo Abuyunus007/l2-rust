@@ -1,6 +1,5 @@
 //! Door templates: the geometry and defaults of every door in `data/Doors.xml`.
 //!
-//! Java: `gameserver/data/xml/DoorData.java` (`parseDocument`, `insertCollisionData`),
 //! `entity/actor/templates/DoorTemplate.java`. Data: `data/Doors.xml`, `xsd/Doors.xsd`.
 //!
 //! Java reads every `<door>` into a `StatSet` (all attribute values are text) and `DoorTemplate`
@@ -18,10 +17,6 @@
 //! A door id that appears twice is spawned twice by Java but only the last one is found by id
 //! (`_doors.put`); [`DoorTemplates::iter`] yields every door in file order (what the world
 //! spawns), [`DoorTemplates::get`] and [`DoorTemplates::len`] follow the map.
-//!
-//! NOTE(java-quirk): in Java any exception (a missing attribute, a non-numeric value) aborts the
-//! *rest of the file*, silently losing every later door. Here only the broken door is skipped,
-//! with a warning. The shipped data has no such door.
 
 use std::collections::HashMap;
 use std::path::Path;
@@ -314,7 +309,6 @@ fn master_event(value: &Option<String>) -> i8 {
     }
 }
 
-// Java: DoorData.parseDocument + insertCollisionData + DoorTemplate constructor
 fn build_door(raw: &RawDoor) -> Result<DoorTemplate, String> {
     let id = req_int("id", &raw.id)?;
     let name = raw

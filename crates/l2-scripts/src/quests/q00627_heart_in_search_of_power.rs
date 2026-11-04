@@ -1,8 +1,6 @@
 //! Quest 627: Heart in Search of Power (the Mysterious Necromancer and Enfeux in the Gludin area;
 //! the splendor monsters drop the beads of obedience, 300 of them buy the seal of light, and the
 //! gem of saints buys one of five rewards).
-// Java: dist/game/data/scripts/quests/Q00627_HeartInSearchOfPower/Q00627_HeartInSearchOfPower.java
-//
 // Pattern: a party kill count with a drop chance per monster (per mille, the member at cond 1,
 // no range check), three NPCs that move the cond (without sound), and a reward page of named
 // choices (`Adena`, `Asofes`, ...) that ends the quest. The reward events are "bypass -h" links
@@ -82,7 +80,6 @@ impl Script for Q00627HeartInSearchOfPower {
     ) -> Option<String> {
         let player = player?;
         let qs = ctx.get_quest_state(player, false)?;
-        // Java: `htmltext = event` by default; `null` for the events not listed below.
         let mut htmltext = Some(event.to_owned());
         match event {
             "31518-02.htm" => qs.start_quest(ctx),

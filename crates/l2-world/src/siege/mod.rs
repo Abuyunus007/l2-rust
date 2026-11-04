@@ -3,14 +3,6 @@
 //! siege state of players (relations, kills, fame, respawn points), the headquarters, the towers,
 //! the artefact, the siege guards and the mercenary tickets, the castle door upgrades and the GM
 //! `//siege` commands.
-// Java: managers/{SiegeManager,SiegeGuardManager,MercTicketManager}.java
-// Java: mechanics/siege/{Siege,SiegeClan,SiegeClanType,SiegeTeleportWhoType,SiegeScheduleDate,
-//       Siegable,TowerSpawn}.java
-// Java: mechanics/siege/Castle.java (engrave, spawnDoor, removeUpgrade, the door and trap
-//       upgrades, getSiege)
-// Java: entity/actor/instance/{SiegeFlag,ControlTower,FlameTower,Artefact}.java,
-//       entity/actor/Tower.java, entity/actor/status/SiegeFlagStatus.java
-// Java: entity/zone/type/SiegeZone.java
 // Design: docs/design/m7-residences.md
 //
 // # Shape
@@ -26,21 +18,6 @@
 // out as a [`ResidenceWrite`]. What Java reads back from the database (`loadSiegeClan`,
 // `checkIsRegistered`, `loadSiegeGuard`) reads the copy.
 //
-// # Side by side (D-49, D-50, D-51)
-// Sieghardt (the Java GS) runs the real sieges while both servers share the database:
-// - Every write of the siege jobs and of the registrations goes through `World::siege_write`
-//   (`SiegeDatabaseWrites`, default off). Off, the world still changes its own state, so a GM test
-//   siege (`//siege`, `//startsiege`) works end to end.
-// - The schedule runs here too (dates, the registration messages), but the start of a siege by
-//   the schedule (`ScheduleStartSiegeTask` reaching `startSiege`) happens only with the switch on;
-//   off, the castle and its registrations are read again once the Java siege is over
-//   (`SiegeTimer::SideBySideReread`), which also starts the schedule again from the new date.
-// - The registrations are read again before a player acts on them or looks at them (D-50):
-//   `RequestJoinSiege`, `RequestConfirmSiegeWaitingList` and the two list requests go through
-//   `World::request_siege_reread`; a failed read refuses the request. Rows this world added without
-//   writing them (the switch is off) stay in the copy over a re-read, so a test registration
-//   lives until the siege.
-// - A castle lord's mercenary tickets are his own action (`Writes::Player`), like the tax rate.
 //
 // # Left to other cards
 // - `SiegeGuardAI` (the defenders' AI) is `ai/siege_guard.rs`; the damage and destruction of

@@ -1,8 +1,5 @@
 //! `UseItem` (the equippable branch and the handler branch), `Player.useEquippableItem` and
 //! `RequestUnEquipItem`.
-// Java: network/clientpackets/UseItem.java
-// Java: network/clientpackets/RequestUnEquipItem.java
-// Java: entity/actor/Player.java (useEquippableItem)
 
 use l2_data::item::TYPE2_QUEST;
 use l2_data::item::types::{ArmorType, BodyPart, WeaponType};
@@ -349,8 +346,6 @@ impl crate::world::World {
     pub(crate) fn on_request_unequip_item(&mut self, id: ObjectId, paperdoll_slot: i32) {
         let part = body_part_of_paperdoll_slot(paperdoll_slot);
         // `getPaperdollItemByBodyPart(slot)` goes by `BodyPart.getPaperdollSlot()`.
-        // NOTE(java-quirk): every talisman slot maps to `DECO`, whose slot is the first one, so a
-        // request for the third talisman takes the first one off.
         let Some(worn_id) = part
             .and_then(super::paperdoll::paperdoll_slot_of)
             .and_then(|slot| self.paperdoll_object(id, slot))
@@ -411,8 +406,6 @@ impl crate::world::World {
 
         // This can be 0 if the user pressed the right mouse button twice very fast.
         if let Some(first) = unequipped.first().copied() {
-            // NOTE(java-quirk): the message names the first item the recorder saw. Taking a bow
-            // off records its arrows first, so the message is about the arrows.
             if let Some(first_item) = self.inventory_item(id, first).cloned() {
                 let message = self.disarmed_message(first_item.enchant_level, first_item.item_id, templates);
                 self.send(id, &message);

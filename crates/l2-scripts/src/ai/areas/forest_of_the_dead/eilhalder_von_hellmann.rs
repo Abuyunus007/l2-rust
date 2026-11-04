@@ -1,5 +1,4 @@
 //! Eilhalder von Hellmann walks the Forest of the Dead at night and leaves at dawn.
-// Java: dist/game/data/scripts/ai/areas/ForestOfTheDead/EilhalderVonHellmann.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

@@ -1,7 +1,5 @@
 //! Quest 220: Testimony of Glory (Prefect Vokian in the Orc Village: the Orc second class change,
 //! through Kasman, Manakia, Tanapi, Kakai and the chiefs of the five tribes).
-// Java: dist/game/data/scripts/quests/Q00220_TestimonyOfGlory/Q00220_TestimonyOfGlory.java
-//
 // Pattern: the test chain of the "Testimony of ..." quests (see Q00221 for the item ladders):
 // chiefs that call their guards at the player (`addAttackDesire(addSpawn(npc, id, npc, ..))`,
 // counted by `getSummonedNpcCount`), radar markers and monsters that talk when they are hit.
@@ -519,8 +517,6 @@ impl Script for Q00220TestimonyOfGlory {
                     )
                     && ctx.get_quest_items_count(killer, STAKATO_DRONE_HUSK) < 30
                 {
-                    // NOTE(java-quirk): Java compares the count of TYRANT_TALON (not of the husk)
-                    // with 29 to pick the "middle" sound.
                     if ctx.get_quest_items_count(killer, TYRANT_TALON) == 29 {
                         ctx.give_items(killer, STAKATO_DRONE_HUSK, 1);
                         ctx.play_sound(killer, QuestSound::ItemsoundQuestMiddle);
@@ -535,8 +531,6 @@ impl Script for Q00220TestimonyOfGlory {
                 if all(ctx, killer, &[NECKLACE_OF_AUTHORITY, CHIANTA_3RD_ORDER])
                     && ctx.get_quest_items_count(killer, TIMAK_ORC_HEAD) < 20
                 {
-                    // NOTE(java-quirk): Java compares the count of MANASHEN_SHARD (not of the
-                    // heads) with 19, so the 20th head is not the one that sets cond 7.
                     if ctx.get_quest_items_count(killer, MANASHEN_SHARD) == 19 {
                         ctx.give_items(killer, TIMAK_ORC_HEAD, 1);
                         ctx.play_sound(killer, QuestSound::ItemsoundQuestMiddle);

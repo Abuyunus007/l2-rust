@@ -1,6 +1,5 @@
 //! `AccessLevels.xml`: the GM levels, one row each, the permission flags as switches.
 //!
-//! Java: `data/xml/AdminData.java` (`<access>`), `data/holders/AccessLevel.java` (attributes and
 //! their defaults). Rust loader: `game-server/src/world_data.rs` (`AccessLevels::from_xml`).
 
 use std::collections::HashMap;
@@ -224,8 +223,6 @@ impl XmlForm for AccessLevelsForm {
                 }
             }
         }
-        // NOTE(java-quirk): `AdminData.getAccessLevel(-1)` returns null when the banned level is
-        // missing, so a banned account would fail to enter the game.
         if !seen.contains_key(&-1) {
             issues.push(Issue::warning(
                 None,

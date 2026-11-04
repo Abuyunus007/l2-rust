@@ -1,5 +1,4 @@
 //! Small `Npc` helpers the scripts of Gracia share, built on the `pub` world API.
-// Java: entity/actor/Npc.java (setDisplayEffect, broadcastSocialAction)
 
 use l2_protocol_game::server::{ExChangeNpcState, SocialAction};
 use l2_util::ObjectId;
@@ -50,7 +49,6 @@ pub fn java_hash_map_order(entries: &[(i32, i32)]) -> Vec<(i32, i32)> {
 }
 
 /// Java `util.PolygonTerritory`: a polygon with a height range, for a random point inside.
-// Java: dist/game/java .../gameserver/util/PolygonTerritory.java
 pub struct PolygonTerritory {
     /// Java `_points`: `(x, y, zmin, zmax, proc)`.
     points: Vec<(i32, i32, i32, i32, i32)>,

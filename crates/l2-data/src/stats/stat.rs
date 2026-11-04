@@ -1,6 +1,5 @@
 //! The stats a creature has and items/skills modify.
 //!
-//! Java: `gameserver/mechanics/stats/Stat.java`.
 //!
 //! Variants are in Java's declaration order (`ordinal()` is the slot index of Java's
 //! `Calculator` array, `NUM_STATS` its length). Each variant is listed with its Java constant and its

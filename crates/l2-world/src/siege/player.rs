@@ -2,12 +2,6 @@
 //! the siege (`_isInSiege`, `_isInHideoutSiege`), the fame of the siege zone, the siege friends
 //! and the siege skills of a clan leader. The fortress, conquerable hall and Territory War cards
 //! set the same state through these functions.
-// Java: entity/actor/Player.java (setSiegeState, getSiegeState, setSiegeSide, getSiegeSide,
-//       isRegisteredOnThisSiegeField, isSiegeFriend, isOnSameSiegeSideWith, setInSiege,
-//       isInSiege, setInHideoutSiege, isInHideoutSiege, startFameTask, stopFameTask)
-// Java: entity/actor/tasks/player/FameTask.java
-// Java: managers/SiegeManager.java (addSiegeSkills, removeSiegeSkills)
-// Java: data/xml/SkillData.java (getSiegeSkills)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};

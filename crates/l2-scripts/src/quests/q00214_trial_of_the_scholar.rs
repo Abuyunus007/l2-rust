@@ -1,5 +1,4 @@
 //! Quest 214: Trial of the Scholar (Magister Mirien and the sigils of eleven NPCs; the wizard's mark).
-// Java: dist/game/data/scripts/quests/Q00214_TrialOfTheScholar/Q00214_TrialOfTheScholar.java
 
 use l2_util::ObjectId;
 use l2_world::script::{QuestSound, player_class};
@@ -155,8 +154,6 @@ impl Script for Q00214TrialOfTheScholar {
             ENCHANTED_GARGOYLE,
             LETO_LIZARDMAN_WARRIOR,
         ]);
-        // NOTE(java-quirk): Java lists CRERAS_PAINTING1 twice and CRERAS_PAINTING2 not at all, so
-        // the second painting is no registered quest item (it stays on abort).
         s.register_quest_items(&[
             MIRIENS_1ST_SIGIL,
             MIRIENS_2ND_SIGIL,

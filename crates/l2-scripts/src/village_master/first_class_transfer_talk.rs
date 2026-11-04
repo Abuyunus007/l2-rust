@@ -1,5 +1,4 @@
 //! The headmasters of the newbie villages: none of them changes a class, they only talk about it.
-// Java: dist/game/data/scripts/village_master/FirstClassTransferTalk/FirstClassTransferTalk.java
 
 use l2_util::ObjectId;
 use l2_world::subclass::{ClassId, Race, VillageMasterKind};

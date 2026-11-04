@@ -36,39 +36,33 @@ macro_rules! one_int_packet {
 }
 
 one_int_packet!(
-    // Java: gameserver/network/clientpackets/RequestHennaItemList.java
     /// Open the list of dyes that can be drawn (`REQUEST_HENNA_ITEM_LIST`). Java reads one int
     /// and ignores it ("Unknown").
     RequestHennaItemList,
     unknown
 );
 one_int_packet!(
-    // Java: gameserver/network/clientpackets/RequestHennaItemInfo.java
     /// Preview of drawing a dye (`REQUEST_HENNA_ITEM_INFO`).
     RequestHennaItemInfo,
     symbol_id
 );
 one_int_packet!(
-    // Java: gameserver/network/clientpackets/RequestHennaEquip.java
     /// Draw a dye (`REQUEST_HENNA_EQUIP`).
     RequestHennaEquip,
     symbol_id
 );
 one_int_packet!(
-    // Java: gameserver/network/clientpackets/RequestHennaRemoveList.java
     /// Open the list of worn dyes (`REQUEST_HENNA_REMOVE_LIST`). Java reads one int and ignores
     /// it ("Unknown").
     RequestHennaRemoveList,
     unknown
 );
 one_int_packet!(
-    // Java: gameserver/network/clientpackets/RequestHennaItemRemoveInfo.java
     /// Preview of removing a dye (`REQUEST_HENNA_ITEM_REMOVE_INFO`).
     RequestHennaItemRemoveInfo,
     symbol_id
 );
 one_int_packet!(
-    // Java: gameserver/network/clientpackets/RequestHennaRemove.java
     /// Remove a dye (`REQUEST_HENNA_REMOVE`).
     RequestHennaRemove,
     symbol_id

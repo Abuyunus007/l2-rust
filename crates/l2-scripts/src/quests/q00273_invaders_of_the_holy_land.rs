@@ -1,6 +1,4 @@
 //! Quest 273: Invaders of the Holy Land (Varkees in the Orc Village buys the soulstones of the rakeclaw imps).
-// Java: dist/game/data/scripts/quests/Q00273_InvadersOfTheHolyLand/Q00273_InvadersOfTheHolyLand.java
-//
 // Pattern: a repeatable collect quest (`docs/design/scripts.md`, "Quest patterns"): every rakeclaw
 // imp drops a black soulstone or, on the other end of a roll of 100, a red one; Varkees pays per
 // stone (red ones more), with a bonus from 10 stones, and gives a beginner's soulshot pack once

@@ -1,7 +1,5 @@
 //! Quest 716: Path to Becoming a Lord - Rune (Chamberlain Frederick, Agripel and Innocentin, the
 //! Rune castle lord).
-// Java: dist/game/data/scripts/quests/Q00716_PathToBecomingALordRune/Q00716_PathToBecomingALordRune.java
-//
 // Pattern: a lord quest with a confidant, unlike the other castles' quests without a check of
 // the clan: the lord (the online leader of the castle's clan) needs Hidden Truth (Q00021) and
 // Hiding Behind the Truth (Q00025) done, a confidant agrees with Frederick (lord cond 5) and
@@ -99,8 +97,6 @@ impl Script for Q00716PathToBecomingALordRune {
             "35509-03.html" => qs.start_quest(ctx),
             "31348-03.html" => qs.set_cond(ctx, 3, false),
             "35509-08.html" => {
-                // NOTE(java-quirk): no check at all: with the lord offline or without a quest
-                // state Java throws here and no page is shown.
                 let lord_qs = ctx.quest_state_of(NAME, lord?, false)?;
                 lord_qs.set(ctx, "confidant", &player.0.to_string());
                 lord_qs.set_cond(ctx, 5, false);
@@ -231,7 +227,6 @@ impl Script for Q00716PathToBecomingALordRune {
         if qs.state(ctx) != STARTED {
             return;
         }
-        // NOTE(java-quirk): `castle.getOwner().getLeader()` throws without an owner.
         if rune_lord_clan(ctx).is_none() {
             return;
         }
@@ -451,7 +446,6 @@ mod tests {
         assert_eq!(talk(&mut t, n.frederick, 1).as_deref(), Some("35509-06.html"));
         t.take_writes();
 
-        // NOTE(java-quirk): no clan check here: a stranger is offered the same page as a member.
         assert_eq!(talk(&mut t, n.frederick, 3).as_deref(), Some("35509-07.html"));
         assert_eq!(talk(&mut t, n.frederick, 2).as_deref(), Some("35509-07.html"));
         event(&mut t, n.frederick, "35509-08.html", 2);

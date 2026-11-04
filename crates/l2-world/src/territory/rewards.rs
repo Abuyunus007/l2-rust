@@ -1,6 +1,4 @@
 //! The points of the war and the badges they are worth.
-// Java: managers/TerritoryWarManager.java (giveTWQuestPoint, giveTWPoint, calcReward,
-//       debugReward, resetReward)
 
 use l2_util::ObjectId;
 
@@ -91,8 +89,6 @@ impl World {
         // Badges for territory wards.
         reward[1] += if temp[WARDS] > 0 { 5 } else { 0 };
         // Badges for territory quest done.
-        // NOTE(java-quirk): `_territoryList.get(temp[0] - 80)` throws for a side that is no
-        // territory; here it adds nothing.
         if let Some(t) = self.territory.territories.get(&(temp[SIDE] - TERRITORY_ID_BASE)) {
             reward[1] += t.quest_done[0].min(10);
             reward[1] += t.quest_done[1];

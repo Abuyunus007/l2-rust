@@ -1,6 +1,5 @@
 //! The manor seeds: `data/Seeds.xml` (M7-MANOR-01).
 //!
-//! Java: `managers/CastleManorManager.java` (`load`, `parseDocument`, the seed queries) and
 //! `mechanics/siege/manor/Seed.java`. The seeds are immutable; the castle manor state (the
 //! production and the procurement of a period) is the world's (`l2_world::manor`).
 //!
@@ -129,7 +128,6 @@ impl Seeds {
     fn add(&mut self, doc: RawList, items: &ItemTemplates, inserted: &mut Vec<i32>) {
         for castle in doc.castles {
             let Some(castle_id) = parse_int(castle.id.as_deref()) else {
-                // NOTE(java-quirk): Java's `parseInteger` throws and the rest of the file is lost.
                 warn!("{}: castle without a numeric id.", Self::LOADER);
                 continue;
             };
@@ -196,8 +194,6 @@ impl Seeds {
     }
 
     /// Java `getSeedsForCastle(castleId)`.
-    // NOTE(java-quirk): Java returns a `HashSet<Seed>` of objects without `hashCode`, so the order
-    // of the packets that list them is arbitrary there; here it is the order of `_seeds`.
     pub fn for_castle(&self, castle_id: i32) -> Vec<&Seed> {
         self.iter().filter(|s| s.castle_id == castle_id).collect()
     }

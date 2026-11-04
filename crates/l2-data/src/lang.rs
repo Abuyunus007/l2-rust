@@ -1,6 +1,5 @@
 //! The translated texts of `data/lang/<lang>/` (`Custom/MultilingualSupport.ini`, M9-L02).
 //!
-//! Java: `gameserver/data/xml/NpcNameLocalisationData.java`,
 //! `gameserver/data/xml/SendMessageLocalisationData.java`, `SystemMessageId.loadLocalisations`
 //! and `NpcStringId.loadLocalisations`. Each language has up to four files:
 //! `NpcNameLocalisation.xml`, `NpcStringLocalisation.xml`, `SystemMessageLocalisation.xml` and
@@ -108,8 +107,6 @@ fn id_texts(doc: RawList) -> Vec<(i32, String)> {
     for item in doc.items {
         // No `id` attribute: the element is skipped without a word.
         let Some(id) = item.id else { continue };
-        // NOTE(java-quirk): `Integer.parseInt` throws; the catch is around the whole file, so the
-        // entries after a bad id are never read (the ones before stay).
         let Some(id) = parse_int(&id) else { break };
         let Some(text) = item.translation else { continue };
         if text.is_empty() || text.encode_utf16().count() > MAX_TEXT_LENGTH {

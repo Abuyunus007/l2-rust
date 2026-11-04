@@ -1,6 +1,4 @@
 //! Quest 615: Magical Power of Fire, Part 1 (Naran, Udan and Asefa's Box; the Ketra monsters).
-// Java: dist/game/data/scripts/quests/Q00615_MagicalPowerOfFirePart1/Q00615_MagicalPowerOfFirePart1.java
-//
 // Pattern: the same shape as Q00609 (the Ketra monsters start Asefa's eye at cond 2; the spell
 // dispels it; the box gives the stolen red totem; Udan gives the red totem at cond 3).
 

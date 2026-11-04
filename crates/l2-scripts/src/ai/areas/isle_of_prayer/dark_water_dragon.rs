@@ -1,5 +1,4 @@
 //! The Dark Water Dragon: shades on the first hit and at half hp, Fafurion Kindred when it dies.
-// Java: dist/game/data/scripts/ai/areas/IsleOfPrayer/DarkWaterDragon.java
 
 use std::collections::{HashMap, HashSet};
 

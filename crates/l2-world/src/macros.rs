@@ -1,9 +1,5 @@
 //! The macro list: `RequestMakeMacro`, `RequestDeleteMacro` and the `MacroList` packets that
 //! follow a change.
-// Java: network/clientpackets/{RequestMakeMacro,RequestDeleteMacro}.java
-// Java: entity/actor/holders/player/MacroList.java (registerMacro, deleteMacro, sendUpdate)
-// Java: network/serverpackets/SendMacroList.java
-//
 // # Where a macro lives
 // `PlayerData.profile.macros` (one `MacroData` per `character_macroses` row), in the order Java's
 // `LinkedHashMap` keeps: a macro that is saved again keeps its place, a new one goes last.
@@ -130,13 +126,11 @@ impl World {
         };
         let macros = &player.data.profile.macros;
         // You may create up to 48 macros.
-        // NOTE(java-quirk): `size() > 48` lets a player with 48 macros make a 49th.
         if macros.len() > MAX_MACROS {
             self.send(id, &SystemMessage::new(SystemMessageId::YouMayCreateUpTo48Macros));
             return;
         }
         // That name is already assigned to another macro.
-        // NOTE(java-quirk): Java sends "Enter the name of the macro" for this too.
         if macros
             .iter()
             .any(|m| equals_ignore_case(&m.name, &new_macro.name) && m.id != new_macro.id)

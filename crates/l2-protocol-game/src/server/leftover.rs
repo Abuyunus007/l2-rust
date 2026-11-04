@@ -8,8 +8,6 @@ use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
 /// The paperdoll slots `ShopPreviewInfo` writes, in the order Java writes them.
-///
-/// NOTE(java-quirk): `RHAND` is there twice (positions 7 and 14), like in `paperdoll::WIRE_ORDER`.
 pub const PREVIEW_SLOTS: [usize; 19] = [
     pd::UNDER,
     pd::REAR,
@@ -32,7 +30,6 @@ pub const PREVIEW_SLOTS: [usize; 19] = [
     pd::LBRACELET,
 ];
 
-// Java: gameserver/network/serverpackets/ShopPreviewInfo.java
 /// The items a player tries on (`SHOP_PREVIEW_INFO`, 0xF6): the item id per paperdoll slot, 0 for
 /// none.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -79,7 +76,6 @@ impl Decode for ShopPreviewInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExRpItemLink.java
 /// An item a player showed in the chat (`0xFE` 0x006C, `EX_RP_ITEM_LINK`): the same fields as one
 /// item of an item list.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -104,7 +100,6 @@ impl Decode for ExRpItemLink {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExChangeClientEffectInfo.java
 /// A change of the client's zone state, fog or post effect (`0xFE` 0x00C2,
 /// `EX_CHANGE_CLIENT_EFFECT_INFO`): Freya's castle uses it to switch the zone effect.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,12 +1,5 @@
 //! Fake players, `config/Custom/FakePlayers.ini` (M9-C04): NPCs with a `<fakePlayer>` look that
 //! the clients see as players.
-// Java: config/custom/FakePlayersConfig.java, data/xml/FakePlayerData.java,
-// Java: managers/FakePlayerChatManager.java, data/holders/FakePlayerChatHolder.java,
-// Java: network/serverpackets/FakePlayerInfo.java, entity/actor/Npc.java (sendInfo, doDie),
-// Java: entity/actor/instance/Monster.java (isAutoAttackable),
-// Java: dist/game/data/scripts/handlers/chat/channels/ChatWhisper.java,
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminFakePlayers.java
-//
 // The fake players are the NPCs of the datapack that have a `<fakePlayer>` element
 // (`NpcTemplate::fake_player_info`); `NpcLoadOptions::fake_players_enabled` keeps them out of the
 // templates unless `EnableFakePlayers` is on, so with the switch off nothing here finds one. The
@@ -234,8 +227,6 @@ impl World {
 
     /// Java `AdminFakePlayers` and `FakePlayerChatManager.sendChat`: the live NPC of the fake
     /// player called `fpc_name` (`SpawnTable.getAnySpawn(npcId).getLastSpawn()`).
-    // NOTE(java-quirk): `getNpcIdByName` unboxes a null for a name that is not there; the callers
-    // only come with a proper name.
     fn fake_player_npc(&self, fpc_name: &str) -> Option<ObjectId> {
         let npc_id = self
             .fake_players
@@ -614,8 +605,6 @@ impl World {
         else {
             return;
         };
-        // NOTE(java-quirk): `isScriptValue(0) && getKarma() < 0`: a fake player's karma is never
-        // negative, so "FakePlayerUnflaggedKillsKarma" gives nothing here and the pvp branch runs.
         if self.npc_script_value(id) == 0 && self.fake_player_karma(id) < 0 {
             if self.settings.fake_players.kill_karma {
                 // Unreachable, kept for the shape of Java's code.
@@ -653,9 +642,6 @@ impl World {
         if !self.settings.fake_players.enabled || !self.is_fake_player(id) || !self.is_aggressive_npc(id) {
             return false;
         }
-        // NOTE(java-quirk): Java runs the body once for every creature in view (a `StaticObject`
-        // is skipped), and each run adds one more target, so a fake player in a crowd hates
-        // several creatures in one think.
         let rounds = self
             .visible_objects(id)
             .into_iter()

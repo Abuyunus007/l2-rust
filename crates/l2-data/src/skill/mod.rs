@@ -1,7 +1,6 @@
 //! Skill templates: every skill of `data/stats/skills/*.xml` as one [`SkillTemplate`] per id and
 //! level, with enchant levels, effect templates and use conditions.
 //!
-//! Java: `gameserver/data/xml/SkillData.java` (load, `getSkillHashCode`, `getSkill`, max levels,
 //! the enchantable set), `data/xml/EnchantSkillGroupsData.java` (only the number of levels a route
 //! has), `util/DocumentSkill.java` and `util/DocumentBase.java` (see [`document`]).
 //! Data: `data/stats/skills/*.xml` (+ `custom/` with `CustomSkillsLoad`), `data/EnchantSkillGroups.xml`

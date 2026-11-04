@@ -1,6 +1,5 @@
 //! The `MpConsumePerLevel` effect: every tick takes `power` times the ticks multiplier times the
 //! level factor of MP from the target; when there is not enough, the skill is switched off.
-// Java: dist/game/data/scripts/handlers/skill/effects/MpConsumePerLevel.java
 
 use l2_data::skill::EffectTemplate;
 use l2_protocol_game::SystemMessageId;

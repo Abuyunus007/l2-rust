@@ -1,6 +1,4 @@
 //! Quest 508: A Clan's Reputation (Sir Eric Rodemai in the Town of Aden, six raid bosses).
-// Java: dist/game/data/scripts/quests/Q00508_AClansReputation/Q00508_AClansReputation.java
-//
 // Pattern: the same shape as Q00509 (a clan quest: the leader picks a raid boss, a radar points
 // to it, the boss's item is brought back for the clan's reputation). The level gate is 5.
 

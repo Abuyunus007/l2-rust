@@ -1,13 +1,5 @@
 //! Dying and coming back: `doDie` of players and NPCs, the `Die` packet, `doRevive`, and the
 //! restart point a dead player picks (`RequestRestartPoint`).
-// Java: entity/actor/Creature.java (doDie, doRevive, isPendingRevive, canRevive)
-// Java: entity/actor/Playable.java (doDie)
-// Java: entity/actor/Player.java (doDie, doRevive, onDieDropItem's call site)
-// Java: entity/actor/Npc.java (doDie)
-// Java: entity/actor/Attackable.java (doDie)
-// Java: network/clientpackets/RequestRestartPoint.java
-// Java: network/serverpackets/{Die,Revive}.java
-//
 // # The order of Java's `doDie`
 // `World::do_die` (combat/damage.rs) runs the class chain the way Java's `super.doDie` calls do:
 // - a player: `Playable.doDie` ([`World::playable_do_die`]; it does not call `Creature.doDie`),
@@ -340,8 +332,6 @@ impl World {
                 let cursed_item_id = self.cursed_weapon_equipped_id(id);
                 self.cursed_drop(cursed_item_id);
             } else if self.is_combat_flag_equipped(id) {
-                // NOTE(java-quirk): "TODO: Fort siege during TW??" - a fortress flag stays on its
-                // carrier while the war runs.
                 if self.is_tw_in_progress() {
                     self.territory_drop_combat_flag(id, true, false);
                 } else {
@@ -735,8 +725,6 @@ impl World {
                     None
                 } else {
                     // Festival Participant.
-                    // NOTE(java-quirk): an item that allows self-resurrection but is none of the
-                    // three above is not consumed, and the player is revived where he stands.
                     instance = self.objects.get(&id).map_or(0, |e| e.instance_id);
                     self.position_of(id)
                 }
@@ -754,7 +742,6 @@ impl World {
             _ => match self.get_tele_to_location(id, TeleportWhereType::Town) {
                 Some(location) => Some(location),
                 None => {
-                    // Java: NullPointerException.
                     warn!("{id}: no restart point; not teleporting.");
                     return;
                 }

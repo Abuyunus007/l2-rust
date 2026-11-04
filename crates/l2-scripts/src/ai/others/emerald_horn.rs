@@ -1,5 +1,4 @@
 //! Emerald Horn (raid boss 25718): Reflect Attack, then Bleed or Piercing Storm.
-// Java: dist/game/data/scripts/ai/others/EmeraldHorn.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};
@@ -67,8 +66,6 @@ impl Script for EmeraldHorn {
             ctx.set_npc_flag(npc, HIGH_DAMAGE_FLAG, true);
         }
 
-        // NOTE(java-quirk): the first block above resets the count to 0 whenever it passes 5000, so
-        // this block (over 10000) can never run.
         if ctx.npc_int(npc, TOTAL_DAMAGE_COUNT) > 10000 {
             ctx.add_skill_cast_desire(npc, attacker, BLEED_LEVEL_1, 99999);
             ctx.set_npc_int(npc, TOTAL_DAMAGE_COUNT, 0);

@@ -1,6 +1,4 @@
 //! L2 Day: collect the letters, make LINEAGE II, NCSOFT or CHRONICLE, win a prize.
-// Java: dist/game/data/scripts/events/L2Day/L2Day.java
-// Java: dist/game/data/scripts/events/L2Day/config.xml
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

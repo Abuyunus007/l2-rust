@@ -1,8 +1,4 @@
 //! Geodata loading and the path worker pool of the game server.
-// Java: org/l2jmobius/gameserver/GameServer.java (`GeoEngine.getInstance()`, section "Geodata")
-// Java: org/l2jmobius/gameserver/config/GeoEngineConfig.java (`GeoDataPath`, `PathFinding`)
-// Java: org/l2jmobius/gameserver/geoengine/GeoEngine.java (constructor: what is logged)
-//
 // Two steps, because the world thread needs the engine before it starts and the pool needs the
 // world's command channel, which exists only after:
 //   1. [`load_engine`]   blocking; run it on `spawn_blocking`. Never fails: Java runs without
@@ -131,7 +127,6 @@ impl GeoSettings {
     }
 }
 
-/// Java: `Paths.get(DATAPACK_ROOT.getPath() + "/" + config.getString("GeoDataPath", "geodata"))`.
 /// Rust extension: an absolute value is used as it is (Java would glue it onto the root).
 pub fn resolve_geodata_path(datapack_root: &Path, value: &str) -> PathBuf {
     datapack_root.join(value.trim().replace('\\', "/"))
@@ -148,7 +143,6 @@ fn path_threads(over_ini: Option<&IniFile>, cpus: usize) -> usize {
 }
 
 /// Loads the geodata (blocking: about a second in release, 1 to 1.6 GB of memory). Never fails.
-// Java: GeoEngine constructor
 pub fn load_engine(settings: &GeoSettings) -> Arc<GeoEngine> {
     let spec = GeoLoadSpec::new(&settings.geodata_path)
         .with_override(settings.override_.clone())
@@ -175,7 +169,6 @@ pub fn load_engine(settings: &GeoSettings) -> Arc<GeoEngine> {
         );
     }
     if report.pathfinding_disabled {
-        // Java: "Pathfinding is disabled." (PathFinding is set to 0 when no region loaded)
         info!("GeoEngine: Pathfinding is disabled.");
     }
     debug!(
@@ -487,7 +480,6 @@ mod tests {
         assert!(!settings.geodata_path.exists());
         let engine = load_engine(&settings);
         assert_eq!(engine.loaded_count(), 0);
-        // Java: PathFinding drops to 0 when no region loaded, so no pool starts.
         assert_eq!(engine.options().pathfinding, 0);
         let (sink, _rx) = sink();
         let geo = Geo::start(engine, &settings, sink);

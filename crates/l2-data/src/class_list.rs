@@ -1,6 +1,5 @@
 //! The player class list: id, display name and parent of every class.
 //!
-//! Java: `gameserver/data/xml/ClassListData.java`, `ClassInfoHolder.java` and the id/race part of
 //! `entity/actor/enums/player/PlayerClass.java`.
 //! Data: `data/stats/players/classList.xml`.
 //!
@@ -103,9 +102,6 @@ impl ClassList {
                 .ok()
                 .filter(|id| id.race().is_some())
                 .ok_or_else(|| DataError::Invalid(format!("unknown class id {}", raw.class_id)))?;
-            // NOTE(java-quirk): Java only looks up a parent when `parentClassId > 0`, so classes whose
-            // parent is class 0 (Warrior, Human Knight, Rogue) get no parent. An unknown parent id
-            // also becomes "no parent" instead of an error.
             let parent = raw
                 .parent_class_id
                 .filter(|&p| p > 0)

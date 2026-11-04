@@ -1,7 +1,5 @@
 //! Quest 219: Testimony of Fate (Magister Kaira in Dark Elf Village: the Dark Elf second class
 //! change, through Metheus, Ixia, Roa, Norman, Thifiell and Arkenia).
-// Java: dist/game/data/scripts/quests/Q00219_TestimonyOfFate/Q00219_TestimonyOfFate.java
-//
 // Pattern: the test chain of the "Testimony of ..." quests (see Q00222 for the shape), with a
 // race and category gate at the start and a spawned NPC (Alder's Spirit) that stays 200 s.
 
@@ -574,9 +572,6 @@ fn ixia_item(ctx: &mut ScriptCtx<'_>, qs: Qs, killer: ObjectId, item: i32) {
 }
 
 /// One of the four overlord skulls for the pixy: with the charm, the note and the garnet.
-/// NOTE(java-quirk): Java tests `!hasQuestItems(killer, RED_FAIRY_DUST, SKULL)` (not both) and
-/// `!hasQuestItems(killer, SKULL)`; the second implies the first, so the skull is given once even
-/// when the player already has the fairy dust.
 fn skull(ctx: &mut ScriptCtx<'_>, killer: ObjectId, item: i32) {
     if ctx.has_all_quest_items(killer, &[PALUS_CHARM, ARKENIAS_NOTE, PIXY_GARNET])
         && !ctx.has_all_quest_items(killer, &[RED_FAIRY_DUST, item])

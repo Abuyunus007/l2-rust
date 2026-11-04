@@ -1,21 +1,5 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
-//! Territory War (M7-TW-01): the territories at startup, the next war date, the countdown and
-//! the war, the registrations and their re-read (D-50), the `SiegeDatabaseWrites` switch and the
-//! side by side re-read (D-51), the wards and their carriers, the outposts and flags, the
-//! rewards, the Territory Managers, clan level 11, `//territory_war*`, the disguise scroll and the
-//! battlefield channel.
-//! Java: managers/TerritoryWarManager.java, mechanics/siege/TerritoryWard.java,
-//! entity/actor/instance/TerritoryWard.java, network/clientpackets/{RequestJoinDominionWar,
-//! RequestDominionInfo}.java, network/serverpackets/{ExShowDominionRegistry,ExReplyDominionInfo,
-//! ExShowOwnthingPos}.java, dist/game/data/scripts/ai/others/TerritoryManagers,
-//! quests/TerritoryWarScripts/TerritoryWarSuperClass.java (the super class instance),
-//! handlers/skill/effects/{OutpostCreate,OutpostDestroy,TakeTerritoryFlag}.java,
-//! handlers/chat/commands/admin/AdminTerritoryWar.java, handlers/items/Disguise.java,
-//! handlers/chat/channels/ChatBattlefield.java, handlers/bypass/npc/TerritoryStatus.java,
-//! entity/clan/Clan.java (levelUpClan). The expected values come from the Java code named in each
-//! test.
-
 use std::sync::{Arc, Mutex};
 
 use l2_data::skill::EnchantSkillGroups;
@@ -595,7 +579,6 @@ impl Scene {
         });
     }
 
-    /// The rows as this world has them (Sieghardt changed nothing).
     fn rows_now(&self) -> TerritoryRows {
         let mut registrations = Vec::new();
         for castle in [1, 2] {
@@ -877,10 +860,6 @@ fn territory_rereads(out: &[Out]) -> Vec<TerritoryThen> {
 
 // ---------------------------------------------------------------------------------- startup
 
-/// `load()`: the town NPCs of the owned territories stand, the ward places hold their wards (not
-/// in the world outside the war), the registrations are clans or mercenaries; the
-/// `TerritoryWarSuperClass` constructor sets the next date (Saturday 20:00 with an owned castle)
-/// and keeps it in the global variable (D-51: only with `SiegeDatabaseWrites`).
 #[test]
 fn startup_loads_the_territories_and_sets_the_next_war() {
     let s = Scene::new();
@@ -1063,9 +1042,6 @@ fn the_war_ends_and_the_channel_closes() {
 
 // ---------------------------------------------------------------------------------- registration
 
-/// `RequestJoinDominionWar` after the re-read (D-50): the registration period, the owner clan,
-/// the clan right, the registration elsewhere, the mercenary's level and class, and the window it
-/// answers with; the rows go out with the switch.
 #[test]
 fn registrations_follow_java_after_a_reread() {
     let mut s = Scene::new();

@@ -1,6 +1,4 @@
 //! Quest 19: Go to the Pastureland (Vladimir in the Town of Dion sends a level 82 character to Tunatun).
-// Java: dist/game/data/scripts/quests/Q00019_GoToThePastureland/Q00019_GoToThePastureland.java
-//
 // Pattern: a single errand with a choice of reward (`docs/design/scripts.md`, "Quest patterns"):
 // Vladimir gives the veal on the start event, and Tunatun pays for the young wild beast meat
 // when the character has it, else for the veal. One-time: `exit_quest(ctx, false, true)`.
@@ -49,8 +47,6 @@ impl Script for Q00019GoToThePastureland {
         _npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        // NOTE(java-quirk): without a quest state `onEvent` answers with the no-quest message
-        // (a page), not with the event.
         let player = player?;
         let Some(qs) = ctx.get_quest_state(player, false) else {
             return Some(ctx.get_no_quest_msg(player));

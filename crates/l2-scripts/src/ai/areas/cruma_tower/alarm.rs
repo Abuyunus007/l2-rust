@@ -1,6 +1,4 @@
 //! The Cruma Tower alarm of the quests "Art of Persuasion" and "Nikola's Cooperation".
-// Java: dist/game/data/scripts/ai/areas/CrumaTower/Alarm/Alarm.java
-//
 // The quests spawn the alarm and keep the player and the device on its variables (`player0`,
 // `npc0`, object ids as longs).
 

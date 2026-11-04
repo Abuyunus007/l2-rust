@@ -1,11 +1,4 @@
 //! The clan window packets and the clan broadcasts.
-// Java: network/serverpackets/{PledgeShowMemberListAll,PledgeShowMemberListUpdate,
-//       PledgeShowMemberListAdd,PledgeShowInfoUpdate,PledgeStatusChanged,PledgeInfo,
-//       PledgeSkillList,PledgeReceiveSubPledgeCreated,PledgeReceiveMemberInfo,
-//       PledgeReceivePowerInfo,PledgePowerGradeList}.java
-// Java: entity/clan/Clan.java (broadcastToOnlineMembers, broadcastToOtherOnlineMembers,
-//       broadcastClanStatus)
-//
 // Java builds most of these packets from the `Clan` when they are written; here they are built
 // when sent, which is the same state (the world is one thread).
 
@@ -222,7 +215,6 @@ impl World {
                 .into_iter()
                 .map(|p| RankPrivileges {
                     rank: p.rank,
-                    // NOTE(java-quirk): Java writes `getParty()` (always 0), not the privileges.
                     privileges: p.party,
                 })
                 .collect(),

@@ -1,7 +1,5 @@
 //! Quest 343: Under The Shadow Of The Ivory Tower (Magic Trader Cema, Lich King Icarus and the
 //! collectors Marsha and Trumpin; the Nebulite Orbs of the Ivory Tower monsters).
-// Java: dist/game/data/scripts/quests/Q00343_UnderTheShadowOfTheIvoryTower/Q00343_UnderTheShadowOfTheIvoryTower.java
-//
 // Pattern: a repeatable quest of orbs from kills (a drop chance, a memo state ex that counts down
 // with the kills); the collectors trade orbs for rewards by their own script variables
 // (`param1`, `param2`, read and set with `qs.set`). The branches are kept as Java has them.
@@ -160,8 +158,6 @@ impl Script for Q00343UnderTheShadowOfTheIvoryTower {
                     } else if (1..25).contains(&memo_state_ex) && orbs < 10 {
                         htmltext = Some("30934-06.html".to_owned());
                     } else if (1..25).contains(&memo_state_ex) && orbs > 10 {
-                        // NOTE(java-quirk): exactly 10 orbs match neither branch (`> 10`, not `>= 10`),
-                        // so Marsha shows no page at all.
                         qs.set_memo_state(ctx, 2);
                         ctx.take_items(player, NEBULITE_ORB, 10);
                         htmltext = Some("30934-07.html".to_owned());
@@ -685,7 +681,6 @@ mod tests {
 
     #[test]
     fn exactly_ten_orbs_get_no_page_from_marsha() {
-        // NOTE(java-quirk): `orbs > 10` in Java, so ten orbs match no branch of `30934-05.html`.
         let (mut t, cema, _icarus, marsha, _trumpin) = setup();
         t.enter_as(1, 40, 0, MYSTIC, vec![item(100, NEBULITE_ORB, 10)]);
         start(&mut t, cema);

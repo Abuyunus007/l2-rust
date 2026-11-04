@@ -2,7 +2,6 @@
 //! `DynamicExpRates.xml`, `SiegeSchedule.xml`, `BotReportPunishments.xml`, `SecondaryAuth.xml`,
 //! `Scripts.xml` (read-only) and `default-ipconfig.xml` / `ipconfig.xml` of `run/game/config`.
 //!
-//! Java: none (tooling); the element and attribute names are those of the Java loaders, which
 //! each form names in its module comment.
 //!
 //! # Where it is shown
@@ -541,7 +540,6 @@ impl XmlConfigView {
         }
     }
 
-    /// The old stand-alone page, for the tests: the buttons, the list and the form side by side.
     #[cfg(test)]
     pub fn show(&mut self, ui: &mut egui::Ui) {
         if self.files.is_empty() && self.errors.is_empty() {

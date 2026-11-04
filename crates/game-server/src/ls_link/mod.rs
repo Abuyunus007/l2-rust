@@ -1,9 +1,4 @@
 //! The game server's side of the link to the login server (port `LoginPort`, default 9014).
-// Java: org/l2jmobius/gameserver/LoginServerThread.java (all of it)
-// Java: org/l2jmobius/gameserver/network/loginserverpackets/** (the packets live in
-//       `l2-protocol-login::link`)
-// Java: org/l2jmobius/gameserver/config/ServerConfig.java (`getServerTypeId`, `IPConfigData`)
-//
 // One task (the "link task") owns everything that belongs to the link: the connection, the
 // accounts that are on this game server, the clients waiting for `PlayerAuthResponse`. Other
 // tasks talk to it through [`LsLink`], a cheap handle that only sends commands over a channel.
@@ -19,9 +14,6 @@
 // - `RequestCharacters` is answered from the database (Java `getCharsOnServer`);
 // - `KickPlayer` goes to the session registry (M2-GS-03) through [`LsLink::take_kicks`];
 // - when the link breaks it waits 5 seconds and connects again.
-//
-// NOTE(java-quirk): after a reconnect the request id stays what it was at start (`RequestServerID`
-// or the id of `hexid.txt`), even when the login server gave another id the first time.
 
 pub mod ipconfig;
 
@@ -70,7 +62,6 @@ const SHUTDOWN_WAIT: Duration = Duration::from_secs(5);
 
 /// The four numbers the client sent in `AuthLogin`, which the login server compares with the
 /// ones it gave out.
-// Java: LoginServerThread.SessionKey
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SessionKey {
     pub login_ok1: i32,
@@ -82,14 +73,12 @@ pub struct SessionKey {
 /// The login server wants this account off the game server (another login with the same
 /// account). The session registry kicks the client, waits until the character is stored, and
 /// then calls [`LsLink::player_logout`].
-// Java: LoginServerThread.doKickPlayer
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KickRequest {
     pub account: String,
 }
 
 /// The login server's answer to a password change: a message for the character.
-// Java: gameserver/network/loginserverpackets/receive/ChangePasswordResponse.java
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PasswordReply {
     pub character: String,
@@ -106,7 +95,6 @@ pub trait CharacterCounts: Send + Sync + 'static {
 }
 
 /// [`CharacterCounts`] from the `characters` table.
-// Java: LoginServerThread.getCharsOnServer
 pub struct DbCharacterCounts {
     characters: CharacterRepository,
 }
@@ -185,7 +173,6 @@ impl std::fmt::Debug for LsLinkParams {
 impl LsLinkParams {
     /// Reads the settings like the `LoginServerThread` constructor. With a `hexid.txt` its id and
     /// secret are used; without, the id comes from `RequestServerID` and a new secret is made.
-    // Java: LoginServerThread constructor
     pub fn from_config(
         config: &GameConfig,
         server_list_type: i32,
@@ -219,7 +206,6 @@ impl LsLinkParams {
     }
 
     /// The `AuthRequest` for this registration.
-    // Java: new AuthRequest(_requestID, _acceptAlternate, _hexID, _gamePort, _reserveHost, _maxPlayer, _subnets, _hosts)
     fn auth_request(&self, max_players: i32) -> GameServerAuth {
         GameServerAuth {
             // Java `writeByte(int)` and `writeShort(int)` keep the low bits.
@@ -235,7 +221,6 @@ impl LsLinkParams {
     }
 
     /// The `ServerStatus` sent right after the registration.
-    // Java: LoginServerThread case 0x02
     fn registration_status(&self) -> ServerStatus {
         let age = match self.server_list_age {
             15 => ServerStatus::SERVER_AGE_15,
@@ -261,9 +246,6 @@ impl LsLinkParams {
                         ServerStatus::STATUS_AUTO
                     },
                 ),
-                // NOTE(java-quirk): the Java game server numbers the age attribute 5, which the
-                // login server knows as `TEST_SERVER` and ignores; it reads age as 6. So the
-                // age never reaches the server list. Sent as Java sends it.
                 (ServerStatus::TEST_SERVER, age),
             ],
         }
@@ -287,7 +269,6 @@ pub fn server_type_id(value: &str) -> i32 {
 }
 
 /// `Java generateHexBytes`: random bytes, none of them zero.
-// Java: HexUtil.generateHexBytes
 fn random_nonzero_bytes(len: usize) -> Vec<u8> {
     let mut rng = rand::rng();
     let mut bytes = vec![0u8; len];
@@ -438,11 +419,6 @@ impl LsLink {
     ///
     /// Whoever ends the session of an authenticated account must call
     /// [`player_logout`](Self::player_logout) afterwards.
-    // Java: LoginServerThread.addGameServerLogin + addWaitingClientAndSendRequest, case 0x03
-    //
-    // NOTE(java-quirk): with the link down Java queues the client and never answers it, so it
-    // hangs until it times out. Answering `false` at once is the same for the player (the
-    // connection is closed) without leaving the client waiting.
     pub async fn auth_player(&self, account: &str, key: SessionKey) -> bool {
         let (reply, answer) = oneshot::channel();
         let command = Command::AuthPlayer {
@@ -459,7 +435,6 @@ impl LsLink {
     /// Tells the login server the account is in the game ([`auth_player`](Self::auth_player)
     /// already did that; this is for the world's `PlayerInGame` event). The account is also
     /// resent after a reconnect.
-    // Java: new PlayerInGame(account)
     pub async fn player_in_game(&self, account: &str) {
         self.send_command(Command::PlayerInGame {
             account: account.to_owned(),
@@ -469,7 +444,6 @@ impl LsLink {
     /// The account left the game server (the client is gone and the character stored): the
     /// login server may let it log in again, here or on another game server. Safe to call for an
     /// account the link does not know.
-    // Java: LoginServerThread.sendLogout
     pub async fn player_logout(&self, account: &str) {
         self.send_command(Command::PlayerLogout {
             account: account.to_owned(),
@@ -478,7 +452,6 @@ impl LsLink {
 
     /// Tells the login server to change the access level of an account: -1 bans it, 0 lifts the
     /// ban.
-    // Java: LoginServerThread.sendAccessLevel
     pub async fn send_access_level(&self, account: &str, level: i32) {
         self.send_command(Command::AccessLevel {
             account: account.to_owned(),
@@ -489,7 +462,6 @@ impl LsLink {
     /// Asks the login server to change the password of an account (the voiced command
     /// `.changepassword`, M9-C06). The answer comes back through
     /// [`take_password_replies`](Self::take_password_replies).
-    // Java: LoginServerThread.sendChangePassword
     pub async fn send_change_password(&self, account: &str, character: &str, old_pass: &str, new_pass: &str) {
         self.send_command(Command::ChangePassword {
             account: account.to_owned(),
@@ -510,7 +482,6 @@ impl LsLink {
 
     /// Asks the login server to ban an account (and the address) for `minutes` (a negative value
     /// counts as 0). The ban ends at `now + minutes * 60000`.
-    // Java: LoginServerThread.sendTempBan, network/loginserverpackets/send/TempBan.java
     pub async fn send_temp_ban(&self, account: &str, ip: &str, minutes: i64) {
         self.send_command(Command::TempBan {
             account: account.to_owned(),
@@ -521,7 +492,6 @@ impl LsLink {
 
     /// Answers a `RequestCharacters` by hand. The link answers those itself from the database;
     /// this is for callers that know better (and for tests).
-    // Java: new ReplyCharacters(account, chars, charToDel)
     pub async fn reply_characters(&self, account: &str, chars: u8, delete_times: Vec<i64>) {
         self.send_command(Command::ReplyCharacters {
             account: account.to_owned(),
@@ -531,7 +501,6 @@ impl LsLink {
     }
 
     /// Changes the status shown in the server list (one of `ServerStatus::STATUS_*`).
-    // Java: LoginServerThread.setServerStatus
     pub async fn set_server_status(&self, status: i32) -> Result<(), InvalidServerStatus> {
         match status {
             ServerStatus::STATUS_AUTO
@@ -548,7 +517,6 @@ impl LsLink {
     }
 
     /// One attribute of `ServerStatus` (`ServerStatus::SERVER_TYPE`, ...).
-    // Java: LoginServerThread.sendServerStatus
     pub async fn send_server_status(&self, id: i32, value: i32) {
         self.send_command(Command::ServerStatus { id, value });
     }
@@ -585,7 +553,6 @@ impl LsLink {
     }
 
     /// Reports the server as down, closes the link and ends the link task.
-    // Java: Shutdown sets STATUS_DOWN, then `LoginServerThread.interrupt()` closes the socket.
     pub async fn shutdown(&self) {
         let (done, finished) = oneshot::channel();
         if self.commands.send(Command::Stop { done }).is_err() {
@@ -640,7 +607,6 @@ struct LinkHandler {
 
 impl LinkHandler {
     /// The key exchange: the answer to `InitLS`.
-    // Java: LoginServerThread case 0x00
     fn handshake(&self, init: &InitLS, ctl: &mut Control<'_>) {
         if init.protocol_revision != PROTOCOL_REV {
             warn!("/!\\ Revision mismatch between LS and GS /!\\");
@@ -860,7 +826,6 @@ impl Actor {
         }
     }
 
-    /// Java: the `finally` of `run` and the end of the read loop. Clients that were waiting for
     /// the answer get `false`: it can no longer come.
     fn connection_lost(&mut self) {
         info!("Disconnected from the login server.");
@@ -973,7 +938,6 @@ impl Actor {
         Flow::Continue
     }
 
-    // Java: addGameServerLogin, addWaitingClientAndSendRequest
     fn auth_player(&mut self, account: String, key: SessionKey, reply: oneshot::Sender<bool>) {
         if !self.registered {
             warn!("Cannot check the session of an account: not registered at the login server.");
@@ -1022,7 +986,6 @@ impl Actor {
             LsPacket::KickPlayer(kick) => self.on_kick(kick.account),
             LsPacket::RequestCharacters(request) => self.request_characters(request.account),
             // Java parses it and does nothing with it.
-            // Java: `player.sendMessage(msgToSend)` (M9-C06).
             LsPacket::ChangePasswordResponse(response) => {
                 let _ = self.password_sender.send(PasswordReply {
                     character: response.character_name,
@@ -1032,7 +995,6 @@ impl Actor {
         }
     }
 
-    // Java: LoginServerThread case 0x02
     fn on_registered(&mut self, response: AuthResponse) {
         let server_id = response.server_id;
         match hex_to_string(&self.params.hex_id) {
@@ -1056,7 +1018,6 @@ impl Actor {
         self.publish();
     }
 
-    // Java: LoginServerThread case 0x03
     fn on_player_auth(&mut self, response: PlayerAuthResponse) {
         let PlayerAuthResponse { account, authed } = response;
         // Java ignores an answer nobody waits for.
@@ -1077,7 +1038,6 @@ impl Actor {
         let _ = reply.send(authed);
     }
 
-    // Java: LoginServerThread.doKickPlayer
     fn on_kick(&mut self, account: String) {
         let can_kick = self.accounts.contains(&account) && self.kicks_taken.taken.load(Ordering::Acquire);
         if can_kick
@@ -1095,7 +1055,6 @@ impl Actor {
         self.logout(&account);
     }
 
-    // Java: LoginServerThread.getCharsOnServer
     fn request_characters(&mut self, account: String) {
         let characters = Arc::clone(&self.characters);
         self.lookups.spawn(async move {
@@ -1150,7 +1109,6 @@ fn fail_reason(reason: u8) -> String {
 
 /// Starts the link in `server`: reads the settings (`Server.ini`, `ipconfig.xml`, `hexid.txt`),
 /// spawns the link task and keeps the handle in the server.
-// Java: GameServer constructor, `LoginServerThread.getInstance().start()`
 pub fn start(server: &mut Server) -> LsLink {
     let state = Arc::clone(server.state());
     let config_dir = state.paths.config_dir.clone();

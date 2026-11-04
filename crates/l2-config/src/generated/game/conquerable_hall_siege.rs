@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/ConquerableHallSiegeConfig.java
 
 use crate::IniFile;
 /// Settings of `config/ConquerableHallSiege.ini` (Java: `ConquerableHallSiegeConfig`).

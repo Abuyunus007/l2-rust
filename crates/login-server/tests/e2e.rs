@@ -90,8 +90,6 @@ impl Rig {
             .await;
     }
 
-    /// A game server that registered as the sample server (id 2) and reported its status the
-    /// way the Java game server does.
     async fn game_server(&self, gm_only: bool) -> FakeGameServer {
         let mut gs = FakeGameServer::register_sample(self.gs_addr).await;
         gs.send_java_status(gm_only).await;

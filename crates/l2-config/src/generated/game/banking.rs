@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/BankingConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/Banking.ini` (Java: `BankingConfig`).

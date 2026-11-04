@@ -1,10 +1,6 @@
 //! Quest 463: I Must Be a Genius (Gutenhagen in the Rune Castle Town, Corpse Logs of the rogues).
-// Java: dist/game/data/scripts/quests/Q00463_IMustBeaGenius/Q00463_IMustBeaGenius.java
-//
 // Pattern: a daily kill quest with a count target. The start draws a number (550..600) and a
 // chance; the rogues add or take corpse logs (a `special` chance for some of them rolls 1..100
-// instead). The log count must reach the number exactly (NOTE(java-quirk) below); then the
-// collection is handed in for the daily experience.
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;
@@ -123,8 +119,6 @@ impl Script for Q00463IMustBeaGenius {
                 );
             }
             "reward" => {
-                // NOTE(java-quirk): without the collection the event falls through and the
-                // answer is the event name itself, which the NPC says in chat.
                 if qs.is_cond(ctx, 2) {
                     let rnd = ctx.get_random(REWARD.len() as i32) as usize;
                     let (exp, sp, html) = REWARD[rnd];
@@ -177,8 +171,6 @@ impl Script for Q00463IMustBeaGenius {
                 &[&name, &count],
             );
             ctx.play_sound(killer, QuestSound::ItemsoundQuestItemget);
-            // NOTE(java-quirk): the count must hit the number exactly; a jump over it (the 1..100
-            // rolls) leaves the quest at cond 1 for good, as in Java.
             if ctx.get_quest_items_count(killer, CORPSE_LOG) == i64::from(qs.get_int(ctx, "number")) {
                 ctx.take_items(killer, CORPSE_LOG, -1);
                 ctx.give_items(killer, COLLECTION, 1);

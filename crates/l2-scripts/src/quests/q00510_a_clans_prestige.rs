@@ -1,6 +1,4 @@
 //! Quest 510: A Clan's Prestige (Valdis in the Town of Aden, the clan's Tyrannosaurus claws).
-// Java: dist/game/data/scripts/quests/Q00510_AClansPrestige/Q00510_AClansPrestige.java
-//
 // Pattern: a clan quest. Only the clan leader (level 5 or more) can start it; the claws of the
 // clan's monsters count for the clan's reputation when the leader is near the killer, and the
 // NPC turns them into reputation points at once.
@@ -116,8 +114,6 @@ impl Script for Q00510AClansPrestige {
                 if !ctx.has_quest_items(player, TYRANNOSAURUS_CLAW) {
                     htmltext = "31331-4.html".to_owned();
                 } else {
-                    // NOTE(java-quirk): the reward formula jumps from 30 per claw to 59 + 30 per
-                    // claw at ten claws; ported as it is.
                     let count = ctx.get_quest_items_count(player, TYRANNOSAURUS_CLAW) as i32;
                     let reward = if count < 10 { 30 * count } else { 59 + 30 * count };
                     ctx.play_sound(player, QuestSound::ItemsoundQuestFanfare1);

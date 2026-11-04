@@ -1,6 +1,4 @@
 //! Quest 212: Trial of Duty (Hannavalt in Talking Island's Knight trial, the Knights of Aden).
-// Java: dist/game/data/scripts/quests/Q00212_TrialOfDuty/Q00212_TrialOfDuty.java
-//
 // Pattern: a memo-state chain over many NPCs with kill steps that roll a flag (`qs.set("flag")`)
 // and a spirit that spawns at the killer's mob (`docs/design/scripts.md`, "Quest patterns"). The
 // memo state is the quest's step counter, the condition is the journal step. One-time:
@@ -31,7 +29,6 @@ const TALIANUSS_REPORT: i32 = 2639;
 const TEAR_OF_LOYALTY: i32 = 2640;
 /// Java `ItemHolder(2641, 20)`: the militas articles, 20 of them.
 const MILITAS_ARTICLE: (i32, i64) = (2641, 20);
-// NOTE(java-quirk): `SAINTS_ASHES_URN` is item 2641 too, the same id as `MILITAS_ARTICLE`.
 const SAINTS_ASHES_URN: i32 = 2641;
 const ATHEBALDTS_SKULL: i32 = 2643;
 const ATHEBALDTS_RIBS: i32 = 2644;

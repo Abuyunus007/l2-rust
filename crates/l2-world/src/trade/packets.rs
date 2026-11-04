@@ -1,9 +1,5 @@
 //! The packets of the trade window: `TradeStart` with the items a player may offer, and the
 //! item layout of `TradeOwnAdd` / `TradeOtherAdd` / `TradeUpdate`.
-// Java: network/serverpackets/{TradeStart,TradeOwnAdd,TradeOtherAdd,TradeUpdate,
-//       AbstractItemPacket}.java
-// Java: entity/itemcontainer/PlayerInventory.java (getAvailableItems)
-// Java: entity/item/instance/Item.java (isAvailable)
 
 use l2_data::item::ADENA_ID;
 use l2_data::item::{ItemTemplate, TYPE1_SHIELD_ARMOR, TYPE2_MONEY, TYPE2_QUEST};

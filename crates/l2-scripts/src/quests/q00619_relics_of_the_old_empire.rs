@@ -1,7 +1,5 @@
 //! Quest 619: Relics of the Old Empire (the Ghost of an Adventurer in the Town of Aden; the undead
 //! and the Imperial Tomb monsters drop broken relic parts, 1000 of them buy a random recipe).
-// Java: dist/game/data/scripts/quests/Q00619_RelicsOfTheOldEmpire/Q00619_RelicsOfTheOldEmpire.java
-//
 // Pattern: a kill drop per monster (a chance, a double-item roll in per cent, and a 1/30 pass to
 // the Sepulcher on some monsters). The killer gets the items (Java's `player` in `onKill` is the
 // killer), the party member at cond 3 is the one that counts (`getRandomPartyMemberState`).

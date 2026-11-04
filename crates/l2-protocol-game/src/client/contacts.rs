@@ -7,7 +7,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_ex_opcode;
 use crate::generated::opcodes::ExClientOpcode;
 
-// Java: gameserver/network/clientpackets/RequestExShowContactList.java
 /// The player opens the contact list (`0xD0` 0x0086, `REQUEST_EX_SHOW_POST_FRIEND_FOR_POST_BOX`).
 /// No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -29,7 +28,6 @@ impl Decode for RequestExShowContactList {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestExAddContactToContactList.java
 /// Add a character to the contact list (`0xD0` 0x0084, `REQUEST_EX_ADD_POST_FRIEND_FOR_POST_BOX`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestExAddContactToContactList {
@@ -53,7 +51,6 @@ impl Decode for RequestExAddContactToContactList {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestExDeleteContactFromContactList.java
 /// Delete a character from the contact list (`0xD0` 0x0085,
 /// `REQUEST_EX_DELETE_POST_FRIEND_FOR_POST_BOX`).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -78,7 +75,6 @@ impl Decode for RequestExDeleteContactFromContactList {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestExFriendListExtended.java
 /// The mail window asks for the friend list with class and level (`0xD0` 0x0087,
 /// `REQUEST_EX_FRIEND_LIST_FOR_POST_BOX`). No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,6 +1,4 @@
 //! Katenar, the Kamael who waits for the soul breaker candidate in "Certified Soul Breaker".
-// Java: dist/game/data/scripts/ai/others/Katenar/Katenar.java
-//
 // Q00065 (S-QR-xx) spawns him and writes `npc0` (the NPC that spawned him) and `player0` (the
 // player he waits for) to his variables as object ids, the way Q00184 does for its alarm.
 
@@ -50,7 +48,6 @@ impl Script for Katenar {
         npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        // NOTE(java-quirk): `npc.getVariables()` throws for a null NPC; nothing happens then.
         let npc = npc?;
         let npc0 = object_var(ctx, npc.object_id, "npc0");
         let spawned = ctx
@@ -67,7 +64,6 @@ impl Script for Katenar {
                 ctx.delete_npc(npc);
             }
             "GOOD_LUCK" => {
-                // NOTE(java-quirk): a missing quest state throws in Java.
                 let qs = ctx.quest_state_of(CERTIFIED_SOUL_BREAKER, player?, false)?;
                 if qs.is_memo_state(ctx, 14) {
                     if let Some(npc0) = npc0
@@ -85,7 +81,6 @@ impl Script for Katenar {
     }
 
     fn on_first_talk(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, talker: ObjectId) -> Option<String> {
-        // NOTE(java-quirk): a missing quest state throws in Java (no page).
         let qs = ctx.quest_state_of(CERTIFIED_SOUL_BREAKER, talker, false)?;
         let mut htmltext = ctx.get_no_quest_msg(talker);
         let memo_state = qs.get_memo_state(ctx);
@@ -103,8 +98,6 @@ impl Script for Katenar {
                 htmltext = "32242-03.html".to_owned();
             }
 
-            // NOTE(java-quirk): the document goes to `player0`, not to the talker; without a
-            // `player0` Java throws.
             if let Some(player) = player
                 && !ctx.has_quest_items(player, SEALED_DOCUMENT)
             {

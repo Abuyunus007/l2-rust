@@ -1,6 +1,4 @@
 //! The data types of the boat routes and the air ship paths.
-// Java: entity/actor/holders/creature/VehiclePathPoint.java
-// Java: dist/game/data/scripts/vehicles/*.java (what one `case` of a boat script does)
 
 use l2_protocol_game::SystemMessageId;
 

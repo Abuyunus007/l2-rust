@@ -9,7 +9,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ClientOpcode;
 
-// Java: gameserver/network/clientpackets/AttackRequest.java
 /// A click to attack an object (a target, a monster). Java reads the same fields as `Action`.
 ///
 /// Java registers this class for two ids: `ATTACK` (0x01) and `ATTACK_REQUEST` (0x32). The
@@ -62,7 +61,6 @@ impl Decode for AttackRequest {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestActionUse.java
 /// A click on an action button: the action id is the one the client sends, Java's `runImpl`
 /// decides what it does.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -88,8 +86,6 @@ impl Encode for RequestActionUse {
 impl Decode for RequestActionUse {
     fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
         let action_id = r.i32()?;
-        // NOTE(java-quirk): Java compares with `== 1` for both flags (`UseItem` uses `!= 0`).
-        // Any other value reads as "not pressed".
         let ctrl_pressed = r.i32()? == 1;
         let shift_pressed = r.i8()? == 1;
         Ok(Self {
@@ -100,7 +96,6 @@ impl Decode for RequestActionUse {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestRestartPoint.java
 /// The player picks a restart point after death (village, clan hall, castle, fortress...).
 ///
 /// The value is the raw Java `_requestedPointType`. Its meaning is decided by the `switch` in

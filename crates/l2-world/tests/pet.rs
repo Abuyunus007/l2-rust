@@ -1547,8 +1547,6 @@ fn a_baby_pet_heals_its_owner() {
         message_ids(&s.me.take()),
         vec![SystemMessageId::APetOnAuxiliaryModeCannotUseSkills]
     );
-    // NOTE(java-quirk): `canControl` refuses before `switchMode()` runs, so the button that
-    // switched to the auxiliary mode cannot switch back.
     s.action(1084);
     assert_eq!(
         message_ids(&s.me.take()),
@@ -1627,11 +1625,6 @@ impl Persisted {
     }
 }
 
-/// A collar that came to the character after the login (a trade, a pickup) may have a `pets` row
-/// the world never read. Using it asks the persistence task for the row (no insert, no pet yet,
-/// one request however often the player clicks); the pet comes with the answer: a restore when
-/// the row exists (its level and exp are not overwritten, D-39), a new pet when the database has
-/// none, nothing when the read failed.
 #[test]
 fn an_unknown_collar_asks_for_its_row_before_the_pet_is_made() {
     let answer = |s: &mut Scene, control: ObjectId, result| {

@@ -1,6 +1,5 @@
 //! World <-> geo coordinate conversion.
 //!
-//! Java: `gameserver/geoengine/GeoEngine.java` (`getGeoX`, `getGeoY`, `getWorldX`, `getWorldY` and
 //! the constants above them).
 //!
 //! A geo cell is 16 x 16 world units. Geo cell `(0, 0)` starts at world `(-655360, -589824)`,
@@ -31,9 +30,6 @@ impl Location {
 }
 
 /// `GeoEngine.getGeoX`: world X to geo cell X.
-///
-/// NOTE(java-quirk): Java `int` division truncates toward zero, so a world X just left of
-/// [`WORLD_MIN_X`] (-1 to -15 units) still gives cell 0, not -1. Rust's `/` on `i32` behaves the same.
 pub fn geo_x(world_x: i32) -> i32 {
     world_x.wrapping_sub(WORLD_MIN_X) / COORDINATE_SCALE
 }
@@ -121,7 +117,6 @@ mod tests {
 
     #[test]
     fn negative_coordinates_round_toward_zero_like_java() {
-        // NOTE(java-quirk): (-1) / 16 == 0 in Java, so cell 0 also covers the 15 units before it.
         assert_eq!(geo_x(WORLD_MIN_X - 1), 0);
         assert_eq!(geo_x(WORLD_MIN_X - 15), 0);
         assert_eq!(geo_x(WORLD_MIN_X - 16), -1);

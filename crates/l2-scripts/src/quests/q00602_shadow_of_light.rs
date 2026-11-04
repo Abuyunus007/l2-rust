@@ -1,6 +1,4 @@
 //! Quest 602: Shadow of Light (Eye of Argos in the Ketra and Varka villages, Eye of Darkness).
-// Java: dist/game/data/scripts/quests/Q00602_ShadowOfLight/Q00602_ShadowOfLight.java
-//
 // Pattern: the same shape as Q00601 (a repeatable collect quest with a drop chance per monster;
 // the hundredth eye sets cond 2; a random bundle or the adena alone is the reward). The second
 // monster has its own chance, and the reward gives experience after the adena.

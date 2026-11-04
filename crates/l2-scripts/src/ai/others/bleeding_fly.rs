@@ -1,5 +1,4 @@
 //! Bleeding Fly (raid boss 25720): Parasitic Leeches at half and a quarter of its HP.
-// Java: dist/game/data/scripts/ai/others/BleedingFly.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};
@@ -214,7 +213,6 @@ mod tests {
             t.world.script_npc_var("BleedingFly", boss, MID_HP_MINION_COUNT),
             4
         );
-        // NOTE(java-quirk): the mid timer still fired once (1 s), spawning its two leeches too.
         assert_eq!(leeches(&t), 4);
     }
 

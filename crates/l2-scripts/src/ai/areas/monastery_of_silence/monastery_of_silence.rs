@@ -1,6 +1,5 @@
 //! Monastery of Silence AI: the Solina knights train on the scarecrows and the monks do not
 //! tolerate weapons.
-// Java: dist/game/data/scripts/ai/areas/MonasteryOfSilence/MonasteryOfSilence.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;
@@ -88,8 +87,6 @@ impl Script for MonasteryOfSilence {
                         continue;
                     };
                     if (ctx.get_random(100) < 30) && !ctx.is_dead(object) && !ctx.is_in_combat(object) {
-                        // NOTE(java-quirk): the script value tested is the scarecrow's (`npc`),
-                        // the one set is the captain's (`character`).
                         if (character.id == CAPTAIN)
                             && (ctx.get_random(100) < 10)
                             && ctx.is_script_value(npc, 0)

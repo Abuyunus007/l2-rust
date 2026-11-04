@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/GraciaSeedsConfig.java
 
 use crate::IniFile;
 /// Settings of `config/GraciaSeeds.ini` (Java: `GraciaSeedsConfig`).

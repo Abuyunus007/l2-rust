@@ -1,7 +1,4 @@
 //! `FavoriteBoard`: the favorite links (`bbs_favorites`).
-// Java: dist/game/data/scripts/handlers/bypass/communityboard/FavoriteBoard.java
-// Java: dist/game/data/scripts/handlers/bypass/communityboard/HomeBoard.java (getFavoriteCount)
-//
 // # Request and answer (the pattern for a board page that needs a table)
 // Java reads and writes the table inside `onCommand`. The world cannot wait for the database
 // (D-15), so a command sends a write ([`FavoriteWrite`]) and/or a read request

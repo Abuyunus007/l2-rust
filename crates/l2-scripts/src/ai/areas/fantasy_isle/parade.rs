@@ -1,6 +1,4 @@
 //! Fantasy Isle Parade: every hour the actors march along five routes and are removed at the end.
-// Java: dist/game/data/scripts/ai/areas/FantasyIsle/Parade.java
-//
 // Java's three `ThreadPool` tasks (spawn every 5 s, delete every 1 s, clean after 7 min) are
 // world timers here: "spawn", "delete" and "clean".
 

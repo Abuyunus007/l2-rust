@@ -1,7 +1,5 @@
 //! Quest 51: O'Fulle's Special Bait (O'Fulle in the Fishing Village; the fettered souls give the
 //! lost bait).
-// Java: dist/game/data/scripts/quests/Q00051_OFullesSpecialBait/Q00051_OFullesSpecialBait.java
-//
 // Pattern: a kill-count quest with a drop chance up to a limit (`docs/design/scripts.md`, "Quest
 // patterns"): the fettered souls drop the lost bait with 33% to the party member at cond 1, and
 // the hundredth moves that member on to cond 2. The icy air lures come back with the bait.

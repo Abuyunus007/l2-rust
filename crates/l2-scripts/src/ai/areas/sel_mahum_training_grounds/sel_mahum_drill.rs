@@ -1,6 +1,5 @@
 //! Sel Mahum Training Ground AI for drill groups: the sergeant drills the recruits with social
 //! actions, the recruits scatter when he dies.
-// Java: dist/game/data/scripts/ai/areas/SelMahumTrainingGrounds/SelMahumDrill.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

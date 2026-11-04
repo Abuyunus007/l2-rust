@@ -1,5 +1,4 @@
 //! The Abyss Gatekeeper at the Seed of Infinity: tells what the gaze lets pass.
-// Java: dist/game/data/scripts/ai/areas/Gracia/AI/NPC/AbyssGaze/AbyssGaze.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

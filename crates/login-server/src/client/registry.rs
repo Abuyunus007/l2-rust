@@ -1,6 +1,4 @@
 //! Accounts that are logged in on the login server (not yet on a game server).
-//!
-//! Java: `LoginController._loginServerClients` (account → `LoginClient`).
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -64,7 +62,6 @@ impl ClientRegistry {
         self.lock().insert(account.to_owned(), client);
     }
 
-    // Java: LoginController.removeAuthedLoginClient
     pub fn remove(&self, account: &str) -> Option<AuthedClient> {
         self.lock().remove(account)
     }
@@ -83,12 +80,10 @@ impl ClientRegistry {
         false
     }
 
-    // Java: LoginController.getAuthedClient
     pub fn get(&self, account: &str) -> Option<AuthedClient> {
         self.lock().get(account).cloned()
     }
 
-    // Java: LoginController.getKeyForAccount
     pub fn session_key(&self, account: &str) -> Option<SessionKey> {
         self.lock().get(account).map(|c| c.session_key)
     }
@@ -103,7 +98,6 @@ impl ClientRegistry {
 
     /// Gives the characters one game server reported to the account's waiting client. `false`
     /// when the account is not logged in here.
-    // Java: LoginController.setCharactersOnServer
     pub fn set_characters_on_server(
         &self,
         account: &str,
@@ -122,7 +116,6 @@ impl ClientRegistry {
 
     /// The periodic cleanup: drops clients that did not join a game server within `timeout_ms`
     /// of connecting, and clients whose connection is gone. Returns how many were dropped.
-    // Java: LoginController.purge
     pub fn purge(&self, now_ms: i64, timeout_ms: i64) -> usize {
         let removed = self.take_where(|client| {
             let timed_out =
@@ -130,9 +123,6 @@ impl ClientRegistry {
             timed_out || client.handle.is_closed()
         });
         for (_, client) in &removed {
-            // NOTE(java-quirk): Java's `close(LoginFailReason)` only sends the packet and relies
-            // on the client to disconnect. The card asks for a close, so the connection ends
-            // here after the packet.
             client.handle.send_and_close(
                 LoginFail {
                     reason: LoginFailReason::AccessFailed,

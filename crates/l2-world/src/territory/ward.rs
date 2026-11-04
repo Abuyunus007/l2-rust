@@ -1,14 +1,6 @@
 //! The territory wards: the places of a territory's wards, the ward NPC (who may hit it, the
 //! damage it takes, its death), the ward item and its carrier, the transport to an outpost and
 //! the residential skills of the wards a territory owns.
-// Java: managers/TerritoryWarManager.java (addTerritoryWard, getTerritoryWard, dropCombatFlag,
-//       Territory.getFreeWardSpawnPlace, Territory.removeWard, updateTerritoryData)
-// Java: mechanics/siege/TerritoryWard.java (spawnBack, spawnMe, unSpawnMe, activate, dropIt)
-// Java: entity/actor/instance/TerritoryWard.java (isAutoAttackable, reduceCurrentHp,
-//       reduceCurrentHpByDOT, doDie, onAction)
-// Java: mechanics/siege/Castle.java (giveResidentialSkills, removeResidentialSkills: the ward part)
-// Java: entity/actor/Player.java (addItem: the ward branch)
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/TerritoryWarSuperClass.java (onSkillSee)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{ActionFailed, InventoryUpdate, SystemMessage, SystemMessageParam};
@@ -284,8 +276,6 @@ impl World {
         ret
     }
 
-    /// The wards a territory owns as the database has them now (side by side): the places follow
-    /// and the owner's online members get their ward skills again. Outside the war only.
     pub(crate) fn territory_apply_owned_wards(&mut self, castle_id: i32, wards: &[i32]) {
         let Some(current) = self
             .territory
@@ -424,8 +414,6 @@ impl World {
         let Some(ward) = self.territory.wards.get(index).cloned() else {
             return;
         };
-        // NOTE(java-quirk): `_oldLocation` is null for a ward nobody picked up; Java's spawn then
-        // throws inside `spawnNPC` (caught and logged) and the ward has no NPC.
         let npc = ward
             .old_location
             .and_then(|(x, y, z, h)| self.spawn_npc_at(WARD_NPC_BASE + ward.territory_id, x, y, z, h));
@@ -499,8 +487,6 @@ impl World {
         let territory_id = match self.territory.wards.get_mut(index) {
             Some(w) => {
                 w.player = Some(player);
-                // NOTE(java-quirk): Java reads the coordinates of the ward NPC, which is decayed
-                // by now but keeps them; a ward without an NPC throws here.
                 if old_location.is_some() {
                     w.old_location = old_location;
                 }

@@ -1,13 +1,6 @@
 //! Parties: the table of parties, who is in one, the party window and the party packets.
 //!
 //! Design: `docs/design/m6-social.md` (parties are ids, D-11).
-// Java: entity/groups/Party.java, entity/groups/AbstractPlayerGroup.java
-// Java: entity/groups/{PartyDistributionType,PartyExpType,PartyMessageType}.java
-// Java: entity/actor/Player.java (`_party`, `joinParty`, `leaveParty`, `isInPartyWith`,
-//       `isInLooterParty`, `_partyDistributionType`)
-// Java: network/serverpackets/{PartySmallWindowAll,PartySmallWindowAdd,PartySmallWindowDelete,
-//       PartySmallWindowDeleteAll,PartySmallWindowUpdate,PartyMemberPosition,PartySpelled}.java
-//
 // # Shape
 // Java has a `Party` object with a `List<Player>`, and every `Player` points back at its party. Here
 // the world owns a table `PartyId -> Party` whose members are `ObjectId`s (`members[0]` is the

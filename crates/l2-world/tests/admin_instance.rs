@@ -3,7 +3,6 @@
 //! The instance admin words (M8-INST-01, `admin/instance.rs`): `//createinstance`,
 //! `//listinstances`, `//setinstance`, `//destroyinstance`, `//instancezone`,
 //! `//instancezone_clear`, `//instance_spawns` and `//instancezones`, with their Java texts.
-//! Java: dist/game/data/scripts/handlers/chat/commands/admin/{AdminInstance,AdminInstanceZone,
 //! AdminSpawn,AdminHelp}.java
 
 use std::sync::{Arc, Mutex};

@@ -44,13 +44,6 @@ pub struct XmlNode {
     /// True when the first DOM child of this element is a text node (any character data before
     /// the first child element, whitespace included; comments do not count because Java's parser
     /// drops them). Filled by [`parse_dom`]; always `false` for nodes made by serde or by hand.
-    ///
-    /// NOTE(java-quirk): `DocumentBase.parse()` uses a non-validating `DocumentBuilderFactory`
-    /// that only ignores comments, so the indentation between tags stays in the DOM as text
-    /// nodes. `parseTemplate` then tests `node.getFirstChild()` for `<conditions>` without
-    /// skipping text: in an indented file the first child is whitespace, the `<conditions>` is not
-    /// taken as the template condition, and the loop below it has no case for it. Only a
-    /// `<conditions>` written directly after the opening tag counts.
     pub leading_text: bool,
 }
 
@@ -84,10 +77,6 @@ impl XmlNode {
     }
 
     /// Java `Node.getTextContent()` for an element: own text, then the text of the descendants.
-    ///
-    /// NOTE(java-quirk): the DOM interleaves text and child elements in document order; this tree
-    /// keeps the element's own text first. The two differ only for mixed content, which the
-    /// datapack does not have (and the callers trim the result).
     pub fn text_content(&self) -> String {
         let mut out = self.text.clone();
         for child in &self.children {

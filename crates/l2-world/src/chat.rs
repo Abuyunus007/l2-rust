@@ -1,8 +1,4 @@
 //! Chat: `Say2` and the chat handlers of the channels a plain character can use.
-// Java: network/clientpackets/Say2.java (runImpl)
-// Java: dist/game/data/scripts/handlers/chat/channels/{ChatGeneral,ChatShout,ChatTrade,
-// Java: ChatWhisper,ChatHeroVoice,ChatParty}.java
-//
 // General chat reaches the players within 1250 of the speaker (M3-WREG-01 regions). Shout and
 // trade in `ON` mode go to the players in the speaker's map region (M3-TELE-01's map regions),
 // `GLOBAL` to everybody. Chat bans and jail come from the punishments (`punishments.rs`). Left
@@ -21,9 +17,7 @@ use crate::data::ChatBroadcast;
 use crate::flood::FloodKind;
 use crate::world::World;
 
-/// Java: `_text.length() > 105` without an item link.
 const MAX_TEXT_LEN: usize = 105;
-/// Java: `_text.length() > 500` with an item link (the `\b` character, code 8).
 const MAX_LINKED_TEXT_LEN: usize = 500;
 /// The character the client puts around an item link.
 const ITEM_LINK_MARK: char = '\u{8}';
@@ -72,7 +66,6 @@ impl World {
         let is_gm = self.data.access_level(player.data.access_level).is_gm;
 
         let Some(mut chat_type) = ChatType::from_client_id(chat_type) else {
-            // Java: warning, ActionFailed, Disconnection.storeAndDeleteWith(LeaveWorld).
             debug!("{}: Say2 with invalid type {chat_type}", player.data.name);
             self.send(id, &ActionFailed);
             self.leave(id, LeaveReason::Logout);
@@ -85,7 +78,6 @@ impl World {
             return;
         }
 
-        // Java: `String.length()` counts UTF-16 units. The client's item links contain code 8.
         let length = text.encode_utf16().count();
         let has_link = text.contains(ITEM_LINK_MARK);
         if !is_gm && ((has_link && length > MAX_LINKED_TEXT_LEN) || (!has_link && length > MAX_TEXT_LEN)) {
@@ -149,7 +141,6 @@ impl World {
             let Some(player) = self.players.get(&id) else {
                 return;
             };
-            // Java: `sb.append(chatType.name()).append(" [").append(player)`, where `player` is
             // `WorldObject.toString()` = `Player:<name>[<objectId>]`.
             let name = java_chat_name(chat_type);
             let who = format!("Player:{}[{}]", player.data.name, id.0);
@@ -297,7 +288,6 @@ impl World {
         }
     }
 
-    // Java: `World.getPlayers()` with `!BlockList.isBlocked(player, activeChar)`.
     fn broadcast_say(&self, id: ObjectId, packet: &CreatureSay) {
         // In object id order, so the same input gives the same output (D-13).
         let mut ids: Vec<ObjectId> = self.players.keys().copied().collect();
@@ -309,7 +299,6 @@ impl World {
         }
     }
 
-    // Java: ChatGeneral.onChat (without voiced commands and block list)
     fn chat_general(&mut self, id: ObjectId, text: &str) {
         // Voiced commands first: a text a handler took is not said (`vcdUsed`).
         if self.wedding_voiced_command(id, text) || self.script_voiced_command(id, text) {
@@ -344,7 +333,6 @@ impl World {
             None
         };
         for to in self.visible_objects_in_range(id, GENERAL_CHAT_RANGE) {
-            // Java: `!BlockList.isBlocked(player, activeChar)`.
             if self.players.contains_key(&to) && !self.is_blocked(to, id) {
                 match &random_packet {
                     Some(random) if self.factions_oppose(id, to) => {
@@ -359,7 +347,6 @@ impl World {
         self.send(id, &packet);
     }
 
-    // Java: ChatShout.onChat
     fn chat_shout(&mut self, id: ObjectId, text: &str) {
         let Some(player) = self.players.get(&id) else {
             return;
@@ -393,7 +380,6 @@ impl World {
         self.broadcast_by_mode(id, self.settings.global_chat, is_gm, &packet, true);
     }
 
-    // Java: ChatTrade.onChat
     fn chat_trade(&mut self, id: ObjectId, text: &str) {
         let Some(player) = self.players.get(&id) else {
             return;
@@ -468,7 +454,6 @@ impl World {
         }
     }
 
-    // Java: ChatWhisper.onChat
     fn chat_whisper(&mut self, id: ObjectId, target: Option<&str>, text: &str) {
         if !self.players.contains_key(&id) {
             return;
@@ -525,7 +510,6 @@ impl World {
                     self.send_message(id, "Player belongs to the opposing faction.");
                     return;
                 }
-                // Java: `!BlockList.isBlocked(receiver, activeChar)`: the receiver refuses messages
                 // or blocks the sender.
                 if self.is_blocked(receiver_id, id) {
                     self.send(
@@ -555,7 +539,6 @@ impl World {
         }
     }
 
-    // Java: ChatBattlefield.onChat (M7-TW-01): while the Territory War channel is open, everybody
     // of the speaker's side hears it.
     fn chat_battlefield(&self, id: ObjectId, text: &str) {
         let side = self.siege_side_of(id);
@@ -589,7 +572,6 @@ impl World {
         }
     }
 
-    // Java: ChatParty.onChat (without the jail rule and the block list)
     fn chat_party(&self, id: ObjectId, text: &str) {
         let Some(player) = self.players.get(&id) else {
             return;
@@ -614,7 +596,6 @@ impl World {
         }
     }
 
-    // Java: ChatHeroVoice.onChat
     fn chat_hero_voice(&mut self, id: ObjectId, text: &str) {
         let Some(player) = self.players.get(&id) else {
             return;

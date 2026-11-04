@@ -2,7 +2,6 @@
 
 //! The minigames (M8-GAMES-01): a Handy's Block Checker match, the Kratei's Cube registration and
 //! match, and an Underground Coliseum match.
-//! Java: managers/HandysBlockCheckerManager.java, managers/games/{BlockCheckerManager,
 //! KrateisCubeManager,UndergroundColiseumManager}.java, mechanics/krateisCube/*,
 //! mechanics/undergroundColiseum/*, entity/actor/instance/{Block,KrateisCubeManager,
 //! KrateisMatchManager,UCManager,UCTower}.java.

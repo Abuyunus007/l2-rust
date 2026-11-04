@@ -1,5 +1,4 @@
 //! The Underground Coliseum helpers and managers: teleports in and out of the coliseum.
-// Java: dist/game/data/scripts/ai/others/TeleportToUndergroundColiseum/TeleportToUndergroundColiseum.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
@@ -71,7 +70,6 @@ impl Script for TeleportToUndergroundColiseum {
             }
         } else if !event.is_empty() && event.bytes().all(|b| b.is_ascii_digit()) {
             // Java `StringUtil.isNumeric` and `Integer.parseInt`.
-            // NOTE(java-quirk): an index outside the managers throws in Java; nothing happens here.
             let val = event.parse::<i32>().ok().map(|v| v - 1);
             if let Some(locs) = val
                 .and_then(|v| usize::try_from(v).ok())

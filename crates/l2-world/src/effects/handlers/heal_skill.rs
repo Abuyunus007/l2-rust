@@ -1,6 +1,4 @@
 //! The `Heal` effect: the amount of HP a healing skill restores.
-// Java: dist/game/data/scripts/handlers/skill/effects/Heal.java
-//
 // The amount is M5-FORM-02's `calc_heal_amount` (checked against Java vectors). M5-SHOT-01: the
 // spiritshot charges are read as "not charged".
 

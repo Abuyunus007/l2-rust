@@ -1,6 +1,4 @@
 //! Quest 148: Path to Becoming an Exalted Mercenary (the mercenary captains, after the elite one).
-// Java: dist/game/data/scripts/quests/Q00148_PathtoBecominganExaltedMercenary/Q00148_PathtoBecominganExaltedMercenary.java
-//
 // Pattern: the same chain of captain pages as Q00147. The elite certificate of Q00147 is the
 // entry; the captain swaps it for the top elite certificate at cond 4. A castle clan is sent to
 // the castle page, and a character with the Q00147 quest completed gets the 00a page.
@@ -50,7 +48,6 @@ impl Script for Q00148PathToBecomingAnExaltedMercenary {
         let player = player?;
         let htmltext = event.to_owned();
         let Some(qs) = ctx.get_quest_state(player, false) else {
-            // NOTE(java-quirk): without a quest state Java returns the event as the page too.
             return Some(htmltext);
         };
         if event.eq_ignore_ascii_case("exalted-00b.htm") {

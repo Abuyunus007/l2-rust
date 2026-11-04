@@ -1,8 +1,6 @@
 //! Quest 236: Seeds of Chaos (the Kamael's Star of Destiny quest: Hierarch Kekropus, Kurstin,
 //! the Mysterious Wizard, Katenar and Harkilgamed who are summoned next to the player, the Rock,
 //! Rodenpicula and Mother Nornil).
-// Java: dist/game/data/scripts/quests/Q00236_SeedsOfChaos/Q00236_SeedsOfChaos.java
-//
 // Pattern: the memo state drives the quest; the summoned helpers (Katenar, Harkilgamed) keep the
 // player and their "owner" NPC in the NPC variables (`player0`, `npc0`, `SPAWNED`, `PLAYER_ID`),
 // and a 120 s timer despawns them (see `q00184_art_of_persuasion.rs` for the same variables).
@@ -732,7 +730,6 @@ impl Script for Q00236SeedsOfChaos {
                             let c0 = link(ctx, npc.object_id, "player0");
                             let npc0 = link(ctx, npc.object_id, "npc0");
                             set_spawned(ctx, npc0, false);
-                            // NOTE(java-quirk): both branches do the same; only the page differs.
                             qs.set_memo_state(ctx, 11);
                             qs.set_cond(ctx, 10, true);
                             if i64::from(player.0) == c0 {

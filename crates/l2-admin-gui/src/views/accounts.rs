@@ -2,7 +2,6 @@
 //! accounts. The login server's admin endpoint does the work (it owns the `accounts` table); the
 //! supervisor relays `Request::Accounts` to it (G-04).
 //!
-//! Java: `tools/AccountManager.java` is the spec for what each action writes. The game server's
 //! `//ban_acc` is a different thing and is explained next to the ban button.
 //!
 //! Passwords: the form fields are moved into the request and replaced by empty strings, so the

@@ -1,13 +1,5 @@
 //! The private warehouse, the clan warehouse and the freight: the NPC bypasses that open them,
 //! the deposit and withdraw packets, the fees and the rows (M6-WH-01).
-// Java: entity/itemcontainer/{ItemContainer,Warehouse,PlayerWarehouse,ClanWarehouse,PlayerFreight}.java
-// Java: network/clientpackets/{SendWareHouseDepositList,SendWareHouseWithDrawList,RequestPackageSend,
-//       RequestPackageSendableItemList}.java
-// Java: network/serverpackets/{WareHouseDepositList,WareHouseWithdrawalList,
-//       SortedWareHouseWithdrawalList,PackageToList,PackageSendableList}.java
-// Java: dist/game/data/scripts/handlers/bypass/npc/{PrivateWarehouse,ClanWarehouse,Freight}.java
-// Java: entity/actor/instance/Warehouse.java, entity/item/WarehouseItem.java
-//
 // # Where the items live
 // A container is a `Vec<ItemData>` in the world, like the inventory is (D-10, D-11):
 // - the private warehouse and the freight of a character are on its [`PlayerWarehouse`]
@@ -18,19 +10,7 @@
 // - `Player::warehouse.active` is Java `_activeWarehouse`: which container the next deposit or
 //   withdraw packet acts on, set by the bypasses ([`ContainerRef`]).
 //
-// # Rows (D-39)
-// Java moves an item by changing `owner_id`, `loc` and `loc_data` of its row and calling
-// `updateDatabase`. Every move here queues the same end state as `PersistCommand::ItemRows`
-// (`ItemRowOp`): an `UPDATE` of the moved row (new owner and location), the `UPDATE` of a count,
-// the `INSERT` of a new stack (a new object id of the Rust range) and the `DELETE` of a stack that
-// went away whole. `items.loc` is `WAREHOUSE` for the private warehouse, `CLANWH` (owner = clan
-// id) for the clan warehouse and `FREIGHT` (owner = the receiving character) for the freight.
 //
-// # One database, two servers (M6-SYNC-01)
-// The Java GS keeps its own copy of the clan warehouse, so an item a clan member took there is
-// still in this server's `Clan::warehouse`. Opening a clan warehouse window (`WithdrawC`,
-// `WithdrawSortedC`, `DepositC`) therefore reads the clan's `CLANWH` rows again first and replaces
-// the container (`refresh.rs`); the window continues when the persistence task answers.
 //
 // # Left out on purpose (each has a comment where it belongs)
 // - `setInventoryBlockingStatus(true)` (nothing

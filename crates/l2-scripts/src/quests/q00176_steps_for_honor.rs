@@ -1,5 +1,4 @@
 //! Quest 176: Steps for Honor (Rapidus, the Territory War quartermaster).
-// Java: dist/game/data/scripts/quests/Q00176_StepsForHonor/Q00176_StepsForHonor.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED};

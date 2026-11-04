@@ -1,8 +1,6 @@
 //! What the config editor knows about the values of a key besides its type: a slider range,
 //! the allowed words of an enum-like key, list keys and colours (GUI card G-07).
-// Java: none (tooling). The ranges come from the comments of the `dist/` `.ini` files and from the
 // `org/l2jmobius/gameserver/config` loaders; they only steer the *controls*.
-//!
 //! None of this validates anything. A slider covers the usual values of a key; the number field
 //! next to it still takes any valid number, and a value outside the slider just parks the slider
 //! at its end. The tables are committed data on purpose (no guessing from the numbers at run
@@ -378,7 +376,6 @@ impl EnumOption {
 }
 
 /// Enum-like keys whose comment does not list the words in a form [`enum_from_help`] reads.
-/// Java: `FloodProtectorConfig` ("'none', 'kick', 'ban', 'jail'"), `RebirthManager.getScreenMessagePosition`.
 const EXPLICIT_ENUMS: &[(&str, &[&str])] = &[
     ("FloodProtector*PunishmentType", &["none", "kick", "ban", "jail"]),
     (

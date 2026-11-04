@@ -1,13 +1,5 @@
 //! The NPCs of a castle siege: the control and flame towers, the headquarters of the attackers,
 //! the artefact the attackers engrave, and the siege guards.
-// Java: mechanics/siege/Siege.java (spawnControlTower, spawnFlameTower, removeTowers,
-//       spawnSiegeGuard)
-// Java: mechanics/siege/Castle.java (engrave, registerArtefact)
-// Java: managers/SiegeGuardManager.java
-// Java: entity/actor/Tower.java, entity/actor/instance/{ControlTower,FlameTower,Artefact,
-//       SiegeFlag,Defender}.java, entity/actor/status/SiegeFlagStatus.java
-// Java: dist/game/data/scripts/handlers/skill/effects/{HeadquarterCreate,TakeCastle}.java
-// Java: managers/TerritoryWarManager.java (isAllyField)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
@@ -32,7 +24,6 @@ impl World {
     fn siege_spawn_tower(&mut self, npc_id: i32, x: i32, y: i32, z: i32, kind: &str) -> Option<ObjectId> {
         let is_kind = self.npc_world.template(npc_id).is_some_and(|t| t.is_type(kind));
         if !is_kind {
-            // Java: the cast to `ControlTower` / `FlameTower` throws.
             warn!("Siege: Cannot spawn {kind}! npc {npc_id}");
             return None;
         }
@@ -123,7 +114,6 @@ impl World {
             return;
         }
         let max = usize::try_from(*upgrade_level * 2).unwrap_or(0);
-        // NOTE(java-quirk): Java throws when the tower has fewer zones than that.
         let zones: Vec<i32> = zone_list.iter().take(max).copied().collect();
         for zone in zones {
             self.sieges.trap_zones.insert(zone, value);
@@ -146,7 +136,6 @@ impl World {
                 .get_mut(&id.0)
                 .and_then(|c| c.flame_towers.get_mut(i))
         }) else {
-            // NOTE(java-quirk): Java's `List.get` throws for an index past the towers.
             warn!("Exception: loadTrapUpgrade(): no flame tower {tower_index} for {id}");
             return;
         };
@@ -366,7 +355,6 @@ impl World {
             // `CHSiegeManager.getSiege(player)` (M7-CHSIEGE-01).
             ResidenceRef::ClanHall(hall)
         } else {
-            // Java: "SiegeFlag: Initialization failed." (a NullPointerException).
             warn!("SiegeFlag: Initialization failed.");
             return;
         };
@@ -480,7 +468,6 @@ impl World {
 
     /// `SiegeFlagStatus.reduceHp`: an advanced headquarters takes half the damage first, then the
     /// damage again. `true` when `npc` is a headquarters (the caller does nothing more).
-    // NOTE(java-quirk): "double HP" in the skill's text, but Java takes 1.5 times the damage.
     pub(crate) fn siege_flag_reduce_hp(
         &mut self,
         npc: ObjectId,
@@ -643,7 +630,6 @@ impl World {
             if is_hired {
                 self.stop_respawn(*index);
                 hired_count += 1;
-                // NOTE(java-quirk): the mercenary past the limit has spawned already.
                 if hired_count > hired_max {
                     break;
                 }

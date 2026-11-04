@@ -1,6 +1,5 @@
 //! The `Escape` effect: the creature is sent to the restart point of its `escapeType` (a town, a
 //! castle, a clan hall, a siege flag or a fortress). A guard goes back to its spawn instead.
-// Java: dist/game/data/scripts/handlers/skill/effects/Escape.java
 
 use l2_data::skill::EffectTemplate;
 

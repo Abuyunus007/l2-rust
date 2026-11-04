@@ -1,5 +1,4 @@
 //! `FakeDeath`: the player plays dead.
-// Java: dist/game/data/scripts/handlers/skill/effects/FakeDeath.java
 
 use l2_data::skill::EffectTemplate;
 

@@ -14,7 +14,6 @@ use crate::generated::opcodes::ServerOpcode;
 /// Java adds this to a summon's template display id.
 const SUMMON_ID_OFFSET: i32 = 1_000_000;
 
-// Java: gameserver/network/serverpackets/PetInfo.java
 /// The full state of a summon or pet (`PET_INFO`), sent to its owner.
 #[derive(Debug, Clone, PartialEq)]
 pub struct PetInfo {
@@ -154,9 +153,6 @@ impl Encode for PetInfo {
             .i32(self.sp)
             .i32(self.level)
             .i64(self.exp);
-        // NOTE(java-quirk): "0% absolute value" is never above the current experience: Java
-        // writes the experience itself when the level's start is higher (a summon whose
-        // experience is below its level's start).
         w.i64(if self.exp_for_this_level > self.exp {
             self.exp
         } else {
@@ -293,7 +289,6 @@ impl Decode for PetInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/AbstractNpcInfo.java (inner class `SummonInfo`)
 /// Describes a summon or pet to a player who is not its owner (`NPC_INFO`, the summon variant).
 ///
 /// Same opcode as [`super::NpcInfo`], but Java's `SummonInfo.writeImpl` writes its own layout: the
@@ -467,7 +462,6 @@ impl Decode for SummonInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/PetStatusShow.java
 server_packet!(
     /// Opens the pet status window (`PET_STATUS_SHOW`).
     PetStatusShow,
@@ -476,7 +470,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/PetStatusUpdate.java
 /// The numbers of the pet status window changed (`PET_STATUS_UPDATE`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PetStatusUpdate {
@@ -548,7 +541,6 @@ impl Decode for PetStatusUpdate {
     }
 }
 
-// Java: gameserver/network/serverpackets/PetDelete.java
 server_packet!(
     /// The summon is gone from the owner's screen (`PET_DELETE`).
     PetDelete,
@@ -558,7 +550,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/SetSummonRemainTime.java
 server_packet!(
     /// The remaining life time of a servitor (`SET_SUMMON_REMAIN_TIME`).
     SetSummonRemainTime,
@@ -568,7 +559,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/ExChangeNpcState.java
 server_packet!(
     /// The state of an NPC changes (`EX_CHANGE_NPC_STATE`). A pet sends `0x64` to its owner when it
     /// runs out of food and `0x65` when it has food again (`Pet.setCurrentFed`).
@@ -579,7 +569,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/PetItemList.java
 /// The pet's inventory (`PET_ITEM_LIST`).
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct PetItemList {
@@ -612,7 +601,6 @@ impl Decode for PetItemList {
     }
 }
 
-// Java: gameserver/network/serverpackets/PetInventoryUpdate.java
 /// Changes to the pet's inventory (`PET_INVENTORY_UPDATE`): the entries of
 /// [`super::InventoryUpdate`], with the pet's opcode.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -639,7 +627,6 @@ impl Decode for PetInventoryUpdate {
     }
 }
 
-// Java: gameserver/network/serverpackets/Ride.java
 /// A player mounts or dismounts (`RIDE`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Ride {

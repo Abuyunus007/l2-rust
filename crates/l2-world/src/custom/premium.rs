@@ -1,12 +1,6 @@
 //! The premium system (`config/Custom/PremiumSystem.ini`, `EnablePremiumSystem`, off by default):
 //! the status of a player, the `account_premium` rows, the rates of exp, sp, drops and spoil, the
 //! voiced command `.premium` and the admin commands `//premium_*`.
-// Java: managers/PremiumManager.java
-// Java: config/custom/PremiumSystemConfig.java
-// Java: entity/actor/Player.java (setPremiumStatus, hasPremiumStatus)
-// Java: dist/game/data/scripts/handlers/chat/commands/voiced/Premium.java
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminPremium.java
-//
 // # Model
 // `World::premium` keeps the cache of `PremiumManager._premiumData` (key to the end date in Unix
 // milliseconds), the set of players with `_premiumStatus` and the expire timer of each. The key
@@ -16,13 +10,6 @@
 // (D-15), so `EnterWorld` sends `PersistCommand::PremiumRequest` and the answer
 // (`WorldCommand::PremiumLoaded`) does the rest of the listener; the player is not premium for
 // the few milliseconds between (the PC cafe timer is started again by the answer).
-//
-// # Side by side (D-39, D-53)
-// - The row of an account is read at every login (D-50), so a purchase on the Java server shows.
-// - `addPremiumTime` (an admin command or the community board of this server) writes its
-//   `REPLACE` as Java does: the action is explicit and for one account.
-// - The `DELETE` of an expired row (`removePremiumStatus(account, false)` at login) is a global
-//   clean-up both servers do, so it is only written with `CycleDatabaseWrites`.
 
 use std::collections::{HashMap, HashSet};
 
@@ -329,13 +316,10 @@ impl World {
         let row = match result {
             Ok(row) => row,
             Err(()) => {
-                // Java: "Problem with PremiumManager" and goes on with the cache it has.
                 warn!("Problem with PremiumManager: the row of {key} could not be read.");
                 None
             }
         };
-        // NOTE(java-quirk): `loadPremiumData` only puts a row it found; a cached end date stays
-        // when the row is gone.
         if let Some(end) = row {
             self.premium.data.insert(key.to_lowercase(), end);
         }
@@ -360,9 +344,6 @@ impl World {
     }
 
     /// `PremiumManager.startExpireTask(player, delay)`.
-    // NOTE(java-quirk): Java keys the tasks by account, so a second character of the account
-    // replaces the first one's entry (the first task still runs); here every player has its own
-    // task, which ends the same status at the same time.
     fn start_premium_expire_task(&mut self, id: ObjectId, delay_ms: i64) {
         let delay = u64::try_from(delay_ms).unwrap_or(0);
         let due = self.tick + TimerWheel::ms_to_ticks(delay);

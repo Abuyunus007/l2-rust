@@ -1,6 +1,5 @@
 //! One task per TCP connection: framing, the cipher, the protocol handler and an outbox.
 //!
-//! Java: `commons/network/{ConnectionManager,Connection,Client}.java`, `handler/*`.
 //!
 //! Differences from Java, on purpose:
 //! - Frames of one connection are handled **strictly in order**, and the handler finishes a

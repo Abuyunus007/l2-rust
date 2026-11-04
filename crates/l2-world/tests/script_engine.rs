@@ -3,7 +3,6 @@
 
 //! The engine follow-ups (S-API-03): `TimerExecutor`, `CreatureSeeTaskManager`, the player and
 //! creature listeners, the skill of a hit, the movie holder, `//show_quests`, spawn slots.
-//! Java: mechanics/script/timers/*, taskmanagers/CreatureSeeTaskManager, mechanics/events/*.
 
 use std::path::Path;
 use std::sync::{Arc, Mutex};
@@ -475,7 +474,6 @@ fn timer_executor_one_shot_cancels_then_fires_with_params() {
     s.ticks(1);
     assert!(s.heard.take().is_empty());
     s.ticks(1);
-    // NOTE(java-quirk): the running one-shot holder is cancelled by `onTimerPostExecute` first.
     assert_eq!(s.heard.take(), ["cancel T x", "event T x 7"]);
     assert_eq!(s.world.exec_timer_count(), 0);
     s.ticks(10);
@@ -553,8 +551,6 @@ fn timer_executor_npc_decay_stops_the_task_but_keeps_the_holder() {
     });
     assert!(s.world.delete_npc(folk));
     s.ticks(4);
-    // NOTE(java-quirk): `stopTimerHolders` only cancels the task: no event, no cancel hook, and
-    // `hasTimer` still says yes.
     assert!(s.heard.take().is_empty());
     assert_eq!(s.world.exec_timer_count(), 1);
     s.world

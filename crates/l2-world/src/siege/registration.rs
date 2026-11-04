@@ -1,14 +1,3 @@
-//! Registering for a castle siege: the attacker and defender lists, their `siege_clans` rows, the
-//! lord's approval of defenders, the siege window packets and the re-read of the registrations
-//! (D-50).
-// Java: mechanics/siege/Siege.java (registerAttacker, registerDefender, checkIfCanRegister,
-//       checkIfAlreadyRegisteredForSameDay, saveSiegeClan, loadSiegeClan, removeSiegeClan,
-//       approveSiegeDefenderClan, clearSiegeClan, clearSiegeWaitingClan, listRegisterClan)
-// Java: managers/SiegeManager.java (checkIsRegistered)
-// Java: network/clientpackets/{RequestJoinSiege,RequestConfirmSiegeWaitingList,
-//       RequestSiegeAttackerList,RequestSiegeDefenderList,RequestSiegeInfo}.java
-// Java: network/serverpackets/{SiegeInfo,SiegeAttackerList,SiegeDefenderList}.java
-
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::siege::{
     DefenderState, SiegeAttackerList, SiegeClan as PacketClan, SiegeDefender, SiegeDefenderList, SiegeInfo,
@@ -341,8 +330,6 @@ impl World {
                     .map(|clan| SiegeDefender { clan, state })
             })
             .collect();
-        // NOTE(java-quirk): Java throws (and sends nothing) for a waiting clan `ClanTable` does not
-        // know; here its record is left out like an unknown approved clan.
         clans.extend(siege.defender_waiting_clans().iter().map(|sc| {
             self.siege_packet_clan(sc.clan_id).map(|clan| SiegeDefender {
                 clan,
@@ -367,10 +354,6 @@ impl World {
         }
     }
 
-    // ------------------------------------------------------------------ re-read (D-50)
-
-    /// Reads the castle and every `siege_clans` row again before acting on them (D-50); the
-    /// answer comes back as `WorldCommand::ResidenceReread` and goes on with `then`.
     pub fn request_siege_reread(&mut self, id: CastleId, then: ResidenceReadThen) {
         self.outbox
             .persist(crate::outbox::PersistCommand::ResidenceRereadRequest {
@@ -569,7 +552,6 @@ impl World {
         let Some(owner) = self.castle(id).map(|c| c.owner_id) else {
             return;
         };
-        // NOTE(java-quirk): Java throws for an owner id `ClanTable` does not know.
         let ally_id = if owner != 0 {
             self.clan(owner).map_or(0, |c| c.ally_id)
         } else {

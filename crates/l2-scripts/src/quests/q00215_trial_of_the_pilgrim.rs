@@ -1,6 +1,4 @@
 //! Quest 215: Trial of the Pilgrim (Hermit Santiago, a healer's second-class trial).
-// Java: dist/game/data/scripts/quests/Q00215_TrialOfThePilgrim/Q00215_TrialOfThePilgrim.java
-//
 // Pattern: a long memo-state chain over many NPCs with three kill steps (`docs/design/scripts.md`,
 // "Quest patterns"). The memo state is the quest's own step counter (`qs.setMemoState`), the
 // condition is the journal step. One-time: `exit_quest(ctx, false, true)`.
@@ -293,7 +291,6 @@ impl Script for Q00215TrialOfThePilgrim {
                 }
                 ANDELLIA => {
                     if memo_state == 12 {
-                        // NOTE(java-quirk): the level check is `>= 0`, so it always passes.
                         if ctx.player_level(player) >= 0 {
                             qs.set_memo_state(ctx, 13);
                             qs.set_cond(ctx, 13, true);

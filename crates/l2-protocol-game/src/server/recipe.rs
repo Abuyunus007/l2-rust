@@ -59,7 +59,6 @@ fn write_manufacture(w: &mut PacketWriter, items: &[ManufactureEntry]) {
     }
 }
 
-// Java: gameserver/network/serverpackets/RecipeBookItemList.java
 /// The recipes of a recipe book (`RECIPE_BOOK_ITEM_LIST`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RecipeBookItemList {
@@ -93,7 +92,6 @@ impl Decode for RecipeBookItemList {
     }
 }
 
-// Java: gameserver/network/serverpackets/RecipeItemMakeInfo.java
 /// The craft window of a recipe: the crafter's MP and whether the last craft worked
 /// (`RECIPE_ITEM_MAKE_INFO`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -136,7 +134,6 @@ impl Decode for RecipeItemMakeInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/RecipeShopItemInfo.java
 /// A recipe of a manufacture shop as the customer sees it, with the manufacturer's MP
 /// (`RECIPE_SHOP_ITEM_INFO`). Java ends it with the constant `0xffffffff`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -177,7 +174,6 @@ impl Decode for RecipeShopItemInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/RecipeShopManageList.java
 /// The window where a crafter sets up its manufacture shop (`RECIPE_SHOP_MANAGE_LIST`): the
 /// recipes it knows and the ones already for sale.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -220,7 +216,6 @@ impl Decode for RecipeShopManageList {
     }
 }
 
-// Java: gameserver/network/serverpackets/RecipeShopMsg.java
 /// The title over a manufacture shop (`RECIPE_SHOP_MSG`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RecipeShopMsg {
@@ -248,7 +243,6 @@ impl Decode for RecipeShopMsg {
     }
 }
 
-// Java: gameserver/network/serverpackets/RecipeShopSellList.java
 /// A manufacture shop as a customer sees it (`RECIPE_SHOP_SELL_LIST`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RecipeShopSellList {

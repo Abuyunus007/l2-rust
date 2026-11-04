@@ -1,7 +1,5 @@
 //! Quest 250: Watch What You Eat (Sally in the Hunter's Village collects the three kinds of
 //! monster meat from the Hunting Grounds, one of each).
-// Java: dist/game/data/scripts/quests/Q00250_WatchWhatYouEat/Q00250_WatchWhatYouEat.java
-//
 // Pattern: one item per kind of monster, each taken once (`docs/design/scripts.md`, "Kills,
 // drops and parties"), and a first-talk page of the start NPC (`add_first_talk_id`).
 
@@ -59,8 +57,6 @@ impl Script for Q00250WatchWhatYouEat {
             if event.eq_ignore_ascii_case("32743-03.htm") {
                 qs.start_quest(ctx);
             } else if event.eq_ignore_ascii_case("32743-end.htm") {
-                // NOTE(java-quirk): the reward is not checked against the cond or the items: any
-                // click on this link pays (`exitQuest` does nothing for a quest not started).
                 ctx.give_adena(player, 135661, true);
                 ctx.add_exp_and_sp(player, 698334, 76369);
                 qs.exit_quest(ctx, false, true);

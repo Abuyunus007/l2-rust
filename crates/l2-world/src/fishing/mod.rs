@@ -1,13 +1,4 @@
 //! Fishing: the cast, the bite, the fight and the catch (M6-FU-08).
-// Java: mechanics/fishing/{Fishing,Fish,FishingRod,FishingMonster}.java
-// Java: data/xml/{FishData,FishingRodsData,FishingMonstersData}.java
-// Java: entity/actor/Player.java (startFishing, stopLookingForFishTask, startLookingForFishTask,
-//       getRandomFishGrade/Group/Lvl, startFishCombat, endFishing, isFishing, setLure)
-// Java: entity/actor/tasks/player/LookingForFishTask.java
-// Java: dist/game/data/scripts/handlers/skill/effects/{Fishing,Pumping,Reeling}.java
-// Java: dist/game/data/scripts/handlers/items/FishShots.java
-// Java: network/clientpackets/{UseItem (the lure branch),RequestExFishRanking}.java
-//
 // # Where things are
 // - `cast.rs`: the `Fishing` skill effect (the checks, the place of the bait, the geodata checks),
 //   `Player.startFishing` and the bite task (`LookingForFishTask`), `endFishing`.

@@ -1,6 +1,4 @@
 //! Quest 10504: Jewel of Antharas (Theodric in the Antharas lair, Antharas).
-// Java: dist/game/data/scripts/quests/Q10504_JewelOfAntharas/Q10504_JewelOfAntharas.java
-//
 // Pattern: a party kill (`docs/design/scripts.md`, "Kills, drops and parties"): `actionForEachPlayer`
 // swaps the empty crystal for the filled one and sets cond 2 for each member in range. The NPC
 // gives the jewel at cond 2 and the quest ends (one time).

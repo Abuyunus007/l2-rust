@@ -1,7 +1,5 @@
 //! Quest 662: A Game of Cards (Klump trades 50 Red Gems for a hand of five cards that he
 //! turns face up; the pairs of the hand decide the reward).
-// Java: dist/game/data/scripts/quests/Q00662_AGameOfCards/Q00662_AGameOfCards.java
-//
 // The hand lives in two quest variables: `v1` (cards 1 to 4, two decimal digits each) and
 // `ExMemoState` (card 5 in the low two digits, the bit field of the cards turned face up above
 // them). The card pages are templates (`FontColorN`, `CellN`) that the script fills in.
@@ -409,7 +407,6 @@ impl Script for Q00662AGameOfCards {
                     let i2 = (i0 % 10_000) / 100;
                     let i3 = (i0 % 1_000_000) / 10_000;
                     let i4 = (i0 % 100_000_000) / 1_000_000;
-                    // Java: `getHtm(..)` of a missing page would throw on the `replace`.
                     htmltext = ctx
                         .get_htm(player, "30845-11a.html")
                         .map(|page| fill_cards(page, i9, [i1, i2, i3, i4, i5]));
@@ -422,8 +419,6 @@ impl Script for Q00662AGameOfCards {
     }
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, _is_summon: bool) {
-        // NOTE(java-quirk): the killer is in the list twice (so alone he is always drawn), and a
-        // party member is added once more per quest state, the killer included.
         let mut players = vec![killer, killer];
         if ctx.is_in_party(killer) {
             for member in ctx.world().party_members_of(killer) {
@@ -441,8 +436,6 @@ impl Script for Q00662AGameOfCards {
         let Some(&(_, chance)) = MONSTERS.iter().find(|m| m.0 == npc.id) else {
             return;
         };
-        // NOTE(java-quirk): `chance` (0..1000) is compared to a roll of 1000 and then passed as
-        // the 0..1 drop chance of `giveItemRandomly`, where it always succeeds.
         if ctx.check_if_in_range(ctx.alt_party_range(), npc.object_id, player, false)
             && chance < ctx.get_random(1000)
             && ctx.get_quest_state(player, false).is_some()

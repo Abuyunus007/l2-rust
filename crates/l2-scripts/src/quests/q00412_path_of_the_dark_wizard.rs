@@ -1,6 +1,4 @@
 //! Quest 412: Path of the Dark Wizard (Varika, Charkeren, Annika and Arkenia).
-// Java: dist/game/data/scripts/quests/Q00412_PathOfTheDarkWizard/Q00412_PathOfTheDarkWizard.java
-//
 // Pattern: four seeds, each made from a few monster drops and a key or item from a guild NPC
 // (`docs/design/scripts.md`, "Quest patterns"). The quest never calls `setCond`: the cond stays
 // 1 until the reward. Drops roll `getRandom(2) == 0` after the item checks.

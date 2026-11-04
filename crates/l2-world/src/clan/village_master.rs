@@ -1,9 +1,4 @@
 //! The clan commands of the village masters (`npc_<id>_create_clan ...`).
-// Java: entity/actor/instance/VillageMaster.java (onBypassFeedback: the clan commands,
-//       dissolveClan, recoverClan, createSubPledge, renameSubPledge, assignSubPledgeLeader,
-//       isValidName)
-// Java: entity/actor/Player.java (calculateDeathExpPenalty, for a dissolution)
-//
 // The pages that list these commands come from the `ClanMaster` script (scripts come last,
 // D-05). The subclass commands of the same NPCs (`Subclass ...`) are `subclass/village_master.rs`
 // (S-SUB-01).

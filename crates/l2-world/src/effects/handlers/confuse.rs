@@ -1,6 +1,4 @@
 //! Confusion and betrayal: the creature turns on somebody else.
-// Java: dist/game/data/scripts/handlers/skill/effects/Confuse.java
-// Java: dist/game/data/scripts/handlers/skill/effects/Betray.java
 
 use l2_data::skill::EffectTemplate;
 
@@ -9,9 +7,6 @@ use crate::effects::registry::{EffectCx, EffectHandler, EffectType, effect_flag}
 use crate::world::World;
 
 /// Java `Confuse`.
-// NOTE(java-quirk): the effect is instant (`isInstant()` is true), so it never joins a buff info:
-// its `CONFUSED` flag and its `onExit` are never used and nothing is ever "confused" through it.
-// The one thing it does is `onStart`: the creature attacks a random creature it can see.
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct Confuse {
     chance: i32,

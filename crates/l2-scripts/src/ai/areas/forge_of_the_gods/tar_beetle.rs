@@ -1,5 +1,4 @@
 //! Tar Beetle AI: the beetles of the Forge of the Gods spit tar at characters who come near.
-// Java: dist/game/data/scripts/ai/areas/ForgeOfTheGods/TarBeetle.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};

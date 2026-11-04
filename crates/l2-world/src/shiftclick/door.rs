@@ -1,5 +1,4 @@
 //! `DoorShiftClick`: the GM window of a door (`doorinfo.htm`).
-// Java: dist/game/data/scripts/handlers/actions/shiftclick/DoorShiftClick.java
 
 use l2_data::door::OPEN_BY_SKILL;
 use l2_util::ObjectId;

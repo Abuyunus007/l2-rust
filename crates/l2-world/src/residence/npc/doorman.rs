@@ -1,9 +1,5 @@
 //! The `CastleDoorman` NPC class: the castle's gate keepers open and close the castle doors for
 //! the owner clan's members with the right to, and teleport them through the gate.
-// Java: entity/actor/instance/CastleDoorman.java
-// Java: entity/actor/instance/Doorman.java (onBypassFeedback, showChatWindow, cannotManageDoors)
-// Java: mechanics/siege/clanhalls/SiegableHall.java (openCloseDoor): a doorman that stands at a
-//       conquerable hall serves the hall's owner instead of the castle's
 
 use l2_protocol_game::server::ActionFailed;
 use l2_util::ObjectId;

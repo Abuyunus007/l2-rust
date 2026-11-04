@@ -1,5 +1,4 @@
 //! The `Grow` effect: an NPC gets its "grown" collision radius while it lasts.
-// Java: dist/game/data/scripts/handlers/skill/effects/Grow.java
 
 use l2_data::skill::EffectTemplate;
 

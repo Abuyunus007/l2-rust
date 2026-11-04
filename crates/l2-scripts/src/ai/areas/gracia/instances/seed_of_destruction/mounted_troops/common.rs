@@ -1,7 +1,4 @@
 //! What the four Mounted Troop instances of the Seed of Destruction share.
-// Java: dist/game/data/scripts/ai/areas/Gracia/instances/SeedOfDestruction/MountedTroops/
-//       {Chamblains,Soldiers,Warriors,GreatWarriors}MountedTroop.java
-//
 // The four Java classes are copies of one another that differ in the template id, the doorman,
 // the monsters of the two halls and the `difficulty` they write to `Q00693_DefeatingDragonkinRemnants`
 // (checked with `diff`). Each Rust script holds that data as a [`Spec`] and calls these functions,

@@ -1,5 +1,4 @@
 //! The 1st class transfer of human and elven fighters (Pabris, Rains, Ramos, Schule).
-// Java: dist/game/data/scripts/village_master/ElfHumanFighterChange1/ElfHumanFighterChange1.java
 
 use l2_util::ObjectId;
 use l2_world::subclass::{CategoryType, Race};

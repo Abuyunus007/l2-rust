@@ -1,6 +1,4 @@
 //! Quest 159: Protect the Water Source (Asterios sends an Elf to collect plague dust).
-// Java: dist/game/data/scripts/quests/Q00159_ProtectTheWaterSource/Q00159_ProtectTheWaterSource.java
-//
 // Pattern: a one-time kill quest with two charms; one dust first, then five. Elves only.
 
 use l2_util::ObjectId;

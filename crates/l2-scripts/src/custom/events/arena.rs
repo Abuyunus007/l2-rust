@@ -1,8 +1,6 @@
 //! What TvT, Deathmatch and CtF have in common: the buffs of the manager, the screen messages,
 //! the scoreboard, the page of the manager, the registration checks and the Java collections
 //! (`ConcurrentHashMap<Player, Integer>` as an ordered list).
-// Java: dist/game/data/scripts/custom/events/TeamVsTeam/TvT.java (the same code is in
-// Java: Deathmatch.java and CtF.java, copy by copy)
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::{

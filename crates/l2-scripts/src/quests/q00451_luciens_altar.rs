@@ -1,6 +1,4 @@
 //! Quest 451: Lucien's Altar (Daichir and the five altars that take the replenished beads).
-// Java: dist/game/data/scripts/quests/Q00451_LuciensAltar/Q00451_LuciensAltar.java
-//
 // Pattern: a daily quest (`exit_quest_type(Daily)`) whose talk NPCs are many: each altar takes a
 // bead once (the variable named after the altar's id), five discharged beads move the quest to
 // cond 2, and the NPC of the start hands out the reward.
@@ -70,7 +68,6 @@ impl Script for Q00451LuciensAltar {
 
         if npc.id == DAICHIR {
             let mut state = qs.state(ctx);
-            // Java: `case COMPLETED` falls through to `CREATED` once the quest is available again.
             if state == COMPLETED {
                 if !qs.is_now_available(ctx) {
                     return Some("30537-03.html".to_owned());

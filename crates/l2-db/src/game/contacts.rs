@@ -1,7 +1,4 @@
 //! The `character_contacts` table: the mail contact list.
-// Java: org/l2jmobius/gameserver/entity/actor/holders/player/ContactList.java (QUERY_ADD,
-// Java: QUERY_REMOVE, QUERY_LOAD)
-//
 // The read also joins `characters` for the name: Java gets it from `CharInfoTable`, which holds
 // every character name (same reasoning as friends.rs).
 
@@ -10,11 +7,8 @@ use sqlx::FromRow;
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: ContactList.QUERY_LOAD. The join is ours.
 const SELECT_CONTACTS: &str = "SELECT cc.contactId, c.char_name FROM character_contacts cc LEFT JOIN characters c ON c.charId = cc.contactId WHERE cc.charId=?";
-// Java: ContactList.QUERY_ADD
 const REPLACE_CONTACT: &str = "REPLACE INTO character_contacts (charId, contactId) VALUES (?, ?)";
-// Java: ContactList.QUERY_REMOVE
 const DELETE_CONTACT: &str = "DELETE FROM character_contacts WHERE charId = ? and contactId = ?";
 
 /// One row of a contact list: the contact and its name.
@@ -48,7 +42,6 @@ impl ContactRepository {
 
     /// The contacts of a character, in the order the rows come back. A row whose id does not fit
     /// an `i32` is skipped.
-    // Java: ContactList.restore
     pub async fn contacts_of(&self, char_id: i32) -> Result<Vec<ContactLink>> {
         let rows = sqlx::query_as::<_, ContactDbRow>(SELECT_CONTACTS)
             .bind(char_id)
@@ -66,7 +59,6 @@ impl ContactRepository {
     }
 
     /// A contact added (`REPLACE`: adding one that exists is not an error).
-    // Java: ContactList.add
     pub async fn add_contact(&self, char_id: i32, contact_id: i32) -> Result<()> {
         sqlx::query(REPLACE_CONTACT)
             .bind(char_id)
@@ -77,7 +69,6 @@ impl ContactRepository {
     }
 
     /// A contact removed.
-    // Java: ContactList.remove
     pub async fn remove_contact(&self, char_id: i32, contact_id: i32) -> Result<()> {
         sqlx::query(DELETE_CONTACT)
             .bind(char_id)

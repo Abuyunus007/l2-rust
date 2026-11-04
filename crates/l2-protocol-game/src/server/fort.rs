@@ -35,7 +35,6 @@ pub struct FortressInfo {
     pub owned_time: i32,
 }
 
-// Java: gameserver/network/serverpackets/ExShowFortressInfo.java
 /// The fortress list (`EX_SHOW_FORTRESS_INFO`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExShowFortressInfo {
@@ -75,7 +74,6 @@ impl Decode for ExShowFortressInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExShowFortressSiegeInfo.java
 /// The siege window of a fortress under siege (`EX_SHOW_FORTRESS_SIEGE_INFO`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExShowFortressSiegeInfo {
@@ -133,7 +131,6 @@ impl Decode for ExShowFortressSiegeInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExShowFortressMapInfo.java
 /// The barracks map of one fortress (`EX_SHOW_FORTRESS_MAP_INFO`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExShowFortressMapInfo {
@@ -157,7 +154,6 @@ impl ExShowFortressMapInfo {
     /// commander spawn of the fortress, true when that spawn has a commander alive in the siege.
     /// An empty list (no commander spawns) or a siege that is not in progress gives zeros.
     pub fn new(fort_id: i32, siege_in_progress: bool, fort_size: i32, commander_spawned: &[bool]) -> Self {
-        // Java: 0 when the commander is spawned, 1 when not.
         let status = |spawned: bool| i32::from(!spawned);
         let barracks = if !commander_spawned.is_empty() && siege_in_progress {
             match commander_spawned.len() {

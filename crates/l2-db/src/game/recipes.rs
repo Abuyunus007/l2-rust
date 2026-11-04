@@ -1,8 +1,5 @@
 //! The crafting tables: `character_recipebook` (the recipes a character knows) and
 //! `character_recipeshoplist` (the recipes it has for sale in its manufacture shop).
-// Java: org/l2jmobius/gameserver/entity/actor/Player.java (insertNewRecipeData, deleteRecipeData,
-// Java: restoreRecipeBook, storeRecipeShopList, restoreRecipeShopList)
-//
 // Same layout as shortcuts.rs: verbatim SQL, one method per statement. `character_recipebook.id`
 // is a DECIMAL column, read through `SqlNumber`.
 
@@ -12,21 +9,14 @@ use super::sql_number::SqlNumber;
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: Player.insertNewRecipeData
 const INSERT_RECIPE: &str = "INSERT INTO character_recipebook (charId, id, classIndex, type) values(?,?,?,?)";
-// Java: Player.deleteRecipeData
 const DELETE_RECIPE: &str = "DELETE FROM character_recipebook WHERE charId=? AND id=? AND classIndex=?";
-// Java: Player.restoreRecipeBook (loadCommon = true)
 const SELECT_RECIPES: &str = "SELECT id, type, classIndex FROM character_recipebook WHERE charId=?";
-// Java: Player.restoreRecipeBook (loadCommon = false, the subclass switch)
 const SELECT_CLASS_DWARVEN_RECIPES: &str =
     "SELECT id FROM character_recipebook WHERE charId=? AND classIndex=? AND type = 1";
-// Java: Player.DELETE_CHAR_RECIPE_SHOP
 const DELETE_RECIPE_SHOP: &str = "DELETE FROM character_recipeshoplist WHERE charId=?";
-// Java: Player.INSERT_CHAR_RECIPE_SHOP
 const INSERT_RECIPE_SHOP: &str =
     "REPLACE INTO character_recipeshoplist (`charId`, `recipeId`, `price`, `index`) VALUES (?, ?, ?, ?)";
-// Java: Player.RESTORE_CHAR_RECIPE_SHOP
 const SELECT_RECIPE_SHOP: &str = "SELECT * FROM character_recipeshoplist WHERE charId=? ORDER BY `index`";
 
 /// A row of `character_recipebook` as `restoreRecipeBook` reads it.

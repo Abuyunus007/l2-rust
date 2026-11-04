@@ -1,6 +1,5 @@
 //! The monsters a Warrior Fishing Block call out of the water: they shout, attack the fisher and
 //! vanish after 50 seconds.
-// Java: dist/game/data/scripts/ai/others/WarriorFishingBlock.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

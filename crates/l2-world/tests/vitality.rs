@@ -7,7 +7,6 @@
 //! The expected numbers are worked out by hand from Java's code (`PlayerStat.updateVitalityPoints`,
 //! `PlayerStat.getExpBonusMultiplier`, `Attackable.getVitalityPoints`, `Nevit`), not from this
 //! implementation.
-//! Java: entity/actor/stat/PlayerStat.java, entity/actor/Attackable.java,
 //! entity/actor/holders/player/Nevit.java, entity/actor/Player.java (the Nevit hourglass)
 
 use std::path::PathBuf;
@@ -754,8 +753,6 @@ fn a_raid_boss_follows_raidboss_use_vitality() {
     assert_eq!(s.me().data.exp - exp_of_level(10), 1000, "no vitality bonus");
     assert_eq!(s.world.vitality_points(s.id()), 15000);
 
-    // On: the bonus applies, and (NOTE(java-quirk)) a boss kill gives points back: the cost
-    // -37.037 becomes +0.37037, times `RateVitalityGain`.
     let on = settings(VitalitySettings {
         raidboss_use_vitality: true,
         rate_vitality_gain: 100.0,

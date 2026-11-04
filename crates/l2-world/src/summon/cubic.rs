@@ -1,13 +1,5 @@
 //! Cubics: the small floating helpers a player summons with a skill. They pick a target on a
 //! timer and cast attack, drain, debuff or heal skills on it.
-// Java: entity/actor/instance/Cubic.java
-// Java: entity/actor/tasks/cubics/{CubicAction,CubicHeal,CubicDisappear}.java
-// Java: entity/actor/Player.java (addCubic, removeCubic, removeFirstCubic, stopCubics,
-//       stopCubicsByOthers, getCubics, getCubicById)
-// Java: entity/actor/stat/PlayerStat.java (get/setMaxCubicCount)
-// Java: entity/cubic/{CubicSkill,ICubicConditionHolder}.java and cubic/conditions/*.java
-// Java: taskmanagers/AttackStanceTaskManager.java (addAttackStanceTask: `cubic.doAction()`)
-//
 // # Where a cubic lives (D-11)
 // A cubic is not an object of the world: it has no object id and nobody can target it. It is a
 // [`Cubic`] in `CubicWorld::players`, under its owner's object id and its own cubic id (Java's
@@ -824,8 +816,6 @@ impl World {
         if self.is_dead(owner_target) {
             return None;
         }
-        // NOTE(java-quirk): `ownerTarget.asPlayer()` is the owner of a summon, so a cubic aimed at
-        // an enemy's summon attacks the enemy player.
         let enemy = self.acting_player(owner_target)?;
         let mut target_it = true;
         if let Some(party) = self.party_of(owner)
@@ -1161,8 +1151,6 @@ impl World {
     /// Java `Cubic.useCubicMdam(skill, targets)` for one target.
     fn cubic_use_mdam(&mut self, owner: ObjectId, power: i32, skill: &SkillTemplate, target: ObjectId) {
         if self.is_alike_dead(target) {
-            // NOTE(java-quirk): a dead player target is hit as well when the fake death setting
-            // is on (`stopFakeDeath` is all that is checked).
             if self.is_player(target) && self.settings.effects.fake_death_damage_stand {
                 self.stop_fake_death(target, true);
             } else {

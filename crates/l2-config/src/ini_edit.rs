@@ -1,6 +1,4 @@
 //! In-place editing of `.ini` files for the config editors (GUI cards G-02, G-05).
-// Java: none (tooling). The syntax is `java.util.Properties`, see `reader.rs`.
-//!
 //! [`IniDoc`] keeps the file as its physical lines *with their line terminators*. Changing a value
 //! rewrites only the part of one line after the `=` (or `:`), so comments, blank lines, order,
 //! spacing around the separator and `\n` / `\r\n` endings stay as they were. Saving a document

@@ -1,6 +1,5 @@
 //! The `StealAbnormal` effect: the buffs the target of a player takes (`slot`, `rate`, `max` as in
 //! `DispelByCategory`) move to the caster, with the time they have left.
-// Java: dist/game/data/scripts/handlers/skill/effects/StealAbnormal.java
 
 use l2_data::skill::{EffectScope, EffectTemplate};
 

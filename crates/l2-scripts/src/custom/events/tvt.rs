@@ -1,6 +1,4 @@
 //! Team vs Team event: two teams fight in the Coliseum instance for 20 minutes.
-// Java: dist/game/data/scripts/custom/events/TeamVsTeam/TvT.java
-//
 // Off by default: the shipped `config.xml` schedules nothing, so the event only runs when a GM
 // starts it (`//event_start TvT`).
 
@@ -447,7 +445,6 @@ impl Script for TvT {
         if event.starts_with("KickPlayer")
             && let Some(player) = player
         {
-            // NOTE(java-quirk): without a world Java throws a NullPointerException here.
             let world = ctx.state::<TvtState>().pvp_world?;
             if ctx.world().instance_id_of(player) == world {
                 if event.contains("Warning") {
@@ -604,7 +601,6 @@ impl Script for TvT {
                 || (s.red_team.is_empty() && !s.blue_team.is_empty())
         };
         if one_side_left {
-            // NOTE(java-quirk): `broadcastScreenMessageWithEffect` throws for a missing world.
             if let Some(world) = ctx.state::<TvtState>().pvp_world {
                 manage_forfeit(ctx, world);
             } else {
@@ -699,8 +695,6 @@ impl Script for TvT {
 
     fn event_stop(&self, ctx: &mut ScriptCtx<'_>) -> bool {
         // Despawn event manager.
-        // NOTE(java-quirk): `MANAGER_NPC_INSTANCE.deleteMe()` throws a NullPointerException when the
-        // event never started; the rest does not run.
         let Some(manager) = ctx.state::<TvtState>().manager_npc else {
             return false;
         };

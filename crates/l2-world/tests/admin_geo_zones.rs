@@ -1,7 +1,6 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
 //! The geodata, region, zone, zone builder and path admin commands.
-//! Java: scripts/handlers/chat/commands/admin/{AdminGeodata,AdminRegions,AdminZone,
 //! AdminZoneBuild,AdminPathNode}.java, managers/ZoneBuildManager.java, util/GeoUtils.java.
 //!
 //! The pages are small files in a temporary datapack root; one test reads the real pages when the
@@ -615,8 +614,6 @@ fn the_edit_commands_open_and_close_one_side_of_a_cell() {
     // No region there.
     s.run("admin_en 0 0");
     assert_eq!(s.said(&s.log.take()), ["There is no geodata at this position."]);
-    // NOTE(java-quirk): `dn` without coordinates takes its X from `getGeoY(getX())`, a cell of
-    // another region (not loaded here).
     s.run("admin_dn");
     assert_eq!(s.said(&s.log.take()), ["There is no geodata at this position."]);
     assert!(open(&s.world, gx, gy, NORTH));

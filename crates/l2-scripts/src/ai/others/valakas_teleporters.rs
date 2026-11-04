@@ -1,6 +1,5 @@
 //! The teleporters of Valakas: into the Hall of Flames, into the Lair (the first one starts the
 //! encounter timer of the Valakas script) and out of it.
-// Java: dist/game/data/scripts/ai/others/ValakasTeleporters/ValakasTeleporters.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
@@ -53,8 +52,6 @@ fn enter_lair(ctx: &mut ScriptCtx<'_>, player: ObjectId) -> String {
                 let (x, y, z) = TELEPORT_INTO_VALAKAS_LAIR;
                 let (dx, dy) = (ctx.get_random(600), ctx.get_random(600));
                 ctx.teleport_player(player, x + dx, y + dy, z, 0, false);
-                // NOTE(java-quirk): `playerCount` is never lowered, so after 200 entries nobody
-                // enters until the server restarts.
                 ctx.state::<Entries>().player_count += 1;
 
                 if status == 0 {

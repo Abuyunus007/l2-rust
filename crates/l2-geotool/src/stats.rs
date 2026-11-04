@@ -1,7 +1,6 @@
 //! `l2-geotool stats`: block counts and average layers per region, plus the region file helpers
 //! the other subcommands share.
 //!
-//! Java: none. The block counts are `Region::block_counts`. The layer counts follow
 //! `tools/analysis/geocmp.py` (see `l2_geo::view`).
 
 use std::path::{Path, PathBuf};

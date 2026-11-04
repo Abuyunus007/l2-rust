@@ -589,14 +589,11 @@ fn the_macro_refusals() {
         [SystemMessageId::MacroDescriptionsMayContainUpTo32Characters]
     );
 
-    // NOTE(java-quirk): a name that is taken says "Enter the name of the macro" too, and the
-    // comparison ignores the case.
     let out = s.leftover(LeftoverInput::MakeMacro(make_macro(0, "FITS")));
     assert_eq!(system_ids(&out), [SystemMessageId::EnterTheNameOfTheMacro]);
     assert_eq!(s.macros().len(), 1);
 }
 
-/// NOTE(java-quirk): `size() > 48` lets a character with 48 macros save a 49th, and refuses the 50th.
 #[test]
 fn the_macro_limit_is_one_more_than_48() {
     let mut s = Scene::new("make_limit");

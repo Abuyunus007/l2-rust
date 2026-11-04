@@ -1,8 +1,6 @@
 //! Quest 241: Possessor of a Precious Soul 1 (Talien sends a sub-class character through the
 //! Gabrielle/Gilmore errand, Baraham, the Malruk succubus claws, the poetry book, the crimson
 //! moss and Caradine's reward).
-// Java: dist/game/data/scripts/quests/Q00241_PossessorOfAPreciousSoul1/Q00241_PossessorOfAPreciousSoul1.java
-//
 // Pattern: a sub-class quest (`no_sub.html`) driven by `cond` alone, with party kills through
 // `getRandomPartyMember(player, cond)` (same shape as `q00246_possessor_of_a_precious_soul3.rs`).
 
@@ -202,7 +200,6 @@ impl Script for Q00241PossessorOfAPreciousSoul1 {
                 let Some(qs) = ctx.get_quest_state(party_member, false) else {
                     return;
                 };
-                // NOTE(java-quirk): the item goes to the killer, the cond to the party member.
                 ctx.give_items(player, LEGEND_OF_SEVENTEEN, 1);
                 qs.set_cond(ctx, 4, true);
             }

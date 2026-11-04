@@ -1,6 +1,5 @@
 //! `l2-geotool render`: PNG of one region, one pixel per geo cell, optionally A | B | difference.
 //!
-//! Java: none. The colours are a debugging aid for comparing geodata sets, not game data. The
 //! pixel rules live in `l2_geo::view`, shared with the admin GUI's geodata viewer.
 
 use std::fs::File;
@@ -34,8 +33,6 @@ impl From<Mode> for view::Mode {
     }
 }
 
-/// Renders `a` alone, or `a | b | difference` side by side, and writes it as an RGB PNG of
-/// `size * panels` by `size` pixels.
 pub(crate) fn render_png(
     a: &Region,
     b: Option<&Region>,

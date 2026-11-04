@@ -1,7 +1,4 @@
 //! The `character_tpbookmark` table: the teleport bookmarks ("My Teleports") of a character.
-// Java: org/l2jmobius/gameserver/entity/actor/Player.java (INSERT_TP_BOOKMARK, UPDATE_TP_BOOKMARK,
-// Java: RESTORE_TP_BOOKMARK, DELETE_TP_BOOKMARK)
-//
 // Same layout as hennas.rs: verbatim SQL, one method per statement.
 
 use sqlx::FromRow;
@@ -9,14 +6,10 @@ use sqlx::FromRow;
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: Player.RESTORE_TP_BOOKMARK
 const SELECT_BOOKMARKS: &str = "SELECT Id,x,y,z,icon,tag,name FROM character_tpbookmark WHERE charId=?";
-// Java: Player.INSERT_TP_BOOKMARK
 const INSERT_BOOKMARK: &str =
     "INSERT INTO character_tpbookmark (charId,Id,x,y,z,icon,tag,name) values (?,?,?,?,?,?,?,?)";
-// Java: Player.UPDATE_TP_BOOKMARK
 const UPDATE_BOOKMARK: &str = "UPDATE character_tpbookmark SET icon=?,tag=?,name=? where charId=? AND Id=?";
-// Java: Player.DELETE_TP_BOOKMARK
 const DELETE_BOOKMARK: &str = "DELETE FROM character_tpbookmark WHERE charId=? AND Id=?";
 
 /// One row of `character_tpbookmark`.
@@ -47,7 +40,6 @@ impl BookmarkRepository {
     }
 
     /// The bookmarks of a character, as Java reads them (no ordering).
-    // Java: Player.restoreTeleportBookmark
     pub async fn bookmarks_of(&self, char_id: i32) -> Result<Vec<BookmarkRow>> {
         let rows = sqlx::query_as::<_, BookmarkRow>(SELECT_BOOKMARKS)
             .bind(char_id)
@@ -57,7 +49,6 @@ impl BookmarkRepository {
     }
 
     /// A bookmark saved in a slot.
-    // Java: Player.teleportBookmarkAdd
     pub async fn add_bookmark(&self, char_id: i32, bookmark: &BookmarkRow) -> Result<()> {
         sqlx::query(INSERT_BOOKMARK)
             .bind(char_id)
@@ -74,7 +65,6 @@ impl BookmarkRepository {
     }
 
     /// The icon, tag and name of a bookmark changed.
-    // Java: Player.teleportBookmarkModify
     pub async fn update_bookmark(
         &self,
         char_id: i32,
@@ -95,7 +85,6 @@ impl BookmarkRepository {
     }
 
     /// A bookmark deleted.
-    // Java: Player.teleportBookmarkDelete
     pub async fn delete_bookmark(&self, char_id: i32, id: i32) -> Result<()> {
         sqlx::query(DELETE_BOOKMARK)
             .bind(char_id)

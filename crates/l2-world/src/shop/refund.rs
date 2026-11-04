@@ -1,6 +1,4 @@
 //! `RequestRefundItem`: buying back what the player sold.
-// Java: network/clientpackets/RequestRefundItem.java
-// Java: entity/itemcontainer/{ItemContainer,PlayerInventory}.java (transferItem, addItem)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::client::RequestRefundItem;

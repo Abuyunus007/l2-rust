@@ -14,7 +14,6 @@ use crate::generated::opcodes::{ClientOpcode, ExClientOpcode};
 // Joining and leaving a clan
 // ---------------------------------------------------------------------------------------------
 
-// Java: gameserver/network/clientpackets/RequestJoinPledge.java
 client_packet!(
     /// A clan member invites a player (`REQUEST_JOIN_PLEDGE`). `pledge_type` is the unit: 0 main
     /// clan, -1 academy, 100/200 knights, 1001... royal guards.
@@ -26,7 +25,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestAnswerJoinPledge.java
 client_packet!(
     /// The invited player answers (`REQUEST_ANSWER_JOIN_PLEDGE`): `1` accepts, anything else
     /// declines.
@@ -36,14 +34,12 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestWithdrawalPledge.java
 client_unit_packet!(
     /// The player leaves its clan (`REQUEST_WITHDRAWAL_PLEDGE`).
     RequestWithdrawalPledge,
     plain RequestWithdrawalPledge
 );
 
-// Java: gameserver/network/clientpackets/RequestOustPledgeMember.java
 client_packet!(
     /// A clan member with the privilege expels another one (`REQUEST_OUST_PLEDGE_MEMBER`).
     RequestOustPledgeMember,
@@ -56,14 +52,12 @@ client_packet!(
 // Clan information windows
 // ---------------------------------------------------------------------------------------------
 
-// Java: gameserver/network/clientpackets/RequestPledgeMemberList.java
 client_unit_packet!(
     /// Opens the clan window's member list (`REQUEST_PLEDGE_MEMBER_LIST`).
     RequestPledgeMemberList,
     plain RequestPledgeMemberList
 );
 
-// Java: gameserver/network/clientpackets/RequestPledgeInfo.java
 client_packet!(
     /// Asks for the name of a clan (`REQUEST_PLEDGE_INFO`).
     RequestPledgeInfo,
@@ -72,7 +66,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestPledgeExtendedInfo.java
 client_packet!(
     /// Asks for the extended info of a clan (`REQUEST_PLEDGE_EXTENDED_INFO`). Java reads the
     /// string and ignores it (`readString(); // name?`).
@@ -82,7 +75,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestPledgeCrest.java
 client_packet!(
     /// Asks for a clan crest image (`REQUEST_PLEDGE_CREST`).
     RequestPledgeCrest,
@@ -91,7 +83,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestExPledgeCrestLarge.java
 client_packet!(
     /// Asks for a large clan crest (`REQUEST_EX_PLEDGE_CREST_LARGE`). Ex packet `0xD0 0x0010`.
     RequestExPledgeCrestLarge,
@@ -100,7 +91,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestPledgePowerGradeList.java
 client_unit_packet!(
     /// Asks for the privileges of the ranks (`REQUEST_PLEDGE_POWER_GRADE_LIST`). Ex packet
     /// `0xD0 0x0013`.
@@ -108,7 +98,6 @@ client_unit_packet!(
     ex RequestPledgePowerGradeList
 );
 
-// Java: gameserver/network/clientpackets/RequestPledgeMemberPowerInfo.java
 client_packet!(
     /// Asks for the rank and privileges of a member (`REQUEST_PLEDGE_MEMBER_POWER_INFO`). Ex
     /// packet `0xD0 0x0014`.
@@ -120,7 +109,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestPledgeMemberInfo.java
 client_packet!(
     /// Asks for the details of a member (`REQUEST_PLEDGE_MEMBER_INFO`). Ex packet
     /// `0xD0 0x0016`.
@@ -132,7 +120,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestPledgeWarList.java
 client_packet!(
     /// Asks for the war list of the clan (`REQUEST_PLEDGE_WAR_LIST`). Ex packet `0xD0 0x0017`.
     RequestPledgeWarList,
@@ -148,7 +135,6 @@ client_packet!(
 // Clan management
 // ---------------------------------------------------------------------------------------------
 
-// Java: gameserver/network/clientpackets/RequestPledgeSetAcademyMaster.java
 client_packet!(
     /// Sets or removes the sponsor of an academy member (`REQUEST_PLEDGE_SET_ACADEMY_MASTER`).
     /// Ex packet `0xD0 0x0012`.
@@ -161,7 +147,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestPledgeSetMemberPowerGrade.java
 client_packet!(
     /// Sets the rank of a member (`REQUEST_PLEDGE_SET_MEMBER_POWER_GRADE`). Ex packet
     /// `0xD0 0x0015`.
@@ -172,7 +157,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestPledgeReorganizeMember.java
 client_packet!(
     /// Moves a member to another unit (`REQUEST_PLEDGE_REORGANIZE_MEMBER`). Ex packet
     /// `0xD0 0x002C`.
@@ -185,7 +169,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestPledgePower.java
 /// Reads or sets the privileges of a rank (`REQUEST_PLEDGE_POWER`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestPledgePower {
@@ -245,12 +228,7 @@ fn write_crest(w: &mut PacketWriter, length: i32, data: &Option<Vec<u8>>) {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestSetPledgeCrest.java
 /// The leader uploads a clan crest (`REQUEST_SET_PLEDGE_CREST`).
-///
-/// NOTE(java-quirk): when the length is above [`Self::MAX_LENGTH`] Java stops reading and the
-/// handler answers with a size message; `data` is `None` then. The handler's `_length < 0` check
-/// can never run, because `readBytes` throws for a negative length first.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestSetPledgeCrest {
     pub length: i32,
@@ -276,7 +254,6 @@ impl Decode for RequestSetPledgeCrest {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestExSetPledgeCrestLarge.java
 /// The leader uploads a large clan crest (`REQUEST_EX_SET_PLEDGE_CREST_LARGE`). Ex packet
 /// `0xD0 0x0011`. Same rules as [`RequestSetPledgeCrest`], limit [`Self::MAX_LENGTH`].
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -304,7 +281,6 @@ impl Decode for RequestExSetPledgeCrestLarge {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestSetAllyCrest.java
 /// The alliance leader uploads an alliance crest (`REQUEST_SET_ALLY_CREST`). Same rules as
 /// [`RequestSetPledgeCrest`], limit [`Self::MAX_LENGTH`].
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -336,7 +312,6 @@ impl Decode for RequestSetAllyCrest {
 // Clan wars
 // ---------------------------------------------------------------------------------------------
 
-// Java: gameserver/network/clientpackets/RequestStartPledgeWar.java
 client_packet!(
     /// The leader declares war on a clan (`REQUEST_START_PLEDGE_WAR`).
     RequestStartPledgeWar,
@@ -345,7 +320,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestReplyStartPledgeWar.java
 client_packet!(
     /// The other leader answers a war declaration (`REQUEST_REPLY_START_PLEDGE`).
     RequestReplyStartPledgeWar,
@@ -356,7 +330,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestStopPledgeWar.java
 client_packet!(
     /// The leader asks to end a war (`REQUEST_STOP_PLEDGE_WAR`).
     RequestStopPledgeWar,
@@ -365,7 +338,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestReplyStopPledgeWar.java
 client_packet!(
     /// The other leader answers a request to end the war (`REQUEST_REPLY_STOP_PLEDGE_WAR`).
     RequestReplyStopPledgeWar,
@@ -376,7 +348,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestSurrenderPledgeWar.java
 client_packet!(
     /// The leader surrenders in a war (`REQUEST_SURRENDER_PLEDGE_WAR`).
     RequestSurrenderPledgeWar,
@@ -385,7 +356,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestReplySurrenderPledgeWar.java
 client_packet!(
     /// The other leader answers a surrender (`REQUEST_REPLY_SURRENDER_PLEDGE_WAR`).
     RequestReplySurrenderPledgeWar,
@@ -399,7 +369,6 @@ client_packet!(
 // Alliances
 // ---------------------------------------------------------------------------------------------
 
-// Java: gameserver/network/clientpackets/RequestJoinAlly.java
 client_packet!(
     /// The alliance leader invites a clan leader (`REQUEST_JOIN_ALLY`).
     RequestJoinAlly,
@@ -409,7 +378,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestAnswerJoinAlly.java
 client_packet!(
     /// The invited clan leader answers (`REQUEST_ANSWER_JOIN_ALLY`): `1` accepts.
     RequestAnswerJoinAlly,
@@ -418,14 +386,12 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/AllyLeave.java
 client_unit_packet!(
     /// A clan leaves its alliance (`ALLY_LEAVE`).
     AllyLeave,
     plain AllyLeave
 );
 
-// Java: gameserver/network/clientpackets/AllyDismiss.java
 client_packet!(
     /// The alliance leader expels a clan (`ALLY_DISMISS`).
     AllyDismiss,
@@ -434,14 +400,12 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestDismissAlly.java
 client_unit_packet!(
     /// The alliance leader dissolves the alliance (`REQUEST_DISMISS_ALLY`).
     RequestDismissAlly,
     plain RequestDismissAlly
 );
 
-// Java: gameserver/network/clientpackets/RequestAllyCrest.java
 client_packet!(
     /// Asks for an alliance crest image (`REQUEST_ALLY_CREST`).
     RequestAllyCrest,
@@ -450,7 +414,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestAllyInfo.java
 client_unit_packet!(
     /// Asks for the alliance info window (`REQUEST_ALLY_INFO`).
     RequestAllyInfo,

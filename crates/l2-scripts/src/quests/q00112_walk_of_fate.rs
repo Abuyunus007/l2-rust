@@ -1,6 +1,4 @@
 //! Quest 112: Walk of Fate (Seer Livina in the village, Karuda in the Crypts of Disgrace).
-// Java: dist/game/data/scripts/quests/Q00112_WalkOfFate/Q00112_WalkOfFate.java
-//
 // Pattern: a start NPC that sends the player to a second NPC, a reward with adena, exp and an
 // item. Unlike Q00121 and Q00122, `onEvent` returns null for a player without the quest or below
 // the level, and answers only the events it handles (`htmltext` stays null otherwise).

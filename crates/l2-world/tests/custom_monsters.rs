@@ -2,7 +2,6 @@
 
 //! The custom monster features (M9-C01, D-57): champion monsters and the boss announcements,
 //! each with its switch off (nothing changes) and on (the Java behaviour).
-//! Java: config/custom/{ChampionMonstersConfig,BossAnnouncementsConfig}.java,
 //! entity/spawns/Spawn.java, entity/actor/Creature.java, entity/actor/templates/NpcTemplate.java,
 //! network/serverpackets/AbstractNpcInfo.java.
 

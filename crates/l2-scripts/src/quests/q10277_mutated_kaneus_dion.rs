@@ -1,5 +1,4 @@
 //! Quest 10277: Mutated Kaneus - Dion (Lukas sends the party after Crimson Hatu and Seer Flouros).
-// Java: dist/game/data/scripts/quests/Q10277_MutatedKaneusDion/Q10277_MutatedKaneusDion.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, QuestSound, STARTED};

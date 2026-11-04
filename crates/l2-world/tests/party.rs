@@ -793,7 +793,6 @@ fn command_channel_and_party_clan_take_the_party_in_range() {
         POSITIVE,
     );
     assert_eq!(cast(&mut s, &sk, P1, false, None).0, vec![P1, P2, P3]);
-    // NOTE(java-quirk): `size >= maxTargets` with a limit of 0 stops after the first member.
     let sk = skill(
         "COMMAND_CHANNEL",
         "<affectRange>1000</affectRange><affectLimit>0-0</affectLimit>",

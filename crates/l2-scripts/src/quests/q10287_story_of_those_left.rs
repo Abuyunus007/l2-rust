@@ -1,6 +1,4 @@
 //! Quest 10287: Story of Those Left (Rafforty in the Gludio area, Jinia and Kegor in the Jinia guild hideout).
-// Java: dist/game/data/scripts/quests/Q10287_StoryOfThoseLeft/Q10287_StoryOfThoseLeft.java
-//
 // Pattern: a memo-state quest (`docs/design/scripts.md`): the memo state tells the three steps
 // apart (1 = the hideout, 2 = back from it), `ex1` and `ex2` are the two checks in the hideout
 // (Jinia's and Kegor's). The reward is one item of the list the NPC shows (`exitQuest(false)`).
@@ -160,7 +158,6 @@ impl Script for Q10287StoryOfThoseLeft {
                             qs.set_memo_state(ctx, 2);
                             qs.unset(ctx, "ex1");
                             qs.unset(ctx, "ex2");
-                            // Java: `InstanceManager.getPlayerWorld(player).removeAllowed(player)`
                             // then `setInstanceId(0)`. The world of the hideout is the instance
                             // script's; without one there is nothing to leave.
                             if let Some(id) = ctx.world().player_instance_world(player).map(|w| w.instance_id)

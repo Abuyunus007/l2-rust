@@ -1,6 +1,4 @@
 //! Quest 352: Help Rood Raise A New Pet! (Rood in Heine, Lienrik eggs).
-// Java: dist/game/data/scripts/quests/Q00352_HelpRoodRaiseANewPet/Q00352_HelpRoodRaiseANewPet.java
-//
 // Pattern: a kill-drop quest (two eggs with separate chances, no limit) that pays per egg when the
 // NPC is talked to; the quest is repeatable (`exitQuest(true, true)`).
 
@@ -152,8 +150,6 @@ impl Script for Q00352HelpRoodRaiseANewPet {
                 ctx.take_items(player, LIENRIK_EGG2, -1);
                 htmltext = "31067-11.html".to_owned();
             }
-            // NOTE(java-quirk): with only second eggs in the bag none of the branches above
-            // matches, so the player gets the "no quest" message and keeps the eggs.
         }
         Some(htmltext)
     }

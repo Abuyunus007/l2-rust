@@ -1,8 +1,5 @@
 //! `FortSiegeGuardAI`: the fortress defenders' AI. It is `SiegeGuardAI` (`siege_guard.rs`) with a
 //! few lines changed; those lines are here, the rest is shared there (`SiegeGuardAiKind::Fort`).
-// Java: ai/FortSiegeGuardAI.java
-// Java: entity/actor/instance/{Defender,FortCommander}.java (returnHome)
-//
 // What differs from `SiegeGuardAI`:
 // - `autoAttackCondition`: a player (or a summon's owner) of the clan that owns the fortress is
 //   never a target ([`World::fort_siege_guard_auto_attack_condition`]).
@@ -23,9 +20,6 @@ impl World {
             return false;
         }
         // Check if the target isn't another guard, folk or a door.
-        // NOTE(java-quirk): `isPlayable()` is in the same condition, so any player or summon goes
-        // into the block too, and only the clan check below sends it away; a dead player whose
-        // clan does not own the fortress passes this check (`isAlikeDead` is in the same `||`).
         let is_door = self.doors.contains_key(&target);
         if self.is_siege_guard(target)
             || self.is_npc(target)

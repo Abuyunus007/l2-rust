@@ -1,5 +1,4 @@
 //! Naia's beam on the Hellbound Core.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/HellboundCore.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};

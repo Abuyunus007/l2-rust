@@ -1,5 +1,4 @@
 //! Connection pool.
-// Java: org/l2jmobius/commons/database/DatabaseFactory.java
 
 use std::time::Duration;
 
@@ -38,7 +37,6 @@ pub fn pool_min_idle(configured_max: i32) -> u32 {
 /// Host, port and database come from the parsed JDBC URL; login and password from their own
 /// keys, like Hikari does. JDBC URL parameters are not translated, except `useSSL=false`
 /// (no TLS), because the Mobius default URL carries it and sqlx would otherwise try TLS first.
-// Java: DatabaseFactory.init (setJdbcUrl / setUsername / setPassword)
 pub fn connect_options(config: &DatabaseConfig) -> Result<MySqlConnectOptions> {
     let url = config
         .jdbc_url
@@ -67,7 +65,6 @@ pub fn connect_options(config: &DatabaseConfig) -> Result<MySqlConnectOptions> {
 }
 
 /// Pool settings of `DatabaseFactory` on top of the given connect options.
-// Java: DatabaseFactory.init (pool size and timeouts)
 pub async fn connect_with(options: MySqlConnectOptions, configured_max: i32) -> Result<Pool> {
     let pool = MySqlPoolOptions::new()
         .max_connections(pool_max_size(configured_max))
@@ -84,7 +81,6 @@ pub async fn connect_with(options: MySqlConnectOptions, configured_max: i32) -> 
 ///
 /// Java starts even when the database is down (`setInitializationFailTimeout(-1)`) and only
 /// logs; here a failure is returned and the server decides.
-// Java: DatabaseFactory.init + testSingleConnection
 pub async fn connect(config: &DatabaseConfig) -> Result<Pool> {
     let options = connect_options(config)?;
     let pool = connect_with(options, config.database_max_connections).await?;

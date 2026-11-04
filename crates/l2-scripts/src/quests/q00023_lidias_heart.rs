@@ -1,6 +1,4 @@
 //! Quest 23: Lidia's Heart (High Priest Innocentin, Trader Violet, the tombstone, the ghost of von Hellmann).
-// Java: dist/game/data/scripts/quests/Q00023_LidiasHeart/Q00023_LidiasHeart.java
-//
 // Pattern: a ghost story with the memo state as the step counter (`docs/design/scripts.md`,
 // "Quest patterns"). The Java NPC variables `SPAWNED` (on the tombstone) and `npc0` (on the ghost,
 // the tombstone that woke it) live in `ctx.state`, keyed by object id.
@@ -313,7 +311,6 @@ impl Script for Q00023LidiasHeart {
                             htmltext = "31524-05.html".to_owned();
                         }
                     } else if memo_state == 9 || memo_state == 10 {
-                        // NOTE(java-quirk): the `memo_state == 9` here is dead, 9 went to the branch above.
                         if ctx.has_quest_items(player, SILVER_KEY) {
                             qs.set_memo_state(ctx, 10);
                             htmltext = "31524-06.html".to_owned();

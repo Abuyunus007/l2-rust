@@ -1,6 +1,4 @@
 //! Quest 659: I'd Rather Be Collecting Fairy Breath (High Summoner Galatea in Gludio, the Windy Hill winds).
-// Java: dist/game/data/scripts/quests/Q00659_IdRatherBeCollectingFairyBreath/Q00659_IdRatherBeCollectingFairyBreath.java
-//
 // Pattern: a repeatable quest of kills and a drop chance per monster (`give_item_randomly` with
 // no limit), paid in adena per breath with a bonus at ten or more. The reward link (`REWARD`) and
 // the "keep going / quit" links are events of the same script.
@@ -89,8 +87,6 @@ impl Script for Q00659IdRatherBeCollectingFairyBreath {
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, _is_summon: bool) {
         if ctx.random_party_member_state(killer, -1, 3, Some(npc)).is_some() {
-            // NOTE(java-quirk): the breath goes to the killer, not to the member the random
-            // pick returned (Java passes `player`, not `qs.getPlayer()`).
             let chance = MOBS
                 .iter()
                 .find(|(id, _)| *id == npc.id)

@@ -1,6 +1,5 @@
 //! Map regions: which town area a position belongs to, and where a player restarts.
 //!
-//! Java: `data/xml/MapRegionData.java`. Data: `data/mapregion/*.xml`, `xsd/MapRegion.xsd`.
 //!
 //! A map region is a named group of 32768-unit map tiles (`<map X Y/>`, tile = `(pos >> 15) +
 //! offset`) with a town name, a client location id (`locId`, shown in the "you are in" text), a
@@ -16,11 +15,6 @@
 //! # Races
 //! Races are Java enum names as text (`"HUMAN"`, `"DARK_ELF"`, ...). Java's `Race.valueOf` throws
 //! for an unknown name; such a region is skipped here.
-//!
-//! NOTE(java-quirk): two regions can claim the same tile (e.g. `darkelf_town` and `kamael_town`
-//! both list 17,19). Java builds the tile index by walking its `HashMap<String, RegionData>`, so
-//! the region that comes last in *hash order* wins. That order is reproduced
-//! (`String.hashCode`, table growth, insertion order inside a bucket).
 
 use std::collections::HashMap;
 use std::path::Path;

@@ -1,11 +1,5 @@
 //! The zone admin commands: `//zone_check`, `//zone_visual`, `//zone_visual_clear` and the zone
 //! builder (`//zone_build`, `_toggle`, `_clear`, `_delete`, `_save`).
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/{AdminZone,AdminZoneBuild}.java
-// Java: managers/ZoneBuildManager.java, managers/ZoneManager.java (getZones, getZoneById,
-// Java: getSpawnTerritories, getDebugItems, clearDebugItems)
-// Java: entity/zone/ZoneForm.java (dropDebugItem), network/clientpackets/{MoveToLocation,
-// Java: DlgAnswer}.java (the tele mode 3 click and the save question)
-//
 // # How the builder works
 // `//zone_build_toggle` puts the GM in tele mode 3. While it is on, every click on the ground
 // (`MoveToLocation`) records a point instead of moving ([`World::zone_build_add_point`]) and draws

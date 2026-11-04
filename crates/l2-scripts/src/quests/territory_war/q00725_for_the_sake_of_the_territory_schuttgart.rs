@@ -1,5 +1,4 @@
 //! Quest 725: For the Sake of the Territory - Schuttgart.
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/Q00725_ForTheSakeOfTheTerritorySchuttgart.java
 
 use l2_protocol_game::NpcStringId;
 

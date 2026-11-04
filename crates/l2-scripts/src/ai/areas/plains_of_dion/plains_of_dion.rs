@@ -1,5 +1,4 @@
 //! The Delu lizardmen of the Plains of Dion shout about their duel and call the others to help.
-// Java: dist/game/data/scripts/ai/areas/PlainsOfDion/PlainsOfDion.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

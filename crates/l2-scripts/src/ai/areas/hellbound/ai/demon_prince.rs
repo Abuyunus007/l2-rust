@@ -1,5 +1,4 @@
 //! The Demon Prince: Ultimate Defense and the Fiends he calls at half and a tenth of his HP.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/DemonPrince.java
 
 use std::collections::HashMap;
 

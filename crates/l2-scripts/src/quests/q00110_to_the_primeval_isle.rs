@@ -1,6 +1,4 @@
 //! Quest 110: To the Primeval Isle (Anton in Rune Town hands out the book, Marquez on the island).
-// Java: dist/game/data/scripts/quests/Q00110_ToThePrimevalIsle/Q00110_ToThePrimevalIsle.java
-//
 // Pattern: a delivery (the book is a quest item, given at the start and kept until the reward),
 // `on_event` echoes every event like Java `return event`; the no-quest message comes back from
 // `on_event` when the player has no state (Java `getNoQuestMsg`).

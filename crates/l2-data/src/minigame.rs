@@ -1,6 +1,5 @@
 //! The minigame arenas: `data/UndergroundColiseum.xml` and `data/KrateisCube.xml` (M8-GAMES-01).
 //!
-//! Java: `managers/games/UndergroundColiseumManager.java` (`parseDocument`),
 //! `managers/games/KrateisCubeManager.java` (`parseDocument`). The definitions are immutable; the
 //! state of a match is the world's (`l2_world::minigame`). Doors are listed by id; the ones the
 //! door table does not know are dropped by the world, like Java's `if (door != null)`.

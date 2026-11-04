@@ -8,7 +8,6 @@ use crate::generated::opcodes::ServerOpcode;
 /// Length of the Blowfish key the server announces in [`KeyPacket`].
 pub const KEY_LEN: usize = 8;
 
-// Java: gameserver/network/serverpackets/KeyPacket.java
 /// The answer to `ProtocolVersion` (opcode name `VERSION_CHECK`). It is the last packet that goes
 /// out unencrypted.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -34,8 +33,8 @@ impl Encode for KeyPacket {
         write_opcode(w, Self::OPCODE);
         w.u8(self.result).bytes(&self.key);
         w.i32(i32::from(self.use_encryption)).i32(self.server_id);
-        w.u8(1); // Java: constant 1
-        w.i32(0); // Java: "obfuscation key", always 0
+        w.u8(1);
+        w.i32(0);
     }
 }
 
@@ -55,7 +54,6 @@ impl Decode for KeyPacket {
     }
 }
 
-// Java: gameserver/network/serverpackets/LoginFail.java
 /// The login server refused the session key of `AuthLogin` (sent right before the connection is
 /// closed).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

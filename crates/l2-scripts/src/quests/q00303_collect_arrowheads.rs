@@ -1,6 +1,4 @@
 //! Quest 303: Collect Arrowheads (Minia in Gludin, Tunath Orc Marksmen).
-// Java: dist/game/data/scripts/quests/Q00303_CollectArrowheads/Q00303_CollectArrowheads.java
-//
 // Pattern: a party kill quest (`docs/design/scripts.md`, "Quest patterns"): `on_kill` picks a
 // random party member at cond 1 with `get_random_party_member_cond` and counts the kill for that
 // member's quest state. Repeatable: `exit_quest(ctx, true, ..)`.
@@ -71,8 +69,6 @@ impl Script for Q00303CollectArrowheads {
             let Some(qs) = ctx.get_quest_state(party_member, false) else {
                 return;
             };
-            // NOTE(java-quirk): the arrowhead goes to the killer, not to the member who was
-            // drawn, while the member's quest moves to cond 2 (and the killer's count decides).
             if ctx.give_item_randomly(
                 player,
                 Some(npc),

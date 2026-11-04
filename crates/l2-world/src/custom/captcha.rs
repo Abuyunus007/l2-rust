@@ -1,10 +1,5 @@
 //! `config/Custom/Captcha.ini`: after a number of monster kills the player must read a code from a
 //! picture, or is punished (moved to town, kicked, jailed or banned).
-// Java: gameserver/managers/CaptchaManager.java
-// Java: gameserver/mechanics/captcha/Captcha.java (the code and the id of the picture)
-// Java: gameserver/entity/actor/Creature.java (`doDie`: `updateCounter`)
-// Java: gameserver/network/clientpackets/RequestBypassToServer.java (`report...` -> `analyseBypass`)
-//
 // Differences, all in how the pictures are made: Java renders 1000 pictures when the server starts
 // and hands them out in turn; here one picture is made per challenge (same code alphabet, same id
 // range). Java also sends a first `PledgeCrest` with a different random id and picture before the

@@ -1,13 +1,5 @@
 //! Clan skills: given to the members, switched off by a negative reputation, learned at the
 //! clan trainer (`AcquireSkillType.PLEDGE` and `SUBPLEDGE`) and stored in `clan_skills`.
-// Java: entity/clan/Clan.java (addNewSkill, addSkillEffects, removeSkillEffects, skillsStatus,
-//       isLearnableSubSkill, isLearnableSubPledgeSkill, SubPledge skills)
-// Java: data/xml/SkillTreeData.java (getAvailablePledgeSkills, getAvailableSubPledgeSkills)
-// Java: entity/actor/instance/VillageMaster.java (showPledgeSkillList)
-// Java: network/clientpackets/{RequestAcquireSkill,RequestAcquireSkillInfo}.java (the PLEDGE and
-//       SUBPLEDGE cases, showSubUnitSkillList)
-// Java: network/serverpackets/AcquireSkillInfo.java (the constructor without a custom SP)
-//
 // # Shape
 // A clan keeps its skills as `(id, level)` (`Clan::skills`, `sub_pledge_skills`, `SubPledge::skills`).
 // A member gets them as ordinary skills of the player (`World::add_skill`, never stored in
@@ -282,8 +274,6 @@ impl World {
             put(&mut sub.skills)
         };
 
-        // NOTE(java-quirk): the update does not look at `sub_pledge_id`, so a skill id that the
-        // clan and a squad (or two squads) share changes in all of them.
         let write = match old_level {
             Some(_) => ClanWrite::UpdateSkill {
                 clan_id,
@@ -409,8 +399,6 @@ impl World {
         let skills = Self::available_pledge_skills(&trees, clan);
         let mut list = AcquireSkillList::new(AcquireSkillType::Pledge);
         for s in &skills {
-            // NOTE(java-quirk): `getSocialClass()` is null for a line without a `socialClass`
-            // and Java throws; every shipped line has one.
             let social_class = s.social_class.map_or(0, |c| c.ordinal());
             list.add_skill(
                 s.skill_id,
@@ -545,8 +533,6 @@ impl World {
         }
         if self.clans.settings.life_crystal_needed {
             for item in &learn.required_items {
-                // NOTE(java-quirk): the items are taken one after the other; one that is missing
-                // leaves the ones before it destroyed.
                 if !self.destroy_item_by_item_id(player, item.item_id, item.count, false) {
                     // Doesn't have required item.
                     self.send(
@@ -603,8 +589,6 @@ impl World {
         }
         let reputation = clan.reputation_score;
         // Hack check. Check if SubPledge can accept the new skill.
-        // NOTE(java-quirk): a squad that does not exist throws a NullPointerException in
-        // `isLearnableSubPledgeSkill`: the request ends without an answer.
         let Some(learnable) = clan.is_learnable_sub_pledge_skill(skill_id, level, sub_type) else {
             return;
         };

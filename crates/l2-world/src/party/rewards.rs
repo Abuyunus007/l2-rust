@@ -1,8 +1,4 @@
 //! Sharing the exp and SP of a kill: the party bonus, which members count, and the level cut-offs.
-// Java: entity/groups/Party.java (distributeXpAndSp, calculateExpSpPartyCutoff, getValidMembers,
-//       getExpBonus, getSpBonus, getBaseExpSpBonus)
-// Java: entity/groups/PartyExpType.java
-// Java: entity/actor/Attackable.java (calculateRewards: the party branch)
 
 use l2_data::Stat;
 use l2_util::ObjectId;
@@ -207,8 +203,6 @@ impl World {
             let level_diff = top_level - self.member_level(member);
             for (i, gap) in settings.xp_cutoff_gaps.iter().enumerate() {
                 if level_diff >= gap[0] && level_diff <= gap[1] {
-                    // NOTE(java-quirk): a gap without a percentage entry is an
-                    // `ArrayIndexOutOfBoundsException` in Java; here it counts as 0.
                     let percent = f64::from(settings.xp_cutoff_gap_percents.get(i).copied().unwrap_or(0));
                     xp = (add_exp * percent) / 100.0;
                     let sp = (add_sp * percent) / 100.0;
@@ -216,9 +210,6 @@ impl World {
                     break;
                 }
             }
-            // NOTE(java-quirk): a member whose level gap is in no range gets nothing added, but the
-            // method still returns the exp before the cut (`xp = addExp`), so the vitality below
-            // is used up for it.
         } else {
             self.add_exp_and_sp(member, add_exp, add_sp, vitality);
         }

@@ -1,8 +1,5 @@
 //! The `Script` bypass handler (Java `ScriptLink`): the quest list of an NPC, a script's talk
 //! window and `bypass Script <name> <event>` (`Player.processScriptEvent`).
-// Java: dist/game/data/scripts/handlers/bypass/npc/ScriptLink.java
-// Java: entity/actor/Player.java (processScriptEvent)
-//
 // The engine (S-API-01, `script/`) answers first: its scripts by name, and the quest list of
 // `bypass Script` alone. `ClanMaster` and `AllianceMaster` are scripts of the engine now
 // (S-API-02, `l2-scripts`). The scripts that are still built in (the fortress and castle NPCs,

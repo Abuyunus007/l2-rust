@@ -1,8 +1,4 @@
 //! Gatekeepers (`Teleporter` NPCs): the list of destinations with their fees, and the teleport.
-// Java: entity/actor/instance/Teleporter.java (onBypassFeedback, sendHtmlMessage)
-// Java: entity/teleporter/{TeleportHolder,TeleportLocation}.java (showTeleportList, doTeleport,
-//       shouldPayFee, calculateFee, getItemName)
-//
 // # What is left out, with the system that brings it
 // - The castle gatekeepers' own page (`Teleporter.showChatWindow` on castle ground): the castle
 //   NPCs (M7-NPC-01). The siege checks of `doTeleport` are here (M7-SIEGE-01).
@@ -71,8 +67,6 @@ impl World {
                 };
                 self.do_teleport(npc, player, holder, location_id);
             }
-            // NOTE(java-quirk): the html sends `Chat` and this case is lower case, so it is never
-            // reached from the shipped pages; they go through the `Chat` bypass handler.
             "chat" => {
                 let value = command
                     .get(5..)
@@ -156,8 +150,6 @@ impl World {
             warn!("{player} requested noblesse teleport without being noble!");
             return;
         }
-        // NOTE(java-quirk): `getLocation` is `List.get`, which throws for an unknown index; the
-        // `null` check after it is never reached. Either way nothing happens.
         let Some(location) = holder.location(location_id) else {
             warn!(
                 "{player} requested unknown teleport location {location_id} within list {}!",
@@ -169,7 +161,6 @@ impl World {
         // Check if castle is in siege (M7-SIEGE-01).
         let allow_in_siege = self.siege_settings().teleport_while_siege_in_progress;
         if !allow_in_siege {
-            // NOTE(java-quirk): Java throws for a castle id that does not exist.
             let besieged = location
                 .castle_ids
                 .iter()

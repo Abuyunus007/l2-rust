@@ -2,7 +2,6 @@
 
 //! The script engine (S-API-01): registration and dispatch order, quest state rows, quest
 //! timers, the quest window and chooser, the journal packets and the global variables.
-//! Java: mechanics/script/{Quest,QuestState,QuestTimer}.java, mechanics/events/EventDispatcher,
 //! handlers/bypass/npc/ScriptLink, network/clientpackets/{RequestQuestAbort,RequestTutorial*}.
 
 use std::path::Path;
@@ -615,7 +614,6 @@ fn a_skipped_step_writes_the_step_flags() {
             },
         ]
     );
-    // NOTE(java-quirk): the journal shows the condition, as the flags are negative.
     let journal = s.world.quest_list(ObjectId(1));
     assert_eq!(journal.quests[0].status, 2);
 }
@@ -684,7 +682,6 @@ fn quest_rows_of_character_select_become_the_states() {
     data.profile.quests = QuestLoad {
         states: vec![
             ("QA".to_owned(), Some("Started".to_owned())),
-            // A script this server does not have: kept in the database, ignored here (D-39).
             ("Q09999_NotPorted".to_owned(), Some("Started".to_owned())),
         ],
         variables: vec![

@@ -89,7 +89,6 @@ fn len_prefixed_bytes(r: &mut PacketReader, field: &'static str) -> Result<Vec<u
 // LS -> GS (the login server writes, the game server reads)
 // ---------------------------------------------------------------------------------------------
 
-// Java: loginserver/network/gameserverpackets/send/InitLS.java (GS reader: gameserver/.../receive/InitLS.java)
 /// First packet on a link: the RSA public key the GS encrypts its Blowfish key with.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InitLS {
@@ -130,7 +129,6 @@ impl Decode for InitLS {
     }
 }
 
-// Java: loginserver/network/gameserverpackets/send/LoginServerFail.java
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LoginServerFail {
     /// One byte on the wire. Java writes `writeByte(reason)`, so values above 0xFF lose their high bits.
@@ -162,7 +160,6 @@ impl Decode for LoginServerFail {
     }
 }
 
-// Java: loginserver/network/gameserverpackets/send/AuthResponse.java
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuthResponse {
     pub server_id: u8,
@@ -189,7 +186,6 @@ impl Decode for AuthResponse {
     }
 }
 
-// Java: loginserver/network/gameserverpackets/send/PlayerAuthResponse.java
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PlayerAuthResponse {
     pub account: String,
@@ -215,7 +211,6 @@ impl Decode for PlayerAuthResponse {
     }
 }
 
-// Java: loginserver/network/gameserverpackets/send/KickPlayer.java
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct KickPlayer {
     pub account: String,
@@ -237,7 +232,6 @@ impl Decode for KickPlayer {
     }
 }
 
-// Java: loginserver/network/gameserverpackets/send/RequestCharacters.java
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestCharacters {
     pub account: String,
@@ -259,7 +253,6 @@ impl Decode for RequestCharacters {
     }
 }
 
-// Java: loginserver/network/gameserverpackets/send/ChangePasswordResponse.java
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ChangePasswordResponse {
     pub character_name: String,
@@ -291,7 +284,6 @@ impl Decode for ChangePasswordResponse {
 // GS -> LS (the game server writes, the login server reads)
 // ---------------------------------------------------------------------------------------------
 
-// Java: gameserver/network/loginserverpackets/send/BlowFishKey.java (LS reader: loginserver/.../receive/BlowFishKey.java)
 /// The GS's Blowfish key, RSA-NoPadding encrypted with the key from `InitLS`.
 ///
 /// This struct carries the encrypted block. The RSA step is not done here.
@@ -315,8 +307,6 @@ impl Encode for BlowFishKey {
 impl Decode for BlowFishKey {
     fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
         let size = r.i32()?;
-        // NOTE(java-quirk): Java logs a warning for a size <= 0 and returns without reading
-        // anything. The connection stays CONNECTED, so no error here, just an empty block.
         if size <= 0 {
             return Ok(Self {
                 encrypted_key: Vec::new(),
@@ -328,7 +318,6 @@ impl Decode for BlowFishKey {
     }
 }
 
-// Java: gameserver/network/loginserverpackets/send/AuthRequest.java (LS reader: loginserver/.../receive/GameServerAuth.java)
 /// Registration request. Java sends the subnet and host lists as two lists, and the LS reads them
 /// back as pairs.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -361,8 +350,6 @@ impl Encode for GameServerAuth {
             .i32(self.max_players)
             .i32(self.hex_id.len() as i32)
             .bytes(&self.hex_id);
-        // NOTE(java-quirk): Java writes `min(subnets.size(), hosts.size())` pairs, so extra
-        // entries on the longer list are dropped without an error. `zip` does the same.
         let pairs = self.subnets.len().min(self.hosts.len());
         w.i32(pairs as i32);
         for (subnet, host) in self.subnets.iter().zip(&self.hosts) {
@@ -417,7 +404,6 @@ impl Decode for GameServerAuth {
     }
 }
 
-// Java: gameserver/network/loginserverpackets/send/PlayerInGame.java (LS reader: loginserver/.../receive/PlayerInGame.java)
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PlayerInGame {
     pub accounts: Vec<String>,
@@ -429,7 +415,6 @@ impl PlayerInGame {
 
 impl Encode for PlayerInGame {
     fn encode(&self, w: &mut PacketWriter) {
-        // NOTE(java-quirk): Java `writeShort(size)`, so more than 65535 accounts wrap.
         w.u8(Self::OPCODE).u16(self.accounts.len() as u16);
         for account in &self.accounts {
             w.string(account);
@@ -453,7 +438,6 @@ impl Decode for PlayerInGame {
     }
 }
 
-// Java: gameserver/network/loginserverpackets/send/PlayerLogout.java (LS reader: loginserver/.../receive/PlayerLogout.java)
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PlayerLogout {
     pub account: String,
@@ -471,7 +455,6 @@ impl Encode for PlayerLogout {
 
 impl Decode for PlayerLogout {
     fn decode(r: &mut PacketReader) -> Result<Self, PacketError> {
-        // Java: `remaining() < 3` with the opcode counted, so the body needs at least 2 bytes.
         if r.remaining() < 2 {
             return Err(truncated(r, 2));
         }
@@ -479,7 +462,6 @@ impl Decode for PlayerLogout {
     }
 }
 
-// Java: gameserver/network/loginserverpackets/send/ChangeAccessLevel.java (LS reader: loginserver/.../receive/ChangeAccessLevel.java)
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ChangeAccessLevel {
     pub account: String,
@@ -507,7 +489,6 @@ impl Decode for ChangeAccessLevel {
     }
 }
 
-// Java: gameserver/network/loginserverpackets/send/PlayerAuthRequest.java (LS reader: loginserver/.../receive/PlayerAuthRequest.java)
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PlayerAuthRequest {
     pub account: String,
@@ -544,7 +525,6 @@ impl Decode for PlayerAuthRequest {
     }
 }
 
-// Java: gameserver/network/loginserverpackets/send/ServerStatus.java (LS reader: loginserver/.../receive/ServerStatus.java)
 /// A list of `(attribute id, value)` pairs. Use the consts below for both.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ServerStatus {
@@ -560,8 +540,6 @@ impl ServerStatus {
     pub const SERVER_LIST_SQUARE_BRACKET: i32 = 0x03;
     pub const MAX_PLAYERS: i32 = 0x04;
     pub const TEST_SERVER: i32 = 0x05;
-    /// NOTE(java-quirk): the GS writer (`gameserver` ServerStatus) sends age as 5, which is
-    /// `TEST_SERVER` here. The LS reads 6 as age, so a GS age attribute is ignored by the LS.
     pub const SERVER_AGE: i32 = 0x06;
 
     // Values for `SERVER_LIST_STATUS`.
@@ -615,7 +593,6 @@ impl Decode for ServerStatus {
     }
 }
 
-// Java: gameserver/network/loginserverpackets/send/PlayerTracert.java (LS reader: loginserver/.../receive/PlayerTracert.java)
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PlayerTracert {
     pub account: String,
@@ -655,7 +632,6 @@ impl Decode for PlayerTracert {
     }
 }
 
-// Java: gameserver/network/loginserverpackets/send/ReplyCharacters.java (LS reader: loginserver/.../receive/ReplyCharacters.java)
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReplyCharacters {
     pub account: String,
@@ -671,7 +647,6 @@ impl ReplyCharacters {
 
 impl Encode for ReplyCharacters {
     fn encode(&self, w: &mut PacketWriter) {
-        // NOTE(java-quirk): Java `writeByte(size)`, so 256 or more delete times wrap.
         w.u8(Self::OPCODE)
             .string(&self.account)
             .u8(self.chars)
@@ -699,7 +674,6 @@ impl Decode for ReplyCharacters {
     }
 }
 
-// Java: gameserver/network/loginserverpackets/send/SendMail.java
 /// Not handled by the LS: `GameServerPacketHandler` returns `null` for opcode 0x09 ("not
 /// implemented"), so [`decode_from_gs`] returns `Ok(None)`. The struct exists for the GS writer
 /// and for tests.
@@ -716,7 +690,6 @@ impl SendMail {
 
 impl Encode for SendMail {
     fn encode(&self, w: &mut PacketWriter) {
-        // NOTE(java-quirk): Java `writeByte(args.length)`, so 256 or more args wrap.
         w.u8(Self::OPCODE)
             .string(&self.account)
             .string(&self.mail_id)
@@ -744,7 +717,6 @@ impl Decode for SendMail {
     }
 }
 
-// Java: gameserver/network/loginserverpackets/send/TempBan.java (LS reader: loginserver/.../receive/RequestTempBan.java)
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestTempBan {
     pub account: String,
@@ -788,7 +760,6 @@ impl Decode for RequestTempBan {
     }
 }
 
-// Java: gameserver/network/loginserverpackets/send/ChangePassword.java (LS reader: loginserver/.../receive/ChangePassword.java)
 /// The only GS-to-LS packet whose Java reader keeps the opcode in a local (`packetId`, for the
 /// log line). The layout is the same as the others: opcode, then four strings.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -869,7 +840,6 @@ pub fn decode_from_gs(
         (Authed, ServerStatus::OPCODE) => GsPacket::ServerStatus(ServerStatus::decode(reader)?),
         (Authed, PlayerTracert::OPCODE) => GsPacket::PlayerTracert(PlayerTracert::decode(reader)?),
         (Authed, ReplyCharacters::OPCODE) => GsPacket::ReplyCharacters(ReplyCharacters::decode(reader)?),
-        // Java: `case 0x09: return null; // RequestSendMail (not implemented)`.
         (Authed, SendMail::OPCODE) => return Ok(None),
         (Authed, RequestTempBan::OPCODE) => GsPacket::RequestTempBan(RequestTempBan::decode(reader)?),
         (Authed, ChangePassword::OPCODE) => GsPacket::ChangePassword(ChangePassword::decode(reader)?),
@@ -1181,7 +1151,6 @@ mod tests {
 
     #[test]
     fn blow_fish_key_empty_block_is_not_an_error() {
-        // Java: size <= 0 logs and returns, the connection stays CONNECTED.
         for size in [0i32, -3] {
             let mut w = PacketWriter::new();
             w.u8(0).i32(size);

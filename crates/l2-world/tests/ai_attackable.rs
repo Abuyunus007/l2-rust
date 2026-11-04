@@ -9,7 +9,6 @@
 //! - regions that switch off take their monsters out of the think set,
 //! - an NPC's path search goes through the path service like a player's.
 //!
-//! Java: ai/AttackableAI.java, ai/CreatureAI.java, ai/AbstractAI.java,
 //! entity/actor/Attackable.java, entity/WorldRegion.java (switchAI), Creature.moveToLocation.
 
 use std::sync::{Arc, Mutex};

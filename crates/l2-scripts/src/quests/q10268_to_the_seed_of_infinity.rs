@@ -1,5 +1,4 @@
 //! Quest 10268: To the Seed of Infinity (Keucereus sends the adventurer to Officer Tepios).
-// Java: dist/game/data/scripts/quests/Q10268_ToTheSeedOfInfinity/Q10268_ToTheSeedOfInfinity.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED};

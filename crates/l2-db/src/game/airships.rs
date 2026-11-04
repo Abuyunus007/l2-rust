@@ -1,12 +1,10 @@
 //! The `airships` table: the fuel of the air ship of each clan (M8-VEHICLE-01).
-// Java: managers/AirShipManager.java (load, registerLicense, storeInDb)
 
 use sqlx::FromRow;
 
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: AirShipManager.LOAD_DB, ADD_DB, UPDATE_DB. `fuel` is a `decimal(5,0)`; the cast makes it
 // the integer `rs.getInt("fuel")` reads.
 const SELECT_ALL: &str = "SELECT owner_id, CAST(fuel AS SIGNED) AS fuel FROM airships";
 const INSERT: &str = "INSERT INTO airships (owner_id,fuel) VALUES (?,?)";

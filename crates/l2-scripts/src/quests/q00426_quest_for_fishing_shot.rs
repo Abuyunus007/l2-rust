@@ -1,6 +1,4 @@
 //! Quest 426: Quest for Fishing Shot (the fishing shot masters; Sweet Fluid from the monsters).
-// Java: dist/game/data/scripts/quests/Q00426_QuestForFishingShot/Q00426_QuestForFishingShot.java
-//
 // Pattern: a drop quest with a chance per monster. `random_party_member_state` picks the started
 // member who gets the drop, the roll is out of 1000. The quest is repeatable: the NPC's page asks
 // to go on or to quit (`exitQuest(true)`).
@@ -40,8 +38,6 @@ const NPC: [i32; 23] = [
 const SWEET_FLUID: i32 = 7586;
 
 /// Java `MOBS`: (monster, chance out of 1000, sweet fluid given). The kill ids are these monsters.
-// NOTE(java-quirk): 21263 is put twice in the Java table; the second put (chance 795, 2 fluid) is
-// the one `HashMap` keeps, so the first line is left out here.
 const MOBS: &[(i32, i32, i32)] = &[
     (20005, 45, 1),
     (20013, 100, 1),
@@ -302,8 +298,6 @@ const MOBS: &[(i32, i32, i32)] = &[
 ];
 
 /// Java `MOBS_SPECIAL`: (monster, chance out of 1000 for one more fluid, fluid given).
-// NOTE(java-quirk): none of these monsters is in `addKillId` (they are not in `MOBS`), so the
-// engine never calls `on_kill` for them. The branch is kept as Java has it.
 const MOBS_SPECIAL: [(i32, i32, i32); 5] = [
     (20829, 115, 6),  // Platinum Tribe Overlord
     (20859, 890, 8),  // Guardian Angel

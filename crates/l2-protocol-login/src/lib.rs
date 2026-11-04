@@ -10,7 +10,7 @@
 //!
 //! ## The packet pattern
 //! One struct per packet with public fields, an `OPCODE` const, `impl Encode` and `impl Decode`,
-//! and a `// Java: path/To/Class.java` line. Both traits are implemented for every login packet
+//! Both traits are implemented for every login packet
 //! (the server, the proxy and test clients each use a different half). `Decode` starts after the
 //! opcode and tolerates trailing bytes. Wire constants from Java are named consts with a comment.
 //! Parts of a packet that are not packets themselves (list entries) use plain `write` / `read`

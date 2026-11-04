@@ -1,6 +1,4 @@
 //! Quest 420: Little Wing (Cooper, the fairy stone, the drake eggs and the hatchling's flute).
-// Java: dist/game/data/scripts/quests/Q00420_LittleWing/Q00420_LittleWing.java
-//
 // Pattern: a long multi-NPC chain. The branch ("fairy_stone" 1 = plain, 2 = deluxe), the previous
 // branch ("old_stone") and the chosen drake ("drake_hunt") live in the quest variables.
 

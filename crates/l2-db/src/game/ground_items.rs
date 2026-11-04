@@ -1,27 +1,17 @@
 //! The `itemsonground` table: the items lying on the ground, saved and restored only when
 //! `SaveDroppedItem` is on (`General.ini`, default off).
-// Java: org/l2jmobius/gameserver/managers/ItemsOnGroundManager.java (load, run, emptyTable)
-//
-// D-39: the Java game server uses the same table. This repository is only called when the owner
-// turned `SaveDroppedItem` (or `ClearDroppedItemTable`) on, exactly like Java does, so a default
-// setup never writes the table. Startup only *reads* the id column (`IdRepository`).
 
 use sqlx::FromRow;
 
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: ItemsOnGroundManager.load (DESTROY_EQUIPABLE_PLAYER_ITEM off)
 const RECYCLE_MISC_ITEMS: &str =
     "UPDATE itemsonground SET drop_time = ? WHERE drop_time = -1 AND equipable = 0";
-// Java: ItemsOnGroundManager.load (DESTROY_EQUIPABLE_PLAYER_ITEM on)
 const RECYCLE_ALL_ITEMS: &str = "UPDATE itemsonground SET drop_time = ? WHERE drop_time = -1";
-// Java: ItemsOnGroundManager.load
 const SELECT_GROUND_ITEMS: &str =
     "SELECT object_id,item_id,count,enchant_level,x,y,z,drop_time,equipable FROM itemsonground";
-// Java: ItemsOnGroundManager.emptyTable
 const EMPTY_TABLE: &str = "DELETE FROM itemsonground";
-// Java: ItemsOnGroundManager.run
 const INSERT_GROUND_ITEM: &str = "INSERT INTO itemsonground(object_id,item_id,count,enchant_level,x,y,z,drop_time,equipable) VALUES(?,?,?,?,?,?,?,?,?)";
 
 /// One row of `itemsonground`.

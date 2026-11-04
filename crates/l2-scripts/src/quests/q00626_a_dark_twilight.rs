@@ -1,7 +1,5 @@
 //! Quest 626: A Dark Twilight (Hierarch in the Gludio/Hot Springs area; the Splendor monsters
 //! drop the blood of saints, 300 of them buy the experience and the sp or 100000 adena).
-// Java: dist/game/data/scripts/quests/Q00626_ADarkTwilight/Q00626_ADarkTwilight.java
-//
 // Pattern: a party kill count with a drop chance per monster (per mille, the member at cond 1,
 // no range check), cond 2 at 300 items, and a choice of reward on the page (`Exp` or `Adena`).
 

@@ -1,15 +1,6 @@
 //! How a vehicle moves: `executePath`, the AI's `moveTo`, `Creature.moveToLocation` and
 //! `updatePosition` as they run for a flying creature without geodata, `moveToNextRoutePoint`,
 //! the stuck monitor, `teleToLocation` and the engine timer.
-// Java: entity/actor/Vehicle.java (executePath, moveToNextRoutePoint, updatePosition, stopMove,
-//       teleToLocation, runEngine)
-// Java: entity/actor/instance/{Boat,AirShip}.java (moveToNextRoutePoint, stopMove)
-// Java: entity/actor/Creature.java (moveToLocation, updatePosition, broadcastMoveToLocation,
-//       onTeleported)
-// Java: ai/{BoatAI,AirShipAI}.java (moveTo, clientStopMoving), ai/CreatureAI.java
-//       (setIntentionMoveTo, setIntentionActive, notifyActionArrived)
-// Java: taskmanagers/MovementTaskManager.java
-//
 // A vehicle is flying (`setFlying(true)`), has no geodata checks, no collision radius and is never
 // in water, so the shared movement code (`crate::movement`) is not needed: this is the same
 // arithmetic on the vehicle's own state. The tick follows `update_movement`: the position only
@@ -142,7 +133,6 @@ impl World {
         let (kind, moving) = (v.kind, v.is_moving());
         if moving {
             self.vehicle_stop_move(id, loc);
-            // NOTE(java-quirk): `stopMove` already broadcast these, the AI sends them again.
             self.vehicle_stop_packets(id, kind);
             return;
         }

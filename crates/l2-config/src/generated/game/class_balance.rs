@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/ClassBalanceConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/ClassBalance.ini` (Java: `ClassBalanceConfig`).

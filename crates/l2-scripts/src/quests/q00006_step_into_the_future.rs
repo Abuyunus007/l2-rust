@@ -1,6 +1,4 @@
 //! Quest 6: Step Into the Future (Roxxy in Talking Island sends a human to Baulro and Sir Collin).
-// Java: dist/game/data/scripts/quests/Q00006_StepIntoTheFuture/Q00006_StepIntoTheFuture.java
-//
 // Pattern: a delivery chain (`docs/design/scripts.md`, "Quest patterns"): Roxxy starts it, Baulro
 // hands out the letter (cond 2), Sir Collin takes it (cond 3), and Roxxy pays the reward items.
 // One-time: `exit_quest(ctx, false, true)`.

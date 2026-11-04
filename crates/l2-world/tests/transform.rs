@@ -419,8 +419,6 @@ fn a_form_replaces_the_base_values() {
     assert_eq!(s.world.transformation_id(ME), 101);
     let v = s.view();
     assert_eq!(v.transformation_display_id(), 150);
-    // NOTE(java-quirk): the level data of the datapack's forms is the one of level 99 (see
-    // `l2_data::transform`), so a level-1 player gets the class' level modifier and HP.
     assert_eq!(v.level_mod(), 0.9);
     assert_eq!(v.max_hp(), 100);
     // pAtk 500 (template) * STR bonus 1 * level mod 0.9.
@@ -679,8 +677,6 @@ fn an_allowed_items_list_blocks_every_other_item() {
     assert!(list.block.is_none());
 }
 
-/// NOTE(java-quirk): a form with both lists sets mode 1 and then mode 2, which replaces it; mode 2
-/// only greys the items out in the client.
 #[test]
 fn both_item_lists_keep_the_second_block_only() {
     let mut s = Scene::new();
@@ -959,8 +955,6 @@ fn a_flying_form_ends_when_the_client_reports_a_position_outside_gracia() {
 // ---- the defence functions ---------------------------------------------------------------------
 
 /// `FuncPDefMod`: the chest takes the form's defence off as a value, every other slot hands the
-/// form's value to the class template as a slot number (NOTE(java-quirk)). Form 101 has head 12:
-/// slot 12 is the feet (7) of the class, not the head (12).
 #[test]
 fn the_defence_functions_use_the_forms_values_like_java() {
     const HEAD_SLOT: i32 = 1;

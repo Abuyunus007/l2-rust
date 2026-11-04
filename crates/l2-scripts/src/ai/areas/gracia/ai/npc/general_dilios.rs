@@ -1,5 +1,4 @@
 //! General Dilios and his guards at the Keucereus Alliance Base: the commands and the salute.
-// Java: dist/game/data/scripts/ai/areas/Gracia/AI/NPC/GeneralDilios/GeneralDilios.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

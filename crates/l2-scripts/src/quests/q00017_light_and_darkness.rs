@@ -1,6 +1,4 @@
 //! Quest 17: Light and Darkness (the Hierarch and four saint altars, for a level 61 character).
-// Java: dist/game/data/scripts/quests/Q00017_LightAndDarkness/Q00017_LightAndDarkness.java
-//
 // Pattern: an ordered visit to four NPCs with a blood per altar (`docs/design/scripts.md`,
 // "Quest patterns"): the Hierarch gives four blood, each altar takes one when it is the next
 // altar in order (cond = altar index), and the Hierarch pays the exp at cond 5. The start needs
@@ -60,8 +58,6 @@ impl Script for Q00017LightAndDarkness {
         _npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        // NOTE(java-quirk): without a quest state `onEvent` returns the event itself (not null),
-        // so the event's page is shown anyway.
         let Some(player) = player else {
             return Some(event.to_owned());
         };
@@ -100,7 +96,6 @@ impl Script for Q00017LightAndDarkness {
         match qs.state(ctx) {
             COMPLETED => htmltext = ctx.get_already_completed_msg(player),
             CREATED => {
-                // Java: `player.getQuestState(Q00015...)` completed.
                 let sweet_whispers_done = ctx
                     .player_quest_state(player, SWEET_WHISPERS)
                     .is_some_and(|q| q.is_completed());
@@ -230,7 +225,6 @@ mod tests {
         fn setup(&self, _setup: &mut ScriptSetup) {}
     }
 
-    /// Java: Sweet Whispers completed (the player's state of that quest), made through its
     /// own exit path (`exitQuest(false)`), since the quest itself is not in this test world.
     fn complete_sweet_whispers(t: &mut ScriptTest, player: i32) {
         t.world.run_as_script("Q00015_SweetWhispers", |ctx| {

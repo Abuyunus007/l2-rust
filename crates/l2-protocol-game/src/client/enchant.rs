@@ -4,7 +4,6 @@
 //! These only read the packet. Every check (is the scroll in use, is the item valid) is the
 //! world's job (`l2_world::enchant`).
 
-// Java: gameserver/network/clientpackets/RequestEnchantItem.java
 client_packet!(
     /// The player pressed "Enchant" in the scroll window (`REQUEST_ENCHANT_ITEM`, `0x5F`).
     RequestEnchantItem,
@@ -15,7 +14,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestExTryToPutEnchantTargetItem.java
 client_packet!(
     /// The player put the item to enchant into the window (`0xD0` 0x004C).
     RequestExTryToPutEnchantTargetItem,
@@ -24,7 +22,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestExTryToPutEnchantSupportItem.java
 client_packet!(
     /// The player put a support item (a "scroll of enchant rate") into the window (`0xD0` 0x004D).
     RequestExTryToPutEnchantSupportItem,
@@ -34,14 +31,12 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestExCancelEnchantItem.java
 client_unit_packet!(
     /// The player closed the enchant window (`0xD0` 0x004E).
     RequestExCancelEnchantItem,
     ex RequestExCancelEnchantItem
 );
 
-// Java: gameserver/network/clientpackets/RequestExEnchantItemAttribute.java
 client_packet!(
     /// The player picked the item to put the element on (`0xD0` 0x0035). `-1` (Java compares
     /// with `0xFFFFFFFF`) means the window was cancelled.
@@ -51,7 +46,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestExRemoveItemAttribute.java
 client_packet!(
     /// The player asks an NPC to take an element off an item (`0xD0` 0x0023).
     RequestExRemoveItemAttribute,

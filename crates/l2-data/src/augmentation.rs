@@ -1,7 +1,6 @@
 //! Augmentation options: what the two option ids of an augmentation give the player who wears the
 //! item (stat functions, an active and a passive skill, chance skills).
 //!
-//! Java: `gameserver/data/xml/OptionData.java` and `mechanics/options/{Options,Augmentation,
 //! OptionSkillHolder,OptionSkillType}.java`. Data: `data/stats/augmentation/options/*.xml`
 //! (`xsd/optionsData.xsd`). Applying the options to a player is the world's
 //! (`l2_world::inventory::augmentation`).

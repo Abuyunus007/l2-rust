@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/OlympiadConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Olympiad.ini` (Java: `OlympiadConfig`).

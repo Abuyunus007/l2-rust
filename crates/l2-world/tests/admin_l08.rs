@@ -3,7 +3,6 @@
 //! L-08: the fight calculator, the spawn reload, the GM misc room, the spawn pools, `//loadhtml`
 //! from the disk, `//msgx` with display ids, `//hide` with silence and the spawn commands that write
 //! the spawn file.
-//! Java: dist/game/data/scripts/handlers/chat/commands/admin/{AdminFightCalculator,AdminSpawn,
 //! AdminHtml,AdminMessages,AdminHide}.java, gameserver/data/xml/SpawnData.java (addNewSpawn).
 
 mod admin_common;

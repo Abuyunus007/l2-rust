@@ -1,9 +1,5 @@
 //! The trait tables of a creature (`AttackTrait`, `DefenceTrait` effects): how much more damage a
 //! trait deals, how much less it takes, and which traits it is immune to.
-// Java: entity/actor/stat/CreatureStat.java (_attackTraits, _attackTraitsCount, _defenceTraits,
-//       _defenceTraitsCount, _traitsInvul and their getters)
-// Java: mechanics/stats/TraitType.java
-// Java: entity/item/type/WeaponType.java (getTraitType)
 
 use l2_data::item::WeaponType;
 use l2_data::skill::TraitType;

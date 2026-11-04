@@ -1,7 +1,5 @@
 //! Queen Shyeed, the Stakato Nest raid boss: the respawn row in the global variables, the
 //! three-hour despawn, and the Stakato Nest buff zones she switches.
-// Java: dist/game/data/scripts/ai/bosses/QueenShyeed/QueenShyeed.java
-//
 // The Java constructor is `on_load` (it decides on the `QueenShyeedRespawn` row loaded at start).
 //
 // The zones 200103 (`MOB_BUFF_ZONE`) is commented out in Java and is not touched here either.
@@ -61,7 +59,6 @@ impl Script for QueenShyeed {
         match event {
             EVENT_RESPAWN => spawn_shyeed(ctx),
             EVENT_DESPAWN => {
-                // Java: `npc.isDead()` on the NPC the timer was started with.
                 let npc = npc?;
                 if !ctx.is_dead(npc.object_id) {
                     start_respawn(ctx);
@@ -96,7 +93,6 @@ fn spawn_shyeed(ctx: &mut ScriptCtx<'_>) {
 
     let (x, y, z, heading) = SHYEED_LOC;
     let npc = ctx.add_spawn(SHYEED, x, y, z, heading, false, 0, 0);
-    // Java: `startQuestTimer(.., npc, ..)` with a null NPC when the spawn failed.
     ctx.start_quest_timer(EVENT_DESPAWN, 10_800_000, npc, None, false);
     ctx.world_mut().set_effect_zone_enabled(PC_BUFF_ZONE, false);
 

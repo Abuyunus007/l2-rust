@@ -1,5 +1,4 @@
 //! Quest 719: For the Sake of the Territory - Giran.
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/Q00719_ForTheSakeOfTheTerritoryGiran.java
 
 use l2_protocol_game::NpcStringId;
 

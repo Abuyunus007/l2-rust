@@ -1,7 +1,5 @@
 //! Quest 46: Once More in the Arms of the Mother Tree (Galladucci, Gentler, Sandra and Dustin
 //! along the order chain; the scroll takes the player to the Elven Village).
-// Java: dist/game/data/scripts/quests/Q00046_OnceMoreInTheArmsOfTheMotherTree/Q00046_OnceMoreInTheArmsOfTheMotherTree.java
-//
 // Pattern: a delivery chain over several NPCs (`docs/design/scripts.md`, "Quest patterns"): the
 // start NPC hands out the first order, every NPC swaps it for the next item, and the end is one-
 // time. Q00045 to Q00049 are the same code with the scroll and the prerequisite quest changed.

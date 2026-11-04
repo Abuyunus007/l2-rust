@@ -1,6 +1,5 @@
 //! The `<capsuled_items>` of an etc item: what an extractable box can give.
 //!
-//! Java: the `capsuled_items` branch of `util/DocumentItem.java`,
 //! `entity/item/holders/ExtractableProduct.java` and `EtcItem.addCapsuledItem`.
 
 use super::EtcInfo;

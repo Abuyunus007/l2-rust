@@ -1,6 +1,4 @@
 //! Quest 275: Dark Winged Spies (Neruga Chief Tantus, Darkwing Bats and the Varangka's Tracker).
-// Java: dist/game/data/scripts/quests/Q00275_DarkWingedSpies/Q00275_DarkWingedSpies.java
-//
 // Pattern: a quest that spawns a monster (`docs/design/scripts.md`, "Quest patterns"): a kill
 // can call a tracker to the killer (`add_spawn_at(id, killer, false, 0)`: Java's
 // `addSpawn(npcId, killer)`), which attacks when it sees a player (`on_creature_see` +
@@ -146,8 +144,6 @@ impl Script for Q00275DarkWingedSpies {
                     if count >= MAX_BAT_FANG_COUNT {
                         ctx.give_adena(talker, count * FANG_PRICE, true);
                         qs.exit_quest(ctx, true, true);
-                        // NOTE(java-quirk): the reward shows the "keep hunting" page 05; the
-                        // reward page 04 is never used.
                         htmltext = "30567-05.html".to_owned();
                     }
                 }

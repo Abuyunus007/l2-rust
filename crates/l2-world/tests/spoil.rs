@@ -4,7 +4,6 @@
 //! `Formulas.calcMagicSuccess` roll, the SPOIL list rolled when the spoiled monster dies, the
 //! blue glow in `Die`, the longer corpse, the Sweeper skill with its `canSweep` condition and the
 //! reward messages, and the reset on respawn.
-//! Java: handlers/skill/effects/{Spoil,Sweeper}.java, mechanics/conditions/ConditionPlayerCanSweep.java,
 //! entity/actor/Attackable.java (checkSpoilOwner, isOldCorpse, getSpoilLootItems, takeSweep,
 //! doItemDrop, onSpawn), taskmanagers/DecayTaskManager.java, mechanics/stats/Formulas.java
 //! (calcMagicSuccess).

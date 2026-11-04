@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/RatesConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Rates.ini` (Java: `RatesConfig`).

@@ -1,47 +1,24 @@
 //! The fortress siege tables: `fortsiege_clans`, `fort_spawnlist`, `fort_siege_guards` and the
 //! `siegeDate` column of `fort` (M7-FORT-01).
-// Java: org/l2jmobius/gameserver/mechanics/siege/FortSiege.java (loadSiegeClan, saveSiegeClan,
-//       removeSiegeClan, clearSiegeClan, saveSiegeDate)
-// Java: org/l2jmobius/gameserver/managers/FortSiegeManager.java (checkIsRegistered)
-// Java: org/l2jmobius/gameserver/managers/FortSiegeGuardManager.java (loadSiegeGuard)
-// Java: org/l2jmobius/gameserver/mechanics/siege/Fort.java (initNpcs, initSiegeNpcs,
-//       initNpcCommanders, initSpecialEnvoys)
-//
-// Same layout as residences.rs: verbatim SQL, one method per statement. D-39: the Java game
-// server reads and writes the same rows.
-//
-// NOTE(java-quirk): `Fort.loadDoorUpgrade` selects `fort_doorupgrade` but reads a column `id` the
-// table does not have (it is `doorId`), and nothing ever inserts a row: the table stays empty and
-// the method does nothing. So there is no repository method for it.
 
 use sqlx::FromRow;
 
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: FortSiege.loadSiegeClan
 const SELECT_SIEGE_CLANS: &str = "SELECT clan_id FROM fortsiege_clans WHERE fort_id=?";
-// Java: FortSiegeManager.checkIsRegistered
 const SELECT_IS_REGISTERED: &str = "SELECT clan_id FROM fortsiege_clans where clan_id=? and fort_id=?";
-// Java: FortSiege.saveSiegeClan
 const INSERT_SIEGE_CLAN: &str = "INSERT INTO fortsiege_clans (clan_id,fort_id) values (?,?)";
-// Java: FortSiege.removeSiegeClan (DELETE_FORT_SIEGECLANS_BY_CLAN_ID, DELETE_FORT_SIEGECLANS)
 const DELETE_SIEGE_CLAN: &str = "DELETE FROM fortsiege_clans WHERE fort_id = ? AND clan_id = ?";
 const DELETE_SIEGE_CLANS: &str = "DELETE FROM fortsiege_clans WHERE fort_id = ?";
-// Java: FortSiege.clearSiegeClan (two statements)
 const CLEAR_SIEGE_CLANS: &str = "DELETE FROM fortsiege_clans WHERE fort_id=?";
 const CLEAR_SIEGE_CLANS_OF_OWNER: &str = "DELETE FROM fortsiege_clans WHERE clan_id=?";
-// Java: FortSiege.saveSiegeDate
 const UPDATE_SIEGE_DATE: &str = "UPDATE fort SET siegeDate = ? WHERE id = ?";
-// Java: Fort.initNpcs, initSiegeNpcs, initNpcCommanders, initSpecialEnvoys read the same table
 // for one `spawnType` each (`ORDER BY id`, `initNpcs` without it, which is the primary key order
 // all the same); this reads the fortress's rows once and the caller sorts them by type.
 const SELECT_SPAWNS: &str = "SELECT id, npcId, x, y, z, heading, spawnType, castleId FROM fort_spawnlist WHERE fortId = ? ORDER BY id";
-// Java: Clan.updateBloodOathCountInDB
 const UPDATE_BLOOD_OATH_COUNT: &str = "UPDATE clan_data SET blood_oath_count=? WHERE clan_id=?";
-// Rust-only (D-50): the blood oaths of a clan, read before they are handed out.
 const SELECT_BLOOD_OATH_COUNT: &str = "SELECT blood_oath_count FROM clan_data WHERE clan_id=?";
-// Java: FortSiegeGuardManager.loadSiegeGuard
 const SELECT_SIEGE_GUARDS: &str =
     "SELECT npcId, x, y, z, heading, respawnDelay FROM fort_siege_guards WHERE fortId = ?";
 
@@ -140,7 +117,6 @@ impl FortSiegeRepository {
         Self { pool }
     }
 
-    // Java: FortSiege.loadSiegeClan
     pub async fn siege_clans(&self, fort_id: i32) -> Result<Vec<i32>> {
         let ids = sqlx::query_scalar::<_, i32>(SELECT_SIEGE_CLANS)
             .bind(fort_id)
@@ -149,7 +125,6 @@ impl FortSiegeRepository {
         Ok(ids)
     }
 
-    // Java: FortSiegeManager.checkIsRegistered
     pub async fn is_registered(&self, clan_id: i32, fort_id: i32) -> Result<bool> {
         let rows = sqlx::query_scalar::<_, i32>(SELECT_IS_REGISTERED)
             .bind(clan_id)
@@ -159,7 +134,6 @@ impl FortSiegeRepository {
         Ok(!rows.is_empty())
     }
 
-    // Java: FortSiege.saveSiegeClan
     pub async fn insert_siege_clan(&self, clan_id: i32, fort_id: i32) -> Result<()> {
         sqlx::query(INSERT_SIEGE_CLAN)
             .bind(clan_id)
@@ -171,7 +145,6 @@ impl FortSiegeRepository {
 
     /// One clan's registration (`clan_id` 0 deletes every registration of the fortress, as Java's
     /// `removeSiegeClan(0)` does).
-    // Java: FortSiege.removeSiegeClan
     pub async fn delete_siege_clan(&self, fort_id: i32, clan_id: i32) -> Result<()> {
         if clan_id != 0 {
             sqlx::query(DELETE_SIEGE_CLAN)
@@ -190,7 +163,6 @@ impl FortSiegeRepository {
 
     /// Every registration of the fortress; with an owner also every registration of the owner
     /// clan at any fortress (Java runs the second statement only when the fortress has an owner).
-    // Java: FortSiege.clearSiegeClan
     pub async fn clear_siege_clans(&self, fort_id: i32, owner_clan_id: Option<i32>) -> Result<()> {
         sqlx::query(CLEAR_SIEGE_CLANS)
             .bind(fort_id)
@@ -205,7 +177,6 @@ impl FortSiegeRepository {
         Ok(())
     }
 
-    // Java: FortSiege.saveSiegeDate
     pub async fn update_siege_date(&self, fort_id: i32, siege_date: i64) -> Result<()> {
         sqlx::query(UPDATE_SIEGE_DATE)
             .bind(siege_date)
@@ -215,7 +186,6 @@ impl FortSiegeRepository {
         Ok(())
     }
 
-    // Java: Fort.initNpcs, initSiegeNpcs, initNpcCommanders, initSpecialEnvoys
     pub async fn spawns(&self, fort_id: i32) -> Result<Vec<FortSpawnRow>> {
         let rows = sqlx::query_as::<_, FortSpawnDbRow>(SELECT_SPAWNS)
             .bind(fort_id)
@@ -224,7 +194,6 @@ impl FortSiegeRepository {
         Ok(rows.into_iter().map(FortSpawnRow::from).collect())
     }
 
-    // Java: Clan.updateBloodOathCountInDB
     pub async fn update_blood_oath_count(&self, clan_id: i32, count: i32) -> Result<()> {
         sqlx::query(UPDATE_BLOOD_OATH_COUNT)
             .bind(count)
@@ -234,7 +203,6 @@ impl FortSiegeRepository {
         Ok(())
     }
 
-    /// Rust-only (D-50): the clan's blood oaths as the table has them (`None` for no such clan).
     pub async fn blood_oath_count(&self, clan_id: i32) -> Result<Option<i32>> {
         let count = sqlx::query_scalar::<_, u16>(SELECT_BLOOD_OATH_COUNT)
             .bind(clan_id)
@@ -243,7 +211,6 @@ impl FortSiegeRepository {
         Ok(count.map(i32::from))
     }
 
-    // Java: FortSiegeGuardManager.loadSiegeGuard
     pub async fn siege_guards(&self, fort_id: i32) -> Result<Vec<FortSiegeGuardRow>> {
         let rows = sqlx::query_as::<_, FortSiegeGuardDbRow>(SELECT_SIEGE_GUARDS)
             .bind(fort_id)

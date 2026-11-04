@@ -1,6 +1,5 @@
 //! Geodata (`.l2j`) parsing, the region model and the `GeoEngine` queries.
 //!
-//! Java: `gameserver/geoengine/**`. M1: the file parser, the in-memory region model and the block
 //! queries `getNearestZ`, `getNextLowerZ`, `getNextHigherZ`, `checkNearestNswe` ([`region`],
 //! [`block`]). M3-GEO-01: [`GeoEngine`] (whole-world loading with the per-region override of D-26,
 //! world <-> geo coordinates, `getHeight`, line of sight, movement checks) and the

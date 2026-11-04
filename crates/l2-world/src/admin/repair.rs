@@ -1,6 +1,4 @@
 //! `//repair <name>` and `//restore <name>`: put a stuck character back in Talking Island.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminRepairChar.java
-//
 // Java writes the rows at once and says nothing to the GM, not even when the name is unknown.
 // The statements go to the persistence task (D-15, `PersistCommand::RepairChar`); the character
 // must be offline to keep the change (an online character stores its own position again).

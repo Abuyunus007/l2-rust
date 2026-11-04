@@ -780,7 +780,6 @@ fn target_me_probability_makes_a_player_target_the_caster() {
 
 #[test]
 fn target_me_probability_from_an_npc_clears_the_target() {
-    // NOTE(java-quirk): an NPC effector has no `asPlayer()`, so `setTarget(null)` runs.
     let (mut world, monster, other_monster) = world_with_monsters();
     world.set_target(OTHER, Some(other_monster));
     cast(&mut world, monster, OTHER, 9214);

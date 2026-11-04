@@ -1,9 +1,4 @@
 //! One applied skill: its effects, time, ticks and stat functions.
-// Java: mechanics/skill/BuffInfo.java (all of it), mechanics/effects/{EffectTickTask,
-//       EffectTaskInfo}.java, mechanics/effects/AbstractEffect.java (getStatFuncs)
-// Java: mechanics/stats/functions/FuncTemplate.java (getFunc: the attach condition)
-// Java: entity/actor/Creature.java (start/stopAbnormalVisualEffect, updateAbnormalEffect)
-//
 // Java's `GameTimeTaskManager` game ticks (100 ms) measure a buff's age (`getTime`); here the
 // world tick (50 ms) does: `(now - start) / 20` whole seconds, the same number.
 
@@ -222,8 +217,6 @@ impl BuffInfo {
     }
 
     /// Java `getTime()`: the seconds left at world tick `now`.
-    // NOTE(java-quirk): a passive or toggle (abnormal time -1) counts down below -1; the client
-    // shows no time for a negative value.
     pub fn time(&self, now: u64) -> i32 {
         let elapsed = now.saturating_sub(self.period_start_tick) / TICKS_PER_SECOND;
         self.abnormal_time
@@ -453,8 +446,6 @@ impl World {
             if ticks > 0 {
                 self.start_effect_tick(owner, info_id, at, ticks);
             }
-            // NOTE(java-quirk): Java adds the functions even when `onStart` removed the info
-            // again; they then stay until the skill's functions are removed by owner.
             let funcs = self.effect_stat_funcs(info.effector, owner, skill, effect);
             self.add_stat_funcs(owner, funcs, passive);
             update = true;

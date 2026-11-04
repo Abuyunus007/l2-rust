@@ -1,5 +1,4 @@
 //! `Hide`: the player becomes invisible and everybody who had it as a target forgets it.
-// Java: dist/game/data/scripts/handlers/skill/effects/Hide.java
 
 use l2_data::skill::EffectTemplate;
 

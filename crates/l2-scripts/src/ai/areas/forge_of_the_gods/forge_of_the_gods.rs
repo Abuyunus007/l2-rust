@@ -1,5 +1,4 @@
 //! Forge of the Gods AI: a run of kills in a short time calls a Lavasaurus on the killer.
-// Java: dist/game/data/scripts/ai/areas/ForgeOfTheGods/ForgeOfTheGods.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

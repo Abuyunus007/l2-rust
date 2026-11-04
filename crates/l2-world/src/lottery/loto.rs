@@ -1,12 +1,7 @@
 //! The `Loto` NPC bypass: the lottery sales windows, the ticket list and the prize claim.
-// Java: dist/game/data/scripts/handlers/bypass/npc/Loto.java
-//
 // The pages (values of the command): 0 first buy window, 1-20 the number buttons, 21 the second
 // buy window, 22 the chosen ticket, 23 the jackpot, 24 earlier winning numbers and the claim
 // list, 25 the instructions, above 25 the object id of a ticket to claim.
-//
-// Pages 24 and the claim need the winning numbers of earlier draws; they are read for the request
-// (`PersistCommand::LotteryRequest`, D-50) and the page is built when they come back.
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{ActionFailed, NpcHtmlMessage, SystemMessage, SystemMessageParam};
@@ -80,8 +75,6 @@ impl World {
         let settings = self.lottery.settings.clone();
         let mut html: String;
         if value < 0 {
-            // NOTE(java-quirk): Java sends an `NpcHtmlMessage` without a page for a negative
-            // value. Nothing is sent here.
             return;
         } else if value == 0 {
             // 0 - first buy lottery ticket window
@@ -245,7 +238,6 @@ impl World {
                     settings.two_and_one_prize,
                 );
                 if check[0] > 0 {
-                    // NOTE(java-quirk): "3th Prize".
                     match check[0] {
                         1 => message.push_str("- 1st Prize"),
                         2 => message.push_str("- 2nd Prize"),

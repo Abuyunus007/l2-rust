@@ -1,5 +1,4 @@
 //! The Grave Robber summoners and magicians call one of their two private lists when they spawn.
-// Java: dist/game/data/scripts/ai/areas/MithrilMines/GraveRobbers.java
 
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
 

@@ -3,10 +3,6 @@
 //! Start it from a copy of `dist/game` (or give `--root`). Runs until Ctrl+C or SIGTERM
 //! (exit code 0), after storing every player. Exit code 2 asks the wrapper (start script,
 //! supervisor) to start it again, exit code 1 is a fatal startup error.
-//!
-//! Run it with its own config folder (own `hexid.txt`, own `GameserverPort`, `Admin.ini`),
-//! never the Java game server's one (D-39).
-// Java: org/l2jmobius/gameserver/GameServer.java (main)
 
 use std::path::PathBuf;
 use std::process::ExitCode;

@@ -1,7 +1,6 @@
 //! One skill at one level: the typed fields Java's `Skill` constructor reads from the `StatSet`,
 //! the leftover `StatSet` keys, the effect templates and the use conditions.
 //!
-//! Java: `mechanics/skill/Skill.java` (the constructor and the plain getters),
 //! `util/StatSet.java` (the getters and their error rules), `mechanics/skill/SkillOperateType.java`,
 //! `mechanics/skill/targets/TargetType.java`, `mechanics/skill/AbnormalVisualEffect.java`,
 //! `mechanics/stats/{TraitType,BaseStat}.java`, `mechanics/skill/enums/FlyType.java`.

@@ -1,6 +1,4 @@
 //! Quest 5: Miner's Favor (Bolter in Talking Island sends a miner to four NPCs for their goods).
-// Java: dist/game/data/scripts/quests/Q00005_MinersFavor/Q00005_MinersFavor.java
-//
 // Pattern: a collection from several NPCs (`docs/design/scripts.md`, "Quest patterns"): each NPC
 // gives its item once, `checkProgress` moves the quest to cond 2 when the five items are in, and
 // the start NPC pays the reward (one-time, with the Newbie Guide hook). Brunon's pick comes in

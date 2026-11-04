@@ -1,6 +1,4 @@
 //! Quest 262: Trade With The Ivory Tower (Vollodos in the Town of Aden sends the player after the fungi).
-// Java: dist/game/data/scripts/quests/Q00262_TradeWithTheIvoryTower/Q00262_TradeWithTheIvoryTower.java
-//
 // Pattern: a party kill quest (`docs/design/scripts.md`, "Quest patterns"): a random party member
 // in cond 1 is drawn on each fungus kill and the spore sac roll is made for the killer. The 10th
 // sac sets cond 2 and Vollodos pays 3000 adena and ends the quest.
@@ -73,8 +71,6 @@ impl Script for Q00262TradeWithTheIvoryTower {
         };
         let qs = ctx.get_quest_state(party_member, false);
         if ctx.get_random(10) < sac_chance(npc.id) {
-            // NOTE(java-quirk): the sac goes to the killer, the cond 2 goes to the party member
-            // drawn above (Java passes `player` to `rewardItems` and `partyMember` to `setCond`).
             ctx.reward_items(player, SPORE_SAC, 1);
             if ctx.get_quest_items_count(player, SPORE_SAC) >= REQUIRED_ITEM_COUNT {
                 if let Some(qs) = qs {

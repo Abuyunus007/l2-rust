@@ -1,24 +1,7 @@
 //! The buff shop (`SellBuffs.ini`): a player sits down and sells his buffs for a price.
-// Java: gameserver/managers/SellBuffsManager.java
-// Java: gameserver/config/custom/SellBuffsConfig.java
-// Java: dist/game/data/scripts/custom/SellBuff/SellBuffBypassHandler.java
-// Java: dist/game/data/scripts/custom/SellBuff/SellBuffCommandHandler.java
-//
 // Off by default (`SellBuffEnable = False`): then neither the bypass words nor the voiced commands
 // are registered (Java registers them in the constructor of the handler only when the switch is
 // on), and the sell list stays empty.
-//
-// # How it fits together
-// - The bypass words `sellbuff*` are registered with the bypass registry by [`World::set_sell_buffs`]
-//   when the switch is on. The pages are the ones of `data/html/mods/SellBuffs/`, shown in the
-//   community board window.
-// - `.sellbuff` / `.sellbuffs` is a voiced command (`script_handlers/expoff.rs` asks
-//   [`World::sell_buffs_voiced_handler`]).
-// - A seller sits down with the private store type `PACKAGE_SELL` and `isSellingBuffs()` set; a
-//   customer who clicks him gets the buff menu instead of the sell list (`PrivateStoreListSell`).
-// - The shop's state (the buffs and prices of each seller) lives in memory; a seller who goes
-//   offline is written to and restored from the offline trader tables (type 9, `SELL_BUFFS`) under
-//   the same switch as the other offline shops (D-52, `trade/offline.rs`, M9-L01).
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
@@ -778,7 +761,6 @@ impl World {
             match parse_int(token) {
                 Some(parsed) => price = i64::from(parsed),
                 None => {
-                    // NOTE(java-quirk): the message names the minimum price.
                     let min = self.custom_buffers.sell.settings.min_price;
                     self.send_message(player, &format!("Too big price! Maximum price is {min}"));
                     self.sell_send_buff_edit_menu(player);

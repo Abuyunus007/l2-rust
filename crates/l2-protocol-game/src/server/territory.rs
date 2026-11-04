@@ -36,7 +36,6 @@ fn read_wards(r: &mut PacketReader) -> Result<Vec<i32>, PacketError> {
     Ok(wards)
 }
 
-// Java: gameserver/network/serverpackets/ExDominionWarStart.java
 /// The player's territory war starts (`EX_DOMINION_WAR_START`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExDominionWarStart {
@@ -81,7 +80,6 @@ impl Decode for ExDominionWarStart {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExDominionWarEnd.java
 server_unit_packet!(
     /// The player's territory war ends (`EX_DOMINION_WAR_END`). No fields.
     ExDominionWarEnd,
@@ -96,7 +94,6 @@ pub struct TerritoryWards {
     pub ward_ids: Vec<i32>,
 }
 
-// Java: gameserver/network/serverpackets/ExShowDominionRegistry.java
 /// The registration window of one territory (`EX_SHOW_DOMINION_REGISTRY`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExShowDominionRegistry {
@@ -116,9 +113,7 @@ pub struct ExShowDominionRegistry {
     pub war_time: i32,
     /// The current time, unix seconds.
     pub current_time: i32,
-    /// Java: the viewer's clan is registered here.
     pub clan_registered: bool,
-    /// Java: the viewer is registered here as a mercenary.
     pub merc_registered: bool,
     /// Every territory and its wards.
     pub territories: Vec<TerritoryWards>,
@@ -202,7 +197,6 @@ pub struct DominionTerritory {
     pub war_start_secs: i32,
 }
 
-// Java: gameserver/network/serverpackets/ExReplyDominionInfo.java
 /// The territory list (`EX_REPLY_DOMINION_INFO`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExReplyDominionInfo {
@@ -255,7 +249,6 @@ pub struct WardPosition {
     pub z: i32,
 }
 
-// Java: gameserver/network/serverpackets/ExShowOwnthingPos.java
 /// The positions of the territory wards on the map (`EX_SHOW_OWNTHING_POS`). Java writes the
 /// wards only while the war runs; otherwise the list is empty (a count of 0).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]

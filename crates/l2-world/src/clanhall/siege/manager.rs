@@ -1,9 +1,5 @@
 //! `CHSiegeManager`: a clan registers for a conquerable hall siege or cancels, and the siege
 //! window shows the hall (`SiegeInfo`, `SiegeAttackerList`).
-// Java: managers/CHSiegeManager.java (registerClan, unRegisterClan, isClanParticipating,
-//       getNearbyClanHall, getSiege)
-// Java: network/clientpackets/{RequestJoinSiege,RequestSiegeAttackerList}.java (the hall branches)
-// Java: network/serverpackets/{SiegeInfo,SiegeAttackerList}.java (the hall branches)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::siege::{SiegeAttackerList, SiegeInfo, SiegeOwnerClan, SiegeTime};
@@ -16,7 +12,6 @@ use super::load::{FlagWarRecord, HallSiegeRows};
 use crate::residence::{ClanHallId, ResidenceReadThen, ResidenceRef};
 use crate::world::{World, unix_ms_now};
 
-/// What the hall code does once the hall was read again (`ResidenceReadThen::HallSiege`, D-50).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum HallThen {
     /// `RequestJoinSiege` for a hall: the registration or its cancelling.
@@ -95,7 +90,6 @@ impl World {
         })
     }
 
-    /// `RequestJoinSiege` for a hall: the hall is read again first (D-50).
     pub(crate) fn hall_join_siege(&mut self, player: ObjectId, id: ClanHallId, is_joining: i32) {
         self.request_residence_reread(
             ResidenceRef::ClanHall(id),
@@ -233,7 +227,6 @@ impl World {
         }
     }
 
-    /// The tables of a hall read again (D-50) replace this world's copy.
     pub(crate) fn apply_hall_siege_rows(&mut self, rows: &HallSiegeRows) {
         if let Some(record) = &rows.hall {
             self.apply_siegable_hall_record(record);

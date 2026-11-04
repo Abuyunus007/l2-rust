@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/ScreenWelcomeMessageConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/ScreenWelcomeMessage.ini` (Java: `ScreenWelcomeMessageConfig`).

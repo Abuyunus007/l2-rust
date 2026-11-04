@@ -1,5 +1,4 @@
 //! The scouts of the Giants' Cave shout and call their neighbours on an intruder.
-// Java: dist/game/data/scripts/ai/areas/GiantsCave/GiantsCave.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

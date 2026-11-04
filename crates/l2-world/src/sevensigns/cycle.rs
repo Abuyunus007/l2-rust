@@ -1,16 +1,3 @@
-//! The cycle: the restore at start, the period change on the timer wheel, the new seal owners,
-//! the saves, `isDateInSealValidPeriod`, the parts of `EnterWorld` / `onPlayerEnter`, and the D-50
-//! re-reads (see the module comment of `sevensigns`).
-// Java: mechanics/sevensigns/SevenSigns.java (constructor, isNextPeriodChangeInPast,
-//       setCalendarForNextPeriodChange, isDateInSealValidPeriod, restoreSevenSignsData,
-//       saveSevenSignsData, saveSevenSignsStatus, resetPlayerData, initializeSeals, resetSeals,
-//       calcNewSealOwners, teleLosingCabalFromDungeons, SevenSignsPeriodChange, giveCPMult,
-//       removeCPMult, sendCurrentPeriodMsg)
-// Java: managers/CastleManager.java (validateTaxes), managers/DailyResetManager.java (onSave)
-// Java: network/clientpackets/EnterWorld.java (the Seal of Strife block, sendCurrentPeriodMsg)
-// Java: entity/actor/Player.java (onPlayerEnter: the dungeon checks; store: saveSevenSignsData)
-// Java: network/serverpackets/SSQInfo.java
-
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SsqInfo, SystemMessage};
 use l2_util::ObjectId;
@@ -80,8 +67,6 @@ fn day_of_week(local_day: i64) -> i64 {
 /// Java `setCalendarForNextPeriodChange()` on a calendar at `from_ms` (UTC milliseconds): the next
 /// change for `period`. The major periods end on Monday at 18:00 local time, the minor ones 15
 /// minutes after `from_ms`.
-// NOTE(java-quirk): only the hour and the minute are set, so the seconds and the milliseconds of
-// the calendar stay (the change is at 18:00:ss of the second the calendar was made).
 pub fn next_period_change_ms(period: i32, from_ms: i64, offset_at: impl Fn(i64) -> i64) -> i64 {
     match period {
         PERIOD_SEAL_VALIDATION | PERIOD_COMPETITION => {
@@ -109,9 +94,6 @@ pub fn next_period_change_ms(period: i32, from_ms: i64, offset_at: impl Fn(i64) 
 }
 
 /// Java `isNextPeriodChangeInPast()`: the server was off when the period should have changed.
-// NOTE(java-quirk): `set(DAY_OF_WEEK, MONDAY)` depends on the locale's first day of the week, but
-// together with the "one week back when in the future" step it is the last Monday 18:00 before
-// now in every locale. `SECOND` is set to 0, the milliseconds of now stay.
 pub fn is_next_period_change_in_past(
     period: i32,
     last_save: i64,
@@ -178,8 +160,6 @@ pub(crate) fn date_in_seal_valid_period(period: i32, milli_to_change: i64, till_
 }
 
 fn status_of_load(status: Option<SevenSignsStatus>) -> SevenSignsStatus {
-    // NOTE(java-quirk): without the `id = 0` row Java leaves the seal maps empty and throws a
-    // NullPointerException at the first `getSealOwner`; here the seals start unowned.
     status.unwrap_or_default()
 }
 
@@ -543,8 +523,6 @@ impl World {
         }
     }
 
-    /// Java `CastleManager.validateTaxes(sealStrifeOwner)`: no castle may tax more than 5% (Dusk
-    /// owns the Seal of Strife), 25% (Dawn) or 15% (nobody). The rows are a cycle's (D-53).
     fn ss_validate_taxes(&mut self, strife_owner: i32) {
         let max_tax = match strife_owner {
             CABAL_DUSK => 5,
@@ -593,10 +571,7 @@ impl World {
                         "You have been teleported to the nearest town due to the beginning of the Seal Validation period.",
                     );
                 }
-            }
-            // NOTE(java-quirk): `!cabal.isEmpty()` sends away the members who did sign, with the
-            // message for those who did not.
-            else if cabal.as_deref().is_none_or(|c| !c.is_empty()) {
+            } else if cabal.as_deref().is_none_or(|c| !c.is_empty()) {
                 self.tele_to_location_where(id, TeleportWhereType::Town);
                 self.set_in_7s_dungeon(id, false);
                 self.send_message(

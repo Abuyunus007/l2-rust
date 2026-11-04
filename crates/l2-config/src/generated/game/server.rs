@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/ServerConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Server.ini` (Java: `ServerConfig`).
@@ -114,16 +113,12 @@ pub struct ServerConfig {
     /// ... and 1 more statement(s), see docs/analysis/config-manual-fields.md.
     pub game_server_hosts: (),
     /// TODO(M2-CFG-01): not generated, hand-port it. Java type `boolean`; the unit type makes any use fail to compile until then.
-    /// Java: `load()` never assigns it.
     pub reserve_host_on_login: (),
     /// Hand-ported, the value is `GameConfig::manual.core.server.filter_list` (Java type `List<String>`); the unit type keeps this field from being used by mistake.
-    /// Java: `load()` never assigns it (used on line(s) [259, 260] of the class).
     pub filter_list: (),
     /// Hand-ported, the value is game-server `hexid::HexId` (hexid.txt) (Java type `int`); the unit type keeps this field from being used by mistake.
-    /// Java: `load()` never assigns it (used on line(s) [283] of the class).
     pub server_id: (),
     /// Hand-ported, the value is game-server `hexid::HexId` (hexid.txt) (Java type `byte[]`); the unit type keeps this field from being used by mistake.
-    /// Java: `load()` never assigns it (used on line(s) [286, 295] of the class).
     pub hex_id: (),
 }
 impl ServerConfig {

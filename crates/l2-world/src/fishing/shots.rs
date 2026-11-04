@@ -1,6 +1,4 @@
 //! The `FishShots` item handler (fishing soulshots) and the lure going to the left hand.
-// Java: dist/game/data/scripts/handlers/items/FishShots.java
-// Java: network/clientpackets/UseItem.java (the fishing rod branch of the handler part)
 
 use l2_data::ItemTemplate;
 use l2_data::item::types::{ActionType, WeaponType};

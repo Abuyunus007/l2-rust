@@ -1,7 +1,4 @@
 //! The `ClanHallDoorman` NPC: opens and closes the doors of the hall for its clan.
-// Java: entity/actor/instance/ClanHallDoorman.java
-// Java: entity/actor/instance/Doorman.java (onBypassFeedback, cannotManageDoors, tele)
-//
 // A doorman answers only the clan that owns the hall it stands at. The halls of `CH_WITH_EVOLVE`
 // also offer the pet evolution (`PetManager.doEvolve`, `summon/evolve.rs`).
 

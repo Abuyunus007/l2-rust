@@ -1,6 +1,4 @@
 //! What `LongTimeEvent` and the seasonal event scripts need from the world (S-EVENT-01).
-// Java: mechanics/script/LongTimeEvent.java, entity/World.java (broadcastToAllOnlinePlayers,
-// Java: getPlayers), mechanics/announce/EventAnnouncement.java
 
 use l2_util::ObjectId;
 

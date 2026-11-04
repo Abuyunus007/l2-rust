@@ -1,9 +1,6 @@
 //! Java `OlympiadStadiumZone` and the stadium half of `OlympiadGameManager`: one stadium per
 //! zone, each in its own copy of the arena (an instance), the players it holds, its broadcasts,
 //! its doors and buffers.
-// Java: entity/zone/type/OlympiadStadiumZone.java
-// Java: mechanics/olympiad/OlympiadGameManager.java (the constructor)
-//
 // Java gives every stadium zone the instance of its arena (`_zone.setInstanceId`), and the zone
 // only takes creatures of that instance (`isAffected`). The world keeps the zone shapes
 // immutable, so the zone code asks [`World::stadium_takes`] for that check.
@@ -49,8 +46,6 @@ impl World {
             return;
         }
         let mut stadiums = Vec::with_capacity(zones.len());
-        // NOTE(java-quirk): the id lives outside the loop, so a zone with another name gets the
-        // instance of the zone before it (0 for the first).
         let mut instance_id = 0;
         for zone in zones {
             let name = zone.name.clone().unwrap_or_default();

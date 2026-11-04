@@ -1,10 +1,6 @@
 //! The tamed beasts (S-API-05): the NPC a player gets at the last growth step of the Beast Farm
 //! and the Feedable Beasts. It follows its owner, buffs him, heals him when he is hit and eats
 //! the owner's food to stay.
-// Java: entity/actor/instance/TamedBeast.java, FeedableBeast.java,
-//       entity/actor/Player.java (getTrainedBeasts, addTrainedBeast, the teleport and
-//       reduceCurrentHp parts)
-//
 // A `TamedBeast` is a `FeedableBeast`, a `Monster`: here an NPC of class `Monster` with the
 // state below kept by the script engine. Java's three `ThreadPool` tasks (`CheckDuration` every
 // minute, `CheckOwnerBuffs` every 5 s, the `buffCast`s of `castBeastSkills`) are timers on the
@@ -104,8 +100,6 @@ impl World {
                 duration_task: None,
             },
         );
-        // NOTE(java-quirk): the Feedable Beasts' constructor sets the owner before `spawnMe`, the
-        // Beast Farm's after it; both end with an owner who is followed.
         self.tamed_beast_set_food_type(beast, food);
         self.tamed_beast_set_owner(beast, owner);
         if is_freya_beast {
@@ -367,8 +361,6 @@ impl World {
         let Some(b) = self.scripts.tamed.beasts.get(&beast).cloned() else {
             return;
         };
-        // NOTE(java-quirk): Java reads `owner.getInventory()` without a null check; a beast
-        // without an owner throws there and the task goes on. Here it does nothing.
         let Some(owner) = b.owner.filter(|o| self.players.contains_key(o)) else {
             return;
         };
@@ -520,8 +512,6 @@ impl World {
         let skills = self.tamed_beast_template_skills(beast);
         if hp_ratio >= 0.8 {
             for (skill, _, debuff) in skills {
-                // NOTE(java-quirk): the attacker must already have the debuff (the comment says
-                // "check if the attacker has it already", the code casts only then).
                 if debuff
                     && self.rng().below(3) < 1
                     && attacker.is_some_and(|a| self.is_affected_by_skill(a, skill.id))

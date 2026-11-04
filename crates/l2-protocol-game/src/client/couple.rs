@@ -5,7 +5,6 @@
 //! `CHANGE_MOVE_TYPE` (0x35) and `CHANGE_WAIT_TYPE` (0x36): their handlers are `null`, the sit
 //! and walk/run buttons arrive as `RequestActionUse`.
 
-// Java: gameserver/network/clientpackets/AnswerCoupleAction.java
 client_packet!(
     /// The asked player answers a couple action request (`0xD0` 0x007A, `ANSWER_COUPLE_ACTION`).
     /// Java reads the action id, the answer, then the object id of the player who asked.

@@ -1,7 +1,4 @@
 //! Christmas Event, Saving Santa: Thomas D. Turkey keeps Santa and the Santa Trainee sells trees and hats.
-// Java: dist/game/data/scripts/events/SavingSanta/SavingSanta.java
-// Java: dist/game/data/scripts/events/SavingSanta/config.xml
-//
 // http://legacy.lineage2.com/archive/2008/12/saving_santa_ev.html
 //
 // Java's constructor registers everything only `if (isEventPeriod())`. Here `on_load` notes whether
@@ -710,10 +707,6 @@ impl Script for SavingSanta {
                                 continue;
                             }
                         } else {
-                            // NOTE(java-quirk): `player` is the player of the timer, which is
-                            // `null` (`startQuestTimer("SantaSpawn", .., null, null)`), so Java
-                            // throws a `NullPointerException` here, ends the event and never
-                            // gives a reward: `_rewardedPlayers` stays empty.
                             let Some(player) = player else {
                                 warn!("SavingSanta: java.lang.NullPointerException in onEvent(SantaSpawn)");
                                 return None;
@@ -891,7 +884,6 @@ impl Script for SavingSanta {
                 }
 
                 if items_ok == 1 {
-                    // NOTE(java-quirk): the spacer row is added twice.
                     html.push_str(PAGE_SPACE);
                     html.push_str(PAGE_SPACE);
                     html.push_str(&page_button("Get the tree", "buySpecialTree"));
@@ -994,8 +986,6 @@ impl Script for SavingSanta {
 
                 return Some("savingsanta-weapon.htm".to_owned());
             } else if let Some(number) = event.strip_prefix("weapon_") {
-                // NOTE(java-quirk): `Integer.parseInt(event.split("weapon_")[1]) - 1` and the array
-                // index throw for a bad number; the event ends there.
                 let Some(item_id) = number
                     .parse::<i32>()
                     .ok()
@@ -1009,7 +999,6 @@ impl Script for SavingSanta {
                     ctx.world_mut()
                         .destroy_item_by_item_id(player, BR_XMAS_WPN_TICKET_JACKPOT, 1, true);
                     ctx.give_items_enchanted(player, item_id, 1, 10);
-                    // NOTE(java-quirk): the jackpot ticket also tells "incorrect item count".
                     ctx.send_system_message(player, SystemMessageId::IncorrectItemCount2);
                 } else if count_of(ctx, player, BR_XMAS_WPN_TICKET_NORMAL) > 0 {
                     ctx.world_mut()
@@ -1213,7 +1202,6 @@ mod tests {
         t.enter(1, 40, vec![item(1000, X_MAS_TREE1, 25)]);
         t.spawn(SANTA_TRAINEE_ID, 20);
         let page = event(&mut t, 1, "SpecialTree").unwrap();
-        // NOTE(java-quirk): the spacer row twice.
         assert_eq!(page.matches(PAGE_SPACE).count(), 2);
         assert!(page.contains("buySpecialTree"));
         event(&mut t, 1, "buySpecialTree");

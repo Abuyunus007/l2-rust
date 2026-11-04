@@ -2,10 +2,6 @@
 //! inventory order, the mini map, "record info", rotating with the keyboard, the skill list, the
 //! dispel of a buff, a skill on the ground and the item link in the chat. Macros, the crystallize
 //! and the wear shop have their own modules (`macros.rs`, `crystallize.rs`, `preview.rs`).
-// Java: network/clientpackets/{RequestSaveKeyMapping,RequestSaveInventoryOrder,RequestShowMiniMap,
-// Java: RequestRecordInfo,StartRotating,FinishRotating,RequestSkillList,RequestDispel,
-// Java: RequestExMagicSkillUseGround,RequestExRqItemLink,MoveWithDelta}.java
-//
 // # What is not Java's
 // - `Item.publish()` (an item shown in the chat can be looked up by its link) is a set on the
 //   *player who showed it* (`LeftoverState::published`). Java keeps the flag on the item object,

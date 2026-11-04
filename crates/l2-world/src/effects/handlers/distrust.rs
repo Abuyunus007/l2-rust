@@ -1,6 +1,4 @@
 //! `Distrust`: a monster turns on another monster nearby.
-// Java: dist/game/data/scripts/handlers/skill/effects/Distrust.java
-// Java: ai/DistrustAI.java (see `World::distrust_think_attack`)
 
 use l2_data::skill::EffectTemplate;
 use l2_protocol_game::SystemMessageId;

@@ -1,8 +1,5 @@
 //! What Java sends around an inventory change: `broadcastUserInfo`, `broadcastModifiedStats`,
 //! the delayed `sendSkillList` / `sendItemList`, and `refreshWeight`.
-// Java: entity/actor/Player.java (broadcastUserInfo, updateUserInfo, broadcastCharInfo,
-//       sendSkillList, sendItemList, refreshOverloaded)
-// Java: entity/actor/Creature.java (broadcastModifiedStats)
 
 use l2_data::Stat;
 use l2_protocol_game::server::enterworld::{SkillList, SkillListEntry};

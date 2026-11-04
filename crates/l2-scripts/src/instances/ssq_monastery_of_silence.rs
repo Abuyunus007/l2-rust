@@ -1,5 +1,4 @@
 //! Monastery of Silence (instance 151), the Seven Signs quests 10294 to 10296.
-// Java: dist/game/data/scripts/instances/SSQMonasteryOfSilence/SSQMonasteryOfSilence.java
 
 use std::collections::HashMap;
 
@@ -247,9 +246,6 @@ impl Script for SSQMonasteryOfSilence {
             }
             "FOLLOW" => {
                 let player = player?;
-                // NOTE(java-quirk): `EXIT` cancels this timer with the NPC that was clicked, not
-                // Elcadia, so it never stops in Java and goes on with a deleted Elcadia. Here it
-                // ends when the NPC is gone: a deleted NPC does nothing visible.
                 if !alive(ctx, npc) {
                     return None;
                 }
@@ -264,7 +260,6 @@ impl Script for SSQMonasteryOfSilence {
             }
             "DIALOG" => {
                 let player = player?;
-                // NOTE(java-quirk): see FOLLOW.
                 if !alive(ctx, npc) {
                     return None;
                 }
@@ -900,7 +895,6 @@ mod tests {
         event(&mut t, "EXIT", eris);
         assert_eq!(t.world.instance_id_of(Oid(1)), 0);
         assert!(!t.in_world(elcadia));
-        // NOTE(java-quirk): Java never cancels FOLLOW and DIALOG; they end here with the NPC.
         t.wait_ms(11_000);
         assert_eq!(t.world.quest_timer_count(), 0);
     }

@@ -1,6 +1,5 @@
 //! Local admin endpoint: status for the supervisor/GUI and a clean shutdown (D-30, D-38).
 //!
-//! Java: the Swing `loginserver/ui/Gui.java` showed the same game server table.
 //! Settings come from the Rust-only `config/Admin.ini` (D-36); a missing file means disabled.
 
 use std::collections::HashSet;

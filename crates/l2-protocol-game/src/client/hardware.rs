@@ -6,7 +6,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::{write_ex_opcode, write_opcode};
 use crate::generated::opcodes::{ClientOpcode, ExClientOpcode};
 
-// Java: gameserver/network/clientpackets/GameGuardReply.java
 /// The answer to `GameGuardQuery` (`0xCB`). Java hashes the eight answer bytes with SHA-1 and
 /// compares them with a fixed value.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -40,7 +39,6 @@ impl Decode for GameGuardReply {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestHardWareInfo.java
 /// The hardware report (`0xD0` 0x0096, accepted in every connection state). Java keeps it in the
 /// client (`ClientHardwareInfoHolder`); the MAC address is what the punishment manager matches.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -163,7 +161,6 @@ impl Decode for RequestHardWareInfo {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestPCCafeCouponUse.java
 /// A coupon code typed into the PC cafe window (`0xD0` 0x0019). Java only logs it.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestPCCafeCouponUse {

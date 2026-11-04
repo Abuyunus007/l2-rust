@@ -1,8 +1,6 @@
 //! Quest 108: Jumble, Tumble, Diamond Fuss (a dwarf runs a chain of contracts through Reep,
 //! Torocco, Maron, Brunon, the two warehouse keepers and Gouph, with gems from the Goblin
 //! Brigands and a star diamond from a Blade Bat).
-// Java: dist/game/data/scripts/quests/Q00108_JumbleTumbleDiamondFuss/Q00108_JumbleTumbleDiamondFuss.java
-//
 // Pattern: several talk NPCs that each move the chain on by cond, two gem drops by chance with a
 // limit (`giveItemRandomly(.., 1, 10, chance, false)`), and the NewbieGuide memo as in quest 104.
 

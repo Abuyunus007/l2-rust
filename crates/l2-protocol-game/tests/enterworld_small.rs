@@ -1,7 +1,3 @@
-//! Small packets of the enter-world sequence and `SystemMessage`, checked against byte layouts
-//! worked out by hand from the Java `writeImpl` code, and against recorded Java game server
-//! sessions when `L2_CAPTURE_DIR` is set.
-//!
 //! The expected bytes are built with an independent little-endian builder (not the crate's
 //! `PacketWriter`), so a mistake in the crate's encoder cannot hide behind the same mistake here.
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)]
@@ -101,7 +97,6 @@ fn skill_list_layout() {
             },
         ],
     };
-    // Java: passive as int, level, id, disabled byte, enchanted byte.
     let expected = Bytes::default()
         .byte(0x5F)
         .int(2)
@@ -158,7 +153,6 @@ fn shortcut_init_layout() {
 
 #[test]
 fn shortcut_register_skill_layout() {
-    // Java: type SKILL (2), slot + page * 12, skill id, level, zero byte, character type.
     let packet = ShortcutRegister::Skill {
         slot: 14,
         id: 1204,
@@ -193,7 +187,6 @@ fn shortcut_register_skill_layout() {
 
 #[test]
 fn shortcut_register_item_layout() {
-    // Java: type ITEM (1), slot, object id, character type, shared reuse group, 0, 0, augment 0.
     let packet = ShortcutRegister::Item {
         slot: 3,
         id: 0x1000_0042,
@@ -360,7 +353,6 @@ fn ex_storage_max_count_layout() {
 #[test]
 fn ex_basic_action_list_default_layout() {
     let packet = ExBasicActionList::default_list();
-    // Java: 74 ids from 0, 99 from 1000, 16 from 5000.
     assert_eq!(packet.action_ids.len(), 74 + 99 + 16);
     assert_eq!(packet.action_ids[0], 0);
     assert_eq!(packet.action_ids[73], 73);
@@ -445,7 +437,6 @@ fn skill_cool_time_layout_and_helpers() {
     let expected = Bytes::default().byte(0xC7).ints(&[1, 1, 2, 10, 1]).done();
     check_round_trip(&packet, &expected, 1);
 
-    // Java: the reuse delay when set, else the time left, then the time left at least 1 second.
     assert_eq!(reuse_seconds(12_500, 1_000), 12);
     assert_eq!(reuse_seconds(0, 1_500), 1);
     assert_eq!(reuse_seconds(0, 999), 0);

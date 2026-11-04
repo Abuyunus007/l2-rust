@@ -1,8 +1,5 @@
 //! The castle observation towers: the broadcasting tower NPC's pages and the `observe`,
 //! `observesiege` and `observeoracle` bypasses.
-// Java: entity/actor/instance/BroadcastingTower.java (showChatWindow)
-// Java: dist/game/data/scripts/handlers/bypass/npc/Observation.java
-// Java: entity/actor/Player.java (enterObserverMode, `observer.rs`)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{ActionFailed, SystemMessage};

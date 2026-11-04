@@ -1,8 +1,5 @@
 //! The HP healing effects: `HealPercent`, `HpByLevel` and `HealOverTime` (`Heal` lives in
 //! `heal_skill.rs`, it needs the M5-FORM-02 number).
-// Java: dist/game/data/scripts/handlers/skill/effects/HealPercent.java
-// Java: dist/game/data/scripts/handlers/skill/effects/HpByLevel.java
-// Java: dist/game/data/scripts/handlers/skill/effects/HealOverTime.java
 
 use l2_data::skill::EffectTemplate;
 use l2_data::stats::AbnormalType;
@@ -78,8 +75,6 @@ impl EffectHandler for HpByLevel {
     }
 
     fn on_start(&self, world: &mut World, cx: &EffectCx<'_>) {
-        // NOTE(java-quirk): the HP goes to the effector, not to the effected; it ignores
-        // `getMaxRecoverableHp` and the dead flag is left to `setCurrentHp`.
         let effector = cx.effector;
         let current = Vital::Hp.current(world, effector);
         let max_hp = Vital::Hp.max(world, effector);

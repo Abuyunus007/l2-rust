@@ -1,13 +1,5 @@
 //! The player-only parts of the stat getters, the player's equipment as the formulas see it, and
 //! applying item functions when items are equipped.
-// Java: entity/actor/stat/{PlayableStat,PlayerStat}.java (getMaxHp/Mp/Cp, getRunSpeed,
-//       getWalkSpeed, getPAtkSpd, canEquipCloak)
-// Java: entity/actor/Player.java (getActiveWeaponItem, findFistsWeaponItem, getChestArmorInstance,
-//       recalcHennaStats, getHennaStat*, getCollisionRadius/Height, getInventoryLimit)
-// Java: entity/itemcontainer/Inventory.java (StatsListener, getWearedMask, isPaperdollSlotEmpty)
-// Java: entity/item/ItemTemplate.java (getStatFuncs), data/xml/EnchantItemHPBonusData.java (the
-//       ENCHANTHP template it attaches to armors)
-// Java: data/holders/ArmorSet.java (containAll), mechanics/stats/functions/formulas/FuncArmorSet
 
 use l2_data::item::{BodyPart, CrystalType};
 use l2_data::{FuncKind, FuncTemplate, Henna, ItemTemplate, PlayerTemplate, Stat};
@@ -36,8 +28,6 @@ pub struct HennaStats {
 
 impl HennaStats {
     /// Java `Player.recalcHennaStats()`.
-    // NOTE(java-quirk): every stat is capped at 5 per dye as it is added, so a negative dye that
-    // comes after the cap was reached still lowers it (`5 - total` is negative then too).
     pub fn recalc<'a>(hennas: impl IntoIterator<Item = &'a Henna>) -> Self {
         let mut s = Self::default();
         let add = |total: &mut i32, value: i32| {
@@ -116,8 +106,6 @@ impl<'w> StatView<'w> {
     }
 
     /// A per-level template value (`getBaseHpMax(level)` ...).
-    // NOTE(java-quirk): Java indexes the level table directly and throws for a level past it; such
-    // a level reads as 0 here.
     pub(crate) fn player_level_value(&self, value: impl Fn(&PlayerTemplate, usize) -> Option<f32>) -> f32 {
         let level = usize::try_from(self.level()).unwrap_or(0);
         self.player_template()

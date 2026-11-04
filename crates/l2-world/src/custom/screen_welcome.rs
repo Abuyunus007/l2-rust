@@ -1,5 +1,4 @@
 //! `config/Custom/ScreenWelcomeMessage.ini`: a text in the middle of the screen at login.
-// Java: network/clientpackets/EnterWorld.java (`ScreenWelcomeMessageConfig.WELCOME_MESSAGE_ENABLED`)
 
 use l2_protocol_game::server::ExShowScreenMessage;
 use l2_util::ObjectId;

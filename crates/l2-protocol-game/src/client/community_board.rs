@@ -4,7 +4,6 @@
 //! These only read the packet. The pages and the DB rows are the world's job
 //! (`l2-world/src/community_board/`).
 
-// Java: gameserver/network/clientpackets/RequestShowBoard.java
 client_packet!(
     /// The player opens the community board (`REQUEST_SHOW_BOARD`). The world shows the page of
     /// `BBSDefault`.
@@ -15,7 +14,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestBBSwrite.java
 client_packet!(
     /// A `Write <url> <arg1> ... <arg5>` button of a board page (`REQUEST_BBS_WRITE`).
     RequestBBSwrite,

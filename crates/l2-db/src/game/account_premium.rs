@@ -1,7 +1,5 @@
 //! The `account_premium` table: the end of the premium status of an account (or a character,
 //! `AccountWidePremium = False`) of the premium system (`EnablePremiumSystem`).
-// Java: org/l2jmobius/gameserver/managers/PremiumManager.java (LOAD_SQL, UPDATE_SQL, DELETE_SQL)
-//
 // Same layout as wedding.rs: the Java SQL, one method per statement. `enddate` is a
 // `decimal(20,0)` of Unix milliseconds.
 
@@ -11,11 +9,8 @@ use super::sql_number::SqlNumber;
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: PremiumManager.LOAD_SQL
 const SELECT_ENDDATE: &str = "SELECT account_name,enddate FROM account_premium WHERE account_name = ?";
-// Java: PremiumManager.UPDATE_SQL
 const REPLACE_ROW: &str = "REPLACE INTO account_premium (account_name,enddate) VALUE (?,?)";
-// Java: PremiumManager.DELETE_SQL
 const DELETE_ROW: &str = "DELETE FROM account_premium WHERE account_name = ?";
 
 #[derive(Debug, FromRow)]

@@ -1,8 +1,4 @@
 //! The `mods_wedding` table: the couples of the wedding system (`AllowWedding`).
-// Java: org/l2jmobius/gameserver/managers/CoupleManager.java (load)
-// Java: org/l2jmobius/gameserver/entity/actor/holders/player/Couple.java (constructors,
-//       marry, divorce)
-//
 // Same layout as characters.rs: verbatim SQL, one method per statement. The `id` of a new couple
 // is an object id the world took from its `IdFactory` (Java: `IdManager.getNextId()`).
 
@@ -12,15 +8,10 @@ use super::sql_number::SqlNumber;
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: CoupleManager.load
 const SELECT_IDS: &str = "SELECT id FROM mods_wedding ORDER BY id";
-// Java: Couple(int coupleId)
 const SELECT_COUPLE: &str = "SELECT * FROM mods_wedding WHERE id = ?";
-// Java: Couple(Player, Player)
 const INSERT_COUPLE: &str = "INSERT INTO mods_wedding (id, player1Id, player2Id, married, affianceDate, weddingDate) VALUES (?, ?, ?, ?, ?, ?)";
-// Java: Couple.marry
 const UPDATE_MARRY: &str = "UPDATE mods_wedding set married = ?, weddingDate = ? where id = ?";
-// Java: Couple.divorce
 const DELETE_COUPLE: &str = "DELETE FROM mods_wedding WHERE id=?";
 
 /// One couple, as `Couple` holds it.
@@ -56,9 +47,6 @@ fn java_parse_boolean(text: Option<&str>) -> bool {
 }
 
 /// The text of `married` this server writes. Java's `setBoolean` on a `varchar(5)` column.
-// NOTE(java-quirk): with MySQL Connector/J `setBoolean(true)` may be sent as `1`, which
-// `Boolean.parseBoolean` reads back as false, so a Java couple would look engaged only after a
-// restart. This server writes the words `true` and `false`, which parse back as written.
 pub fn married_text(married: bool) -> &'static str {
     if married { "true" } else { "false" }
 }

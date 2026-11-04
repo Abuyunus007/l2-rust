@@ -1,9 +1,5 @@
 //! The client side of the item auctions: the two packets, the `ItemAuction` bypass of the
 //! auctioneer NPC and `ExItemAuctionInfo`.
-// Java: network/clientpackets/{RequestInfoItemAuction,RequestBidItemAuction}.java
-// Java: network/serverpackets/ExItemAuctionInfoPacket.java
-// Java: dist/game/data/scripts/handlers/bypass/npc/ItemAuctionLink.java
-// Java: entity/actor/Player.java (updateLastItemAuctionRequest, isItemAuctionPolling)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{ExItemAuctionInfo, ItemAuctionNext, ItemInfo, SystemMessage};

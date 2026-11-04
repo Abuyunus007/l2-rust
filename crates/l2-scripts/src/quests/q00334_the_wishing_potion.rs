@@ -1,7 +1,5 @@
 //! Quest 334: The Wishing Potion (Matild has the player collect eight ingredients for a wish
 //! potion and then make a wish; the wish spawns fairies, succubi, demon kings or a chest).
-// Java: dist/game/data/scripts/quests/Q00334_TheWishingPotion/Q00334_TheWishingPotion.java
-//
 // Pattern: events that are numbers (the page links), NPC timers that speak and delete NPCs,
 // spawns that talk (`on_spawn`), a kill that picks a random party member
 // (`docs/design/scripts.md`, "Quest patterns": timer, busy NPC, NPC turns into a monster).
@@ -272,8 +270,6 @@ impl Script for Q00334TheWishingPotion {
                     return Some("30738-08.html".to_owned());
                 }
 
-                // NOTE(java-quirk): Java lists Q_WIND_SOULSTONE and Q_GLASS_EYE twice; `hasQuestItems`
-                // does not count, so the repeats change nothing.
                 if ctx.has_all_quest_items(
                     player,
                     &[
@@ -308,7 +304,6 @@ impl Script for Q00334TheWishingPotion {
             }
             FAIRY_RUPINA => {
                 if qs.get_int(ctx, FLAG) == 1 {
-                    // NOTE(java-quirk): `getRandom(4) < 4` is always true, the second branch never runs.
                     let html = if ctx.get_random(4) < 4 {
                         ctx.give_items(player, NECKLACE_OF_GRACE, 1);
                         qs.set(ctx, FLAG, "0");
@@ -334,8 +329,6 @@ impl Script for Q00334TheWishingPotion {
                         give_random_fabric(ctx, player);
                         html = Some("30743-03.html");
                     } else if (50..100).contains(&random) {
-                        // NOTE(java-quirk): this branch takes every roll from 50 to 99, so the
-                        // demon's armour (85..95) and the circlets (95..) below are never reached.
                         match ctx.get_random(2) {
                             0 => ctx.give_items(player, Q_MUSICNOTE_LOVE, 1),
                             1 => ctx.give_items(player, Q_MUSICNOTE_BATTLE, 1),
@@ -437,7 +430,6 @@ impl Script for Q00334TheWishingPotion {
                     return Some("30738-04.htm".to_owned());
                 }
 
-                // NOTE(java-quirk): `Integer.parseInt(event)` throws on any other text.
                 let number: i32 = event.parse().ok()?;
                 match number {
                     1 => return Some("30738-03.htm".to_owned()),
@@ -642,8 +634,6 @@ impl Script for Q00334TheWishingPotion {
         let Some(qs) = ctx.get_quest_state(member, false) else {
             return;
         };
-        // NOTE(java-quirk): the drops go to `killer`, the member only picks the quest state whose
-        // memo state and flag are tested.
         match npc.id {
             WHISPERING_WIND => ingredient(
                 ctx,
@@ -681,7 +671,6 @@ impl Script for Q00334TheWishingPotion {
                 qs,
                 killer,
                 Q_SILENOS_HORN,
-                // NOTE(java-quirk): the Silenos Horn is not in this list, only the other seven.
                 &[
                     Q_AMBER_SCALE,
                     Q_WIND_SOULSTONE,

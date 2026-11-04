@@ -12,7 +12,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ClientOpcode;
 
-// Java: gameserver/network/clientpackets/RequestRecipeBookOpen.java
 client_packet!(
     /// The player opens its recipe book (`REQUEST_RECIPE_BOOK_OPEN`).
     RequestRecipeBookOpen,
@@ -22,7 +21,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestRecipeBookDestroy.java
 client_packet!(
     /// The player forgets a recipe (`REQUEST_RECIPE_BOOK_DESTROY`).
     RequestRecipeBookDestroy,
@@ -32,7 +30,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestRecipeItemMakeInfo.java
 client_packet!(
     /// The player looks at a recipe in its own book (`REQUEST_RECIPE_ITEM_MAKE_INFO`).
     RequestRecipeItemMakeInfo,
@@ -41,7 +38,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestRecipeItemMakeSelf.java
 client_packet!(
     /// The player crafts an item for itself (`REQUEST_RECIPE_ITEM_MAKE_SELF`).
     RequestRecipeItemMakeSelf,
@@ -50,7 +46,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestRecipeShopMessageSet.java
 client_packet!(
     /// The title of the manufacture shop (`REQUEST_RECIPE_SHOP_MESSAGE_SET`). The handler
     /// punishes a title longer than 29 characters.
@@ -60,14 +55,12 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestRecipeShopManageQuit.java
 client_unit_packet!(
     /// The player closes its manufacture shop (`REQUEST_RECIPE_SHOP_MANAGE_QUIT`).
     RequestRecipeShopManageQuit,
     plain RequestRecipeShopManageQuit
 );
 
-// Java: gameserver/network/clientpackets/RequestRecipeShopMakeInfo.java
 client_packet!(
     /// A customer looks at a recipe of a manufacture shop (`REQUEST_RECIPE_SHOP_MAKE_INFO`).
     RequestRecipeShopMakeInfo,
@@ -78,7 +71,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestRecipeShopMakeItem.java
 client_packet!(
     /// A customer orders an item from a manufacture shop (`REQUEST_RECIPE_SHOP_MAKE_ITEM`).
     RequestRecipeShopMakeItem,
@@ -91,7 +83,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestRecipeShopManagePrev.java
 client_unit_packet!(
     /// The player previews the shop of its target (`REQUEST_RECIPE_SHOP_MANAGE_PREV`).
     RequestRecipeShopManagePrev,
@@ -110,7 +101,6 @@ pub struct RecipeShopListEntry {
     pub cost: i64,
 }
 
-// Java: gameserver/network/clientpackets/RequestRecipeShopListSet.java
 /// The player confirms the recipes and prices of its manufacture shop
 /// (`REQUEST_RECIPE_SHOP_LIST_SET`).
 ///

@@ -1,6 +1,5 @@
 //! Lindvior's visit above Gracia on Tuesday and Friday evenings: the shouts of Tomaris and Artius
 //! and the movie.
-// Java: dist/game/data/scripts/ai/areas/Gracia/AI/Lindvior.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;
@@ -33,9 +32,6 @@ fn day_of_week(local_ms: i64) -> i64 {
 }
 
 /// Java `scheduleNextLindviorDate()`, on the local wall clock of this machine (D-48).
-// NOTE(java-quirk): Java sets the hour and minute only, so the seconds and milliseconds of "now"
-// stay in the date; and a Saturday gets `1 + RESET_DAY_1` days (a Wednesday, not the Tuesday).
-// The wait is the wall-clock difference, so a daylight saving change in between is not counted.
 fn schedule_next_lindvior_date(local_now_ms: i64) -> i64 {
     let day_start = local_now_ms.div_euclid(DAY_MS) * DAY_MS;
     let mut date = day_start + RESET_HOUR * 3_600_000 + RESET_MIN * 60_000 + local_now_ms.rem_euclid(60_000);

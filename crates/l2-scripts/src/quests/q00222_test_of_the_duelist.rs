@@ -1,7 +1,5 @@
 //! Quest 222: Test of the Duelist (Duelist Kaien in Gludio: the Warrior, Elven Knight, Palus Knight
 //! and Orc Monk second class change).
-// Java: dist/game/data/scripts/quests/Q00222_TestOfTheDuelist/Q00222_TestOfTheDuelist.java
-//
 // Pattern: the test hunt of the "Test of ..." quests. The memo state picks the step, `memoStateEx(1)`
 // counts the kills of the step, and each kill rolls one item (`giveItemRandomly` with a limit) until
 // the whole step is in the inventory (`getQuestItemsCount(.., ..) == total`).

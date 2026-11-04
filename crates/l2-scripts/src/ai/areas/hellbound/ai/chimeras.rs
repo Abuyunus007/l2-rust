@@ -1,5 +1,4 @@
 //! The Chimeras of Hellbound: a Magic Bottle on a nearly dead one gives life force.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/Chimeras.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};

@@ -1,6 +1,4 @@
 //! Quest 298: Lizardmen's Conspiracy (Guard Praga and Magister Rohmer in the Gludio area; maille lizardmen and araneids).
-// Java: dist/game/data/scripts/quests/Q00298_LizardmensConspiracy/Q00298_LizardmensConspiracy.java
-//
 // Pattern: two NPCs and a party collect quest (`docs/design/scripts.md`, "Quest patterns"): Praga
 // hands out the patrol report, Rohmer takes it (cond 2) and wants 50 shining gems and 50 shining
 // red gems from the lizardmen and araneids; a random party member in cond 2 gets the gems, the

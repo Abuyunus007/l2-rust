@@ -1,7 +1,6 @@
 //! The enums an item template is made of: weapon/armor/etc types, material, crystal grade,
 //! default action and body part.
 //!
-//! Java: `entity/item/type/{WeaponType,ArmorType,EtcItemType,MaterialType,CrystalType,ActionType}.java`,
 //! `entity/item/enums/{BodyPart,ItemGrade}.java`.
 //!
 //! Variant names are Rust style; [`name`](WeaponType::name) gives the Java constant (the spelling
@@ -538,9 +537,6 @@ impl BodyPart {
 
     /// Java `BodyPart.fromName`: the lower-case name used in the XML (`bodypart`). Exact match;
     /// `None` where Java returns `null`.
-    ///
-    /// NOTE(java-quirk): `rbracelet` is listed under both `R_EAR` and `R_BRACELET` in Java; the map is
-    /// filled in declaration order, so the later one (`R_BRACELET`) wins.
     pub fn from_name(name: &str) -> Option<Self> {
         Some(match name {
             "none" => BodyPart::None,
@@ -631,7 +627,6 @@ mod tests {
         assert_eq!(BodyPart::from_name("waist").unwrap().mask(), 0x1000_0000);
         assert_eq!(BodyPart::from_name("greatwolf").unwrap().mask(), -104);
         assert_eq!(BodyPart::from_name("RHAND"), None);
-        // NOTE(java-quirk): the later enum constant wins the shared name.
         assert_eq!(BodyPart::from_name("rbracelet"), Some(BodyPart::RightBracelet));
     }
 }

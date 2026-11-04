@@ -1,7 +1,5 @@
 //! Quest 650: A Broken Dream (the Ghost of a Railroad Engineer in the Rune Town station; the
 //! forgotten crewmen and vagabonds of the ruins drop the remnants of an old dwarf's dream).
-// Java: dist/game/data/scripts/quests/Q00650_ABrokenDream/Q00650_ABrokenDream.java
-//
 // Pattern: a kill drop that goes to one started player picked from a list (the killer twice,
 // every started party member once), the start gate of Q00117 read through `player_quest_state`,
 // and the exit that pays nothing.
@@ -139,7 +137,6 @@ impl Script for Q00650ABrokenDream {
         }
         let index = ctx.get_random(random_list.len() as i32);
         let player = random_list[index as usize];
-        // Java: the roll comes first, the range check second.
         if ctx.get_random(1000) < monster_chance
             && ctx.check_if_in_range(ctx.alt_party_range(), npc.object_id, player, true)
         {

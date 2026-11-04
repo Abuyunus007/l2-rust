@@ -1,10 +1,5 @@
 //! How a skill puts its effects on creatures: the entry points casting (M5-CAST-01), items
 //! (M5-ITEM-01), passive skills and everything else call.
-// Java: mechanics/skill/Skill.java (applyEffects (3 overloads), applyEffectScope, activateSkill,
-//       hasEffectType, hasNegativeEffect, checkCondition)
-// Java: mechanics/stats/Formulas.java (calcEffectSuccess, calcEffectAbnormalTime,
-//       calcBuffDebuffReflection: the parts that need no M5-FORM-02 formula)
-//
 // The formulas M5-FORM-02 ported (vector-checked, `crate::formulas::effect`) are wired in here: the
 // landing rate of `calcEffectSuccess`, the skill mastery and debuff resistance parts of
 // `calcEffectAbnormalTime`. The inputs the stat view cannot give yet are marked `M5:`.
@@ -403,7 +398,6 @@ impl World {
             if let Some(id) = SystemMessageId::from_id(message.message_id) {
                 let mut sm = SystemMessage::new(id);
                 if message.add_name {
-                    // NOTE(java-quirk): `addSkillName(_id)` names level 1.
                     sm = sm.with(SystemMessageParam::SkillName {
                         id: skill.id,
                         level: 1,

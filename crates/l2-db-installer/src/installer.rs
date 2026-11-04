@@ -1,5 +1,4 @@
 //! The installation itself, shared by the GUI and the console front ends.
-// Java: org/l2jmobius/tools/DatabaseInstaller.java (`installDatabase`, `createDatabase`,
 // `executeDatabaseScripts`, `executeSQLScript`)
 //
 // The front ends implement [`Ui`]; this module never prints or draws anything. Nothing here
@@ -113,10 +112,6 @@ pub struct Script {
 }
 
 /// The `.sql` files of one schema folder, in install order, already split.
-///
-/// NOTE(java-quirk): Java sorts by `String.CASE_INSENSITIVE_ORDER` on the file name and only
-/// takes names ending in exactly `.sql`; same here (ties broken by the plain name so the order
-/// does not depend on the file system).
 pub fn load_scripts(sql_dir: &Path, schema: Schema) -> Result<Vec<Script>, InstallError> {
     let dir = sql_dir.join(schema.dir_name());
     if !dir.is_dir() {
@@ -259,8 +254,6 @@ pub async fn run(params: &Params, ui: &mut dyn Ui) -> Result<Summary, InstallErr
                         Level::Error,
                         &format!("Error executing SQL: {}\nError: {e}", shorten(sql)),
                     );
-                    // NOTE(java-quirk): Java only asks in the GUI and then calls
-                    // `System.exit(0)` on Abort; the console version just goes on. Both ask here.
                     if ui.ask_error(&shorten(sql), &e.to_string()) == ErrorChoice::Abort {
                         let _ = conn.close().await;
                         return Err(InstallError::Aborted);
@@ -288,11 +281,7 @@ async fn prepare_database(params: &Params, db_name: &str, ui: &mut dyn Ui) -> Re
             .await?;
     let result = if exists > 0 {
         match ui.ask_exists(db_name) {
-            ExistsChoice::Reset => {
-                // NOTE(java-quirk): Java dumps the old database to `dumps/` first; this port
-                // does not (see the card report). The question warns about the data loss.
-                reset_database(&mut conn, db_name, ui).await
-            }
+            ExistsChoice::Reset => reset_database(&mut conn, db_name, ui).await,
             ExistsChoice::Keep => {
                 ui.log(Level::Info, "Proceeding with installation on existing database.");
                 Ok(())

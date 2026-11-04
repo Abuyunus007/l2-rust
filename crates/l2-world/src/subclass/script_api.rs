@@ -1,9 +1,6 @@
 //! What the class change, class master and certification scripts (S-VM-01) call on a player:
 //! Java's `setPlayerClass`, `setBaseClass`, `getRace`, `setNoble`, `store`, the village master
 //! checks of an NPC and the player variables.
-// Java: entity/actor/Player.java (setPlayerClass, setBaseClass, getRace, setNoble, store,
-//       giveAvailableSkills, getVariables), entity/actor/instance/VillageMaster.java
-//       (checkVillageMaster)
 
 use l2_data::{ClassId, Race};
 use l2_util::ObjectId;

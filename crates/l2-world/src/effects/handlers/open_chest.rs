@@ -1,6 +1,5 @@
 //! The `OpenChest` effect: a chest within a few levels of the caster breaks open and drops its
 //! real loot; one too strong for the caster turns on it.
-// Java: dist/game/data/scripts/handlers/skill/effects/OpenChest.java
 
 use l2_data::skill::EffectTemplate;
 use l2_protocol_game::server::SocialAction;

@@ -1,6 +1,5 @@
 //! The Epidos (Ekimus' Seed of Infinity): minions follow the damage it takes, and an idle one is
 //! deleted.
-// Java: dist/game/data/scripts/ai/others/Epidos.java
 
 use std::collections::HashMap;
 

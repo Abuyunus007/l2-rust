@@ -1,5 +1,4 @@
 //! Devastated Castle (clan hall 34): the clan that does the most damage to Gustav wins the hall.
-// Java: dist/game/data/scripts/conquerablehalls/DevastatedCastle/DevastatedCastle.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::{ChatType, NpcSay};

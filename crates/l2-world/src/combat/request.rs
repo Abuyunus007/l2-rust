@@ -1,11 +1,4 @@
 //! The client's attack click (`AttackRequest`), the forced attack and the peace zone rules.
-// Java: network/clientpackets/AttackRequest.java
-// Java: entity/WorldObject.java (onForcedAttack, canBeAttacked), entity/actor/Creature.java
-//       (onForcedAttack, isInsidePeaceZone), entity/actor/{Npc,Attackable,Playable}.java
-//       (canBeAttacked)
-// Java: entity/actor/Player.java, entity/actor/instance/Monster.java (isAutoAttackable: the NPC
-//       attacker side)
-//
 // Left out: flood protection, spawn protection
 // (`onActionRequest`), private stores and pending requests, confusion, the block
 // checker arena. Each refuses an attack in Java; none of them exists yet. (The Olympiad
@@ -191,8 +184,6 @@ impl World {
         }
         if self.settings.combat.karma_player_can_be_killed_in_peacezone {
             // Allows red to be attacked and red to attack flagged players.
-            // NOTE(java-quirk): Java asks `asPlayer()` of `this` (the creature the method runs on),
-            // which is the attacker for `isInsidePeaceZone(this, target)`.
             let player_karma = self.players.get(&this).map(|p| p.data.karma);
             if player_karma.is_some_and(|k| k > 0) {
                 return false;

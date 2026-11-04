@@ -1,7 +1,4 @@
 //! Titles: a clan member's title, the title colour items and the title reset.
-// Java: network/clientpackets/{RequestGiveNickName,RequestChangeNicknameColor,RequestResetNickname}.java
-// Java: entity/actor/Creature.java (setTitle), entity/actor/Player.java (broadcastTitleInfo)
-//
 // Nothing is written to the database here: the title and its colour are stored with the character
 // when it is saved, like in Java.
 
@@ -28,13 +25,10 @@ const COLORS: [i32; 10] = [
 ];
 
 /// The title colour `RequestResetNickname` sets.
-// NOTE(java-quirk): this is not the default title colour of a character (`0xECF9A2`).
 const RESET_TITLE_COLOR: i32 = 0x00FF_FF77;
 
 /// Java `Creature.setTitle(value)` for a player: a title of more than 21 characters is cut to its
 /// first 20 (Java counts UTF-16 units).
-// NOTE(java-quirk): `substring(0, 20)` when `length() > 21`, so a title of 21 characters stays
-// whole and one of 22 loses two.
 fn java_player_title(value: &str) -> String {
     let units: Vec<u16> = value.encode_utf16().collect();
     if units.len() > 21 {

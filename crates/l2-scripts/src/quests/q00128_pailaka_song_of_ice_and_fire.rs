@@ -1,6 +1,4 @@
 //! Quest 128: Pailaka: Song of Ice and Fire (Adler at the Pailaka entrance, Sinai, the inspector).
-// Java: dist/game/data/scripts/quests/Q00128_PailakaSongOfIceAndFire/Q00128_PailakaSongOfIceAndFire.java
-//
 // Pattern: a chain of monster kills, each kill moves the cond and spawns the next monster at a
 // fixed place (`add_spawn` into the NPC's own instance, `instance_id_of`). The last NPC closes
 // the instance (`set_instance_duration`, `set_instance_empty_destroy_time`) and rewards only the

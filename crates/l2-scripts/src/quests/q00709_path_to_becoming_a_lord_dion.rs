@@ -1,7 +1,5 @@
 //! Quest 709: Path to Becoming a Lord - Dion (Chamberlain Crosby, Rouke and Sophya, the Dion
 //! castle lord).
-// Java: dist/game/data/scripts/quests/Q00709_PathToBecomingALordDion/Q00709_PathToBecomingALordDion.java
-//
 // Pattern: a lord quest with a confidant, like Q00708 (`isLordAvailable`: the lord is online,
 // is not the talker, the talker is in the lord's clan and the lord's cond is the expected one).
 // The lord gets the Bloody Axe Black Epaulette (cond 6 to 8) while the confidant collects 100
@@ -112,7 +110,6 @@ impl Script for Q00709PathToBecomingALordDion {
         player: Option<ObjectId>,
     ) -> Option<String> {
         let player = player?;
-        // Java: "Castle has no lord." is returned as a chat line, before anything else.
         if dion_lord_clan(ctx).is_none() {
             return Some("Castle has no lord.".to_owned());
         }

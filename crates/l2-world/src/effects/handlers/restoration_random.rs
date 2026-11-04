@@ -1,6 +1,5 @@
 //! The `RestorationRandom` effect: the player gets one of several item lists, picked by chance
 //! (item skills that "extract" items). The amounts follow `RateExtractable`.
-// Java: dist/game/data/scripts/handlers/skill/effects/RestorationRandom.java
 
 use l2_data::skill::{EffectTemplate, ItemGroup, ParamValue};
 use l2_protocol_game::SystemMessageId;
@@ -73,7 +72,6 @@ impl EffectHandler for RestorationRandom {
         }
 
         let rate = world.settings.inventory.rate_extractable;
-        // Java: a `HashMap<Item, Long>` (the same item merges); the order here is the order the
         // items were given.
         let mut extracted: Vec<(ObjectId, i64)> = Vec::new();
         for created in creation_list {

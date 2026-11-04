@@ -1,5 +1,4 @@
 //! Quest 216: Trial of the Guildsman (Valkon, Norman, Altran, Pinter and Duning; the dwarf's mark).
-// Java: dist/game/data/scripts/quests/Q00216_TrialOfTheGuildsman/Q00216_TrialOfTheGuildsman.java
 
 use l2_util::ObjectId;
 use l2_world::script::{QuestSound, player_class};
@@ -278,10 +277,6 @@ impl Script for Q00216TrialOfTheGuildsman {
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, _is_summon: bool) {
         match npc.id {
             ANT | ANT_CAPTAIN | ANT_OVERSEER => {
-                // NOTE(java-quirk): `checkPartyMember(Player, Npc)` below is the filter of
-                // `getRandomPartyMember`, which this quest never calls; `getRandomPartyMemberState`
-                // uses `checkPartyMember(QuestState, Npc)` (always true), so every started member
-                // can get the drops, whatever he carries.
                 let Some(qs) = ctx.random_party_member_state(killer, -1, 2, Some(npc)) else {
                     return;
                 };
@@ -485,7 +480,6 @@ impl Script for Q00216TrialOfTheGuildsman {
     }
 
     /// Java `checkPartyMember(player, npc)`.
-    // NOTE(java-quirk): dead code in Java too, see `on_kill`; ported for the record.
     fn check_party_member(&self, ctx: &mut ScriptCtx<'_>, player: ObjectId, npc: Option<ScriptNpc>) -> bool {
         let Some(npc) = npc else {
             return false;

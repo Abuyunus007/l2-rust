@@ -1,7 +1,6 @@
 //! Java `Formulas.calcCancelStealEffects` and `calcCancelSuccess`: which buffs or debuffs a dispel
 //! or a steal takes. Shared by `DispelByCategory` and `StealAbnormal`. M5-FORM-02 does not list
 //! these, so they live with the handlers that use them.
-// Java: mechanics/stats/Formulas.java (calcCancelStealEffects, calcCancelSuccess)
 
 use l2_data::SkillTemplate;
 use l2_util::ObjectId;
@@ -22,8 +21,6 @@ pub(crate) struct Canceled {
 /// Java `Formulas.calcCancelStealEffects(creature, target, skill, slot, rate, max)`. `slot` is
 /// `buff` (the buffs, triggered buffs and dances, taken from the newest) or `debuff`; any other
 /// slot takes nothing.
-// NOTE(java-quirk): Java's `switch (slot)` throws on a missing slot; here a missing slot takes
-// nothing.
 // NOTE: `canBeStolen()` needs the hero and GM skill lists of `SkillTreeData`, which are not loaded
 // (see `l2-data` `skill/template.rs`): those skills count as not hero and not GM.
 pub(crate) fn calc_cancel_steal_effects(
@@ -45,7 +42,6 @@ pub(crate) fn calc_cancel_steal_effects(
     };
     match slot {
         Some("buff") => {
-            // Java: buffs, then the triggered buffs, then the dances, taken from the last one.
             let candidates: Vec<Canceled> = [ListKind::Buffs, ListKind::Triggered, ListKind::Dances]
                 .into_iter()
                 .flat_map(|kind| list.queue(kind).iter())
@@ -124,8 +120,6 @@ fn can_be_stolen(skill: &SkillTemplate) -> bool {
 /// Java `Formulas.calcCancelSuccess(info, cancelMagicLvl, rate, skill)`: the level bonus of the
 /// cancelling skill over the taken one, then the chance clamped to the cancelling skill's
 /// minimum and maximum.
-// NOTE(java-quirk): Java's `Math.clamp` throws when the minimum is above the maximum; here the
-// maximum wins over the minimum and nothing throws. The skill data never has that.
 fn cancel_success(world: &mut World, info_skill: &SkillTemplate, skill: &SkillTemplate, rate: i32) -> bool {
     let cancel_magic_lvl = skill.magic_level;
     let factor = if info_skill.magic_level > 0 {

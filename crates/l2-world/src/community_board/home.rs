@@ -1,6 +1,4 @@
 //! `HomeBoard`: the top page of the board (`_bbshome`, `_bbstop`, `_bbstop;<page>.html`).
-// Java: dist/game/data/scripts/handlers/bypass/communityboard/HomeBoard.java
-//
 // The custom commands (`_bbsmultisell`, `_bbsteleport`, `_bbsbuff`, `_bbsheal`, ...) are
 // `custom/community_board.rs` (M9-C03); `_bbspremium` is left out, see the module note of `mod.rs`.
 
@@ -66,7 +64,6 @@ impl World {
     /// The end of `HomeBoard.onCommand`: `%navigation%` for the custom board, then the page.
     fn finish_home_page(&mut self, id: ObjectId, html: Option<String>) {
         let Some(mut html) = html else {
-            // Java: the null page is sent as nothing (or throws before it).
             return;
         };
         if self.community_board.settings.custom_cb_enabled {

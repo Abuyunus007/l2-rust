@@ -1,6 +1,4 @@
 //! Quest 284: Muertos Feather (Trevor in the Hunters Village buys the Muertos feathers).
-// Java: dist/game/data/scripts/quests/Q00284_MuertosFeather/Q00284_MuertosFeather.java
-//
 // Pattern: a party drop quest without a limit (`docs/design/scripts.md`, "Quest patterns"): a
 // random party member gets a Muertos feather from a Muertos monster with a drop chance; Trevor pays
 // 45 adena per feather and the quest repeats. The quest has no condition: it is started until it

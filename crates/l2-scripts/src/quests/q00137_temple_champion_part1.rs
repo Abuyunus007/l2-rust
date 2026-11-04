@@ -1,6 +1,4 @@
 //! Quest 137: Temple Champion - 1 (Sylvain; 30 fragments, then the executor and missionary badges).
-// Java: dist/game/data/scripts/quests/Q00137_TempleChampionPart1/Q00137_TempleChampionPart1.java
-//
 // Pattern: a one-NPC quest that echoes every event (Java `return event`), counts kills of the
 // killer's own quest and tracks the dialogue in the `talk` variable.
 

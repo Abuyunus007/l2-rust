@@ -1,6 +1,5 @@
 //! The manor periods: the mode at start, the daily change on the timer wheel and what each change
 //! does (`CastleManorManager` constructor, `scheduleModeChange`, `changeMode`).
-// Java: managers/CastleManorManager.java
 
 use std::sync::Arc;
 
@@ -24,8 +23,6 @@ const DAY_MS: i64 = 24 * HOUR_MS;
 
 /// The mode the manor starts in at this hour and minute (local time): the first lines of the
 /// `CastleManorManager` constructor.
-// NOTE(java-quirk): `(hour >= REFRESH_TIME) && (min >= maintenanceMin)` tests the minute of the
-// hour, not the time of the day: from 21:00 to 21:05 the manor starts APPROVED, not MODIFIABLE.
 pub fn manor_initial_mode(settings: &ManorSettings, hour: i32, min: i32) -> ManorMode {
     let maintenance_min = settings.refresh_min + settings.maintenance_min;
     if (hour >= settings.refresh_time && min >= maintenance_min)
@@ -43,7 +40,6 @@ pub fn manor_initial_mode(settings: &ManorSettings, hour: i32, min: i32) -> Mano
 /// `Calendar.set(SECOND, 0)` on "now", then the hour and minute set: the wall clock time
 /// `hour:min:00` of today with the milliseconds of now, as UTC milliseconds. `offset_at(utc_ms)`
 /// is the zone's offset from UTC (D-48).
-// NOTE(java-quirk): `Calendar.set(SECOND, 0)` leaves the millisecond field alone.
 fn today_at(now_ms: i64, offset_at: &impl Fn(i64) -> i64, hour: i32, min: i32) -> (i64, i64) {
     let local_now = now_ms + offset_at(now_ms);
     let day_start = local_now - local_now.rem_euclid(DAY_MS);
@@ -444,16 +440,11 @@ impl World {
     fn manor_validate_next_periods(&mut self) {
         for (castle_id, owner) in self.manor_castle_owners() {
             // Calculate the necessary slots in the warehouse for new crops.
-            // NOTE(java-quirk): Java counts a slot when `cwh.getAllItemsByItemId(matureId) ==
-            // null`, but that method returns an empty collection, never null: no slot is ever
-            // required.
             let required_slots: i64 = 0;
             let manor_cost = self.manor_cost(castle_id, true);
             let treasury = self.castle(CastleId(castle_id)).map_or(0, |c| c.treasury);
 
             // Check if there's enough capacity and funds.
-            // NOTE(java-quirk): `&&`, not `||`: the next period is only cleared when the clan
-            // warehouse is over its limit and the treasury is short.
             if !self.container_validate_capacity(ContainerRef::Clan(owner), required_slots)
                 && treasury < manor_cost
             {
@@ -549,7 +540,6 @@ impl World {
     }
 
     /// Java `Shutdown`: "Save all manor data." (`storeMe`, only without `AltManorSaveAllActions`).
-    // NOTE(java-quirk): Java stores even when the manor is disabled, which empties both tables.
     pub(crate) fn manor_shutdown(&mut self) {
         if !self.manor.settings.save_all_actions {
             self.manor_store_me();

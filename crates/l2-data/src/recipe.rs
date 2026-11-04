@@ -1,7 +1,6 @@
 //! Crafting recipes: what a recipe needs, what it makes, what it costs (HP or MP) and how likely
 //! it is to work.
 //!
-//! Java: `gameserver/data/xml/RecipeData.java`, `gameserver/entity/item/recipe/RecipeList.java`,
 //! `gameserver/data/holders/{RecipeHolder,RecipeStatHolder}.java`, `gameserver/data/enums/
 //! StatType.java`. Data: `data/Recipes.xml` (`xsd/Recipes.xsd`).
 //!
@@ -130,7 +129,6 @@ impl RecipeData {
         Ok(table)
     }
 
-    // Java: RecipeData.parseDocument
     fn add(&mut self, doc: RawFile) -> Result<(), DataError> {
         for child in doc.children {
             let RawChild::Item(raw) = child else { continue };
@@ -149,9 +147,6 @@ impl RecipeData {
     }
 
     /// Java `getRecipeByItemId(itemId)`: the recipe the recipe item teaches.
-    // NOTE(java-quirk): Java walks a `HashMap` and returns the first match. Two recipes share the
-    // recipe item 5008 in the shipped file; here the lower recipe id wins (the order a table of
-    // that size iterates small keys in).
     pub fn by_item_id(&self, item_id: i32) -> Option<&RecipeList> {
         self.recipes.values().find(|r| r.recipe_id == item_id)
     }

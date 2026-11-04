@@ -1,5 +1,4 @@
 //! Quest 10276: Mutated Kaneus - Gludio (Bathis sends the party after Tomlan Kamos and Ol Arios).
-// Java: dist/game/data/scripts/quests/Q10276_MutatedKaneusGludio/Q10276_MutatedKaneusGludio.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, QuestSound, STARTED};

@@ -1,8 +1,4 @@
 //! Venom, the raid boss in the dungeon of Rune Castle, who moves to the throne during the siege.
-// Java: dist/game/data/scripts/ai/areas/Rune/RuneCastle/Venom/Venom.java
-//
-// D-54: the `VenomStatus` row decides whether Venom lives, so `onSpawn` re-reads it first
-// (`reread_global_variables`) and the rest of Java's `onSpawn` runs as the `SPAWN_CHECKED` event.
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;
@@ -130,7 +126,6 @@ fn change_location(ctx: &mut ScriptCtx<'_>, loc: MoveTo) {
 /// Java `teleportTarget(player)`.
 fn teleport_target(ctx: &mut ScriptCtx<'_>, player: ObjectId) {
     if !ctx.is_dead(player) {
-        // NOTE(java-quirk): `getRandom(11)` is 0..10; the twelfth location is never used.
         let rnd = usize::try_from(ctx.get_random(11)).unwrap_or(0);
         let (x, y, z) = TARGET_TELEPORTS[rnd];
         ctx.world_mut().tele_to_location(
@@ -167,7 +162,6 @@ impl Script for Venom {
 
     fn on_load(&self, ctx: &mut ScriptCtx<'_>) {
         // The constructor: the prison is open in the day before the siege.
-        // NOTE(java-quirk): `HOURS_BEFORE * 360000` is 6 minutes per "hour", not 3600000.
         if let Some((start_siege_date, current_time)) = ctx.world().script_castle_siege_clock(CASTLE)
             && current_time > start_siege_date - HOURS_BEFORE * 360000
             && current_time < start_siege_date
@@ -240,8 +234,6 @@ impl Script for Venom {
             }
             _ => {}
         }
-        // NOTE(java-quirk): Java returns the event name from every event; with no player there
-        // is nobody to show it to.
         Some(event.to_owned())
     }
 
@@ -329,7 +321,6 @@ impl Script for Venom {
                 }
             }
             4996 => {
-                // NOTE(java-quirk): Java dereferences `player` below; without one it throws.
                 let Some(player) = player else {
                     return;
                 };

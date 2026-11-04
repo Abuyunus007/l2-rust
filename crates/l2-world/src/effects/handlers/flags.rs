@@ -1,12 +1,5 @@
 //! The status handlers whose whole work is an effect flag or an effect type (the checks that read
 //! the flag are `isInvul()`, `isAffected(NOBLESS_BLESSING)`, ... in the rest of the world).
-// Java: dist/game/data/scripts/handlers/skill/effects/Debuff.java
-// Java: dist/game/data/scripts/handlers/skill/effects/Invincible.java
-// Java: dist/game/data/scripts/handlers/skill/effects/BlockResurrection.java
-// Java: dist/game/data/scripts/handlers/skill/effects/ProtectionBlessing.java
-// Java: dist/game/data/scripts/handlers/skill/effects/NoblesseBless.java
-// Java: dist/game/data/scripts/handlers/skill/effects/Lucky.java
-// Java: dist/game/data/scripts/handlers/skill/effects/PolearmSingleTarget.java
 
 use l2_data::skill::EffectTemplate;
 

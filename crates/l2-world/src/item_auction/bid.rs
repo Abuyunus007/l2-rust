@@ -1,6 +1,4 @@
 //! Bidding and taking a canceled bid back.
-// Java: entity/item/auction/ItemAuction.java (registerBid, onPlayerBid, cancelBid,
-//       reduceItemCount, increaseItemCount)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
@@ -13,9 +11,6 @@ use crate::world::{World, unix_ms_now};
 
 impl World {
     /// Java `reduceItemCount(player, count)`: the adena of the bid.
-    ///
-    /// NOTE(java-quirk): `reduceAdena` already tells the player there is not enough adena, then
-    /// this sends the message of the bid, and `registerBid` sends it a third time.
     fn item_auction_reduce_item_count(&mut self, player: ObjectId, count: i64) -> bool {
         if self.reduce_adena(player, count, true) {
             return true;

@@ -1,7 +1,5 @@
 //! The admin exp and sp commands: `//add_exp_sp exp sp`, `//remove_exp_sp exp sp` and the menu
 //! word `//add_exp_sp_to_character`.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminExpSp.java
-//
 // The handler's own part is here: the target check, the two numbers, the messages to the target
 // and to the GM. The change of the target's exp and sp is `Player.addExpAndSp` (M4-EXP-01,
 // `World::add_exp_and_sp`), and `//add_exp_sp` clamps the sp to `MaxSp` (`settings.exp.max_sp`).

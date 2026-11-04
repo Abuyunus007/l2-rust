@@ -1,6 +1,4 @@
 //! Quest 114: Resurrection of an Old Manager (Yumi, Wendy, the box, the stones, Newyear).
-// Java: dist/game/data/scripts/quests/Q00114_ResurrectionOfAnOldManager/Q00114_ResurrectionOfAnOldManager.java
-//
 // Pattern: a long cond chain with quest variables (`talk`, `talk1`, `choice`, `spawned`), an
 // `on_event` that echoes the event, a summoned guardian kept in the script's state (Java's
 // `static Attackable golem`), and `on_creature_see` of the pile of stones.
@@ -214,7 +212,6 @@ impl Script for Q00114ResurrectionOfAnOldManager {
             }
             "golem_despawn" => {
                 qs.unset(ctx, "spawned");
-                // NOTE(java-quirk): `golem` is dereferenced without a check; no golem throws.
                 if let Some(golem) = ctx.state::<Golem>().0.take()
                     && let Some(golem) = ctx.script_npc(golem)
                 {

@@ -1,8 +1,4 @@
 //! Creature events for the trigger skill effects, and `Creature.makeTriggerCast`.
-// Java: entity/actor/Creature.java (makeTriggerCast, notifyDamageReceived, notifyAttackAvoid,
-//       addListener / removeListenerIf)
-// Java: mechanics/events/impl (EventDispatcher): the listeners the trigger effects register
-//
 // Java registers a `ConsumerEventListener` with the creature (`effected.addListener(..)`) when a
 // `TriggerSkillBy*` effect starts and removes it (`removeListenerIf(owner == this)`) when it ends.
 // Here the creature's listeners are a small side table (`EffectsWorld::listeners`); a listener
@@ -301,8 +297,6 @@ impl World {
     }
 
     /// The `MagicSkillUse` and `MagicSkillLaunched` of `makeTriggerCast`.
-    // NOTE(java-quirk): both packets name `skill.getLevel()`, not the display level `beginCast`
-    // sends.
     fn broadcast_trigger_cast(
         &mut self,
         caster: ObjectId,

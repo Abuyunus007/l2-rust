@@ -1,5 +1,4 @@
 //! Quest 10283: Request of Ice Merchant (Rafforty and Kier send the adventurer to Jinia, one at a time).
-// Java: dist/game/data/scripts/quests/Q10283_RequestOfIceMerchant/Q10283_RequestOfIceMerchant.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED};

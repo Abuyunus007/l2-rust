@@ -1,7 +1,5 @@
 //! Quest 102: Sea of Spores Fever (Alberius sends an elf to Cobendell, the dryads give ten tears,
 //! and the medicine goes to the five sentinels; the last one puts the reward on Alberius).
-// Java: dist/game/data/scripts/quests/Q00102_SeaOfSporesFever/Q00102_SeaOfSporesFever.java
-//
 // Pattern: a kill chance (`getRandom(10) < 3`) that counts up to ten items, then a list of NPCs
 // that each take one item for the next step, with the NewbieGuide-free reward of Java.
 

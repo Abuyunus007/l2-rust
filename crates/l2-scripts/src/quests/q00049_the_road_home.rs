@@ -1,7 +1,5 @@
 //! Quest 49: The Road Home (Galladucci, Gentler, Sandra and Dustin along the order chain; the
 //! scroll takes the player to the Dwarven Village).
-// Java: dist/game/data/scripts/quests/Q00049_TheRoadHome/Q00049_TheRoadHome.java
-//
 // Pattern: a delivery chain over several NPCs (`docs/design/scripts.md`, "Quest patterns"): the
 // start NPC hands out the first order, every NPC swaps it for the next item, and the end is one-
 // time. Q00045 to Q00049 are the same code with the scroll and the prerequisite quest changed.

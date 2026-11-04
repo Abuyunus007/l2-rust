@@ -1,6 +1,4 @@
 //! Quest 605: Alliance with Ketra Orcs (Wahkan in the Ketra Orc Village, Varka badges).
-// Java: dist/game/data/scripts/quests/Q00605_AllianceWithKetraOrcs/Q00605_AllianceWithKetraOrcs.java
-//
 // Pattern: a five-step alliance. Each step trades badges (soldier, officer, captain) of the
 // Varka monsters for a Ketra mark; the badges are dropped by a random party member in the
 // started state, only as many as the current step asks for (`canGetItem`).

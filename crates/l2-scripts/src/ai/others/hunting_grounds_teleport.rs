@@ -1,6 +1,5 @@
 //! The Dawn and Dusk priests' hunting grounds teleports (Seven Signs): the page depends on the
 //! Seal of Gnosis.
-// Java: dist/game/data/scripts/ai/others/HuntingGroundsTeleport/HuntingGroundsTeleport.java
 
 use l2_util::ObjectId;
 use l2_world::sevensigns::{CABAL_NULL, SEAL_GNOSIS};

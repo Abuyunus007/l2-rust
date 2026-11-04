@@ -1,6 +1,4 @@
 //! Quest 115: The Other Side of Truth (Rafforty, Misa, Kier, the four ice sculptures).
-// Java: dist/game/data/scripts/quests/Q00115_TheOtherSideOfTruth/Q00115_TheOtherSideOfTruth.java
-//
 // Pattern: a cond chain; the four ice sculptures share a bit field in the quest variable `ex`
 // (each sculpture adds its own bit, the pages depend on the bits already set).
 
@@ -204,11 +202,8 @@ impl Script for Q00115TheOtherSideOfTruth {
                 }
             }
             "32021-02.html" | "32021-03.html" => {
-                // NOTE(java-quirk): `npc.getId()` throws without an NPC.
                 let npc = npc?;
                 if let Some(mut sc) = sculpture(npc.id) {
-                    // NOTE(java-quirk): in "32021-03" the third sculpture lists 12 where "32021-02"
-                    // lists 10 as the second visited value.
                     if npc.id == ICE_SCULPTURE3 && event == "32021-03.html" {
                         sc.visited = [3, 9, 12];
                     }

@@ -1,8 +1,5 @@
 //! The item lists the warehouse windows show: what can be deposited, what a container holds, and
 //! what can be sent as a package.
-// Java: network/serverpackets/{WareHouseDepositList,WareHouseWithdrawalList,PackageSendableList}.java
-// Java: entity/itemcontainer/PlayerInventory.java (getAvailableItems)
-// Java: entity/item/instance/Item.java (isDepositable, isShadowItem)
 
 use l2_data::item::ItemTemplate;
 use l2_protocol_game::server::{

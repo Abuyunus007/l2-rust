@@ -1,8 +1,5 @@
 //! The Hall of Suffering, attack and defence: five rooms of monsters with a Tumor of Death each,
 //! then the twins Klodekus and Klanikus, who only die together.
-// Java: dist/game/data/scripts/ai/areas/Gracia/instances/HallOfSufferingAttack/HallOfSufferingAttack.java
-// Java: dist/game/data/scripts/ai/areas/Gracia/instances/HallOfSufferingDefence/HallOfSufferingDefence.java
-//
 // The two Java scripts are the same code with other spawns, template and quest; this module is
 // that code over a [`HallData`], and `hall_of_suffering_attack.rs` / `_defence.rs` are the two
 // scripts (the `hall_of_suffering!` macro writes their `impl Script`).
@@ -467,7 +464,6 @@ pub(crate) fn on_kill(data: &HallData, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) 
             world.klanikus = None;
             world.klodekus = None;
         }
-        // NOTE(java-quirk): `cancelQuestTimers(name)` stops the timers of every instance.
         ctx.cancel_quest_timers("ressurectTwin");
         ctx.cancel_quest_timers("spawnBossGuards");
         ctx.cancel_quest_timers("isTwinSeparated");

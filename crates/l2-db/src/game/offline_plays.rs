@@ -1,34 +1,20 @@
 //! The `character_offline_play` and `character_offline_play_group` tables: the auto play settings
 //! of the characters that keep hunting without a client (offline play), and the groups they were
 //! in at shutdown.
-// Java: org/l2jmobius/gameserver/data/sql/OfflinePlayTable.java (LOAD_PLAYER_IDS, LOAD_PLAYER,
-// Java: SAVE_PLAYER, REMOVE_PLAYER, LOAD_GROUP_LEADER_IDS, LOAD_GROUP_MEMBERS, SAVE_GROUP_MEMBER,
-// Java: REMOVE_GROUP_MEMBERS)
-//
-// The Rust game server touches these tables only with `OfflineTradeDatabaseWrites = True` in
-// `SideBySide.ini` (D-39, D-52: the Java game server restores the rows at its next start).
 
 use sqlx::FromRow;
 
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: OfflinePlayTable.LOAD_PLAYER_IDS
 const LOAD_PLAYER_IDS: &str = "SELECT DISTINCT charId FROM character_offline_play";
-// Java: OfflinePlayTable.LOAD_PLAYER
 const LOAD_PLAYER: &str = "SELECT * FROM character_offline_play WHERE charId=?";
-// Java: OfflinePlayTable.SAVE_PLAYER
 const SAVE_PLAYER: &str = "INSERT INTO character_offline_play (charId, type, id) VALUES (?, ?, ?)";
-// Java: OfflinePlayTable.REMOVE_PLAYER
 const REMOVE_PLAYER: &str = "DELETE FROM character_offline_play WHERE charId=?";
-// Java: OfflinePlayTable.LOAD_GROUP_LEADER_IDS
 const LOAD_GROUP_LEADER_IDS: &str = "SELECT DISTINCT leaderId FROM character_offline_play_group";
-// Java: OfflinePlayTable.LOAD_GROUP_MEMBERS
 const LOAD_GROUP_MEMBERS: &str = "SELECT charId, type FROM character_offline_play_group WHERE leaderId=?";
-// Java: OfflinePlayTable.SAVE_GROUP_MEMBER
 const SAVE_GROUP_MEMBER: &str =
     "INSERT INTO character_offline_play_group (leaderId, charId, type) VALUES (?, ?, ?)";
-// Java: OfflinePlayTable.REMOVE_GROUP_MEMBERS
 const REMOVE_GROUP_MEMBERS: &str = "TRUNCATE TABLE character_offline_play_group";
 
 /// A row of `character_offline_play` (without the `charId`).

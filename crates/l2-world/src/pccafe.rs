@@ -1,13 +1,5 @@
 //! PC cafe points: what a character has (`characters.pccafe_points`), what hunting and the retail
 //! timer give, and the packet the client shows them with.
-// Java: managers/PcCafePointsManager.java
-// Java: entity/actor/Player.java (getPcCafePoints, setPcCafePoints)
-// Java: config/custom/PremiumSystemConfig.java (the `PcCafe*` keys of `Custom/PremiumSystem.ini`)
-//
-// The points are the `pccafe_points` column of the shared `characters` row (D-39). The world keeps
-// them in `PlayerProfile::pccafe_points` and the persistence task writes them with every store,
-// like the fame.
-//
 // # Left out
 // - `hasPremiumStatus()` is `custom/premium.rs` (M9-C02): with the premium system off (the Java
 //   default) nobody is premium, so with `PcCafeOnlyPremium = True` (the shipped file) no points
@@ -140,9 +132,6 @@ impl World {
     }
 
     /// Java `PcCafePointsManager.run(player)`: every `PcCafeRewardTime` the retail points come.
-    // NOTE(java-quirk): Java never stops the task (a second `run` from the community board or
-    // `//premium` adds another one, and a task outlives its player and only returns early). Here
-    // there is one timer per online player and it ends with the player.
     pub(crate) fn pc_cafe_run(&mut self, id: ObjectId) {
         let settings = &self.pccafe.settings;
         let entered = self.players.get(&id).is_some_and(|p| p.entered_world);

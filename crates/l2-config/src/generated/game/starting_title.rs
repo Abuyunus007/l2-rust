@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/StartingTitleConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/StartingTitle.ini` (Java: `StartingTitleConfig`).

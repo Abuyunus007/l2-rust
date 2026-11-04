@@ -1,11 +1,6 @@
 //! Who rides a vehicle: `Player.setVehicle` / `setInVehiclePosition`, `Vehicle.addPassenger`,
 //! `oustPlayer`, `payForRide`, and the hooks the player code calls (teleport, logout, the info
 //! packets).
-// Java: entity/actor/Vehicle.java (addPassenger, removePassenger, oustPlayer, oustPlayers,
-//       getOustLoc, payForRide)
-// Java: entity/actor/instance/{Boat,AirShip,ControllableAirShip}.java (addPassenger, oustPlayer)
-// Java: entity/actor/Player.java (setVehicle, setInVehiclePosition, teleToLocation, onTeleported,
-//       sendInfo, deleteMe)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{

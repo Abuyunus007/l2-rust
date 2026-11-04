@@ -1,7 +1,5 @@
 //! Quest 620: Four Goblets (the Four Sepulchers: goblets from the four bosses, the Antique Brooch,
 //! and the sealed boxes the monsters drop).
-// Java: dist/game/data/scripts/quests/Q00620_FourGoblets/Q00620_FourGoblets.java
-//
 // The rooms, doors and bosses are `FourSepulchers` (`ai/areas/imperial_tomb/four_sepulchers.rs`);
 // this quest only hands out the items and the rewards.
 
@@ -408,7 +406,6 @@ impl Script for Q00620FourGoblets {
             "31454-07.html" => {
                 let memo_state_ex = qs.get_memo_state_ex(ctx, 1);
                 if (memo_state_ex == 2 || memo_state_ex == 3) && ctx.has_quest_items(player, SEALED_BOX) {
-                    // NOTE(java-quirk): `getRandom(100) < 100` is always true, but it rolls.
                     if ctx.get_random(100) < 100 {
                         let i2 = get_reward(ctx, player);
                         htmltext = Some(if i2 { event } else { "31454-08.html" }.to_owned());

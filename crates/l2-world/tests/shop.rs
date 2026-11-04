@@ -1032,8 +1032,6 @@ fn stock_rows_of_the_last_run_come_back_with_javas_quirk() {
     }]);
     assert_eq!(s.world.product_count(100, LIMITED), 1);
     assert!(product_rows(&s.log.take()).is_empty());
-    // NOTE(java-quirk): `update(product, remainTime)` stores 5000, not a time, so the first scan
-    // (1 s later) finds it long overdue and restocks it.
     s.advance(20);
     s.advance(2);
     assert_eq!(
@@ -1366,11 +1364,6 @@ fn the_town_zone_picks_the_base_tax() {
 
 // ---- the castle tax (M7-RES-01) -----------------------------------------------------------------
 
-/// `MerchantPriceConfig.getTotalTaxRate()` with a castle: Gludin's config names castle 1, whose
-/// `taxPercent` (10) joins the base tax (30). `RequestBuyItem` charges `price * (1 + castleTaxRate +
-/// baseTaxRate)` and pays `(long) (subTotal * castleTaxRate)` into the treasury of the merchant's
-/// castle (`Npc.getCastle()`: the town's `taxById`). D-51: the treasury row only with
-/// `SiegeDatabaseWrites`.
 #[test]
 fn the_castle_tax_goes_into_the_treasury() {
     let zone = format!(

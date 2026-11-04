@@ -1,11 +1,5 @@
 //! The `Subclass` bypass of the village masters: the menu, adding, switching and replacing a
 //! subclass, and the race and class rules of each master.
-// Java: entity/actor/instance/VillageMaster.java (onBypassFeedback's `Subclass` branch,
-//       getSubClassMenu, getSubClassFail, checkQuests, getAvailableSubClasses, getSubclasses,
-//       isValidNewSubClass, checkVillageMaster*, the subclass sets)
-// Java: entity/actor/instance/VillageMaster{DElf,Dwarf,Fighter,Kamael,Mystic,Orc,Priest}.java
-// Java: data/xml/CategoryData.java (THIRD_CLASS_GROUP, FOURTH_CLASS_GROUP, FIGHTER_GROUP,
-//       MAGE_GROUP, CLERIC_GROUP of `categoryData.xml`)
 
 use l2_data::{ClassId, Race};
 use l2_protocol_game::SystemMessageId;
@@ -471,7 +465,6 @@ impl World {
                                 })
                         }
                         None => {
-                            // NOTE(java-quirk): these pages go out before `%objectId%` is replaced.
                             let race = self.base_race(player);
                             let fail = match race {
                                 Some(Race::Elf | Race::DarkElf) => Some("SubClass_Fail_Elves.htm"),
@@ -714,8 +707,6 @@ impl World {
                 }
                 return;
             }
-            // NOTE(java-quirk): any other choice leaves the page without content, and Java's
-            // `replace` on it throws, so nothing is sent.
             _ => return,
         };
         if let Some(html) = html {

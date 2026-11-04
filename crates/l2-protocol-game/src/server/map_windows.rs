@@ -5,7 +5,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/ShowMiniMap.java
 /// Opens the mini map (`SHOW_MINIMAP`, 0xA3) for a map item.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ShowMiniMap {
@@ -35,7 +34,6 @@ impl Decode for ShowMiniMap {
     }
 }
 
-// Java: gameserver/network/serverpackets/ShowCalculator.java
 /// Opens the calculator (`SHOW_CALC`, 0xE2) for a calculator item.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ShowCalculator {

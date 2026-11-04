@@ -1,7 +1,5 @@
 //! Quest 106: Forgotten Truth (Thifiell sends a dark elf to Karta, who sends it to the Tumran
 //! Orc Brigands for the scroll and the clay tablet, and back to Karta for the translation).
-// Java: dist/game/data/scripts/quests/Q00106_ForgottenTruth/Q00106_ForgottenTruth.java
-//
 // Pattern: a kill chance with a limit (`getRandom(100) < 20`, the scroll first, then the tablet),
 // the items of one NPC taken together (`takeItems(player, -1, ...)`), and the NewbieGuide memo
 // as in quest 104.

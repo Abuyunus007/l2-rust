@@ -1,7 +1,5 @@
 //! Small world reads and writes the area AI scripts of S-AI-03 need (Beast Farm, Pagan Temple,
 //! Dragon Valley, Monastery of Silence, Primeval Isle, ...).
-// Java: config/PlayerConfig.java (AUTO_LOOT), entity/actor/Npc.java (broadcastSocialAction),
-//       entity/actor/Creature.java (getTemplate().getParameters())
 
 use l2_data::npc::NpcParam;
 use l2_protocol_game::server::{SocialAction, ValidateLocation};

@@ -1,8 +1,4 @@
 //! Drowning and falling damage of a player.
-// Java: entity/zone/type/WaterZone.java (onEnter/onExit), entity/actor/tasks/player/WaterTask.java,
-//       entity/actor/Player.java (startWaterTask, stopWaterTask, checkWaterState, isFalling),
-//       mechanics/stats/Formulas.java (calcFallDam)
-//
 // The tasks live in the zone context (`zoning`), keyed by player id: they are world timers, no
 // player field changes.
 
@@ -47,7 +43,6 @@ impl World {
         let Some(view) = self.stats(id) else {
             return 0.0;
         };
-        // NOTE(java-quirk): `(fallHeight * getMaxHp()) / 1000` is an int division.
         let base = fall_height.wrapping_mul(view.max_hp()) / 1000;
         view.calc_stat(Stat::Fall, f64::from(base), None, None)
     }

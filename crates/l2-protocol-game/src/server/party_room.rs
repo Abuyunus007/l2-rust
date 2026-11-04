@@ -11,7 +11,6 @@ use crate::generated::opcodes::ServerOpcode;
 /// What Java writes at the end of `PartyMatchDetail`: `writeShort(59064)`, "?" for the client.
 const PARTY_ROOM_INFO_TAIL: u16 = 59064;
 
-// Java: gameserver/network/serverpackets/PartyMatchDetail.java
 /// The window of one room (`PARTY_ROOM_INFO`, 0x9D).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PartyRoomInfo {
@@ -104,7 +103,6 @@ impl RoomMember {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExPartyRoomMember.java
 /// All the members of the room (`EX_PARTY_ROOM_MEMBER`, `0xFE` 0x08). `mode` 0 = a member entered,
 /// 1 = the room was created, 2 = the owner looks at its room again.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -142,7 +140,6 @@ impl Decode for ExPartyRoomMember {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExManagePartyRoomMember.java
 /// One member added (`mode` 0), changed (1) or removed (2) (`EX_MANAGE_PARTY_ROOM_MEMBER`,
 /// `0xFE` 0x0A).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -172,7 +169,6 @@ impl Decode for ExManagePartyRoomMember {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExClosePartyRoom.java
 /// Closes the room window (`EX_CLOSE_PARTY_ROOM`, `0xFE` 0x09). No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExClosePartyRoom;
@@ -193,7 +189,6 @@ impl Decode for ExClosePartyRoom {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExAskJoinPartyRoom.java
 /// An invitation into the room of `requestor_name` (`EX_ASK_JOIN_PARTY_ROOM`, `0xFE` 0x35).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExAskJoinPartyRoom {
@@ -234,7 +229,6 @@ pub struct WaitingRoom {
     pub members: Vec<(i32, String)>,
 }
 
-// Java: gameserver/network/serverpackets/ListPartyWating.java
 /// The list of rooms (`LIST_PARTY_WAITING`, 0x9C).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ListPartyWaiting {
@@ -300,7 +294,6 @@ impl Decode for ListPartyWaiting {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExListPartyMatchingWaitingRoom.java
 /// The players who wait for a room (`EX_LIST_PARTY_MATCHING_WAITING_ROOM`, `0xFE` 0x36). The
 /// answer to mode 0 is page 0 and no players (Java writes two zero ints).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -336,7 +329,6 @@ impl Decode for ExListPartyMatchingWaitingRoom {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExAskModifyPartyLooting.java
 /// Asks the members to agree to a new loot rule (`EX_ASK_MODIFY_PARTY_LOOTING`, `0xFE` 0xBF).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExAskModifyPartyLooting {
@@ -365,7 +357,6 @@ impl Decode for ExAskModifyPartyLooting {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExSetPartyLooting.java
 /// The result of the vote (`EX_SET_PARTY_LOOTING`, `0xFE` 0xC0): `result` 1 = changed, 0 = not.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExSetPartyLooting {
@@ -393,7 +384,6 @@ impl Decode for ExSetPartyLooting {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExRequestChangeNicknameColor.java
 /// Opens the title colour window for the item `item_object_id`
 /// (`EX_REQUEST_CHANGE_NICKNAME_COLOR`, `0xFE` 0x83).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

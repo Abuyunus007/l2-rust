@@ -1,7 +1,5 @@
 //! The containers: which `Vec<ItemData>` a warehouse is, its owner column, its location name and
 //! its capacity.
-// Java: entity/itemcontainer/{ItemContainer,PlayerWarehouse,ClanWarehouse,PlayerFreight}.java
-// Java: entity/actor/Player.java (getWareHouseLimit)
 
 use l2_data::Stat;
 use l2_util::ObjectId;

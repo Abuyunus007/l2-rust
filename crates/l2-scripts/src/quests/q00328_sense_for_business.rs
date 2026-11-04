@@ -1,6 +1,4 @@
 //! Quest 328: Sense for Business (Sarien in the Rune town, the eye and basilisk monsters).
-// Java: dist/game/data/scripts/quests/Q00328_SenseForBusiness/Q00328_SenseForBusiness.java
-//
 // Pattern: a kill-count quest with drop chances per monster (`docs/design/scripts.md`, "Quest
 // patterns"). One roll (`getRandom(100)`) per kill decides the item: below the first threshold
 // the carcass, below the second the lens (eye monsters), or the gizzard (basilisks). The NPC pays

@@ -1,9 +1,5 @@
 //! The vehicle as an object of the world: creating it (`BoatManager.getNewBoat`,
 //! `AirShipManager.getNewAirShip`), `onSpawn`, `deleteMe`, and what the players are told about it.
-// Java: managers/{BoatManager,AirShipManager}.java (getNewBoat, getNewAirShip, removeAirShip)
-// Java: entity/actor/Vehicle.java (deleteMe), entity/actor/instance/{Boat,AirShip,
-//       ControllableAirShip}.java (sendInfo, updateAbnormalEffect, onSpawn, deleteMe)
-// Java: ai/{BoatAI,AirShipAI}.java (describeStateToPlayer)
 
 use l2_protocol_game::server::{
     DeleteObject, ExAirShipInfo, ExMoveToLocationAirShip, VehicleDeparture, VehicleInfo,
@@ -226,8 +222,6 @@ impl World {
             // `AirShipManager.removeAirShip`: `storeInDb(ownerId)` writes the fuel the manager knew
             // before this flight, then the manager learns the ship's.
             if ship.owner_id != 0 {
-                // NOTE(java-quirk): `storeInDb` runs before `info.set("fuel", ship.getFuel())`, so
-                // the row is one flight behind.
                 if let Some(old) = self.vehicle.licenses.get(&ship.owner_id).copied() {
                     self.outbox
                         .persist(PersistCommand::Vehicle(VehicleWrite::StoreFuel {

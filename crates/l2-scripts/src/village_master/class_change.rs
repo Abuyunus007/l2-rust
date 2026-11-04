@@ -1,8 +1,6 @@
 //! What the class change scripts of `village_master` share: the page whitelist of their
 //! `onEvent`, the player's class and categories, and the `ClassChangeRequested` branch that
 //! twelve of them repeat once per class (a table here, one row per Java `else if`).
-// Java: dist/game/data/scripts/village_master/*Change{1,2}/*.java (ClassChangeRequested)
-//
 // Not a Java script: a helper module of the folder. The rows of each script's table are its
 // `else if ((classId == X) && (player.getPlayerClass() == PlayerClass.Y))` blocks in Java's order,
 // with the four pages of the block in the order Java tests them.

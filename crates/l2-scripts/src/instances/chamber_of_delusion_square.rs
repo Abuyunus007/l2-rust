@@ -1,5 +1,4 @@
 //! Chamber of Delusion Square, instance 131.
-// Java: dist/game/data/scripts/instances/ChambersOfDelusion/ChamberOfDelusionSquare.java
 
 use super::chamber::{ChamberData, chamber_script};
 

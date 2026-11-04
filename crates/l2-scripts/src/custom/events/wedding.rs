@@ -1,6 +1,4 @@
 //! The wedding priest (NPC 50007): the ceremony of an engaged couple.
-// Java: dist/game/data/scripts/custom/events/Wedding/Wedding.java
-//
 // The engagement (`.engage`), the divorce, `.gotolove` and the couple table are the world's
 // `wedding.rs`; the steps the priest takes on the couple are its `wedding_*` methods.
 
@@ -57,8 +55,6 @@ impl Script for Wedding {
 
         let mut htmltext = None;
         if state.marry_request {
-            // NOTE(java-quirk): whatever the click was (accept or decline), the first one of the
-            // player who was asked only clears the requests and shows the question again.
             if !is_wearing_formal_wear(ctx, player) || !is_wearing_formal_wear(ctx, partner) {
                 htmltext = Some(send_html(ctx, partner, "NoFormal.html", None));
             } else {
@@ -378,7 +374,6 @@ mod tests {
         t.talk(BOB, priest);
         t.bypass(ALICE, "Script Wedding ask");
         t.take();
-        // NOTE(java-quirk): the first click only clears the request and shows the page again.
         t.bypass(BOB, "Script Wedding decline");
         t.take();
         t.bypass(BOB, "Script Wedding decline");

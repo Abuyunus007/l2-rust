@@ -1,7 +1,5 @@
 //! Quest 228: Test of Magus (Bard Rukal in Gludio: the Wizard, Elven Wizard and Dark Wizard second
 //! class change, through the four elemental elders and the singing flowers).
-// Java: dist/game/data/scripts/quests/Q00228_TestOfMagus/Q00228_TestOfMagus.java
-//
 // Pattern: the test chain of the "Test of ..." quests (see Q00222), with four elements. Each
 // element is a charm from its elder, a hunt, and a tone; the singing flowers talk when they die.
 
@@ -580,7 +578,6 @@ impl Script for Q00228TestOfMagus {
     }
 }
 
-/// Java: the collecting sound of a drop, the middle sound once the count reaches `limit`.
 fn play_collect_sound(ctx: &mut ScriptCtx<'_>, killer: ObjectId, count: i64, limit: i64) {
     if count >= limit {
         ctx.play_sound(killer, QuestSound::ItemsoundQuestMiddle);

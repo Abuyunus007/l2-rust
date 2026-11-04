@@ -1,5 +1,4 @@
 //! The `SummonPet` effect: the caster calls the pet of the collar it used.
-// Java: dist/game/data/scripts/handlers/skill/effects/SummonPet.java
 
 use l2_data::skill::EffectTemplate;
 

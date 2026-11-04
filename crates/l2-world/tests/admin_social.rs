@@ -6,7 +6,6 @@
 //! `//pledge`, `//remove_clan_penalty`), the summon words, the transformation words, and the
 //! skill buttons that were left over from M5-FU-01 (`//get_skills`, `//reset_skills`,
 //! `//give_all_skills_fs`, `//setskill`, `//removereuse`, `//buff`).
-//! Java: scripts/handlers/chat/commands/admin/{AdminEditChar,AdminClan,AdminPledge,AdminMenu,
 //! AdminSummon,AdminTransform,AdminRide,AdminSkill,AdminBuffs,AdminKill}.java.
 //!
 //! The harness is the one of `admin_combat.rs`; the clan fixtures are loaded before the players
@@ -1045,9 +1044,6 @@ fn untransform_of_a_normal_character_is_an_invalid_target() {
 }
 
 /// `//unride`: the horse and the bike leave by untransforming, anything else is `dismount()`.
-// NOTE(java-quirk): `dismount()` has no "is mounted" check, so a player who rides nothing still
-// gets the dismount packets (the food gauge at 0, `Ride` with 1000000 as the NPC id and the user
-// info).
 #[test]
 fn unride_without_a_mount_or_transformation_dismounts_nothing_but_sends_the_packets() {
     let mut s = setup();

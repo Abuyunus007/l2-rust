@@ -1,9 +1,4 @@
 //! Summons: servitors now, pets (PET-01) and cubics (CUBIC-01) on top of the same core.
-// Java: entity/actor/Summon.java, entity/actor/instance/Servitor.java
-// Java: ai/SummonAI.java (see `ai.rs`)
-// Java: network/clientpackets/RequestActionUse.java (the summon branch, see `actions.rs`)
-// Java: data/sql/{CharSummonTable,SummonEffectTable}.java (see `servitor.rs`)
-//
 // # Where a summon lives (D-11, D-17)
 // - The creature itself (position, vitals, calculators, skills, movement, pawn) is an [`Npc`]
 //   entry in `World::npcs` with `class == NpcClass::Summon`, and an `ObjectKind::Summon` entry in
@@ -15,18 +10,6 @@
 //   time) is a [`Summon`] in `SummonWorld::summons`, by the summon's object id. The owner's link
 //   to it (Java `Player._summon`) is `SummonWorld::by_owner`. Both are ids, never references.
 // - A pet (PET-01) is a `Summon` of kind [`SummonKind::Pet`] with its own pet state next to it.
-//
-// # Left out, with the system that brings it
-// - Cubics are in `cubic.rs` (CUBIC-01). The duel part of `SummonStatus.reduceHp` is
-//   `duel_interrupt_on_summon_hit` in `duel.rs`.
-// - Sieges and territory wars (`isSiegeFriend`) are M7; the Olympiad (`isInOlympiadMode`) is
-//   read from `olympiad/` since M8-OLY-01.
-// - The servitor restore at the first action after a login (`Player.onActionRequest` with spawn
-//   protection, `CharSummonTable.restoreServitor`): not ported. The
-//   `character_summons` row is written and removed exactly like Java, so the Java GS restores it.
-// - The `PathFinding.findPath` refusals of `SummonAI` and `Summon.useMagic` (see `ai.rs`).
-// - Transfer pain (`SummonStatus.reduceHp`'s `TRANSFER_DAMAGE_TO_PLAYER`), `TamedBeast`, mounts,
-//   the Mobius auto play.
 
 pub mod actions;
 pub mod ai;

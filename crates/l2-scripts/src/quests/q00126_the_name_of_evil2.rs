@@ -1,6 +1,4 @@
 //! Quest 126: The Name of Evil - 2 (Asamah, the three Kaimu, the Warrior's Grave and Shilen's Stone Statue).
-// Java: dist/game/data/scripts/quests/Q00126_TheNameOfEvil2/Q00126_TheNameOfEvil2.java
-//
 // Pattern: a long chain of cond steps with three note puzzles at the Warrior's Grave (the notes
 // are quest variables, cleared when the grave is talked to and after a wrong or complete try).
 

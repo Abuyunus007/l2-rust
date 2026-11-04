@@ -1,19 +1,5 @@
 //! A servitor's life: the 5 s life task (time and the item it eats), unsummoning, dying and
 //! decaying, the owner leaving or teleporting, and the rows Java keeps for it.
-// Java: entity/actor/Summon.java (unSummon, deleteMe, doDie, onDecay, stopAllEffects)
-// Java: entity/actor/instance/Servitor.java (run, unSummon, doDie, storeMe, storeEffect,
-//       restoreEffects, stopSkillEffects)
-// Java: entity/actor/Player.java (deleteMe's summon part, onTeleported's summon part)
-// Java: data/sql/CharSummonTable.java (saveSummon, removeServitor)
-// Java: data/sql/SummonEffectTable.java (the servitor half)
-//
-// # Rows (D-39)
-// `character_summons` (`CharSummonTable`) and `character_summon_skills_save` (`Servitor`'s
-// `storeEffect` / `restoreEffects`) are written through [`PersistCommand::Summon`] in Java's
-// order. Java reads `character_summon_skills_save` when a servitor of the same skill spawns and
-// the memory table has no entry; here the rows of the character are read at load
-// (`PlayerProfile::summon_effects`) and kept as the world's view of the table (`saved_rows`),
-// updated with every write, so the read finds what Java's `SELECT` would.
 
 use std::collections::HashSet;
 
@@ -163,9 +149,6 @@ impl World {
                             SystemMessageId::SinceYouDoNotHaveEnoughItemsToMaintainTheServitorSStayTheServitorHasDisappeared,
                         ),
                     );
-                    // NOTE(java-quirk): Java goes on after this `unSummon`: the owner still gets
-                    // `SetSummonRemainTime` (and an icon update of the gone servitor, which has
-                    // no effects left and no object here, so it is not sent).
                     self.unsummon(summon, owner);
                     if let Some(owner) = owner {
                         self.send(
@@ -241,9 +224,6 @@ impl World {
             }
             // Stop AI tasks.
             self.stop_summon_ai_task(summon);
-            // NOTE(java-quirk): `stopAllEffects()` ends with `updateAndBroadcastStatus(1)`; the
-            // summon is still spawned, so its owner gets `PetInfo` and `PetStatusUpdate` again
-            // after the `PetDelete` above, and the others `SummonInfo`, before `decayMe()`.
             self.stop_all_effects(summon);
             self.decay(summon);
             // `oldRegion.removeFromZones(this)`: summons have no zone state.
@@ -486,8 +466,6 @@ impl World {
     }
 
     /// `SummonEffectTable.clearServitorEffects(owner, referenceSkill)`.
-    // NOTE(java-quirk): Java empties the set but keeps the key, so `containsSkill` stays true and
-    // the saved rows are not read again in this session.
     fn clear_servitor_effects(&mut self, owner: ObjectId, class_index: i32, reference_skill: i32) {
         if let Some(effects) = self
             .summons
@@ -501,8 +479,6 @@ impl World {
     }
 
     /// `SummonEffectTable.addServitorEffect(owner, referenceSkill, skill, effectCurTime)`.
-    // NOTE(java-quirk): Java keeps the effects in a concurrent set, applied in no fixed order;
-    // here they are applied in the order they were stored.
     fn add_servitor_effect(
         &mut self,
         owner: ObjectId,

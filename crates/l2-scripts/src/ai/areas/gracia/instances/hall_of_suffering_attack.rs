@@ -1,6 +1,4 @@
 //! The Hall of Suffering (attack): the instance of `Q00694_BreakThroughTheHallOfSuffering`.
-// Java: dist/game/data/scripts/ai/areas/Gracia/instances/HallOfSufferingAttack/HallOfSufferingAttack.java
-//
 // The code is the Defence's too: see `hall_of_suffering.rs`.
 
 use super::hall_of_suffering::{HallData, hall_of_suffering};

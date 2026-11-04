@@ -1,7 +1,4 @@
 //! The newbie helper NPC bypasses `SupportMagic`, `SupportMagicServitor` and `GiveBlessing`.
-// Java: dist/game/data/scripts/handlers/bypass/npc/SupportMagic.java
-// Java: dist/game/data/scripts/handlers/bypass/npc/SupportBlessing.java
-//
 // The NPC casts the skills itself ([`World::set_npc_target`] + [`World::do_cast`]), as Java's
 // `npc.setTarget(..)` + `npc.doCast(..)`.
 
@@ -177,7 +174,6 @@ fn support_blessing_handler(
     }
     world.set_npc_target(npc, Some(player));
     world.do_cast(npc, BLESSING_OF_PROTECTION);
-    // NOTE(java-quirk): the handler answers `false` after the cast.
     false
 }
 

@@ -1,13 +1,5 @@
 //! Duels: the challenge, the countdown, the fight, the end and what a duelist's state changes in
 //! the rest of the world (M6-DUEL-01).
-// Java: managers/DuelManager.java
-// Java: entity/actor/holders/player/Duel.java
-// Java: entity/actor/enums/player/DuelResult.java
-// Java: network/clientpackets/{RequestDuelStart,RequestDuelAnswerStart,RequestDuelSurrender}.java
-// Java: network/serverpackets/{ExDuelAskStart,ExDuelReady,ExDuelStart,ExDuelEnd,ExDuelUpdateUserInfo}.java
-// Java: entity/actor/Player.java (canDuel, getNoDuelReason, setInDuel, setDuelState,
-//       setStartingDuel, setTeam, isInDuelWith)
-//
 // # State
 // Java keeps a duelist's state on the `Player` (`_isInDuel`, `_duelId`, `_duelState`,
 // `_startingDuel`, the `Creature` team). Here it is one [`PlayerDuel`] per player in
@@ -274,8 +266,6 @@ impl World {
 
     /// Java `Player.canDuel()`; the `Err` is `getNoDuelReason()`'s message id (its `C1` is the
     /// player).
-    // NOTE(java-quirk): Java keeps the reason in a field that `getNoDuelReason` resets; every
-    // caller reads it right after `canDuel()` returned false, so a plain `Result` is the same.
     pub fn can_duel(&self, id: ObjectId) -> Result<(), SystemMessageId> {
         use SystemMessageId::{
             C1CannotDuelBecauseC1IsAlreadyEngagedInADuel,
@@ -568,8 +558,6 @@ impl World {
                 &SystemMessage::new(SystemMessageId::C1SPartyHasBeenChallengedToADuel)
                     .with(text(&leader_name)),
             );
-            // NOTE(java-quirk): "<challenger>'s party has challenged your party" goes to the player
-            // who was named in the request, not to the party leader who got the question.
             self.send(
                 target,
                 &SystemMessage::new(SystemMessageId::C1SPartyHasChallengedYourPartyToADuel)
@@ -827,9 +815,6 @@ impl World {
                 duel.conditions.iter().map(|(id, c)| (*id, c.clone())).collect();
             duel.player_a = None;
             duel.player_b = None;
-            // NOTE(java-quirk): only `teleportBack()` and `setInDuel(0)`: the team colour
-            // (BLUE/RED) and the opponents' `DUELSTATE` stay, as nothing calls
-            // `restorePlayerConditions` for a duel without duelists.
             for (id, condition) in players {
                 self.duel_teleport_back(id, &condition);
                 self.set_in_duel(id, 0);
@@ -948,8 +933,6 @@ impl World {
             self.duel.duels.remove(&duel_id);
             return;
         };
-        // NOTE(java-quirk): this early return leaves `_startingDuel` set on the players (only
-        // `setInDuel` clears it), so they cannot duel until they are in one.
         if self.is_in_duel(a) || self.is_in_duel(b) {
             self.duel.duels.remove(&duel_id);
             return;
@@ -1323,8 +1306,6 @@ impl World {
 
     /// Java `PlayerCondition.teleportBack()`: a party duelist goes back to where he stood
     /// (`teleToLocation(x, y, z)`).
-    // NOTE(java-quirk): this overload keeps the instance id; a player who leaves the party during
-    // the fight is put at his old position inside the arena instance.
     fn duel_teleport_back(&mut self, id: ObjectId, condition: &PlayerCondition) {
         if let Some((x, y, z)) = condition.position
             && self.players.contains_key(&id)
@@ -1406,9 +1387,6 @@ impl World {
                 crate::teleport::TeleportTarget::at(spawn1.x, spawn1.y, spawn1.z).with_instance(instance_id),
             );
         }
-        // NOTE(java-quirk): `Rnd.get(size / 2, size)` includes `size`: one roll in `size / 2 + 1`
-        // is past the end of the list, Java throws there and the challenged party is never moved
-        // (nor does the duel start).
         let second_index = self.rng().get(len / 2, len);
         let Some(spawn2) = usize::try_from(second_index)
             .ok()

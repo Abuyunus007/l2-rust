@@ -1,7 +1,6 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
 //! The NPC admin commands of this card: `//delete [range]` and `//delete_group` (`admin/delete.rs`).
-//! Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminDelete.java
 
 use std::path::Path;
 use std::sync::{Arc, Mutex};

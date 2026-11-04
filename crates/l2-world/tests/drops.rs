@@ -6,7 +6,6 @@
 //! and the bounds of the draws, the `float`/`double` quirks and the occurrence counter. The
 //! second half runs whole scenes (a monster dies, the loot lies there, somebody picks it up) on
 //! the real world with small synthetic templates, and checks the packets and their order.
-//! Java: entity/actor/templates/NpcTemplate.java (calculateDrops), entity/actor/Attackable.java
 //! (doItemDrop), entity/actor/Npc.java (dropItem), entity/item/instance/Item.java (dropMe,
 //! pickupMe), entity/actor/Player.java (doPickupItem, addItem, addAdena),
 //! taskmanagers/ItemsAutoDestroyTaskManager.java, managers/ItemsOnGroundManager.java.
@@ -1014,7 +1013,6 @@ fn a_monster_drops_its_loot_around_itself_for_everybody_who_sees_it() {
             s.world.is_in_auto_destroy(*id),
             "AutoDestroyDroppedItemAfter = 600"
         );
-        // The object ids are the Rust range's (D-39).
         assert!((RUST_FIRST_OBJECT_ID..=RUST_LAST_OBJECT_ID).contains(&id.0));
     }
 

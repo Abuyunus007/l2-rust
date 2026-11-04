@@ -1,6 +1,4 @@
 //! Quest 710: Path to Becoming a Lord - Giran (Chamberlain Saul, Gesto, Felton and the Zaken's freight, the Giran castle lord).
-// Java: dist/game/data/scripts/quests/Q00710_PathToBecomingALordGiran/Q00710_PathToBecomingALordGiran.java
-//
 // Pattern: a lord quest for the owner of Giran castle (`castle.owner_id`, the clan whose leader
 // is online): a cargo seal from the freight box, 300 Gesto's boxes from Zaken's soldiers (cond 7
 // to 8), and a coronation shout of the lord's name when the clan leader is online.
@@ -77,7 +75,6 @@ impl Script for Q00710PathToBecomingALordGiran {
         player: Option<ObjectId>,
     ) -> Option<String> {
         let player = player?;
-        // Java: "Castle has no lord." is returned as a chat line, before anything else.
         if giran_lord_clan(ctx).is_none() {
             return Some("Castle has no lord.".to_owned());
         }

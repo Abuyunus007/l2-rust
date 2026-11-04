@@ -1,9 +1,5 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
-//! The boss managers (M8-BOSS-01): a raid boss's kill and its respawn time, the raid points and
-//! their ranking, the weekly reset, a grand boss state read and written, the D-53 switch off case,
-//! `RequestGetBossRecord`, the boss zones and the admin commands.
-//!
 //! The expected numbers are read off the Java sources, not off this code. Java:
 //! managers/{GrandBossManager,RaidBossSpawnManager,RaidBossPointsManager}.java,
 //! entity/actor/instance/{RaidBoss,GrandBoss}.java, entity/zone/type/BossZone.java,
@@ -525,8 +521,6 @@ fn the_reset_task_is_one_repeating_timer() {
     assert_eq!(s.world.timers().len(), 1);
 }
 
-/// D-50: the rows of a character are read again when it enters the world, and the answer replaces
-/// what this server held of it.
 #[test]
 fn entering_the_world_reads_the_points_again() {
     let mut s = scene(BossSettings::default());
@@ -565,8 +559,6 @@ fn entering_the_world_reads_the_points_again() {
 
 // ------------------------------------------------------------------ the grand boss states
 
-/// `GrandBossManager.init`: the status and the info of each row are in memory; a boss spawns on
-/// this server only when the status says alive (D-53).
 #[test]
 fn a_grand_boss_state_is_read_at_start() {
     let mut s = scene(BossSettings::default());
@@ -656,8 +648,6 @@ fn with_the_switch_on_the_grand_boss_rows_are_written() {
     assert_eq!(boss_writes(&s).len(), 2);
 }
 
-/// D-50: the answer of the read replaces the state in memory; a failed read changes nothing and
-/// the page is refused.
 #[test]
 fn a_grand_boss_state_is_read_again_before_the_page_shows_it() {
     let mut s = scene(BossSettings::default());

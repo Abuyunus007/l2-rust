@@ -1,5 +1,4 @@
 //! The Treasure Chest of the Ancient Giants and its guards in the Silent Valley.
-// Java: dist/game/data/scripts/ai/areas/SilentValley/SilentValley.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

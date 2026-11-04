@@ -1,7 +1,5 @@
 //! Quest 52: Willie's Special Bait (Willie in the Fishing Village; the tarlk basilisks give the
 //! tarlk eye).
-// Java: dist/game/data/scripts/quests/Q00052_WilliesSpecialBait/Q00052_WilliesSpecialBait.java
-//
 // Pattern: a kill-count quest with a drop chance up to a limit (`docs/design/scripts.md`, "Quest
 // patterns"): the tarlk basilisks drop the tarlk eye with 33% to the party member at cond 1, and
 // the hundredth moves that member on to cond 2. The earth fishing lures come back with the eyes.

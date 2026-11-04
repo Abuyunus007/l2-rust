@@ -1,6 +1,5 @@
 //! Player class templates: base stats, speeds, collision, creation points and per-level HP/MP/CP.
 //!
-//! Java: `gameserver/data/xml/PlayerTemplateData.java`, `entity/actor/templates/PlayerTemplate.java`
 //! and the defaults in `CreatureTemplate.java`.
 //! Data: `data/stats/players/templates/**/*.xml` (one file per class, `xsd/playerTemplate.xsd`).
 //!
@@ -222,7 +221,6 @@ impl PlayerTemplates {
                 + s.base_p_def.gloves
                 + s.base_p_def.underwear
                 + s.base_p_def.cloak,
-            // NOTE(java-quirk): Java adds `rfinger` twice and never `lfinger`.
             m_def: s.base_m_def.rear
                 + s.base_m_def.lear
                 + s.base_m_def.rfinger
@@ -280,8 +278,6 @@ impl PlayerTemplates {
                 result = Err(DataError::Invalid(format!("negative level {}", level.val)));
                 break;
             };
-            // NOTE(java-quirk): Java `return`s from the whole file at the first level above the max,
-            // ignoring everything after it. Files list levels in order, so this equals skipping them.
             if index > max_level {
                 break;
             }
@@ -417,8 +413,6 @@ fn base_slot_def(p: &RawPDef, m: &RawMDef) -> [i32; PAPERDOLL_TOTAL_SLOTS] {
     slots[8] = m.rear;
     slots[9] = m.lear;
     slots[13] = m.rfinger;
-    // NOTE(java-quirk): the left finger slot is filled from `baseMDefrfinger`, so `lfinger` of the
-    // XML is never read.
     slots[14] = m.rfinger;
     slots[4] = m.neck;
     slots

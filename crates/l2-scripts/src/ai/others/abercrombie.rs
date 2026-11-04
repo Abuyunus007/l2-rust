@@ -1,5 +1,4 @@
 //! Abercrombie, the Golden Ram mercenary officer: a first-talk NPC script.
-// Java: dist/game/data/scripts/ai/others/Abercrombie/Abercrombie.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

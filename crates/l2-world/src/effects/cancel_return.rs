@@ -1,8 +1,5 @@
 //! The "cancel return" of the dispel effects (`CancelReturn.ini`): buffs a dispel took come back
 //! after `TimeToReturn` seconds with the time they had left.
-// Java: dist/game/data/scripts/handlers/skill/effects/{DispelAll,DispelByCategory,
-//       DispelBySlotProbability}.java (the `CancelReturnConfig` branches),
-//       config/custom/CancelReturnConfig.java
 
 use std::collections::HashMap;
 

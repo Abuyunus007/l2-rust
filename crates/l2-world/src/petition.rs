@@ -1,18 +1,9 @@
 //! The GM petition system: a player's `RequestPetition`, the queue GMs answer from, the
 //! consultation chat and the end of it.
-// Java: managers/PetitionManager.java, mechanics/petition/{Petition,PetitionState,PetitionType}.java
-// Java: network/clientpackets/{RequestPetition,RequestPetitionCancel,RequestPetitionFeedback}.java
-// Java: network/serverpackets/PetitionVotePacket.java
-// Java: dist/game/data/scripts/handlers/chat/channels/ChatPetition.java
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminPetition.java
-//
 // A petition keeps the object ids of the petitioner and of the answering GM, and their names as
 // they were when each took part: Java holds the `Player` objects, which still have a name when
 // they are offline, and the pages show it (greyed out).
 //
-// NOTE(java-quirk): Java keeps the queue in a plain `HashMap` keyed by the petition's object id,
-// so the order of the lists is the hash order. The queue is ordered by id here, which is the
-// order the petitions came in.
 //
 // Left out: `petition_feedback` rows are written only through the persistence task (the
 // feedback packet), see [`PersistCommand::PetitionFeedback`].

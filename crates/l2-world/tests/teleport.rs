@@ -2,7 +2,6 @@
 
 //! Teleports (`teleToLocation`, `Appearing`), zone membership of players (flags, zone messages,
 //! the compass icon) and the nearest-town lookups.
-//! Java: Creature.teleToLocation, Player.onTeleported, clientpackets/Appearing, ZoneType,
 //! ZoneRegion, Player.revalidateZone, MapRegionData.
 //!
 //! The zones come from small XML files written to a temporary datapack root; the checks against

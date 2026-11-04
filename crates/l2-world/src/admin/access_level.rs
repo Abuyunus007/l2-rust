@@ -1,7 +1,4 @@
 //! `//changelvl`: change the access level of the target, or of a named character.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminChangeAccessLevel.java
-// Java: entity/actor/Player.java (setAccessLevel)
-//
 // # Left out, with the system that brings it
 // - A character who is not online: Java runs `UPDATE characters SET accesslevel=? WHERE
 //   char_name=?` and tells the GM from the update count. The world cannot wait for the database

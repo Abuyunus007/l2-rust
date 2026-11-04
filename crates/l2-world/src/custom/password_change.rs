@@ -1,8 +1,5 @@
 //! `config/Custom/PasswordChange.ini`: the voiced command `.changepassword`. The change itself
 //! is the login server's: the game server sends `ChangePassword` and shows the answer.
-// Java: dist/game/data/scripts/handlers/chat/commands/voiced/ChangePassword.java
-// Java: gameserver/LoginServerThread.java (sendChangePassword)
-// Java: gameserver/network/loginserverpackets/receive/ChangePasswordResponse.java
 
 use l2_protocol_game::server::NpcHtmlMessage;
 use l2_util::ObjectId;

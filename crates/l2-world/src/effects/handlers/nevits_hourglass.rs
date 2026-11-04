@@ -1,5 +1,4 @@
 //! The `NevitsHourglass` effect: the Nevit hourglass of the player stands still while it lasts.
-// Java: dist/game/data/scripts/handlers/skill/effects/NevitsHourglass.java
 
 use l2_data::skill::EffectTemplate;
 

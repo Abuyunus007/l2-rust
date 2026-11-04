@@ -1,13 +1,3 @@
-//! Object id allocation: the Rust game server's IdFactory (D-39).
-// Java: org/l2jmobius/gameserver/managers/IdManager.java (allocation: BitSet, next free bit)
-// Java: org/l2jmobius/gameserver/managers/DatabaseIdManager.java (the startup scan lives in `l2-db`)
-//
-// Why a separate range: the Java GS and ours run at the same time on the same database (D-39).
-// Java hands out ids from `FirstObjectId` (0x10000000) upwards, always the lowest free one, so it
-// needs more than a billion ids before it could reach 0x60000000. We allocate only from
-// 0x60000000..=0x7FFFFFFF. Neither allocator can then hand out an id the other one owns, without
-// the two servers talking to each other.
-//
 // This module has no dependencies and takes no database handle: the game server runs the scan
 // (`l2_db::IdRepository::used_object_ids`) and passes the ids in.
 
@@ -17,21 +7,17 @@ use std::sync::{Mutex, MutexGuard, PoisonError};
 use l2_util::ObjectId;
 use tracing::{debug, warn};
 
-/// First object id the Rust game server may allocate (D-39).
 pub const RUST_FIRST_OBJECT_ID: i32 = 0x6000_0000;
 /// Last object id the Rust game server may allocate: Java's `LastObjectId` default, the largest
 /// positive `int`.
 pub const RUST_LAST_OBJECT_ID: i32 = 0x7FFF_FFFF;
 
-/// Java's default `FirstObjectId` (`IdManager.ini`). Ids below [`RUST_FIRST_OBJECT_ID`] belong to
-/// the Java GS; this server never allocates, scans for or releases them.
 pub const JAVA_FIRST_OBJECT_ID: i32 = 0x1000_0000;
 
 /// Why an [`IdFactory`] could not be built or could not hand out an id.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum IdError {
     /// Every id of the range is in use. At startup this means the server must not start.
-    // Java: IdManager.getNextId throws NullPointerException("IdManager: Ran out of valid ids.")
     Exhausted,
     /// `first` is negative or greater than `last`.
     InvalidRange,
@@ -110,7 +96,6 @@ impl Inner {
     }
 
     /// The first clear bit at or after `from` and below `total`.
-    // Java: BitSet.nextClearBit
     fn next_clear_from(&self, from: u32, total: u32) -> Option<u32> {
         let mut word = (from / 64) as usize;
         let mut shift = from % 64;
@@ -133,11 +118,6 @@ impl Inner {
 impl IdFactory {
     /// The factory for the Rust range ([`RUST_FIRST_OBJECT_ID`]..=[`RUST_LAST_OBJECT_ID`]),
     /// with the ids the startup scan found in use.
-    ///
-    /// Ids outside the range are ignored (they are the Java GS's). Fails with
-    /// [`IdError::Exhausted`] when the scan shows the whole range used: the server must then
-    /// refuse to start.
-    // Java: IdManager constructor
     pub fn new(used_ids: impl IntoIterator<Item = i32>) -> Result<Self, IdError> {
         Self::with_range(RUST_FIRST_OBJECT_ID, RUST_LAST_OBJECT_ID, used_ids)
     }
@@ -206,7 +186,6 @@ impl IdFactory {
     }
 
     /// Allocates the next free id.
-    // Java: IdManager.getNextId
     pub fn allocate(&self) -> Result<ObjectId, IdError> {
         let mut inner = self.lock();
         let offset = inner.next.ok_or(IdError::Exhausted)?;
@@ -227,13 +206,6 @@ impl IdFactory {
     }
 
     /// Gives an id back. Returns whether it was an allocated id of this range.
-    ///
-    /// Ids outside the range are ignored: they belong to the Java GS (a character it created and
-    /// the Rust GS deletes, say), whose allocator reuses them after its own next restart scan.
-    // Java: IdManager.releaseId
-    // NOTE(java-quirk): Java increments its free counter even for an id that was never allocated
-    // or was already released, which makes the counter drift. Here only a set bit is cleared and
-    // counted, so a double release is harmless.
     pub fn release(&self, id: ObjectId) -> bool {
         let Some(offset) = self.offset(id) else {
             debug!(
@@ -268,7 +240,6 @@ impl IdFactory {
     }
 
     /// How many ids are left.
-    // Java: IdManager.getAvailableIdCount
     pub fn available_count(&self) -> u32 {
         self.total - self.lock().used
     }
@@ -386,7 +357,6 @@ mod tests {
     fn release_ignores_foreign_unallocated_and_double_released_ids() {
         let ids = small(100, 109, &[]);
         let a = ids.allocate().unwrap();
-        // Java GS id, below and above the range.
         assert!(!ids.release(ObjectId(268_435_456)));
         assert!(!ids.release(ObjectId(99)));
         assert!(!ids.release(ObjectId(110)));

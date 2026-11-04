@@ -1,5 +1,4 @@
 //! Jude, who trades the treasure sacks of the natives for the Ring of Wind Mastery.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/NPC/Jude/Jude.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

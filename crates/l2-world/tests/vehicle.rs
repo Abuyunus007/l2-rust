@@ -2,7 +2,6 @@
 
 //! Boats and air ships (M8-VEHICLE-01): boarding a ferry, a leg of its route, getting off, the
 //! busy dock quirk, an air ship boarding, and the route tables against the Java scripts.
-//! Java: managers/BoatManager.java, entity/actor/Vehicle.java, the scripts in
 //! `dist/game/data/scripts/vehicles/` and `ai/areas/Gracia/vehicles/`.
 
 use std::sync::{Arc, Mutex};

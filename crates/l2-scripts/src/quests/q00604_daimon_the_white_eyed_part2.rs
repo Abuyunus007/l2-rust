@@ -1,9 +1,5 @@
 //! Quest 604: Daimon the White-Eyed - Part 2 (the Eye of Argos sends the character to Daimon's
 //! Altar; the summon crystal calls the raid boss, whose essence is traded for a greater dye).
-// Java: dist/game/data/scripts/quests/Q00604_DaimonTheWhiteEyedPart2/Q00604_DaimonTheWhiteEyedPart2.java
-//
-// Pattern: as Q00625 (a boss that the quest summons, the respawn time in a global variable, D-54,
-// the "is it alive" check over the world and the kill that pays the players in range).
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

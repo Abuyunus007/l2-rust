@@ -1,6 +1,4 @@
 //! Quest 24: Inhabitants of the Forest of the Dead (Dorian, the maid of Lidia, the wizard, a tombstone).
-// Java: dist/game/data/scripts/quests/Q00024_InhabitantsOfTheForestOfTheDead/Q00024_InhabitantsOfTheForestOfTheDead.java
-//
 // Pattern: an event-heavy chain with the page picked by the quest variable `var`
 // (`docs/design/scripts.md`, "Quest patterns"). `onEvent` echoes the event by default and Java's
 // `default` branch answers null.

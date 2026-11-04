@@ -1,5 +1,4 @@
 //! The Support Unit Captains of the fortresses: talismans for Knight's Epaulettes, the squad skills.
-// Java: dist/game/data/scripts/ai/others/SupportUnitCaptain/SupportUnitCaptain.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

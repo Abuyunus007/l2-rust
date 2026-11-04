@@ -1,6 +1,4 @@
 //! The list, set and map getters the generated game config uses (M9-L03).
-// Java: gameserver/config/**/*Config.java (the `split(..)` loops in `load()`)
-//
 // The Java config classes have no list getter: each one splits a `getString` by hand. The
 // generator (since removed) knew six shapes and emits a call to one of the
 // `IniFile` methods below instead of a `()` placeholder:
@@ -64,10 +62,6 @@ impl IniFile {
 
     /// A `Map<Integer, Integer>` read from `a,b;c,d`. A pair needs exactly two numbers; a later
     /// pair with the same key replaces the earlier one (`HashMap.put`).
-    // NOTE(java-quirk): Java uses the first two numbers of a longer pair after warning, and
-    // throws `ArrayIndexOutOfBoundsException` for a one-number pair; here the one-number pair is
-    // skipped. Empty pieces are skipped without a warning (the empty default makes Java swallow a
-    // `NumberFormatException` silently).
     pub fn get_int_map(&self, key: &str, default: &str) -> HashMap<i32, i32> {
         let mut map = HashMap::new();
         for pair in java_split(&self.get_string(key, default), ';') {

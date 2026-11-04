@@ -1,5 +1,4 @@
 //! The words of the admin panel that do nothing in Java: `//set`, `//set_mod` and `//gmon`.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminAdmin.java (the `admin_set`
 // branch, which catches `admin_set_mod` as well, and `admin_gmon`: both are `// nothing`)
 //
 // The other words of `AdminAdmin` that are not here, and why:

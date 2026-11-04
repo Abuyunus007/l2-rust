@@ -1,6 +1,5 @@
 //! The monsters of the Dimensional Rift rooms: `data/DimensionalRift.xml` (M8-FEST-01).
 //!
-//! Java: `managers/DimensionalRiftManager.java` (`loadSpawns`). The rooms themselves are rows of
 //! the `dimensional_rift` table; this file only says which monsters stand in which room.
 
 use std::path::Path;

@@ -1,7 +1,5 @@
 //! Quest 645: Ghosts of Batur (Karuda in the Ruins of Batur; the contaminated Morek and Batur
 //! warriors drop the cursed burial items, 500 of them end the hunt).
-// Java: dist/game/data/scripts/quests/Q00645_GhostsOfBatur/Q00645_GhostsOfBatur.java
-//
 // Pattern: a party kill count (the drop goes to a random member at cond 1), a per-monster drop
 // chance per mille, the cond 2 at the limit, and the old reward for the old grave goods.
 
@@ -63,7 +61,6 @@ impl Script for Q00645GhostsOfBatur {
         let player = player?;
         let qs = ctx.get_quest_state(player, false)?;
         let mut htmltext = None;
-        // Java: every event needs the level, not only the start.
         if ctx.player_level(player) >= MIN_LEVEL {
             match event {
                 "32017-03.htm" => {
@@ -98,8 +95,6 @@ impl Script for Q00645GhostsOfBatur {
         }
         let qs = ctx.get_quest_state(player, false);
         ctx.give_items(killer, CURSED_BURIAL_ITEMS, 1);
-        // NOTE(java-quirk): Java calls `qs.isCond(1)` on the member's state without a check; a
-        // member without one would throw there, after the item is given. Here the kill stops.
         let Some(qs) = qs else {
             return;
         };

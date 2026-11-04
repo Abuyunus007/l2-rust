@@ -1,7 +1,5 @@
 //! Quest 227: Test of the Reformer (Priestess Pupina in Talking Island: the Cleric and Shillien
 //! Oracle second class change, through Preacher Sla, Ramus, Katari, Kakan and Nyakuri).
-// Java: dist/game/data/scripts/quests/Q00227_TestOfTheReformer/Q00227_TestOfTheReformer.java
-//
 // Pattern: the test chain of the "Test of ..." quests (see Q00222) with pilgrims that a monster
 // chases (`addDamageHate` + `setIntentionAttack`), spawned NPCs that despawn themselves on a
 // repeating timer (`onSpawn`) and a monster that dies when it is not hit by the right skill.
@@ -591,8 +589,6 @@ fn bone(ctx: &mut ScriptCtx<'_>, qs: l2_world::Qs, killer: ObjectId, fragment: i
 
 /// Java `addSpawn(OL_MAHUM_PILGRIM, ..)` and a chaser next to it that gets
 /// `addDamageHate(pilgrim, 99999, 99999)` and `setIntentionAttack(pilgrim)`.
-/// NOTE(java-quirk): these `addSpawn` calls do not name the NPC as summoner, so
-/// `getSummonedNpcCount()` of Kakan, Nyakuri and Katari stays 0 and a pilgrim comes every time.
 fn chase_pilgrim(
     ctx: &mut ScriptCtx<'_>,
     pilgrim_at: (i32, i32, i32),

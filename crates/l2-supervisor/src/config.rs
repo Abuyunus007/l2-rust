@@ -1,6 +1,5 @@
 //! `supervisor.ini`: the Rust-only settings file of the supervisor (D-36).
 //!
-//! Java: `dist/login/LoginServer.vbs`, `LoginServerTask.sh`, `dist/game/GameServer.*` (what a start
 //! script does: working directory, command line, restart on exit code 2).
 //!
 //! The file uses the Java `.ini` syntax (read with `l2_config::IniFile`). It has no sections, so

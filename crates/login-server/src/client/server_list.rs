@@ -1,7 +1,6 @@
 //! The server list, the character counts that go into it, and the "may this account enter
 //! game server N" check.
 //!
-//! Java: `loginserver/network/serverpackets/ServerList.java`,
 //! `LoginController.isLoginPossible` / `setCharactersOnServer` / `getCharactersOnAccount`,
 //! `GameServerTable.GameServerInfo.canLogin` / `getServerAddress`.
 //!
@@ -23,11 +22,9 @@ use crate::gs::subnet::GameServerAddress;
 use crate::state::{GameServerTable, LoginState, ServerStatus};
 
 /// How long the server list waits for the game servers' `ReplyCharacters`.
-// Java: ServerList constructor (10 × 50 ms)
 pub const CHARACTER_WAIT: Duration = Duration::from_millis(500);
 
 /// A game server as the server list and the login check see it: a copy, taken at one moment.
-// Java: GameServerTable.GameServerInfo (the getters these two users call)
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GsServerSnapshot {
     pub id: i32,
@@ -52,7 +49,6 @@ impl GsServerSnapshot {
             .map(|a| a.host.as_str())
     }
 
-    // Java: GameServerInfo.canLogin
     pub fn can_login(&self, access_level: i32) -> bool {
         // DOWN lets nobody in.
         if self.status == ServerStatus::Down {
@@ -76,7 +72,6 @@ pub trait GsView: Sync {
 
     /// Sends `RequestCharacters(account)` to every authed game server and returns their ids,
     /// so the server list knows which replies to wait for.
-    // Java: LoginController.getCharactersOnAccount
     fn request_characters(&self, account: &str) -> Vec<i32>;
 }
 
@@ -141,7 +136,6 @@ impl CharacterState {
 /// The character info one logged-in client collects from the game servers. The client's
 /// session waits on it; the game server link records into it through the
 /// [`ClientRegistry`](super::registry::ClientRegistry).
-// Java: LoginClient._charsOnServers / _charsToDelete
 #[derive(Debug)]
 pub struct CharacterReplies {
     state: watch::Sender<CharacterState>,
@@ -162,7 +156,6 @@ impl CharacterReplies {
     }
 
     /// A `ReplyCharacters` arrived: remembers the count and the deletion times.
-    // Java: LoginController.setCharactersOnServer / LoginClient.setCharsOnServ
     pub fn record_reply(&self, server_id: i32, chars: i32, delete_times: &[i64]) {
         self.state.send_modify(|s| {
             s.replied.insert(server_id);
@@ -211,7 +204,6 @@ fn entry_ip(address: Option<&str>) -> [u8; 4] {
     };
     match text.parse::<IpAddr>().map(|ip| ip.to_canonical()) {
         Ok(IpAddr::V4(v4)) => v4.octets(),
-        // NOTE(java-quirk): Java copies the first four bytes of an IPv6 address.
         Ok(IpAddr::V6(v6)) => {
             let o = v6.octets();
             [o[0], o[1], o[2], o[3]]
@@ -229,8 +221,6 @@ fn entry_ip(address: Option<&str>) -> [u8; 4] {
 /// Java `InetAddress.getByName(host)` for a game server host name: the first IPv4 address of the
 /// name, else the first address cut to 4 bytes (the same IPv6 quirk as [`entry_ip`]). `None` when
 /// the name does not resolve.
-// NOTE(java-quirk): Java resolves the name for every server list it writes, and so does this.
-// The lookup blocks like Java's call does; a name that never answers holds the list back.
 fn resolve_host(host: &str) -> Option<[u8; 4]> {
     use std::net::ToSocketAddrs;
     let addresses = (host, 0).to_socket_addrs().ok()?;
@@ -245,8 +235,6 @@ fn resolve_host(host: &str) -> Option<[u8; 4]> {
     first_v6.map(|o| [o[0], o[1], o[2], o[3]])
 }
 
-/// Java: the `ServerList` constructor and `writeImpl`, as a packet struct.
-///
 /// `now_ms` turns the absolute deletion times of `ReplyCharacters` into the seconds the client
 /// wants.
 pub fn build_server_list(
@@ -270,12 +258,9 @@ pub fn build_server_list(
                 gs.status
             };
             ServerEntry {
-                // NOTE(java-quirk): `writeByte(id)` keeps the low 8 bits.
                 server_id: gs.id as u8,
                 ip: entry_ip(gs.server_address(client.ip)),
                 port: gs.port,
-                // NOTE(java-quirk): `_ageLimit = 0`; the age limit a game server reports is
-                // never shown.
                 age_limit: 0,
                 // `GameServerInfo.IS_PVP` is a constant `true`.
                 pvp: true,
@@ -334,7 +319,6 @@ pub enum ServerLogin {
     Allowed { remember: bool },
 }
 
-// Java: LoginController.isLoginPossible (without the database write)
 pub fn check_server_login(
     gs: &dyn GsView,
     access_level: i32,
@@ -480,7 +464,6 @@ mod tests {
 
     #[test]
     fn a_host_name_is_resolved_like_java_get_by_name() {
-        // Java: `InetAddress.getByName("localhost")` is the loopback address (IPv4 first).
         assert_eq!(entry_ip(Some("localhost")), [127, 0, 0, 1]);
         assert_eq!(entry_ip(Some("203.0.113.9")), [203, 0, 113, 9]);
         assert_eq!(resolve_host("localhost"), Some([127, 0, 0, 1]));

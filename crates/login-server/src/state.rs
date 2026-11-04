@@ -1,8 +1,4 @@
 //! `LoginState`: everything the login server shares between its tasks.
-// Java: org/l2jmobius/loginserver/controller/LoginController.java (the singleton's fields)
-// Java: org/l2jmobius/loginserver/data/GameServerTable.java
-// Java: org/l2jmobius/loginserver/LoginServer.java (`_loginStatus`, `shutdown`)
-//
 // REFERENCE PATTERN for server-process state (the game server's connection-layer state copies
 // it): one struct behind an `Arc`, built once at startup from already-loaded parts, read-only
 // pools as plain fields, mutable parts behind the smallest lock that fits (`DashMap` for the
@@ -35,7 +31,6 @@ pub(crate) fn lock<T>(mutex: &Mutex<T>) -> MutexGuard<'_, T> {
 }
 
 /// Status of the login server, and of a game server as it reports it (`ServerStatus`).
-// Java: org/l2jmobius/loginserver/network/gameserverpackets/receive/ServerStatus.java
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ServerStatus {
     Auto = 0,
@@ -70,7 +65,6 @@ impl ServerStatus {
 
 /// Why and how the process should end. The exit code is what the start scripts and the
 /// supervisor look at.
-// Java: LoginServer.EXIT_CODE_*
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ExitReason {
     /// Normal shutdown, exit code 0.
@@ -118,7 +112,6 @@ impl ShutdownHandle {
 }
 
 /// One row of the registered game server table.
-// Java: GameServerTable.GameServerInfo. The operations on it (registration, going down, the
 // address lookup) are in `gs/table.rs`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GameServerInfo {
@@ -160,7 +153,6 @@ impl GameServerInfo {
 }
 
 /// Server names, registered game servers and the RSA-512 pairs of the game server links.
-// Java: GameServerTable
 pub struct GameServerTable {
     names: ServerNames,
     /// Locked only for short, synchronous updates (never across an `.await`). `gs/table.rs`
@@ -192,7 +184,6 @@ impl GameServerTable {
 
     /// Reads the `gameservers` table. Like Java, a database error is logged and leaves the
     /// table empty, and a row whose hexid cannot be parsed ends the loading there.
-    // Java: GameServerTable.loadRegisteredGameServers
     pub async fn load_registered(repository: &LoginRepository) -> BTreeMap<i32, GameServerInfo> {
         let mut registered = BTreeMap::new();
         match repository.game_servers().await {
@@ -331,7 +322,6 @@ impl LoginState {
         pairs.get(index).map(|pair| (index, pair))
     }
 
-    // Java: LoginServer.getStatus / setStatus
     pub fn status(&self) -> ServerStatus {
         ServerStatus::from_u8(self.status.load(Ordering::Relaxed))
     }
@@ -342,7 +332,6 @@ impl LoginState {
 
     /// Counts a failed login of `address`. At `LoginTryBeforeBan` failures the address is banned
     /// for `LoginBlockAfterBan` seconds and its counter starts again. True when it got banned.
-    // Java: LoginController.recordFailedLoginAttemp
     pub fn record_failed_login(&self, address: &str) -> bool {
         let attempts = {
             let mut failed = lock(&self.failed_logins);
@@ -353,8 +342,6 @@ impl LoginState {
         if attempts < self.config.login.login_try_before_ban {
             return false;
         }
-        // NOTE(java-quirk): `LOGIN_BLOCK_AFTER_BAN * 1000` is an int multiplication in Java and
-        // overflows (wraps) for block times above about 24 days.
         let block_ms = i64::from(self.config.login.login_block_after_ban.wrapping_mul(1000));
         self.bans.add(address, block_ms);
         // The counter starts again, so after the ban the client gets a fresh set of attempts.
@@ -363,7 +350,6 @@ impl LoginState {
         true
     }
 
-    // Java: LoginController.clearFailedLoginAttemps
     pub fn clear_failed_logins(&self, address: &str) {
         lock(&self.failed_logins).remove(address);
     }
@@ -375,7 +361,6 @@ impl LoginState {
 
     /// Periodic cleanup of clients that never finished logging in. Called every
     /// [`LOGIN_TIMEOUT`](crate::LOGIN_TIMEOUT).
-    // Java: LoginController.purge (scheduled in the constructor)
     pub fn purge(&self) {
         let timeout_ms = i64::try_from(crate::LOGIN_TIMEOUT.as_millis()).unwrap_or(i64::MAX);
         let removed = self.clients.purge(l2_util::time::now_millis(), timeout_ms);
@@ -384,7 +369,6 @@ impl LoginState {
         }
     }
 
-    // Java: LoginServer.shutdown(restart)
     pub fn request_shutdown(&self, restart: bool) {
         self.shutdown.request(restart);
     }

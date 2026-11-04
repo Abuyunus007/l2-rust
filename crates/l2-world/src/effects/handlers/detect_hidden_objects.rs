@@ -1,6 +1,5 @@
 //! The `DetectHiddenObjects` effect: a stealth door shows its other mesh and becomes targetable when
 //! its open type is not zero.
-// Java: dist/game/data/scripts/handlers/skill/effects/DetectHiddenObjects.java
 
 use l2_data::skill::EffectTemplate;
 

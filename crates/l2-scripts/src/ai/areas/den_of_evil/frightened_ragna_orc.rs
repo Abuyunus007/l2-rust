@@ -1,5 +1,4 @@
 //! The Frightened Ragna Orc begs for its life and promises adena it rarely pays.
-// Java: dist/game/data/scripts/ai/areas/DenOfEvil/FrightenedRagnaOrc.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

@@ -1,6 +1,4 @@
 //! Quest 267: Wrath of Verdure (Treant Bremec in the Elven Village hands out the goblin club quest).
-// Java: dist/game/data/scripts/quests/Q00267_WrathOfVerdure/Q00267_WrathOfVerdure.java
-//
 // Pattern: a collect-and-turn-in quest with a drop chance (`docs/design/scripts.md`, "Quest
 // patterns"): every Goblin Raider drops a goblin club half of the time; the NPC pays the leaves
 // for the clubs (and adena at 10 clubs or more) and the quest repeats.

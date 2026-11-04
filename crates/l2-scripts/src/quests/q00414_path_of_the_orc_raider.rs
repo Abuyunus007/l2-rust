@@ -1,6 +1,4 @@
 //! Quest 414: Path of the Orc Raider (Prefect Karukia, Prefect Kasman and Prefect Tazeer).
-// Java: dist/game/data/scripts/quests/Q00414_PathOfTheOrcRaider/Q00414_PathOfTheOrcRaider.java
-//
 // Pattern: a kill chain where the green blood drops summon the Kuruka ratman leader (a spawn at
 // the goblin's place that attacks the killer), the tooth count sets cond 2, and two ways lead to
 // the reward: Kasman (betrayer heads) or Tazeer (the Timora orc head), with the memo state as

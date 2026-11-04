@@ -1,6 +1,4 @@
 //! Quest 10286: Reunion with Sirra (Rafforty in the Gludio area, Jinia, Sirra in the Jinia guild hideout).
-// Java: dist/game/data/scripts/quests/Q10286_ReunionWithSirra/Q10286_ReunionWithSirra.java
-//
 // Pattern: a memo-state quest (`docs/design/scripts.md`): the memo state is the step (1 = the
 // hideout, 2 = back from it, 10 = the last step, set by the Ice Queen's castle instance script),
 // `ex` is the check inside the hideout (1 = Sirra was spawned, 2 = Sirra gave the cores). Sirra
@@ -98,7 +96,6 @@ impl Script for Q10286ReunionWithSirra {
                 if qs.is_memo_state(ctx, 1) && qs.get_int(ctx, "ex") == 2 {
                     qs.unset(ctx, "ex");
                     qs.set_memo_state(ctx, 2);
-                    // Java: `InstanceManager.getPlayerWorld(player).removeAllowed(player)` then
                     // `setInstanceId(0)`. The hideout's world is the instance script's.
                     if let Some(id) = ctx.world().player_instance_world(player).map(|w| w.instance_id)
                         && let Some(world) = ctx.world_mut().instance_world_mut(id)
@@ -198,8 +195,6 @@ impl Script for Q10286ReunionWithSirra {
                     }
                 }
                 JINIA2 => {
-                    // NOTE(java-quirk): memo state 10 is set by the Ice Queen's castle instance
-                    // script (`IceQueensCastleBattle`), not by this quest.
                     if qs.is_memo_state(ctx, 10) {
                         ctx.add_exp_and_sp(player, 2_152_200, 181_070);
                         qs.exit_quest(ctx, false, true);

@@ -1,10 +1,6 @@
 //! The GM flags of the admin page: `//gmliston`, `//gmlistoff` (the GM list that `/gmlist`
 //! shows), `//silence` (refuse private messages), `//diet` (no weight penalty) and `//tradeoff`
 //! (refuse trades), each with the code that reads the flag.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminAdmin.java
-// Java: data/xml/AdminData.java (the GM list), network/clientpackets/RequestGmList.java
-// Java: entity/actor/Player.java (setSilenceMode, isSilenceMode, setDietMode, getWeightPenalty)
-//
 // # Where the flags are read
 // - silence: the whisper channel (`chat.rs`) answers "not online" for a receiver who is silent,
 //   `EtcStatusUpdate` shows the chat block icon.
@@ -40,8 +36,6 @@ pub struct GmFlags {
     /// Java `_dietMode`.
     pub diet: bool,
     /// Java `PlayerAppearance._nameColor` after `//setcolor`: `None` is the colour of the access
-    /// level. NOTE(java-quirk): Java keeps the name colour in no table (the `characters` table has
-    /// no such column), so a changed colour lasts until the character leaves the world.
     pub name_color: Option<i32>,
     /// Java `GameClient._trace`: the five hops the client sent with `EnterWorld`.
     pub trace: Option<[[u8; 4]; 5]>,
@@ -116,9 +110,6 @@ fn admin_silence(world: &mut World, gm: ObjectId, _command: &str) -> Outcome {
 }
 
 fn admin_diet(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
-    // NOTE(java-quirk): Java reads the second word, and only when it is not "on" reads a third
-    // one and compares that with "off". `//diet off` has no third word, so the exception makes
-    // it a toggle, like a bare `//diet`.
     let mut st = Tokens::new(command);
     st.next_token();
     let explicit = match st.next_token() {

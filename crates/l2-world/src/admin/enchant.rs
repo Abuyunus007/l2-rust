@@ -1,7 +1,5 @@
 //! `//enchant`: the page that sets the enchant level of the items a character wears, and the
 //! `//seteh` .. `//setbe` commands behind its buttons.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminEnchant.java
-//
 // # Left out
 // - The element buttons of the page (`admin_setlh` and the like) belong to `AdminElement`, not to
 //   this handler; they are not registered here, so they answer "does not exist".

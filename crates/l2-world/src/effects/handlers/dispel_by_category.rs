@@ -1,6 +1,5 @@
 //! The `DispelByCategory` effect: takes buffs (`slot` "buff") or debuffs (`slot` "debuff") off
 //! the creature, each with a chance that depends on `rate`, at most `max` of them.
-// Java: dist/game/data/scripts/handlers/skill/effects/DispelByCategory.java
 
 use l2_data::skill::EffectTemplate;
 

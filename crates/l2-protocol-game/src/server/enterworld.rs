@@ -18,7 +18,6 @@ fn read_count(r: &mut PacketReader, field: &'static str) -> Result<usize, Packet
     usize::try_from(count).map_err(|_| PacketError::invalid(field, format!("negative: {count}")))
 }
 
-// Java: gameserver/network/serverpackets/SkillList.java
 /// One skill of [`SkillList`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SkillListEntry {
@@ -29,7 +28,6 @@ pub struct SkillListEntry {
     pub enchanted: bool,
 }
 
-// Java: gameserver/network/serverpackets/SkillList.java
 /// The skills the character knows. `passive` is written as an int, `disabled` and `enchanted`
 /// as bytes (Java `writeInt(boolean)` / `writeByte(boolean)`).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -74,7 +72,6 @@ impl Decode for SkillList {
     }
 }
 
-// Java: gameserver/network/serverpackets/ShortcutInit.java
 /// One shortcut of [`ShortcutInit`]. `slot` is the wire slot: Java writes
 /// `slot + page * 12`, so the caller passes that sum.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -118,16 +115,15 @@ impl ShortcutEntry {
                 shared_reuse_group,
             } => {
                 w.i32(Self::TYPE_ITEM).i32(slot);
-                // Java: id, constant 1, shared reuse group, two zero ints, two zero shorts.
                 w.i32(id).i32(1).i32(shared_reuse_group).i32(0).i32(0);
                 w.u16(0).u16(0);
             }
             Self::Skill { slot, id, level } => {
                 w.i32(Self::TYPE_SKILL).i32(slot);
-                w.i32(id).i32(level).u8(0).i32(1); // Java: "C5" zero byte, "C6" constant 1
+                w.i32(id).i32(level).u8(0).i32(1);
             }
             Self::Other { kind, slot, id } => {
-                w.i32(kind as i32).i32(slot).i32(id).i32(1); // Java: "C6" constant 1
+                w.i32(kind as i32).i32(slot).i32(id).i32(1);
             }
         }
     }
@@ -205,7 +201,6 @@ impl Decode for ShortcutInit {
     }
 }
 
-// Java: gameserver/network/serverpackets/ShortcutRegister.java
 /// A shortcut was put on the bar (`SHORT_CUT_REGISTER`). `RequestShortcutReg` answers with it, and
 /// `Shortcuts.updateShortcuts` sends it for every skill shortcut when the skill's level changes.
 ///
@@ -257,7 +252,6 @@ impl Encode for ShortcutRegister {
                 shared_reuse_group,
             } => {
                 w.i32(ShortcutEntry::TYPE_ITEM).i32(slot);
-                // Java: id, character type, shared reuse group, two "unknown" zeros, the item
                 // augment id (0).
                 w.i32(id).i32(character_type).i32(shared_reuse_group);
                 w.i32(0).i32(0).i32(0);
@@ -269,7 +263,7 @@ impl Encode for ShortcutRegister {
                 character_type,
             } => {
                 w.i32(ShortcutEntry::TYPE_SKILL).i32(slot);
-                w.i32(id).i32(level).u8(0).i32(character_type); // Java: "C5" zero byte
+                w.i32(id).i32(level).u8(0).i32(character_type);
             }
             Self::Other {
                 kind,
@@ -334,7 +328,6 @@ impl Decode for ShortcutRegister {
     }
 }
 
-// Java: gameserver/network/serverpackets/QuestList.java
 /// One quest of [`QuestList`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct QuestListEntry {
@@ -344,7 +337,6 @@ pub struct QuestListEntry {
     pub status: i32,
 }
 
-// Java: gameserver/network/serverpackets/QuestList.java
 /// The quest journal. Java ends the packet with 128 zero bytes, which this packet writes too.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct QuestList {
@@ -383,7 +375,6 @@ impl Decode for QuestList {
     }
 }
 
-// Java: gameserver/network/serverpackets/HennaInfo.java
 /// The dye (henna) summary of the character.
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct HennaInfo {
@@ -417,7 +408,7 @@ impl Encode for HennaInfo {
         w.i32(Self::SLOTS);
         w.i32(self.dye_ids.len() as i32);
         for dye_id in &self.dye_ids {
-            w.i32(*dye_id).i32(1); // Java: constant 1 after each dye id
+            w.i32(*dye_id).i32(1);
         }
     }
 }
@@ -444,7 +435,6 @@ impl Decode for HennaInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/FriendList.java (one `FriendInfo`)
 /// One friend of [`FriendList`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct FriendListEntry {
@@ -453,7 +443,6 @@ pub struct FriendListEntry {
     pub online: bool,
 }
 
-// Java: gameserver/network/serverpackets/FriendList.java
 /// The friend list. Java sends it as `L2_FRIEND_LIST` (`0x75`), not `FRIEND_LIST` (`0x58`).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct FriendList {
@@ -498,7 +487,6 @@ impl Decode for FriendList {
     }
 }
 
-// Java: gameserver/network/serverpackets/EtcStatusUpdate.java
 /// The status icons of the character (weight, dangers, penalties, charges).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct EtcStatusUpdate {
@@ -506,7 +494,6 @@ pub struct EtcStatusUpdate {
     pub charges: i32,
     /// Weight penalty level, 0 to 4.
     pub weight_penalty: i32,
-    /// Java: refusing messages, chat banned or silenced.
     pub chat_blocked: bool,
     /// The player stands in a danger area.
     pub danger_area: bool,
@@ -554,7 +541,6 @@ impl Decode for EtcStatusUpdate {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExStorageMaxCount.java
 /// The slot limits of the storages (`EX_STORAGE_MAX_COUNT`). The values come from the player
 /// and [`PlayerConfig`] in Java; the caller passes them in.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
@@ -606,7 +592,6 @@ impl Decode for ExStorageMaxCount {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExBasicActionList.java
 /// The action bar actions (`EX_BASIC_ACTION_LIST`).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ExBasicActionList {
@@ -645,7 +630,6 @@ impl Decode for ExBasicActionList {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExVoteSystemInfo.java
 /// Recommendations and the Nevit hourglass bonus (`EX_VOTE_SYSTEM_INFO`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct ExVoteSystemInfo {
@@ -695,7 +679,6 @@ pub struct TeleportBookmark {
     pub tag: String,
 }
 
-// Java: gameserver/network/serverpackets/ExGetBookMarkInfoPacket.java
 /// The teleport bookmark list (`EX_GET_BOOKMARK_INFO`).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ExGetBookMarkInfoPacket {
@@ -711,7 +694,7 @@ impl ExGetBookMarkInfoPacket {
 impl Encode for ExGetBookMarkInfoPacket {
     fn encode(&self, w: &mut PacketWriter) {
         write_opcode(w, Self::OPCODE);
-        w.i32(0); // Java: "Dummy"
+        w.i32(0);
         w.i32(self.slot).i32(self.bookmarks.len() as i32);
         for bookmark in &self.bookmarks {
             w.i32(bookmark.id)
@@ -746,7 +729,6 @@ impl Decode for ExGetBookMarkInfoPacket {
     }
 }
 
-// Java: gameserver/network/serverpackets/ValidateLocation.java
 /// Tells the client where the server thinks the character stands (`VALIDATE_LOCATION`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct ValidateLocation {
@@ -808,7 +790,6 @@ pub fn remaining_seconds(remaining_ms: i64) -> i32 {
     ((remaining_ms as i32) / 1000).max(1)
 }
 
-// Java: gameserver/network/serverpackets/SkillCoolTime.java
 /// The skills still in their reuse delay (`SKILL_COOL_TIME`). The caller leaves out the ones
 /// that already passed (Java `hasNotPassed()`).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -849,7 +830,6 @@ impl Decode for SkillCoolTime {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExUISetting.java
 /// The stored UI key mapping (`EX_UI_SETTING`). Java reads it from a player variable; empty
 /// bytes mean "nothing stored" (Java writes a length of 0 then).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
@@ -895,7 +875,6 @@ pub const BOTTOM_CENTER: i32 = 7;
 /// Screen position: bottom right.
 pub const BOTTOM_RIGHT: i32 = 8;
 
-// Java: gameserver/network/serverpackets/ExShowScreenMessage.java
 /// A message in the middle of the screen (`EX_SHOW_SCREEN_MESSAGE`).
 ///
 /// The constructors cover the Java constructors EnterWorld uses. `npc_string_id` `-1` and
@@ -984,9 +963,6 @@ impl ExShowScreenMessage {
     }
 
     /// Java `ExShowScreenMessage(SystemMessageId, int position, int time, String... params)`.
-    ///
-    /// NOTE(java-quirk): Java keeps the parameters but its `writeImpl` only writes them when
-    /// there is an NPC string, so they never reach the client. They are kept here as well.
     pub fn system_message(message: SystemMessageId, position: i32, time: i32, params: &[&str]) -> Self {
         Self {
             sys_message_id: message.id(),

@@ -1,9 +1,4 @@
 //! `SwampZone` and `DamageZone`: the castle trap zones the flame towers switch on (M7-FU-03).
-// Java: entity/zone/type/{SwampZone,DamageZone}.java
-// Java: entity/actor/stat/PlayableStat.java (getRunSpeed, getWalkSpeed: the swamp's move bonus)
-// Java: entity/actor/instance/FlameTower.java (enableZones), mechanics/siege/Castle.java
-//       (getTrapUpgradeLevel)
-//
 // # How the trap level reaches the zones
 // `castle_trap.xml` zones start disabled (`default_enabled = false`). A flame tower of upgrade level
 // `n` switches its first `2 * n` zones on when the siege starts (`siege/npcs.rs`:
@@ -14,8 +9,6 @@
 // # Where this differs from Java
 // - NOTE: only players are tracked by the zones here (NPC zones are inert, `zones.rs`), so a
 //   `DamageZone` hurts players only, which is what Java does too (`character.isPlayer()`).
-// - NOTE(java-quirk): `ThreadPool.scheduleAtFixedRate(.., initialDelay, reuse)` takes milliseconds
-//   (10 ms and 5000 ms by default); the world runs the first pass on the next 50 ms tick.
 
 use l2_data::Zone;
 use l2_data::stats::Stat;
@@ -259,7 +252,6 @@ impl World {
             return;
         }
         let p = DamageParams::of(&zone);
-        // NOTE(java-quirk): a disabled zone keeps its task and only skips the pass.
         if !self.trap_zone_is_on(&zone) {
             self.reschedule_damage_zone(zone_id, p);
             return;

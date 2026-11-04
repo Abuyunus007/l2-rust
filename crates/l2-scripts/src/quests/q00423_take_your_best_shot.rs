@@ -1,6 +1,4 @@
 //! Quest 423: Take Your Best Shot (Johnny and Batracos at the Ugoros gate, Tanta Guards).
-// Java: dist/game/data/scripts/quests/Q00423_TakeYourBestShot/Q00423_TakeYourBestShot.java
-//
 // Pattern: a one-kill quest (`on_kill` moves to cond 2) with a first-talk page of the start NPC
 // (`add_first_talk_id`) that depends on the position of the NPC.
 

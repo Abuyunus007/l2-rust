@@ -1,6 +1,4 @@
 //! Master of Enchanting: Master Yogi sells the staff and the scrolls and pays for the enchant level.
-// Java: dist/game/data/scripts/events/MasterOfEnchanting/MasterOfEnchanting.java
-// Java: dist/game/data/scripts/events/MasterOfEnchanting/config.xml
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
@@ -135,14 +133,9 @@ impl Script for MasterOfEnchanting {
                 htmltext = Some("32599-staffcant.htm".to_owned());
             }
         } else if event.eq_ignore_ascii_case("buy_scroll_24") {
-            // NOTE(java-quirk): `player.getCreateDate().after(getStartDate())` is a `Calendar`
-            // compared with a `Date`: `Calendar.after` answers false for anything that is not a
-            // `Calendar`, so "32599-birth.htm" is never shown.
             let value = ctx
                 .player_variable(player, "MasterOfEnchanting")
                 .unwrap_or_default();
-            // NOTE(java-quirk): `Long.parseLong` throws on a value that is not a number; it is
-            // read as no reuse here.
             let reuse: i64 = if value.is_empty() {
                 0
             } else {
@@ -158,7 +151,6 @@ impl Script for MasterOfEnchanting {
                 }
             } else {
                 let remaining_time = (reuse - cur_time) / 1000;
-                // NOTE(java-quirk): `(int) remainingTime / 3600` casts first, then divides.
                 let hours = remaining_time as i32 / 3600;
                 let minutes = (remaining_time as i32 % 3600) / 60;
                 if hours > 0 {

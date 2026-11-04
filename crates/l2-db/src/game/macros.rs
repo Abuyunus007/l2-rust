@@ -1,7 +1,4 @@
 //! The `character_macroses` table: the macros of a character.
-// Java: org/l2jmobius/gameserver/entity/actor/holders/player/MacroList.java (registerMacroInDb,
-// Java: deleteMacroFromDb)
-//
 // Same layout as characters.rs: verbatim SQL, one method per statement. Only the writes of
 // character creation exist so far (`InitialShortcutData.registerAllShortcuts` registers the
 // macro presets of the shortcut bar).
@@ -9,13 +6,10 @@
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: MacroList.registerMacroInDb
 const INSERT_MACRO: &str =
     "INSERT INTO character_macroses (charId,id,icon,name,descr,acronym,commands) values(?,?,?,?,?,?,?)";
-// Java: MacroList.restoreMe
 const SELECT_MACROS: &str =
     "SELECT charId, id, icon, name, descr, acronym, commands FROM character_macroses WHERE charId=?";
-// Java: MacroList.deleteMacroFromDb
 const DELETE_MACRO: &str = "DELETE FROM character_macroses WHERE charId=? AND id=?";
 
 /// One macro to store, the values of `INSERT_MACRO` after the character id.
@@ -68,7 +62,6 @@ impl MacroRepository {
 
     /// Stores a macro. Fails on a duplicate `(charId, id)` (primary key), like Java, which
     /// deletes the old row first when it replaces a macro.
-    // Java: MacroList.registerMacroInDb
     pub async fn insert_macro(&self, char_id: i32, m: &NewMacro) -> Result<()> {
         sqlx::query(INSERT_MACRO)
             .bind(char_id)
@@ -85,7 +78,6 @@ impl MacroRepository {
 
     /// The macros of the character, in primary key order (Java does not order the select; the
     /// `LinkedHashMap` it fills keeps whatever order the server returns).
-    // Java: MacroList.restoreMe
     pub async fn macros_of(&self, char_id: i32) -> Result<Vec<MacroRow>> {
         let rows = sqlx::query_as::<_, MacroRow>(SELECT_MACROS)
             .bind(char_id)
@@ -95,7 +87,6 @@ impl MacroRepository {
     }
 
     /// Removes one macro of the character.
-    // Java: MacroList.deleteMacroFromDb
     pub async fn delete_macro(&self, char_id: i32, id: i32) -> Result<()> {
         sqlx::query(DELETE_MACRO)
             .bind(char_id)

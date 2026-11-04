@@ -1,6 +1,4 @@
 //! Quest 458: Perfect Form (Kelleyia; feed the full grown beasts and beat them with overhits).
-// Java: dist/game/data/scripts/quests/Q00458_PerfectForm/Q00458_PerfectForm.java
-//
 // Pattern: a kill log per monster (a variable per beast, up to 10 each), the overhit counts of the
 // kills in the quest variables, and result pages whose numbers come from those variables
 // (`getHtm` with `<?number?>` replaced). The reward is a daily one.
@@ -135,8 +133,6 @@ impl Script for Q00458PerfectForm {
                         let rnd = ctx.get_random(ICARUS_WEAPON_PIECES.len() as i32);
                         ctx.reward_items(player, ICARUS_WEAPON_PIECES[rnd as usize], 2);
 
-                        // NOTE(java-quirk): Java gives these two crates with `giveItems`, not
-                        // `rewardItems` ("not sure if this should use rewardItems"): no quest rates.
                         ctx.give_items(player, GOLDEN_SPICE_CRATE, 10);
                         ctx.give_items(player, CRYSTAL_SPICE_CRATE, 10);
                     }
@@ -190,8 +186,6 @@ impl Script for Q00458PerfectForm {
                 }
                 let consecutive = qs.get_int(ctx, "overhitsConsecutive");
                 qs.set(ctx, "overhitsConsecutive", &(consecutive + 1).to_string());
-                // NOTE(java-quirk): the retail rule that trims `overhitsConsecutive` is commented
-                // out in Java: the count keeps growing.
             } else if qs.get_int(ctx, "overhitsConsecutive") > 0 {
                 // Java avoids a database write when the variable is already zero.
                 qs.set(ctx, "overhitsConsecutive", "0");
@@ -217,7 +211,6 @@ impl Script for Q00458PerfectForm {
         let mut htmltext = ctx.get_no_quest_msg(player);
 
         let mut state = qs.state(ctx);
-        // Java: `case COMPLETED` falls through to `CREATED` once the quest is available again.
         if state == COMPLETED {
             if !qs.is_now_available(ctx) {
                 return Some("32768-18.htm".to_owned());

@@ -1,6 +1,5 @@
 //! Armor set bonuses: the pieces that make a set, its set skills and its six stat bonuses.
 //!
-//! Java: `gameserver/data/xml/ArmorSetData.java` and `gameserver/data/holders/ArmorSet.java`.
 //! Data: `data/stats/armorsets/*.xml` (`xsd/armorSets.xsd`). Only that folder is read, not its
 //! subfolders (Java `parseDatapackDirectory(..., false)`).
 //!
@@ -71,10 +70,6 @@ impl ArmorSets {
 
     /// Loads every `.xml` file directly inside `<root>/data/stats/armorsets` and logs Java's count
     /// line (`ArmorSetData: Loaded N armor sets.`).
-    ///
-    /// NOTE(java-quirk): Java sizes its chest-id array with `Collections.max` of the keys, which
-    /// throws on an empty map, so Java cannot start without at least one armor set. Here an empty
-    /// table is loaded instead (the datapack loads with no armor sets, nothing crashes).
     pub fn load(root: &Path) -> Self {
         let mut table = Self::default();
         load_dir(
@@ -180,7 +175,6 @@ struct RawSet {
 
 impl RawSet {
     fn into_set(self) -> ArmorSet {
-        // Java: a set without a `chest` element keeps chest id 0.
         let last = |values: &[RawValue]| values.last().map_or(0, |v| v.val);
         ArmorSet {
             chest_id: self.chest.last().map_or(0, |c| c.id),

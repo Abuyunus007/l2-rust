@@ -1,6 +1,5 @@
 //! `//pccafepoints <set|increase|decrease|rewardOnline> <points> [range]`: the PC cafe points of the
 //! targeted player (the GM when there is no target), and the menu `pccafe.htm` that shows them.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminPcCafePoints.java
 
 use l2_protocol_game::server::ExPcCafePointInfo;
 use l2_util::ObjectId;
@@ -43,7 +42,6 @@ fn admin_pccafepoints(world: &mut World, gm: ObjectId, command: &str) -> Outcome
     if words.len() > 1 {
         let action = words[1];
         let target = target_or_gm(world, gm);
-        // Java: `if ((target == null) || !st.hasMoreTokens()) return false;`
         let Some(value_text) = words.get(2) else {
             return Ok(());
         };
@@ -108,7 +106,6 @@ fn admin_pccafepoints(world: &mut World, gm: ObjectId, command: &str) -> Outcome
                 world.send(target, &ExPcCafePointInfo::new(now, -value, 0));
             }
             "rewardOnline" => {
-                // Java: an unparsable range is 0 (the whole server).
                 let range = words.get(3).and_then(|w| parse_int(w).ok()).unwrap_or(0);
                 if range <= 0 {
                     let players: Vec<ObjectId> = world.players.keys().copied().collect();
@@ -149,7 +146,6 @@ fn clamp_increase(points: i32, value: i32, max: i32) -> i32 {
 
 /// Java `AdminPcCafePoints.increaseForAll`: each player whose points are not already at the int
 /// maximum gets `value` more. Returns how many did.
-// NOTE(java-quirk): Java caps this at `Integer.MAX_VALUE`, not at the configured maximum.
 fn increase_for_all(world: &mut World, players: &[ObjectId], value: i32) -> usize {
     let mut counter = 0;
     for player in players {

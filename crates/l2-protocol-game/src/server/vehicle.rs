@@ -8,7 +8,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::{read_count, write_opcode};
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/VehicleInfo.java
 server_packet!(
     /// A boat's position and heading (`VEHICLE_INFO`).
     VehicleInfo,
@@ -21,7 +20,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/VehicleDeparture.java
 server_packet!(
     /// A boat starts to move to its destination (`VEHICLE_DEPARTURE`). Java writes the speeds
     /// before the destination.
@@ -37,7 +35,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/VehicleStarted.java
 server_packet!(
     /// The boat's control state changed (`VEHICLE_START`).
     VehicleStarted,
@@ -48,7 +45,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/VehicleCheckLocation.java
 server_packet!(
     /// The boat's position, for the client to check (`VEHICLE_CHECK_LOCATION`).
     VehicleCheckLocation,
@@ -61,7 +57,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/GetOnVehicle.java
 server_packet!(
     /// A character boards a boat (`GET_ON_VEHICLE`).
     GetOnVehicle,
@@ -74,7 +69,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/GetOffVehicle.java
 server_packet!(
     /// A character leaves a boat (`GET_OFF_VEHICLE`).
     GetOffVehicle,
@@ -87,7 +81,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/MoveToLocationInVehicle.java
 server_packet!(
     /// A character walks to a place inside a boat (`MOVE_TO_LOCATION_IN_VEHICLE`).
     MoveToLocationInVehicle,
@@ -103,7 +96,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/StopMoveInVehicle.java
 server_packet!(
     /// A character stops inside a boat (`STOP_MOVE_IN_VEHICLE`).
     StopMoveInVehicle,
@@ -117,7 +109,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/ValidateLocationInVehicle.java
 server_packet!(
     /// The position of a character inside a boat, to validate it (`VALIDATE_LOCATION_IN_VEHICLE`).
     ValidateLocationInVehicle,
@@ -131,7 +122,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/ExAirShipInfo.java
 /// An air ship's state for the window (`EX_AIRSHIP_INFO`).
 ///
 /// Java writes the helm and captain positions only when there is a helm (`helm_object_id != 0`):
@@ -212,7 +202,6 @@ impl Decode for ExAirShipInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExAirShipStopMove.java
 server_packet!(
     /// A passenger stopped moving on the air ship (`EX_STOP_MOVE_AIRSHIP`, the player layout).
     ExAirShipStopMove,
@@ -225,7 +214,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/ExStopMoveAirShip.java
 server_packet!(
     /// The air ship itself stopped moving (`EX_STOP_MOVE_AIRSHIP`, the ship layout).
     ExStopMoveAirShip,
@@ -251,7 +239,6 @@ pub struct AirShipTeleport {
     pub z: i32,
 }
 
-// Java: gameserver/network/serverpackets/ExAirShipTeleportList.java
 /// The destinations of an air ship at a dock (`EX_AIRSHIP_TELEPORT_LIST`). An empty list is
 /// Java's `null` path list.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -296,7 +283,6 @@ impl Decode for ExAirShipTeleportList {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExStopMoveInAirShip.java
 server_packet!(
     /// A passenger stopped inside the air ship (`EX_STOP_MOVE_IN_AIRSHIP`).
     ExStopMoveInAirShip,
@@ -310,7 +296,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/ExValidateLocationInAirShip.java
 server_packet!(
     /// The position of a passenger inside the air ship, to validate it
     /// (`EX_VALIDATE_LOCATION_IN_AIRSHIP`).
@@ -325,7 +310,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/ExGetOnAirShip.java
 server_packet!(
     /// A passenger boards the air ship (`EX_GET_ON_AIRSHIP`).
     ExGetOnAirShip,
@@ -338,7 +322,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/ExGetOffAirShip.java
 server_packet!(
     /// A passenger leaves the air ship (`EX_GET_OFF_AIRSHIP`).
     ExGetOffAirShip,
@@ -351,7 +334,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/ExMoveToLocationAirShip.java
 server_packet!(
     /// The air ship moves to a destination (`EX_MOVE_TO_LOCATION_AIRSHIP`).
     ExMoveToLocationAirShip,
@@ -366,7 +348,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/ExMoveToLocationInAirShip.java
 server_packet!(
     /// A passenger walks to a place inside the air ship (`EX_MOVE_TO_LOCATION_IN_AIRSHIP`).
     ExMoveToLocationInAirShip,

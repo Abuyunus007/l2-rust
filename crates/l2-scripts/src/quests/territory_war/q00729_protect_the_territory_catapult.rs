@@ -1,5 +1,4 @@
 //! Quest 729: Protect the Territory Catapult!
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/Q00729_ProtectTheTerritoryCatapult.java
 
 use super::territory_war_super_class::{TerritoryWarData, territory_war_quest};
 

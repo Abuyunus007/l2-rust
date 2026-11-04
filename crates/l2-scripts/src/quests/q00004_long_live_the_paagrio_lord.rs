@@ -1,6 +1,4 @@
 //! Quest 4: Long Live the Pa'agrio Lord (Nakusin in the Orc Village sends an orc to six NPCs for six items).
-// Java: dist/game/data/scripts/quests/Q00004_LongLiveThePaagrioLord/Q00004_LongLiveThePaagrioLord.java
-//
 // Pattern: a collection from several NPCs (`docs/design/scripts.md`, "Quest patterns"): each NPC
 // gives its item once, and the quest moves to cond 2 when all six are in. The start NPC pays the
 // reward (one-time, with the Newbie Guide hook).

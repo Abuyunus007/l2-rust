@@ -3,7 +3,6 @@
 //! These only read the packet. Every check (distance, party, who can duel) is the world's job
 //! (`l2_world::duel`).
 
-// Java: gameserver/network/clientpackets/RequestDuelStart.java
 client_packet!(
     /// The player challenges another player (or that player's party) to a duel
     /// (`0xD0` 0x001B, `REQUEST_DUEL_START`).
@@ -16,7 +15,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestDuelAnswerStart.java
 client_packet!(
     /// The challenged player answers (`0xD0` 0x001C, `REQUEST_DUAL_ANSWER_START`: the opcode
     /// table spells it "DUAL", the Java class is `RequestDuelAnswerStart`).
@@ -31,7 +29,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestDuelSurrender.java
 client_unit_packet!(
     /// The player gives up the duel (`0xD0` 0x0045, `REQUEST_DUEL_SURRENDER`).
     RequestDuelSurrender,

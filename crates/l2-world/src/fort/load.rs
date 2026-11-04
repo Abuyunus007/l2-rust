@@ -1,11 +1,3 @@
-//! Loading the fortress siege data at startup, and reading it again on demand (D-50).
-// Java: mechanics/siege/Fort.java (the constructor: initNpcs, initSiegeNpcs, initNpcCommanders,
-//       spawnNpcCommanders, initSpecialEnvoys, spawnSpecialEnvoys)
-// Java: managers/FortManager.java (loadInstances: `getSiege().getSiegeGuardManager()
-//       .loadSiegeGuard()`)
-// Java: mechanics/siege/FortSiege.java (constructor: checkAutoTask, loadSiegeClan)
-// Java: managers/FortSiegeManager.java (load: the commander and flag lists)
-
 use tracing::info;
 
 use super::combat_flag::CombatFlag;
@@ -51,7 +43,6 @@ pub struct FortSiegeFortLoad {
     pub siege_clans: Vec<i32>,
 }
 
-/// Everything the game server read for the fortress sieges at startup (D-15: only reads, D-39).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct FortSiegeLoad {
     pub forts: Vec<FortSiegeFortLoad>,
@@ -143,9 +134,6 @@ impl World {
         info!("FortSiegeManager: {} fortress sieges.", forts.len());
     }
 
-    /// The rows of a fortress read again for its siege (D-50): the fortress, the registrations
-    /// and the blood oaths of the owner replace this world's copy; a registration this world
-    /// holds without a row stays.
     pub(crate) fn apply_fort_siege_rows(&mut self, rows: &FortSiegeRows) {
         let id = FortId(rows.fort.id);
         if self.fort(id).is_none() {

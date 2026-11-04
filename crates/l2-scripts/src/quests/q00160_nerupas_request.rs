@@ -1,6 +1,4 @@
 //! Quest 160: Nerupa's Request (an Elf carries a spider silk through four NPCs for a leaf).
-// Java: dist/game/data/scripts/quests/Q00160_NerupasRequest/Q00160_NerupasRequest.java
-//
 // Pattern: a delivery chain where each NPC swaps one quest item for the next (cond 2, 3, 4).
 
 use l2_util::ObjectId;

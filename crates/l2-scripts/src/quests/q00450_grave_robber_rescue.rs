@@ -1,6 +1,4 @@
 //! Quest 450: Grave Robber Rescue (Kanemika at the Seed of Infinity, the wounded grave robbers).
-// Java: dist/game/data/scripts/quests/Q00450_GraveRobberRescue/Q00450_GraveRobberRescue.java
-//
 // Pattern: a quest with a timer (`docs/design/scripts.md`, "Quest patterns"): a rescued robber
 // walks away, `start_quest_timer("despawn", 3000, npc, player)` and the `"despawn"` branch of
 // `on_event` deletes it (a timer is an event with no page). A robber that turns hostile is

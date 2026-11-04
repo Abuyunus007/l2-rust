@@ -1,7 +1,5 @@
 //! The quest lists of Java's `TerritoryWarSuperClassLoader`: which quest belongs to a territory,
 //! to a class, and the "Protect the ..." quests.
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/TerritoryWarSuperClassLoader.java
-//
 // Java fills three `HashMap`s in `main`; the quests are statics here, so the maps are lookups.
 
 use super::q00717_for_the_sake_of_the_territory_gludio;

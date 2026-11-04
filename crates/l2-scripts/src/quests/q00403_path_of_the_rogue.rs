@@ -1,6 +1,4 @@
 //! Quest 403: Path of the Rogue (Captain Bezique and Neti).
-// Java: dist/game/data/scripts/quests/Q00403_PathOfTheRogue/Q00403_PathOfTheRogue.java
-//
 // Pattern: a kill chain with the attack as the gate (`onAttack` sets the NPC's script value to 1
 // when the attacker holds the Netis' bow or dagger, see `docs/design/scripts.md`, "Quest
 // patterns"): spartoi bones from the undead, the horseshoe from Neti, then the four stolen items

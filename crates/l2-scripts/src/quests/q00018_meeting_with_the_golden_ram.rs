@@ -1,6 +1,4 @@
 //! Quest 18: Meeting with the Golden Ram (Donal and Daisy in the Town of Gludio, Abercrombie in the Gludin Village).
-// Java: dist/game/data/scripts/quests/Q00018_MeetingWithTheGoldenRam/Q00018_MeetingWithTheGoldenRam.java
-//
 // Pattern: a delivery chain (`docs/design/scripts.md`, "Quest patterns"): Donal starts it at
 // level 66, Daisy hands out the box (cond 2), and Abercrombie takes it for the reward. One-time:
 // `exit_quest(ctx, false, true)`.
@@ -49,8 +47,6 @@ impl Script for Q00018MeetingWithTheGoldenRam {
         _npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        // NOTE(java-quirk): without a quest state `onEvent` returns the event itself (not null),
-        // so the event's page is shown anyway.
         let Some(player) = player else {
             return Some(event.to_owned());
         };

@@ -72,7 +72,6 @@ pub struct Played {
 }
 
 pub async fn play<H: Harness>(h: &mut H) -> Played {
-    // ---- everybody enters: the lord's clan and castle come from the database (D-50, D-51) ----------
     let lord_enter = h.enter(Who::Lord).await;
     let gate = all::<StaticObjectInfo>(&lord_enter, "STATIC_OBJECT")
         .into_iter()
@@ -162,7 +161,6 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
         SystemMessageId::CastleOwningClansAreAutomaticallyRegisteredOnTheDefendingSide
     ));
 
-    // ---- the raider registers as an attacker: the registrations are read again first (D-50) -------
     h.act(Who::Raider, act::join_siege(GLUDIO, 1, 1)).await;
     let joined = h.collect_quiet(Who::Raider).await;
     let siege_info: SiegeInfo = all(&joined, "CASTLE_SIEGE_INFO").remove(0);
@@ -367,7 +365,6 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
     );
     let rows_end = h.rows().await;
 
-    // ---- the raider logs in again: the world reads his clan's residences again (D-50, D-51) ---------------------
     let raider = h.leave(Who::Raider).await;
     h.enter(Who::Raider).await;
     h.act(Who::Raider, act::all_castle_info()).await;
@@ -435,8 +432,6 @@ async fn a_gm_started_castle_siege_runs_in_a_bare_world() {
     assert_played(&played);
 }
 
-/// D-50: a registration is acted on only after the registrations were read again; a read that
-/// fails changes nothing and refuses it (the world never falls back to its memory).
 #[tokio::test]
 async fn a_failed_reread_refuses_the_registration_in_a_bare_world() {
     let mut world = BareWorld::start(&opts());

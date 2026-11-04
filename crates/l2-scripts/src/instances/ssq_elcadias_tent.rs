@@ -1,5 +1,4 @@
 //! Elcadia's Tent (instance 158), the Seven Signs quests 10292 to 10296.
-// Java: dist/game/data/scripts/instances/SSQElcadiasTent/SSQElcadiasTent.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, TeleportTarget};

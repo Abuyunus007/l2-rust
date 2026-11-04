@@ -1,8 +1,6 @@
 //! Quest 235: Mimir's Elixir (Ladd in the Gludin ... sends the characters of level 75 and up with
 //! the Star of Destiny through Joan, the chimera and the bloody guardian, and the Alchemists'
 //! Mixing Urn to the Mimir's Elixir).
-// Java: dist/game/data/scripts/quests/Q00235_MimirsElixir/Q00235_MimirsElixir.java
-//
 // Pattern: the step is the memo state (`memoState`, `set_memo_state`), the cond follows it. The
 // party drops are rolled on the NPC with `random_party_member_for_npc` and the member's
 // `checkPartyMember` (memo 3 or 6). The choice events of the urn are `bypass -h` links, see the
@@ -161,9 +159,6 @@ impl Script for Q00235MimirsElixir {
                     htmltext = Some(event.to_owned());
                 }
             }
-            // NOTE(java-quirk): the three choice events below come from `bypass -h <name>` links,
-            // which `RequestBypassToServer` hands to `BypassHandler` (no handler: "not handled"),
-            // so no link reaches them in Java either. The arms are kept as Java has them.
             "PURE_SILVER" => {
                 if qs.is_memo_state(ctx, 7) {
                     htmltext = Some(

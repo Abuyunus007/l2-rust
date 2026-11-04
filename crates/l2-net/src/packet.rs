@@ -2,12 +2,11 @@
 //!
 //! **Pattern for all packet structs** (login, link and ~700 game packets copy it):
 //! one plain struct per packet, `impl Encode` for packets we send, `impl Decode` for packets we
-//! receive, and a `// Java:` line naming the class it was ported from.
+//! receive.
 //!
 //! ```
 //! use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 //!
-//! // Java: loginserver/network/serverpackets/PlayOk.java
 //! #[derive(Debug, Clone, PartialEq, Eq)]
 //! pub struct PlayOk {
 //!     pub play_ok1: i32,

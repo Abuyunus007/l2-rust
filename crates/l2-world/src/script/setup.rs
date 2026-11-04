@@ -1,9 +1,5 @@
 //! Registration: the listeners a script asks for in its constructor, and the tables the world
 //! dispatches events through.
-// Java: mechanics/script/Quest.java (addStartNpc, addTalkId, addKillId, ..., registerQuestItems,
-//       setOnEnterWorld, addCondStart, registerListener)
-// Java: mechanics/events/{EventType,ListenerRegisterType,ListenersContainer,EventDispatcher}.java
-//
 // Java keeps the listeners on the NPC template, item template, zone or global container, each a
 // `PriorityBlockingQueue` ordered by priority. Every listener a `Quest` registers has priority
 // 0, and a priority queue keeps equal elements in insertion order, so Java's dispatch order is
@@ -56,10 +52,6 @@ pub enum EventKind {
     /// `ON_NPC_HATE` (`addNpcHateId`).
     NpcHate,
     /// `ON_NPC_HATE` through `addCanSeeMeId`.
-    ///
-    /// NOTE(java-quirk): Java's `addCanSeeMeId` registers an `ON_NPC_HATE` listener that answers
-    /// with `!onCanSeeMe(npc, player)`, not an `ON_NPC_CAN_BE_SEEN` one. It shares the
-    /// `NpcHate` table (and its order); this kind only marks which hook answers.
     NpcHateCanSeeMe,
     /// `ON_ITEM_TALK` (`addItemTalkId`), by item id.
     ItemTalk,

@@ -4,7 +4,6 @@
 //! These only read the packet. Every check (is the item valid, does the player have the
 //! gemstones) is the world's job (`l2_world::augment`).
 
-// Java: gameserver/network/clientpackets/RequestConfirmTargetItem.java
 client_packet!(
     /// The player put the item to augment into the window (`0xD0` 0x0026).
     RequestConfirmTargetItem,
@@ -13,7 +12,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestConfirmRefinerItem.java
 client_packet!(
     /// The player put the life stone into the window (`0xD0` 0x0027).
     RequestConfirmRefinerItem,
@@ -23,7 +21,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestConfirmGemStone.java
 client_packet!(
     /// The player put the gemstones into the window (`0xD0` 0x0028).
     RequestConfirmGemStone,
@@ -35,7 +32,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestRefine.java
 client_packet!(
     /// The player pressed "Augment" (`0xD0` 0x0041).
     RequestRefine,
@@ -47,7 +43,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestConfirmCancelItem.java
 client_packet!(
     /// The player put an augmented item into the removal window (`0xD0` 0x0042).
     RequestConfirmCancelItem,
@@ -56,7 +51,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestRefineCancel.java
 client_packet!(
     /// The player pressed "Remove augmentation" (`0xD0` 0x0043).
     RequestRefineCancel,

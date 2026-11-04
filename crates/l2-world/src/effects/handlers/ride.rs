@@ -1,5 +1,4 @@
 //! The `Ride` effect: an instant effect that mounts the player on the NPC `npcId`.
-// Java: dist/game/data/scripts/handlers/skill/effects/Ride.java
 
 use l2_data::skill::EffectTemplate;
 

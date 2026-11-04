@@ -1,5 +1,4 @@
 //! Nornil's Garden instance zone, template 11 (`Q00179_IntoTheLargeCavern`).
-// Java: dist/game/data/scripts/instances/NornilsGarden/NornilsGarden.java
 
 use std::collections::HashMap;
 
@@ -204,8 +203,6 @@ impl Script for NornilsGarden {
                 } else {
                     return Some(format!("{}-00.html", npc.id));
                 }
-                // NOTE(java-quirk): a right answer leaves `htmltext` at the event, so the player
-                // gets the text "check" as a chat message.
             }
         }
 

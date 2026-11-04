@@ -1,6 +1,5 @@
 //! Quest 660: Aiding the Floran Village (Maria or Alex hand it out; the monsters of the Floran
 //! area drop three kinds of items that Alex pays for or trades for scrolls and adena).
-// Java: dist/game/data/scripts/quests/Q00660_AidingTheFloranVillage/Q00660_AidingTheFloranVillage.java
 
 use l2_util::ObjectId;
 use l2_world::script::{CREATED, QuestSound, STARTED};
@@ -165,7 +164,6 @@ impl Script for Q00660AidingTheFloranVillage {
                     htmltext = Some("30291-11.html".to_owned());
                 } else {
                     trade_items(ctx, player, 100, counts);
-                    // NOTE(java-quirk): getRandom(99) > 50, one chance less than the others.
                     if ctx.get_random(99) > 50 {
                         ctx.give_items(player, SCROLL_ENCHANT_ARMOR_D_GRADE, 1);
                         ctx.give_adena(player, ADENA_REWARD_1, true);
@@ -234,7 +232,6 @@ impl Script for Q00660AidingTheFloranVillage {
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId, _is_summon: bool) {
         let qs = ctx.random_party_member_state(player, 2, 2, Some(npc));
         if qs.is_some() {
-            // NOTE(java-quirk): the item goes to the killer, not to the party member drawn.
             if let Some((_, item, chance)) = MONSTERS.iter().find(|m| m.0 == npc.id) {
                 ctx.give_item_randomly(player, Some(npc), *item, 1, 1, 0, *chance, true);
             } else {

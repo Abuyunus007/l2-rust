@@ -1,8 +1,6 @@
 //! Quest 242: Possessor of a Precious Soul 2 (Virgil sends a sub-class character through
 //! Kassandra, Ogmar and the Mysterious Knight to the Angel Corpse, Kalis and Matild, then to the
 //! unicorns, whose cornerstones need four Orbs of Binding from the Restrainers of Glory).
-// Java: dist/game/data/scripts/quests/Q00242_PossessorOfAPreciousSoul2/Q00242_PossessorOfAPreciousSoul2.java
-//
 // Pattern: a sub-class quest (`no_sub.html`), a per-quest variable that picks a random party
 // member (`awaitsDrops`), NPCs that die and cast, spawns made by timers.
 
@@ -78,7 +76,6 @@ impl Script for Q00242PossessorOfAPreciousSoul2 {
         let Some(st) = ctx.get_quest_state(player, false) else {
             return Some(ctx.get_no_quest_msg(player));
         };
-        // NOTE(java-quirk): the check also stops the unicorn timers of a player who left the sub class.
         if !ctx.is_sub_class_active(player) {
             return Some("no_sub.html".to_owned());
         }

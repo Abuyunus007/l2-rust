@@ -1,6 +1,5 @@
 //! The names and access levels the mail needs: Java `CharInfoTable.getIdByName`, `getNameById`
 //! and `getAccessLevelById`, answered from the online players first and the startup table after.
-// Java: data/sql/CharInfoTable.java
 
 use l2_util::ObjectId;
 

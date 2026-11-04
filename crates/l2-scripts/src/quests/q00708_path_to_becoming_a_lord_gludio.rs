@@ -1,7 +1,5 @@
 //! Quest 708: Path to Becoming a Lord - Gludio (Chamberlain Sayres, Pinter and Bathis, the
 //! Gludio castle lord).
-// Java: dist/game/data/scripts/quests/Q00708_PathToBecomingALordGludio/Q00708_PathToBecomingALordGludio.java
-//
 // Pattern: a lord quest with a confidant. The lord (the online leader of the castle's clan)
 // starts it, then asks a clan member to be the confidant: the member's talk with Sayres sets the
 // lord's `confidant` variable and moves the lord's cond (`isLordAvailable`: the lord is online,
@@ -103,7 +101,6 @@ impl Script for Q00708PathToBecomingALordGludio {
         player: Option<ObjectId>,
     ) -> Option<String> {
         let player = player?;
-        // Java: "Castle has no lord." is returned as a chat line, before anything else.
         if gludio_lord_clan(ctx).is_none() {
             return Some("Castle has no lord.".to_owned());
         }

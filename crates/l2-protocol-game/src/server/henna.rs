@@ -10,7 +10,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/HennaEquipList.java (one row)
 /// One dye of [`HennaEquipList`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct HennaEquipEntry {
@@ -25,15 +24,12 @@ pub struct HennaEquipEntry {
     pub allowed: bool,
 }
 
-// Java: gameserver/network/serverpackets/HennaEquipList.java
 /// The dyes the character can draw with the dye items it carries (`HENNA_EQUIP_LIST`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HennaEquipList {
     /// `Player.getAdena()`.
     pub adena: i64,
     /// The count Java writes: the size of the whole henna list of the class, not of `entries`.
-    // NOTE(java-quirk): Java writes `_hennaEquipList.size()` and then only the dyes the player has
-    // an item of, so the count is usually larger than the number of rows that follow.
     pub total: i32,
     pub entries: Vec<HennaEquipEntry>,
 }
@@ -84,7 +80,6 @@ impl Decode for HennaEquipList {
     }
 }
 
-// Java: gameserver/network/serverpackets/HennaRemoveList.java (one row)
 /// One worn dye of [`HennaRemoveList`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct HennaRemoveEntry {
@@ -96,14 +91,11 @@ pub struct HennaRemoveEntry {
     pub cancel_fee: i32,
 }
 
-// Java: gameserver/network/serverpackets/HennaRemoveList.java
 /// The dyes the character wears and can remove (`HENNA_UNEQUIP_LIST`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct HennaRemoveList {
     pub adena: i64,
     /// The count Java writes: `3 - getHennaEmptySlots()`.
-    // NOTE(java-quirk): `getHennaEmptySlots` is 0 for a class of level 0 and 2 minus the dyes for
-    // level 1, so this count is not the number of rows that follow.
     pub count: i32,
     pub entries: Vec<HennaRemoveEntry>,
 }
@@ -220,7 +212,6 @@ impl HennaPreview {
     }
 }
 
-// Java: gameserver/network/serverpackets/HennaItemDrawInfo.java
 /// The preview of drawing a dye: the stats with the dye added (`HENNA_ITEM_INFO`).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct HennaItemInfo(pub HennaPreview);
@@ -242,7 +233,6 @@ impl Decode for HennaItemInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/HennaItemRemoveInfo.java
 /// The preview of removing a dye: the stats with the dye taken off (`HENNA_UNEQUIP_INFO`).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct HennaItemRemoveInfo(pub HennaPreview);

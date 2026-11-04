@@ -244,8 +244,6 @@ fn enchant_levels_take_the_last_level_then_their_own_overrides() {
         assert_eq!((s.power, s.mp_consume), (power, mp), "level {level}");
         // `#power` of an enchant level reads the last plain level (entry 2 of 2).
         assert_eq!(s.hit_time, 20, "level {level}");
-        // NOTE(java-quirk): an element with `levelValues` but no `subLevel1Values` goes through
-        // parseElementValue in the enchant loop, which finds no text and sets nothing.
         assert_eq!(s.cast_range, -1, "level {level}");
         assert_eq!(s.name, "Ench");
     }
@@ -361,7 +359,6 @@ fn enchant_levels_use_their_own_lists_and_fall_back_per_kind() {
 
     // Route 2 defines nothing: everything comes from the plain list, read at the LAST plain level
     // (`#pAtk` entry 2), except `startEffects`.
-    // NOTE(java-quirk): the route 2 fallback loop has no `startEffects` branch.
     for level in [201, 202] {
         let s = t.get(30, level).unwrap();
         assert_eq!(effect_names(s, EffectScope::Passive), ["Buff"]);
@@ -374,7 +371,6 @@ fn enchant_levels_use_their_own_lists_and_fall_back_per_kind() {
 
 #[test]
 fn route_seven_guards_start_effects_with_the_channeling_flag() {
-    // NOTE(java-quirk): the route 7 fallback takes `startEffects` when `!foundChannelingEffects`.
     let xml = |extra: &str| {
         format!(
             r#"<skill id="31" levels="1" name="R7" enchantGroup7="1">
@@ -407,10 +403,6 @@ fn route_seven_guards_start_effects_with_the_channeling_flag() {
 
 #[test]
 fn conditions_inside_an_effects_list_only_count_without_leading_whitespace() {
-    // NOTE(java-quirk): `parseTemplate` tests `node.getFirstChild()` for `<conditions>`; in an
-    // indented file that is a whitespace text node, so the condition is neither the attach
-    // condition nor parsed by the loop (it has no case). Written back to back it is the attach
-    // condition of every effect and function of the list.
     let t = load(
         r#"<skill id="40" levels="1" name="Indented">
             <operateType>P</operateType>
@@ -479,7 +471,6 @@ fn effect_templates_hold_attributes_params_funcs_and_conditions() {
         assert_eq!(e.param("chance"), Some("10"));
         assert_eq!(e.param("mode"), Some(power));
         assert_eq!(e.param("rate"), Some(rate));
-        // NOTE(java-quirk): a leaf condition element under <effect> is also a parameter.
         assert_eq!(e.param("using"), Some(""));
         assert!(!e.params.contains_key("mul") && !e.params.contains_key("enchant"));
 

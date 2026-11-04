@@ -1,6 +1,5 @@
 //! Talent Show AI: the MC of Fantasy Isle opens a show every four hours, with the singers, the
 //! circus, three individuals and the show staff, all driven by chained quest timers.
-// Java: dist/game/data/scripts/ai/areas/FantasyIsle/TalentShow.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::{ChatType, PlaySound};
@@ -206,8 +205,6 @@ impl Script for TalentShow {
         let game_time = game_time_minutes(ctx.now_ms());
         let hours = (game_time / 60) % 24;
         let minutes = game_time % 60;
-        // NOTE(java-quirk): the differences are taken in game time but used as real
-        // milliseconds, and a negative difference becomes `24 - |difference|`.
         let mut hour_diff = 20 - hours;
         if hour_diff < 0 {
             hour_diff = 24 - hour_diff.abs();

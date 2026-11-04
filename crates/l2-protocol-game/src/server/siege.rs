@@ -71,8 +71,6 @@ fn read_clan_tail(r: &mut PacketReader, clan: &mut SiegeClan) -> Result<(), Pack
 /// Java writes the same header in both list packets: the residence id, 0, 1, 0, then the count
 /// twice.
 fn write_list_header(w: &mut PacketWriter, residence_id: i32, count: usize) {
-    // NOTE(java-quirk): the count is the number of siege clans, including the ones Java skips
-    // because `ClanTable` does not know them, so the list can hold fewer records than it says.
     w.i32(residence_id)
         .i32(0)
         .i32(1)
@@ -93,7 +91,6 @@ fn read_list_header(r: &mut PacketReader) -> Result<(i32, usize), PacketError> {
     Ok((residence_id, count))
 }
 
-// Java: gameserver/network/serverpackets/SiegeAttackerList.java
 /// The attackers of a castle or clan hall siege (`CASTLE_SIEGE_ATTACKER_LIST`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SiegeAttackerList {
@@ -180,7 +177,6 @@ pub struct SiegeDefender {
     pub state: DefenderState,
 }
 
-// Java: gameserver/network/serverpackets/SiegeDefenderList.java
 /// The defenders of a castle: the owner, the approved clans and the clans waiting for approval
 /// (`CASTLE_SIEGE_DEFENDER_LIST`).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -243,13 +239,11 @@ pub enum SiegeTime {
     Hours(Vec<i32>),
 }
 
-// Java: gameserver/network/serverpackets/SiegeInfo.java
 /// The siege window of a castle or a clan hall (`CASTLE_SIEGE_INFO`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SiegeInfo {
     /// The castle or clan hall id.
     pub residence_id: i32,
-    /// Java: the owner clan is the viewer's clan and the viewer is its leader.
     pub viewer_is_owner_leader: bool,
     /// The owner clan id (0 for none).
     pub owner_id: i32,
@@ -279,7 +273,6 @@ impl Encode for SiegeInfo {
                     .i32(owner.ally_id)
                     .string(&owner.ally_name);
             }
-            // NOTE(java-quirk): an owner id that names no clan writes no block (see the field).
             (true, None) => {}
             (false, _) => {
                 w.string("").string("").i32(0).string("");
@@ -356,7 +349,6 @@ pub struct CastleInfo {
     pub siege_date_secs: i32,
 }
 
-// Java: gameserver/network/serverpackets/ExShowCastleInfo.java
 /// The castle list for the castle window (`EX_SHOW_CASTLE_INFO`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExShowCastleInfo {

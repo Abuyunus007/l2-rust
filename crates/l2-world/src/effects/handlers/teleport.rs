@@ -1,6 +1,5 @@
 //! The `Teleport` effect: the creature is moved to the fixed point `x`, `y`, `z` of the skill (a
 //! random offset of `MaxOffsetOnTeleport` is added, as `teleToLocation(loc, true)` does).
-// Java: dist/game/data/scripts/handlers/skill/effects/Teleport.java
 
 use l2_data::skill::EffectTemplate;
 

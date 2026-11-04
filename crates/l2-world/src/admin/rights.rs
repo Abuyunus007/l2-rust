@@ -1,7 +1,4 @@
 //! Who may run which admin command.
-// Java: data/xml/AdminData.java (hasAccess, requireConfirm, getAccessLevel)
-// Java: data/holders/{AccessLevel,AccessRight}.java
-//
 // The game server fills this from `config/AccessLevels.xml` and `config/AdminCommands.xml`
 // (`add_level`, `add_command`); the world only asks.
 
@@ -133,7 +130,6 @@ impl AdminRights {
     }
 
     /// `getAccessLevel(level).getLevel()`: the level a character with this `accesslevel` column
-    /// really has. NOTE(java-quirk): an unlisted number counts as level 0.
     pub fn effective_level(&self, level: i32) -> i32 {
         self.row(level).level
     }
@@ -169,9 +165,6 @@ impl AdminRights {
     }
 
     /// Java `AdminData.requireConfirm(command)`, called right after `hasAccess`.
-    ///
-    /// NOTE(java-quirk): a command the file does not list is registered by `hasAccess` for the
-    /// highest level with `confirmDlg` true, so its first use asks for a confirmation.
     pub fn requires_confirm(&self, command: &str, player_level: i32) -> bool {
         match self.commands.get(command) {
             Some(right) => right.confirm,

@@ -1,7 +1,5 @@
 //! Quest 38: Dragon Fangs (Guard Luis, Iris and Magister Rohmer; the lizardmen of the Talking
 //! Island and Gludio hunting grounds).
-// Java: dist/game/data/scripts/quests/Q00038_DragonFangs/Q00038_DragonFangs.java
-//
 // Pattern: a delivery chain with party kills (`docs/design/scripts.md`, "Quest patterns"): the
 // sentinels and subleaders give feathers at cond 1, the leaders and shamans give the second
 // tooth at cond 6 (`getRandomPartyMemberState`), and the quest ends with a random reward.

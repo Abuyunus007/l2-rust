@@ -5,11 +5,6 @@
 //! world runs the command as a **virtual GM**: a player named "GUI" with the master access level
 //! that is inside the world only while the command runs. Its packets go to a capturing sink, and
 //! the system messages, chat lines and html pages it was sent come back as plain text lines.
-//
-// Java: handler/AdminCommandHandler.java (`onCommand`), util/GMAudit.java (the actor name)
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/{AdminKick,AdminPunishment,
-// Java: AdminAnnouncements,AdminShutdown,AdminServerInfo}.java
-//
 // # What the virtual GM is not
 // It is not registered as a world object (no region, no known list), so other players never see
 // it and it does not count as online. `//kick GUI` finds nobody once the command is over.

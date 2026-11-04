@@ -1,7 +1,6 @@
 //! Instance zones: the names of `data/InstanceNames.xml` and the templates of
 //! `data/instances/**/*.xml`.
 //!
-//! Java: `gameserver/managers/InstanceManager.java` (`load`, `parseDocument`) and
 //! `gameserver/entity/instancezone/Instance.java` (`loadInstanceTemplate`, `parseInstance`).
 //! Data: `data/InstanceNames.xml`, `data/instances/**`, `xsd/instance.xsd`.
 //!
@@ -138,10 +137,6 @@ pub struct InstanceSpawn {
     /// `onKillDelay` in milliseconds (default -1: the NPC keeps its own).
     pub on_kill_delay: i32,
     /// The value `Spawn.setRandomWalking` gets.
-    ///
-    /// NOTE(java-quirk): Java stores the *negation* of `allowRandomWalk` (of the `<npc>`, else of
-    /// the root): `spawnSet.set("allowRandomWalk", !allowRandomWalk)`. So `allowRandomWalk="false"`
-    /// makes the NPC walk, and the default (true) makes it stand.
     pub random_walk: bool,
 }
 
@@ -227,7 +222,6 @@ impl InstanceTemplate {
         (template, error)
     }
 
-    // Java: Instance.parseInstance
     fn parse_instance(&mut self, node: &XmlNode) -> Result<(), String> {
         self.id = int(required(node, "id")?)?;
         if let Some(a) = node.attr("ejectTime") {
@@ -358,9 +352,6 @@ impl InstanceTemplate {
                     let time = long(a)?;
                     if time > 0 {
                         self.reenter_data.push(InstanceReenterTime::Delay(time));
-                        // NOTE(java-quirk): this `break` leaves the loop over the `<reset>`
-                        // elements: the resets after the first fixed delay are never read. A
-                        // `time` of 0 or less adds nothing.
                         break;
                     }
                 }
@@ -383,7 +374,6 @@ impl InstanceTemplate {
 }
 
 fn required<'a>(node: &'a XmlNode, name: &str) -> Result<&'a str, String> {
-    // Java: `getNamedItem(name).getNodeValue()` on a missing attribute.
     node.attr(name)
         .ok_or_else(|| format!("java.lang.NullPointerException: <{}> has no {name}", node.name))
 }

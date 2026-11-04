@@ -1,11 +1,5 @@
 //! Alliances: creating and dissolving one, the invitation, leaving, expelling a clan and the
 //! alliance window (M6-CLAN-02).
-// Java: entity/clan/Clan.java (checkAllyJoinCondition, createAlly, dissolveAlly,
-//       broadcastToOnlineAllyMembers)
-// Java: network/clientpackets/{RequestJoinAlly,RequestAnswerJoinAlly,AllyLeave,AllyDismiss,
-//       RequestDismissAlly,RequestAllyInfo}.java
-// Java: network/serverpackets/{AllianceInfo,AskJoinAlly}.java, entity/clan/ClanInfo.java
-//
 // The alliance is its leading clan: `ally_id` is the id of that clan, and the alliance's name,
 // penalty and crest are read from the clans like in Java (there is no alliance object).
 
@@ -263,7 +257,6 @@ impl World {
             c.ally_id = 0;
             c.ally_name = None;
         }
-        // NOTE(java-quirk): the ally id is 0 here already, see `change_ally_crest_inner`.
         self.change_ally_crest(clan_id, 0, false);
         let days = self.clans.settings.alt_create_ally_days_when_dissolved;
         if let Some(c) = self.clan_mut(clan_id) {

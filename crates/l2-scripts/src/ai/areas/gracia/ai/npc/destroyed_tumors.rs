@@ -1,6 +1,5 @@
 //! The Destroyed Tumors of the Seed of Infinity: the pages of the Hall of Suffering / Erosion /
 //! Heart of Infinity instances.
-// Java: dist/game/data/scripts/ai/areas/Gracia/AI/NPC/DestroyedTumors/DestroyedTumors.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

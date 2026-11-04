@@ -1,7 +1,4 @@
 //! The fisherman's skill list: `FishSkillList` (the fishing skills of `fishingSkillTree.xml`).
-// Java: entity/actor/instance/Fisherman.java (showFishSkillList)
-// Java: data/xml/SkillTreeData.java (getAvailableFishingSkills, getMinLevelForNewSkill)
-//
 // Learning itself (`RequestAcquireSkillInfo` / `RequestAcquireSkill` of type `FISHING`) is the
 // shared code in `skills/learn.rs`; this file is the list the fisherman shows and the race and
 // level rules of the fishing tree.

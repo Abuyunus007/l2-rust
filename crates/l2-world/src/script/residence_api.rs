@@ -1,7 +1,5 @@
 //! What the NPC scripts of the residences (S-AI-08: WyvernManager) read about "the castle, fortress
 //! or conquerable hall of an NPC", and the Strider to Wyvern change.
-// Java: entity/actor/Npc.java (getCastle, getFort, getConquerableHall),
-//       mechanics/siege/{Castle,Fort,clanhalls/SiegableHall}.java, entity/actor/Player.java (mount)
 
 use l2_util::ObjectId;
 

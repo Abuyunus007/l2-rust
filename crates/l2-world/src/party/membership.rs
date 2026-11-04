@@ -1,9 +1,5 @@
 //! Who is in a party: creating one, joining, leaving, expelling, disbanding, changing the leader,
 //! and the position broadcast of a running party.
-// Java: entity/groups/Party.java (Party(), addPartyMember, removePartyMember, disbandParty,
-//       setLeader, changePartyLeader, getPlayerByName, recalculatePartyLevel,
-//       broadcastToPartyMembersNewLeader, the position broadcast task)
-// Java: entity/actor/Player.java (joinParty, leaveParty, setParty)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{
@@ -207,8 +203,6 @@ impl World {
         }
         let is_leader = p.leader() == Some(player);
         let alt_leave = self.settings.party.alt_leave_party_leader;
-        // NOTE(java-quirk): the leader of a party that survives its leader (`AltLeavePartyLeader`)
-        // still takes the party down when only two are left.
         if !p.disbanding
             && (p.members.len() == 2 || (is_leader && !alt_leave && kind != PartyMessageType::Disconnected))
         {

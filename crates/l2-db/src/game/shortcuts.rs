@@ -1,8 +1,4 @@
 //! The `character_shortcuts` table: the shortcut bars of one class index.
-// Java: org/l2jmobius/gameserver/entity/actor/holders/player/Shortcuts.java (registerShortcutInDb,
-// Java: deleteShortcutFromDb, restoreMe), entity/actor/Player.java (DELETE_CHAR_SHORTCUTS, used
-// Java: by modifySubClass)
-//
 // Same layout as characters.rs: verbatim SQL, one method per statement. The DECIMAL columns and
 // the VARCHAR `level` are read through `SqlNumber` (see sql_number.rs).
 
@@ -12,14 +8,10 @@ use super::sql_number::SqlNumber;
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: Shortcuts.registerShortcutInDb
 const REPLACE_SHORTCUT: &str = "REPLACE INTO character_shortcuts (charId,slot,page,type,shortcut_id,level,class_index) values(?,?,?,?,?,?,?)";
-// Java: Shortcuts.deleteShortcutFromDb
 const DELETE_SHORTCUT: &str =
     "DELETE FROM character_shortcuts WHERE charId=? AND slot=? AND page=? AND class_index=?";
-// Java: Shortcuts.restoreMe
 const SELECT_SHORTCUTS: &str = "SELECT charId, slot, page, type, shortcut_id, level FROM character_shortcuts WHERE charId=? AND class_index=?";
-// Java: Player.DELETE_CHAR_SHORTCUTS
 const DELETE_CLASS_SHORTCUTS: &str = "DELETE FROM character_shortcuts WHERE charId=? AND class_index=?";
 
 /// One shortcut to store, the values of `REPLACE_SHORTCUT` after the ids.
@@ -94,7 +86,6 @@ impl ShortcutRepository {
     }
 
     /// Stores a shortcut in its slot, replacing whatever the slot held (`REPLACE`).
-    // Java: Shortcuts.registerShortcutInDb
     pub async fn replace_shortcut(
         &self,
         char_id: i32,
@@ -115,7 +106,6 @@ impl ShortcutRepository {
     }
 
     /// Removes the shortcut of one slot.
-    // Java: Shortcuts.deleteShortcutFromDb
     pub async fn delete_shortcut(&self, char_id: i32, class_index: i32, slot: i32, page: i32) -> Result<()> {
         sqlx::query(DELETE_SHORTCUT)
             .bind(char_id)
@@ -128,7 +118,6 @@ impl ShortcutRepository {
     }
 
     /// The shortcuts of one class index.
-    // Java: Shortcuts.restoreMe
     pub async fn shortcuts_of(&self, char_id: i32, class_index: i32) -> Result<Vec<ShortcutRow>> {
         let rows = sqlx::query_as::<_, ShortcutDbRow>(SELECT_SHORTCUTS)
             .bind(char_id)
@@ -139,7 +128,6 @@ impl ShortcutRepository {
     }
 
     /// Removes every shortcut of one class index (subclass deletion).
-    // Java: Player.modifySubClass (DELETE_CHAR_SHORTCUTS)
     pub async fn delete_class_shortcuts(&self, char_id: i32, class_index: i32) -> Result<()> {
         sqlx::query(DELETE_CLASS_SHORTCUTS)
             .bind(char_id)

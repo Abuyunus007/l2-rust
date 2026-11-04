@@ -8,7 +8,6 @@ use super::interaction::prepare_html;
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/NpcQuestHtmlMessage.java
 /// The quest dialog (`EX_NPC_QUEST_HTML_MESSAGE`): an NPC page with the quest id, so the client
 /// shows the quest title. Build it with [`NpcQuestHtmlMessage::new`] to get Java's `setHtml`
 /// rules (the same as `NpcHtmlMessage`).
@@ -56,7 +55,6 @@ impl Decode for NpcQuestHtmlMessage {
     }
 }
 
-// Java: gameserver/network/serverpackets/TutorialShowHtml.java
 /// The tutorial window (`TUTORIAL_SHOW_HTML`). Build it with [`TutorialShowHtml::new`] to get
 /// Java's `setHtml` rules.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -88,7 +86,6 @@ impl Decode for TutorialShowHtml {
     }
 }
 
-// Java: gameserver/network/serverpackets/TutorialShowQuestionMark.java
 server_packet!(
     /// The blinking question mark of the tutorial (`SHOW_TUTORIAL_MARK`).
     TutorialShowQuestionMark,
@@ -98,7 +95,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/TutorialEnableClientEvent.java
 server_packet!(
     /// Asks the client to report a client event (`TUTORIAL_ENABLE_CLIENT_EVENT`).
     TutorialEnableClientEvent,
@@ -108,7 +104,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/ExShowQuestMark.java
 server_packet!(
     /// The "quest progressed" mark of a quest (`EX_SHOW_QUEST_MARK`).
     ExShowQuestMark,
@@ -117,7 +112,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/RadarControl.java
 server_packet!(
     /// A radar marker (`RADAR_CONTROL`). Java's `Radar` sends `(2, 2)` + `(0, 1)` to add one,
     /// `(1, 1)` to remove one and `(2, 2)` per marker to clear them.
@@ -133,7 +127,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/ExQuestNpcLogList.java
 /// One NPC line of [`ExQuestNpcLogList`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct QuestNpcLogEntry {
@@ -144,7 +137,6 @@ pub struct QuestNpcLogEntry {
     pub count: i32,
 }
 
-// Java: gameserver/network/serverpackets/ExQuestNpcLogList.java
 /// The kill counts of a quest shown in the journal (`EX_QUEST_NPC_LOG_LIST`).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ExQuestNpcLogList {

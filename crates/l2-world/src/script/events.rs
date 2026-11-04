@@ -1,7 +1,4 @@
 //! The remaining `EventType`s of the scripts and the per-object listeners (S-API-04).
-// Java: mechanics/events/{EventDispatcher,ListenersContainer,EventType}.java
-// Java: mechanics/events/returns/TerminateReturn.java, mechanics/events/holders/**
-//
 // # Model
 // Java's scripts register listeners in three places: on the global container (`Containers.Global()`,
 // `Containers.Players()`: every object), on an NPC template (`@Id`, `setXxxId`), and on one

@@ -1,10 +1,5 @@
 //! The shift click of a GM (`Action` with `actionId` 1): the info windows of NPCs, doors, static
 //! objects and items, and the character and summon info pages.
-// Java: dist/game/data/scripts/handlers/actions/shiftclick/{NpcShiftClick,PlayerShiftClick,
-// Java: DoorShiftClick,SummonShiftClick,ItemShiftClick,StaticObjectShiftClick}.java
-// Java: entity/WorldObject.java (onActionShift), handler/ActionShiftHandler.java
-// Java: network/clientpackets/Action.java (the `case 1` branch)
-//
 // # Which handler runs
 // `ActionShiftHandler.getHandler(instanceType)` walks up the instance type tree, so every NPC class
 // (Monster, Folk, RaidBoss, ...) gets `NpcShiftClick`. Objects with no handler (fences, traps that

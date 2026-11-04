@@ -1,14 +1,11 @@
 //! The `ClanHallManager` NPC (the chamberlain of a hall): the pages where a clan buys, changes and
 //! stops the hall functions, the hall's buffs, teleport, item creation, doors and banishing.
-// Java: entity/actor/instance/ClanHallManager.java
-//
 // # The functions
 // The Java class repeats one block per function (HP, MP and exp recovery; teleport, support and
 // item creation; curtains and front platform). They differ only in their names, texts, fee tables
 // and the levels a hall grade offers, so a table (`SPECS`) describes them and one routine runs
 // every page. The pages, messages, bypass commands and the order of the checks are Java's.
 //
-// NOTE(java-quirk): a purchase that fails for lack of adena sends the "low adena" page twice.
 //
 // # Who may use it
 // Only the owning clan (or a GM) gets past the condition; everybody else gets nothing, not even the
@@ -993,7 +990,6 @@ impl World {
             self.html_from_file(player, npc.0, "data/html/clanHallManager/low_adena.htm")
         {
             html = low;
-            // NOTE(java-quirk): the page goes out here and once more below.
             self.manager_send(npc, player, html.clone());
         }
         self.manager_send(npc, player, html);

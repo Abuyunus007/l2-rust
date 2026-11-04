@@ -2,7 +2,6 @@
 
 //! Flood protectors (M6-FU-06): the interval of every kind in game ticks of 100 ms, the GM
 //! exception, the punishments and the places that ask.
-//! Java: util/FloodProtectors.java, util/FloodProtectorAction.java, config/FloodProtectorConfig.java,
 //! and the packets that call `getClient().getFloodProtectors()`.
 
 use std::sync::{Arc, Mutex};

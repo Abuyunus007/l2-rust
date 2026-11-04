@@ -1,5 +1,4 @@
 //! The Golem Trader servitor vanishes after three minutes.
-// Java: dist/game/data/scripts/ai/others/Servitors/GolemTrader.java
 
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
 

@@ -5,7 +5,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/ExRegenMax.java
 /// The client's HP regeneration bar of a heal-over-time skill (`EX_REGEN_MAX`, ex id `0x01`).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ExRegenMax {

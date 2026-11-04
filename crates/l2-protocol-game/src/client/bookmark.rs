@@ -28,7 +28,6 @@ fn write_head(w: &mut PacketWriter, sub: i32) {
     w.i32(sub);
 }
 
-// Java: gameserver/network/clientpackets/RequestBookMarkSlotInfo.java
 /// The player opens "My Teleports": the server sends the list. No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestBookMarkSlotInfo;
@@ -45,7 +44,6 @@ impl Decode for RequestBookMarkSlotInfo {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestSaveBookMarkSlot.java
 /// Save the current location as a bookmark.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestSaveBookMarkSlot {
@@ -70,7 +68,6 @@ impl Decode for RequestSaveBookMarkSlot {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestModifyBookMarkSlot.java
 /// Change the name, icon and tag of a bookmark.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestModifyBookMarkSlot {
@@ -97,7 +94,6 @@ impl Decode for RequestModifyBookMarkSlot {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestDeleteBookMarkSlot.java
 /// Delete a bookmark.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestDeleteBookMarkSlot {
@@ -117,7 +113,6 @@ impl Decode for RequestDeleteBookMarkSlot {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestTeleportBookMark.java
 /// Teleport to a bookmark.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestTeleportBookMark {
@@ -137,7 +132,6 @@ impl Decode for RequestTeleportBookMark {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestChangeBookMarkSlot.java
 /// Java reads nothing and does nothing ("change slot" is not implemented).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestChangeBookMarkSlot;

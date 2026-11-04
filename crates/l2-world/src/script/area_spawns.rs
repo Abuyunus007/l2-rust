@@ -1,5 +1,4 @@
 //! The spawn table reads the area AI scripts of S-AI-03 need (`SelMahumDrill`).
-// Java: entity/spawns/Spawn.java (getName, getLastSpawn), data/SpawnTable.java (getSpawns)
 
 use l2_util::ObjectId;
 

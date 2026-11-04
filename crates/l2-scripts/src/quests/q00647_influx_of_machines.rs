@@ -1,7 +1,5 @@
 //! Quest 647: Influx of Machines (Gutenhagen in the Rune Town/Gludio area; the golems of the
 //! Gludio/Rune ruins drop broken golem fragments, 500 of them buy one random recipe).
-// Java: dist/game/data/scripts/quests/Q00647_InfluxOfMachines/Q00647_InfluxOfMachines.java
-//
 // Pattern: a party kill count with a drop chance per golem (per mille, the member at cond 1),
 // cond 2 at the limit, and a reward of one random recipe (`getRandomEntry`, the world RNG).
 

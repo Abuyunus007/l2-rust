@@ -1,5 +1,4 @@
 //! Gordon (grand boss 29095): attacks a player who carries a cursed weapon and never goes home.
-// Java: dist/game/data/scripts/ai/others/Gordon.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

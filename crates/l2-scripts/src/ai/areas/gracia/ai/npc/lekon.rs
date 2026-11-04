@@ -1,5 +1,4 @@
 //! Engineer Lekon: the Airship Summon License for ten Energy Star Stones.
-// Java: dist/game/data/scripts/ai/areas/Gracia/AI/NPC/Lekon/Lekon.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;

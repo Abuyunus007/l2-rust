@@ -2,44 +2,27 @@
 //! current period), `olympiad_nobles_eom` (the copy of the last period) and `olympiad_fights`
 //! (one row per decided match), plus the `character_variables` rows of the unclaimed points
 //! (M8-OLY-01).
-// Java: mechanics/olympiad/Olympiad.java (load, loadNoblesRank, saveNobleData, saveOlympiadStatus,
-//       updateMonthlyData, deleteNobles, getClassLeaderBoard, getLastNobleOlympiadPoints)
-// Java: mechanics/olympiad/OlympiadGameNormal.java (saveResults)
-//
-// Same layout as cursed_weapons.rs: verbatim SQL, one method per statement. D-39, D-53: the Java
-// game server writes the same rows; the world decides which writes go out (`CycleDatabaseWrites`).
-// Java builds some statements with `OlympiadConfig.OLYMPIAD_MIN_MATCHES` concatenated into the
-// text; here the value is a bound parameter (same rows).
 
 use sqlx::Row;
 
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: Olympiad.OLYMPIAD_LOAD_DATA / OLYMPIAD_SAVE_DATA
 const LOAD_DATA: &str = "SELECT current_cycle, period, olympiad_end, validation_end, next_weekly_change FROM olympiad_data WHERE id = 0";
 const SAVE_DATA: &str = "INSERT INTO olympiad_data (id, current_cycle, period, olympiad_end, validation_end, next_weekly_change) VALUES (0,?,?,?,?,?) ON DUPLICATE KEY UPDATE current_cycle=?, period=?, olympiad_end=?, validation_end=?, next_weekly_change=?";
-// Java: Olympiad.OLYMPIAD_LOAD_NOBLES
 const LOAD_NOBLES: &str = "SELECT olympiad_nobles.charId, olympiad_nobles.class_id, characters.char_name, olympiad_nobles.olympiad_points, olympiad_nobles.competitions_done, olympiad_nobles.competitions_won, olympiad_nobles.competitions_lost, olympiad_nobles.competitions_drawn, olympiad_nobles.competitions_done_week, olympiad_nobles.competitions_done_week_classed, olympiad_nobles.competitions_done_week_non_classed, olympiad_nobles.competitions_done_week_team FROM olympiad_nobles, characters WHERE characters.charId = olympiad_nobles.charId";
-// Java: Olympiad.OLYMPIAD_SAVE_NOBLES / OLYMPIAD_UPDATE_NOBLES
 const SAVE_NOBLE: &str = "INSERT INTO olympiad_nobles (`charId`,`class_id`,`olympiad_points`,`competitions_done`,`competitions_won`,`competitions_lost`,`competitions_drawn`, `competitions_done_week`, `competitions_done_week_classed`, `competitions_done_week_non_classed`, `competitions_done_week_team`) VALUES (?,?,?,?,?,?,?,?,?,?,?)";
 const UPDATE_NOBLE: &str = "UPDATE olympiad_nobles SET olympiad_points = ?, competitions_done = ?, competitions_won = ?, competitions_lost = ?, competitions_drawn = ?, competitions_done_week = ?, competitions_done_week_classed = ?, competitions_done_week_non_classed = ?, competitions_done_week_team = ? WHERE charId = ?";
-// Java: Olympiad.GET_ALL_CLASSIFIED_NOBLESS
 const ALL_CLASSIFIED: &str = "SELECT charId from olympiad_nobles_eom WHERE competitions_done >= ? ORDER BY olympiad_points DESC, competitions_done DESC, competitions_won DESC";
-// Java: Olympiad.GET_EACH_CLASS_LEADER(_CURRENT)(_SOULHOUND)
 const CLASS_LEADER: &str = "SELECT characters.char_name from olympiad_nobles_eom, characters WHERE characters.charId = olympiad_nobles_eom.charId AND olympiad_nobles_eom.class_id = ? AND olympiad_nobles_eom.competitions_done >= ? ORDER BY olympiad_nobles_eom.olympiad_points DESC, olympiad_nobles_eom.competitions_done DESC, olympiad_nobles_eom.competitions_won DESC LIMIT 10";
 const CLASS_LEADER_CURRENT: &str = "SELECT characters.char_name from olympiad_nobles, characters WHERE characters.charId = olympiad_nobles.charId AND olympiad_nobles.class_id = ? AND olympiad_nobles.competitions_done >= ? ORDER BY olympiad_nobles.olympiad_points DESC, olympiad_nobles.competitions_done DESC, olympiad_nobles.competitions_won DESC LIMIT 10";
 const CLASS_LEADER_SOULHOUND: &str = "SELECT characters.char_name from olympiad_nobles_eom, characters WHERE characters.charId = olympiad_nobles_eom.charId AND (olympiad_nobles_eom.class_id = ? OR olympiad_nobles_eom.class_id = 133) AND olympiad_nobles_eom.competitions_done >= ? ORDER BY olympiad_nobles_eom.olympiad_points DESC, olympiad_nobles_eom.competitions_done DESC, olympiad_nobles_eom.competitions_won DESC LIMIT 10";
 const CLASS_LEADER_CURRENT_SOULHOUND: &str = "SELECT characters.char_name from olympiad_nobles, characters WHERE characters.charId = olympiad_nobles.charId AND (olympiad_nobles.class_id = ? OR olympiad_nobles.class_id = 133) AND olympiad_nobles.competitions_done >= ? ORDER BY olympiad_nobles.olympiad_points DESC, olympiad_nobles.competitions_done DESC, olympiad_nobles.competitions_won DESC LIMIT 10";
-// Java: Olympiad.getLastNobleOlympiadPoints
 const LAST_POINTS: &str = "SELECT olympiad_points FROM olympiad_nobles_eom WHERE charId = ?";
-// Java: Olympiad.OLYMPIAD_DELETE_ALL / OLYMPIAD_MONTH_CLEAR / OLYMPIAD_MONTH_CREATE
 const DELETE_ALL: &str = "TRUNCATE olympiad_nobles";
 const MONTH_CLEAR: &str = "TRUNCATE olympiad_nobles_eom";
 const MONTH_CREATE: &str = "INSERT INTO olympiad_nobles_eom SELECT charId, class_id, olympiad_points, competitions_done, competitions_won, competitions_lost, competitions_drawn FROM olympiad_nobles";
-// Java: OlympiadGameNormal.saveResults
 const INSERT_FIGHT: &str = "INSERT INTO olympiad_fights (charOneId, charTwoId, charOneClass, charTwoClass, winner, start, time, classed) values(?,?,?,?,?,?,?,?)";
-// Java: Olympiad.REMOVE_UNCLAIMED_POINTS / INSERT_UNCLAIMED_POINTS
 const REMOVE_UNCLAIMED: &str = "DELETE FROM character_variables WHERE charId=? AND var=?";
 const INSERT_UNCLAIMED: &str = "INSERT INTO character_variables (charId, var, val) VALUES (?, ?, ?)";
 // The value `OlympiadManagerLink` reads with `player.getVariables().getInt(...)`.
@@ -302,8 +285,6 @@ impl OlympiadRepository {
         Ok(())
     }
 
-    /// The value of one character variable (`None` without the row). The world reads the
-    /// unclaimed points again before it hands the passes out (D-50).
     pub async fn variable(&self, char_id: i32, var: &str) -> Result<Option<String>> {
         let row = sqlx::query(SELECT_VARIABLE)
             .bind(char_id)

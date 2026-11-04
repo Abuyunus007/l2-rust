@@ -1,7 +1,4 @@
 //! The soul crystal table for scripts and the crystal exchange of quest 350 (S-API-05).
-// Java: data/xml/LevelUpCrystalData.java (the table, `getInstance()`),
-//       quests/Q00350_EnhanceYourWeapon (`exchangeCrystal`)
-//
 // The table is loaded by the game server (`l2_data::LevelUpCrystalData::load` with
 // `SoulCrystalChanceMultiplier`) and installed before the scripts, so Q00350's
 // `Script::setup_with` can register its kill and skill-see ids from it. The absorb list of a

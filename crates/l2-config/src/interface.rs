@@ -1,5 +1,4 @@
 //! `Interface.ini`.
-// Java: org/l2jmobius/commons/config/InterfaceConfig.java
 
 use crate::IniFile;
 
@@ -11,9 +10,6 @@ pub const INTERFACE_CONFIG_FILE: &str = "Interface.ini";
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct InterfaceConfig {
     /// Key: `EnableGUI`, default true.
-    ///
-    /// NOTE(java-quirk): Java also ANDs this with `!GraphicsEnvironment.isHeadless()`. That is a
-    /// property of the JVM host, not of the file, so the raw file value is kept.
     pub enable_gui: bool,
     /// Key: `DarkTheme`, default true. Java only reads it when `EnableGUI` is on, otherwise the
     /// field stays false (and the key is not looked up, so no warning either).

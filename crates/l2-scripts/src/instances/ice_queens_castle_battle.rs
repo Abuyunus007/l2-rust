@@ -1,7 +1,5 @@
 //! Ice Queen's Castle (Normal Battle) instance zone: the fight against Freya, in the normal
 //! (139) and the hardcore (144) version.
-// Java: dist/game/data/scripts/instances/IceQueensCastleBattle/IceQueensCastleBattle.java
-//
 // Java keeps the state of a run in the parameters of the `InstanceWorld` (`isHardCore`,
 // `playersInside`, `controller`, `freya`, `canSpawnMobs`, `isSupportActive`); so does this port,
 // as strings, because `onEnterInstance` runs inside `World::enter_instance` without a
@@ -206,9 +204,6 @@ impl Script for IceQueensCastleBattle {
                                         && !ctx.world().is_dead(players)
                                         && ctx.world().instance_id_of(players) == instance_id
                                     {
-                                        // NOTE(java-quirk): the quest state asked is the one of
-                                        // `player` (who clicked), not of `players`, once for every
-                                        // player inside.
                                         let qs = player.and_then(|p| {
                                             ctx.quest_state_of(Q10286_REUNION_WITH_SIRRA, p, false)
                                         });
@@ -248,7 +243,6 @@ impl Script for IceQueensCastleBattle {
                             qs.set_cond(ctx, 7, true);
                         }
 
-                        // NOTE(java-quirk): `world.getNpc(SUPP_KEGOR)` and `freya` are used unchecked.
                         let kegor = ctx.world().instance_npc_by_template(instance_id, SUPP_KEGOR)?;
                         ctx.world_mut().delete_npc(kegor);
                         ctx.world_mut().decay(freya?.object_id);
@@ -325,7 +319,6 @@ impl Script for IceQueensCastleBattle {
                             );
                             manage_timer(ctx, instance_id, 360, NpcStringId::BattleEndLimitTime);
                             let end = ctx.now_ms() + GLAKIAS_KILL_TIMER * 60 * 1000;
-                            // NOTE(java-quirk): `controller` is used unchecked.
                             ctx.world_mut()
                                 .npc_variables_mut(controller?.object_id)
                                 .set_long("TIMER_END", end);
@@ -402,7 +395,6 @@ impl Script for IceQueensCastleBattle {
                             "freya",
                             frey.object_id.0.to_string(),
                         );
-                        // NOTE(java-quirk): `controller` is used unchecked.
                         let controller_id = controller?.object_id;
                         ctx.world_mut()
                             .npc_variables_mut(controller_id)
@@ -495,7 +487,6 @@ impl Script for IceQueensCastleBattle {
                             ctx.world_mut().set_invul(players, false);
                         }
 
-                        // NOTE(java-quirk): `freya` is used unchecked.
                         let freya = freya?;
                         ctx.world_mut().set_invul(freya.object_id, false);
                         ctx.world_mut().set_core_ai_disabled(freya.object_id, false);
@@ -658,7 +649,6 @@ impl Script for IceQueensCastleBattle {
                     }
                     "ATTACK_FREYA" => {
                         let skill = ctx.world().npc_template_skill_param(npc.object_id, "Skill01_ID");
-                        // NOTE(java-quirk): `freya` and `skill` are used unchecked.
                         let freya = freya?;
                         if ctx.is_inside_radius_2d(npc.object_id, freya.object_id, 100) {
                             let skill = skill?;
@@ -882,7 +872,6 @@ impl Script for IceQueensCastleBattle {
         let id = npc.object_id;
         match npc.id {
             FREYA_THRONE => {
-                // NOTE(java-quirk): `controller` and `freya` are used unchecked.
                 let (Some(controller), Some(freya)) = (controller, freya) else {
                     return;
                 };
@@ -930,7 +919,6 @@ impl Script for IceQueensCastleBattle {
                 }
             }
             FREYA_STAND_EASY | FREYA_STAND_HARD => {
-                // NOTE(java-quirk): `controller` and `freya` are used unchecked.
                 let (Some(controller), Some(freya)) = (controller, freya) else {
                     return;
                 };
@@ -1205,7 +1193,6 @@ impl Script for IceQueensCastleBattle {
                     .filter(|id| *id != 0)
                     .map(ObjectId)
                     .and_then(|id| script_npc(ctx, id));
-                // NOTE(java-quirk): `controller` is used unchecked.
                 let Some(controller) = controller else {
                     return;
                 };
@@ -1431,8 +1418,6 @@ fn manage_random_attack(ctx: &mut ScriptCtx<'_>, instance_id: i32, mob: ObjectId
                 && !world.is_object_invisible(*p)
         })
         .collect();
-    // NOTE(java-quirk): `Collections.shuffle` uses an unseeded `java.util.Random`; the world RNG
-    // draws the target here.
     let target = if players.is_empty() {
         None
     } else {

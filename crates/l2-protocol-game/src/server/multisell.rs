@@ -97,7 +97,6 @@ pub struct MultiSellEntry {
     pub ingredients: Vec<MultiSellIngredient>,
 }
 
-// Java: gameserver/network/serverpackets/MultiSellList.java
 /// One page of a multisell list (`MULTI_SELL_LIST`, 0xD0). Java sends the pages of a list one
 /// after the other; an empty list is one page without entries.
 #[derive(Debug, Clone, PartialEq, Eq)]

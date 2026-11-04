@@ -1,7 +1,4 @@
 //! The `CharmOfCourage` item handler and the death rule of the charm.
-// Java: dist/game/data/scripts/handlers/items/CharmOfCourage.java
-// Java: entity/actor/Playable.java (doDie: the `hasCharmOfCourage()` block)
-// Java: entity/actor/Player.java (setCharmOfCourage, hasCharmOfCourage)
 
 use l2_data::item::ItemTemplate;
 use l2_protocol_game::SystemMessageId;

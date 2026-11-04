@@ -1,7 +1,5 @@
 //! Quest 340: Subjugation Of Lizardmen (Guard Weisz, Priestess Levian, Priest Adonius, the
 //! Serpent Demon Bifrons and its chest in Innadril).
-// Java: dist/game/data/scripts/quests/Q00340_SubjugationOfLizardmen/Q00340_SubjugationOfLizardmen.java
-//
 // Pattern: the memo state is the step (1..7), kept as Java keeps it: `setMemoState` next to every
 // `setCond`. The trade cargo comes from kills (limit 30) and is sold; the holy symbol and the
 // rosary are dropped by the Langk lizardmen; the Bifrons kill spawns the chest that holds the totem.

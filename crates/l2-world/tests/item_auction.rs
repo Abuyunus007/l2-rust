@@ -1,12 +1,5 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
-//! Item auctions (L-05): an auction from its start to its end with two bidders, the outbid and
-//! the returned bid, the winner's item, the rows and messages Java writes, and the side by side
-//! switch (D-53): with `CycleDatabaseWrites` off the global rows and the end stay with the Java
-//! game server and the rows are read again before they are shown (D-50). Expected values come
-//! from `ItemAuction.java`, `ItemAuctionInstance.java`, `ItemAuctionLink.java`,
-//! `RequestInfoItemAuction.java`, `RequestBidItemAuction.java` and `ExItemAuctionInfoPacket.java`.
-//!
 //! The world counts ticks while the auction times are wall-clock times: an auction is set up a
 //! few seconds from now and the test ticks past its start and end.
 
@@ -1056,8 +1049,6 @@ fn invalid_and_expired_rows_are_dropped() {
             .any(|w| matches!(w, ItemAuctionWrite::Store { auction_id: 15, .. }))
     );
 }
-
-// ---- side by side (D-53) -----------------------------------------------------------------------
 
 /// The settings off: the bypass says it is not an auction period, and nothing is loaded.
 #[test]

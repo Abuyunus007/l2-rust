@@ -1,6 +1,4 @@
 //! Quest 512: Blade Under Foot (the castle wardens, Fragments of the Dungeon Leader's Mark).
-// Java: dist/game/data/scripts/quests/Q00512_BladeUnderFoot/Q00512_BladeUnderFoot.java
-//
 // Pattern: a kill quest with a castle gate. Only the lord of the castle (the clan leader whose
 // clan owns the warden's castle) starts it. Each raid boss drops marks (the whole first chance
 // alone, the second chance split among the party members in range); the warden turns them into

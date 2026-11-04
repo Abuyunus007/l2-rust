@@ -1,7 +1,5 @@
 //! Quest 621: Egg Delivery (Jeremy in the Town of Gludin area hands out five boiled eggs; Pulin,
 //! Naff, Crocus, Kuber and Boelin each take one and give a price; Valentine pays for the last).
-// Java: dist/game/data/scripts/quests/Q00621_EggDelivery/Q00621_EggDelivery.java
-//
 // Pattern: a delivery chain (`docs/design/scripts.md`, the delivery pattern), with a list of
 // talkers whose step is `TALKERS.indexOf(npc) + 2`: each talker's page gives the price and the
 // cond goes up by one. Jeremy pays out at cond 6 and Valentine at cond 7.

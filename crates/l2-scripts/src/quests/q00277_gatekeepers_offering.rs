@@ -1,6 +1,4 @@
 //! Quest 277: Gatekeeper's Offering (Tamil in the Gludio area sends the player to the Greystone Golems).
-// Java: dist/game/data/scripts/quests/Q00277_GatekeepersOffering/Q00277_GatekeepersOffering.java
-//
 // Pattern: a kill-count quest (`docs/design/scripts.md`, "Quest patterns"): every Greystone Golem
 // gives one starstone until 20 are in, the 20th sets cond 2; the NPC pays and the quest repeats.
 

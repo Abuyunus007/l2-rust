@@ -1,6 +1,4 @@
 //! Quest 608: Slay the Enemy Commander! (Ketra) (Kadun in the Ketra Orc Village, Mos).
-// Java: dist/game/data/scripts/quests/Q00608_SlayTheEnemyCommanderKetra/Q00608_SlayTheEnemyCommanderKetra.java
-//
 // Pattern: a one-kill quest, the same shape as Q00607 (`actionForEachPlayer` gives the head to the
 // party members in range; the NPC rewards the totem and experience once).
 

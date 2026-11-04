@@ -1,7 +1,6 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
 //! Clicks, targets, NPC dialogs, bypasses and gatekeepers with fake players.
-//! Java: network/clientpackets/{Action,RequestBypassToServer,RequestLinkHtml,RequestTargetCanceld},
 //! handlers/actions/click/NpcClick, Npc.showChatWindow, Teleporter, TeleportHolder.
 //!
 //! The pages and teleport lists are small files in a temporary datapack root. The checks against
@@ -410,7 +409,6 @@ fn first_click_selects_the_target_and_tells_the_neighbours() {
 
     s.click(1, npc);
     let out = s.log.take();
-    // Java: setTarget (ValidateLocation, MyTargetSelected, StatusUpdate), then ActionFailed.
     assert_eq!(
         names_to(&out, 1),
         [
@@ -474,7 +472,6 @@ fn escape_drops_the_target_for_everybody() {
 
     s.input(1, ClientInput::TargetCanceled { unselect: 0 });
     let out = s.log.take();
-    // Java: `broadcastPacket(new TargetUnselected(this))`, with the player's own id and place.
     for to in [1, 2] {
         assert_eq!(names_to(&out, to), ["TARGET_UNSELECTED"]);
         assert_eq!(
@@ -1068,7 +1065,6 @@ fn not_enough_adena_stays_put_and_says_so_twice_like_java() {
     s.bypass(1, &format!("npc_{}_showTeleports", npc.0));
     s.bypass(1, &format!("npc_{}_teleport NORMAL 0", npc.0));
     let out = s.log.take();
-    // NOTE(java-quirk): `reduceAdena` tells the player, then `doTeleport` does it again.
     let ids: Vec<i32> = messages_to(&out, 1).iter().map(|m| m.id.id()).collect();
     assert_eq!(ids, [279, 279]);
     assert!(!names_to(&out, 1).contains(&"TELEPORT_TO_LOCATION".to_owned()));

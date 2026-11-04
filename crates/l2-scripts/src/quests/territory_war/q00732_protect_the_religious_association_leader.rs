@@ -1,5 +1,4 @@
 //! Quest 732: Protect the Religious Association Leader.
-// Java: dist/game/data/scripts/quests/TerritoryWarScripts/Q00732_ProtectTheReligiousAssociationLeader.java
 
 use super::territory_war_super_class::{TerritoryWarData, territory_war_quest};
 

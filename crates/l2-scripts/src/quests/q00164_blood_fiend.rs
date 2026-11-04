@@ -1,6 +1,4 @@
 //! Quest 164: Blood Fiend (Creamees sends the player to kill Kirunak).
-// Java: dist/game/data/scripts/quests/Q00164_BloodFiend/Q00164_BloodFiend.java
-//
 // Pattern: a one-time kill quest. The monster's death sets cond 2 and gives the skull; the start
 // NPC gives the reward when the skull is in hand. Dark Elves are sent away (race gate).
 

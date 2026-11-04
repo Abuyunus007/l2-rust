@@ -1,7 +1,4 @@
 //! The decoy: a copy of its owner that draws the hate of monsters around it.
-// Java: entity/actor/instance/Decoy.java, dist/game/data/scripts/handlers/skill/effects/SummonNpc.java
-//       (the "Decoy" branch), handlers/actions/click/DecoyClick.java,
-//       network/serverpackets/CharInfo.java (the `Decoy` constructor)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{CharInfo, SystemMessage};
@@ -152,7 +149,6 @@ impl World {
         // `Math.min(getDisplayId() - 13070, SkillData.getMaxLevel(5272))`.
         let level = (display_id - 13070).min(table.max_level(DECOY_HATE_SKILL_ID));
         if level < 1 {
-            // Java: `doCast(null)` throws and the task logs it.
             warn!("Decoy Error: no skill {DECOY_HATE_SKILL_ID} level {level}");
             return;
         }

@@ -2,8 +2,6 @@
 //! wake-up at the stone statue, the wake-up movie with Baium's gift, the archangels, the
 //! three-slot hate model, the inactivity reset and the respawn cycle on the `GrandBossManager`
 //! state.
-// Java: dist/game/data/scripts/ai/bosses/Baium/Baium.java
-//
 // The Java fields are `BaiumState` (`ctx.state`); Baium's `NpcVariables` (`c_quest0..2`,
 // `i_quest0..2`) are a map by NPC object id in it. The constructor is `on_load`. Statuses: 0 alive
 // (the stone statue), 1 waiting (unused by this script), 2 in fight, 3 dead.
@@ -135,7 +133,6 @@ impl Script for Baium {
     /// The constructor's second half: restores the state from the boss manager.
     fn on_load(&self, ctx: &mut ScriptCtx<'_>) {
         let Some(boss_info) = ctx.world().grand_boss_info(BAIUM_NPC_ID).cloned() else {
-            // Java: `getStatSet` answers null and the constructor throws.
             tracing::warn!("Baium: no grandboss_data row for {BAIUM_NPC_ID}, the script does not start.");
             return;
         };
@@ -149,8 +146,6 @@ impl Script for Baium {
         let current_status = get_status(ctx);
         match current_status {
             STATUS_WAITING => {
-                // NOTE(java-quirk): the status goes back to alive, but no statue is spawned until
-                // the next start.
                 set_status(ctx, STATUS_ALIVE);
             }
             STATUS_ALIVE => {
@@ -393,8 +388,6 @@ impl Script for Baium {
                     ctx.set_random_walking(npc, true);
                 }
                 spawn_archangels(ctx);
-                // NOTE(java-quirk): `npc` is the timer's NPC; a timer without one makes Java's
-                // `addAttackDesire(null, ..)` throw.
                 let npc = npc?;
                 if let Some(player) = player
                     && !ctx.world().is_dead(player)
@@ -638,7 +631,6 @@ impl Script for Baium {
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, _is_summon: bool) {
         let (zone_id, zone_type) = BAIUM_RIM_ZONE;
         if !ctx.world().is_character_in_zone(zone_id, zone_type, killer) {
-            // NOTE(java-quirk): a kill from outside the rim leaves the status "in fight".
             return;
         }
         set_status(ctx, STATUS_DEAD);

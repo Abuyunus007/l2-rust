@@ -1,12 +1,7 @@
 //! Quest 29: Chest Caught with a Bait of Earth (Willie in the Fishing Village, the bait quest of the earth).
-// Java: dist/game/data/scripts/quests/Q00029_ChestCaughtWithABaitOfEarth/Q00029_ChestCaughtWithABaitOfEarth.java
-//
 // Pattern: a fishing chest hand-over (`docs/design/scripts.md`, "Quest patterns"): Willie starts
 // the quest once Willie's Special Bait (Q00052) is done, takes the purple treasure box for the
 // small glass box, and Anabel pays the plated leather gloves. One-time: `exit_quest(ctx, false, true)`.
-//
-// NOTE(java-quirk): an event that is not handled is still shown back as its page (the Java
-// `htmltext = event` default), so the quest answers every event it gets.
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED};
@@ -55,7 +50,6 @@ impl Script for Q00029ChestCaughtWithABaitOfEarth {
         _npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        // Java: `htmltext = event` for every case, also when there is no quest state.
         let Some(player) = player else {
             return Some(event.to_owned());
         };
@@ -92,7 +86,6 @@ impl Script for Q00029ChestCaughtWithABaitOfEarth {
         match qs.state(ctx) {
             COMPLETED => htmltext = ctx.get_already_completed_msg(player),
             CREATED => {
-                // Java: `player.getQuestState(Q00052...)` completed and level 48 (on Willie only).
                 if npc.id == WILLIE {
                     htmltext = "31574-02.htm".to_owned();
                     let bait_done = ctx

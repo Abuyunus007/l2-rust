@@ -1,5 +1,4 @@
 //! The Race Manager sends the player to the Monster Race Track and back, from the town teleporters.
-// Java: dist/game/data/scripts/ai/others/TeleportToRaceTrack/TeleportToRaceTrack.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
@@ -68,8 +67,6 @@ impl Script for TeleportToRaceTrack {
             if npc.id == RACE_MANAGER {
                 let return_id = ctx.player_variable_int(player, MONSTER_RETURN, -1);
                 if return_id > 30000 {
-                    // NOTE(java-quirk): a `returnId` that is not a teleporter gives a null
-                    // location and `teleToLocation(null)` throws; the player stays.
                     let (x, y, z) = teleporter_location(return_id)?;
                     ctx.teleport_player(player, x, y, z, 0, false);
                     ctx.remove_player_variable(player, MONSTER_RETURN);

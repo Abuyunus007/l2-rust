@@ -1,11 +1,6 @@
 //! The Festival of Darkness (M8-FEST-01): the festival manager that runs every cycle of the
 //! competition period, the arenas with their witch and monsters, the signing up at the festival
 //! guides, the blood offerings, the scores in `seven_signs_festival` and the accumulated bonus.
-// Java: mechanics/sevensigns/SevenSignsFestival.java
-// Java: entity/actor/instance/{FestivalGuide,FestivalMonster}.java
-// Java: dist/game/data/scripts/handlers/bypass/npc/Festival.java
-// Java: mechanics/sevensigns/SevenSigns.java (addFestivalScore)
-//
 // # Shape
 // Java's `FestivalManager.run()` blocks its thread in `wait(...)` between the steps of one round.
 // Here the same sequence is a chain of timers on the world's wheel, one [`FestivalStage`] per
@@ -14,11 +9,6 @@
 // A `Spawn` of Java is a runtime spawn (`add_runtime_spawn`), a `FestivalMonster` an NPC of the
 // template type `FestivalMonster` that the world remembers in `monsters` (its offering bonus).
 //
-// # Side by side (D-39, D-50, D-53)
-// The rows of `seven_signs_festival` are global: with `CycleDatabaseWrites = False` nothing is
-// written (the scores stay in this world's memory) and the rows are read again when a score table
-// is shown (`SSQStatus`, the guide's pages 4, 5 and 6; a read replaces the data in memory).
-// Java writes no festival row per player.
 //
 // # Left out
 // - `FestivalMonster.isAutoAttackable(attacker)` (a festival monster is not attackable by another
@@ -401,8 +391,6 @@ impl World {
     pub(crate) fn festival_start_manager(&mut self) {
         let settings = self.seven_signs.settings.festival.clone();
         let now = unix_ms_now();
-        // NOTE(java-quirk): `new FestivalManager()` drops the old instances without unspawning
-        // them, so their witch and monsters would stay for good; they are unspawned here.
         self.festival_unspawn_all();
         self.seven_signs.festival.instances.clear();
         self.seven_signs.status.festival_cycle = self.seven_signs.status.festival_cycle.wrapping_add(1);
@@ -447,8 +435,6 @@ impl World {
     }
 
     /// A `wait(ms)`: the stage runs after `ms`. A wait of 0 or less is a stage run at once.
-    // NOTE(java-quirk): `wait(0)` waits forever and `wait(-1)` throws (ignored); the first would
-    // stop the manager for good, so both go on at once here.
     fn festival_wait(&mut self, ms: i64, stage: FestivalStage) {
         let timer = self.festival_timer(ms.max(0), FestivalTimer::Stage(stage));
         if let Some(old) = self.seven_signs.festival.stage_timer.replace(timer) {
@@ -733,8 +719,6 @@ impl World {
     }
 
     /// `getFestivalForPlayer(player)`: the oracle and the level range, `(-1, -1)` for nobody.
-    // NOTE(java-quirk): the loop reads Dusk at `++festivalId`, so it finds Dawn in ranges 0, 2 and 4
-    // and Dusk in ranges 1, 3 and 5 only (the other ranges read as "not found").
     pub fn festival_for_player(&self, player: ObjectId) -> (i32, i32) {
         let mut festival_id = 0;
         let has = |map: &BTreeMap<i32, Option<Vec<ObjectId>>>, id: i32| {
@@ -1041,7 +1025,6 @@ impl World {
         if offering_score > i64::from(this_cabal) {
             // If the current score is greater than that for the other cabal, then they already
             // have the points from this festival.
-            // NOTE(java-quirk): that also refuses a better score of the cabal that leads.
             if this_cabal > other_cabal {
                 return false;
             }
@@ -1062,8 +1045,6 @@ impl World {
                 festival_id
             };
             let cycle = self.seven_signs.festival.signs_cycle;
-            // NOTE(java-quirk): without a data set for the cycle Java changes a blank copy that
-            // is thrown away.
             if let Some(data) = self
                 .seven_signs
                 .festival
@@ -1105,8 +1086,6 @@ impl World {
 
     /// Java `distribAccumulatedBonus(player)`: the player's share of the bonus of the festival his
     /// name is in, when his cabal won.
-    // NOTE(java-quirk): nothing is paid out; the share is taken off the accumulated bonus and only
-    // the caller's page depends on it.
     pub fn festival_distrib_accumulated_bonus(&mut self, player: ObjectId) -> i32 {
         let player_cabal = self.ss_player_cabal(player.0);
         if player_cabal != self.ss_cabal_highest_score() {
@@ -1698,7 +1677,6 @@ impl World {
             if count < min {
                 // Under minimum count.
                 self.festival_update_participants(player, None);
-                // NOTE(java-quirk): the player is out of the party already, so this does nothing.
                 self.remove_party_member(party, player, PartyMessageType::Expelled);
             }
         }
@@ -1709,8 +1687,6 @@ impl World {
     /// `FestivalMonster.doItemDrop(lastAttacker)`: a blood offering for the leader of the killer's
     /// party. The normal drop follows (the caller).
     /// `false` when the monster gives no drop at all.
-    // NOTE(java-quirk): a killer who is no player (a summon too) or has no party ends the method
-    // before `super.doItemDrop`, so the monster drops nothing then.
     pub(crate) fn festival_monster_drop(
         &mut self,
         monster: ObjectId,
@@ -1742,8 +1718,6 @@ impl World {
 
     /// The festival modifier of `Formulas.calcHpRegen` / `calcMpRegen`: `Some` for a participant
     /// while a festival is in progress (`calcFestivalRegenModifier`).
-    // NOTE(java-quirk): `getFestivalForPlayer` finds only some ranges (see there), and `-1` makes
-    // the modifier 0, which stops the regeneration of everybody who is in another range.
     pub(crate) fn festival_regen_modifier(&self, player: ObjectId) -> Option<f64> {
         if !(self.seven_signs.festival.in_progress && self.is_festival_participant(player)) {
             return None;
@@ -2023,7 +1997,6 @@ impl World {
         }
     }
 
-    /// What the pages 4, 5 and 6 show once the rows were read again (D-50).
     pub(crate) fn festival_show_page(&mut self, npc: ObjectId, player: ObjectId, value: i32) {
         if !self.players.contains_key(&player) || !self.npcs.contains_key(&npc) {
             return;

@@ -1,14 +1,8 @@
 //! Quest 308: Reed Field Maintenance (Katensa in the Hot Springs area trades the mucrokian hides for dynasty and Moirai items).
-// Java: dist/game/data/scripts/quests/Q00308_ReedFieldMaintenance/Q00308_ReedFieldMaintenance.java
-//
 // Pattern: a repeatable trade (`docs/design/scripts.md`, "Quest patterns"): the mucrokians drop
 // hides (awakened ones their own kind) for a random party member; Katensa exchanges hides for one
 // item of a table (Moirai pieces get 1 to 4 of them), the exchange takes the awakened hides first.
 // Players who are on Q00309_ForAGoodCause are sent to its own NPC (`player_quest_state`).
-//
-// NOTE(java-quirk): the reward check reads Q00238 with the full class name (`Class.getName()`),
-// which never matches a quest state (states are keyed by the simple name), so the page is always
-// the one for "not completed".
 
 use l2_util::ObjectId;
 use l2_world::script::{QuestSound, STARTED};

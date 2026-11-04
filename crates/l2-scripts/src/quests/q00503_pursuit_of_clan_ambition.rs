@@ -1,6 +1,4 @@
 //! Quest 503: Pursuit of Clan Ambition (a level 4 clan's leader earns the Seal of Aspiration).
-// Java: dist/game/data/scripts/quests/Q00503_PursuitOfClanAmbition/Q00503_PursuitOfClanAmbition.java
-//
 // Pattern: a long clan quest driven by the memo state (1000 .. 10000). The clan leader's quest
 // state decides what the members' kills give; the members also hold a state (`lqs != null`) to
 // talk to the NPCs.
@@ -221,7 +219,6 @@ impl Script for Q00503PursuitOfClanAmbition {
             "30762-02.html" => {
                 let npc = npc?;
                 let memo = qs.get_memo_state(ctx);
-                // NOTE(java-quirk): 2100 is in both lists; the first (the reward) wins.
                 if [2000, 2101, 2001, 2100].contains(&memo) {
                     ctx.give_items(player, BLITZ_WYRM_EGG, 3);
                     ctx.give_items(player, MIST_DRAKES_EGG, 4);
@@ -336,7 +333,6 @@ impl Script for Q00503PursuitOfClanAmbition {
 
         match npc.id {
             DRAKE | DRAKE2 => {
-                // NOTE(java-quirk): `>= 2000 || < 3000` is always true; the drops have no memo gate.
                 let memo = leader_qs.get_memo_state(ctx);
                 if memo >= 2000 || memo < 3000 {
                     ctx.give_item_randomly(leader, None, MIST_DRAKES_EGG, 1, 1, 10, 0.1, true);
@@ -344,14 +340,12 @@ impl Script for Q00503PursuitOfClanAmbition {
                 }
             }
             THUNDER_WYRM | THUNDER_WYRM2 => {
-                // NOTE(java-quirk): the same always-true memo test.
                 let memo = leader_qs.get_memo_state(ctx);
                 if memo >= 2000 || memo < 3000 {
                     ctx.give_item_randomly(leader, None, THUNDER_WYRM_EGG, 1, 1, 10, 0.5, true);
                 }
             }
             GRAVE_GUARD => {
-                // NOTE(java-quirk): `< 8511 || >= 8500` is always true.
                 let memo = leader_qs.get_memo_state(ctx);
                 if memo < 8511 || memo >= 8500 {
                     leader_qs.set_memo_state(ctx, memo + 1);
@@ -376,7 +370,6 @@ impl Script for Q00503PursuitOfClanAmbition {
                 }
             }
             BLITZ_WYRM => {
-                // NOTE(java-quirk): the same always-true memo test.
                 let memo = leader_qs.get_memo_state(ctx);
                 if memo >= 2000 || memo < 3000 {
                     ctx.give_item_randomly(leader, None, BLITZ_WYRM_EGG, 1, 1, 10, 1.0, true);
@@ -388,7 +381,6 @@ impl Script for Q00503PursuitOfClanAmbition {
                 }
             }
             IMPERIAL_GRAVEKEEPER => {
-                // NOTE(java-quirk): `< 8511 || >= 8500` is always true.
                 let memo = leader_qs.get_memo_state(ctx);
                 if (memo < 8511 || memo >= 8500)
                     && let Some((x, y, z)) = ctx.world().position_of(npc.object_id)

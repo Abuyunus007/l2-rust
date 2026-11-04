@@ -6,15 +6,6 @@
 //! Every scenario is written once (`play_*`) against a `Harness` and runs twice, like
 //! `e2e_m4.rs` and `e2e_m5.rs`:
 //!
-//! * `Net`: the real thing. The Rust login server and the Rust game server in one process, a
-//!   throwaway MariaDB, `FakeGameClient`s on sockets. It runs only when `L2_TEST_DATABASE_URL`
-//!   is set (CI's MariaDB job; never point it at a database with real data). Both servers listen
-//!   on port 0 on loopback. After a scenario the rows the game server wrote are read back and
-//!   compared with what the Java statements write (D-39).
-//! * `BareWorld`: the same datapack, configuration, geodata, zones and spawns loaded the way the
-//!   game server loads them, but with the world driven directly (no sockets, no database, ticks
-//!   instead of time) and a seeded RNG. It always runs. The persistence commands the world sends
-//!   are applied to a small model of the tables (`SimDb`), so the same row checks run here.
 //!
 //! A client action is an `Act`: the `ClientInput` for the bare world and the bytes of the packet
 //! the real client sends for `Net`. `every_act_decodes_on_the_wire` checks that the bytes decode
@@ -337,7 +328,6 @@ mod act {
             ctrl_pressed: false,
             shift_pressed: false,
         };
-        // Java: the three store actions go to the store code, the others to the action code.
         let input = if matches!(action_id, 10 | 28 | 61) {
             ClientInput::Store(StoreInput::ActionUse { action_id })
         } else {
@@ -1576,7 +1566,6 @@ impl Rig {
             "the creation point of the datapack"
         );
         let char_id = created.object_id;
-        // Java: Logout at the character screen disconnects.
         assert!(game.logout().await.is_empty());
         self.wait_until_out_of_game(account).await;
         char_id
@@ -1747,8 +1736,6 @@ impl Rig {
     }
 }
 
-/// One rig at a time: every real-server test starts a login server, a game server and a
-/// database, and the tests of this file run side by side.
 static ONE_RIG_AT_A_TIME: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 /// The scenario against the real servers.

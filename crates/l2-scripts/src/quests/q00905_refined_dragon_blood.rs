@@ -1,5 +1,4 @@
 //! Quest 905: Refined Dragon Blood (the Separated Souls send the adventurer to the dragon knights and drakes).
-// Java: dist/game/data/scripts/quests/Q00905_RefinedDragonBlood/Q00905_RefinedDragonBlood.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, QuestSound, QuestType, STARTED};

@@ -1,6 +1,4 @@
 //! Quest 421: Little Wing's Big Adventure (Cronos gives the hatchling's flute; Mimyu's pet quest).
-// Java: dist/game/data/scripts/quests/Q00421_LittleWingsBigAdventure/Q00421_LittleWingsBigAdventure.java
-//
 // Pattern: a pet quest. The flute's object id is the quest's link to the summon (`fluteObjectId`).
 // The trees (the attacked monsters) drop fairy leaves while the summon hits them, a memo state
 // counts the trees, and a killed tree calls 20 guardian ghosts. The end is the bugle of the flute.
@@ -204,7 +202,6 @@ impl Script for Q00421LittleWingsBigAdventure {
             CRONOS => match qs.state(ctx) {
                 CREATED => {
                     let flute_count = ctx.get_quest_items_count_of(talker, &FLUTES);
-                    // Java: this quest does not show up without a flute in the inventory.
                     if flute_count != 0 {
                         htmltext = if ctx.player_level(talker) < MIN_PLAYER_LEVEL {
                             "30610-01.htm"

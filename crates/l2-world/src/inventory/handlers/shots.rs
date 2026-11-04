@@ -1,16 +1,6 @@
 //! Soulshots, spiritshots and blessed spiritshots: the item handlers, the charge state of a
 //! weapon, the automatic use (`RequestAutoSoulShot`, `ExAutoSoulShot`, `rechargeShots`) and the
 //! shots of NPCs.
-// Java: dist/game/data/scripts/handlers/items/{SoulShots,SpiritShot,BlessedSpiritShot}.java
-// Java: entity/actor/Player.java (rechargeShots, addAutoSoulShot, removeAutoSoulShot,
-//       disableAutoShot, disableAutoShotByCrystalType, disableAutoShotsAll, isChargedShot,
-//       setChargedShot)
-// Java: entity/actor/Npc.java (isChargedShot, setChargedShot, rechargeShots)
-// Java: entity/item/instance/Item.java (isChargedShot, setChargedShot, unChargeAllShots)
-// Java: entity/item/enums/ShotType.java
-// Java: network/clientpackets/RequestAutoSoulShot.java
-// Java: mechanics/skill/Skill.java (useSoulShot, useSpiritShot, the end of activateSkill)
-//
 // # Where the charge lives
 // Java keeps the charge as a bit mask on the weapon `Item` (a player's `isChargedShot` asks the
 // item in the right hand) and on the `Npc` itself. Here the masks are in a side table keyed by
@@ -279,9 +269,6 @@ impl World {
         // Fake players with `FakePlayerUseShots`: not ported.
         let (mut soul, mut spirit) = self.shots.npc_ammo.get(&id).copied().unwrap_or(template_ammo);
         if soul > 0 || spirit > 0 {
-            // NOTE(java-quirk): a failed soulshot roll returns, so an NPC that wants both kinds
-            // never gets the spiritshot in that call; and the roll is `get(100) > chance`, so a
-            // chance of 100 always passes and a chance of 0 still passes once in a hundred.
             'recharge: {
                 if physical {
                     if soul == 0 || self.rng().below(100) > soul_chance {
@@ -495,8 +482,6 @@ impl World {
                 self.stats(id)
                     .and_then(|v| v.active_weapon_item().map(|w| w.crystal_type_plus()))
             });
-            // NOTE(java-quirk): the shot's own grade is compared with the weapon's grade plus
-            // (S80 and S84 count as S), not with the shot's `getCrystalTypePlus()`.
             if weapon_crystal != Some(template.crystal_type) {
                 let spirit = matches!(item_id, 2509..=2514 | 3947..=3952 | 5790 | 22072..=22081);
                 let message = if spirit {
@@ -506,7 +491,6 @@ impl World {
                 };
                 self.send(id, &SystemMessage::new(message));
             }
-            // NOTE(java-quirk): a shot of the wrong grade is switched on all the same.
             self.add_auto_soul_shot(id, item_id);
             self.send(id, &ExAutoSoulShot { item_id, shot_type });
             // Start the auto soulshot use.

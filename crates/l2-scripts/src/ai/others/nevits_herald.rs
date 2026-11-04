@@ -1,5 +1,4 @@
 //! Nevit's Herald: after Antharas or Valakas die, heralds appear in the towns and offer a buff.
-// Java: dist/game/data/scripts/ai/others/NevitsHerald/NevitsHerald.java
 
 use l2_protocol_game::NpcStringId;
 use l2_util::ObjectId;
@@ -60,10 +59,6 @@ impl Script for NevitsHerald {
         npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        // NOTE(java-quirk): Java reads `npc.getId()` first. The "despawn" timer is started without
-        // an NPC, so it throws a NullPointerException and the heralds are never removed (nor
-        // `SPAWNS` cleared), and the "text_spam" timer of a herald only enters the branch of the
-        // herald, which answers "buff" alone: the heralds never shout.
         let npc = npc?;
         if npc.id == NEVITS_HERALD && event.eq_ignore_ascii_case("buff") {
             let player = player?;

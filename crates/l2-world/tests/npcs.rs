@@ -2,7 +2,6 @@
 
 //! NPC spawning and `NpcInfo`: synthetic spawn files for the counting rules, the real datapack
 //! and the recorded Java session (both skipped when the reference folders are missing).
-//! Java: data/xml/SpawnData.java, entity/spawns/*.java, network/serverpackets/AbstractNpcInfo.java.
 
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -253,7 +252,6 @@ fn territory_spawns_land_inside_the_territory_with_a_random_heading() {
         assert!(n.core.heading < 61_794);
         headings.insert(n.core.heading);
     }
-    // NOTE(java-quirk) kept: the XML heading is dropped for territory spawns.
     assert!(headings.len() > 10, "headings are random: {headings:?}");
 }
 

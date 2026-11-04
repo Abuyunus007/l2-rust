@@ -1,6 +1,5 @@
 //! Raw RSA as L2 uses it: `RSA/ECB/NoPadding`, no padding scheme anywhere.
 //!
-//! Java: loginserver/controller/LoginController.java (1024-bit client keys),
 //! loginserver/data/GameServerTable.java `initRSAKeys` (512-bit GS link keys),
 //! loginserver/network/clientpackets/RequestAuthLogin.java,
 //! loginserver/network/gameserverpackets/receive/BlowFishKey.java and

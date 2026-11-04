@@ -1,15 +1,5 @@
 //! The Hellbound engine: the level and the trust of the island, the spawns of each level, the
 //! doors, and the trust points of the kills (`HellboundLoader` loads it first).
-// Java: dist/game/data/scripts/ai/areas/Hellbound/HellboundEngine.java, HellboundLoader.java,
-//       HellboundPointData.java, HellboundSpawns.java
-//
-// The engine is not a singleton here: its Java fields (`_cachedLevel`, `_maxTrust`, `_minTrust`
-// and the `Spawn`s of `HellboundSpawns`) are the [`HbState`] of the script, a shared state the
-// other Hellbound scripts reach through the free functions below (`level`, `update_trust`, ...).
-// The level and the trust are the `HBLevel` / `HBTrust` global variables, as in Java (D-54: kept
-// in memory, written only with `CycleDatabaseWrites`, and re-read every update because the Java
-// GS may have changed them, D-50).
-//
 // `//hellbound_setlevel` and `//hellbound` (Java `AdminHellbound`, a handler outside this folder)
 // live in `l2_world::script::hellbound_api`: the setter writes `HBLevel`, which this engine's
 // update sees as "changed by administrator".
@@ -163,8 +153,6 @@ fn do_spawn(ctx: &mut ScriptCtx<'_>) {
             let world = ctx.world();
             // Java reuses the `Npc` object of the spawn (`setDecayed(false)`, `doRevive()`,
             // `setSpawned(true)`); here an NPC that is gone or waits for its respawn is a new one.
-            // NOTE(java-quirk): Java also revives a dead NPC whose corpse is still there; here
-            // that NPC decays and respawns by itself.
             if world.spawn_current_count(index) == 0 && world.spawn_scheduled_count(index) == 0 {
                 ctx.world_mut().script_do_spawn(index);
                 added += 1;
@@ -335,7 +323,6 @@ mod tests {
     fn setup() -> ScriptTest {
         let mut registry = ScriptRegistry::new();
         registry.add(HellboundEngine);
-        // `CycleDatabaseWrites` on: the update's re-read of the two rows (D-50) runs at once.
         ScriptTest::new_with(registry, NPCS, "", &[], |world, _| {
             world.set_script_settings(l2_world::ScriptSettings {
                 ..l2_world::ScriptSettings::default()

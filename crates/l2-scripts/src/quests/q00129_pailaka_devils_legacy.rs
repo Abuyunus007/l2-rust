@@ -1,6 +1,4 @@
 //! Quest 129: Pailaka - Devil's Legacy (Survivor, Supporter, the dwarf adventurers and three bosses).
-// Java: dist/game/data/scripts/quests/Q00129_PailakaDevilsLegacy/Q00129_PailakaDevilsLegacy.java
-//
 // Pattern: like Q00128 (the instance NPC pays only players inside the instance) plus a first-talk
 // page (`add_first_talk_id`). The instance entry belongs to the instance script (`instances/`).
 

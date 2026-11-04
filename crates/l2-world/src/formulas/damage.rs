@@ -1,6 +1,5 @@
 //! Physical damage of a normal attack and the helpers it calls.
 //!
-//! Java: `mechanics/stats/Formulas.java` `calcPhysDam(attacker, target, null, shld, crit, ss)`,
 //! `calcAttributeBonus`, `calcGeneralTraitBonus` / `calcWeaponTraitBonus` / `calcAttackTraitBonus`,
 //! `calcLvlBonusMod`; `entity/actor/Creature.getRandomDamageMultiplier`.
 //! Skill damage (`skill != null`: skill power, `PHYSICAL_SKILL_POWER`, skill penalties, blows) is M5.
@@ -251,8 +250,6 @@ pub fn calc_phys_dam(input: &PhysDamInput<'_>, shld: u8, crit: bool, ss: bool, r
 
     // Defense bonuses in PvP fight.
     if is_pvp {
-        // NOTE(java-quirk): a normal attack (`skill == null`) still uses the *skill* defence
-        // multiplier of the class balance config here.
         defence *= input.pvp_physical_def;
         defence *= f64::from(input.class_balance.pvp_physical_skill_defence);
     }
@@ -301,8 +298,6 @@ pub fn calc_phys_dam(input: &PhysDamInput<'_>, shld: u8, crit: bool, ss: bool, r
         );
     }
 
-    // NOTE(java-quirk): the multiplier is applied a second time, whatever the config says, so a
-    // normal attack varies by up to twice the weapon's random damage (and draws twice).
     damage *= random_damage_multiplier(
         input.attacker_has_active_weapon,
         input.random_damage,
@@ -465,7 +460,6 @@ mod tests {
     fn random_damage_is_drawn_twice() {
         let mut i = input();
         i.random_damage = 10;
-        // NOTE(java-quirk) of calc_phys_dam: two draws, each 1 + r/100.
         let d = dmg(&i, 0, false, false, &[10, -10]);
         assert_eq!(d, 100.0 * 1.1 * 0.9);
         // With the config off only the unconditional draw is left.

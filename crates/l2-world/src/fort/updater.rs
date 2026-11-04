@@ -1,22 +1,10 @@
 //! `FortUpdater`: the periodic jobs of an owned fortress (the blood oaths, the supply level and the
 //! contract with a castle, and the end of the owner's time).
-// Java: mechanics/siege/FortUpdater.java, FortUpdaterType.java
-// Java: mechanics/siege/Fort.java (load, updateOwnerInDB: where the two tasks are started and
-//       cancelled; getTimeTillRebelArmy, getTimeTillNextFortUpdate)
-// Java: entity/clan/Clan.java (increaseBloodOathCount)
-//
 // # The tasks
 // `_fortUpdater[0]` is the periodic update (every `FortressPeriodicUpdateFrequency` minutes),
 // `_fortUpdater[1]` the owner's time limit (every hour while `FortressMaximumOwnTime` is above 0,
 // or once, a minute after the start, when the owner held the fortress too long already). Both
 // run on the timer wheel ([`FortTimer::Updater`]).
-//
-// # Side by side (D-49, D-51)
-// Java runs the same jobs on both servers. Here the blood oaths count up in memory and the clan's
-// row is written with the switch; the part that moves adena (the fee for the contracted castle,
-// the supply level and the fall back to an independent fortress when the clan cannot pay) runs only
-// with `SiegeDatabaseWrites`, because it changes the clan warehouse and the castle treasury,
-// which the Java game server charges for real (see `residence/functions.rs` for the same rule).
 
 use tracing::warn;
 
@@ -162,8 +150,6 @@ impl World {
                         Some(3_600_000),
                     );
                 }
-                // NOTE(java-quirk): with `FortressMaximumOwnTime` off, Java keeps the old
-                // `_fortUpdater[1]` future of an earlier owner (it was cancelled, not nulled).
             }
             None => {
                 self.fort_cancel_updater(fort, 0, true);

@@ -1,7 +1,6 @@
 //! Hand-ported fields of the misc custom configs (M9-C06): the `()` placeholders of
 //! `ScreenWelcomeMessageConfig`, `MultilingualSupportConfig`, `CustomMailManagerConfig`,
 //! `DualboxCheckConfig` and `CaptchaConfig`.
-// Java: org/l2jmobius/gameserver/config/custom/{ScreenWelcomeMessage,MultilingualSupport,
 // CustomMailManager,DualboxCheck,Captcha}Config.java
 //
 // They live in `GameManual::custom_misc`. Every key has the Java default; the `int` products wrap
@@ -43,7 +42,6 @@ impl CustomMiscManual {
         dualbox: &IniFile,
         captcha: &IniFile,
     ) -> Self {
-        // Java: MultilingualSupportConfig.java:48-65
         let multilang_default = multilingual.get_string("MultiLangDefault", "en").to_lowercase();
         let allowed = multilingual.get_string("MultiLangAllowed", &multilang_default);
         let multilang_allowed: Vec<String> = java_split(&allowed, ';')
@@ -86,7 +84,6 @@ pub fn ipv4_hash(text: &str) -> Option<i32> {
 }
 
 /// Java `DualboxCheckConfig.load()`: `address,count;address,count`.
-// Java: DualboxCheckConfig.java:65-92
 fn parse_whitelist(text: &str) -> HashMap<i32, i32> {
     let mut map = HashMap::new();
     for entry in java_split(text, ';') {

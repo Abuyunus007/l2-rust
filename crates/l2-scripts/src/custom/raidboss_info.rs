@@ -1,5 +1,4 @@
 //! The raid boss information NPCs: a link per boss that marks its spawn on the radar.
-// Java: dist/game/data/scripts/custom/RaidbossInfo/RaidbossInfo.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

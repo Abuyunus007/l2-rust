@@ -96,8 +96,6 @@ impl World {
     }
 }
 
-// Java: gameserver/config/custom/*.java, dist/game/data/scripts/custom/**
-//
 // # The buffer cards (M9-C03)
 // - `community_board.rs`: the custom home board (`CommunityBoard.ini`).
 // - `scheme_buffer.rs`: the scheme buffer NPC (`SchemeBuffer.ini`).

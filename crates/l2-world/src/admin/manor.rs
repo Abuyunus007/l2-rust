@@ -1,7 +1,5 @@
 //! `//manor`: the manor status page, with the current mode, the next mode change and the manor
 //! cost of every castle for this period and the next one.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminManor.java
-// Java: util/FormatUtil.java (formatAdena)
 
 use l2_util::ObjectId;
 

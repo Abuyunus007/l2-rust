@@ -1,7 +1,4 @@
 //! What the castle NPCs ask of Seven Signs.
-// Java: mechanics/sevensigns/SevenSigns.java (getSealOwner, getCurrentPeriod, getPlayerCabal,
-//       isCompResultsPeriod, isCompetitionPeriod, isSealValidationPeriod)
-//
 // M8-SS-01: the answers come from the Seven Signs state (`sevensigns/`).
 
 use l2_util::ObjectId;

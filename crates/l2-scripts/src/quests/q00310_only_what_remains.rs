@@ -1,6 +1,4 @@
 //! Quest 310: Only What Remains (Kintaijin in the Rune town, the Mutated Creatures).
-// Java: dist/game/data/scripts/quests/Q00310_OnlyWhatRemains/Q00310_OnlyWhatRemains.java
-//
 // Pattern: a party kill, a random member at a state (`docs/design/scripts.md`, "Quest patterns"):
 // `get_random_party_member_cond(player, 1)` draws the member and the bead goes to that member.
 // The start needs another quest completed (Q00240) through its state: a read only

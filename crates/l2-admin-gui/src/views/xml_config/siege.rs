@@ -1,6 +1,5 @@
 //! `SiegeSchedule.xml`: the siege day and hour of each castle.
 //!
-//! Java: `data/xml/SiegeScheduleData.java` (`day` is a `java.util.Calendar` constant name such as
 //! `SUNDAY`, or a number), `mechanics/siege/SiegeScheduleDate.java` (defaults: day Sunday, hour
 //! 16, `maxConcurrent` 5, siege disabled). Rust loader: `l2_data::SiegeSchedule`.
 //!
@@ -167,7 +166,6 @@ impl XmlForm for SiegeForm {
                             });
                             flag_cell(ui, row, "siegeEnabled", false);
                             ui.horizontal(|ui| {
-                                // Java: a missing day is Sunday.
                                 let current = day_index(row.get_or("day", "SUNDAY"));
                                 let mut chosen = current;
                                 let shown = current.map_or("?", |d| DAYS[d]);

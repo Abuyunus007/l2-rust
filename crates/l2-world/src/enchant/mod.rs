@@ -1,13 +1,4 @@
 //! Enchanting items and putting elements on them (M6-ENCHANT-01).
-// Java: network/clientpackets/{RequestEnchantItem,RequestExTryToPutEnchantTargetItem,
-//       RequestExTryToPutEnchantSupportItem,RequestExCancelEnchantItem,RequestExEnchantItemAttribute,
-//       RequestExRemoveItemAttribute}.java
-// Java: dist/game/data/scripts/handlers/items/{EnchantScrolls,EnchantAttribute}.java
-// Java: dist/game/data/scripts/handlers/bypass/npc/ReleaseAttribute.java
-// Java: network/serverpackets/ExShowBaseAttributeCancelWindow.java
-// Java: entity/actor/Player.java (the `_activeEnchant*` fields, `isEnchanting`)
-// Java: network/clientpackets/{UseItem,EnterWorld}.java (the over-enchant protection)
-//
 // # Model
 // The data (`EnchantItemData`, `EnchantItemGroupsData`, `ElementalAttributeData`) is read only and
 // lives in [`EnchantWorld`], installed with [`World::set_enchant_data`]. What Java keeps in the
@@ -33,10 +24,6 @@
 // `check_item_manipulation`, `is_item_available`), a trade cannot be confirmed
 // (`TradeDone`), logout and restart are refused (`canLogout`), `ConvertItem` and the
 // `ChangeWeapon` condition give up (`isEnchanting`).
-//
-// # Left out on purpose
-// - The Java GS "enchant.items" log file: the lines go to `tracing` with the target `enchant.items`
-//   (`LogItemEnchants`).
 
 mod attribute;
 mod protection;

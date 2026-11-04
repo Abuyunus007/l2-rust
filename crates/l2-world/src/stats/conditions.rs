@@ -1,6 +1,4 @@
 //! Condition evaluation: the `Condition` trees of `l2-data` tested against the world.
-// Java: mechanics/conditions/*.java (testImpl of each class)
-//
 // Java tests a condition with `(effector, effected, skill, item)`; the stat functions always pass
 // `item = null`. Here the effector is a [`StatView`], the effected an optional object id.
 //
@@ -507,7 +505,6 @@ pub(crate) fn test(cond: &Condition, env: &CondEnv<'_, '_>) -> bool {
             None => false,
         },
         Condition::TargetWeight { weight } => target(env).is_some_and(|t| {
-            // Java: false for a target in diet mode.
             t.player().is_some()
                 && !t.world().players.get(&t.object_id()).is_some_and(|p| p.gm.diet)
                 && t.max_load() > 0

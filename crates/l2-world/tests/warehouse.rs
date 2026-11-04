@@ -4,7 +4,6 @@
 //! `SendWareHouseWithDrawList`, `RequestPackageSend`, `RequestPackageSendableItemList`, the fees,
 //! the sorted lists and the item rows. The expected values come from the Java code named in each
 //! test.
-//! Java: dist/game/data/scripts/handlers/bypass/npc/{PrivateWarehouse,ClanWarehouse,Freight}.java,
 //! network/clientpackets/{SendWareHouseDepositList,SendWareHouseWithDrawList,RequestPackageSend,
 //! RequestPackageSendableItemList}.java, entity/itemcontainer/{ItemContainer,PlayerWarehouse,
 //! ClanWarehouse,PlayerFreight}.java, network/serverpackets/SortedWareHouseWithdrawalList.java.
@@ -214,7 +213,6 @@ const A: ObjectId = ObjectId(0x6000_0001);
 const B: ObjectId = ObjectId(0x6000_0002);
 const C: ObjectId = ObjectId(0x6000_0003);
 const CLAN: i32 = 500;
-/// Where the Rust server's new object ids start (D-39).
 const RUST_IDS: i32 = 0x6000_0000;
 
 fn item(object_id: i32, item_id: i32, count: i64, loc: &str) -> ItemData {
@@ -1799,9 +1797,6 @@ fn only_a_warehouse_keeper_serves_the_warehouse_bypasses() {
 
 // ---- one database, two servers (M6-SYNC-01) -----------------------------------------------------
 
-/// The window of the clan warehouse waits for the rows of the clan (D-15: the world asks, the
-/// persistence task answers) and shows the refreshed container: an item the Java GS took is not in
-/// the list, one it added is.
 #[test]
 fn the_clan_warehouse_window_shows_the_refreshed_rows() {
     let mut s = clan_scene(3, WorldSettings::default());
@@ -1818,7 +1813,6 @@ fn the_clan_warehouse_window_shows_the_refreshed_rows() {
     assert_eq!(s.world.player(A).unwrap().warehouse.active, None);
     assert_eq!(s.world.clan(CLAN).unwrap().warehouse.len(), 2);
 
-    // The sword (400) was taken at the Java GS, a cuirass (405) was deposited there.
     s.world.handle(WorldCommand::ClanWarehouseLoaded {
         player: A,
         clan_id: CLAN,
@@ -1961,9 +1955,6 @@ fn the_private_warehouse_does_not_ask() {
     assert_eq!(of(&s.log.take(), A, "WAREHOUSE_WITHDRAW_LIST").len(), 1);
 }
 
-/// `SendWareHouseWithDrawList` on the clan warehouse reads the rows first and runs on the refreshed
-/// container: nothing moves before the answer, an item the Java GS took meanwhile is skipped (and
-/// does not punish the player), the rest goes on.
 #[test]
 fn a_clan_withdraw_runs_on_the_refreshed_container() {
     let mut s = clan_scene(3, WorldSettings::default());
@@ -1981,7 +1972,6 @@ fn a_clan_withdraw_runs_on_the_refreshed_container() {
     );
     assert_eq!(s.world.clan(CLAN).unwrap().warehouse.len(), 2);
 
-    // The sword (400) was taken on the Java GS; 401 is still there.
     s.world.handle(WorldCommand::ClanWarehouseLoaded {
         player: A,
         clan_id: CLAN,

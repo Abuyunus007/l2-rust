@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/PrivateStoreRangeConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/PrivateStoreRange.ini` (Java: `PrivateStoreRangeConfig`).

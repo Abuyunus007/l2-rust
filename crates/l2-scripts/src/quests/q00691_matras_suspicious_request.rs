@@ -1,6 +1,4 @@
 //! Quest 691: Matras' Suspicious Request (Matras at the Steel Citadel, the guards of Bate Tower).
-// Java: dist/game/data/scripts/quests/Q00691_MatrasSuspiciousRequest/Q00691_MatrasSuspiciousRequest.java
-//
 // Pattern: a repeatable quest whose progress lives in a quest variable (`submitted_gems`): the
 // Red Stones of the tower guards are handed in, counted into the variable and paid per stone
 // (or 744 stones for the Dynasty Soul). The pages show the count with `%itemcount%`
@@ -120,13 +118,10 @@ impl Script for Q00691MatrasSuspiciousRequest {
         let Some((_, chance)) = REWARD_CHANCES.iter().find(|(id, _)| *id == npc.id) else {
             return;
         };
-        // Java: `numItems = max(chance / 1000, 1)` and `chance %= 1000`; every chance is below
         // 1000, so one stone at most, and the roll is `<=`.
         let num_items = i64::from((chance / 1000).max(1));
         let chance = chance % 1000;
         if ctx.get_random(1000) <= chance {
-            // NOTE(java-quirk): the stone goes to the killer, not to the member the random pick
-            // returned (Java passes `player`, not `pl`).
             ctx.give_items(killer, RED_GEM, num_items);
             ctx.play_sound(killer, QuestSound::ItemsoundQuestItemget);
         }

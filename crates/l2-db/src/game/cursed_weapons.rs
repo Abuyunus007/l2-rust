@@ -1,25 +1,16 @@
 //! The `cursed_weapons` table, and the two statements a cursed weapon's end runs on a character
 //! that is offline (M8-CURSED-01).
-// Java: managers/CursedWeaponsManager.java (restore, controlPlayers, removeFromDb)
-// Java: entity/actor/holders/player/CursedWeapon.java (saveData, endOfLife)
-//
-// Same layout as manor.rs: verbatim SQL, one method per statement. D-39, D-53: the Java game
-// server writes the same rows; the world decides which writes go out (`CycleDatabaseWrites`).
 
 use sqlx::FromRow;
 
 use crate::error::Result;
 use crate::pool::Pool;
 
-// Java: CursedWeaponsManager.restore
 const SELECT_ALL: &str =
     "SELECT itemId, charId, playerKarma, playerPkKills, nbKills, endTime FROM cursed_weapons";
-// Java: CursedWeapon.saveData
 const DELETE_WEAPON: &str = "DELETE FROM cursed_weapons WHERE itemId = ?";
 const INSERT_WEAPON: &str = "INSERT INTO cursed_weapons (itemId, charId, playerKarma, playerPkKills, nbKills, endTime) VALUES (?, ?, ?, ?, ?, ?)";
-// Java: CursedWeaponsManager.controlPlayers
 const SELECT_ITEM_OWNER: &str = "SELECT owner_id FROM items WHERE item_id=?";
-// Java: CursedWeaponsManager.controlPlayers, CursedWeapon.endOfLife (offline)
 const DELETE_OWNER_ITEM: &str = "DELETE FROM items WHERE owner_id=? AND item_id=?";
 const RESTORE_KARMA: &str = "UPDATE characters SET karma=?, pkkills=? WHERE charId=?";
 

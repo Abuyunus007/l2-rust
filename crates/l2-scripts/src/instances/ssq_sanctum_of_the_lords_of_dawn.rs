@@ -1,5 +1,4 @@
 //! Sanctum of the Lords of Dawn (instance 111), the Seven Signs quest 195 (Secret Ritual of the Priests).
-// Java: dist/game/data/scripts/instances/SSQSanctumOfTheLordsOfDawn/SSQSanctumOfTheLordsOfDawn.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::SystemMessageId;

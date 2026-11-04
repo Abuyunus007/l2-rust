@@ -7,16 +7,6 @@
 //!
 //! Every scenario is written once against a `Harness` and runs like `e2e_m7.rs`:
 //!
-//! * `Net`: the real thing. The Rust login server and the Rust game server in one process, a
-//!   throwaway MariaDB, a `FakeGameClient` on a socket. It runs only when `L2_TEST_DATABASE_URL`
-//!   is set (CI's MariaDB job; never point it at a database with real data). The rows the Java
-//!   game server would keep (the raid boss, the item auction, the Seven Signs status) are
-//!   inserted before the game server starts (D-39). After a scenario the rows are read back and
-//!   compared with what Java's statements write.
-//! * `BareWorld`: the same datapack, configuration, geodata, zones and spawns loaded the way the
-//!   game server loads them, but with the world driven directly (no sockets, no database, ticks
-//!   instead of time). The persistence commands the world sends are recorded, the reads the
-//!   world asks for are answered from a model of the rows, so the same row checks run here.
 //!
 //! A client action is an `Act`: the `ClientInput` for the bare world and the bytes of the packet
 //! the real client sends for `Net`. `every_act_decodes_on_the_wire` checks that the bytes decode
@@ -434,10 +424,6 @@ trait Harness {
     async fn fact(&mut self, fact: Fact) -> i64;
 }
 
-// ------------------------------------------------------------------------------------------
-// What the Java game server keeps (the seed)
-// ------------------------------------------------------------------------------------------
-
 struct Seed {
     now: i64,
 }
@@ -463,7 +449,6 @@ impl Seed {
         }
     }
 
-    /// The auction the Java game server started a minute ago and that runs for an hour.
     fn auction_record(&self) -> ItemAuctionRecord {
         ItemAuctionRecord {
             auction_id: m8_data::AUCTION_ID,
@@ -486,7 +471,6 @@ impl Seed {
         }
     }
 
-    /// The statements of the Java game server before this one starts.
     fn startup_sql(&self) -> Vec<String> {
         let raid = self.raid_row();
         let auction = self.auction_record();
@@ -786,16 +770,13 @@ impl BareWorld {
             Arc::clone(&datapack.elemental_attributes),
         );
         world.spawn_door_data(&datapack, &ids).unwrap();
-        // Java: InstanceManager (the names and templates; M8-INST-01).
         world.set_instance_settings(game_server::world_data::instance_settings(&config, &config_dir));
         world.set_instance_data(Arc::clone(&datapack.instances));
         npcs::spawn_npcs(&mut world, &datapack, ids, &config, &config_dir);
 
-        // Java: RaidBossPointsManager, GrandBossManager and RaidBossSpawnManager (M8-BOSS-01).
         world.set_boss_settings(game_server::world_data::boss_settings(&config, &config_dir));
         world.load_bosses(BossLoad::default());
         world.spawn_raid_bosses(vec![seed.raid_row()]);
-        // Java: SevenSigns (after the castles), then the Mammon spawns (M8-SS-01).
         world.set_seven_signs_settings(game_server::seven_signs_settings(&config, &config_dir));
         world.load_seven_signs(SevenSignsLoad {
             status: Some(seed.ss_status()),
@@ -803,7 +784,6 @@ impl BareWorld {
         });
         world.load_auto_spawns(Vec::new());
         world.spawn_seven_signs_npc();
-        // Java: Olympiad.getInstance (GameServer; M8-OLY-01). The clock is the tests': a real
         // server has no clock override, so this half is bare only.
         if opts.olympiad {
             world.set_olympiad_settings(olympiad_test_settings(&config));
@@ -818,10 +798,8 @@ impl BareWorld {
                 ..OlympiadLoad::default()
             });
         }
-        // Java: the scripts of the boats (M8-VEHICLE-01).
         world.set_vehicle_settings(game_server::vehicle_settings(&config));
         world.spawn_boats();
-        // Java: ItemAuctionManager (after the managers; L-05).
         let item_auction_settings = game_server::item_auctions::item_auction_settings(&config, &config_dir);
         let xml =
             std::fs::read_to_string(data_root.join(game_server::item_auctions::ITEM_AUCTIONS_FILE)).unwrap();
@@ -934,8 +912,6 @@ impl BareWorld {
         members
     }
 
-    /// What the persistence task does for the commands that ask a question (D-50): it reads the
-    /// rows and answers on the world's channel. Here the rows come from the model of the tables.
     fn answer_reads(&mut self) {
         loop {
             let commands = self.persisted.commands();
@@ -1130,7 +1106,6 @@ impl Rig {
                 db.exec(statement).await;
             }
         }
-        // The rows the Java game server keeps in the shared database (D-39).
         for statement in seed.startup_sql() {
             db.exec(&statement).await;
         }
@@ -1251,7 +1226,6 @@ impl Rig {
             "the creation point of the datapack"
         );
         let char_id = created.object_id;
-        // Java: Logout at the character screen disconnects.
         assert!(game.logout().await.is_empty());
         self.wait_until_out_of_game(account).await;
         char_id
@@ -1315,8 +1289,6 @@ impl Rig {
     }
 }
 
-/// One rig at a time: every real-server test starts a login server, a game server and a
-/// database, and the tests of this file run side by side.
 static ONE_RIG_AT_A_TIME: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 /// The scenario against the real servers.
@@ -1655,7 +1627,6 @@ async fn seven_signs<H: Harness>(h: &mut H) {
         pages(&paid)
     );
 
-    // The status page (D-50: with the switch off it is read from the rows first).
     h.act(act::ssq_status(1)).await;
     let status = h.collect_until(&|body| is_named(body, "SSQ_STATUS")).await;
     let page = &all::<SsqStatus>(&status, "SSQ_STATUS")[0];

@@ -1,5 +1,4 @@
 //! `NpcBuffersData.xml` (Java `NpcBuffersData`), copied into the code like `hellbound/data.rs`.
-// Java: dist/game/data/scripts/ai/others/NpcBuffers/NpcBuffersData.xml
 
 /// Java `AffectScope` (the two the file uses).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -16,8 +15,6 @@ pub enum AffectObject {
 }
 
 /// One `<skill>`: skill id and level, `delay` in seconds, scope and object.
-// NOTE(java-quirk): Java reads the initial delay from `skillInitDelay`, which no `<skill>` has
-// (the file says `initialDelay`), so the first run is always at once.
 pub type BufferSkill = (i32, i32, i32, AffectScope, AffectObject);
 
 /// `(npc id, skills)`.

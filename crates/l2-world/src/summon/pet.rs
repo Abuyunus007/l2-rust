@@ -1,13 +1,4 @@
 //! Pets: a summon made from a pet collar, with its own level, food, exp and the `pets` row.
-// Java: entity/actor/instance/Pet.java (spawnPet, restore, storeMe, storeEffect, restoreEffects,
-//       FeedTask, startFeed, stopFeed, unSummon, deleteMe, destroyControlItem, doDie, doRevive,
-//       deathPenalty, restoreExp, addExpAndSp, setCurrentFed, isHungry, isUncontrollable)
-// Java: entity/actor/stat/PetStat.java, PlayableStat.java (addExp, removeExp, addLevel)
-// Java: entity/actor/status/PetStatus.java (reduceHp)
-// Java: dist/game/data/scripts/handlers/skill/effects/SummonPet.java (see `effects/handlers`)
-// Java: dist/game/data/scripts/handlers/items/{SummonItems,PetFood}.java
-// Java: data/sql/{CharSummonTable,SummonEffectTable}.java (the pet halves)
-//
 // # Where a pet lives
 // Like a servitor, a pet is a creature in `World::npcs` (`NpcClass::Summon`) with a [`Summon`]
 // of kind [`SummonKind::Pet`] in `SummonWorld::summons`; what only a pet has is [`PetState`]. Its
@@ -21,12 +12,6 @@
 // that `loc` (the loader reads them with the inventory); nothing but the pet code looks at them
 // (`pet_items.rs`).
 //
-// # Rows (D-39)
-// `pets` (`Pet.storeMe`, `destroyControlItem`) and `character_pet_skills_save` (`storeEffect`,
-// `restoreEffects`) are written through [`PersistCommand::Summon`] in Java's order. Java reads
-// them when the pet spawns; the loader reads the rows of the collars a character holds before it
-// enters (`PlayerProfile::pet_rows`, `pet_effects`) and the world keeps them as its view of the
-// tables (`PetWorld::rows`, `saved_effect_rows`).
 //
 // # Left out, with the system that brings it
 // - Mounts are `mount.rs` (`Player.mount` unsummons the pet through [`World::pet_unsummon`]).
@@ -429,8 +414,6 @@ impl World {
         if !known {
             return;
         }
-        // The `pets` row of a collar that came to the character after the login is not in the
-        // world: it is read first, so a pet that has a row is never made new (D-39).
         let pet_world = &self.summons.pet_world;
         if !pet_world.rows.contains_key(&control) && !pet_world.no_row.contains(&control) {
             if self

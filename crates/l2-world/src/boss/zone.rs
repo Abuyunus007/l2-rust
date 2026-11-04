@@ -1,7 +1,6 @@
 //! Java `entity/zone/type/BossZone.java` and the zone registry of `GrandBossManager`: the players a
 //! boss zone lets in (`grandboss_list`), the rule that sends everybody else out, and the lookups
 //! the managers offer (`getZone(creature)`, `getZone(x, y, z)`, `checkIfInZone`).
-//
 // Players only: Java's `onEnter` also removes the summon of a player who may not enter and
 // `onExit` sends a raid boss home, but NPCs and summons have no zone state in the world.
 
@@ -67,8 +66,6 @@ impl World {
             match lists.get_mut(zone) {
                 Some(players) => players.push(*player),
                 None => {
-                    // NOTE(java-quirk): `zones.get(zone).add(..)` throws a NullPointerException,
-                    // the catch is outside the loop and the rows after this one are dropped.
                     warn!("Error while initializing GrandBoss zones: no boss zone {zone}");
                     break;
                 }

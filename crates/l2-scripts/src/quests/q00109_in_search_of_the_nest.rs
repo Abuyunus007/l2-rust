@@ -1,6 +1,4 @@
 //! Quest 109: In Search of the Nest (Mercenary Captain Pierce, the scout's corpse, Kahman).
-// Java: dist/game/data/scripts/quests/Q00109_InSearchOfTheNest/Q00109_InSearchOfTheNest.java
-//
 // Pattern: a delivery chain with a found item (the scout's note) that is taken back at the
 // third step; the states of the start NPC are read through the cond (`switch (getCond())`).
 

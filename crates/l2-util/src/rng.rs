@@ -1,6 +1,5 @@
 //! The world's random number generator (D-13).
 //!
-//! Java: `commons/util/Rnd.java` (static `ThreadLocalRandom` wrappers).
 //!
 //! Game logic must draw every random value from one [`WorldRng`] owned by the world, never from
 //! `rand::rng()` or other thread-local sources. Production seeds it from the OS; tests use

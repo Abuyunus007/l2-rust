@@ -1,10 +1,5 @@
 //! Entering the world: the packets Java's `EnterWorld` sends to a plain character, in Java's
 //! order, and the builders for each of them.
-// Java: network/clientpackets/EnterWorld.java (runImpl)
-// Java: entity/actor/Player.java (restore, checkRecoBonusTask, sendSkillList, refreshOverloaded)
-// Java: network/serverpackets/{UserInfo,ItemList,ExQuestItemList,SendMacroList,ShortcutInit,
-// Java: EtcStatusUpdate,ExStorageMaxCount,ExVoteSystemInfo,SkillList}.java
-//
 // The builders are plain functions of the player's data, so the game server can reuse them
 // (`SkillList` is sent when the character is selected, before the world is involved) and tests
 // can call them directly.
@@ -188,7 +183,6 @@ pub fn skill_list(data: &PlayerData, st: &dyn StaticData) -> SkillList {
                 id: skill.skill_id,
                 level: skill.skill_level,
                 passive: st.skill_is_passive(skill.skill_id),
-                // Java: a clan skill of a clan with negative reputation: not known here.
                 disabled: false,
                 enchanted: skill_is_enchantable(st, skill.skill_id, skill.skill_level),
             })
@@ -197,10 +191,6 @@ pub fn skill_list(data: &PlayerData, st: &dyn StaticData) -> SkillList {
 }
 
 /// Java `ShortcutInit(player)`.
-///
-/// Item shortcuts whose item is gone are left out, like `Shortcuts.restoreMe` does (Java also
-/// deletes their rows; the persistence task never deletes rows it did not see in a snapshot, so
-/// the row stays until the Java game server cleans it up).
 pub fn shortcut_init(data: &PlayerData, st: &dyn StaticData) -> ShortcutInit {
     let mut shortcuts = Vec::new();
     for sc in &data.shortcuts {
@@ -212,7 +202,6 @@ pub fn shortcut_init(data: &PlayerData, st: &dyn StaticData) -> ShortcutInit {
 }
 
 fn shortcut_entry(data: &PlayerData, st: &dyn StaticData, sc: &ShortcutData) -> Option<ShortcutEntry> {
-    // Java: `getSlot() + getPage() * 12`
     let slot = sc.slot + sc.page * 12;
     // `ShortcutType` ordinals: NONE, ITEM, SKILL, ACTION, MACRO, RECIPE, BOOKMARK.
     Some(match sc.kind {
@@ -250,7 +239,6 @@ fn shortcut_entry(data: &PlayerData, st: &dyn StaticData, sc: &ShortcutData) -> 
             slot,
             id: sc.shortcut_id,
         },
-        // Java: `ShortcutType.values()[type]` throws, which drops all shortcuts. A bad row is
         // left out here and the rest is shown.
         _ => return None,
     })
@@ -447,21 +435,15 @@ impl World {
         // Java `Player.restore`, the clan part (`ClanTable.getClan`, rank, privileges, pledge
         // class): before anything shows the player.
         self.clan_restore_player(id);
-        // The residences of the clan as the session read them at `CharacterSelect` (M7-RES-01,
-        // D-51: the Java GS runs the real sieges).
         self.residence_refresh_player(id);
         // The siege state of a fortress siege that is going on, and "Remove combat flag before
         // teleporting" (M7-FORT-01).
         self.fort_player_entered(id);
         // A player registered for the Territory War gets his side (M7-TW-01).
         self.territory_player_entered(id);
-        // The raid points the Java GS may have given the character since this server read them
-        // (M8-BOSS-01, D-50).
         self.request_raid_points_reread(id.0);
         // "Updating Seal of Strife Buff/Debuff" (M8-SS-01).
         self.ss_enter_world_strife(id);
-        // The mails the session read at `CharacterSelect` replace this server's copies of them
-        // (M6-SYNC-01, D-39: the Java GS shares the table).
         self.mail_refresh_player(id);
         // Java `CharacterSelect`: `CharInfoTable.addName(player)` (M6-MAIL-01).
         self.mail_remember_player(id);
@@ -590,9 +572,6 @@ impl World {
         // "Check if expoff is enabled." (S-HAND-02)
         self.exp_gain_on_enter(id);
 
-        // NOTE(java-quirk): Java builds the second UserInfo (`broadcastUserInfo`) before it calls
-        // `setEnteredWorld()`, but writes it after, so the client is told it cannot equip a cloak
-        // only in the first one (the Java capture shows exactly that).
         if let Some(p) = self.players.get_mut(&id) {
             p.entered_world = true;
         }
@@ -880,8 +859,6 @@ pub fn build_user_info(world: &World, player: &Player) -> UserInfo {
         sp: data.sp as i32,
         current_load: current_load(data, st),
         max_load: view.max_load(),
-        // NOTE(java-quirk): `getActiveWeaponItem()` returns the fists weapon for an unarmed
-        // character, never null, so Java always writes 40.
         weapon_equipped: true,
         paperdoll_object_ids: object_ids,
         paperdoll_item_ids: item_ids,

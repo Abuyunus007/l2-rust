@@ -30,7 +30,6 @@ fn read_list_count(r: &mut PacketReader, batch: usize) -> Result<Option<usize>, 
     Ok(usize::try_from(count).ok())
 }
 
-// Java: gameserver/network/clientpackets/RequestManorList.java
 client_unit_packet!(
     /// Asks for the manor list, which the server answers with the default crop table
     /// (`0xD0` 0x0001, `REQUEST_MANOR_LIST`).
@@ -51,7 +50,6 @@ pub struct CropSaleItem {
     pub count: i64,
 }
 
-// Java: gameserver/network/clientpackets/RequestProcureCropList.java
 /// The player sells crops to the manor (`0xD0` 0x0002, `REQUEST_PROCURE_CROP_LIST`, Java name
 /// `RequestProcureCropList`). Each entry is 20 bytes.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -110,7 +108,6 @@ pub struct SeedSale {
     pub price: i64,
 }
 
-// Java: gameserver/network/clientpackets/RequestSetSeed.java
 /// The lord sets the seed production of the next period (`0xD0` 0x0003, `REQUEST_SET_SEED`).
 /// Each entry is 20 bytes.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -155,8 +152,6 @@ impl Decode for RequestSetSeed {
                     items: Vec::new(),
                 });
             }
-            // NOTE(java-quirk): Java drops the zero-sales rows here, so a list of only those is
-            // empty. Encoding a value with such a row does not decode to the same value.
             if sales > 0 {
                 items.push(SeedSale {
                     item_id,
@@ -184,7 +179,6 @@ pub struct CropSale {
     pub reward_type: i8,
 }
 
-// Java: gameserver/network/clientpackets/RequestSetCrop.java
 /// The lord sets the crop procurement of the next period (`0xD0` 0x0004, `REQUEST_SET_CROP`).
 /// Each entry is 21 bytes.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -233,7 +227,6 @@ impl Decode for RequestSetCrop {
                     items: Vec::new(),
                 });
             }
-            // NOTE(java-quirk): zero-sales rows are dropped, as in RequestSetSeed.
             if sales > 0 {
                 items.push(CropSale {
                     item_id,
@@ -254,7 +247,6 @@ pub struct SeedPurchase {
     pub count: i64,
 }
 
-// Java: gameserver/network/clientpackets/RequestBuySeed.java
 /// The player buys seeds from the manor (`REQUEST_BUY_SEED`). Each entry is 12 bytes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestBuySeed {

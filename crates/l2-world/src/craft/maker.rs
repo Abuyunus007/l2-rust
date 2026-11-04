@@ -1,9 +1,5 @@
 //! `RecipeManager.RecipeItemMaker`: making an item from a recipe, for oneself or for a customer
 //! of a manufacture shop.
-// Java: managers/RecipeManager.java (requestManufactureItem, requestMakeItem, RecipeItemMaker)
-// Java: network/clientpackets/RequestRecipeItemMakeSelf.java
-// Java: entity/item/recipe/{RecipeItemInfo,ManufactureItem}.java
-//
 // # The two modes
 // Without `AltGameCreation` (the default) a craft is one call: the checks of the constructor,
 // then `run()` takes the MP or HP, the payment and the materials, rolls the chance and gives the
@@ -476,7 +472,6 @@ impl World {
     /// Java `RecipeItemMaker.finishCrafting()`.
     fn maker_finish(&mut self, m: &mut ItemMaker) {
         if !self.settings.craft.alt_game_creation {
-            // NOTE(java-quirk): the result is ignored (see the module notes).
             self.calculate_stat_use(m, false, true);
         }
 
@@ -614,8 +609,6 @@ impl World {
             .unwrap_or(0);
 
         // Check that the current recipe has a rare production or not.
-        // NOTE(java-quirk): a recipe without a rare product has rare item id 0, not -1, so this
-        // holds and the dice are rolled (see the module notes).
         if rare_prod_id != -1
             && (rare_prod_id == item_id || self.settings.craft.craft_masterwork)
             && f64::from(self.rng().below(100))

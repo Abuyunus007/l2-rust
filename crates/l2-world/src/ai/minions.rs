@@ -1,12 +1,6 @@
 //! The life of a master's minions after the first spawn: a dead minion that comes back
 //! (`MinionRespawnTask`), the minions that go with their master, and the config values that
 //! steer both.
-// Java: entity/actor/holders/npc/MinionList.java (onMinionDie, onMasterDie, MinionRespawnTask,
-//       initializeNpc)
-// Java: entity/actor/Attackable.java (doDie: the minion part), entity/actor/instance/Monster.java
-//       (deleteMe)
-// Java: config/NpcConfig.java (RaidMinionRespawnTime, CustomMinionsRespawnTime, ForceDeleteMinions)
-//
 // # How it plugs in
 // - The master -> minions index is `AttackableWorld::minions` (`attackable.rs`), Java's
 //   `Monster._minionList`; `hasMinions()` is "the master has an entry".
@@ -16,14 +10,6 @@
 //   ([`TimerKind::MinionRespawn`]) instead of Java's `ThreadPool.schedule`.
 // - The respawn re-creates the minion with its old object id near the master (Java re-initialises
 //   the same `Monster` object) and hands it the master's aggro list.
-//
-// NOTE(java-quirk): `MinionRespawnTask` skips a minion whose corpse has not decayed
-// (`!_minion.isSpawned()`), so a respawn time shorter than the corpse time loses the minion for
-// good.
-// NOTE(java-quirk): `_minion.getAggroList().putAll(_master.getAggroList())` shares the `AggroInfo`
-// objects, so later hits on the master change the minion's numbers too; here the minion gets a
-// copy. The creature it attacks first is `getAggroList().keySet().iterator().next()`, a
-// `ConcurrentHashMap` key in an order nobody can name; the master's oldest entry is used.
 
 use std::collections::HashMap;
 

@@ -654,7 +654,6 @@ fn an_approval_from_the_wrong_distance_is_refused_for_both() {
     assert_eq!(message_ids(&out, B), [id]);
     assert!(of(&out, A, "EX_ROTATION").is_empty());
 
-    // NOTE(java-quirk): the request was not cleared, so Bob can answer again once he is back.
     s.world.player_mut(B).unwrap().core.x = 1100;
     s.answer(B, 16, 1, A);
     assert_eq!(socials(&s.log.take(), A), [(B.0, 16), (A.0, 16)]);

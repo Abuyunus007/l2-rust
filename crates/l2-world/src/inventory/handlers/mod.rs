@@ -1,7 +1,4 @@
 //! Item handlers: what a double click does to an item that is not worn (M5-ITEM-01).
-// Java: dist/game/data/scripts/handlers/items/*.java, handler/ItemHandler.java
-// Java: network/clientpackets/UseItem.java (the handler branch and the reuse checks)
-//
 // # How it fits together
 // `registry.rs` is Java's `ItemHandler` table: the `handler` name of an etc item maps to an
 // [`ItemHandlerKind`], and [`World::use_item_with_handler`] is the `else` branch of `UseItem`

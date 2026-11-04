@@ -1,13 +1,8 @@
 //! Quest 30: Chest Caught with a Bait of Fire (Linnaeus in the Fishing Village, the bait quest of the fire).
-// Java: dist/game/data/scripts/quests/Q00030_ChestCaughtWithABaitOfFire/Q00030_ChestCaughtWithABaitOfFire.java
-//
 // Pattern: a fishing chest hand-over (`docs/design/scripts.md`, "Quest patterns"): Linnaeus
 // starts the quest at level 61 once Linnaeus' Special Bait (Q00053) is done, takes the red
 // treasure box for Rukal's musical score, and Rukal pays the protection necklace. One-time:
 // `exit_quest(ctx, false, true)`.
-//
-// NOTE(java-quirk): an event that is not handled is still shown back as its page (the Java
-// `htmltext = event` default), so the quest answers every event it gets.
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED};
@@ -56,7 +51,6 @@ impl Script for Q00030ChestCaughtWithABaitOfFire {
         _npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        // Java: `htmltext = event` for every case, also when there is no quest state.
         let Some(player) = player else {
             return Some(event.to_owned());
         };
@@ -93,7 +87,6 @@ impl Script for Q00030ChestCaughtWithABaitOfFire {
         match qs.state(ctx) {
             COMPLETED => htmltext = ctx.get_already_completed_msg(player),
             CREATED => {
-                // Java: `player.getQuestState(Q00053...)` completed and level 61 (on Linnaeus only).
                 if npc.id == LINNAEUS {
                     htmltext = "31577-00.htm".to_owned();
                     let bait_done = ctx

@@ -1,5 +1,4 @@
 //! Rafforty swaps a Pretty Necklace and a Bottle for a Blessed Necklace.
-// Java: dist/game/data/scripts/ai/areas/FrozenLabyrinth/Rafforty/Rafforty.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
@@ -36,7 +35,6 @@ impl Script for Rafforty {
         _npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        // NOTE(java-quirk): every other event is echoed as the page to show.
         let mut htmltext = event.to_owned();
         let player = player?;
         match event {

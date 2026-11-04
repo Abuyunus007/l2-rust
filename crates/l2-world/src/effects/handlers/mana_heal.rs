@@ -1,9 +1,5 @@
 //! The MP restoring effects: `ManaHeal`, `ManaHealByLevel`, `ManaHealOverTime` and
 //! `ManaHealPercent`.
-// Java: dist/game/data/scripts/handlers/skill/effects/ManaHeal.java
-// Java: dist/game/data/scripts/handlers/skill/effects/ManaHealByLevel.java
-// Java: dist/game/data/scripts/handlers/skill/effects/ManaHealOverTime.java
-// Java: dist/game/data/scripts/handlers/skill/effects/ManaHealPercent.java
 
 use l2_data::Stat;
 use l2_data::skill::EffectTemplate;
@@ -88,7 +84,6 @@ impl EffectHandler for ManaHealByLevel {
         let mut amount = self.power;
         // Recharged MP influenced by difference between target level and skill level.
         // If target is within 5 levels or lower then skill level there's no penalty.
-        // NOTE(java-quirk): unlike `ManaHeal`, the mana charge stat applies to a static skill too.
         amount = mana_charge(world, effected, amount);
         let level = world.stats(effected).map_or(0, |view| view.level());
         if level > cx.skill.magic_level {
@@ -139,8 +134,6 @@ impl EffectHandler for ManaHealOverTime {
         let mut mp = Vital::Mp.current(world, effected);
         let max_mp = Vital::Mp.max_recoverable(world, effected);
         // Not needed to set the MP and send update packet if player is already at max MP.
-        // NOTE(java-quirk): `HealOverTime` and `CpHealOverTime` return false here (which ends a
-        // toggle); this one returns true.
         if mp >= max_mp {
             return true;
         }

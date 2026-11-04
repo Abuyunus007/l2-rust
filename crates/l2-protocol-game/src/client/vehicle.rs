@@ -5,7 +5,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_ex_opcode;
 use crate::generated::opcodes::ExClientOpcode;
 
-// Java: gameserver/network/clientpackets/RequestGetOnVehicle.java
 client_packet!(
     /// The player asks to board a boat at a position (`0x53`).
     RequestGetOnVehicle,
@@ -19,7 +18,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestGetOffVehicle.java
 client_packet!(
     /// The player asks to leave a boat at a position (`0x54`).
     RequestGetOffVehicle,
@@ -32,7 +30,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestMoveToLocationInVehicle.java
 client_packet!(
     /// The player clicks a place to walk to inside a boat (`0x75`).
     RequestMoveToLocationInVehicle,
@@ -48,7 +45,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/CannotMoveAnymoreInVehicle.java
 client_packet!(
     /// The client stopped moving inside a boat at a position (`0x76`).
     CannotMoveAnymoreInVehicle,
@@ -62,7 +58,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/MoveToLocationAirShip.java
 /// The air ship control panel commands (`0xD0` 0x0038).
 ///
 /// Java reads `command` and `param1` and the optional `param2`, which only comes when bytes are
@@ -101,7 +96,6 @@ impl Decode for MoveToLocationAirShip {
     }
 }
 
-// Java: gameserver/network/clientpackets/MoveToLocationInAirShip.java
 client_packet!(
     /// The player clicks a place to walk to inside an air ship (`0xD0` 0x0020).
     MoveToLocationInAirShip,

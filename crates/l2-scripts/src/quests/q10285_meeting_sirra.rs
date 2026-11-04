@@ -1,6 +1,4 @@
 //! Quest 10285: Meeting Sirra (Rafforty, Jinia, Kegor and Sirra in the Jinia guild hideout, Freya's steward).
-// Java: dist/game/data/scripts/quests/Q10285_MeetingSirra/Q10285_MeetingSirra.java
-//
 // Pattern: a memo-state quest like Q10286: memo state 1 = the hideout (`ex` is the step inside it,
 // 0..5), 2 = out of the hideout, 3 = the Freya castle script is done (set by that instance
 // script, not by this quest). Sirra is spawned in the instance of the NPC that talks.
@@ -115,7 +113,6 @@ impl Script for Q10285MeetingSirra {
                 if qs.is_memo_state(ctx, 1) && qs.get_int(ctx, "ex") == 5 {
                     qs.unset(ctx, "ex");
                     qs.set_memo_state(ctx, 2);
-                    // Java: `InstanceManager.getPlayerWorld(player).removeAllowed(player)` then
                     // `setInstanceId(0)`. The hideout's world belongs to the instance script.
                     if let Some(id) = ctx.world().player_instance_world(player).map(|w| w.instance_id)
                         && let Some(world) = ctx.world_mut().instance_world_mut(id)

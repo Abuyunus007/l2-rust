@@ -1,6 +1,4 @@
 //! Quest 125: The Name of Evil - 1 (Mushika, Karakawei and the three Kaimu on Primeval Isle).
-// Java: dist/game/data/scripts/quests/Q00125_TheNameOfEvil1/Q00125_TheNameOfEvil1.java
-//
 // Pattern: a chain of NPCs with a spelling puzzle. The Kaimu pages send one letter per event; the
 // letters are kept as quest variables ("T", "E", "P", "U") and "Memo" says the puzzle is solved.
 
@@ -249,8 +247,6 @@ impl Script for Q00125TheNameOfEvil1 {
         };
 
         let qs = ctx.get_quest_state(party_member, false);
-        // NOTE(java-quirk): the items are counted and given to `player` (the killer), not to the
-        // party member that was drawn.
         if let Some(chance) = ornithomimus(npc.id) {
             if ctx.get_quest_items_count(player, ORNITHOMIMUS_CLAW) < 2 && ctx.get_random(1000) < chance {
                 ctx.give_items(player, ORNITHOMIMUS_CLAW, 1);
@@ -362,7 +358,6 @@ impl Script for Q00125TheNameOfEvil1 {
                             }
                         }
                         7 => htmltext = "32120-17.html".to_owned(),
-                        // NOTE(java-quirk): Balu Kaimu answers with Ulu Kaimu's page 18 at cond 8.
                         _ => htmltext = "32119-18.html".to_owned(),
                     }
                 }

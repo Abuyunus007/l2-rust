@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/ServerTimeConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/ServerTime.ini` (Java: `ServerTimeConfig`).

@@ -1,5 +1,4 @@
 //! Naia Cube of the Steel Citadel: lets a command channel into Beleth's chamber.
-// Java: dist/game/data/scripts/ai/others/SteelCitadelTeleport/SteelCitadelTeleport.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, TeleportTarget};

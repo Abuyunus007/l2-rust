@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/NpcStatMultipliersConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/NpcStatMultipliers.ini` (Java: `NpcStatMultipliersConfig`).

@@ -3,14 +3,12 @@
 //! This only reads the packets. What they do is the world's script engine
 //! (`l2_world::script`).
 
-// Java: gameserver/network/clientpackets/RequestQuestList.java
 client_unit_packet!(
     /// The player opens the quest journal (`0x62`). Java answers with `QuestList`.
     RequestQuestList,
     plain RequestQuestList
 );
 
-// Java: gameserver/network/clientpackets/RequestQuestAbort.java
 client_packet!(
     /// The player aborts a quest from the journal (`0x63`).
     RequestQuestAbort,
@@ -20,7 +18,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestTutorialLinkHtml.java
 client_packet!(
     /// A link of the tutorial window (`0x85`): a bypass handler, or `TL:<bypass>` for the
     /// tutorial quest.
@@ -31,7 +28,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestTutorialPassCmdToServer.java
 client_packet!(
     /// A command of the tutorial window (`0x86`): a bypass handler, or `TC:<bypass>` for the
     /// tutorial quest.
@@ -42,7 +38,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestTutorialQuestionMark.java
 client_packet!(
     /// The player clicked the blinking question mark (`0x87`): `QM:<number>` for the tutorial
     /// quest.
@@ -53,7 +48,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestTutorialClientEvent.java
 client_packet!(
     /// A client event the tutorial enabled happened (`0x88`): `CE:<eventId>` for the tutorial
     /// quest.

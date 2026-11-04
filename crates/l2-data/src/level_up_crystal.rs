@@ -1,6 +1,5 @@
 //! The soul crystal leveling table: which crystal becomes which, and which monsters level them.
 //!
-//! Java: `gameserver/data/xml/LevelUpCrystalData.java`, `data/holders/SoulCrystal.java`,
 //! `data/holders/LevelingSoulCrystalInfo.java`, `data/enums/AbsorbCrystalType.java`.
 //! Data: `data/LevelUpCrystalData.xml` (`xsd/LevelUpCrystalData.xsd`).
 //!

@@ -1,7 +1,5 @@
 //! Transmog (`Transmog.ini`): the NPC that changes the look of worn items to the look of items
 //! the player has owned (the appearance collection).
-// Java: dist/game/data/scripts/custom/Transmog/Transmog.java
-//
 // Off by default (`TransmogEnabled = False`): the NPC still stands in the script, its menu answers
 // nothing useful because the collection is never filled (the item listener is only added with
 // the switch on), exactly as in Java.
@@ -220,8 +218,6 @@ fn menu_page(ctx: &mut ScriptCtx<'_>, event: &str, player: ObjectId) -> Option<S
     for item_id in &item_ids {
         if let Some((name, icon, display_id)) = ctx.world().transmog_item_info(*item_id) {
             total += 1;
-            // NOTE(java-quirk): `total < minItem`, so the last item of a page is on the next one
-            // as well.
             if total < min_item || total > max_item {
                 continue;
             }

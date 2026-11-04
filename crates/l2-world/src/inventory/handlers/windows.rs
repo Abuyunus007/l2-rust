@@ -1,10 +1,5 @@
 //! The `Maps`, `Calculator`, `Bypass`, `SevenSignsRecord`, `SpecialXMas` and `TeleportBookmark`
 //! handlers: a double click opens a client window (or, for the last one, adds teleport slots).
-// Java: dist/game/data/scripts/handlers/items/Maps.java
-// Java: dist/game/data/scripts/handlers/items/Calculator.java
-// Java: dist/game/data/scripts/handlers/items/{Bypass,SevenSignsRecord,SpecialXMas,TeleportBookmark}.java
-// Java: network/serverpackets/ShowMiniMap.java, ShowCalculator.java
-//
 // Both start with `if (!playable.isPlayer())` (a pet cannot carry the item). `Playable` is always
 // a player here (summons are M6), so that branch is left out.
 

@@ -1,7 +1,5 @@
 //! Java `OlympiadGameTask` (one stadium's state machine), `OlympiadGameManager.run` (the
 //! matchmaking every 30 s) and `OlympiadAnnouncer`.
-// Java: mechanics/olympiad/{OlympiadGameTask,OlympiadGameState,OlympiadGameManager,
-//       OlympiadAnnouncer}.java
 
 use l2_protocol_game::server::{ChatType, NpcSay, SystemMessage, SystemMessageParam};
 use l2_protocol_game::{NpcStringId, SystemMessageId};

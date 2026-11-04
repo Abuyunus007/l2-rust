@@ -1,6 +1,5 @@
 //! Java `Olympiad`: the load, the competition periods, the weekly change, the period end (the
 //! heroes to be, the monthly copy, the ranks and passes) and the validation end.
-// Java: mechanics/olympiad/Olympiad.java
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
@@ -152,8 +151,6 @@ pub(super) fn format_local_date(local_ms: i64, minutes: bool) -> String {
 
 /// `Hero.loadFights`' `from`: `Calendar.getInstance()` with `DAY_OF_MONTH` 1, `HOUR_OF_DAY` 0,
 /// `MINUTE` 0 and `MILLISECOND` 0 (D-48). The seconds stay.
-// NOTE(java-quirk): `SECOND` is not set, so the cut is the first of the month at 00:00:ss, ss
-// being the second the server loaded the hero at.
 pub fn hero_fights_cutoff_ms(now_utc_ms: i64, offset_at: &dyn Fn(i64) -> i64) -> i64 {
     let mut cal = Cal::at(now_utc_ms, offset_at);
     cal.set_first_of_month();
@@ -197,7 +194,6 @@ fn countdown(ms: i64) -> (i64, i64, i64) {
 }
 
 impl World {
-    /// The `Olympiad.ini` values, the D-53 switch and the test clocks.
     pub fn set_olympiad_settings(&mut self, settings: OlympiadSettings) {
         self.olympiad.settings = settings;
     }
@@ -487,8 +483,6 @@ impl World {
             "Olympiad System: Event starts/started: {}",
             self.olympiad.comp_start
         );
-        // NOTE(java-quirk): the task of an earlier `init()` is not cancelled; it checks
-        // `isOlympiadEnd()` when it runs.
         self.schedule_olympiad_timer(OlympiadTimer::CompStart, milli_to_start);
     }
 
@@ -831,8 +825,6 @@ impl World {
     /// Java `sortHerosToBe()`: for each hero class the best noble with enough matches and a win
     /// (Java's `OLYMPIAD_GET_HEROS` reads the table `saveNobleData` just wrote, which is the
     /// memory; the soul hounds share one hero).
-    // NOTE(java-quirk): `HEROS_TO_BE` is never cleared, so the heroes of earlier periods stay in
-    // the list.
     // NOTE: the database orders ties as it likes; here a tie goes by char id.
     fn sort_heroes_to_be(&mut self) {
         if self.olympiad.data.period != 1 {

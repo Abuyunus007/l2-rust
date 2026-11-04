@@ -1,6 +1,5 @@
 //! The 2nd class transfer of human clerics and elven oracles (Maximilian, Hollint, Orven,
 //! Squillari, Gregory, Innocentin, Baryl).
-// Java: dist/game/data/scripts/village_master/ElfHumanClericChange2/ElfHumanClericChange2.java
 
 use l2_util::ObjectId;
 use l2_world::subclass::CategoryType;

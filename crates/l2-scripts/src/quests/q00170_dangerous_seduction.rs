@@ -1,5 +1,4 @@
 //! Quest 170: Dangerous Seduction (Velior in the Dark Elven Village, Merkenis kills).
-// Java: dist/game/data/scripts/quests/Q00170_DangerousSeduction/Q00170_DangerousSeduction.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

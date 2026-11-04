@@ -15,7 +15,6 @@ pub const MAX_INVENTORY_ORDER: usize = 125;
 /// `RequestPreviewItem` returns on a longer list ("prevent too long lists").
 pub const MAX_PREVIEW_ITEMS: i32 = 100;
 
-// Java: gameserver/network/clientpackets/RequestMakeMacro.java (one command)
 /// One command of a [`RequestMakeMacro`], as it came on the wire.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct MacroCommand {
@@ -31,7 +30,6 @@ pub struct MacroCommand {
     pub command: String,
 }
 
-// Java: gameserver/network/clientpackets/RequestMakeMacro.java
 /// The player saves a macro (`REQUEST_MAKE_MACRO`, 0xCD).
 ///
 /// Java reads at most [`MAX_MACRO_COMMANDS`] commands and ignores the rest of the packet; a
@@ -96,7 +94,6 @@ impl Decode for RequestMakeMacro {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestDeleteMacro.java
 client_packet!(
     /// The player deletes a macro (`REQUEST_DELETE_MACRO`, 0xCE).
     RequestDeleteMacro,
@@ -106,7 +103,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestCrystallizeItem.java
 client_packet!(
     /// The player crystallizes an item (`REQUEST_CRYSTALLIZE_ITEM`, 0x2F).
     RequestCrystallizeItem,
@@ -116,7 +112,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestPreviewItem.java
 /// The player tries items on in a wear shop (`REQUEST_PREVIEW_ITEM`, 0xC7).
 ///
 /// Java reads a count, clamps a negative one to 0 and leaves the list null (`items` is `None`)
@@ -178,7 +173,6 @@ impl Decode for RequestPreviewItem {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestExRqItemLink.java
 client_packet!(
     /// The player clicks an item link in the chat (`0xD0` 0x001E, `REQUEST_EX_RQ_ITEM_LINK`).
     RequestExRqItemLink,
@@ -187,7 +181,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/RequestSaveKeyMapping.java
 /// The client stores its key mapping (`0xD0` 0x0022, `REQUEST_SAVE_KEY_MAPPING`).
 ///
 /// `None` when the size is not above 0 (Java then keeps no array and does nothing).
@@ -226,7 +219,6 @@ impl Decode for RequestSaveKeyMapping {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestSaveInventoryOrder.java
 /// The client stores the order of its inventory window (`0xD0` 0x0024,
 /// `REQUEST_SAVE_INVENTORY_ORDER`): pairs of object id and slot, at most [`MAX_INVENTORY_ORDER`].
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -264,7 +256,6 @@ impl Decode for RequestSaveInventoryOrder {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestExMagicSkillUseGround.java
 /// The player uses a skill on a point of the ground (`0xD0` 0x0044,
 /// `REQUEST_EX_MAGIC_SKILL_USE_GROUND`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -308,28 +299,24 @@ impl Decode for RequestExMagicSkillUseGround {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestShowMiniMap.java
 client_unit_packet!(
     /// The player opens the mini map (`REQUEST_SHOW_MINI_MAP`, 0x6C).
     RequestShowMiniMap,
     plain RequestShowMiniMap
 );
 
-// Java: gameserver/network/clientpackets/RequestRecordInfo.java
 client_unit_packet!(
     /// The client asks for everything around it again (`REQUEST_RECORD_INFO`, 0x6E).
     RequestRecordInfo,
     plain RequestRecordInfo
 );
 
-// Java: gameserver/network/clientpackets/RequestSkillList.java
 client_unit_packet!(
     /// The client asks for its skill list (`REQUEST_SKILL_LIST`, 0x50).
     RequestSkillList,
     plain RequestSkillList
 );
 
-// Java: gameserver/network/clientpackets/MoveWithDelta.java
 client_packet!(
     /// A move by a difference (`MOVE_WITH_DELTA`, 0x52). Java reads it and does nothing
     /// ("TODO this").
@@ -341,7 +328,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/StartRotating.java
 client_packet!(
     /// The player starts to turn with the keyboard (`START_ROTATING`, 0x5B).
     StartRotating,
@@ -351,7 +337,6 @@ client_packet!(
     }
 );
 
-// Java: gameserver/network/clientpackets/FinishRotating.java
 client_packet!(
     /// The player stops turning (`FINISH_ROTATING`, 0x5C).
     FinishRotating,

@@ -1,7 +1,5 @@
 //! Hands the world the NPC templates and spawn list and starts the spawns, where Java does
 //! (`GameServer`: `SpawnData.getInstance()` then `DayNightSpawnManager...notifyChangeMode()`).
-// Java: GameServer.java, data/xml/SpawnData.java, config/NpcConfig.java,
-//       config/custom/RandomSpawnsConfig.java
 
 use std::collections::HashSet;
 use std::path::Path;
@@ -201,7 +199,6 @@ pub fn spawn_npcs_with_scripts(
     world.set_water_check(water_check(datapack));
     world.set_id_factory(ids);
     if config.development.no_spawns {
-        // Java: nothing is loaded and nothing is logged.
         if let Some(scripts) = scripts {
             world.install_scripts(scripts);
         }

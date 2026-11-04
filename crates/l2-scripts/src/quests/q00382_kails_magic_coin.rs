@@ -1,6 +1,4 @@
 //! Quest 382: Kail's Magic Coin (Head Blacksmith Vergara, the Fallen Orcs of the Forsaken Plains).
-// Java: dist/game/data/scripts/quests/Q00382_KailsMagicCoin/Q00382_KailsMagicCoin.java
-//
 // Pattern: kills give the coins with a chance, to the killer who has the Royal Membership and
 // stands in the alt party range (`check_if_in_range`). No quest item is registered and the quest
 // is never finished: the NPC trades (the multisell list is the NPC's own bypass, not the script).
@@ -79,8 +77,6 @@ impl Script for Q00382KailsMagicCoin {
                     htmltext = Some(event.to_owned());
                 }
             }
-            // NOTE(java-quirk): the "Back" links of 30687-05/06 send `30687-04.htm`, which
-            // `onEvent` does not handle: nothing is shown for it.
             "30687-05.htm" | "30687-06.htm" => {
                 if qs.is_started(ctx) {
                     htmltext = Some(event.to_owned());
@@ -114,7 +110,6 @@ impl Script for Q00382KailsMagicCoin {
             && ctx.check_if_in_range(ctx.alt_party_range(), npc.object_id, killer, true)
         {
             if npc.id == FALLEN_ORC_CAPTAIN {
-                // Java: `KAILS_SILVER_BASILISK + getRandom(3)` is evaluated before the roll.
                 let coin = KAILS_SILVER_BASILISK + ctx.get_random(3);
                 ctx.give_item_randomly(killer, None, coin, 1, 1, 0, ORC_CAPTAIN_DROP_CHANCE, true);
             } else if let Some((_, coin, chance)) = MONSTER_DROPS.iter().find(|(id, _, _)| *id == npc.id) {

@@ -1,6 +1,5 @@
 //! The hate helpers of the aggro effects: `Attackable.reduceHate(target, amount)` for one target,
 //! and `NpcTemplate.isClan(clans)`. Shared by `AddHate`, `GetAgro` and the hate effects.
-// Java: entity/actor/Attackable.java (reduceHate), entity/actor/templates/NpcTemplate.java (isClan)
 
 use std::collections::BTreeSet;
 

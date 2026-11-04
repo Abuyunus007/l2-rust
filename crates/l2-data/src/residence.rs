@@ -2,7 +2,6 @@
 //! residences themselves (owners, tax, treasury, functions) are rows of the database and live in
 //! the world (`l2_world::residence`); this module only holds the immutable parts.
 //!
-//! Java: `managers/CastleManager.java` (`_castleCirclets`), `data/xml/SiegeScheduleData.java`,
 //! `mechanics/siege/SiegeScheduleDate.java`, and the zone lookups of `mechanics/siege/Castle.java`
 //! (`getZone`, `initResidenceZone`, `getTeleZone`), `mechanics/siege/Fort.java` (`getZone`,
 //! `initResidenceZone`) and `entity/zone/type/ClanHallZone.java` (`setParameter`, which registers
@@ -166,8 +165,6 @@ impl SiegeSchedule {
                 Ok((castle_id, date)) => {
                     self.schedules.insert(castle_id, date);
                 }
-                // NOTE(java-quirk): Java's `StatSet.getInt` throws on a value that is not a number
-                // and the rest of the file is lost; here only that entry is skipped.
                 Err(e) => warn!("{}: {e}", Self::LOADER),
             }
         }

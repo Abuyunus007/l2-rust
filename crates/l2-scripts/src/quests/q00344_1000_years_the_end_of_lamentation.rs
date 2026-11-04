@@ -1,7 +1,5 @@
 //! Quest 344: 1000 Years, the End of Lamentation (Gilmore, Kaien, Rodemai, Garvarentz and Orven
 //! in the Antharas lair area; the cave servants drop the articles).
-// Java: dist/game/data/scripts/quests/Q00344_1000YearsTheEndOfLamentation/Q00344_1000YearsTheEndOfLamentation.java
-//
 // Pattern: a party kill drop (articles, a chance per monster), the articles are sold at 60 adena
 // each or, with a chance of count / 1000, they give one of four relics. The relic decides the NPC
 // that rewards it (the memo state is the relic: 1 hilt, 2 key, 3 necklace, 4 crucifix).

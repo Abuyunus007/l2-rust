@@ -1,5 +1,4 @@
 //! Library of Sages (instance 156), the Seven Signs quests 10292 and 10293.
-// Java: dist/game/data/scripts/instances/SSQLibraryOfSages/SSQLibraryOfSages.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;
@@ -97,9 +96,6 @@ impl Script for SSQLibraryOfSages {
                 "FOLLOW" => {
                     // A null NPC (the first entrance, see `spawn_elcadia`) is a NullPointerException.
                     let npc = npc?;
-                    // NOTE(java-quirk): `exit`/`ENTER` cancel this timer with the NPC that was
-                    // clicked, not Elcadia, so it never stops in Java and goes on with a deleted
-                    // Elcadia. Here it ends when Elcadia is gone: a deleted NPC does nothing visible.
                     if !ctx.world().npc(npc.object_id).is_some_and(|n| !n.decayed) {
                         return None;
                     }
@@ -201,8 +197,6 @@ fn spawn_elcadia(ctx: &mut ScriptCtx<'_>, player: ObjectId, instance_id: i32) {
             .parameters
             .insert("elcadia".to_owned(), new.object_id.0.to_string());
     }
-    // NOTE(java-quirk): the timer gets the `elcadia` read before the new spawn: null on the first
-    // entrance (the FOLLOW event then ends in a NullPointerException) and the deleted one after.
     ctx.start_quest_timer("FOLLOW", 3000, old, Some(player), false);
 }
 

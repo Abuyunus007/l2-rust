@@ -29,7 +29,6 @@ fn read_seed_rewards(r: &mut PacketReader) -> Result<(i32, i32, i32), PacketErro
     Ok((level, reward_1, reward_2))
 }
 
-// Java: gameserver/network/serverpackets/ExShowManorDefaultInfo.java
 /// One crop of the default crop table.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ManorDefaultCrop {
@@ -96,7 +95,6 @@ impl Decode for ExShowManorDefaultInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExShowSeedInfo.java
 /// One seed the castle produces in a period (the `SeedProduction` rows of the castle).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SeedProductionInfo {
@@ -172,7 +170,6 @@ impl Decode for ExShowSeedInfo {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExShowCropInfo.java
 /// One crop the castle buys in a period (the `CropProcure` rows of the castle).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CropProcureInfo {
@@ -456,7 +453,6 @@ pub struct ProcureCastle {
     pub reward: u8,
 }
 
-// Java: gameserver/network/serverpackets/ExShowProcureCropDetail.java
 /// The castles that buy one crop (`EX_SHOW_PROCURE_CROP_DETAIL`). Java lists them in ascending
 /// castle id order (a `HashMap` of small ids).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -524,7 +520,6 @@ pub struct SellCropItem {
     pub my_crops: i64,
 }
 
-// Java: gameserver/network/serverpackets/ExShowSellCropList.java
 /// The crops the player can sell to the manor (`EX_SHOW_SELL_CROP_LIST`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExShowSellCropList {
@@ -592,7 +587,6 @@ impl Decode for ExShowSellCropList {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExSendManorList.java
 /// The answer to `RequestManorList` (`EX_SEND_MANOR_LIST`): the castles by id, each with its name
 /// in lower case (the client looks the manor name up by it).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -627,7 +621,6 @@ impl Decode for ExSendManorList {
     }
 }
 
-// Java: gameserver/network/serverpackets/BuyListSeed.java
 /// One seed the castle sells in the seed purchase window (a `SeedProduction` with an amount and a
 /// price above 0). Java writes it as an item row; only the id, the amount and the price vary.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,6 +1,4 @@
 //! Quest 36: Make a Sewing Kit (Ferris in the Talking Island's Gludin side, golems in the hunt).
-// Java: dist/game/data/scripts/quests/Q00036_MakeASewingKit/Q00036_MakeASewingKit.java
-//
 // Pattern: a kill-count chain with a party-member check (`docs/design/scripts.md`, "Quest
 // patterns"): the enchanted iron golems give iron to the killer at cond 1 with a 50% roll, the
 // member at cond 1 moves on to cond 2 at the fifth, and Ferris takes the iron and then the

@@ -1,6 +1,5 @@
 //! The skills the scheme buffer NPC offers.
 //!
-//! Java: `gameserver/data/SchemeBufferTable.java` (`loadAvailableBuffs`),
 //! `entity/actor/holders/npc/BuffSkillHolder.java`.
 //! Data: `data/SchemeBufferSkills.xml` (`xsd/SchemeBufferSkills.xsd`).
 //!

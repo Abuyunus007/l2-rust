@@ -1,10 +1,6 @@
 //! The fortress siege admin commands: `//fortsiege`, `//add_fortattacker`, `//list_fortsiege_clans`,
 //! `//clear_fortsiege_list`, `//spawn_fortdoors`, `//endfortsiege`, `//startfortsiege`,
 //! `//setfort` and `//removefort`.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminFortSiege.java
-//
-// A GM can run a test siege on this world whatever `SiegeDatabaseWrites` says (D-51): the siege
-// runs here, and its rows are written only with the switch.
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};

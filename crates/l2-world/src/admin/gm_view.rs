@@ -1,13 +1,5 @@
 //! The Alt+G window of a GM: what another character has. (`/gmlist` is `send_gm_list` in
 //! `flags.rs`.)
-// Java: network/clientpackets/{RequestGMCommand,RequestGmList}.java
-// Java: network/serverpackets/{GMViewCharacterInfo,GMHennaInfo,GMViewPledgeInfo,GMViewSkillInfo,
-//       GmViewQuestInfo,GMViewItemList,GMViewWarehouseWithdrawList}.java
-//
-// # Left out
-// - The clan warehouse is shown as the world holds it. D-50 asks for a fresh read before items
-//   leave a clan warehouse; this window only shows them, and the fresh read needs a player of
-//   the clan, which a GM is not.
 
 use l2_protocol_game::server::{
     GmHennaInfo, GmSkillEntry, GmViewCharacterInfo, GmViewQuestInfo, GmViewSkillInfo,

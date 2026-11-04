@@ -1,5 +1,4 @@
 //! Elroki teleport AI: Orahochin and Gariachin send a character across the isle.
-// Java: dist/game/data/scripts/ai/areas/PrimevalIsle/ElrokiTeleporters/ElrokiTeleporters.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

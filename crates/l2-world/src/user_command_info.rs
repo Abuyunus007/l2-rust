@@ -1,18 +1,5 @@
 //! The information user commands: `/time`, `/clanpenalty`, `/clanwarlist` (and its two siblings)
 //! and `/siegestatus`.
-// Java: dist/game/data/scripts/handlers/chat/commands/user/{Time,ClanPenalty,ClanWarsList,SiegeStatus}.java
-// Java: network/clientpackets/BypassUserCmd.java (the dispatch, see `user_command.rs`)
-//
-// # Left out
-// - `/mybirthday` (126): `MyBirthday` reads `Player.getCreateDate()` (`characters.createDate`),
-//   which the character load does not carry yet.
-// - `/unstuck` (52): the escape cast with the 5 minute `2099` skill, the Soul of Escape animation and
-//   the timer that teleports to the town; the cast engine needs a player cast that stays
-//   interruptible for that long (own card).
-// - `/clanwarlist` reads the clan war sets the clan table keeps (`Clan.at_war_with` and
-//   `at_war_attackers`, the same rows as `clan_wars`) instead of three joins over `clan_data` and
-//   `clan_wars`: a war the Java game server declared after this server started shows after the
-//   next start (D-50 would need a read request for a list that rarely changes).
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{NpcHtmlMessage, SystemMessage, SystemMessageParam};

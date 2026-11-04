@@ -1,6 +1,4 @@
 //! Quest 417: Path of the Scavenger (Pipi, the dwarven fighter's way to the scavenger class).
-// Java: dist/game/data/scripts/quests/Q00417_PathOfTheScavenger/Q00417_PathOfTheScavenger.java
-//
 // Pattern: a class-change path quest with a long NPC chain; spoiled kills of the first attacker
 // (script value 2) drop the quest items, a bear spawns a quest bear (`FLAG` counts up to it).
 

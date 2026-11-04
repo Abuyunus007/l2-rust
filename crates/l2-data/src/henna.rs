@@ -1,7 +1,6 @@
 //! Hennas (dyes): the stat bonuses, the cost to add and remove them, and the classes that can wear
 //! them.
 //!
-//! Java: `gameserver/data/xml/HennaData.java` and `gameserver/entity/item/Henna.java`.
 //! Data: `data/stats/hennaList.xml` (`xsd/hennaList.xsd`).
 
 use std::collections::{BTreeMap, BTreeSet};

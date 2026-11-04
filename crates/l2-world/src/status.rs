@@ -1,14 +1,5 @@
 //! HP, MP and CP: the vitals setters, the regeneration task, the status listeners and the
 //! `StatusUpdate` broadcast.
-// Java: entity/actor/status/CreatureStatus.java (setCurrentHp/Mp, start/stopHpMpRegeneration,
-//       doRegeneration, add/removeStatusListener)
-// Java: entity/actor/status/PlayerStatus.java (setCurrentCp, doRegeneration, reduceHp)
-// Java: entity/actor/status/{NpcStatus,AttackableStatus}.java (reduceHp)
-// Java: entity/actor/Creature.java (broadcastStatusUpdate, needHpUpdate)
-// Java: entity/actor/Player.java (broadcastStatusUpdate, needCpUpdate, needMpUpdate)
-// Java: entity/WorldRegion.java (switchAI: the regeneration part)
-// Java: network/serverpackets/StatusUpdate.java
-//
 // Java keeps this state in each creature's status object. Here it is one `CreatureStatus` per
 // creature in `World::statuses` (D-17: data, not a class tree). An entry exists while its creature
 // needs one; `sweep_statuses` drops the entries of creatures that have left the world.
@@ -503,7 +494,6 @@ impl World {
         if self.is_dead(id) {
             return;
         }
-        // Java: `player.isInvul() && !(isDOT || isHPConsumption)`, before anything else. DOT and HP
         // consumption do not reach this function yet (M5).
         if self.is_invul(id) {
             return;
@@ -907,9 +897,6 @@ impl World {
     /// Java `Creature.broadcastStatusUpdate` for an NPC: the HP to its listeners, when there are
     /// any and the change is big enough. Java `Player.broadcastStatusUpdate`: the player's own
     /// vitals 50 ms later, once however many changes come in between.
-    ///
-    // NOTE(java-quirk): `Player` overrides `broadcastStatusUpdate` and sends nothing to the
-    // status listeners, so a player's target sees its HP only when it is re-targeted.
     pub fn broadcast_status_update(&mut self, id: ObjectId) {
         if self.is_player(id) {
             if self

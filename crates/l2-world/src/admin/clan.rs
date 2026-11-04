@@ -1,10 +1,6 @@
 //! The clan admin commands: `//clan_info [name|objectId]`, `//clan_changeleader`,
 //! `//clan_show_pending`, `//clan_force_pending`, `//pledge <create|info|dismiss|setlevel|rep>`
 //! and `//remove_clan_penalty join|create <name>`.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminClan.java
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminPledge.java
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminEditChar.java (remove_clan_penalty)
-//
 // # Left out, with the system that brings it
 // - `//give_clan_skills`, `//give_all_clan_skills` and `//add_clan_skill` (AdminSkill.java): the
 //   pledge skill tree and `Clan.addNewSkill` come with M6-CLAN-03, so these words are not
@@ -276,7 +272,6 @@ fn admin_pledge(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
                 Some(clan_name) => world.clan_by_name(clan_name).map(|c| c.id),
                 None => clan_id_of(world, player),
             };
-            // Java: `new GMViewPledgeInfo(null, player)` throws a NullPointerException.
             let Some(clan) = clan_id.and_then(|id| world.clan(id)) else {
                 return Err(JavaException("java.lang.NullPointerException".to_owned()));
             };
@@ -434,9 +429,6 @@ pub(crate) fn gm_view_pledge_info(world: &World, clan: &Clan, player_name: &str)
 
 /// Java `AdminEditChar.onCommand`, `admin_remove_clan_penalty join|create <name>` (the words are
 /// split on spaces only, as `new StringTokenizer(command, " ")` does).
-// NOTE(java-quirk): for a character that is not online, Java runs `UPDATE characters SET
-// clan_create_expiry_time WHERE char_name=?` (no `= value`), which the database refuses. Java only
-// logs that failure and sends nothing to the GM, so this does the same.
 fn admin_remove_clan_penalty(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
     let mut st = Tokens::spaces(command);
     let mut words = Vec::new();

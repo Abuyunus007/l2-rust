@@ -1,6 +1,5 @@
 //! Cell constants and cell word decoding.
 //!
-//! Java: `gameserver/geoengine/geodata/Cell.java` and the cell helpers in `ComplexBlock` /
 //! `MultilayerBlock`.
 
 /// East NSWE flag (`Cell.NSWE_EAST`).

@@ -8,7 +8,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_ex_opcode;
 use crate::generated::opcodes::ExClientOpcode;
 
-// Java: gameserver/network/clientpackets/RequestEx2ndPasswordCheck.java
 /// The client asks whether it must show the password window (`0xD0` 0x0093). No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct RequestEx2ndPasswordCheck;
@@ -29,7 +28,6 @@ impl Decode for RequestEx2ndPasswordCheck {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestEx2ndPasswordVerify.java
 /// The password typed to unlock the character screen (`0xD0` 0x0094).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestEx2ndPasswordVerify {
@@ -53,7 +51,6 @@ impl Decode for RequestEx2ndPasswordVerify {
     }
 }
 
-// Java: gameserver/network/clientpackets/RequestEx2ndPasswordReq.java
 /// Create (`change_pass` 0) or change (2) the password (`0xD0` 0x0095).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestEx2ndPasswordReq {

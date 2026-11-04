@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/PvpAnnounceConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/PvpAnnounce.ini` (Java: `PvpAnnounceConfig`).

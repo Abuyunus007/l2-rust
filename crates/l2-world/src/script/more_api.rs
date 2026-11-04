@@ -1,8 +1,5 @@
 //! Small `pub` doors the quest batches asked for (S-API-05): the raw radar packet, an `NpcSay` to
 //! one player, the clan info update, `isMyLord`.
-// Java: network/serverpackets/RadarControl.java, network/serverpackets/NpcSay.java,
-//       entity/clan/Clan.java (broadcastToOnlineMembers(new PledgeShowInfoUpdate(clan))),
-//       entity/actor/Npc.java (isMyLord)
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::{ChatType, NpcSay, RadarControl};

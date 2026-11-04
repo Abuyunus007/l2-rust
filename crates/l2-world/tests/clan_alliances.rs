@@ -3,7 +3,6 @@
 //! Crests, alliances and clan wars (M6-CLAN-02): the crest table and the crest uploads, the
 //! alliance (create, invite, leave, expel, dissolve, info), the clan war (declare, answer, stop,
 //! surrender, list), the war reputation on a kill and the `ClanMaster` / `AllianceMaster` pages.
-//! Java: data/sql/CrestTable.java, entity/clan/Clan.java (the alliance and crest parts),
 //! data/sql/ClanTable.java (storeClanWars, deleteClanWars), network/clientpackets/{RequestSet*Crest,
 //! RequestJoinAlly,RequestAnswerJoinAlly,AllyLeave,AllyDismiss,RequestDismissAlly,RequestAllyInfo,
 //! Request*PledgeWar,RequestPledgeWarList}.java, entity/actor/Player.java (doDie),
@@ -1700,8 +1699,6 @@ fn dissolving_an_alliance_frees_the_clans_and_keeps_javas_stale_crest() {
         ),
         (0, None, 0)
     );
-    // NOTE(java-quirk): `changeAllyCrest(0, false)` runs after `setAllyId(0)`: its statement is
-    // `WHERE ally_id = 0`, the clans keep the old crest id and the crest row of the alliance goes.
     assert_eq!((lions.ally_crest_id, tigers.ally_crest_id), (2, 2));
     assert!(s.world.crest(2).is_none());
     let writes = clan_writes(&s.outs.take());
@@ -2177,13 +2174,10 @@ fn the_war_replies_use_the_active_requester_of_any_transaction() {
     assert!(s.take().is_empty());
     assert!(clan_writes(&s.outs.take()).is_empty());
 
-    // NOTE(java-quirk): `RequestStartPledgeWar` declares the war at once and nobody is asked, so
-    // the replies read whatever request the player has, here a trade request of P1.
     s.input(P1, ClientInput::TradeRequest { object_id: P4 });
     s.take();
     s.clan_input(P4, ClanInput::ReplyStartPledgeWar { answer: 0 });
     let out = s.take();
-    // NOTE(java-quirk): Java adds no clan name to this message.
     assert_eq!(
         raw_message_ids(&out, P1),
         [SystemMessageId::TheS1ClanDidNotRespondWarProclamationHasBeenRefused2.id()]

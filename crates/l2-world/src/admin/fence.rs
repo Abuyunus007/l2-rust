@@ -1,8 +1,6 @@
 //! The fence admin commands: `//addfence <width> <length> <height>` (a closed fence where the GM
 //! stands), `//setfencestate <objectId> <state>`, `//removefence <objectId>`, `//listfence [page]`
 //! (the fences in `fences.htm`, 10 a page) and `//gofence <objectId>`.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminFence.java
-//
 // # Left out, with the system that brings it
 // - The instance of a fence: a fence has no instance in the world, so `//addfence` makes it in
 //   the common world and `//gofence` teleports to instance 0.

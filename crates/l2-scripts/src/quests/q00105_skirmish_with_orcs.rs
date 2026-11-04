@@ -1,7 +1,5 @@
 //! Quest 105: Skirmish with Orcs (Kendnell gives one of four Kendell's orders; the Kaboo chiefs
 //! give torques, and the last torque brings the reward).
-// Java: dist/game/data/scripts/quests/Q00105_SkirmishWithOrcs/Q00105_SkirmishWithOrcs.java
-//
 // Pattern: a kill chain by orders (`MONSTER_DROP`), a random order from a range (`getRandom(min,
 // max)`, inclusive), and the NewbieGuide memo as in quest 104.
 

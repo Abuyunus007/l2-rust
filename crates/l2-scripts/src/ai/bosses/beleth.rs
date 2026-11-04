@@ -1,7 +1,5 @@
 //! Beleth's chamber: the opening movie, the fake Belethes and the real one, the death movie, the
 //! priest and the stone coffin with the ring, and the respawn cycle.
-// Java: dist/game/data/scripts/ai/bosses/Beleth/Beleth.java
-//
 // The Java constructor is `on_load`; the fields are `BelethState` (`ctx.state`). Statuses: 0 alive
 // (entry open), 1 init (the entry script let a party in), 2 fight, 3 dead. Setting status 1 is the
 // entry script's job (not in this folder).
@@ -104,7 +102,6 @@ impl Script for Beleth {
     fn on_load(&self, ctx: &mut ScriptCtx<'_>) {
         match ctx.world().grand_boss_info(REAL_BELETH).cloned() {
             None => {
-                // Java: `getStatSet` answers null and the constructor throws.
                 warn!("Beleth: no grandboss_data row for {REAL_BELETH}, the script does not start.");
                 return;
             }
@@ -406,9 +403,6 @@ impl Script for Beleth {
             }
             "CHECK_ATTACK" => {
                 let last_attack = ctx.state::<BelethState>().last_attack;
-                // NOTE(java-quirk): `_lastAttack` is set once, at the end of the movie, and
-                // `onAttack` never updates it: 15 minutes after the fight starts the chamber is
-                // reset whoever is still fighting.
                 if (last_attack + 900_000) < ctx.now_ms() {
                     ctx.world_mut().set_grand_boss_status(REAL_BELETH, ALIVE);
                     for creature in zone_characters(ctx) {

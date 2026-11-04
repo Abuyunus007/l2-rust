@@ -1,12 +1,5 @@
 //! Item reuse: the stamps of items that were used, the shared reuse groups, and what the client is
 //! told about them.
-// Java: entity/actor/Creature.java (addTimeStampItem, getItemRemainingReuseTime,
-//       getReuseDelayOnGroup)
-// Java: entity/actor/holders/creature/TimeStamp.java (the item constructor, getRemaining)
-// Java: network/clientpackets/UseItem.java (reuseData, sendSharedGroupUpdate and the reuse check)
-// Java: network/serverpackets/ExUseSharedGroupItem.java
-// Java: entity/actor/Player.java (storeItemReuseDelay, restoreItemReuse), M5-FIX-03
-//
 // # Time
 // Like the skill stamps (`skills/reuse.rs`), item stamps use the world clock (`World::world_ms`)
 // instead of `System.currentTimeMillis()`. What the client sees is the time left, which is the
@@ -134,11 +127,6 @@ impl World {
 
     /// Java `Player.restoreItemReuse`: the rows of the last logout become stamps again. Called
     /// once when the character enters; the rows are taken from the profile.
-    // NOTE(java-quirk): the item is looked up by its template id, not by the saved object id, so
-    // two saved stamps of one template (two objects) both land on the first such item, the later
-    // row replacing the earlier.
-    // An item that is not in the inventory is looked up in the private warehouse (`isInInventory`
-    // false: the stamp is made, the client is not told).
     pub(crate) fn restore_item_reuse(&mut self, id: ObjectId) {
         let Some(player) = self.players.get_mut(&id) else {
             return;

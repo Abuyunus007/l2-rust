@@ -3,7 +3,6 @@
 //! The combat admin commands (M4-ADMIN-02): `//res`, `//res_monster`, `//kill`, `//kill_monster`
 //! and the exp/sp handlers, and the item and level commands (M4-ADMIN-03), with a fake GM, a fake
 //! player and a fake monster.
-//! Java: scripts/handlers/chat/commands/admin/{AdminRes,AdminKill,AdminExpSp,AdminCreateItem,
 //! AdminLevel}.java.
 //!
 //! The harness is the one of `admin.rs` (the framework and the core commands).
@@ -522,7 +521,6 @@ fn kill_on_an_npc_is_a_real_death_and_the_corpse_stays_until_it_decays() {
     s.world.set_target(ObjectId(GM), Some(rat));
     s.log.take();
 
-    // Java: reduceCurrentHp(maxHp + 1): the rat is dead, its corpse is in the world and decays later.
     s.cmd(GM, "kill");
     assert!(s.world.is_dead(rat));
     assert_eq!(s.world.npc(rat).unwrap().core.cur_hp, 0.0);
@@ -580,7 +578,6 @@ fn kill_a_player_is_a_real_death_with_the_die_packet() {
 
     s.cmd(GM, "kill P1");
     let out = s.log.take();
-    // Java: reduceCurrentHp(maxHp + maxCp + 1): the CP and then the HP go to zero.
     let core = s.world.player(ObjectId(USER)).unwrap().core.clone();
     assert_eq!((core.cur_hp, core.cur_cp), (0.0, 0.0));
     assert!(s.world.is_dead(ObjectId(USER)));
@@ -612,7 +609,6 @@ fn res_brings_a_dead_player_back_with_the_restored_share() {
     s.cmd(GM, "res");
     let out = s.log.take();
     assert!(!s.world.is_dead(ObjectId(USER)));
-    // Java: doRevive restores RespawnRestoreHP (65 %) of the maximum HP.
     assert_eq!(s.world.player(ObjectId(USER)).unwrap().core.cur_hp, 65.0);
     assert!(names_to(&out, USER).contains(&"REVIVE".to_owned()));
 
@@ -664,7 +660,6 @@ fn res_monster_brings_a_dead_npc_back_and_refuses_a_player() {
     assert!(s.world.has_decay_task(rat));
     s.log.take();
 
-    // Java: `DecayTaskManager.cancel` and `doRevive`: the corpse does not decay.
     s.cmd(GM, "res_monster");
     assert!(!s.world.is_dead(rat));
     assert!(!s.world.has_decay_task(rat));
@@ -833,7 +828,6 @@ fn invul_makes_the_gm_immune_and_toggles_with_java_messages() {
     s.enter(USER, 100);
     s.log.take();
 
-    // Java: the GM is told, and nobody else (the admin is the target).
     s.cmd(GM, "invul");
     assert_eq!(texts_to(&s.log.take(), GM), ["You are now invulnerable."]);
     assert!(s.world.is_invul(ObjectId(GM)));
@@ -956,7 +950,6 @@ fn spawn_with_a_respawn_time_brings_the_npc_back_at_its_spawn() {
     s.enter(GM, 0);
     s.log.take();
 
-    // Java: `setAmount(2)`, `setRespawnDelay(30)`, `init()` leaves `_doRespawn` on.
     s.cmd(GM, "spawn 2000 2 30");
     let rats = s.npcs_of(2000);
     assert_eq!(rats.len(), 2);
@@ -1340,7 +1333,6 @@ fn add_exp_sp_caps_the_sp_at_max_sp() {
     s.world.set_target(ObjectId(GM), Some(ObjectId(USER)));
     s.log.take();
 
-    // Java: `Math.min(sp, MAX_SP)`, and the messages carry the capped number.
     s.cmd(GM, "add_exp_sp 0 500");
     let out = s.log.take();
     assert_eq!(texts_to(&out, USER), ["Admin is adding you 0 xp and 100 sp."]);

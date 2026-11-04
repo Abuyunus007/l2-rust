@@ -1,6 +1,5 @@
 //! The `OpenDoor` effect: the caster tries to open a door with a chance `chance`. A door that is
 //! not openable by skill refuses (unless the effect is `isItem`).
-// Java: dist/game/data/scripts/handlers/skill/effects/OpenDoor.java
 
 use l2_data::door::OPEN_BY_SKILL;
 use l2_data::skill::EffectTemplate;

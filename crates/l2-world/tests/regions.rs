@@ -1,7 +1,6 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
 //! The region grid with several players: who sees whom, region switches, activation timers.
-//! Java: entity/World.java, entity/WorldRegion.java, entity/WorldObject.java.
 
 use std::sync::{Arc, Mutex};
 

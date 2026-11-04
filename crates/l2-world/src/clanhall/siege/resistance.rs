@@ -1,6 +1,5 @@
 //! Fortress of Resistance (clan hall 21): the clan that does the most damage to Bloody Lord
 //! Nurka wins the hall.
-// Java: dist/game/data/scripts/conquerablehalls/FortressOfResistance/FortressOfResistance.java
 
 use l2_protocol_game::server::NpcHtmlMessage;
 use l2_util::ObjectId;
@@ -28,7 +27,6 @@ pub(crate) struct Resistance {
     /// `_nurka`: the spawn (an index into the runtime spawns).
     pub(crate) nurka_spawn: usize,
     /// `_damageToNurka`: clan id to damage, in the order the clans first hit (a `HashMap`).
-    // NOTE(java-quirk): never cleared, the damage of an earlier siege counts in the next one.
     pub(crate) damage: Vec<(i32, i64)>,
     /// `_messengerMsg`: the page with the date of the siege when it was built.
     pub(crate) messenger_page: Option<String>,

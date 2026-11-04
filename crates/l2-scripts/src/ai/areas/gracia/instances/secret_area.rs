@@ -1,5 +1,4 @@
 //! The Secret Area in the Keucereus Fortress: Ginby takes a character in, Lelrikia back out.
-// Java: dist/game/data/scripts/ai/areas/Gracia/instances/SecretArea/SecretArea.java
 
 use l2_util::ObjectId;
 use l2_world::teleport::TeleportTarget;

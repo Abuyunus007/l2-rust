@@ -1,5 +1,4 @@
 //! `RequestSendPost`: the checks, the fee, and moving the attachments into the mail.
-// Java: network/clientpackets/RequestSendPost.java
 
 use l2_data::item::ADENA_ID;
 use l2_protocol_game::SystemMessageId;
@@ -267,8 +266,6 @@ impl World {
             return;
         }
 
-        // NOTE(java-quirk): the id is taken here, before `removeItems`, and a mail that is not
-        // sent keeps it (Java never releases it either).
         let Some(message_id) = self.allocate_item_id() else {
             warn!("No object id for a new mail of {id}.");
             return;
@@ -292,9 +289,6 @@ impl World {
         }
     }
 
-    /// `WorldCommand::BlockListLoaded`: the block list of the offline receiver is in, so the
-    /// mail goes on (`BlockList.isInBlockList(receiverId, senderId)` of the offline list). A
-    /// failed read sends nothing and never falls back to "not blocked" (D-50).
     pub(crate) fn on_block_list_loaded(
         &mut self,
         sender: ObjectId,
@@ -405,8 +399,6 @@ impl World {
         self.flush_item_rows(id, ops);
         let msg = self.mail.drafts.remove(&message_id);
         if !done {
-            // NOTE(java-quirk): the mail is dropped with the items already moved (their rows say
-            // `MAIL` with a message that does not exist) and the fee is gone.
             return None;
         }
 

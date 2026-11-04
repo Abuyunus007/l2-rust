@@ -1,7 +1,5 @@
 //! Quest 663: Seductive Whispers (Wilbert trades spirit beads for rounds of a card duel; every
 //! win in a row raises the prize).
-// Java: dist/game/data/scripts/quests/Q00663_SeductiveWhispers/Q00663_SeductiveWhispers.java
-//
 // The state is `memoState`: 1..4 collecting beads, `n5` a duel is to start (card 1 pending),
 // `n6` Wilbert's card is on the table, `n7` the duel is won; `n` = wins so far (tens digit).
 // 1005 / 1006 are the same for the one-bead side game.
@@ -59,7 +57,6 @@ const PARTS: [Holder; 18] = [
     (4112, 12), // DARK_ELVEN_LONGBOW_SHAFT
     (4108, 12), // SWORD_OF_VALHALLA_BLADE
     (4111, 12), // ARTHRO_NAIL_BLADE
-    // NOTE(java-quirk): SPRITES_STAFF_HEAD has the id of the great sword blade (4104).
     (4104, 12), // SPRITES_STAFF_HEAD
     (4109, 12), // KRIS_EDGE
     (4107, 12), // KESHANBERK_BLADE
@@ -79,7 +76,6 @@ const PARTS: [Holder; 18] = [
 const SPITEFUL_SOUL_LEADER: i32 = 20974;
 const SPITEFUL_SOUL_LEADER_CHANCE: i32 = 100;
 /// Java `MONSTERS`: `(npc id, chance)`.
-// NOTE(java-quirk): Java puts 20674 twice (807, then 537); the later value wins.
 const MONSTERS: [(i32, i32); 25] = [
     (20674, 537),
     (20678, 372),
@@ -211,9 +207,6 @@ impl Script for Q00663SeductiveWhispers {
                             htmltext = Some("30846-17.html".to_owned());
                         } else {
                             let win_count = (memo / 10) + 1;
-                            // NOTE(java-quirk): the page is `30846-16.htm` in the datapack but Java asks
-                            // for `30846-16.html`, which is not there: `getHtm` gives null and the
-                            // `replace` throws, so Wilbert shows nothing here.
                             htmltext = get_html(ctx, player, "30846-16.html", 0, 0, win_count, 0);
                         }
                     }
@@ -250,8 +243,6 @@ impl Script for Q00663SeductiveWhispers {
             }
             _ => {}
         }
-        // NOTE(java-quirk): Java does not null-check the quest state here: without one every other
-        // event is a NullPointerException (no page).
         let qs = qs?;
         match event {
             "30846-03.htm" => {
@@ -292,8 +283,6 @@ impl Script for Q00663SeductiveWhispers {
                     let rdn2 = ctx.get_random(5) + 1;
                     let win_count = (qs.get_memo_state(ctx) / 10) + 1;
                     let card2pic = (rdn1 * 10) + rdn2;
-                    // NOTE(java-quirk): the first draw ("rdn1 == i2") and the second ("rdn1 != i2") have the
-                    // same two outcomes in Java, only the winning test differs.
                     if wins(rdn1, rdn2, i2, i1) {
                         if (qs.get_memo_state(ctx) % 100) / 10 >= 7 {
                             ctx.give_adena(player, 2_384_000, true);
@@ -327,7 +316,6 @@ impl Script for Q00663SeductiveWhispers {
                     let card2pic = (rnd1 * 10) + rnd2;
                     if wins(rnd1, rnd2, i2, i1) {
                         qs.set_memo_state(ctx, 1);
-                        // NOTE(java-quirk): only the "rnd1 == i2" win also clears the card.
                         if rnd1 == i2 {
                             qs.set_memo_state_ex(ctx, 1, 0);
                         }
@@ -412,7 +400,6 @@ impl Script for Q00663SeductiveWhispers {
                         qs.set_memo_state(ctx, 1);
                         qs.set_memo_state_ex(ctx, 1, 0);
                         ctx.give_adena(player, 800, true);
-                        // NOTE(java-quirk): only the "rnd1 == i2" win fills in `<?card1?>`.
                         let shown_card1 = if rnd1 == i2 { card1 } else { -1 };
                         htmltext =
                             get_html(ctx, player, "30846-25.html", card1pic, card2pic, -1, shown_card1);

@@ -1,6 +1,4 @@
 //! Quest 10291: Fire Dragon Destroyer (Klein in the Valakas lair, Valakas).
-// Java: dist/game/data/scripts/quests/Q10291_FireDragonDestroyer/Q10291_FireDragonDestroyer.java
-//
 // Pattern: a party kill (`docs/design/scripts.md`, "Kills, drops and parties"), with the reward
 // check of the whole command channel (or party) on each kill. The NPC is the start of the quest
 // and gives the reward at the end (one time).
@@ -61,8 +59,6 @@ impl Script for Q10291FireDragonDestroyer {
             qs.start_quest(ctx);
             ctx.give_items(player, POOR_NECKLACE, 1);
         }
-        // NOTE(java-quirk): every event is shown back as a page, also one this quest does not
-        // know.
         Some(event.to_owned())
     }
 
@@ -85,7 +81,6 @@ impl Script for Q10291FireDragonDestroyer {
         let mut htmltext = ctx.get_no_quest_msg(player);
         match qs.state(ctx) {
             CREATED => {
-                // Java: `getLevel() < 83` (no constant in Java).
                 htmltext = if ctx.player_level(player) < 83 {
                     "31540-00.htm"
                 } else if ctx.has_quest_items(player, FLOATING_STONE) {
@@ -122,8 +117,6 @@ impl Script for Q10291FireDragonDestroyer {
 fn reward_check(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, member: ObjectId) {
     if ctx.check_if_in_range(8000, npc.object_id, member, false) {
         let qs = ctx.get_quest_state(member, false);
-        // NOTE(java-quirk): Java tests, takes and gives the items of the killer (`player`), but
-        // moves the quest state of the member (`p`).
         if let Some(qs) = qs
             && qs.is_cond(ctx, 1)
             && ctx.has_quest_items(killer, POOR_NECKLACE)

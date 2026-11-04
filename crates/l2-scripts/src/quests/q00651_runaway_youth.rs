@@ -1,6 +1,4 @@
 //! Quest 651: Runaway Youth (Ivan, the boy who ran from home, and his father Batidae in Schuttgart).
-// Java: dist/game/data/scripts/quests/Q00651_RunawayYouth/Q00651_RunawayYouth.java
-//
 // Pattern: a level-gated quest that takes an item on start (the Scroll of Escape), deletes the
 // start NPC when the quest begins (`delete_npc`), and pays adena from a second NPC.
 

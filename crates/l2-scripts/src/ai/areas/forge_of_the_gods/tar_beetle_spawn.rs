@@ -1,7 +1,5 @@
 //! The Tar Beetle zone spawn of the Forge of the Gods: keeps `maxNpcCount` beetles in each spawn
 //! zone and takes the ones nobody used for 5 rounds away again.
-// Java: dist/game/data/scripts/ai/areas/ForgeOfTheGods/TarBeetleSpawn.java
-//
 // The Java class owns two `ThreadPool` tasks (every 60 s from 1 s, and every 300 s from 300 s);
 // here they are two quest timers of `TarBeetle` that start themselves again. The beetles of each
 // zone are the script's state (`ctx.state`), the zone index of a beetle is its NPC variable
@@ -25,8 +23,6 @@ pub const REFRESH_SHOTS: &str = "TAR_BEETLE_REFRESH_SHOTS";
 pub const REFRESH_SHOTS_MS: i64 = 300_000;
 
 /// How many times `refresh_spawn` may fail to find a point for one beetle.
-// NOTE(java-quirk): Java loops without a bound while `getRandomPoint()` gives `null`; the data
-// always has points, the bound only keeps a broken zone from hanging the world loop.
 const MAX_POINT_TRIES: usize = 1_000;
 
 /// The beetles of each spawn zone (Java `SpawnZone._spawn`), by zone index.

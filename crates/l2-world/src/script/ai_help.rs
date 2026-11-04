@@ -1,8 +1,5 @@
 //! `ScriptCtx` helpers of the `ai/others` scripts (S-AI-05): small `pub` doors on world state the
 //! scripts read or change, named after the Java calls they stand for.
-// Java: entity/actor/Player.java (getFame, setFame, getPkKills, setPkKills, getExpertiseLevel,
-//       getDeathPenaltyBuffLevel, setDeathPenaltyBuffLevel, hasAccess), entity/actor/Npc.java
-//       (getCurrentHp, getMaxHp, getSpawn), mechanics/script/Quest.java (addSkillCastDesire)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
@@ -19,10 +16,6 @@ const EXPERTISE_SKILL: i32 = 239;
 /// Java `Npc.getVariables()` (`NpcVariables`) and `Npc.getScriptValue()` for the scripts that
 /// keep a few flags and counters on a monster: a script's [`ScriptCtx::state`] holds one of
 /// these, keyed by the NPC's object id (a script holds no state of its own, D-10).
-// NOTE(java-quirk): Java's variables live in the `Npc` object, which a respawn of the same spawn
-// reuses, so they survive a respawn there; here they belong to the object id, which a respawn
-// keeps too (`respawn.rs`). Entries of NPCs that are gone for good (minions, summoned bosses) are
-// dropped by [`ScriptCtx::clear_npc_vars`] where a script knows it.
 #[derive(Debug, Default)]
 pub struct NpcVars(std::collections::HashMap<ObjectId, std::collections::HashMap<&'static str, i64>>);
 

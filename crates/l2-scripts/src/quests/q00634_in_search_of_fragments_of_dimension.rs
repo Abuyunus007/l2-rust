@@ -1,7 +1,5 @@
 //! Quest 634: In Search of Fragments of Dimension (the Dimensional Gate Keepers of the Dimensional
 //! Rift; the monsters of the Holy Lands and the Sepulcher drop dimensional fragments).
-// Java: dist/game/data/scripts/quests/Q00634_InSearchOfFragmentsOfDimension/Q00634_InSearchOfFragmentsOfDimension.java
-//
 // Pattern: a repeatable kill drop of a number that depends on the monster's level
 // (`(int) (0.15 * level + 1.6)`), given to a random started party member (counted three times),
 // with a 10 % roll per kill.

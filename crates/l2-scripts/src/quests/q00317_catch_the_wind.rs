@@ -1,6 +1,4 @@
 //! Quest 317: Catch the Wind (Rizraell in the Elven village, Lireins).
-// Java: dist/game/data/scripts/quests/Q00317_CatchTheWind/Q00317_CatchTheWind.java
-//
 // Pattern: a repeatable quest (`docs/design/scripts.md`, "Quest patterns"): no limit on the
 // drops, the NPC buys what the player brings and the player chooses to go on ("09") or to quit
 // ("08": `exit_quest(ctx, true, true)`, the quest can be taken again). The kill goes to a random

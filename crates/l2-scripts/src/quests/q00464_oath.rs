@@ -1,6 +1,4 @@
 //! Quest 464: Oath (a Solina strongbox starts a daily errand through the villages).
-// Java: dist/game/data/scripts/quests/Q00464_Oath/Q00464_Oath.java
-//
 // Pattern: a quest started by using an item (`on_item_talk`), a monster drop (`dropItem`) and a
 // daily exit. The NPC to visit is chosen at random (cond 2..9) and kept in the quest variable
 // "npc".

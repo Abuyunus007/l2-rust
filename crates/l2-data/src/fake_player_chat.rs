@@ -1,6 +1,5 @@
 //! The chat lines of the fake players (`data/FakePlayerChatData.xml`, `Custom/FakePlayers.ini`).
 //!
-//! Java: `gameserver/managers/FakePlayerChatManager.java` (`parseDocument`) and
 //! `gameserver/data/holders/FakePlayerChatHolder.java`. The file is only read with
 //! `EnableFakePlayers` and `FakePlayerChat` on (the caller decides).
 

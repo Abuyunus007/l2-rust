@@ -1,5 +1,4 @@
 //! Dust Rider (raid boss 25719): Haste below 30% HP, and back to its spawn when pulled too far.
-// Java: dist/game/data/scripts/ai/others/DustRider.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};

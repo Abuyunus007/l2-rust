@@ -1343,7 +1343,6 @@ async fn a_kick_of_a_character_in_the_world_goes_through_the_world() {
 async fn a_character_that_cannot_be_loaded_is_not_selected() {
     let h = start(true).await;
     let mut client = logged_in(&h).await;
-    // Java: `client.load` returns null, the packet ends, nothing is sent and nothing is marked.
     client.send(select_packet(0).to_bytes()).await;
     client.send(RequestGotoLobby.to_bytes()).await;
     decode_char_list(&client.recv().await.unwrap());

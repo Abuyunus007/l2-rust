@@ -1,6 +1,4 @@
 //! Quest 152: Shards of Golem (Harrys and Altran, five golem shards for a tool box).
-// Java: dist/game/data/scripts/quests/Q00152_ShardsOfGolem/Q00152_ShardsOfGolem.java
-//
 // Pattern: a delivery chain with a kill count (30 % per kill up to 5 shards, no party share).
 
 use l2_util::ObjectId;

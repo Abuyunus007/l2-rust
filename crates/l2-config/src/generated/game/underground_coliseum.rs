@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/UndergroundColiseumConfig.java
 
 use crate::IniFile;
 /// Settings of `config/UndergroundColiseum.ini` (Java: `UndergroundColiseumConfig`).

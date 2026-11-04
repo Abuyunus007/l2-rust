@@ -1,7 +1,5 @@
 //! Tully's Workshop: the doormen, the contraptions after Tully's death, the servants and agents of
 //! the 6th and 8th floor, the followers of the 7th floor, Darion and his pillar.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/Zones/TullyWorkshop/TullyWorkshop.java
-//
 // # Java's scheduled tasks
 // `ThreadPool.schedule` and `scheduleAtFixedRate` are quest timers: `door_task <open|close>
 // <ids>` (`DoorTask`) and `countdown` (60 seconds, then every 10 seconds: the task starts itself
@@ -92,8 +90,6 @@ fn tele_coords(npc_id: i32) -> Option<[Location; 2]> {
 const TELE_NPCS: [i32; 4] = [32753, 32754, 32755, 32756];
 
 /// Java `POST_MORTEM_SPAWNLIST`: `(npc id, x, y, z, heading, despawn time)`.
-// NOTE(java-quirk): the fourth contraption's row has an extra number (`8428, 49151, 0`), so
-// Java reads heading 8428 and a despawn time of 49151 ms: it vanishes after 49 seconds.
 const POST_MORTEM_SPAWNLIST: [(i32, i32, i32, i32, i32, i32); 14] = [
     (32371, -12524, 273932, -9014, 49151, 0),
     (32371, -10831, 273890, -9040, 81895, 0),

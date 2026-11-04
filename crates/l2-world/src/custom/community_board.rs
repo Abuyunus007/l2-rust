@@ -1,17 +1,8 @@
 //! The custom community board (`CommunityBoard.ini`): multisells, a shop list, teleports, buffs,
 //! heal and delevel from the board's home page.
-// Java: dist/game/data/scripts/handlers/bypass/communityboard/HomeBoard.java (`CUSTOM_COMMANDS`,
-// Java: `COMBAT_CHECK`, and the custom branches of `onCommand`)
-// Java: gameserver/config/custom/CommunityBoardConfig.java
-//
 // # What is a switch here
 // `CustomCommunityBoard = False` (the default) turns the whole feature off: the pages of
 // `data/html/CommunityBoard/Custom/` are not used and none of the custom commands is taken.
-// NOTE(java-quirk): Java registers the custom command words (`_bbsheal`, `_bbsteleport`, ...)
-// whatever `CustomCommunityBoard` says, and `_bbs...` commands need no page that offered them, so
-// a modified client could heal or teleport for the (default 0) price with the board off. Here the
-// words are taken only with `CustomCommunityBoard = True` ("every feature is off by default",
-// D-57).
 //
 // `_bbspremium` (M9-C02) buys premium days with `CommunityPremiumSystem` and the premium system.
 

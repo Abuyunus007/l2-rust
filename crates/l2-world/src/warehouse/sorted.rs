@@ -1,8 +1,4 @@
 //! The sorted withdraw list: `SortedWareHouseWithdrawalList` with its filters and comparators.
-// Java: network/serverpackets/SortedWareHouseWithdrawalList.java
-// Java: network/enums/WarehouseListType.java, entity/item/WarehouseItem.java
-// Java: config/custom/WarehouseSortingConfig.java (the `WhSortedP.htm` / `WhSortedC.htm` pages)
-//
 // The `RECIPE` list sorted by level (`LEVEL`) uses `RecipeData` (M6-CRAFT-01).
 
 use std::cmp::Ordering;

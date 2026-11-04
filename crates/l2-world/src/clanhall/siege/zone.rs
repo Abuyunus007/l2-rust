@@ -1,11 +1,6 @@
 //! The zones of a conquerable hall: its siege zone (active during the battle), its
 //! `SiegableHallZone` (the inner spawn points, banishing) and the `ResidenceHallTeleportZone`s of
 //! the flag war halls.
-// Java: entity/zone/type/SiegeZone.java (setActive, setSiegeInstance, getSiegeObjectId)
-// Java: entity/zone/type/SiegableHallZone.java (getChallengerSpawns, banishNonSiegeParticipants)
-// Java: entity/zone/type/ResidenceHallTeleportZone.java (checkTeleportTask)
-// Java: mechanics/siege/clanhalls/SiegableHall.java (updateSiegeZone)
-// Java: entity/actor/instance/Door.java (isEnemy)
 
 use l2_data::Location;
 
@@ -87,8 +82,6 @@ impl World {
     }
 
     /// Java `SiegableHallZone.banishNonSiegeParticipants()`.
-    // NOTE(java-quirk): despite its name it banishes the players with `isInHideoutSiege()` (the
-    // participants); the others stay.
     pub(crate) fn hall_banish_non_siege_participants(&mut self, id: ClanHallId) {
         let Some((zone_id, zone_type)) = self.clan_hall(id).and_then(|h| h.zone.clone()) else {
             return;

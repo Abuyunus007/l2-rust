@@ -1,13 +1,5 @@
 //! Clan halls: the hall table (auctionable and conquerable halls), the owner, the doors, the
 //! zone and its decorations (`AgitDecoInfo`).
-// Java: data/sql/ClanHallTable.java (setFree, setOwner, getClanHallByOwner, getAbstractHallByOwner,
-//       getClanHall(x, y, z), getNearbyClanHall, getNearbyAbstractHall)
-// Java: entity/residences/ClanHall.java (setOwner, free, openCloseDoor(s), banishForeigners)
-// Java: entity/residences/AuctionableHall.java (setOwner, free, updateDb; not the rent)
-// Java: mechanics/siege/clanhalls/SiegableHall.java (updateDb; not the siege)
-// Java: entity/zone/type/ClanHallZone.java (onEnter: CLAN_HALL and AgitDecoInfo)
-// Java: network/serverpackets/AgitDecoInfo.java (the decoration levels)
-//
 // The rent of an auctionable hall (`AuctionableHall.FeeTask`, the "please pay" messages and the
 // loss of a hall a week overdue) and the auctions are `clanhall/` (M7-CH-01); the conquerable
 // halls' siege and schedule are `clanhall/siege/` (M7-CHSIEGE-01).
@@ -218,9 +210,6 @@ impl World {
         self.clan_hall_set_owner(id, clan_id);
     }
 
-    /// Java `ClanHall.setOwner(clan)` (and `AuctionableHall.setOwner`): only a free hall changes
-    /// hands; the clan gets the hall id and `PledgeShowInfoUpdate`, the row is written (D-51: only
-    /// with `SiegeDatabaseWrites`).
     pub fn clan_hall_set_owner(&mut self, id: ClanHallId, clan_id: i32) {
         let Some(hall) = self.clan_hall(id) else {
             return;
@@ -270,8 +259,6 @@ impl World {
         // A free hall pays no rent (the task would find `isFree()` and end).
         self.clan_hall_cancel_rent_task(id);
         self.residence_remove_all_functions(ResidenceRef::ClanHall(id));
-        // NOTE(java-quirk): `ClanHall.free()` writes the row before `AuctionableHall.free()` resets
-        // `paidUntil` and `paid`, so the row keeps the old values with owner 0.
         self.clan_hall_update_db(id);
         if let Some(ClanHallKind::Auctionable { paid_until, paid, .. }) =
             self.clan_hall_mut(id).map(|h| &mut h.kind)
@@ -281,7 +268,6 @@ impl World {
         }
     }
 
-    /// Java `updateDb()` of the hall's class (D-51: only with `SiegeDatabaseWrites`).
     pub(crate) fn clan_hall_update_db(&mut self, id: ClanHallId) {
         let Some(hall) = self.clan_hall(id) else {
             return;

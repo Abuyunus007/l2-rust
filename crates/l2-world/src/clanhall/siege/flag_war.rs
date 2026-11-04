@@ -2,14 +2,6 @@
 //! five clans register at the messenger, each gets a flag and picks a warrior; the last clan whose
 //! warrior stands wins the hall. The two Java scripts differ in their constants and the numbers
 //! of their pages only.
-// Java: dist/game/data/scripts/conquerablehalls/BanditStronghold/BanditStronghold.java
-// Java: dist/game/data/scripts/conquerablehalls/WildBeastReserve/WildBeastReserve.java
-//
-// NOTE(java-quirk): `startSiege()` of the script calls itself again five minutes later instead of
-// `super.startSiege()`: the doors open and close and the owner's members are moved to their
-// spawn point every five minutes, but the battle never starts. `_firstPhase` is never set to
-// true, so the first phase code of `onKill` and `doSpawns` is dead code. Everything is ported as
-// it is.
 
 use l2_data::Location;
 use l2_protocol_game::server::NpcHtmlMessage;
@@ -404,7 +396,6 @@ impl World {
     }
 
     /// The `Attackers` event: the list of the clans.
-    // NOTE(java-quirk): every line shows the name of the *player's* clan, not the attacker's.
     fn flag_war_attackers_page(&mut self, c: &Consts, hall: ClanHallId, player: ObjectId) -> Option<String> {
         let path = format!(
             "data/scripts/conquerablehalls/{}/{}",
@@ -558,8 +549,6 @@ impl World {
         }
         let first_phase = self.flag_war(hall).is_some_and(|s| s.first_phase);
         let owner = self.clan_hall(hall).map_or(0, |h| h.owner_id);
-        // NOTE(java-quirk): the royal flag (the first clan to register) has no coordinate in the
-        // first phase: Java's `FLAG_COORDS[-1]` throws and nothing spawns for the clan.
         let index = if first_phase {
             data.flag - c.red()
         } else if clan_id == owner {
@@ -649,8 +638,6 @@ impl World {
                 .is_some_and(|d| d.npc == npc_id)
             {
                 self.flag_war_remove_participant(hall, *key, true);
-                // NOTE(java-quirk): the map changed under the iterator: the next `next()` throws a
-                // `ConcurrentModificationException` unless this was the last key.
                 if position + 1 < keys.len() {
                     return Err(ScriptError("java.util.ConcurrentModificationException"));
                 }
@@ -752,8 +739,6 @@ impl World {
     // ------------------------------------------------------------------ the inner spawns
 
     /// Java `getInnerSpawnLoc(player)`: where a participant restarts inside the hall.
-    // NOTE(java-quirk): `Player.getId()` is the class id, so the owner test and the lookup of the
-    // clan data never match a real clan.
     pub(crate) fn flag_war_inner_spawn_loc(
         &self,
         hall: ClanHallId,
@@ -822,7 +807,6 @@ pub(super) fn start_siege(world: &mut World, hall: ClanHallId) -> ScriptResult {
             world.tele_to_location(member, crate::teleport::TeleportTarget::at(loc.x, loc.y, loc.z));
         }
     }
-    // NOTE(java-quirk): the lambda calls `startSiege()` of this script again, see the module.
     world.hall_schedule(HallSiegeTimer::FlagWarOuterDoors(hall), FIVE_MINUTES_MS);
     Ok(())
 }
@@ -859,7 +843,6 @@ pub(super) fn on_siege_ends(world: &mut World, hall: ClanHallId) -> ScriptResult
     let owner = world.clan_hall(hall).map_or(0, |h| h.owner_id);
     for (position, clan) in keys.iter().enumerate() {
         world.flag_war_remove_participant(hall, *clan, owner != *clan);
-        // NOTE(java-quirk): the map changed under the iterator, see `onKill`.
         if position + 1 < keys.len() {
             return Err(ScriptError("java.util.ConcurrentModificationException"));
         }
@@ -902,7 +885,6 @@ pub(super) fn new_state(
     (state, attackers)
 }
 
-/// D-50: the flag war tables as the database has them now.
 pub(super) fn apply_rows(world: &mut World, hall: ClanHallId, rows: &[FlagWarRecord]) {
     let Some(state) = world.flag_war_mut(hall) else {
         return;

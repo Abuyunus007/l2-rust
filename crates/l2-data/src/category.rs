@@ -1,6 +1,5 @@
 //! The class and creature categories: which ids belong to which `CategoryType`.
 //!
-//! Java: `gameserver/data/xml/CategoryData.java`, `data/enums/CategoryType.java`.
 //! Data: `data/CategoryData.xml` (`xsd/CategoryData.xsd`).
 //!
 //! A category lists player class ids (`FIGHTER_GROUP`, `HEAL_GROUP`, ...) or NPC ids

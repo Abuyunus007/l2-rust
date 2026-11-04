@@ -1,7 +1,4 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
-//! The persistence store against a throwaway MariaDB: store, restore, and the rows the Java
-//! game server owns stay untouched (D-39).
-//!
 //! Runs only when `L2_TEST_DATABASE_URL` is set (CI sets it for a throwaway MariaDB service,
 //! e.g. `mysql://root@127.0.0.1:3306/`). Never point it at a server with real data: the test
 //! only creates and drops a database named `l2_test_persist_*`, but it needs the rights to do
@@ -172,7 +169,6 @@ async fn store_writes_the_snapshot_and_keeps_what_java_owns() {
     let skills = SkillRepository::new(pool.clone());
     let shortcuts = ShortcutRepository::new(pool.clone());
     characters.insert_character(&new_character()).await.unwrap();
-    // Columns M2 does not model, as the Java game server left them.
     db.exec(&format!(
         "UPDATE characters SET clanid = 77, nobless = 1, fame = 123, clan_privs = 9, \
          vitality_points = 555, pccafe_points = 42, language = 'en', bookmarkslot = 3 \
@@ -523,7 +519,6 @@ async fn vitality_nevit_variables_and_the_hourglass_are_written_like_java() {
     let variables = VariableRepository::new(pool.clone());
     let reco = RecommendationRepository::new(pool.clone());
     characters.insert_character(&new_character()).await.unwrap();
-    // A variable the Java game server owns, and one the world will remove.
     variables
         .upsert_variable(CHAR_ID, "UI_KEY_MAPPING", "1\t2")
         .await
@@ -608,7 +603,6 @@ async fn item_changes_are_written_at_once_with_javas_columns() {
     let characters = CharacterRepository::new(pool.clone());
     let items = ItemRepository::new(pool.clone());
     characters.insert_character(&new_character()).await.unwrap();
-    // What the Java game server left: a sword in the bag and a warehouse item.
     for (object_id, item_id, loc) in [
         (0x6000_1001, 2, ItemLocation::Inventory),
         (0x6000_1003, 6, ItemLocation::Warehouse),
@@ -1296,9 +1290,6 @@ async fn player_variables_are_upserted_and_deleted() {
     db.drop_db().await;
 }
 
-/// M6-SYNC-01: the reads that keep the mail and the clan warehouse of this server in step with the
-/// Java game server, which shares the rows (D-39). Only reads; the rows come from the writes of
-/// the other server, here made with the store.
 #[tokio::test]
 async fn the_mail_and_clan_warehouse_reads_see_what_the_database_has_now() {
     let Some((db, pool)) = setup().await else {
@@ -1391,7 +1382,6 @@ async fn the_mail_and_clan_warehouse_reads_see_what_the_database_has_now() {
     let rows = store.load_mail_attachments(SENDER, MAIL_A).await.unwrap();
     assert_eq!(rows.len(), 2);
     assert!(rows.iter().all(|r| r.loc == "MAIL" && r.loc_data == MAIL_A));
-    // The Java game server gave one out: its row moved to a character's inventory.
     items
         .update_item(
             0x1000_0201,
@@ -1433,9 +1423,6 @@ async fn the_mail_and_clan_warehouse_reads_see_what_the_database_has_now() {
     db.drop_db().await;
 }
 
-/// M7-RES-01: the start-up read of the residences (`CastleManager`, `FortManager`,
-/// `ClanHallTable`, `CHSiegeManager`), Java's residence statements through the store, the re-read
-/// on demand and the `CharacterSelect` read of a clan's residences (D-50, D-51).
 #[tokio::test]
 async fn residences_are_read_written_and_read_again_like_java() {
     use l2_world::residence::{ResidenceReadKind, ResidenceRereadRows};
@@ -1559,8 +1546,6 @@ async fn residences_are_read_written_and_read_again_like_java() {
     db.drop_db().await;
 }
 
-/// M7-CHSIEGE-01: the start-up read of the conquerable hall scripts' tables, their statements
-/// through the store, and the re-read of a flag war hall (D-50, D-51).
 #[tokio::test]
 async fn hall_sieges_are_read_written_and_read_again_like_java() {
     use l2_world::residence::{ResidenceReadKind, ResidenceRereadRows};
@@ -1799,9 +1784,6 @@ async fn the_manor_is_read_and_written_like_java() {
     db.drop_db().await;
 }
 
-/// M7-CH-01: the start-up read of the clan hall auctions (`ClanHallAuctionManager.load`), Java's
-/// auction statements through the store and the re-read of one auction before it is acted on
-/// (D-50).
 #[tokio::test]
 async fn clan_hall_auctions_are_read_written_and_read_again_like_java() {
     use l2_world::ResidenceWrite;
@@ -1912,9 +1894,6 @@ async fn clan_hall_auctions_are_read_written_and_read_again_like_java() {
     db.drop_db().await;
 }
 
-/// M7-SIEGE-01: the start-up read of the sieges (`loadSiegeClan`, `castle_siege_guards`, the door
-/// and trap upgrades), Java's siege statements through the store and the re-read of a castle with
-/// every registration (D-50).
 #[tokio::test]
 async fn sieges_are_read_written_and_read_again_like_java() {
     use l2_world::residence::{ResidenceReadKind, ResidenceRereadRows};

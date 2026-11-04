@@ -1,6 +1,5 @@
 //! NPC spawns from `data/spawns`: fixed `<npc>` spawns, spawn groups and spawn territories.
 //!
-//! Java: `gameserver/data/xml/SpawnData.java` (the parser), `gameserver/data/SpawnTable.java`,
 //! `gameserver/entity/spawns/{Spawn,SpawnGroup,SpawnGroupEntry,SpawnSelection}.java`,
 //! `gameserver/entity/zone/type/NpcSpawnTerritory.java` and the zone forms it wraps
 //! (`entity/zone/form/{ZoneNPoly,ZoneCuboid,ZoneCylinder}.java`).
@@ -222,7 +221,6 @@ impl SpawnTerritory {
     ) -> Option<Location> {
         let shape = self.shape.as_ref()?;
         if !self.banned.is_empty() {
-            // Java: 100 points outside banned areas and below the high Z, then 100 outside banned
             // areas only, then the common loop below.
             for _ in 0..100 {
                 let point = shape.random_point(rng, height);
@@ -343,9 +341,6 @@ impl TerritoryShape {
             Self::Cylinder {
                 x: cx, y: cy, rad, ..
             } => {
-                // NOTE(java-quirk): ZoneCylinder measures the first candidate from the origin (0, 0),
-                // not from the centre. A centre within `rad` of the origin therefore returns (0, 0)
-                // without any random draw. Kept as is.
                 let rad_sq = f64::from(*rad) * f64::from(*rad);
                 let (mut x, mut y) = (0, 0);
                 let mut dx = f64::from(*cx);
@@ -381,8 +376,6 @@ fn min_max(values: &[i32]) -> (i32, i32) {
 /// Java `java.awt.Polygon.contains(x, y)`: the even-odd crossing test of JDK 8 and later, which
 /// includes the left and top edges and excludes the right and bottom ones. The point must first be
 /// inside the bounding box (`Rectangle2D` containment, also half-open).
-// NOTE(java-quirk): edges on the right and bottom of the bounding box are outside, so a random
-// point at the maximum X or Y is always rejected here and resampled.
 fn polygon_contains(xs: &[i32], ys: &[i32], x: i32, y: i32) -> bool {
     let n = xs.len().min(ys.len());
     if n <= 2 {
@@ -509,7 +502,6 @@ fn java_split_semicolon(text: &str) -> Vec<String> {
 }
 
 fn required<'a>(value: Option<&'a str>, attribute: &str) -> Result<&'a str, DataError> {
-    // Java: `getNamedItem(name)` returns null and the unboxing or `getNodeValue` throws NPE.
     value.ok_or_else(|| DataError::Invalid(format!("missing attribute {attribute}")))
 }
 
@@ -818,7 +810,6 @@ impl SpawnData {
                 warn!("{LOADER}: zone and zones are exclusive, ignoring zones in {file_name}");
             } else {
                 let names = java_split_semicolon(zones);
-                // Java: `territoryNames[0]` throws for `zones=";"` (an empty split).
                 let first = names
                     .first()
                     .cloned()
@@ -896,7 +887,6 @@ impl SpawnData {
 
     /// Java's `territory` branch: registers a named territory unless the name is taken.
     fn add_territory(&mut self, raw: RawTerritory, block: &Block) -> Result<(), DataError> {
-        // Java: a missing name falls back to the block's zone; a null name throws in
         // `spawnTerritoryExists`.
         let declared = match raw.name.clone() {
             Some(name) => name,
@@ -912,8 +902,6 @@ impl SpawnData {
         let max_z = java_decode(required(raw.max_z.as_deref(), "maxZ")?)?;
         let shape_name = raw.shape.as_deref().unwrap_or("NPoly");
         let what = format!("territory {declared}");
-        // NOTE(java-quirk): `attrs` still points at the last `<node>` when the cylinder radius is read,
-        // so `rad` comes from that node if there is one.
         let rad = raw
             .nodes
             .last()
@@ -1057,7 +1045,6 @@ impl SpawnData {
         };
         let mut slots = Vec::with_capacity(slot_territories.len());
         for territory in slot_territories {
-            // Java: a rolling group, or an `all` group without a delay, stops the slot's own respawn.
             let respawn_enabled = selection == SpawnSelection::All && draft.respawn_delay > 0;
             let spawn = self.make_spawn(draft, block, territory, total, Some((group, respawn_enabled)));
             self.spawns.push(spawn);
@@ -1127,8 +1114,6 @@ fn respawn_range(delay: i32, random: i32) -> (i32, i32) {
 /// Java `SpawnData.checkTemplate`: the NPC exists and may be spawned.
 fn check_template(npc_id: i32, npcs: &NpcTemplates, options: &SpawnLoadOptions) -> bool {
     let Some(template) = npcs.get(npc_id) else {
-        // NOTE(java-quirk): Java's range test `(npcId < 80000) && (npcId > 89999)` is never true, so
-        // Java warns only when fake players are enabled. Kept as is.
         if options.fake_players_enabled {
             warn!("{LOADER}: Requested spawn for non-existing NPC: {npc_id}.");
         }
@@ -1195,7 +1180,6 @@ fn build_shape(
         });
     }
     if shape_name.eq_ignore_ascii_case("NPoly") {
-        // NOTE(java-quirk): a polygon needs more than two vertices; a two-point "polygon" is rejected.
         if points.len() <= 2 {
             warn!("{LOADER}: SpawnTable: Bad data for {what} in file: {file_name}");
             return ShapeOutcome::Rejected;

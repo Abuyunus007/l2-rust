@@ -1,10 +1,5 @@
 //! Passive, Flag and the instant "mess with the target" effects: TargetCancel, Bluff,
 //! SkillTurning.
-// Java: dist/game/data/scripts/handlers/skill/effects/Passive.java
-// Java: dist/game/data/scripts/handlers/skill/effects/Flag.java
-// Java: dist/game/data/scripts/handlers/skill/effects/TargetCancel.java
-// Java: dist/game/data/scripts/handlers/skill/effects/Bluff.java
-// Java: dist/game/data/scripts/handlers/skill/effects/SkillTurning.java
 
 use l2_data::skill::EffectTemplate;
 use l2_protocol_game::server::{StartRotation, StopRotation};

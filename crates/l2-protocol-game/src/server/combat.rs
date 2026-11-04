@@ -19,7 +19,6 @@ pub const HITFLAG_SHLD: u8 = 0x40;
 /// Hit flag: the attack missed.
 pub const HITFLAG_MISS: u8 = 0x80;
 
-// Java: gameserver/entity/actor/holders/creature/Hit.java
 /// One hit of an [`Attack`]: the target, the damage and the `HITFLAG_*` bits. Java writes the
 /// flags with `writeByte`, so only the low 8 bits reach the wire.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -43,7 +42,6 @@ impl AttackHit {
     }
 }
 
-// Java: gameserver/network/serverpackets/Attack.java
 /// An attack: the attacker, its position, the hits and the target's position (`ATTACK`).
 ///
 /// The first hit sits right after the attacker id. Java then writes the number of hits after it
@@ -78,8 +76,6 @@ impl Encode for Attack {
         w.i32(self.attacker_id);
         self.first_hit.write(w);
         w.i32(self.attacker_x).i32(self.attacker_y).i32(self.attacker_z);
-        // NOTE(java-quirk): Java `writeShort(size - 1)`. A short keeps the low 16 bits, so `as`
-        // does the same for a (never seen) huge hit list.
         w.i16(self.other_hits.len() as i16);
         for hit in &self.other_hits {
             hit.write(w);
@@ -114,7 +110,6 @@ impl Decode for Attack {
     }
 }
 
-// Java: gameserver/network/serverpackets/AutoAttackStart.java
 /// The player starts auto attacking a target (`AUTO_ATTACK_START`). Java marks it droppable.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AutoAttackStart {
@@ -138,7 +133,6 @@ impl Decode for AutoAttackStart {
     }
 }
 
-// Java: gameserver/network/serverpackets/AutoAttackStop.java
 /// The player stops auto attacking (`AUTO_ATTACK_STOP`). Java marks it droppable.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct AutoAttackStop {
@@ -162,7 +156,6 @@ impl Decode for AutoAttackStop {
     }
 }
 
-// Java: gameserver/network/serverpackets/Die.java
 /// The death window (`DIE`). The flags decide which buttons the client shows.
 ///
 /// The world works them out (Java's constructor and `writeImpl`). The four clan buttons are only
@@ -228,7 +221,6 @@ impl Decode for Die {
     }
 }
 
-// Java: gameserver/network/serverpackets/Revive.java
 /// The creature is revived (`REVIVE`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Revive {
@@ -252,7 +244,6 @@ impl Decode for Revive {
     }
 }
 
-// Java: gameserver/network/serverpackets/ChangeMoveType.java
 /// Walking or running (`CHANGE_MOVE_TYPE`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ChangeMoveType {
@@ -284,7 +275,6 @@ impl Decode for ChangeMoveType {
     }
 }
 
-// Java: gameserver/network/serverpackets/ChangeWaitType.java
 /// Sitting, standing or fake death (`CHANGE_WAIT_TYPE`), with the creature's position.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ChangeWaitType {
@@ -327,7 +317,6 @@ impl Decode for ChangeWaitType {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExUseSharedGroupItem.java
 /// The cooldown of a shared item group (`EX_USE_SHARED_GROUP_ITEM`, ex id `0x4A`), shown after an
 /// item was used.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -376,7 +365,6 @@ impl Decode for ExUseSharedGroupItem {
     }
 }
 
-// Java: gameserver/network/serverpackets/SetupGauge.java
 /// A progress bar on the client (`SETUP_GAUGE`): a bow's reload, a cast. Java writes the time
 /// twice with the three-argument constructor (current and maximum).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -1,6 +1,5 @@
 //! The `ChangeHairColor` effect: the caster's hair color becomes `value` (its user info is sent
 //! again).
-// Java: dist/game/data/scripts/handlers/skill/effects/ChangeHairColor.java
 
 use l2_data::skill::EffectTemplate;
 

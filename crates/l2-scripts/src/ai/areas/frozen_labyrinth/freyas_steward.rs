@@ -1,5 +1,4 @@
 //! Freya's Steward teleports characters of level 82 and above into the Frozen Labyrinth.
-// Java: dist/game/data/scripts/ai/areas/FrozenLabyrinth/FreyasSteward/FreyasSteward.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

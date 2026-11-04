@@ -1,6 +1,4 @@
 //! Quest 356: Dig Up the Sea of Spores (Gauen in the Rune Township, Rotting Trees and Spore Zombies).
-// Java: dist/game/data/scripts/quests/Q00356_DigUpTheSeaOfSpores/Q00356_DigUpTheSeaOfSpores.java
-//
 // Pattern: two drops with a limit of 50 each (`docs/design/scripts.md`, "Quest patterns"): the
 // herbivorous spores from the rotting trees, the carnivorous from the spore zombies, the cond moves
 // to 2 at the first 50 and to 3 when both are complete. The reward is picked on the page: exp

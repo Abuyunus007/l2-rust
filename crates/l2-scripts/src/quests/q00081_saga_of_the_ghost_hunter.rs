@@ -1,6 +1,4 @@
 //! Quest 81: Saga of the Ghost Hunter.
-// Java: dist/game/data/scripts/quests/Q00081_SagaOfTheGhostHunter/Q00081_SagaOfTheGhostHunter.java
-//
 // Pattern: a saga (`docs/design/scripts.md`, "Quest patterns"): the Java class only fills the
 // fields of `AbstractSagaQuest`; here that is a `SagaData` constant and one `saga_quest!` line.
 // The hooks are the shared ones of `abstract_saga_quest.rs`.

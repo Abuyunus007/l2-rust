@@ -1,6 +1,4 @@
 //! Quest 130: Path to Hellbound (Casian and Galate; only while Hellbound is unlocked).
-// Java: dist/game/data/scripts/quests/Q00130_PathToHellbound/Q00130_PathToHellbound.java
-//
 // Pattern: a short talk chain. Casian only offers the quest when the Hellbound engine is not
 // locked (`ai::areas::hellbound::engine::is_locked`, level 0 or less).
 

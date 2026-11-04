@@ -1,7 +1,5 @@
 //! Quest 622: Specialty Liquor Delivery (Jeremy in the Town of Gludin area hands out five special
 //! drinks; Boelin, Kuber, Crocus, Naff and Pulin each take one and give a price; Lietta pays).
-// Java: dist/game/data/scripts/quests/Q00622_SpecialtyLiquorDelivery/Q00622_SpecialtyLiquorDelivery.java
-//
 // Pattern: the delivery chain of Q00621 with another order of the talkers (`TALKERS.indexOf(npc)
 // + 2` is the cond at which each takes a drink). Boelin takes the first drink at cond 1, the
 // reward is the Lietta page (its last band has no upper limit, as in Java).

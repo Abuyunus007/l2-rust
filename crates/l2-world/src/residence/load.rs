@@ -1,12 +1,4 @@
 //! Loading the residences at startup: the rows the game server read, in Java's order.
-// Java: managers/CHSiegeManager.java (loadClanHalls), data/sql/ClanHallTable.java (load)
-// Java: entity/residences/{ClanHall,AuctionableHall}.java (constructors)
-// Java: managers/CastleManager.java (loadInstances, activateInstances)
-// Java: mechanics/siege/Castle.java (constructor, load, loadDoor, initResidenceZone)
-// Java: managers/FortManager.java (loadInstances, activateInstances)
-// Java: mechanics/siege/Fort.java (constructor, load, loadFlagPoles, loadDoor, initResidenceZone)
-// Java: entity/actor/instance/Door.java (constructor: the clan hall doors; getCastle, getFort)
-// Java: entity/zone/type/ClanHallZone.java (setParameter: the zone registers with its hall)
 
 use std::sync::Arc;
 
@@ -51,8 +43,6 @@ pub struct CastleRecord {
     pub owner_id: i32,
     /// `castle_functions` (read only for an owned castle).
     pub functions: Vec<FunctionRecord>,
-    /// `clan_data.blood_alliance_count` of the owner, read again on demand (D-50: the Java game
-    /// server adds to it); `None` at startup and for a castle without an owner.
     pub owner_blood_alliance_count: Option<i32>,
 }
 
@@ -104,8 +94,6 @@ pub struct SiegableHallRecord {
     pub functions: Vec<FunctionRecord>,
 }
 
-/// Everything the game server read for the residences at startup (D-15: read before the world
-/// runs, only reads, D-39).
 #[derive(Debug, Clone, PartialEq, Eq, Default)]
 pub struct ResidenceLoad {
     /// `SELECT id FROM castle ORDER BY id`, each read like `new Castle(id)`.
@@ -160,13 +148,11 @@ impl World {
     /// `FortManager.loadInstances` and `activateInstances`. Call after the clans, the doors and
     /// static objects, the zones and the skill trees are installed.
     pub fn load_residences(&mut self, load: ResidenceLoad) {
-        // Java: CHSiegeManager.loadClanHalls.
         let siegable = load.siegable_halls.len();
         for record in load.siegable_halls {
             self.install_siegable_hall(record);
         }
         info!("CHSiegeManager: Loaded {siegable} conquerable clan halls.");
-        // Java: ClanHallTable.load.
         let (mut owned, mut free) = (0, 0);
         for record in load.clan_halls {
             if self.install_auctionable_hall(record) {
@@ -181,15 +167,12 @@ impl World {
         // `_loaded = true`: the rent and the auctions wait for it.
         self.clanhall.loaded = true;
 
-        // Java: CastleManager.loadInstances.
         for record in &load.castles {
             self.install_castle(record);
         }
         info!("CastleManager: Loaded {} castles", self.residences.castles.len());
-        // Java: CastleManager.activateInstances (`loadDoor`).
         self.bind_siege_zone_doors(true);
 
-        // Java: FortManager.loadInstances. A fortress without a flag pole throws in Java and the
         // forts after it are not loaded either.
         for record in &load.forts {
             if !self.install_fort(record) {
@@ -197,7 +180,6 @@ impl World {
             }
         }
         info!("FortManager: Loaded {} fortress", self.residences.forts.len());
-        // Java: FortManager.activateInstances.
         self.bind_siege_zone_doors(false);
     }
 
@@ -226,15 +208,12 @@ impl World {
                 clan.hideout_id = id.0;
             } else {
                 // `free()` from the `ClanHall` constructor.
-                // NOTE(java-quirk): `SiegableHall.updateDb` runs before `_nextSiege` exists, throws
-                // and is logged, so Java writes no row here; neither does this.
                 if let Some(hall) = self.clan_hall_mut(id) {
                     hall.owner_id = 0;
                 }
                 warn!("Exception: SiegableHall.updateDb(): the owner of {id} does not exist.");
             }
         }
-        // `updateNextSiege()` when the next siege is due within an hour (a write, D-51).
         if record.next_siege - self.siege_now_ms() - 3_600_000 < 0 {
             let name = self.clan_hall(id).map(|h| h.name.clone()).unwrap_or_default();
             let config = crate::clanhall::siege::schedule::parse_schedule_config(
@@ -279,8 +258,6 @@ impl World {
             } else {
                 // `free()` from the `ClanHall` constructor, before `AuctionableHall` set its own
                 // fields.
-                // NOTE(java-quirk): the row gets owner 0, `paidUntil` 0 and `paid` 0 (the fields
-                // are not set yet), while the hall keeps the row's `paidUntil` and `paid`.
                 if let Some(hall) = self.clan_hall_mut(id) {
                     hall.owner_id = 0;
                 }

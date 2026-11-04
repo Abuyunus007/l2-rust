@@ -1,6 +1,4 @@
 //! Quest 329: Curiosity of a Dwarf (Trader Rolento in the Rune town, the golems).
-// Java: dist/game/data/scripts/quests/Q00329_CuriosityOfADwarf/Q00329_CuriosityOfADwarf.java
-//
 // Pattern: a kill-count quest with drop chances per monster (`docs/design/scripts.md`, "Quest
 // patterns"). One roll per kill (`getRandom(100)`) is compared with each drop of the monster in
 // order; the first one that the roll is below gives its item (chance 1.0, no limit). The NPC pays

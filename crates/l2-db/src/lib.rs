@@ -2,9 +2,8 @@
 //! Java schema (D-21).
 //!
 //! Pattern for repositories (copy it for the game tables): a struct holding a [`Pool`], one
-//! `async` method per Java SQL statement, the SQL text as a constant next to a
-//! `// Java: Class.CONSTANT` comment, runtime queries (`query_as` + `FromRow`), and row
-//! structs whose field types match the column types.
+//! `async` method per Java SQL statement, the SQL text as a constant, runtime queries
+//! (`query_as` + `FromRow`), and row structs whose field types match the column types.
 
 mod error;
 mod game;

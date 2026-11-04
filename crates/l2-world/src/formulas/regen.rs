@@ -1,6 +1,5 @@
 //! HP, MP and CP regeneration rates.
 //!
-//! Java: `mechanics/stats/Formulas.java` `calcHpRegen`, `calcMpRegen`, `calcCpRegen`,
 //! `getRegeneratePeriod`. The rates are per regeneration period (3 s).
 //!
 //! What stays with the caller (M4-REGEN-01) because it needs the world: the Seven Signs festival
@@ -148,7 +147,6 @@ pub fn calc_hp_regen(input: &HpRegenInput<'_>) -> f64 {
         RegenKind::Npc { .. } => {}
     }
 
-    // NOTE(java-quirk): a non-raid NPC uses the *player* multiplier (HpRegenMultiplier).
     ((input.regenerate_hp_rate)(init.max(1.0)) * hp_regen_multiplier) + hp_regen_bonus
 }
 
@@ -239,8 +237,6 @@ pub struct CpRegenInput<'a> {
 
 /// Java `Formulas.calcCpRegen`: CP regained per period.
 pub fn calc_cp_regen(input: &CpRegenInput<'_>) -> f64 {
-    // With CON bonus. NOTE(java-quirk): unlike HP and MP this multiplies left to right
-    // ((base * levelMod) * bonus), which can differ in the last bit.
     let init = input.base_cp_regen * input.level_mod * input.con_bonus;
     let mut cp_regen_multiplier = input.cp_regen_multiplier;
     if let Some(factor) = input.posture.factor() {

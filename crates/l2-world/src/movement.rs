@@ -3,17 +3,6 @@
 //! Players and NPCs share it, as they share Java's `Creature`; the NPC branches of Java's code
 //! (no cursor keys, the `z` of the valid location, the closest-point search of an attackable,
 //! the teleport home on a jump of the ground layer) are marked where they are.
-// Java: org/l2jmobius/gameserver/entity/actor/Creature.java (moveToLocation, moveToNextRoutePoint,
-//       updatePosition, stopMove, broadcastMoveToLocation, isOnGeodataPath, setSyncedXYZ)
-// Java: org/l2jmobius/gameserver/taskmanagers/MovementTaskManager.java
-// Java: org/l2jmobius/gameserver/network/clientpackets/{MoveToLocation,ValidatePosition,
-//       CannotMoveAnymore}.java
-// Java: org/l2jmobius/gameserver/ai/{AbstractAI,CreatureAI,PlayerAI}.java (the move intention path:
-//       setIntentionMoveTo, moveTo, clientStopMoving, notifyActionArrived,
-//       notifyActionArrivedBlocked)
-// Java: org/l2jmobius/gameserver/entity/actor/Player.java (isFalling, last server position,
-//       client position)
-//
 // # NPCs (M4-AI-01)
 // An NPC keeps `_move`, `isRunning()`, `isTeleporting()`, the pending path search and the AI's
 // pawn fields in `Npc::movement` ([`NpcMovement`]); every function here reaches them through
@@ -549,8 +538,6 @@ impl World {
             instance,
             false,
         ) {
-            // NOTE(java-quirk): `getLastServerPosition()` is a `Location` that never had a heading
-            // set, so stopping there turns the character to heading 0.
             self.stop_move(id, Some((last_server.0, last_server.1, last_server.2, 0)));
             self.send(id, &ActionFailed);
             return;
@@ -622,7 +609,6 @@ impl World {
 
         // Abnormal z read from client.
         if !(-20_000..=20_000).contains(&z) {
-            // Java: `teleToLocation(lastServerPosition)`.
             warn!("{id}: client reported an abnormal z ({z}); back to the last server position.");
             if let Some((lx, ly, lz)) = self.players.get(&id).map(|p| p.movement.last_server_position) {
                 self.tele_to_location(id, crate::teleport::TeleportTarget::at(lx, ly, lz));
@@ -645,7 +631,6 @@ impl World {
         let dz = z.wrapping_sub(real_z);
         let diff_sq = f64::from(dx.wrapping_mul(dx).wrapping_add(dy.wrapping_mul(dy)));
         if self.is_in_water(id) || self.stats(id).is_some_and(|v| v.is_flying()) {
-            // Java: `isFlying() || isInsideZone(WATER)`.
             self.set_xyz(id, real_x, real_y, z);
             if diff_sq > 90_000.0 {
                 self.send_validate_location(id);
@@ -986,7 +971,6 @@ impl World {
         let dy = f64::from(mv.y_destination) - mv.y_accurate;
         let dz = f64::from(mv.z_destination.wrapping_sub(z_prev)); // Z coordinate will follow client values.
 
-        // Java: `isPlayer() && !_isFlying`.
         if is_player && cursor {
             // In case of cursor movement, avoid moving through obstacles.
             let (x, y) = front_probe(x_prev, y_prev, heading, speed);
@@ -1719,8 +1703,6 @@ impl World {
 
         if calc.geo_checks {
             // Verify destination when using mouse movement and no path is found.
-            // NOTE(java-quirk): a path with fewer than two nodes still counts as "a path" here
-            // (`geoPath == null` fails), so the destination is not corrected in that case.
             let cursor = self.is_cursor_movement(id);
             // `isPlayable()`: a summon too.
             if (is_player || self.is_summon(id))

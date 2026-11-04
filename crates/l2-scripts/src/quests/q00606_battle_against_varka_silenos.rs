@@ -1,6 +1,4 @@
 //! Quest 606: Battle against Varka Silenos (Kadun in the Ketra Orc Village, Varka monsters).
-// Java: dist/game/data/scripts/quests/Q00606_BattleAgainstVarkaSilenos/Q00606_BattleAgainstVarkaSilenos.java
-//
 // Pattern: a repeatable collect quest. Each monster drops a mane with a chance per monster (a
 // random member of the party at cond 1 gets it); the NPC trades 100 manes for horns.
 
@@ -93,8 +91,6 @@ impl Script for Q00606BattleAgainstVarkaSilenos {
     }
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, _is_summon: bool) {
-        // NOTE(java-quirk): the mane goes to a random member at cond 1; `getRandom` is only rolled
-        // when a member was found (`member != null && getRandom(1000) < chance`).
         let Some(member) = ctx.get_random_party_member_cond(killer, 1) else {
             return;
         };

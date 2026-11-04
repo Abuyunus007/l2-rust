@@ -1,6 +1,4 @@
 //! Frame codec: `u16 LE` total length (including the 2 header bytes), then the body.
-//!
-//! Java: `commons/network/handler/ReadHandler.java` (`handleHeader`, `MAX_PACKET_SIZE`).
 
 use std::io;
 
@@ -28,8 +26,6 @@ impl Decoder for FrameCodec {
             }
             let total = usize::from(u16::from_le_bytes([src[0], src[1]]));
             if total <= HEADER_SIZE {
-                // NOTE(java-quirk): Java's ReadHandler treats `dataSize <= 0` as "nothing to read"
-                // and just reads the next header, so empty frames are skipped silently.
                 src.advance(HEADER_SIZE);
                 continue;
             }

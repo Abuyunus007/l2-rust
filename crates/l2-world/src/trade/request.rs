@@ -1,9 +1,5 @@
 //! `TradeRequest` and `AnswerTradeRequest`, the transaction state of `Player` they share with the
 //! party, friend and duel requests, and the trade window's start and end.
-// Java: network/clientpackets/{TradeRequest,AnswerTradeRequest}.java
-// Java: entity/actor/Player.java (getActiveRequester, setActiveRequester, isProcessingRequest,
-//       isProcessingTransaction, onTransactionRequest, isRequestExpired, onTransactionResponse,
-//       startTrade, onTradeStart, onTradeConfirm, onTradeCancel, onTradeFinish, cancelActiveTrade)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{
@@ -396,8 +392,6 @@ impl World {
     /// Java calls it from `Player.deleteMe` (see `leave.rs`), when a duel starts, from the
     /// attribute enchant, and from the trade packets. Not from movement, death, teleport or an
     /// attack.
-    // NOTE(java-quirk): `onTradeCancel(this)` names the player who cancels in the message to
-    // himself too ("<own name> has cancelled the trade").
     pub fn cancel_active_trade(&mut self, id: ObjectId) {
         let Some(partner) = self
             .players
@@ -414,10 +408,6 @@ impl World {
     }
 
     /// Java `Player.deleteMe`: "Deals with sudden exit in the middle of transaction."
-    // NOTE(java-quirk): this only runs `if (getActiveRequester() != null)`: a player who leaves in
-    // the middle of an open trade (the request is answered by then, so there is no requester) does
-    // not cancel it. The partner finds out the next time it touches the trade
-    // (`THAT_PLAYER_IS_NOT_ONLINE` in `AddTradeItem` / `TradeDone`).
     pub(crate) fn cancel_transaction_on_leave(&mut self, id: ObjectId) {
         if self.active_requester(id).is_some() {
             self.set_active_requester(id, None);

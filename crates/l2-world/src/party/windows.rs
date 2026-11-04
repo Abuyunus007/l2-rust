@@ -1,8 +1,4 @@
 //! The packets of the party window and the ways to send a packet to a party.
-// Java: network/serverpackets/{PartySmallWindowAll,PartySmallWindowAdd,PartySmallWindowDelete,
-//       PartySmallWindowUpdate,PartyMemberPosition,PartySpelled}.java
-// Java: entity/groups/AbstractPlayerGroup.java (broadcastPacket)
-// Java: entity/groups/Party.java (broadcastToPartyMembers)
 
 use l2_net::Encode;
 use l2_protocol_game::server::{

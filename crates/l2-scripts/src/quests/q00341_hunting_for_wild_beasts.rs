@@ -1,6 +1,4 @@
 //! Quest 341: Hunting for Wild Beasts (Pano the grocer in Dion, bear pelts).
-// Java: dist/game/data/scripts/quests/Q00341_HuntingForWildBeasts/Q00341_HuntingForWildBeasts.java
-//
 // Pattern: a kill-drop quest with a per-monster chance up to a limit; the limit moves to cond 2
 // and the NPC pays once for the pelts.
 

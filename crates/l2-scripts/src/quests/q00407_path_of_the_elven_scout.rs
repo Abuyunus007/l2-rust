@@ -1,6 +1,4 @@
 //! Quest 407: Path of the Elven Scout (Master Reoria, Guard Babenco, Guard Moretti and Prias).
-// Java: dist/game/data/scripts/quests/Q00407_PathOfTheElvenScout/Q00407_PathOfTheElvenScout.java
-//
 // Pattern: a party-free kill step where the monster must have been attacked by the killer
 // first (the NPC's script value holds the attacker's id, `onAttack`), then letters from Ol Mahum
 // patrols, a rusted key from the quest monster Ol Mahum Sentry, and the scout's recommendation.

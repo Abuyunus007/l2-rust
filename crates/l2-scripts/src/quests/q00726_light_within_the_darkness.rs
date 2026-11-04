@@ -1,7 +1,5 @@
 //! Quest 726: Light Within the Darkness (the fortress wardens; the party of the fortress clan
 //! enters the Rim Pailaka, and kills Kanadis Guide twice for 152 Knight's Epaulettes).
-// Java: dist/game/data/scripts/quests/Q00726_LightWithinTheDarkness/Q00726_LightWithinTheDarkness.java
-//
 // Pattern: a quest with its own instance (`PAWORLD`): the wardens' `enter` event makes a dynamic
 // instance of the fortress' template, and three timed waves spawn in it. The Java `Runnable`s
 // on the thread pool are quest timers with the instance id in their parameters. A world of this
@@ -198,8 +196,6 @@ fn enter_instance(
         return ret;
     }
     if let Some(ret) = check_conditions(ctx, player) {
-        // NOTE(java-quirk): the other refusals of `checkConditions` (not the leader, too far, too
-        // low) return null in Java: the instance is made all the same.
         return ret;
     }
 

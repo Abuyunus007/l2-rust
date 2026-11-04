@@ -457,7 +457,6 @@ impl Bare {
         for (index, hero) in opts.players.iter().enumerate() {
             rows.seed_quests(&opts.seed, hero.name, Self::id_of(index));
         }
-        // Java: RaidBossPointsManager and GrandBossManager before the "Scripts" section.
         world.set_boss_settings(game_server::world_data::boss_settings(&config, &config_dir));
         world.load_bosses(opts.seed.boss_load());
         world.set_script_settings(game_server::script_settings(&config, &config_dir));
@@ -467,7 +466,6 @@ impl Bare {
             &datapack.root,
             config.player.soul_crystal_chance_multiplier,
         )));
-        // Java: the "Scripts" section, then the spawns (none here: `no_spawns`).
         let scripts = l2_scripts::all_with(l2_data::ClassMasterConfig::load(&datapack.root));
         npcs::spawn_npcs_with_scripts(&mut world, &datapack, ids, &config, &config_dir, Some(scripts));
         world.spawn_raid_bosses(Vec::new());

@@ -1,5 +1,4 @@
 //! `Database.ini`.
-// Java: org/l2jmobius/commons/config/DatabaseConfig.java
 
 use std::fmt;
 

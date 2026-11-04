@@ -1,15 +1,6 @@
 //! Private stores (sit-down sell, buy and package sell): the store state of a player, opening and
 //! closing a store, the titles, the lists the owner sets, and the checks other systems make with
 //! `isInStoreMode` (M6-STORE-01).
-// Java: network/clientpackets/{RequestActionUse,RequestPrivateStoreManageSell,
-//       RequestPrivateStoreManageBuy,RequestPrivateStoreQuitSell,RequestPrivateStoreQuitBuy,
-//       SetPrivateStoreMsgSell,SetPrivateStoreMsgBuy,SetPrivateStoreWholeMsg,
-//       SetPrivateStoreListSell,SetPrivateStoreListBuy}.java
-// Java: entity/actor/Player.java (canOpenPrivateStore, tryOpenPrivateBuyStore,
-//       tryOpenPrivateSellStore, setPrivateStoreType, getSellList, getBuyList, doInteract,
-//       getMinShopDistance)
-// Java: entity/actor/enums/player/PrivateStoreType.java
-//
 // # How it fits together
 // - This file: the state, opening and closing a store, the titles and the two `SetPrivateStoreList*`
 //   handlers (the owner confirms its list).
@@ -211,8 +202,6 @@ impl TradeList {
             .items
             .iter()
             .position(|t| t.object_id.0 == object_id || t.item.item_id == item_id)?;
-        // NOTE(java-quirk): Java also invalidates the partner's confirmation here; a store list has
-        // no partner.
         let titem = self.items[index].clone();
         // Reduce item count or complete item.
         if count != -1 && titem.count > count {
@@ -499,8 +488,6 @@ impl World {
     }
 
     /// Java `RequestPrivateStoreManageSell.runImpl`.
-    // NOTE(java-quirk): Java only refuses a dead player here ("TODO: implement me properly"); the
-    // manage window itself comes from the `RequestActionUse` actions.
     fn on_request_private_store_manage_sell(&mut self, id: ObjectId) {
         // Player shouldn't be able to set stores if he/she is alike dead (dead or fake death), or
         // in olympiad (M8-OLY-01).
@@ -599,8 +586,6 @@ impl World {
         if let Some(list) = self.sell_list_mut(id) {
             list.title = msg.to_string();
         }
-        // NOTE(java-quirk): `new ExPrivateStoreSetWholeMsg(player)` reads the title back from the
-        // sell list, which is what was just set.
         let title = self.sell_list_copy(id).title;
         self.send(
             id,
@@ -720,8 +705,6 @@ impl World {
                 );
                 return;
             }
-            // NOTE(java-quirk): the result of `list.addItem` is ignored, so an item the list
-            // refuses (not tradeable, not owned, a count that is too high...) is skipped quietly.
             self.sell_list_add_item(id, entry.item_id, entry.count, entry.price);
 
             // Java's `getPrice()` of the entry is `count * price`.
@@ -844,7 +827,6 @@ impl World {
                 self.store_illegal_action(id, &text);
                 return;
             }
-            // NOTE(java-quirk): the result of `addItemByItemId` is ignored (see the sell list).
             let template = templates.as_ref().and_then(|t| t.get(entry.item_id));
             if let Some(list) = self.buy_list_mut(id) {
                 list.add_item_by_item_id(

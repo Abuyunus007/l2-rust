@@ -1,25 +1,5 @@
 //! Skill enchanting: the info windows and the four ways to change an enchanted skill (enchant, safe
 //! enchant, untrain, change route), with their SP, adena and spellbook costs.
-// Java: network/clientpackets/{RequestExEnchantSkill,RequestExEnchantSkillSafe,
-//       RequestExEnchantSkillUntrain,RequestExEnchantSkillRouteChange,RequestExEnchantSkillInfo,
-//       RequestExEnchantSkillInfoDetail}.java
-// Java: network/serverpackets/{ExEnchantSkillInfo,ExEnchantSkillInfoDetail,ExEnchantSkillResult}.java
-// Java: data/xml/EnchantSkillGroupsData.java (the constants), entity/actor/Player.java
-//       (isAllowedToEnchantSkills, addSkill, updateShortcuts)
-//
-// # The flow
-// The client asks for the routes of a skill (`RequestExEnchantSkillInfo`, answered with
-// `ExEnchantSkillInfo`), for what a step costs (`RequestExEnchantSkillInfoDetail`, answered with
-// `ExEnchantSkillInfoDetail`) and then does the step. A step takes SP, adena and (usually) a
-// spellbook, rolls the chance of the player's level, and replaces the skill by the next level of
-// its route (`101`, `102`, ...), by the base level again (failure of a normal enchant), or by the
-// level one step down (untrain). The new level is a `character_skills` row like any other skill
-// (D-39), written through [`SkillWrites`]. Afterwards the client gets `UserInfo`, the `SkillList`,
-// both info packets for the new level, and the shortcuts of the skill show the new level.
-//
-// # What is left out
-// - The Java GS "enchant.skills" log file: the lines go to `tracing` with the target
-//   `enchant.skills` (`LogSkillEnchants`).
 
 use std::sync::Arc;
 
@@ -478,8 +458,6 @@ impl World {
         if before != learn.min_skill_level(skill_level) {
             return;
         }
-        // NOTE(java-quirk): Java dereferences the holder without a null check; a level that is on
-        // no route throws and nothing happens.
         let Some(esd) = data.enchant_skill_holder(skill_id, skill_level) else {
             return;
         };
@@ -673,7 +651,6 @@ impl World {
             return;
         }
 
-        // NOTE(java-quirk): Java dereferences the holder without a null check.
         let Some(esd) = data.enchant_skill_holder(skill_id, before) else {
             return;
         };
@@ -756,7 +733,6 @@ impl World {
         if current_enchant_level != skill_level % 100 {
             return;
         }
-        // NOTE(java-quirk): Java dereferences the holder without a null check.
         let Some(esd) = data.enchant_skill_holder(skill_id, skill_level) else {
             return;
         };

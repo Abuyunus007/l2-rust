@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/MerchantZeroSellPriceConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/MerchantZeroSellPrice.ini` (Java: `MerchantZeroSellPriceConfig`).

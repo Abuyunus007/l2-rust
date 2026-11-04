@@ -2,18 +2,6 @@
 //! effect flags (`isStunned`, `isMovementDisabled`, ...), the AI notifications the handlers call,
 //! and the creature state Java keeps on `Creature`/`Player` that effects change (fake death,
 //! sitting, immobilization, invisibility, an NPC's target, charges and souls).
-// Java: entity/actor/Creature.java (isStunned, isSleeping, isRooted, isParalyzed, isMuted,
-//       isPhysicalMuted, isPhysicalAttackMuted, isConfused, isControlBlocked, isOutOfControl,
-//       isAllSkillsDisabled, isDisabled, isImmobilized, startStunning, stopStunning, startParalyze,
-//       startFakeDeath, stopFakeDeath, setRunning, abortAttack)
-// Java: ai/CreatureAI.java (notifyActionStunned, ...Paralyzed, ...Sleeping, ...Rooted, ...Confused,
-//       ...Muted, ...FakeDeath, ...Afraid)
-// Java: ai/AttackableAI.java (notifyActionAfraid: the fear task)
-// Java: entity/actor/Player.java (sitDown, standUp, isFakeDeath, isRecentFakeDeath,
-//       increaseCharges, decreaseCharges, increaseSouls, ...)
-// Java: entity/actor/tasks/player/{SitDownTask,StandUpTask}.java
-// Java: entity/WorldObject.java (setInvisible)
-//
 // Java keeps these on the creature object. Here they are one `CreatureControl` per creature in
 // `EffectsWorld::control`, made when something first sets one (a creature without an entry has
 // every value at Java's default).
@@ -845,8 +833,6 @@ impl World {
             self.set_recent_fake_death(id, true);
         }
         self.broadcast_wait_type(id, ChangeWaitType::WT_STOP_FAKEDEATH);
-        // NOTE(java-quirk): "Temp hack: players see FD on ppl that are moving"; Java sends a
-        // `Revive` to everybody on top of the wait type.
         self.broadcast_creature_packet(id, &Revive { object_id: id.0 });
     }
 

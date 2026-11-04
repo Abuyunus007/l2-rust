@@ -7,21 +7,18 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ServerOpcode;
 
-// Java: gameserver/network/serverpackets/ExShowVariationMakeWindow.java
 server_unit_packet!(
     /// Opens the augmentation window (`EX_SHOW_VARIATION_MAKE_WINDOW`).
     ExShowVariationMakeWindow,
     ExShowVariationMakeWindow
 );
 
-// Java: gameserver/network/serverpackets/ExShowVariationCancelWindow.java
 server_unit_packet!(
     /// Opens the augmentation removal window (`EX_SHOW_VARIATION_CANCEL_WINDOW`).
     ExShowVariationCancelWindow,
     ExShowVariationCancelWindow
 );
 
-// Java: gameserver/network/serverpackets/ExVariationResult.java
 server_packet!(
     /// The result of the augmentation (`EX_VARIATION_RESULT`): the two option ids and 1 for
     /// success, all 0 for a failure. Java names the constructor arguments `unk1`, `unk2`, `unk3`
@@ -34,7 +31,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/ExVariationCancelResult.java
 server_packet!(
     /// The result of the removal (`EX_VARIATION_CANCEL_RESULT`): 1 removed, 0 not.
     ExVariationCancelResult,
@@ -43,7 +39,6 @@ server_packet!(
     }
 );
 
-// Java: gameserver/network/serverpackets/ExPutItemResultForVariationMake.java
 /// The item in the augmentation window is acceptable (`EX_PUT_ITEM_RESULT_FOR_VARIATION_MAKE`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExPutItemResultForVariationMake {
@@ -76,7 +71,6 @@ impl Decode for ExPutItemResultForVariationMake {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExPutIntensiveResultForVariationMake.java
 /// The life stone in the window is acceptable, and the gemstones it needs
 /// (`EX_PUT_INTENSIVE_RESULT_FOR_VARIATION_MAKE`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -120,7 +114,6 @@ impl Decode for ExPutIntensiveResultForVariationMake {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExPutCommissionResultForVariationMake.java
 /// The gemstones in the window are right (`EX_PUT_COMMISSION_RESULT_FOR_VARIATION_MAKE`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct ExPutCommissionResultForVariationMake {
@@ -161,7 +154,6 @@ impl Decode for ExPutCommissionResultForVariationMake {
     }
 }
 
-// Java: gameserver/network/serverpackets/ExPutItemResultForVariationCancel.java
 /// The augmented item in the removal window and the price
 /// (`EX_PUT_ITEM_RESULT_FOR_VARIATION_CANCEL`).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

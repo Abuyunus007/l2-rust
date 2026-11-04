@@ -1,6 +1,5 @@
 //! Which connection belongs to which account: for `KickPlayer` from the login server and for the
 //! admin view. Network-side bookkeeping only; the world keeps its own player list (D-10).
-// Java: LoginServerThread._accountsInGameServer (account -> GameClient)
 
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -80,14 +79,12 @@ impl SessionRegistry {
     }
 
     /// The login server wants `account` off this server.
-    // Java: LoginServerThread.doKickPlayer
     pub fn kick(&self, account: &str, world: &WorldHandle) -> KickOutcome {
         let Some(entry) = self.get(account) else {
             return KickOutcome::NotConnected;
         };
         info!("Kicked by login, account '{account}'.");
         if entry.in_world.load(Ordering::Acquire) {
-            // Java: Disconnection.of(client).storeAndDeleteWith(msg). The world sends the message,
             // stores the character and closes the connection through its packet sink.
             if world.send(WorldCommand::Kick {
                 account: account.to_string(),
@@ -95,7 +92,6 @@ impl SessionRegistry {
                 return KickOutcome::WorldKick;
             }
         }
-        // Java: client.close(msg) — the message, then the connection is closed.
         entry.handle.send_and_close(
             SystemMessage::new(SystemMessageId::AnotherPersonHasLoggedInWithTheSameAccount).to_bytes(),
         );

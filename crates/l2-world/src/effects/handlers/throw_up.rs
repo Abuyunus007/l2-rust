@@ -1,6 +1,5 @@
 //! The `ThrowUp` effect: the target is thrown away from the caster, past it by `FlyRadius` and
 //! the height difference, and stunned while it flies.
-// Java: dist/game/data/scripts/handlers/skill/effects/ThrowUp.java
 
 use l2_data::skill::{EffectTemplate, FlyType};
 use l2_geo::Location;
@@ -47,7 +46,6 @@ impl EffectHandler for ThrowUp {
             return;
         }
         let dz = f64::from(ez - cur_z);
-        // Java: `int offset = Math.min((int) distance + skill.getFlyRadius(), 1400);`, then
         // `offset += Math.abs(dz)` (an int that takes a double: the sum is truncated).
         let mut offset = std::cmp::min((distance as i32) + cx.skill.fly_radius, 1400);
         offset = (f64::from(offset) + dz.abs()) as i32;

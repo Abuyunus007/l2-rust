@@ -3,7 +3,6 @@
 //! The skill and buff admin commands (M5-ADMIN-04): `//add_skill`, `//remove_skill`,
 //! `//give_all_skills`, `//remove_all_skills`, `//skill_list`, `//getbuffs`, `//stopbuff`,
 //! `//stopallbuffs` and `//areacancel`, with a fake GM, fake players and a fake monster.
-//! Java: scripts/handlers/chat/commands/admin/{AdminSkill,AdminBuffs}.java.
 //!
 //! The harness is the one of `admin_combat.rs`, with a recording outbox (the `character_skills`
 //! rows) and a class skill tree (the skills `//give_all_skills` gives).
@@ -535,7 +534,6 @@ fn add_skill_gives_the_skill_and_stores_its_row() {
 
     s.cmd(GM, "add_skill 3100 2");
     assert_eq!(s.level_of(USER, 3100), 2);
-    // Java: `addSkill(skill, true)` stores the row.
     assert_eq!(s.persisted.skill_changes(), [(vec![(3100, 2)], vec![])]);
     let out = s.log.take();
     assert_eq!(texts_to(&out, USER), ["Admin gave you the skill Reflect."]);
@@ -645,7 +643,6 @@ fn add_skill_without_a_target_says_invalid_target_twice() {
     s.enter(GM, 0);
     s.log.take();
 
-    // Java: `INVALID_TARGET`, then `showMainPage` checks the target and says it again.
     s.cmd(GM, "add_skill 3100 1");
     assert_eq!(
         system_ids_to(&s.log.take(), GM),
@@ -675,7 +672,6 @@ fn remove_skill_takes_the_skill_and_stores_the_removal() {
         ["Admin removed the skill Reflect from your skills list."]
     );
     assert_eq!(texts_to(&out, GM), ["You removed the skill Reflect from P1."]);
-    // Java: `removeSkillsPage(activeChar, 0)`, the page of the skills the target still has.
     let pages = html_to(&out, GM);
     assert_eq!(pages.len(), 1);
     assert!(pages[0].contains("Editing <font color=\"LEVEL\">P1</font>"));
@@ -1207,7 +1203,6 @@ fn stopbuff_removes_the_effect_of_one_skill_of_the_target() {
     assert!(s.world.is_affected_by_skill(ObjectId(USER), 9001));
     s.log.take();
 
-    // Java: `stopSkillEffects(REMOVED, 9001)` on the object 1, its message, then the buff page of
     // the target (now without the skill).
     s.cmd(GM, "stopbuff 1 9001");
     assert!(!s.world.is_affected_by_skill(ObjectId(USER), 9001));

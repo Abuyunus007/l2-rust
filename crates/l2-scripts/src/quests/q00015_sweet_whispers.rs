@@ -1,6 +1,4 @@
 //! Quest 15: Sweet Whispers (Vladimir in the Town of Dion sends a level 60 character to a Necromancer and the Hierarch).
-// Java: dist/game/data/scripts/quests/Q00015_SweetWhispers/Q00015_SweetWhispers.java
-//
 // Pattern: a two-step errand with no items (`docs/design/scripts.md`, "Quest patterns"): Vladimir
 // starts it, the Necromancer moves it to cond 2 with a page, and the Hierarch pays the reward
 // (exp only). One-time: `exit_quest(ctx, false, true)`.
@@ -45,8 +43,6 @@ impl Script for Q00015SweetWhispers {
         _npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        // NOTE(java-quirk): without a quest state `onEvent` returns the event itself (not null),
-        // so the event's page is shown anyway.
         let Some(player) = player else {
             return Some(event.to_owned());
         };

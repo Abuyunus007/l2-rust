@@ -1,6 +1,4 @@
 //! Quest 178: Iconic Trinity (Kamael, Hierarch Kekropus and three icons with a password puzzle).
-// Java: dist/game/data/scripts/quests/Q00178_IconicTrinity/Q00178_IconicTrinity.java
-//
 // Pattern: the memo state picks the step, `memoStateEx(1)` adds up the answers of a three (or
 // four) step puzzle (1, 10, 100, 1000 per answer; the right ones add up to 111 / 1111), pages
 // with the player's name (`getHtm(..).replace("%name1%", ..)`).
@@ -78,8 +76,6 @@ impl Script for Q00178IconicTrinity {
                 htmltext = named_page(ctx, player, event);
             }
             "32138-14.html" => {
-                // NOTE(java-quirk): `||` binds weaker than the memo/level/class group, so a
-                // female soldier passes whatever the memo state and level are.
                 let class = ctx.player_class_id(player);
                 if (qs.is_memo_state(ctx, 10)
                     && ctx.player_level(player) <= TWENTY_LEVEL
@@ -93,7 +89,6 @@ impl Script for Q00178IconicTrinity {
                 }
             }
             "32138-17.html" => {
-                // NOTE(java-quirk): the same precedence slip: any class but female soldier passes.
                 let class = ctx.player_class_id(player);
                 if (qs.is_memo_state(ctx, 10)
                     && ctx.player_level(player) > TWENTY_LEVEL

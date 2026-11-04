@@ -1,6 +1,4 @@
 //! The two formulas of cubics: `calcMagicDam(Cubic, ..)` and `calcCubicSkillSuccess`.
-// Java: mechanics/stats/Formulas.java (calcMagicDam (Cubic overload), calcCubicSkillSuccess)
-//
 // The numbers are pure functions with their inputs in a struct (the pattern of `crate::formulas`);
 // the `World` methods below fill the inputs from the creatures, draw in Java's order from the
 // world RNG and send the messages Java sends from inside the formulas.
@@ -71,10 +69,6 @@ pub struct CubicMagicDamInput<'a> {
 ///
 /// A perfect block returns 1 before any draw. With `alt_game_magicfailures` the first draw is the
 /// `Rnd.get(100)` of `calcMagicSuccess`; a failed check draws it a second time (see the quirks).
-// NOTE(java-quirk): the damage is `91 * ((cubicPower + skillPower) / mDef)`: the cubic's power is
-// added to the skill's and not rooted like a creature's M. Atk (`91 * sqrt(mAtk) / mDef * power`).
-// There is no weapon random damage, no PvP bonus and no class balance but the PvE damage one, and
-// a critical hit is a plain `* 3`.
 pub fn calc_cubic_magic_dam(
     input: &CubicMagicDamInput<'_>,
     shld: u8,
@@ -107,9 +101,6 @@ pub fn calc_cubic_magic_dam(
     let mut failure = MagicFailure::None;
     if input.alt_game_magicfailures && !calc_magic_success(&input.magic_success, rng) {
         failed = true;
-        // NOTE(java-quirk): the check is rolled a second time to decide between "half damage" and
-        // "fully resisted", and the level gap is the target's level minus the skill's magic
-        // level (a creature's formula uses the attacker's level).
         if calc_magic_success(&input.magic_success, rng)
             && input.target_level.wrapping_sub(input.skill_magic_level) <= 9
         {

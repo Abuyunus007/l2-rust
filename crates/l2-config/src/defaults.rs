@@ -1,6 +1,4 @@
 //! The Java defaults of every key, for the config editors (G-02, G-05).
-// Java: the `config.getX("Key", default)` calls of org/l2jmobius/{gameserver,loginserver}/config
-//!
 //! There is no table of defaults to keep in sync: the typed structs read their keys through
 //! [`IniFile`], so [`IniFile::recording`] feeds an empty file through the very `from_ini` the
 //! server uses and collects the default of every key it asks for. A key the structs do not read

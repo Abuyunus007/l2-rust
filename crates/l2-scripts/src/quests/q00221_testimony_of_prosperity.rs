@@ -1,8 +1,6 @@
 //! Quest 221: Testimony of Prosperity (Warehouse Keeper Parman in Dwarven Village: the Artisan
 //! and Scavenger second class change, through the merchants and guild masters of Aden's
 //! trading road, Emily, Lilith, Maestro Nikola and the Box of Titan).
-// Java: dist/game/data/scripts/quests/Q00221_TestimonyOfProsperity/Q00221_TestimonyOfProsperity.java
-//
 // Pattern: the test chain of the "Testimony of ..." quests (see Q00222 for the shape): a long
 // ladder of item tests per NPC, written with the three small helpers below (`has`, `all`, `any`
 // for Java's `hasQuestItems(a)`, `hasQuestItems(a, b, ..)` and `hasAtLeastOneQuestItem(..)`).

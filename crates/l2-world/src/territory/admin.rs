@@ -1,10 +1,5 @@
 //! The GM Territory War commands: `//territory_war`, `//territory_war_time`,
 //! `//territory_war_start`, `//territory_war_end` and `//territory_wards_list`.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminTerritoryWar.java
-//
-// A GM can run a test war on this world whatever `SiegeDatabaseWrites` says (D-51): the start
-// command marks the start as a GM's, the war runs here, and its rows are written only with the
-// switch (the new start date of `//territory_war_time` too).
 
 use l2_protocol_game::server::NpcHtmlMessage;
 use l2_util::ObjectId;
@@ -44,7 +39,6 @@ fn admin_territory_war(world: &mut World, gm: ObjectId, command_value: &str) -> 
         }
         show_siege_time_page(world, gm);
     } else if command.eq_ignore_ascii_case("admin_territory_war_start") {
-        // D-51: a GM's start runs the war in this world.
         world.territory.gm_start = true;
         let now = world.tw_now_ms();
         world.tw_set_start_time(now);

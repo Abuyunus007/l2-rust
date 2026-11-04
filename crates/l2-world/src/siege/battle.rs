@@ -1,12 +1,6 @@
 //! The siege itself: the start, the owner change in the middle (`midVictory`), the end, the
 //! announcements to both sides, the siege state of the participants and the teleports out of the
 //! siege zone.
-// Java: mechanics/siege/Siege.java (startSiege, endSiege, midVictory, announceToPlayer,
-//       updatePlayerSiegeStateFlags, teleportPlayer, getAttackersInZone, getPlayersInZone,
-//       getOwnersInZone, getSpectatorsInZone, removeFlags, removeDefenderFlags, killedCT,
-//       killedFlag, addAttacker, addDefender, removeAttacker, removeDefender)
-// Java: entity/clan/Clan.java (increaseBloodAllianceCount, addSiegeKill, addSiegeDeath,
-//       clearSiegeKills, clearSiegeDeaths)
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{RelationChanged, SystemMessage, SystemMessageParam};
@@ -108,7 +102,6 @@ impl World {
             .map(|c| (c.owner_id, c.name.clone()))
             .unwrap_or_default();
         if owner > 0 {
-            // NOTE(java-quirk): Java throws for an owner `ClanTable` does not know.
             if let Some(clan_name) = self.clan(owner).map(|c| c.name.clone()) {
                 self.broadcast_to_all_online_players(
                     &SystemMessage::new(SystemMessageId::ClanS1IsVictoriousOverS2SCastleSiege)
@@ -120,7 +113,6 @@ impl World {
                     // Owner is unchanged.
                     self.clan_increase_blood_alliance_count(owner);
                 } else {
-                    // `_castle.setTicketBuyCount(0)` (D-51: the row only with the switch).
                     if let Some(castle) = self.castle_mut(id) {
                         castle.ticket_buy_count = 0;
                     }
@@ -211,7 +203,6 @@ impl World {
         if owner <= 0 {
             return;
         }
-        // NOTE(java-quirk): Java throws for an owner `ClanTable` does not know.
         let Some(ally_id) = self.clan(owner).map(|c| c.ally_id) else {
             return;
         };
@@ -278,8 +269,6 @@ impl World {
     }
 
     /// `removeAttacker(getAttackerClan(owner)); addDefender(sc, OWNER)`.
-    // NOTE(java-quirk): `addDefender(null, ...)` does nothing, so an owner that was no attacker
-    // (a GM `//setcastle`) is not added.
     fn siege_move_new_owner_to_defenders(&mut self, id: CastleId, owner: i32) {
         let Some(siege) = self.castle_siege_mut(id) else {
             return;
@@ -473,8 +462,6 @@ impl World {
     }
 
     /// Java `Siege.killedFlag(flag)`: the first attacker clan's `removeFlag(flag)`.
-    // NOTE(java-quirk): `SiegeClan.removeFlag` deletes the flag even when it is not the clan's,
-    // so the loop always ends at the first attacker clan.
     pub fn siege_killed_flag(&mut self, id: CastleId, flag: ObjectId) {
         let Some(siege) = self.castle_siege_mut(id) else {
             return;
@@ -494,8 +481,6 @@ impl World {
 
     // ------------------------------------------------------------------ clans
 
-    /// Java `Clan.increaseBloodAllianceCount()`: `BloodAllianceReward` more, written as a siege
-    /// job (D-51).
     pub(crate) fn clan_increase_blood_alliance_count(&mut self, clan_id: i32) {
         let reward = self.sieges.settings.blood_alliance_reward;
         let Some(clan) = self.clan_mut(clan_id) else {

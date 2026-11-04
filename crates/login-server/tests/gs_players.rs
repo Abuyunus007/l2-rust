@@ -36,8 +36,6 @@ async fn a_player_enters_the_game_through_the_login_server() {
     let client_addr = server.client_addr().unwrap();
     let mut gs = FakeGameServer::register_sample(state.game_servers.listen_addr().unwrap()).await;
 
-    // What the Java game server does right after AuthResponse: without it the server shows as
-    // down (a registered server is DOWN until it reports its status).
     gs.send_java_status(false).await;
     until(|| state.game_servers.registered(2).unwrap().status == ServerStatus::Auto).await;
 

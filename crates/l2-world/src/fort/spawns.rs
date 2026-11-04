@@ -1,13 +1,5 @@
 //! The spawns of a fortress: the always spawned NPCs, the suspicious merchant, the NPC commanders
 //! of peace time, the special envoys of the castles, and the siege guards.
-// Java: mechanics/siege/Fort.java (initNpcs, initSiegeNpcs, initNpcCommanders, initSpecialEnvoys,
-//       spawnSuspiciousMerchant, despawnSuspiciousMerchant, spawnNpcCommanders,
-//       despawnNpcCommanders, spawnSpecialEnvoys, getCastleIdByAmbassador, getCastleByAmbassador,
-//       isBorderFortress)
-// Java: managers/FortSiegeGuardManager.java (loadSiegeGuard, spawnSiegeGuard, unspawnSiegeGuard)
-// Java: entity/spawns/Spawn.java (setRespawnDelay, doSpawn, startRespawn, stopRespawn,
-//       getLastSpawn)
-//
 // A Java `Spawn` that is created and kept (`new Spawn(npcId)` with an amount of one, a place and
 // a delay of 60 seconds) is an entry of the runtime spawns here (`respawn.rs`); the fortress holds
 // its index. `doSpawn(false)` is `initialize_npc`, `getLastSpawn().deleteMe()` is `delete_npc`.

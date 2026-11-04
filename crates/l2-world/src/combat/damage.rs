@@ -1,12 +1,5 @@
 //! A hit lands: `Creature.onHitTimer`, the damage messages, `reduceCurrentHp` (player, NPC and
 //! attackable variants), the aggro list's damage and hate, and the death hook.
-// Java: entity/actor/Creature.java (onHitTimer, sendDamageMessage, reduceCurrentHp)
-// Java: entity/actor/Player.java (sendDamageMessage, reduceCurrentHp)
-// Java: entity/actor/Attackable.java (reduceCurrentHp, addDamage, addDamageHate, getHateRatio)
-// Java: entity/actor/holders/npc/AggroInfo.java
-// Java: entity/actor/status/{CreatureStatus,NpcStatus,AttackableStatus,PlayerStatus}.java
-//       (reduceHp)
-//
 // # Left out (each has its card)
 // - Effects (M5): the invulnerability *effect* (`EffectFlag.INVUL`) and reflect/absorb come from
 //   effects and passives, so they are read from the stat engine (passive funcs do apply). The
@@ -287,7 +280,6 @@ impl World {
         // Olympiad damage counting (M8-OLY-01): damage to a fighter of the same game.
         self.olympiad_on_damage_dealt(id, target, damage);
         let target_kind = self.objects.get(&target).map(|e| e.kind);
-        // Java: an invulnerable target that is not an NPC makes the attack "blocked" (the target
         // itself takes no damage, `status.rs`).
         if self.is_invul(target) && target_kind != Some(ObjectKind::Npc) {
             self.send(id, &SystemMessage::new(SystemMessageId::TheAttackHasBeenBlocked));

@@ -1,7 +1,6 @@
 //! Stat function templates: "set pAtk to 8", "add maxMp 50", "enchant pDef", with their order and
 //! optional conditions. Data only, no evaluation (M4-STAT-01 turns them into calculator entries).
 //!
-//! Java: `mechanics/stats/functions/{FuncTemplate,StatFunction}.java` and the function parts of
 //! `util/DocumentBase.java` (`parseTemplate`'s `add/sub/mul/div/set/share/enchant/enchanthp` case,
 //! `attachFunc`, `processAlternativeFuncFormat`).
 //!

@@ -162,8 +162,6 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
         "{:?}",
         names(&seen_by_a)
     );
-    // NOTE(java-quirk): `SetPrivateStoreMsgSell` sends the typed title to its owner only, so A
-    // saw the (still empty) title of the moment the list was set.
     let titles: Vec<PrivateStoreMsgSell> = all(&seen_by_a, "PRIVATE_STORE_SELL_MSG");
     assert_eq!(
         titles

@@ -1,6 +1,5 @@
 //! The spawn zones of `tar_beetle.xml` (Java `TarBeetleSpawn.load`), copied into the code like
 //! `hellbound/data.rs`: the script engine has no datapack reader for script folders.
-// Java: dist/game/data/scripts/ai/areas/ForgeOfTheGods/tar_beetle.xml
 
 /// One polygon: `(x, y)` corners.
 pub type Points = &'static [(i32, i32)];

@@ -1,5 +1,4 @@
 //! Keltas: spawns and despawns Darion's Enforcers and Executioners with him.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/Keltas.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

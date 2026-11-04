@@ -1,11 +1,7 @@
 //! The Seed of Destruction: a command channel fights from the entrance through the square, the
 //! corridors and the fortress to Tiat's throne; each Tiat killed counts for the seed's stage.
-// Java: dist/game/data/scripts/ai/areas/Gracia/instances/SeedOfDestruction/SeedOfDestruction.java
-//
 // Not modelled (no world counterpart): `Attackable.setSeeThroughSilentMove(true)` (silent move is
 // not modelled) and `setIsRaidMinion(true)` of a Soldier of Bravery that comes back.
-//
-// D-54: Sergeant Allenos decides on the seed's state; his talk re-reads `SoDState` first.
 
 use l2_protocol_game::server::ExShowScreenMessage;
 use l2_protocol_game::{NpcStringId, SystemMessageId};
@@ -748,8 +744,6 @@ impl Default for SodWorld {
 }
 
 /// The script's fields and its worlds.
-// NOTE(java-quirk): `_numAtk` is a field of the script: Tiat calls her portals once per server
-// run and kill, whichever instance she is in.
 #[derive(Default)]
 struct State {
     worlds: Worlds<SodWorld>,
@@ -898,7 +892,6 @@ impl SeedOfDestruction {
             .instance(instance_id)
             .is_some_and(|i| i.is_remove_buff_enabled());
         let now = ctx.now_ms();
-        // NOTE(java-quirk): the welcome goes to the leader once per member.
         for member in members.unwrap_or_else(|| vec![player]) {
             ctx.world().send_message(
                 player,
@@ -1101,7 +1094,6 @@ impl SeedOfDestruction {
         Self::spawn(ctx, instance_id, &FORT_PORTALS, false, true);
     }
 
-    /// Sergeant Allenos' part of `onTalk`, on the re-read state (D-54).
     fn alenos(ctx: &mut ScriptCtx<'_>, player: ObjectId) {
         match sod_state(ctx) {
             1 => {
@@ -1163,8 +1155,6 @@ impl Script for SeedOfDestruction {
         };
         let status = common::status(ctx, instance_id);
         if status == 2 && npc.id == OBELISK {
-            // NOTE(java-quirk): the status jumps to 4 and the square is spawned again, without
-            // `spawnState`; killing the Obelisk then opens the corridors.
             common::set_status(ctx, instance_id, 4);
             Self::spawn(ctx, instance_id, &SQUARE_SPAWNS_MAIN, false, false);
         } else if status == 3 && npc.id == OBELISK {
@@ -1223,7 +1213,6 @@ impl Script for SeedOfDestruction {
             "Spawn" => {
                 let npc = npc?;
                 if common::status(ctx, instance_id) <= 7 {
-                    // NOTE(java-quirk): `getAllowed().stream().findAny().get()`: the first one.
                     let target = common::allowed(ctx, instance_id).first().copied();
                     let count = sod(ctx, instance_id).device_spawned_mob_count;
                     if count < MAX_DEVICE_SPAWNED_MOB_COUNT

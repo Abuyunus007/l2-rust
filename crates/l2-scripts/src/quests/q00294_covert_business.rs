@@ -1,6 +1,4 @@
 //! Quest 294: Covert Business (Keef in the Dwarven Village sends the dwarves after the bat fangs).
-// Java: dist/game/data/scripts/quests/Q00294_CovertBusiness/Q00294_CovertBusiness.java
-//
 // Pattern: a kill quest with a graded drop (`docs/design/scripts.md`, "Quest patterns"): a kill of
 // a bat or a vampire bat gives 1 to 4 fangs by one roll of ten, up to 100 fangs; the 100th sets
 // cond 2 and Keef pays a ring of raccoon (or adena, once the player has one) and ends the quest.

@@ -1,6 +1,5 @@
 //! `GeoEngine`: whole-world geodata, height, line of sight and movement checks.
 //!
-//! Java: `gameserver/geoengine/GeoEngine.java` (constructor, `getRegion`, `hasGeoPos`,
 //! `checkNearestNswe*`, `getNearestZ`/`getNextLowerZ`/`getNextHigherZ`, `getHeight`,
 //! `getSpawnHeight`, `canSeeTarget`, `getValidLocation`, `canMoveToTarget`, `isCompletelyBlocked`),
 //! `config/GeoEngineConfig.java` and `util/GeoUtils.java` (`computeNswe`).
@@ -517,10 +516,6 @@ impl GeoEngine {
     // ------------------------------------------------------------------ geo-coordinate queries
 
     /// `GeoEngine.getRegion`: the region of a geo cell, `None` where Java answers `NullRegion`.
-    ///
-    /// NOTE(java-quirk): the index is `(geoX / 2048) * 32 + (geoY / 2048)` (truncating division, no
-    /// range check on Y), so a Y beyond the 32 columns reads the next row. Java throws for an index
-    /// outside 0..1024; this returns `None` then.
     pub fn region_at(&self, geo_x: i32, geo_y: i32) -> Option<&Region> {
         let (x, y) = region_slot(geo_x, geo_y)?;
         self.set.region(x, y)
@@ -575,7 +570,6 @@ impl GeoEngine {
             warn!("GeoEngine: Cannot reload, file not found for region {region_x}_{region_y}");
             return false;
         }
-        // Java: `REGIONS.get((regionX * 32) + regionY)` without a range check; an index outside
         // the table throws and the reload fails.
         let offset = region_x
             .wrapping_mul(GEO_REGIONS_SIDE as i32)
@@ -1226,10 +1220,6 @@ mod tests {
         let from = at(base_x + 1, y, 0);
         let to = at(base_x + 6, y, 0);
         assert!(!engine.can_see_target(from, to));
-        // NOTE(java-quirk): the "sudden height increase" check of the walk is defeated by the
-        // single-cell gap fallback whenever the step is orthogonal: the cell we come from is a
-        // neighbour of the wall cell and has a layer near our Z. Only NSWE (or a diagonal step)
-        // stops a walk, which is why real walls carry NSWE bits.
         assert!(engine.can_move_to_target(from, to, 0));
         assert_eq!(engine.valid_location(from, to, 0), Location::new(to.x, to.y, 0));
         // Both sides of the wall are fine on their own.
@@ -1315,7 +1305,6 @@ mod tests {
         assert!(engine.has_geo_pos(21 * 2048, 10 * 2048));
         assert!(engine.has_geo_pos(21 * 2048 + 2047, 10 * 2048 + 2047));
         assert!(!engine.has_geo_pos(21 * 2048, 11 * 2048));
-        // NOTE(java-quirk): a Y of 42 regions reads index 21 * 32 + 42 = 22 * 32 + 10, i.e. region 22_10.
         assert!(engine.has_geo_pos(21 * 2048, 42 * 2048));
         // Negative cells just left of the table (-1 / 2048 == 0) read region 0_0: none loaded.
         assert!(!engine.has_geo_pos(-1, -1));

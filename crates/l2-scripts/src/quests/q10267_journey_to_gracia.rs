@@ -1,5 +1,4 @@
 //! Quest 10267: Journey To Gracia (High Priest Orven sends the adventurer to Papiku and Keucereus).
-// Java: dist/game/data/scripts/quests/Q10267_JourneyToGracia/Q10267_JourneyToGracia.java
 
 use l2_util::ObjectId;
 use l2_world::script::{COMPLETED, CREATED, STARTED};

@@ -1,15 +1,11 @@
 //! Static objects: town maps, thrones and signboards from `data/StaticObjects.xml`.
 //!
-//! Java: `gameserver/data/xml/StaticObjectData.java`, `entity/actor/instance/StaticObject.java`.
 //! Data: `data/StaticObjects.xml`, `xsd/StaticObjects.xsd`.
 //!
 //! `id`, `name`, `x`, `y` and `z` are required; `type` defaults to 0, `texture` to `none`,
 //! `map_x` / `map_y` to 0. Java spawns one `StaticObject` per element (each gets its own object
 //! id from the id manager, the XML `id` is the client-side static object id), so the count is the
 //! number of elements.
-//!
-//! NOTE(java-quirk): as in `door.rs`, only the broken element is skipped here, not the rest of the
-//! file.
 
 use std::path::Path;
 
@@ -134,7 +130,6 @@ fn int(key: &str, value: &Option<String>, default: Option<i32>) -> Result<i32, S
     }
 }
 
-// Java: StaticObjectData.parseDocument + addObject
 fn build_object(raw: &RawObject) -> Result<StaticObjectTemplate, String> {
     let id = int("id", &raw.id, None)?;
     let kind = int("type", &raw.kind, Some(0))?;

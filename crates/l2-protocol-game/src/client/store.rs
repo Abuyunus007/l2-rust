@@ -69,33 +69,28 @@ macro_rules! empty_client_packet {
     };
 }
 
-// Java: gameserver/network/clientpackets/RequestPrivateStoreManageSell.java
 empty_client_packet!(
     /// The player opens the manage window of a sell store (`REQUEST_PRIVATE_STORE_MANAGE_SELL`).
     /// No fields: Java's `readImpl` has a TODO and reads nothing.
     RequestPrivateStoreManageSell,
     RequestPrivateStoreManageSell
 );
-// Java: gameserver/network/clientpackets/RequestPrivateStoreManageBuy.java
 empty_client_packet!(
     /// The player opens the manage window of a buy store (`REQUEST_PRIVATE_STORE_MANAGE_BUY`).
     RequestPrivateStoreManageBuy,
     RequestPrivateStoreManageBuy
 );
-// Java: gameserver/network/clientpackets/RequestPrivateStoreQuitSell.java
 empty_client_packet!(
     /// The player closes its sell store (`REQUEST_PRIVATE_STORE_QUIT_SELL`).
     RequestPrivateStoreQuitSell,
     RequestPrivateStoreQuitSell
 );
-// Java: gameserver/network/clientpackets/RequestPrivateStoreQuitBuy.java
 empty_client_packet!(
     /// The player closes its buy store (`REQUEST_PRIVATE_STORE_QUIT_BUY`).
     RequestPrivateStoreQuitBuy,
     RequestPrivateStoreQuitBuy
 );
 
-// Java: gameserver/network/clientpackets/SetPrivateStoreMsgSell.java
 /// The title of the sell store (`SET_PRIVATE_STORE_MSG_SELL`). Java reads it as is; the handler
 /// punishes a title longer than 29 characters.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -122,7 +117,6 @@ impl Decode for SetPrivateStoreMsgSell {
     }
 }
 
-// Java: gameserver/network/clientpackets/SetPrivateStoreMsgBuy.java
 /// The title of the buy store (`SET_PRIVATE_STORE_MSG_BUY`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SetPrivateStoreMsgBuy {
@@ -148,7 +142,6 @@ impl Decode for SetPrivateStoreMsgBuy {
     }
 }
 
-// Java: gameserver/network/clientpackets/SetPrivateStoreWholeMsg.java
 /// The title of a package sale (`SET_PRIVATE_STORE_WHOLE_MSG`). Ex packet `0xD0 0x0049`.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SetPrivateStoreWholeMsg {
@@ -183,7 +176,6 @@ pub struct SellListEntry {
     pub price: i64,
 }
 
-// Java: gameserver/network/clientpackets/SetPrivateStoreListSell.java
 /// The owner confirms the items of its sell store (`SET_PRIVATE_STORE_LIST_SELL`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SetPrivateStoreListSell {
@@ -233,16 +225,13 @@ impl Decode for SetPrivateStoreListSell {
 pub struct BuyListEntry {
     /// The item template id.
     pub item_id: i32,
-    /// Java: `readInt(); // TODO analyze this`.
     pub unknown1: i32,
     pub count: i64,
     /// The price of one unit.
     pub price: i64,
-    /// Java: four `readInt(); // Unk`.
     pub unknown2: [i32; 4],
 }
 
-// Java: gameserver/network/clientpackets/SetPrivateStoreListBuy.java
 /// The owner confirms the items of its buy store (`SET_PRIVATE_STORE_LIST_BUY`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SetPrivateStoreListBuy {
@@ -304,13 +293,7 @@ pub struct StoreBuyRequestEntry {
     pub price: i64,
 }
 
-// Java: gameserver/network/clientpackets/RequestPrivateStoreBuy.java
 /// A customer buys items from a sell store or package sale (`REQUEST_PRIVATE_STORE_BUY`).
-///
-/// NOTE(java-quirk): Java collects the entries in a `HashSet<RequestTrade>` whose `equals` is
-/// inverted (`objectId != other.objectId`), so entries with the same object id are all kept and
-/// the iteration order is the hash order. The entries are kept in packet order here and none is
-/// dropped.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestPrivateStoreBuy {
     pub store_player_id: i32,
@@ -362,13 +345,11 @@ impl Decode for RequestPrivateStoreBuy {
 pub struct StoreSellRequestEntry {
     pub object_id: i32,
     pub item_id: i32,
-    /// Java: two `readShort(); // TODO: analyze this`.
     pub unknown: [i16; 2],
     pub count: i64,
     pub price: i64,
 }
 
-// Java: gameserver/network/clientpackets/RequestPrivateStoreSell.java
 /// A customer sells items to a buy store (`REQUEST_PRIVATE_STORE_SELL`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RequestPrivateStoreSell {

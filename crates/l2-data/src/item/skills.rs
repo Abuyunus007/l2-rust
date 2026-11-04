@@ -1,7 +1,6 @@
 //! Skills attached to an item template: ids and levels only, resolved against the skill table
 //! when the item is used or equipped (M4/M5).
 //!
-//! Java: the `<skills>` branch of `util/DocumentItem.java`, `ItemSkillType`, and the readers of
 //! the resulting `StatSet` keys in `ItemTemplate.set` (`item_skill`, `unequip_skill`),
 //! `Weapon.set` and `Armor.set` (`enchant4_skill`, `onmagic_skill`, `oncrit_skill`).
 //!

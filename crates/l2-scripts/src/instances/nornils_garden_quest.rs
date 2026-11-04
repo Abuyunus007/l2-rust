@@ -1,6 +1,5 @@
 //! Nornil's Garden Quest instant zone, template 12: the Kamael of `Q00236_SeedsOfChaos` meets
 //! Mother Nornil.
-// Java: dist/game/data/scripts/instances/NornilsGardenQuest/NornilsGardenQuest.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, TeleportTarget};
@@ -56,7 +55,6 @@ impl Script for NornilsGardenQuest {
                         format!("{x};{y};{z};{heading};{instance}")
                     };
                     enter_instance(ctx, player);
-                    // NOTE(java-quirk): `getPlayerWorld(player)` is dereferenced unchecked.
                     let instance_id = ctx.world().player_instance_world(player).map(|w| w.instance_id)?;
                     if let Some(world) = ctx.world_mut().instance_world_mut(instance_id) {
                         world.parameters.insert("ORIGIN_LOC".to_owned(), origin);
@@ -73,7 +71,6 @@ impl Script for NornilsGardenQuest {
                 if let Some(q236) = q236
                     && q236.is_completed(ctx)
                 {
-                    // NOTE(java-quirk): `getPlayerWorld(player)` is dereferenced unchecked.
                     let instance_id = ctx.world().player_instance_world(player).map(|w| w.instance_id)?;
                     if let Some(world) = ctx.world_mut().instance_world_mut(instance_id) {
                         world.remove_allowed(player);

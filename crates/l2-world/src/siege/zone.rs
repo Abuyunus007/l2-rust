@@ -1,10 +1,6 @@
 //! The siege zones: active while a siege runs, they set the PvP and siege flags of the players
 //! inside, put the registered ones in the siege (with the zone's fame), keep wyverns and mounts
 //! out, and punish deaths of the participants with the Battleground Death Syndrome.
-// Java: entity/zone/type/SiegeZone.java (Settings, onEnter, onExit, onDieInside,
-//       onPlayerLogoutInside, updateZoneStatusForCharactersInside, setActive, setSiegeInstance)
-// Java: mechanics/siege/Siegable.java (giveFame, getFameFrequency, getFameAmount)
-//
 // The zone's settings (`SiegeZone.Settings`: the siege object id, the siege, the active flag) live
 // in `SiegeWorld::zones` by zone id. The fortress and conquerable hall cards activate their zones
 // with [`World::set_siege_zone_siege`] and [`World::set_siege_zone_active`].
@@ -149,8 +145,6 @@ impl World {
         if self.is_registered_on_this_siege_field(id, siegable_id) {
             // In siege.
             self.set_in_siege(id, true);
-            // NOTE(java-quirk): Java reads `getSiege()` without a null check; a zone that is active
-            // without a siege throws there. Here such a zone gives no fame.
             if let Some((freq, amount)) = state.siege.and_then(|s| s.fame) {
                 self.start_fame_task(id, i64::from(freq) * 1000, amount);
             }

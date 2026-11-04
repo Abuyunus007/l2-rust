@@ -1,6 +1,4 @@
 //! Quest 22: Tragedy in Von Hellmann Forest (Tifaren, Innocentin, the well and two ghosts).
-// Java: dist/game/data/scripts/quests/Q00022_TragedyInVonHellmannForest/Q00022_TragedyInVonHellmannForest.java
-//
 // Pattern: a ghost story with shared state (`docs/design/scripts.md`, "Quest patterns"): the
 // static `_tifarenOwner` (the one player whose ghost of the priest is out) and `_soulWellNpc` (the
 // one soul of the well) live in `ctx.state`; the ghosts despawn through quest timers.

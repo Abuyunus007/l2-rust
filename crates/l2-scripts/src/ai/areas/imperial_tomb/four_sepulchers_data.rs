@@ -1,5 +1,4 @@
 //! `FourSepulchers.xml` (Java `FourSepulchers.load`), copied into the code like `hellbound/data.rs`.
-// Java: dist/game/data/scripts/ai/areas/ImperialTomb/FourSepulchers/FourSepulchers.xml
 
 /// One `<spawn>`: `(sepulcherId, wave, npcId, x, y, z, heading)`, in file order.
 pub static ROOM_SPAWN_DATA: [(i32, i32, i32, i32, i32, i32, i32); 762] = [

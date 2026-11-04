@@ -6,7 +6,6 @@ use l2_net::{Decode, Encode, PacketError, PacketReader, PacketWriter};
 use super::write_opcode;
 use crate::generated::opcodes::ClientOpcode;
 
-// Java: gameserver/network/clientpackets/MoveToLocation.java
 /// The player clicked (or used the cursor keys) to walk somewhere. This is Java's
 /// `MOVE_BACKWARD_TO_LOCATION` packet (opcode `0x0F`; the generated table calls it
 /// `MoveToLocation`).
@@ -55,7 +54,6 @@ impl Decode for MoveToLocation {
     }
 }
 
-// Java: gameserver/network/clientpackets/ValidatePosition.java
 /// The client's periodic report of where it thinks the player is.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct ValidatePosition {
@@ -95,7 +93,6 @@ impl Decode for ValidatePosition {
     }
 }
 
-// Java: gameserver/network/clientpackets/CannotMoveAnymore.java
 /// The client could not walk any further (it ran into something).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct CannotMoveAnymore {
@@ -127,7 +124,6 @@ impl Decode for CannotMoveAnymore {
     }
 }
 
-// Java: gameserver/network/clientpackets/Appearing.java
 /// The client finished loading after a teleport. No fields.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Appearing;

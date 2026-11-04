@@ -1,7 +1,6 @@
 //! Transformations: the stats, skills, action list, item rules and level tables a player gets
 //! while transformed.
 //!
-//! Java: `gameserver/data/xml/TransformData.java` and `gameserver/entity/actor/transform/
 //! {Transform,TransformTemplate,TransformLevelData,TransformType,AdditionalSkillHolder,
 //! AdditionalItemHolder}.java`. Data: `data/stats/transformations/*.xml` (only that folder, not its
 //! subfolders: Java `parseDatapackDirectory(..., false)`). What a transformation does to a
@@ -12,17 +11,6 @@
 //! every `base`, `stats`, `defense`, `magicDefense`, `collision` and `moving` element of every
 //! `common` block of the Male and the Female part. A `TransformTemplate` reads that set when it
 //! is made. Three consequences are ported as they are:
-//! - NOTE(java-quirk): the set is shared by the two sexes. A Female part whose `common` leaves
-//!   out `stats` or `defense` (transformation 101 does) gets the values the Male part read.
-//! - NOTE(java-quirk): a part without a `common` block gets its template from the set as it
-//!   stands when its first `skills`/`actions`/`additionalSkills`/`items`/`levels` element comes
-//!   (the stance transformations 312..318 have no `common` at all: collision 0, attack range 40,
-//!   no stats).
-//! - NOTE(java-quirk): `levels` keeps one entry only. Java collects the attributes of every
-//!   `<level>` into one `StatSet` and builds the single `TransformLevelData` after the loop, so
-//!   the attributes of the last `<level>` (level 99 in the datapack) overwrite the others.
-//!   A transformed player below that level finds no level data: the template's own stats apply
-//!   and the level modifier stays the class one.
 
 use std::collections::BTreeMap;
 use std::path::Path;
@@ -598,8 +586,6 @@ fn fill_template(
             }
         }
         "levels" => {
-            // NOTE(java-quirk): see the module docs: one `StatSet` for every `<level>`, one
-            // `TransformLevelData` after the loop.
             let mut levels_set = StatSet::new();
             for level in block.children.iter().filter(|s| s.name == "level") {
                 for (key, value) in &level.attrs {

@@ -2,11 +2,6 @@
 //! the effect. `TriggerSkillByAvoid` (an attack missed the owner), `TriggerSkillByDamageDealt`
 //! (the owner hurt somebody), `TriggerSkillByDamageReceived` (the owner was hurt) and
 //! `TriggerSkillBySkill` (the owner started a skill).
-// Java: dist/game/data/scripts/handlers/skill/effects/TriggerSkillByAvoid.java
-// Java: dist/game/data/scripts/handlers/skill/effects/TriggerSkillByDamageDealt.java
-// Java: dist/game/data/scripts/handlers/skill/effects/TriggerSkillByDamageReceived.java
-// Java: dist/game/data/scripts/handlers/skill/effects/TriggerSkillBySkill.java
-//
 // The effect registers a listener with the creature when it starts and removes it when it ends
 // (`effects/triggers.rs`). The listener carries the parameters below; the checks of the events
 // are in the same order as Java's, because the dice (`Rnd.get(100)`) are only rolled once the
@@ -170,7 +165,6 @@ impl ByAvoid {
             warn_no_handler(self.target_type);
             return;
         }
-        // NOTE(java-quirk): `Rnd.get(100) > _chance`, so a chance of 50 passes 51 times in 100.
         if world.rng().below(100) > self.chance {
             return;
         }
@@ -344,8 +338,6 @@ impl ByDamageReceived {
         if event.damage_over_time || self.chance == 0 || self.skill.level == 0 {
             return;
         }
-        // NOTE(java-quirk): Java dereferences the attacker without a null check below (the
-        // listener runs asynchronously, so the exception is swallowed): no attacker, no trigger.
         let Some(attacker) = event.attacker else {
             return;
         };

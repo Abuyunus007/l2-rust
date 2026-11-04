@@ -1,6 +1,5 @@
 //! Condition trees (data only) and the parser that builds them from XML.
 //!
-//! Java: `mechanics/conditions/*.java` (one [`Condition`] variant per class `DocumentBase` can
 //! create, constructor arguments kept as typed fields) and `util/DocumentBase.java`
 //! (`parseCondition`, `parseLogicAnd/Or/Not`, `parse{Player,Target,Using,Game}Condition`, `joinAnd`,
 //! `getValue`, and the `<conditions msg msgId addName>` handling of `parseTemplate`/`DocumentItem`).
@@ -338,10 +337,6 @@ impl<'a> ConditionParser<'a> {
     /// Java `parseCondition(Node node, template)`: `nodes[start..]` are the siblings that begin
     /// at `node`. Skips non-condition `<value>` elements and builds the first real one;
     /// `Ok(None)` for no element or an unknown element name.
-    ///
-    /// NOTE(java-quirk): called from `parseLogicAnd/Or/Not` with an element that is itself a
-    /// `<value>`, Java continues with the *following siblings* (and the enclosing loop then
-    /// visits them again). This function does the same.
     pub fn parse_condition(&self, nodes: &[XmlNode], start: usize) -> Result<Option<Condition>, ParseError> {
         let Some(n) = nodes
             .iter()
@@ -410,9 +405,6 @@ impl<'a> ConditionParser<'a> {
         Ok(Condition::Or(any))
     }
 
-    /// NOTE(java-quirk): Java builds `ConditionLogicNot(null)` when the child is not a known
-    /// condition and fails with a `NullPointerException` only when the item is used. Here such a
-    /// `<not>` is dropped (`None`) with the same severe log, so no half-built tree exists.
     fn parse_logic_not(&self, node: &XmlNode) -> Result<Option<Condition>, ParseError> {
         if node.children.is_empty() {
             error!("Empty <not> condition in {}", self.file);
@@ -557,7 +549,6 @@ impl<'a> ConditionParser<'a> {
                 "instanceid" => Condition::PlayerInstanceId {
                     instance_ids: self.int_set(raw)?,
                 },
-                // NOTE(java-quirk): `Integer.decode` of the raw value, no `getValue`.
                 "agathionid" => Condition::PlayerAgathionId {
                     agathion_id: decode(raw)?,
                 },
@@ -743,7 +734,6 @@ impl<'a> ConditionParser<'a> {
                 "npctype" => {
                     let values = self.value(raw)?;
                     let mut npc_types = Vec::new();
-                    // NOTE(java-quirk): `trim()` of the whole value only, the parts are not trimmed.
                     for part in java_split(values.trim(), ',') {
                         npc_types.push(
                             InstanceType::from_name(part)
@@ -1142,8 +1132,6 @@ mod tests {
 
     #[test]
     fn value_siblings_inside_logic_are_visited_twice() {
-        // NOTE(java-quirk) of parseLogicAnd: the <value> child hands over to the next sibling,
-        // which the loop then visits again.
         let c = ok(r#"<and><value/><player level="5"/></and>"#);
         assert_eq!(
             c,

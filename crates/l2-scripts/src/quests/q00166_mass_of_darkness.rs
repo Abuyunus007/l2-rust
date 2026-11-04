@@ -1,6 +1,4 @@
 //! Quest 166: Mass of Darkness (Undrias sends a Dark Elf to three priests for the offerings).
-// Java: dist/game/data/scripts/quests/Q00166_MassOfDarkness/Q00166_MassOfDarkness.java
-//
 // Pattern: a delivery chain over several NPCs. Each of the three priests hands out one offering
 // once; when the three are in hand the quest moves to cond 2, and Undrias gives the reward and
 // ends the quest (one-time). The Newbie Guide's memo (`NRmemo`) counts the delivery, like

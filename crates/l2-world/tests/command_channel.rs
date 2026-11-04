@@ -585,10 +585,6 @@ fn a_party_that_breaks_up_leaves_the_channel() {
 }
 
 /// The party that opened the channel breaks up.
-// NOTE(java-quirk): `Party.removePartyMember` deletes the whole channel only when the *last* member
-// left is the channel's leader, but `disbandParty` removes the leader first, so the party just
-// leaves the channel (`removeParty`). With three parties the channel goes on, and its leader is
-// still the player who left (not in any party now).
 #[test]
 fn the_channel_leaders_party_breaking_up_only_leaves_the_channel() {
     let mut s = three_parties(true);

@@ -1,6 +1,4 @@
 //! The game traffic cipher as an `l2-net` frame cipher.
-// Java: org/l2jmobius/gameserver/network/GameClient.java (`encrypt`, `decrypt`, `enableCrypt`)
-// Java: org/l2jmobius/gameserver/network/Encryption.java (the cipher itself, in l2-crypto)
 
 use l2_crypto::GameCipher;
 use l2_net::{CipherError, FrameCipher};

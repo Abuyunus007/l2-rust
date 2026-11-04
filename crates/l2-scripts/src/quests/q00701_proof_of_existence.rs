@@ -1,6 +1,4 @@
 //! Quest 701: Proof of Existence (War Mage Artius at the Barrier Orb, Banshee Queen Enira and her floating undead).
-// Java: dist/game/data/scripts/quests/Q00701_ProofOfExistence/Q00701_ProofOfExistence.java
-//
 // Pattern: a repeatable kill-and-collect quest. Enira drops 1 to 18 Banshee Queen's Eyes (a
 // five-step chance), the floating undead drop one Deadman's Remains each with their own chance.
 // Artius pays per remains, with a bonus for the eye, and the quest is offered after "Good Day to

@@ -1,7 +1,5 @@
 //! The summon admin commands: `//summon <id> [count]` (an item, or an NPC for ids from 1000000),
 //! `//summon_info`, `//unsummon`, `//summon_setlvl <level>` and `//show_pet_inv`.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminSummon.java
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminEditChar.java (admin_summon_info,
 // gatherSummonInfo, admin_unsummon, admin_summon_setlvl, admin_show_pet_inv)
 //
 // # Left out, with the system that brings it

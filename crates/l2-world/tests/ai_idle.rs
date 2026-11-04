@@ -9,7 +9,6 @@
 //! - `takeAggro="false"` of `AccessLevels.xml`: a GM level that takes no aggro is not attacked.
 //!
 //! The scenarios use small synthetic templates (they run in CI).
-//! Java: ai/AttackableAI.java (thinkActive), taskmanagers/RandomAnimationTaskManager.java,
 //! entity/actor/Npc.java (onRandomAnimation, hasRandomAnimation), entity/WorldRegion.java
 //! (switchAI), data/holders/AccessLevel.java (canTakeAggro).
 

@@ -1,5 +1,4 @@
 //! Kief, the native who turns badges and life forces into Hellbound's trust.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/NPC/Kief/Kief.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

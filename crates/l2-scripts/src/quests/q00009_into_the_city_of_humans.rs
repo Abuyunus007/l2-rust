@@ -1,6 +1,4 @@
 //! Quest 9: Into the City of Humans (Petukai in the Orc Village sends an orc to Tanapi and Tamil).
-// Java: dist/game/data/scripts/quests/Q00009_IntoTheCityOfHumans/Q00009_IntoTheCityOfHumans.java
-//
 // Pattern: a short delivery chain with no quest items (`docs/design/scripts.md`, "Quest
 // patterns"): Petukai starts it, Tanapi moves it to cond 2 with a page, and Tamil pays the
 // reward items. One-time: `exit_quest(ctx, false, true)`.

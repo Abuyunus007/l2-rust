@@ -1,5 +1,4 @@
 //! The 1st class transfer of orcs (Osborn, Drikus, Castor, Finker).
-// Java: dist/game/data/scripts/village_master/OrcChange1/OrcChange1.java
 
 use l2_util::ObjectId;
 use l2_world::subclass::{CategoryType, Race};

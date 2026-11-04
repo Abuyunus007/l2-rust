@@ -1,13 +1,8 @@
 //! The Heart of Infinity (defence): a command channel keeps Ekimus from waking for thirty
 //! minutes while Soul Wagons carry souls to him.
-// Java: dist/game/data/scripts/ai/areas/Gracia/instances/HeartInfinityDefence/HeartInfinityDefence.java
-//
 // NOT FIRED: `onEnterZone` (zone 200032) counts the Soul Wagons that reach Ekimus. The zone is
 // in no datapack file (Java's `addEnterZoneId(200032)` listens to nothing either), and the
 // world does not track NPCs in zones; the hook is ported as Java has it.
-//
-// NOTE(java-quirk): the success marks `Q00697_DefendTheHallOfErosion` (`defenceDone`), the quest
-// of the Hall of Erosion.
 
 use l2_protocol_game::server::ChatType;
 use l2_protocol_game::{NpcStringId, SystemMessageId};
@@ -60,8 +55,6 @@ struct HidWorld {
 }
 
 /// The script's fields and its worlds.
-// NOTE(java-quirk): `preawakenedEchmus`, `coffinsCreated`, `tumorRespawnTime`,
-// `wagonRespawnTime` and `conquestEnded` are fields of the script, shared by every instance.
 struct State {
     worlds: Worlds<HidWorld>,
     preawakened_echmus: Option<ScriptNpc>,
@@ -715,8 +708,6 @@ mod tests {
             let instance = common::create_world(ctx, INSTANCEID);
             let now = ctx.now_ms();
             let world = hid(ctx, instance);
-            // NOTE(java-quirk): the task runs at 298 s + 5 min * n, so at 24 min 58 s
-            // `(start + 25 min - now) / 60000` is 0: the defence fails before `FinishTask`.
             world.start_time = now - (25 * 60_000 - 2_000);
             world.timer_task = true;
             world.finish_task = true;

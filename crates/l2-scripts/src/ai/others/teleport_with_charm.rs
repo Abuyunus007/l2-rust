@@ -1,5 +1,4 @@
 //! Whirpy and Tamil teleport a player to Talking Island for a gatekeeper charm or token.
-// Java: dist/game/data/scripts/ai/others/TeleportWithCharm/TeleportWithCharm.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

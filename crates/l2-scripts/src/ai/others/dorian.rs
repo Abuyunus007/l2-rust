@@ -1,5 +1,4 @@
 //! Dorian, the Forest of the Dead's keeper of the Silver Cross: reacts to a player in sight.
-// Java: dist/game/data/scripts/ai/others/Dorian/Dorian.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;

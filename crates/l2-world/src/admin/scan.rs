@@ -1,7 +1,5 @@
 //! `//scan [id=<npcId>] [name=<text>] [radius=<n> | range=<n>] [page=<n>]`: the NPCs around the GM
 //! in `scan.htm` (15 a page, each with a Delete link), and `//deleteNpcByObjectId objectId=<oid>`.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminScan.java
-//
 // # Left out, with the system that brings it
 // - The order of the list: Java takes the NPCs of the surrounding regions in their region order;
 //   here they are listed by object id.

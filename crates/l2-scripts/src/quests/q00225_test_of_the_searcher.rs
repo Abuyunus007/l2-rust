@@ -1,8 +1,6 @@
 //! Quest 225: Test of the Searcher (Master Luther in Talking Island: the Scavenger second class
 //! change, a trail through Captain Alex, Militiaman Leirynn, Tyra, the Strong Wooden Chest and the
 //! Bodyguard Jax).
-// Java: dist/game/data/scripts/quests/Q00225_TestOfTheSearcher/Q00225_TestOfTheSearcher.java
-//
 // Pattern: the test chain of the "Test of ..." quests (see Q00222) with a step that spawns a
 // monster when it is hit (`onAttack` + `isScriptValue`) and a tree that drops a chest.
 
@@ -299,8 +297,6 @@ impl Script for Q00225TestOfTheSearcher {
                         && ctx.get_quest_items_count(killer, DELU_TOTEM) < 10
                     {
                         ctx.give_items(killer, DELU_TOTEM, 1);
-                        // NOTE(java-quirk): Java tests `RED_SPORE_DUST` here, not `DELU_TOTEM`, so the
-                        // condition moves only when the spore dust of the fungus step is in.
                         if ctx.get_quest_items_count(killer, RED_SPORE_DUST) >= 10 {
                             qs.set_cond(ctx, 4, true);
                         } else {
@@ -438,7 +434,6 @@ impl Script for Q00225TestOfTheSearcher {
                 }
                 TREE => {
                     if ctx.has_quest_items(player, COMBINED_MAP) {
-                        // Java: no key and no gold bar, or the key with the 20 gold bars: the same page.
                         let no_key_or_gold =
                             !ctx.has_at_least_one_quest_item(player, &[RUSTED_KEY, GOLD_BAR]);
                         let key_and_gold = ctx.has_quest_items(player, RUSTED_KEY)

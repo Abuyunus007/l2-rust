@@ -1,6 +1,5 @@
 //! Shadow Summoner (raid boss 25722): summons Demon's Banquets below 25% HP, and goes home when
 //! pulled too far.
-// Java: dist/game/data/scripts/ai/others/ShadowSummoner.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};

@@ -369,8 +369,6 @@ fn equipping_an_augmented_item_sends_the_skill_list() {
     assert_eq!(sent(&log.take(), "SKILL_LIST"), 0);
 }
 
-/// NOTE(java-quirk): the owner of an option's functions is the shared `Options` object, so taking
-/// off one item removes the option's functions of the other worn item as well.
 #[test]
 fn taking_off_one_item_strips_the_shared_option_from_the_other() {
     let (plain, _) = world_with(player(vec![worn(100, 1, pd::RHAND), worn(101, 2, pd::CHEST)]));
@@ -456,7 +454,6 @@ fn item_packets_show_the_augmentation_and_the_elements() {
     let fire = item_info_of(&world, ObjectId(103));
     assert_eq!((fire.attack_element_type, fire.attack_element_power), (0, 20));
 
-    // NOTE(java-quirk): `getElementDefAttr` stops at the template when it has any element.
     let water = item_info_of(&world, ObjectId(104));
     assert_eq!(water.element_defense, [0, 7, 0, 0, 0, 0]);
 }

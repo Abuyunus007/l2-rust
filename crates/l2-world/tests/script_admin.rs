@@ -3,7 +3,6 @@
 //! The admin words of the script systems (S-ADMIN-08): `//quest_info`, `//show_quests`,
 //! `//quest_reload`, `//script_load`, `//script_unload`, `//charquestmenu`, `//setcharquest` and
 //! `//reload quest`, with a fake GM and a fake player.
-//! Java: dist/game/data/scripts/handlers/chat/commands/admin/{AdminQuest,AdminShowQuests,AdminReload}.java
 
 use std::sync::{Arc, Mutex};
 
@@ -284,7 +283,6 @@ fn the_reload_and_load_words_answer_bad_arguments() {
     assert_eq!(texts, ["Usage: //script_load path/to/script.java"]);
     let (texts, _) = s.say("script_load scripts/Nope.java");
     assert_eq!(texts, ["Failed to load script!"]);
-    // NOTE(java-quirk): the unload usage names script_load.
     let (texts, _) = s.say("script_unload");
     assert_eq!(texts, ["Usage: //script_load path/to/script.java"]);
     let (texts, _) = s.say("script_unload Nope");
@@ -318,7 +316,6 @@ fn reload_quest_by_name_by_id_and_all() {
         "{texts:?}"
     );
 
-    // NOTE(java-quirk): an unknown name is announced too.
     let (texts, _) = s.say("reload quest Nope");
     assert!(lines(&s.log).is_empty());
     assert!(

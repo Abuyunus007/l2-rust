@@ -1,14 +1,5 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
-//! The castle manor (M7-MANOR-01): loading the lists, the daily change of the period, the lord's
-//! settings, the seed purchase and the crop sale, the `ManorManager` NPC, sowing and harvesting,
-//! and the `SiegeDatabaseWrites` switch (D-51).
-//! Java: managers/CastleManorManager.java, network/clientpackets/{RequestSetSeed,RequestSetCrop,
-//! RequestBuySeed,RequestProcureCropList,RequestManorList}.java, network/serverpackets/{BuyListSeed,
-//! ExShow*}.java, dist/game/data/scripts/ai/others/ManorManager/ManorManager.java,
-//! handlers/items/{Seed,Harvester}.java, handlers/skill/effects/{Sow,Harvesting}.java,
-//! entity/actor/Attackable.java. The expected values come from the Java code named in each test.
-
 use std::sync::{Arc, Mutex};
 
 use l2_data::skill::EnchantSkillGroups;
@@ -1040,7 +1031,6 @@ fn the_lord_sets_the_seeds_of_the_next_period() {
                 seed_sale(SEED_1, 100, 2),
                 seed_sale(SEED_1, 9_000, 7),
                 seed_sale(9_999, 10, 7),
-                // NOTE(java-quirk): Java does not check that the seed is the castle's own.
                 seed_sale(SEED_2, 50, 10),
             ],
         }),
@@ -1073,7 +1063,6 @@ fn the_lord_sets_the_seeds_of_the_next_period() {
 
 #[test]
 fn the_lords_seeds_are_written_at_once_with_save_all_actions() {
-    // A player's action: written without `SiegeDatabaseWrites`.
     let (mut s, _) = lord_scene(Options {
         manor: ManorSettings {
             save_all_actions: true,

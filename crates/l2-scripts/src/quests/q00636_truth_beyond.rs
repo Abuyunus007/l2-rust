@@ -1,7 +1,5 @@
 //! Quest 636: The Truth Beyond the Gate (Eliyah in the Hot Springs, Flauron at the Tower of
 //! Insolence; the visitor's mark is faded when the character enters the zone).
-// Java: dist/game/data/scripts/quests/Q00636_TruthBeyond/Q00636_TruthBeyond.java
-//
 // Pattern: a one-visit quest whose reward is a mark that the zone (30100) turns into the faded
 // mark. Java's `destroyItemByItemId(.., false)` and `addItem(.., true)` in `onEnterZone` are
 // ported as they are (no message on the destroy, the usual message on the add).
@@ -65,7 +63,6 @@ impl Script for Q00636TruthBeyond {
     }
 
     fn on_enter_zone(&self, ctx: &mut ScriptCtx<'_>, creature: ObjectId, _zone_id: i32) {
-        // Java: `creature.isPlayer()`; the destroy is silent, the faded mark is added with its
         // message.
         if ctx.world().player(creature).is_none() {
             return;

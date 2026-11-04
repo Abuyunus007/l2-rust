@@ -1,11 +1,4 @@
 //! `WalkingManager`: NPCs that walk a route of `data/Routes.xml` (M8-MISC-01).
-// Java: managers/WalkingManager.java
-// Java: entity/actor/holders/npc/{WalkInfo,WalkNode,WalkRoute}.java
-// Java: entity/actor/tasks/npc/walker/ArrivedTask.java
-// Java: data/holders/NpcRoutesHolder.java (in `l2_data::route`)
-// Java: entity/actor/Npc.java (`onSpawn`, `onDecay`), ai/CreatureAI.java (`onEvtArrived`),
-//       entity/actor/Attackable.java (`addDamage`)
-//
 // # How it fits in
 // - `Routes.xml` is parsed by `l2_data::route`; [`World::set_walking_routes`] resolves the
 //   `NpcStringId` words of the points and keeps the routes. Call it before the spawns: a spawn
@@ -223,8 +216,6 @@ impl World {
     /// Java `WalkingManager.isOnWalk(npc)`.
     pub fn walking_is_on_walk(&self, npc: ObjectId) -> bool {
         let monster = self.walking_monster_of(npc);
-        // NOTE(java-quirk): a minion needs its own entry as well as its leader's, and it never has
-        // one (only the leader is registered), so it is never "on walk".
         if monster.is_some_and(|m| !self.walking_is_registered(m)) || !self.walking_is_registered(npc) {
             return false;
         }
@@ -572,8 +563,6 @@ impl World {
                 if let Some(walk) = self.walking.active.get_mut(&npc) {
                     walk.blocked = false;
                 }
-                // NOTE(java-quirk): the task calls `startMoving` even for a walk that ended
-                // (`cancelMoving`), so a route without `repeat` starts over from its first point.
                 self.walking_start_moving(npc, &route);
             }
         }

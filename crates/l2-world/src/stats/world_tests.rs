@@ -249,7 +249,6 @@ fn armor_replaces_the_slot_defence_and_gets_enchant_and_hp_bonuses() {
     assert_eq!(s.p_def(None), (80.0 - 31.0 + 40.0 + 2.0) * 0.9);
     // Ring: 40 - 5 (rfinger) + 10 + enchant 1 = 46, * 0.9.
     assert_eq!(s.m_def(None, None), (40.0 - 5.0 + 10.0 + 1.0) * 0.9);
-    // NOTE(java-quirk): the shield's enchant function adds nothing to sDef.
     assert_eq!(s.shld_def(), 50);
     // FuncEnchantHp of the D chest at +2: the second bonus, 9. The shield is D too: +5 -> the
     // last entry, 26. Max MP + 10 from the chest.

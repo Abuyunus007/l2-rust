@@ -1,6 +1,5 @@
 //! Primeval Isle AI: the dinosaurs flee or bite with their skills, the Tyrannosaurus calls the
 //! herbivores, the Ancient Egg calls its neighbours and the Mesozoic Stone is a rare drop.
-// Java: dist/game/data/scripts/ai/areas/PrimevalIsle/PrimevalIsle.java
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::ChatType;
@@ -139,8 +138,6 @@ impl Script for PrimevalIsle {
                     attack_target(ctx, npc, target);
                 }
             } else if hp_percent(ctx, npc) < 30.0 {
-                // NOTE(java-quirk): never reached, a hit point share below 30 is below 60 and
-                // the branch above took it.
                 if skill.id == SELFBUFF1.id {
                     ctx.set_script_value(npc, 1);
                     attack_target(ctx, npc, target);
@@ -406,7 +403,6 @@ impl Script for PrimevalIsle {
             {
                 target = ctx.most_hated(npc);
                 ctx.world_mut().clear_aggro_list(npc.object_id);
-                // NOTE(java-quirk): a template without `SelfRangeBuff1` throws in Java here.
                 if let Some(buff) = self_range_buff1
                     && !ctx.world_mut().is_skill_disabled_of(npc.object_id, buff)
                 {

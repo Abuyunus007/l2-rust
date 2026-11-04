@@ -1,5 +1,4 @@
 //! The `Lethal` effect: a chance to take a target down to 1 HP (or half its HP).
-// Java: dist/game/data/scripts/handlers/skill/effects/Lethal.java
 
 use l2_data::skill::EffectTemplate;
 use l2_protocol_game::SystemMessageId;

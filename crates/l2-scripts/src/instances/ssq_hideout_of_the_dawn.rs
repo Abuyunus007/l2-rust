@@ -1,5 +1,4 @@
 //! Hideout of the Dawn (instance 113), the Seven Signs quest 198 (Embryo).
-// Java: dist/game/data/scripts/instances/SSQHideoutOfTheDawn/SSQHideoutOfTheDawn.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, TeleportTarget};
@@ -28,8 +27,6 @@ impl Script for SSQHideoutOfTheDawn {
     }
 
     fn setup(&self, s: &mut ScriptSetup) {
-        // NOTE(java-quirk): Jaina has a first-talk listener but `onFirstTalk` is not overridden,
-        // so her page (32617.html) is never shown by the script.
         s.add_first_talk_id(&[JAINA]);
         s.add_start_npc(&[WOOD]);
         s.add_talk_id(&[WOOD, JAINA]);

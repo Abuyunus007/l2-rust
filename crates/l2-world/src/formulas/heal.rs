@@ -1,6 +1,5 @@
 //! The number a `Heal` effect restores.
 //!
-//! Java: `dist/game/data/scripts/handlers/skill/effects/Heal.java` `onStart`.
 //! The effect itself (dead / door / invulnerable targets, setting the HP, the system messages) is
 //! the handler's job; this is the amount.
 
@@ -74,7 +73,6 @@ pub fn calc_heal_amount(input: &HealInput<'_>, rng: &mut impl Rnd) -> f64 {
     let sps = input.skill_is_magic && input.effector_spiritshot_charged;
     let bss = input.skill_is_magic && input.effector_blessed_spiritshot_charged;
     if ((sps || bss) && input.effector_is_mage_player) || input.effector_is_summon {
-        // NOTE(java-quirk): a summon always gets the static bonus, with or without a shot.
         static_shot_bonus = f64::from(input.skill_mp_consume); // static bonus for spiritshots
         m_atk_mul = if bss { 4 } else { 2 };
         static_shot_bonus *= if bss { 2.4 } else { 1.0 };
@@ -211,7 +209,6 @@ mod tests {
             effector_is_mage_player: false,
             ..base()
         };
-        // NOTE(java-quirk): no shot needed.
         assert_eq!(amount(&summon, &[999]), 100.0 + (40.0 + (2.0_f64 * 100.0).sqrt()));
         let npc = HealInput {
             effector_is_npc: true,

@@ -493,7 +493,6 @@ fn heal_over_time_without_hp_recover_sends_no_bar() {
 
 #[test]
 fn heal_over_time_at_full_hp_ends_a_toggle() {
-    // NOTE(java-quirk): `HealOverTime` returns false at the maximum, which ends a toggle.
     let mut s = Scene::inline(
         r#"<skill id="9103" levels="1" name="Toggle regen"><operateType>T</operateType><targetType>SELF</targetType>
         <effects><effect name="HealOverTime" ticks="5"><power>1</power></effect></effects></skill>"#,
@@ -604,7 +603,6 @@ fn mana_heal_by_level_of_the_datapack_recharges_a_player() {
 
 #[test]
 fn mana_heal_over_time_returns_true_at_full_mp_so_a_toggle_stays() {
-    // NOTE(java-quirk): unlike `HealOverTime`, `ManaHealOverTime` returns true at the maximum.
     let mut s = Scene::inline(
         r#"<skill id="9105" levels="1" name="Toggle mana"><operateType>T</operateType><targetType>SELF</targetType>
         <effects><effect name="ManaHealOverTime" ticks="5"><power>1</power></effect></effects></skill>"#,
@@ -711,7 +709,6 @@ fn cp_heal_over_time_restores_each_tick_and_always_returns_true() {
     s.advance(3_400);
     let multiplier = f64::from((5_i64 * 666) as f32 / 1000.0_f32);
     assert_eq!(s.cp(ME), 1.0 + 2.0 * multiplier);
-    // NOTE(java-quirk): at the maximum it returns false (a toggle ends), below it true.
     assert!(s.world.is_affected_by_skill(ME, 9106));
 }
 
@@ -808,7 +805,6 @@ fn max_cp_diff_raises_the_maximum_and_leaves_the_cp_above_it_when_it_ends() {
     );
     s.advance(7_000);
     assert_eq!(s.world.stats(ME).unwrap().max_cp(), before);
-    // NOTE(java-quirk): `MaxCp.onExit` does not pull the CP down like `MaxHp.onExit` does.
     assert_eq!(s.cp(ME), f64::from(before) + 10.0);
 }
 
@@ -834,8 +830,6 @@ fn max_cp_of_the_datapack_raises_the_maximum() {
 #[test]
 fn a_max_cp_effect_with_an_unknown_parameter_changes_nothing() {
     let Some(table) = datapack() else { return };
-    // NOTE(java-quirk): 5743 gives `MaxCp` an `<amount>` that the class never reads, and it is
-    // an A1 skill: no continuous effect lands.
     let skill = table.get(5743, 1).unwrap().clone();
     let mut s = Scene::new(table);
     let before = s.world.stats(ME).unwrap().max_cp();
@@ -1351,7 +1345,6 @@ fn heal_never_goes_above_the_room_left() {
 
 #[test]
 fn heal_skill_4051_tells_rejuvenating_hp() {
-    // NOTE(java-quirk): skill 4051 has its own message whoever heals.
     let mut s = Scene::inline(&static_heal(4051, 10));
     s.world.set_current_hp(ME, 10.0, false);
     s.me.take();
@@ -2175,7 +2168,6 @@ fn magical_damage_mp_of_the_datapack_drains() {
 
 #[test]
 fn the_shield_deflect_stat_turns_a_spell_on_its_caster() {
-    // Java: `VENGEANCE_SKILL_MAGIC_DAMAGE > Rnd.get(100)` (100 always) reflects all the damage.
     let xml = format!(
         "{}{}",
         spell(9500, r#"<effect name="MagicalDamage"/>"#, ""),

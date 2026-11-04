@@ -1,7 +1,6 @@
 //! Enchant options: the option ids (see [`crate::AugmentationOption`]) an enchant level of an item
 //! gives its wearer.
 //!
-//! Java: `gameserver/data/xml/EnchantItemOptionsData.java`, `mechanics/options/EnchantOptions.java`.
 //! Data: `data/EnchantItemOptions.xml` (`xsd/enchantItemOptions.xsd`). The options themselves are
 //! the ones of `data/stats/augmentation/options` (Java `OptionData`).
 //!

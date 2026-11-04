@@ -1,6 +1,4 @@
 //! Quest 371: Shrieks of Ghosts (Reva and Patrin in the Town of Dion, the Hallates monsters).
-// Java: dist/game/data/scripts/quests/Q00371_ShrieksOfGhosts/Q00371_ShrieksOfGhosts.java
-//
 // Pattern: a repeatable kill-count quest with two drops per monster (`docs/design/scripts.md`,
 // "Quest patterns"): one roll of 1000 gives an ancient ash urn, a second band an ancient porcelain.
 // Reva pays for the urns, Patrin trades a porcelain for a quality one (or nothing). Only the urn is
@@ -145,7 +143,6 @@ impl Script for Q00371ShrieksOfGhosts {
         let qs = ctx.get_quest_state(player, true)?;
         let mut htmltext = ctx.get_no_quest_msg(player);
         if qs.is_created(ctx) {
-            // NOTE(java-quirk): Java asks for `30867-03.htm`; the datapack's page is `30867-03.html`.
             htmltext = if ctx.player_level(player) >= MIN_LEVEL {
                 "30867-01.htm"
             } else {

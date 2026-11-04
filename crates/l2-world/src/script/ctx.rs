@@ -1,12 +1,4 @@
 //! [`ScriptCtx`]: the world a script hook runs with, and the helpers of Java's `Quest`.
-// Java: mechanics/script/Quest.java (getQuestState, giveItems, takeItems, rewardItems,
-//       giveAdena, getQuestItemsCount, hasQuestItems, giveItemRandomly, addExpAndSp, playSound,
-//       showHtmlFile, getHtm, showResult, getNoQuestMsg, getAlreadyCompletedMsg,
-//       showOnScreenMsg, addSpawn, teleportPlayer, addAttackDesire, castSkill, addRadar,
-//       getRandomPartyMember*, executeForEachPlayer, openDoor, closeDoor, playMovie, the
-//       one-time flags and the NR memo helpers)
-// Java: entity/actor/holders/player/Radar.java
-//
 // The names follow Java (`give_items` = `giveItems`). Overloads become one function with the
 // extra arguments spelled out, or a `_with` variant; the doc of each says which Java call it is.
 
@@ -276,8 +268,6 @@ impl<'w> ScriptCtx<'w> {
         for item in p.data.items.iter().filter(|i| in_inventory(&i.loc)) {
             for &item_id in item_ids {
                 if item.item_id == item_id {
-                    // NOTE(java-quirk): Java's `count + n > Long.MAX_VALUE` can never be true, the
-                    // sum wraps instead.
                     count = count.wrapping_add(item.count);
                 }
             }
@@ -589,8 +579,6 @@ impl<'w> ScriptCtx<'w> {
             self.world.send_inventory_update_now(player, entries);
             self.world.broadcast_user_info(player);
         }
-        // NOTE(java-quirk): `destroyItemByItemId` destroys from the first item of the id, not
-        // necessarily the one this loop is at.
         self.world
             .destroy_item_by_item_id(player, item_id, to_delete, true)
     }
@@ -849,8 +837,6 @@ impl<'w> ScriptCtx<'w> {
         };
         let instance = self.world.instance_id_of(player);
         if !members.iter().any(|m| self.world.instance_id_of(*m) == instance) {
-            // NOTE(java-quirk): Java draws until a member is in the player's instance; the
-            // player is always one, so this never happens there.
             return Some(player);
         }
         loop {
@@ -1263,7 +1249,6 @@ impl<'w> ScriptCtx<'w> {
 
     /// Java `clearRadar(player)`.
     pub fn clear_radar(&mut self, player: ObjectId) {
-        // NOTE(java-quirk): Java walks a hash set; the markers go in the order they came.
         let markers = self.world.scripts.radar.remove(&player).unwrap_or_default();
         for (x, y, z) in markers {
             self.world.send(player, &radar(2, 2, x, y, z));

@@ -4,7 +4,6 @@
 //! attackers of a GM test siege (the damage, `doDie`'s message, the door packets, the geodata), a
 //! wall that only a siege weapon hurts, the doors repaired at the end of the siege, the guards
 //! that attack the attackers and leave the defenders alone, and the guards a hit gate calls.
-//! Java: entity/actor/instance/Door.java (reduceCurrentHp, doDie, broadcastStatusUpdate,
 //! isAutoAttackable), entity/actor/stat/DoorStat.java, ai/DoorAI.java, ai/SiegeGuardAI.java,
 //! entity/actor/instance/Defender.java, mechanics/siege/{Siege,Castle}.java (startSiege,
 //! endSiege, spawnDoor). The expected values come from the Java code named in each test.
@@ -614,8 +613,6 @@ fn attackers_break_the_gate_and_the_siege_end_repairs_it() {
         .map(|b| decode::<Revive>(b))
         .collect();
     assert!(revives.iter().any(|r| r.object_id == gate.0));
-    // NOTE(java-quirk): `endSiege` repairs the doors before the zone goes off, so the last update
-    // still says "enemy"; nothing sends the door again when the zone is off.
     let last = *door_updates(&out, P1, gate).last().unwrap();
     assert_eq!((last.current_hp, last.damage, last.is_enemy), (1000, 0, true));
     assert!(!s.world.door(gate).unwrap().is_enemy());

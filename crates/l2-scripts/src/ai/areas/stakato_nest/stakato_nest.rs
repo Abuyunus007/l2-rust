@@ -1,6 +1,5 @@
 //! The Stakato Nest monsters: nurses and females that change, a leader that devours its minion,
 //! and the cocoons that become a Cannibalistic Stakato Chief.
-// Java: dist/game/data/scripts/ai/areas/StakatoNest/StakatoNest.java
 
 use l2_util::ObjectId;
 use l2_world::movement::heading_from_points;

@@ -1,8 +1,4 @@
 //! The blow effects: `FatalBlow`, `Backstab` and `SoulBlow`.
-// Java: dist/game/data/scripts/handlers/skill/effects/FatalBlow.java
-// Java: dist/game/data/scripts/handlers/skill/effects/Backstab.java
-// Java: dist/game/data/scripts/handlers/skill/effects/SoulBlow.java
-//
 // M5-SHOT-01: every soulshot charge is read as "not charged".
 
 use l2_data::skill::EffectTemplate;
@@ -13,9 +9,6 @@ use crate::world::World;
 
 /// What the three blows do after the damage is known: the HP, the attack break, the damage
 /// message and the counter.
-///
-/// NOTE(java-quirk): the damage message always says "critical" (`sendDamageMessage(.., false,
-/// true, false)`), whatever the roll said.
 fn finish_blow(world: &mut World, cx: &EffectCx<'_>, damage: f64, critical: bool) {
     let (effector, effected, skill) = (cx.effector, cx.effected, cx.skill);
     world.reduce_current_hp_by_skill(effected, damage, Some(effector), skill);

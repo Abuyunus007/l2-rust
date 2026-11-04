@@ -1,10 +1,6 @@
 //! What the Gracia instance scripts share: Java has a copy of each of these methods in every
 //! script (`teleportPlayer`, `broadCastPacket`, the entry checks, the tumor warp, the Ward of
 //! Death, the end of an instance).
-// Java: dist/game/data/scripts/ai/areas/Gracia/instances/{HallOfErosionAttack,HallOfErosionDefence,
-//       HallOfSufferingAttack,HallOfSufferingDefence,HeartInfinityAttack,HeartInfinityDefence,
-//       SeedOfDestruction}/*.java
-//
 // # How the scripts keep Java's `InstanceWorld` subclasses
 // Java's `HEAWorld`, `HSAWorld`, ... are fields on a subclass of `InstanceWorld`. Here the
 // world's [`l2_world::instance::InstanceWorld`] keeps what every script reads (the allowed
@@ -206,7 +202,6 @@ pub fn check_channel_members(
     let members = channel_members(ctx, player);
     let count = i32::try_from(members.len()).unwrap_or(i32::MAX);
     if count < min || count > max {
-        // NOTE(java-quirk): the "level does not correspond" message, without the name it asks for.
         let sm = SystemMessage::new(SystemMessageId::C1SLevelDoesNotCorrespondToTheRequirementsForEntry);
         broadcast_to_channel(ctx, player, &sm);
         return false;
@@ -326,7 +321,6 @@ pub fn warp(
     }
 
     ctx.world_mut().destroy_item_by_item_id(player, 13797, 1, true);
-    // NOTE(java-quirk): `getRandom(0)` of an empty list would throw; nothing happens here.
     if dead_tumors.is_empty() {
         return;
     }
@@ -372,8 +366,6 @@ pub fn ward_of_death(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, instance_id: i32, 
     let Some(loc) = location_of(ctx, npc.object_id) else {
         return;
     };
-    // NOTE(java-quirk): `for (int i = 0; i < getRandom(1, 4); i++)` draws the bound again at
-    // every round.
     let mut i = 0;
     while i < ctx.get_random_range(1, 4) {
         if let Some(id) = ctx.get_random_entry(monsters) {

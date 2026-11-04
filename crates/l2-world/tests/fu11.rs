@@ -3,7 +3,6 @@
 //! The stale M6 markers (M6-FU-11): the summon branches of the duel, the GM pages of a pet, the
 //! talisman mana of an item skill, `SkillCoolTime` where Java sends it, and the PC cafe points.
 //! The expected values are read off the Java code named in each test.
-//! Java: entity/actor/holders/player/Duel.java, entity/actor/status/{Player,Npc}Status.java,
 //! entity/actor/Creature.java (doCast), entity/item/instance/Item.java (decreaseMana),
 //! entity/itemcontainer/Inventory.java (the skill listeners), managers/PcCafePointsManager.java,
 //! scripts/handlers/chat/commands/admin/{AdminEditChar,AdminBuffs}.java.

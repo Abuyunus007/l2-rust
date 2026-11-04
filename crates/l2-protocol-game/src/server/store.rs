@@ -83,7 +83,6 @@ fn write_sell_entries(w: &mut PacketWriter, items: &[SellStoreEntry]) {
     }
 }
 
-// Java: gameserver/network/serverpackets/PrivateStoreManageListSell.java
 /// The manage window of a sell store (`PRIVATE_STORE_SELL_MANAGE_LIST`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PrivateStoreManageListSell {
@@ -123,7 +122,6 @@ impl Decode for PrivateStoreManageListSell {
     }
 }
 
-// Java: gameserver/network/serverpackets/PrivateStoreManageListBuy.java
 /// The manage window of a buy store (`PRIVATE_STORE_BUY_MANAGE_LIST`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PrivateStoreManageListBuy {
@@ -176,7 +174,6 @@ impl Decode for PrivateStoreManageListBuy {
     }
 }
 
-// Java: gameserver/network/serverpackets/PrivateStoreListSell.java
 /// What a customer sees when it opens a sell store (`PRIVATE_STORE_SELL_LIST`).
 ///
 /// Java instead sends the buff menu when the seller is a buff seller (`isSellingBuffs`); that
@@ -215,7 +212,6 @@ impl Decode for PrivateStoreListSell {
     }
 }
 
-// Java: gameserver/network/serverpackets/PrivateStoreListBuy.java
 /// What a customer sees when it opens a buy store (`PRIVATE_STORE_BUY_LIST`).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PrivateStoreListBuy {
@@ -302,19 +298,16 @@ macro_rules! store_message_packet {
     };
 }
 
-// Java: gameserver/network/serverpackets/PrivateStoreMsgSell.java
 store_message_packet!(
     /// The title over a sell store (`PRIVATE_STORE_SELL_MSG`).
     PrivateStoreMsgSell,
     PrivateStoreSellMsg
 );
-// Java: gameserver/network/serverpackets/PrivateStoreMsgBuy.java
 store_message_packet!(
     /// The title over a buy store (`PRIVATE_STORE_BUY_MSG`).
     PrivateStoreMsgBuy,
     PrivateStoreBuyMsg
 );
-// Java: gameserver/network/serverpackets/ExPrivateStoreSetWholeMsg.java
 store_message_packet!(
     /// The title over a package sale (`EX_PRIVATE_STORE_PACKAGE_MSG`).
     ExPrivateStoreSetWholeMsg,

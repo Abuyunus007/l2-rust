@@ -1,7 +1,5 @@
 //! Quest 259: Request from the Farm Owner (Edmond in the Talking Island farm collects spider skins
 //! for Marius, who trades them for consumables; the rest of the skins are paid in adena).
-// Java: dist/game/data/scripts/quests/Q00259_RequestFromTheFarmOwner/Q00259_RequestFromTheFarmOwner.java
-//
 // Pattern: a kill count with every kill giving the item, a repeatable quest, and a second NPC
 // that trades the items (`docs/design/scripts.md`, "Quest patterns").
 

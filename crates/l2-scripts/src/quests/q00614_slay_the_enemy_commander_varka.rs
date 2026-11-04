@@ -1,6 +1,4 @@
 //! Quest 614: Slay the Enemy Commander! (Varka) (Ashas in the Varka Silenos Village, Tayr).
-// Java: dist/game/data/scripts/quests/Q00614_SlayTheEnemyCommanderVarka/Q00614_SlayTheEnemyCommanderVarka.java
-//
 // Pattern: a one-kill quest, the same shape as Q00613 (`actionForEachPlayer` gives the head to the
 // party members in range; the NPC rewards the feather and experience once).
 

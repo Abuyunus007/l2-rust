@@ -1,7 +1,4 @@
 //! The world region grid: which objects are near which.
-// Java: org/l2jmobius/gameserver/entity/World.java (constants, init, getRegion, calculateRegionZ)
-// Java: org/l2jmobius/gameserver/entity/WorldRegion.java (visible objects, activation, surrounding)
-//
 // Java allocates every region up front (257 x 273 x 16 = 1.1 million objects with their
 // surrounding arrays). Here a region exists only while it holds objects or activation state;
 // an absent region reads as empty and inactive (or active with `GridsAlwaysOn`). The surrounding
@@ -65,10 +62,6 @@ impl RegionId {
 
     /// Java `getSurroundingRegions()`: the neighbours built in `World.init`, in that order, with
     /// this region swapped to the front.
-    ///
-    /// NOTE(java-quirk): `World.init` only takes neighbours with `sx < REGIONS_X` and
-    /// `sy < REGIONS_Y` although the array has `REGIONS_X + 1` columns, so the last column and row
-    /// are in nobody's list, not even their own.
     pub fn surrounding(self) -> Vec<RegionId> {
         let mut list = Vec::with_capacity(27);
         for sx in self.x - 1..=self.x + 1 {
@@ -104,7 +97,6 @@ pub fn region_z(z: i32) -> i32 {
 
 /// Java `World.getRegion(x, y, z)`. `None` where Java's array access throws
 /// (`ArrayIndexOutOfBoundsException`): outside the world, and
-/// NOTE(java-quirk): at exactly `z == WORLD_Z_MAX`, whose index is `REGIONS_Z`.
 pub fn region_of(x: i32, y: i32, z: i32) -> Option<RegionId> {
     let rx = (x >> SHIFT_BY) + OFFSET_X;
     let ry = (y >> SHIFT_BY) + OFFSET_Y;

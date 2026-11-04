@@ -1,6 +1,5 @@
 //! The small custom features of M9-C06: their switches, the state they keep and the hooks the
 //! rest of the world calls (D-57). Each feature has its own file next to this one.
-// Java: gameserver/config/custom/{ScreenWelcomeMessage,OnlineInfo,PasswordChange,
 // MultilingualSupport,CustomMailManager,DualboxCheck,Captcha,ChatModeration,WalkerBotProtection,
 // HellboundStatus,Banking}Config.java
 //

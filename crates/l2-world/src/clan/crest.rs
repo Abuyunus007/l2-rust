@@ -1,22 +1,11 @@
 //! Clan, large clan and alliance crests: the crest cache, the uploads and the requests of the
 //! client (M6-CLAN-02).
-// Java: data/sql/CrestTable.java
-// Java: entity/clan/Crest.java, entity/clan/enums/CrestType.java
-// Java: entity/clan/Clan.java (changeClanCrest, changeAllyCrest, changeLargeCrest)
-// Java: network/clientpackets/{RequestSetPledgeCrest,RequestExSetPledgeCrestLarge,
-//       RequestSetAllyCrest,RequestPledgeCrest,RequestExPledgeCrestLarge,RequestAllyCrest}.java
-//
 // # Shape
 // Java's `CrestTable` is a map `crest id -> Crest` backed by the `crests` table. Here the map is
 // [`CrestTable`] (in `ClanWorld`), loaded at startup from the rows the game server read
 // ([`World::load_crests`], D-15) and changed by the world; every change goes out as a
 // `ClanWrite::Crest*` with Java's own statement.
 //
-// # Side by side with the Java game server (D-39, D-49)
-// The start-up cleanup of `CrestTable.load` deletes every crest no clan uses (except the one with
-// the highest id, which is never reused) and clears the crest columns of clans whose crest is
-// gone. Those are global writes; they run only with `ClanMaintenanceDatabaseWrites = True`
-// (`config/SideBySide.ini`). The world applies the same changes to its own state either way.
 //
 // # Crest ids (M7-FU-03)
 // Java allocates a crest id as `max(crest_id) + 1` read at its start, so two servers that both
@@ -542,9 +531,6 @@ impl World {
                 ally_id,
                 crest_id,
             }));
-            // NOTE(java-quirk): `dissolveAlly` sets the clan's ally id to 0 before it calls this,
-            // so the statement above is `WHERE ally_id = 0` and the loop below walks the clans of
-            // alliance 0, which are none: the clan keeps its old `_allyCrestId`.
             for ally in self.clan_allies(ally_id) {
                 if let Some(c) = self.clan_mut(ally) {
                     c.ally_crest_id = crest_id;

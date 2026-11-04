@@ -1,7 +1,5 @@
 //! Quest 43: Help the Sister! (Cooper in the Gludin Village, Galladucci in the Gludio area; the
 //! specters and sorrow maidens give the map pieces).
-// Java: dist/game/data/scripts/quests/Q00043_HelpTheSister/Q00043_HelpTheSister.java
-//
 // Pattern: the same chain as Q00042 Help the Uncle (`docs/design/scripts.md`, "Quest patterns"):
 // a crafted dagger starts the hunt, thirty map pieces make the map, and the map goes to
 // Galladucci for the ticket.

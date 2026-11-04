@@ -1,7 +1,5 @@
 //! Quest 252: It Smells Delicious (Stan, the cook of the Gludin village, wants 10 diaries from the
 //! orcs and beasts of the Gludio area and 5 cookbook pages from the chef).
-// Java: dist/game/data/scripts/quests/Q00252_ItSmellsDelicious/Q00252_ItSmellsDelicious.java
-//
 // Pattern: two kill drops with chances and limits, one from a random party member at cond 1 and
 // one from the killer only (`docs/design/scripts.md`, "Kills, drops and parties"). The party
 // filter is `check_party_member_state`, Java's `checkPartyMember(qs, npc)`.
@@ -110,7 +108,6 @@ impl Script for Q00252ItSmellsDelicious {
                     COOKBOOK_PAGE_CHANCE,
                     true,
                 )
-                // NOTE(java-quirk): Java checks the diaries here, not the cookbook pages.
                 && has_max_diaries(ctx, killer)
             {
                 qs.set_cond(ctx, 2, true);

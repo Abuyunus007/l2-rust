@@ -1,6 +1,4 @@
 //! Quest 290: Threat Removal (Pinaps in the Town of Gludin sends level 82 players after the sel mahum).
-// Java: dist/game/data/scripts/quests/Q00290_ThreatRemoval/Q00290_ThreatRemoval.java
-//
 // Pattern: a party collect quest that is paid by counting (`docs/design/scripts.md`, "Quest
 // patterns"): the sel mahum drop identification tags with a chance per monster; Pinaps takes 400
 // of them for one reward picked by a roll of ten. The quest is open to players who completed
@@ -122,8 +120,6 @@ impl Script for Q00290ThreatRemoval {
     }
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, _is_summon: bool) {
-        // NOTE(java-quirk): Java only checks that some party member exists (`partyMember` is not
-        // used again); the tag is rewarded to the killer.
         if ctx.get_random_party_member_cond(killer, 1).is_none() {
             return;
         }

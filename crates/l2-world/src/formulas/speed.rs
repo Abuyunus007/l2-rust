@@ -1,6 +1,5 @@
 //! Attack and cast speed formulas.
 //!
-//! Java: `mechanics/stats/Formulas.java` `calcPAtkSpd`, `calcAtkSpd`;
 //! `entity/actor/Creature.java` `calculateTimeBetweenAttacks`, `calculateReuseTime`.
 
 /// Java `Formulas.calcPAtkSpd(attacker, target, rate)`: the delay in milliseconds before the next

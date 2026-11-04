@@ -320,7 +320,6 @@ fn result_entry(name: &str) -> OlympiadResultEntry {
 
 #[test]
 fn olympiad_match_result_layout() {
-    // Java: type 1, tie flag, first winner's name, winning team, winners, losing team, losers.
     let packet = ExOlympiadMatchResult::new(false, 1, vec![result_entry("Win")], vec![result_entry("Lose")]);
     let entry = |name: &str| cat(&[text(name), text("Clan"), ints(&[4, 88, 300, 1700, 12])]);
     let expected = cat(&[
@@ -337,7 +336,6 @@ fn olympiad_match_result_layout() {
 
 #[test]
 fn olympiad_match_result_team_mapping() {
-    // Java: winning team 2 means losing team 1; winning team 0 is shown as team 1.
     let packet = ExOlympiadMatchResult::new(true, 2, Vec::new(), Vec::new());
     assert_eq!((packet.win_team, packet.lose_team), (2, 1));
     assert!(packet.tie);
@@ -457,7 +455,6 @@ fn ssq_status_page_one_writes_cycle_messages_and_scores() {
     let SsqStatusBody::Cycle(cycle) = &status.body else {
         panic!("page 1 has a cycle body");
     };
-    // Java: 75% of the total is dawn, the stone share of 500 is 375 and 125.
     assert_eq!(cycle.dawn.percent, 75);
     assert_eq!(cycle.dusk.percent, 25);
     assert_eq!(cycle.dawn.stone_score, 375);
@@ -537,7 +534,6 @@ fn ssq_status_page_two_writes_five_festivals() {
         body: SsqStatusBody::Festivals(festivals.clone()),
     };
     let bytes = packet.to_bytes();
-    // Java: short 1, then the festival count byte 5, then per festival: id, level score, dusk.
     assert_eq!(&bytes[..6], &[0xFB, 2, 1, 1, 0, 5]);
     assert_eq!(bytes[6], 1);
     assert_eq!(

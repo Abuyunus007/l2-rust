@@ -1,6 +1,5 @@
 //! `PvpRewardItem.ini` and `PvpAnnounce.ini`: the item a killer gets for a PvP or PK kill and the
 //! announcement the whole server hears.
-// Java: entity/actor/Player.java (`doDie`), config/custom/PvpRewardItemConfig.java,
 // config/custom/PvpAnnounceConfig.java
 
 use l2_protocol_game::SystemMessageId;
@@ -129,8 +128,6 @@ impl World {
                     .replace("$killer", &name)
                     .replace("$target", &target)
             } else {
-                // NOTE(java-quirk): the PvP text names `killer`, which is the summon when a
-                // summon dealt the blow; the PK text names the owner.
                 announce
                     .announce_pvp_msg
                     .replace("$killer", &self.creature_name(killer))

@@ -1,6 +1,5 @@
 //! The system message test commands: `//msg <id>` sends the message as it is, and `//msgx <id>
 //! [item:id] [skill:id] [npc:id] [zone:x,y,z] [castle:id] [str:'text']` adds the parameters.
-// Java: dist/game/data/scripts/handlers/chat/commands/admin/AdminMessages.java
 
 use l2_data::ItemTemplates;
 use l2_protocol_game::SystemMessageId;
@@ -54,8 +53,6 @@ fn admin_msgx(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
         );
         return Ok(());
     }
-    // NOTE(java-quirk): `new SystemMessage(id)` is outside Java's try: an id the table does not
-    // have is the uncaught NullPointerException of the command.
     let id = parse_int(tokens[1])?;
     let Some(id) = SystemMessageId::from_id(id) else {
         return Err(JavaException("java.lang.NullPointerException".to_owned()));
@@ -99,7 +96,6 @@ fn param(
         return int_of(value).map(|v| Some(SystemMessageParam::CastleName(v)));
     }
     if token.starts_with("str:") {
-        // Java: the text between the first two quotes after `lastPos`.
         let pos = index_of(command, '\'', *last_pos + 1);
         *last_pos = index_of(command, '\'', pos + 1);
         let text = java_substring(command, pos + 1, *last_pos)?;

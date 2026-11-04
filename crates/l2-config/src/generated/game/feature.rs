@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/FeatureConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Feature.ini` (Java: `FeatureConfig`).

@@ -1,5 +1,4 @@
 //! The Delusion Chamber teleporters (Pathfinder Worker and the seal guardians).
-// Java: dist/game/data/scripts/ai/others/DelusionTeleport/DelusionTeleport.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
@@ -65,8 +64,6 @@ impl Script for DelusionTeleport {
             }
         } else {
             let town_id = ctx.player_variable_int(player, DELUSION_RETURN, 0);
-            // NOTE(java-quirk): `RETURN_LOCATIONS.get(townId)` is null for a town that is not in the
-            // map and `teleToLocation(null, true)` throws; the player stays and the variable stays.
             let (x, y, z) = return_location(town_id)?;
             ctx.teleport_player(player, x, y, z, 0, true);
             ctx.remove_player_variable(player, DELUSION_RETURN);

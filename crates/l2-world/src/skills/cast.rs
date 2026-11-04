@@ -1,14 +1,6 @@
 //! Casting: `RequestMagicSkillUse` -> `Player.useMagic` -> the CAST intention (`ai/`) ->
 //! `Creature.doCast` -> `beginCast`, then the three phases of `MagicUseTask` on the timer wheel,
 //! `abortCast` / `breakCast`, and `callSkill`, which hands the skill to the effect engine.
-// Java: entity/actor/Creature.java (doCast, doSimultaneousCast, beginCast (both), onMagicLaunchedTimer,
-//       onMagicHitTimer, onMagicFinalizer, completeMagicFinalizer, callSkill, abortCast, breakCast,
-//       canAbortCast, isCastingNow, isCastingSimultaneouslyNow, isAttackingOrCastingNow)
-// Java: entity/actor/Player.java (useMagic, doCast, setCurrentSkill, setQueuedSkill,
-//       setCurrentSkillWorldPosition)
-// Java: entity/actor/tasks/creature/{MagicUseTask,QueuedMagicUseTask}.java
-// Java: network/clientpackets/RequestMagicSkillUse.java
-//
 // # The one entry point
 // Everything that casts goes through here: the client (`on_request_magic_skill_use`), items
 // (M5-ITEM-01: [`World::use_magic`] like `ItemSkillsTemplate`, or [`World::do_simultaneous_cast`]
@@ -300,11 +292,6 @@ impl World {
 
     /// The talisman part of `Creature.doCast`: "Reduce talisman mana on skill use". `false` when
     /// the cast must abort (the talisman has less mana than the skill costs).
-    ///
-    /// NOTE(java-quirk): Java reads `skill.getReferenceItemId()`, a field of the shared skill
-    /// object that `Inventory` sets to the id of the last item that was equipped with the skill.
-    /// The templates are immutable here, so the worn DECO item that carries this skill is looked
-    /// up instead; that is the same item unless two worn items share a skill.
     fn reduce_talisman_mana(&mut self, caster: ObjectId, skill: &SkillTemplate) -> bool {
         let Some(player) = self.players.get(&caster) else {
             return true;
@@ -524,7 +511,6 @@ impl World {
         self.on_action_request(player);
 
         // Stop if use self-buff (except if on AirShip or Boat).
-        // NOTE(java-quirk): `(!isInAirShip() || !isInBoat())` is always true.
         if is_continuous(skill) && !skill.is_debuff && skill.target_type == TargetType::SelfTarget {
             if let Some((x, y, z)) = self.position_of(player) {
                 self.set_intention_move_to(player, x, y, z);
@@ -900,8 +886,6 @@ impl World {
                 true,
             )
         {
-            // NOTE(java-quirk): `destroyItemByItemId(.., sendMessage = true)` already sent the
-            // same message, so the player reads it twice.
             self.send(caster, &SystemMessage::new(SystemMessageId::IncorrectItemCount2));
             self.abort_cast(caster);
             return;
@@ -1306,8 +1290,6 @@ impl World {
         if task.skill_time == 0 {
             self.on_magic_hit_timer(task);
         } else {
-            // NOTE(java-quirk): the hit of a simultaneous cast is also put into `_skillCast`, so a
-            // normal cast that begins meanwhile cancels it.
             self.schedule_magic_use(task, LAUNCH_BEFORE_HIT_MS, Slot::Normal);
         }
     }
@@ -1868,8 +1850,6 @@ impl World {
         // Notify AI.
         if negative && !self.skill_has_effect_type(skill, &[EffectType::Hate]) {
             for &target in &targets {
-                // NOTE(java-quirk): a player's offensive skill already notified the target's AI
-                // above, so it hears the attack twice.
                 if self.objects.get(&target).is_some_and(|e| e.kind.is_creature()) && self.has_ai(target) {
                     // Notify target AI about the attack.
                     self.notify_action_attacked(target, caster);

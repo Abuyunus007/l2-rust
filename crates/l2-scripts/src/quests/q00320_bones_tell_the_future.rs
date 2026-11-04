@@ -1,6 +1,4 @@
 //! Quest 320: Bones Tell the Future (Tetrarch Kaitar in the Dark Elven village, Skeleton Hunters).
-// Java: dist/game/data/scripts/quests/Q00320_BonesTellTheFuture/Q00320_BonesTellTheFuture.java
-//
 // Pattern: a party kill, a random member at cond N (`docs/design/scripts.md`, "Quest patterns"):
 // `random_party_member_state` draws the member, the bone goes to the killer.
 
@@ -65,8 +63,6 @@ impl Script for Q00320BonesTellTheFuture {
     }
 
     fn on_kill(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, killer: ObjectId, _is_summon: bool) {
-        // NOTE(java-quirk): the bone goes to the killer, not to the member drawn, while the
-        // drawn member's quest moves to cond 2 (`random_party_member_state` returns that member).
         if let Some(qs) = ctx.random_party_member_state(killer, 1, 3, Some(npc))
             && ctx.give_item_randomly(
                 killer,

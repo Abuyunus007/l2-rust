@@ -1,6 +1,4 @@
 //! `Relax` and `ChameleonRest`: sit down and recover, paying MP for it.
-// Java: dist/game/data/scripts/handlers/skill/effects/Relax.java
-// Java: dist/game/data/scripts/handlers/skill/effects/ChameleonRest.java
 
 use l2_data::skill::EffectTemplate;
 use l2_protocol_game::SystemMessageId;
@@ -110,7 +108,6 @@ impl EffectHandler for ChameleonRest {
         }
         let mp = world.core_of(effected).map_or(0.0, |c| c.cur_mp);
         let mana_dam = self.power * cx.ticks_multiplier(world);
-        // NOTE(java-quirk): unlike `Relax`, the MP check does not look at the toggle flag.
         if mana_dam > mp {
             world.send_lack_of_mp(effected);
             return false;

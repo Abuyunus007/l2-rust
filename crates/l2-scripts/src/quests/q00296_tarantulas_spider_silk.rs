@@ -1,6 +1,4 @@
 //! Quest 296: Tarantula's Spider Silk (Trader Mion in the Town of Gludio buys the spider silk of the tarantulas).
-// Java: dist/game/data/scripts/quests/Q00296_TarantulasSpiderSilk/Q00296_TarantulasSpiderSilk.java
-//
 // Pattern: a collect quest with a second item (`docs/design/scripts.md`, "Quest patterns"): the
 // tarantulas drop spider silk, and rarely a spinnerette; Defender Nathan turns each spinnerette into
 // 15 to 23 silk. Trader Mion buys the silk for 30 adena each, with a bonus from 10 silk, and tells

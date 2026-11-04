@@ -121,8 +121,6 @@ async fn reports_are_stored_and_read_back() {
         ]
     );
 
-    // The same pair again (the Java game server wrote it meanwhile): the date is replaced, no
-    // second row, no error.
     repo.insert_report(BOT, ALICE, DATE + 5).await.unwrap();
     let rows = repo.load_all().await.unwrap();
     assert_eq!(rows.len(), 2);

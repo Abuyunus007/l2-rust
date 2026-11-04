@@ -1,5 +1,4 @@
 //! The Demon Prince's floor of the Tower of Infinitum (the 6th floor, instance 142).
-// Java: dist/game/data/scripts/ai/areas/Hellbound/Instances/DemonPrinceFloor/DemonPrinceFloor.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

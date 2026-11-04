@@ -1,4 +1,3 @@
-// Java: org/l2jmobius/gameserver/config/custom/ChampionMonstersConfig.java
 
 use crate::IniFile;
 /// Settings of `config/Custom/ChampionMonsters.ini` (Java: `ChampionMonstersConfig`).

@@ -1,13 +1,5 @@
 //! Skill reuse: the reuse time stamps, the short "disabled" delays and the all-skills lock of a
 //! creature, and the `SkillCoolTime` list built from them.
-// Java: entity/actor/Creature.java (addTimeStamp, removeTimeStamp, resetTimeStamps,
-//       getSkillRemainingReuseTime, hasSkillReuse, getSkillReuseTimeStamp, enableSkill,
-//       disableSkill, resetDisabledSkills, isSkillDisabled, disableAllSkills, enableAllSkills,
-//       isAllSkillsDisabled)
-// Java: entity/actor/holders/creature/TimeStamp.java (the skill constructor, getRemaining,
-//       hasNotPassed)
-// Java: network/serverpackets/SkillCoolTime.java
-//
 // # Time
 // Java stamps reuse with `System.currentTimeMillis()`. The world stamps it with its own clock,
 // `World::world_ms` (50 ms steps), so reuse follows the ticks like every other timer and tests are
@@ -104,7 +96,6 @@ impl ReuseState {
 /// The iteration order of a `ConcurrentHashMap<Integer, V>` holding `keys` (inserted in this
 /// order, no duplicates): by bucket `spread(h) & (n - 1)` of the final table size, then insertion
 /// order within a bucket.
-// Java: the table starts at 16 and doubles as soon as the count reaches `sizeCtl` (`n - n/4`),
 // one entry earlier than `HashMap`. A bucket that would become a tree (8 entries in a table of 64)
 // is far beyond the number of reuse stamps a character has.
 pub(crate) fn concurrent_hash_map_order(keys: &[i32]) -> Vec<usize> {

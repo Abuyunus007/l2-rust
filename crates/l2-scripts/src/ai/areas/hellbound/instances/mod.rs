@@ -44,7 +44,6 @@ pub(crate) fn party_message(world: &World, party_of: ObjectId, id: SystemMessage
 /// The `checkConditions(player)` of the two floors (they differ in the template, the item and the
 /// reach only): a party leader with a party that is near, high enough, free to enter and holds the
 /// Seal Breaker.
-// NOTE(java-quirk): `getPlayerWorld(player)` is asked for the leader, once per member.
 pub(crate) fn check_floor_conditions(
     world: &mut World,
     player: ObjectId,

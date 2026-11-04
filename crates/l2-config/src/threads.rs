@@ -1,5 +1,4 @@
 //! `Threads.ini`.
-// Java: org/l2jmobius/commons/config/ThreadConfig.java
 
 use crate::IniFile;
 

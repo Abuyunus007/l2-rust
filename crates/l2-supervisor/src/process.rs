@@ -1,6 +1,5 @@
 //! Process control: one small actor task per configured server.
 //!
-//! Java: `dist/login/LoginServerTask.sh`, `dist/game/GameServer.sh`, `GameServer.vbs` (run the
 //! command in its working directory, start it again on exit code 2, collect the output).
 //!
 //! # State machine of one server

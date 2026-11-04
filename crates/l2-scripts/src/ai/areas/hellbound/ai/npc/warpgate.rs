@@ -1,5 +1,4 @@
 //! The Warpgates: players who finished one of the two Hellbound quests may enter the island.
-// Java: dist/game/data/scripts/ai/areas/Hellbound/AI/NPC/Warpgate/Warpgate.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

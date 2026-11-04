@@ -1,6 +1,3 @@
-//! Character screen packets against byte layouts worked out by hand from the Java `writeImpl`
-//! code, and against recorded Java game server sessions when `L2_CAPTURE_DIR` is set.
-//!
 //! The expected bytes below are built with a tiny writer of their own (not the crate's
 //! `PacketWriter`), listing the fields in the order of the Java source, so a mistake in the
 //! crate's encoder cannot hide behind the same mistake in the test.
@@ -253,7 +250,6 @@ fn new_character_success_for_the_eleven_java_templates() {
 
 #[test]
 fn key_packet_for_a_rejected_protocol() {
-    // Java: `new KeyPacket(key, 0)` when the protocol version is not in the list.
     let packet = KeyPacket {
         result: 0,
         key: [0xAA; 8],

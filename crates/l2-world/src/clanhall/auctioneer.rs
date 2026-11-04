@@ -1,12 +1,7 @@
 //! The `Auctioneer` NPC: the pages of the clan hall auction board.
-// Java: entity/actor/instance/Auctioneer.java
-//
 // Every command is the Java one with its pages (`data/html/auction/*.htm`) and messages. Java
 // catches most exceptions of a command and answers with a message ("Invalid bid!"); an exception
 // it does not catch ends the command without an answer, as `None` does here.
-//
-// The commands that change an auction (`bid`, `doCancelBid`, `doCancelAuction`) read the auction
-// again first and go on in `auction.rs` (D-50); the pages show what this world knows.
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{NpcHtmlMessage, SystemMessage};
@@ -188,7 +183,6 @@ impl World {
             let clan = self.clan_of(player)?;
             let hall = self.auctionable_hall_by_owner(clan.id)?;
             let hall = self.clan_hall(hall)?;
-            // NOTE(java-quirk): `days * 86400000` is an int product: more than 24 days wrap.
             let delay = i64::from(days.wrapping_mul(86_400_000));
             let auction = ClanHallAuction::pending(
                 clan.hideout_id,
@@ -533,8 +527,6 @@ impl World {
 
     /// `list [page]`: the auctions, 15 to a page.
     fn auctioneer_list(&mut self, npc: ObjectId, player: ObjectId, val: &str) -> bool {
-        // D-50: the Java game server shares the `auction` rows, so the list is built from rows
-        // read just now (M7-FU-03); a failed read shows nothing.
         self.request_auction_rows(
             0,
             ResidenceReadKind::Auctions,

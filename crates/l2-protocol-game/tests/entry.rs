@@ -240,7 +240,6 @@ fn nevit_packets_layout() {
         &Bytes::default().byte(0xFE).short(0xDF).int(2000).done(),
         3,
     );
-    // Java: the byte is `!paused`, the time is capped at 14400.
     check_round_trip(
         &ExNevitAdventTimeChange::new(30, true),
         &Bytes::default().byte(0xFE).short(0xE1).byte(0).int(30).done(),

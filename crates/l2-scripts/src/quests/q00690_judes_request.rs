@@ -1,6 +1,4 @@
 //! Quest 690: Jude's Request (Jude in the Aden Steel Citadel area, the Evil Weapons of the Monster Foundry).
-// Java: dist/game/data/scripts/quests/Q00690_JudesRequest/Q00690_JudesRequest.java
-//
 // Pattern: a repeatable kill-and-collect quest with two exchanges: 200 Evil Weapons for an S80
 // recipe, or 5 for three S80 pieces, the item drawn at random from a list (`get_random(9)`).
 // Java's `htmltext = event` default means every event of this script is shown as a page, and
@@ -55,7 +53,6 @@ impl Script for Q00690JudesRequest {
         player: Option<ObjectId>,
     ) -> Option<String> {
         let player = player?;
-        // Java: `htmltext = event` is the default; without a quest state the no-quest message.
         let Some(qs) = ctx.get_quest_state(player, false) else {
             return Some(ctx.get_no_quest_msg(player));
         };
@@ -101,10 +98,7 @@ impl Script for Q00690JudesRequest {
         } else {
             0
         };
-        // Java: `chance %= 1000` (a no-op here) and one weapon: `max(chance / 1000, 1)`.
         if ctx.get_random(1000) <= chance {
-            // NOTE(java-quirk): the weapon goes to the killer, not to the member the random pick
-            // returned (Java passes `player`, not `partyMember`).
             ctx.give_items(killer, EVIL_WEAPON, 1);
             ctx.play_sound(killer, QuestSound::ItemsoundQuestItemget);
         }

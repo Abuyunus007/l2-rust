@@ -1,6 +1,4 @@
 //! Quest 10292: Seven Signs, Girl of Doubt (Wood, Franz, Elcadia and Hardin in the Hideout of the Dawn).
-// Java: dist/game/data/scripts/quests/Q10292_SevenSignsGirlOfDoubt/Q10292_SevenSignsGirlOfDoubt.java
-//
 // Pattern: a memo-state quest with a party kill (`docs/design/scripts.md`, "Kills, drops and
 // parties"): the Cruel and Horrifying Golems drop Elcadia's marks to a random started member
 // (`random_party_member_state`), the two Creatures of the Dusk (spawned by Elcadia's `SPAWN`

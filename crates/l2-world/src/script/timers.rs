@@ -1,10 +1,5 @@
 //! Quest timers on the timer wheel (D-12), the delayed kill notification and the despawn of
 //! `addSpawn(..., despawnDelay)`.
-// Java: mechanics/script/QuestTimer.java, mechanics/script/Quest.java (startQuestTimer,
-//       getQuestTimer, cancelQuestTimer, cancelQuestTimers, removeQuestTimer)
-// Java: entity/actor/Npc.java (addQuestTimer, stopQuestTimers at onDecay, scheduleDespawn)
-// Java: entity/actor/Player.java (addQuestTimer, stopAllTasks)
-// Java: entity/actor/Attackable.java (doDie: notifyEventAsyncDelayed(OnAttackableKill, _onKillDelay))
 
 use l2_util::ObjectId;
 
@@ -113,10 +108,6 @@ impl World {
         self.insert_quest_timer(script, name, time_ms, npc, player, repeating, false);
     }
 
-    /// Java `ThreadPool.schedule(() -> ..., delay)` in a script: a one-shot task that runs the
-    /// script's `on_event(name, npc, player)` and never merges with a timer of the same name
-    /// (several can run side by side). It stops with its NPC or player like a quest timer
-    /// (`Npc.onDecay`, logout), where Java's runnable would still run on the stale object.
     pub(crate) fn schedule_script_event(
         &mut self,
         script: ScriptId,

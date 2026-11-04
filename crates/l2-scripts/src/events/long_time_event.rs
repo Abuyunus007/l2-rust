@@ -1,6 +1,4 @@
 //! `LongTimeEvent`: the dates, event drops, spawns and messages of a seasonal event.
-// Java: org/l2jmobius/gameserver/mechanics/script/LongTimeEvent.java
-//
 // The reference of the seasonal event scripts: copy `the_valentine_event.rs` (the smallest one).
 //
 // Java's `LongTimeEvent extends Script` reads `data/scripts/events/<name>/config.xml` in its
@@ -14,8 +12,6 @@
 //    (Java: `ScheduleStart` / `ScheduleEnd` are `Runnable`s, here quest timers on the wheel); give it
 //    the `npc` of the call too;
 // 3. asks `long_time_event::is_event_period(ctx)` where Java calls `isEventPeriod()`.
-//
-// Several events run side by side: the state is kept per script name in the shared state.
 
 use std::collections::BTreeMap;
 
@@ -484,7 +480,6 @@ fn spawn_npcs(ctx: &mut ScriptCtx<'_>, cfg: &EventConfig, end_date: i64) {
             && let Some(npc) = npc
             && let Some(index) = ctx.world().npc_spawn_index(npc.object_id)
         {
-            // NOTE(java-quirk): `setRespawnDelay` takes seconds and gets `respawnTime * 1000`.
             ctx.world_mut()
                 .set_spawn_respawn_delay(index, spawn.respawn_time_ms);
             ctx.world_mut().start_spawn_respawn(index);
@@ -499,9 +494,6 @@ fn spawn_npcs(ctx: &mut ScriptCtx<'_>, cfg: &EventConfig, end_date: i64) {
     }
 }
 
-/// Java `destroyItemsOnEnd()`: the items leave every online player's inventory, then
-/// `DELETE FROM items WHERE item_id=?` takes the rows of the offline characters. The delete is a
-/// global write: it goes out through the outbox only with `CycleDatabaseWrites` (D-53, D-15).
 fn destroy_items_on_end(ctx: &mut ScriptCtx<'_>, cfg: &EventConfig) {
     for &item_id in cfg.destroy_items_on_end {
         if ctx.world().item_template_name(item_id).is_none() {

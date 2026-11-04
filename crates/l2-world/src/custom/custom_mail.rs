@@ -1,12 +1,5 @@
 //! `config/Custom/CustomMailManager.ini`: every `DatabaseQueryDelay` seconds the rows of
 //! `custom_mail` whose receiver is online become a mail with the listed items.
-// Java: gameserver/managers/CustomMailManager.java
-// Java: gameserver/GameServer.java (the manager starts with `CustomMailManagerEnabled`)
-//
-// D-15: the query goes out through the outbox and the rows come back as
-// `WorldCommand::CustomMailLoaded`. D-39/D-53: the rows are per receiver, and a server only
-// takes the rows of the players it has online, so the Java GS and this one do not send a mail
-// twice; the delete of a row is written as usual.
 
 use tracing::{info, warn};
 
@@ -117,7 +110,6 @@ impl World {
                     self.send_custom_mail(row);
                 }
             }
-            // Java: "Error reading from database: ".
             Err(()) => warn!("CustomMailManager: Error reading from database."),
         }
     }

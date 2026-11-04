@@ -1,7 +1,6 @@
 //! Zones: the shapes and types from `data/zones/*.xml`, and the world-region grid that finds the
 //! zones at a point.
 //!
-//! Java: `managers/ZoneManager.java`, `entity/zone/{ZoneType,ZoneRespawn,ZoneRegion}.java`,
 //! `entity/zone/type/{RespawnZone,NpcSpawnTerritory}.java`. The shapes are in [`shape`].
 //! Data: `data/zones/*.xml` (documented in `data/zones/documentation.txt`), `xsd/zones.xsd`.
 //!
@@ -24,11 +23,6 @@
 //!   touches, so an old zone can survive in other cells (Java's `ZoneRegion` maps behave so).
 //! * The grid has 17 x 18 cells of 32768 units. A zone is registered in every cell its shape
 //!   `intersectsRectangle`s.
-//!
-//! NOTE(java-quirk): Java iterates the zones of a cell (and of a type) in `ConcurrentHashMap`
-//! order, which decides which of two overlapping zones of one type `zone_at` finds first. That
-//! order is reproduced by `IntMap` (bins, insertion order, resize reordering); tree bins (8+ ids
-//! in one bin of a 64+ bin table) are not modelled.
 
 pub mod shape;
 
@@ -755,7 +749,6 @@ impl Builder {
     }
 
     fn add_file(&mut self, doc: RawZoneFile, file: &str) {
-        // Java: `enabled` present and not "true" (Boolean.parseBoolean) skips the file.
         if let Some(enabled) = &doc.enabled
             && !enabled.eq_ignore_ascii_case("true")
         {

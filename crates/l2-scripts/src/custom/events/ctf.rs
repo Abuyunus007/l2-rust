@@ -1,7 +1,5 @@
 //! Capture the Flag event: two teams fight in the Coliseum instance for 20 minutes and carry
 //! the flag of the enemy to their own headquarters.
-// Java: dist/game/data/scripts/custom/events/CaptureTheFlag/CtF.java
-//
 // Off by default: the shipped `config.xml` schedules nothing, so the event only runs when a GM
 // starts it (`//event_start CtF`).
 
@@ -512,7 +510,6 @@ impl Script for CtF {
         if event.starts_with("KickPlayer")
             && let Some(player) = player
         {
-            // NOTE(java-quirk): without a world Java throws a NullPointerException here.
             let world = ctx.state::<CtfState>().pvp_world?;
             if ctx.world().instance_id_of(player) == world {
                 if event.contains("Warning") {
@@ -579,8 +576,6 @@ impl Script for CtF {
                 return Some("manager-buffheal.html".to_owned());
             }
 
-            // NOTE(java-quirk): the precedence of Java's `&&` and `||` makes any red
-            // headquarters count, in an instance or not.
             if (in_instance && npc.id == BLUE_TEAM_HEADQUARTERS) || npc.id == RED_TEAM_HEADQUARTERS {
                 flag_talk(ctx, npc, player);
                 return None;
@@ -749,7 +744,6 @@ impl Script for CtF {
             arena::put_score(&mut ctx.state::<CtfState>().player_scores, killer, score + 1);
             let scores = ctx.state::<CtfState>().player_scores.clone();
             arena::broadcast_scoreboard(ctx, world, SCOREBOARD_UPDATE, &scores);
-            // NOTE(java-quirk): only the red kills are announced to the team.
             let killer_name = ctx.player_name(killer);
             let killed_name = ctx.player_name(killed_player);
             for active_char in participant_team(ctx, killer) {
@@ -821,8 +815,6 @@ impl Script for CtF {
 
     fn event_stop(&self, ctx: &mut ScriptCtx<'_>) -> bool {
         // Despawn event manager.
-        // NOTE(java-quirk): `MANAGER_NPC_INSTANCE.deleteMe()` throws a NullPointerException when the
-        // event never started; the rest does not run.
         let Some(manager) = ctx.state::<CtfState>().manager_npc else {
             return false;
         };
@@ -1081,7 +1073,6 @@ fn carrier_is_gone(ctx: &mut ScriptCtx<'_>, carrier: Option<ObjectId>) -> bool {
     let Some(carrier) = carrier else {
         return false;
     };
-    // NOTE(java-quirk): `PVP_WORLD.getInstanceId()` throws without a world.
     let Some(world) = ctx.state::<CtfState>().pvp_world else {
         return false;
     };
@@ -1177,8 +1168,6 @@ fn remove_flag_carrier(ctx: &mut ScriptCtx<'_>, player: ObjectId) {
     set_carrier_unequipped_weapons(ctx, player, None, None);
 
     // Flag carrier removal.
-    // NOTE(java-quirk): a player who is in no team list (a logout removes it first) counts as
-    // red here.
     let s = ctx.state::<CtfState>();
     if s.in_blue(player) {
         s.blue_team_carrier = None;
@@ -1399,7 +1388,6 @@ fn send_flag_page(
         .get_htm(player, file)
         .unwrap_or_default()
         .replace("%enemyteam%", enemyteam);
-    // NOTE(java-quirk): the page of the missing enemy flag is sent without a `%team%` replaced.
     if let Some(team) = team {
         html = html.replace("%team%", team);
     }

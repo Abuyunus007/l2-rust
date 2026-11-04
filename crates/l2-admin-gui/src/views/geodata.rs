@@ -1,7 +1,3 @@
-//! Geodata viewer: one region of geodata set A and set B, drawn side by side, with the world
-//! position and height under the pointer (card M3-GUI-03). Read-only.
-//!
-//! Java: none (tooling). The pictures and the layer rules are `l2_geo::view`, shared with
 //! `l2-geotool render`; the coordinates are `l2_geo::coords`, so nothing here re-derives the
 //! world <-> geo math.
 //!
@@ -26,7 +22,6 @@ use crate::views::View;
 
 /// Screen pixels per geo cell, in the zoom steps the view offers.
 pub const ZOOMS: [f32; 4] = [0.25, 0.5, 1.0, 2.0];
-/// Index into [`ZOOMS`] at first open (0.5: a side-by-side pair fits a normal window).
 const DEFAULT_ZOOM: usize = 1;
 /// Region (20, 18) holds the world origin (`coords` module), so it is the first one shown.
 const DEFAULT_REGION: (u32, u32) = (20, 18);
@@ -97,7 +92,6 @@ pub fn cell_in_panel(local: (f32, f32), zoom: f32) -> Option<(usize, usize)> {
 /// What the picture shows.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Source {
-    /// Set A and set B side by side, with one height scale.
     #[default]
     Both,
     A,

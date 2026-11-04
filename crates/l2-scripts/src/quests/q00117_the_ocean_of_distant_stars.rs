@@ -1,6 +1,4 @@
 //! Quest 117: The Ocean of Distant Stars (Abey, the ghosts of the railroad engineers, Obi, the box).
-// Java: dist/game/data/scripts/quests/Q00117_TheOceanOfDistantStars/Q00117_TheOceanOfDistantStars.java
-//
 // Pattern: a long chain of memo states (`setMemoState`, Java's `isMemoState(n)`) that go with
 // the conds, a kill with a drop chance for a random started party member (`on_kill`, the drop
 // goes to the killer with a limit of one, `giveItemRandomly` seven-argument overload), and

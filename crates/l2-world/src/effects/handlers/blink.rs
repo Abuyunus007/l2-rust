@@ -1,6 +1,5 @@
 //! The `Blink` effect: the creature jumps `FlyRadius` away from where it faces, on the `FlyCourse`
 //! of the skill, as far as the geodata lets it.
-// Java: dist/game/data/scripts/handlers/skill/effects/Blink.java
 
 use l2_data::skill::{EffectTemplate, FlyType};
 use l2_geo::Location;

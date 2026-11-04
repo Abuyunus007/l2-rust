@@ -1,6 +1,5 @@
 //! The delevel manager NPC (`DelevelManager.ini`): takes an item and puts the player back to
 //! the start of the level below.
-// Java: dist/game/data/scripts/custom/DelevelManager/DelevelManager.java
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};

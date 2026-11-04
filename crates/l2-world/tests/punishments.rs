@@ -2,7 +2,6 @@
 
 //! Punishments: the `punishments` table rows the world loads, the chat ban, the ban, the jail,
 //! the penalty of an illegal action and the admin commands that set them.
-//! Java: managers/PunishmentManager.java, mechanics/punishment/*, entity/actor/tasks/player/
 //! IllegalPlayerActionTask.java, scripts/handlers/punishments/{BanHandler,ChatBanHandler,
 //! JailHandler}.java, scripts/handlers/chat/commands/admin/AdminPunishment.java.
 //!
@@ -502,7 +501,6 @@ fn the_chat_ban_command_bans_stores_and_lifts() {
     let out = s.log.take();
     // ChatBanHandler: forever (no expiration), then `EtcStatusUpdate`.
     assert_eq!(texts_to(&out, P1), ["You've been chat banned forever."]);
-    // NOTE(java-quirk): the task is not in the holder yet when the icon is sent.
     assert_eq!(etc_status_to(&out, P1), [false]);
     assert_eq!(
         texts_to(&out, GM)[0],
@@ -554,8 +552,6 @@ fn the_chat_ban_command_bans_stores_and_lifts() {
     s.cmd(GM, "unban_chat P1");
     let out = s.log.take();
     assert_eq!(system_ids_to(&out, P1), [SystemMessageId::ChatEnabled]);
-    // NOTE(java-quirk): the task leaves the holder after its handler ran, so the icon still
-    // shows the ban.
     assert_eq!(etc_status_to(&out, P1), [true]);
     assert!(!s.world.is_chat_banned(ObjectId(P1)));
     let outs = s.outs.take();
@@ -614,7 +610,6 @@ fn a_long_chat_ban_keeps_javas_plurals() {
     s.enter(GM);
     s.enter(P1);
     s.log.take();
-    // NOTE(java-quirk): "2 hour's." and "1 hour." followed by " and ".
     s.cmd(GM, "punishment_add P1 CHARACTER CHAT_BAN 150 long one");
     assert_eq!(
         texts_to(&s.log.take(), P1),

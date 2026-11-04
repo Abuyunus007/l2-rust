@@ -1,17 +1,5 @@
 //! What a registered game server sends: players in and out, the check of a player arriving at
 //! the game server, status updates, character counts and the account changes.
-// Java: org/l2jmobius/loginserver/network/gameserverpackets/receive/PlayerInGame.java
-// Java: org/l2jmobius/loginserver/network/gameserverpackets/receive/PlayerLogout.java
-// Java: org/l2jmobius/loginserver/network/gameserverpackets/receive/ChangeAccessLevel.java
-// Java: org/l2jmobius/loginserver/network/gameserverpackets/receive/PlayerAuthRequest.java
-// Java: org/l2jmobius/loginserver/network/gameserverpackets/receive/ServerStatus.java
-// Java: org/l2jmobius/loginserver/network/gameserverpackets/receive/PlayerTracert.java
-// Java: org/l2jmobius/loginserver/network/gameserverpackets/receive/ReplyCharacters.java
-// Java: org/l2jmobius/loginserver/network/gameserverpackets/receive/RequestTempBan.java
-// Java: org/l2jmobius/loginserver/network/gameserverpackets/receive/ChangePassword.java
-// Java: org/l2jmobius/loginserver/GameServerThread.java (`addAccountOnGameServer`,
-//       `removeAccountOnGameServer`)
-//
 // Java does the work in the constructor of each packet class. Here every packet is one function
 // that does the same steps in the same order. The database goes through [`AccountStore`] so the
 // handlers can be tested without one; failures are logged and the packet is otherwise dropped,
@@ -30,7 +18,6 @@ use crate::client::session_key::SessionKey;
 use crate::gs::link::GsLink;
 use crate::state::{LoginState, ServerStatus as Status};
 
-// Java: ChangePassword.MSG_*
 const MSG_PASSWORD_CHANGED: &str = "You have successfully changed your password!";
 const MSG_PASSWORD_CHANGE_FAILED: &str = "The password change was unsuccessful!";
 const MSG_CURRENT_PASSWORD_MISMATCH: &str = "The typed current password doesn't match with your current one.";
@@ -88,7 +75,6 @@ impl AccountStore for LoginRepository {
 }
 
 /// Runs the packet of the registered game server `server_id`, whose connection is `link`.
-// Java: GameServerPacketHandler.handle (the AUTHED cases)
 pub(crate) async fn handle<S: AccountStore>(
     state: &LoginState,
     store: &S,
@@ -114,48 +100,38 @@ pub(crate) async fn handle<S: AccountStore>(
 }
 
 /// Puts the account on the game server and drops its login server client.
-// Java: GameServerThread.addAccountOnGameServer
 pub fn add_account_on_game_server(state: &LoginState, link: &GsLink, account: &str) {
     link.add_account(account);
     state.clients.remove(account);
 }
 
 /// Takes the account off the game server and drops its login server client.
-// Java: GameServerThread.removeAccountOnGameServer
 pub fn remove_account_on_game_server(state: &LoginState, link: &GsLink, account: &str) {
     link.remove_account(account);
     state.clients.remove(account);
 }
 
-// Java: PlayerInGame
 fn player_in_game(state: &LoginState, link: &GsLink, packet: &PlayerInGame) {
     for account in packet.accounts.iter().filter(|account| !account.is_empty()) {
         add_account_on_game_server(state, link, account);
     }
 }
 
-// Java: PlayerLogout
 fn player_logout(state: &LoginState, link: &GsLink, packet: &PlayerLogout) {
-    // NOTE(java-quirk): this also drops a login server client the account has by now, e.g. a new
-    // login that happened between the player leaving and this packet.
     if !packet.account.is_empty() {
         remove_account_on_game_server(state, link, &packet.account);
     }
 }
 
-// Java: ChangeAccessLevel
 async fn change_access_level<S: AccountStore>(store: &S, packet: &ChangeAccessLevel) {
-    // Java: LoginController.setAccountAccessLevel
     if let Err(error) = store.set_access_level(&packet.account, packet.level).await {
         warn!("Could not set accessLevel: {error}");
     }
-    // NOTE(java-quirk): the line is logged also when the update failed.
     info!("Changed {} access level to {}", packet.account, packet.level);
 }
 
 /// The game server asks whether a player that arrived at it holds the keys this login server
 /// gave out. On success the login server forgets the client; the game server owns it now.
-// Java: PlayerAuthRequest
 fn player_auth_request(state: &LoginState, link: &GsLink, packet: &PlayerAuthRequest) {
     let sent = SessionKey {
         login_ok1: packet.login_ok1,
@@ -177,7 +153,6 @@ fn player_auth_request(state: &LoginState, link: &GsLink, packet: &PlayerAuthReq
 }
 
 /// Status, type, brackets, player limit and age of the game server, as it reports them.
-// Java: ServerStatus
 fn server_status(state: &LoginState, server_id: i32, packet: &ServerStatus) {
     let login_status = state.status();
     // Java skips everything when the server is not in the table, which cannot happen for a
@@ -193,9 +168,6 @@ fn server_status(state: &LoginState, server_id: i32, packet: &ServerStatus) {
                 ServerStatus::SERVER_LIST_SQUARE_BRACKET => info.showing_brackets = value == ServerStatus::ON,
                 ServerStatus::MAX_PLAYERS => info.max_players = value,
                 ServerStatus::SERVER_TYPE => info.server_type = value,
-                // NOTE(java-quirk): the Java game server writes the age as attribute 5
-                // (`TEST_SERVER` here), but this side reads attribute 6. A real game server's age
-                // is therefore never stored, and attribute 5 is not handled at all.
                 ServerStatus::SERVER_AGE => info.age_limit = value,
                 _ => {}
             }
@@ -203,7 +175,6 @@ fn server_status(state: &LoginState, server_id: i32, packet: &ServerStatus) {
     });
 }
 
-// Java: PlayerTracert
 async fn player_tracert<S: AccountStore>(store: &S, packet: PlayerTracert) {
     let hops = TracertHops {
         pc_ip: Some(packet.pc_ip),
@@ -214,7 +185,6 @@ async fn player_tracert<S: AccountStore>(store: &S, packet: PlayerTracert) {
             Some(packet.hop4),
         ],
     };
-    // Java: LoginController.setAccountLastTracert
     if let Err(error) = store.set_tracert(&packet.account, &hops).await {
         warn!("Could not set last tracert: {error}");
     }
@@ -222,9 +192,7 @@ async fn player_tracert<S: AccountStore>(store: &S, packet: PlayerTracert) {
 
 /// A game server answers `RequestCharacters`. Every reply is recorded, also one with no
 /// characters: it tells the waiting server list that this game server has answered.
-// Java: ReplyCharacters
 fn reply_characters(state: &LoginState, server_id: i32, packet: &ReplyCharacters) {
-    // Java: LoginController.setCharactersOnServer (nothing happens for an account that is not
     // logged in here).
     state.clients.set_characters_on_server(
         &packet.account,
@@ -234,19 +202,14 @@ fn reply_characters(state: &LoginState, server_id: i32, packet: &ReplyCharacters
     );
 }
 
-// Java: RequestTempBan (`banUser`)
 async fn request_temp_ban<S: AccountStore>(state: &LoginState, store: &S, packet: &RequestTempBan) {
     if let Err(error) = store.temp_ban(&packet.account, packet.ban_time).await {
         warn!("RequestTempBan: {error}");
     }
-    // NOTE(java-quirk): the game server sends the time the ban ends, and `addBanForAddress` takes
-    // a duration and adds the current time to it. The address ban therefore lasts until about
-    // twice the epoch time (practically forever). The reason, when there is one, is not stored.
     state.bans.add(&packet.ip, packet.ban_time);
 }
 
 /// A player asks the game server to change the account password.
-// Java: ChangePassword
 async fn change_password<S: AccountStore>(state: &LoginState, store: &S, packet: &ChangePassword) {
     // The answer goes to the game server that has the account online, which need not be this one.
     let owner = state

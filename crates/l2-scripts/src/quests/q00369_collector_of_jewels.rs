@@ -1,6 +1,4 @@
 //! Quest 369: Collector of Jewels (Nell in the Town of Talking Island, the shards of the Forgotten Temple).
-// Java: dist/game/data/scripts/quests/Q00369_CollectorOfJewels/Q00369_CollectorOfJewels.java
-//
 // Pattern: a party quest with a memo state per stage (`docs/design/scripts.md`, "Quest
 // patterns"): memo 1 = collecting 100 shards, memo 2 = paid, memo 3 = collecting 400. A kill
 // gives the shard to a random party member who is at memo 1 or 3 (`random_party_member_for_npc`,

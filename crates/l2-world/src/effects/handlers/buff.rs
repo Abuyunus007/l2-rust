@@ -1,7 +1,6 @@
 //! The `Buff` effect: a continuous effect whose only work is its stat functions (which the buff
 //! info adds and removes for every effect). The reference handler: every other handler file
 //! follows this layout.
-// Java: dist/game/data/scripts/handlers/skill/effects/Buff.java
 
 use l2_data::skill::EffectTemplate;
 

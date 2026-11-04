@@ -1,13 +1,6 @@
 //! Rainbow Springs Chateau (clan hall 62): a contest of up to four clans, each in its own arena,
 //! who collect the letters of a word from chests, trade them for rainbow items, and use those on
 //! a yeti to hurt the others' gourds; the first gourd to fall loses.
-// Java: dist/game/data/scripts/conquerablehalls/RainbowSpringsChateau/RainbowSpringsChateau.java
-//
-// NOTE(java-quirk): the script never sets the status to running, `registerClan` puts the
-// *registering* clan in `_acceptedClans` up to four times (so the first clan to register fills
-// all the arenas), `Cancel` only deletes the row, `_acceptedClans` is not cleared when a siege
-// ends, the yetis are not spawned again for a second siege, and all the `GenerateTask`s but the
-// last one run for ever. All of it is ported as it is.
 
 use l2_protocol_game::NpcStringId;
 use l2_protocol_game::server::{ChatType, ExShowScreenMessage};
@@ -76,7 +69,6 @@ const ARENAS: [(i32, i32, i32); 4] = [
     (153892, -127530, -2214),
     (155657, -125752, -2214),
 ];
-// NOTE(java-quirk): the fourth point has 156657 where the arena has 155657.
 const YETIS_SPAWN: [(i32, i32, i32); 4] = [
     (151560, -127075, -2221),
     (153129, -125337, -2221),
@@ -206,7 +198,6 @@ const WORD_LIST: [Word; 8] = [
             (ITEM_S, 1),
         ],
     },
-    // NOTE(java-quirk): the word has no O in the list of items to destroy, the check asks for one.
     Word {
         name: "TRITON",
         destroy: &[(ITEM_T, 2), (ITEM_R, 1), (ITEM_I, 1), (ITEM_N, 1)],
@@ -381,8 +372,6 @@ impl World {
                     if let Some(state) = self.rainbow_mut() {
                         state.war_decrees.retain(|(c, _)| c != key);
                     }
-                    // NOTE(java-quirk): removing from the map while its keys are walked throws on
-                    // the next key.
                     if position + 1 < keys.len() {
                         return Err(ScriptError("java.util.ConcurrentModificationException"));
                     }
@@ -401,7 +390,6 @@ impl World {
                 && fight_clan.is_some()
                 && state.accepted.len() < 4
             {
-                // NOTE(java-quirk): adds the registering clan, not `fightclan`.
                 state.accepted.push(Some(clan_id));
             }
         }
@@ -531,7 +519,6 @@ impl World {
                 .ok()
                 .and_then(|i| WORD_LIST.get(i))
                 .map_or_else(
-                    // NOTE(java-quirk): the string id is written with `toString()`, "NS[id:name]".
                     || {
                         format!(
                             "<fstring>NS[{}:{}]</fstring>",
@@ -573,8 +560,6 @@ impl World {
         if self.party_leader(party) != Some(player) {
             return Some("35603-04.htm".to_owned());
         }
-        // NOTE(java-quirk): `player.getId()` is the class id, so this compares classes; and the
-        // pages 05, 06, 08, 09 and 10 are set and never shown, Java returns null after them.
         let class_of = |world: &World, p: ObjectId| world.players.get(&p).map_or(0, |pl| pl.data.class_id);
         let _non_clan_member = self
             .party_members(party)
@@ -930,7 +915,6 @@ impl World {
                 warn!("RainbowSpringsChateau: Problem with spawnYetis: index {i}");
                 break;
             };
-            // NOTE(java-quirk): `_yetis[i]` is never emptied, a second siege spawns no yeti.
             if self.rainbow().is_some_and(|s| s.yetis[i].is_some()) {
                 continue;
             }
@@ -1118,7 +1102,6 @@ pub(super) fn new_state(world: &World, rows: &[(i32, i64)]) -> Rainbow {
             Some((_, n)) => *n = *count,
             None => state.war_decrees.push((*clan_id, *count)),
         }
-        // NOTE(java-quirk): every row adds *every* clan of the map again.
         for clan in state.keys() {
             state
                 .accepted
@@ -1130,8 +1113,6 @@ pub(super) fn new_state(world: &World, rows: &[(i32, i64)]) -> Rainbow {
     state
 }
 
-/// D-50: the table as the database has it now; a registration this world holds without a row
-/// stays.
 pub(super) fn apply_rows(world: &mut World, rows: &[(i32, i64)]) {
     if let Some(state) = world.rainbow_mut() {
         for (clan_id, count) in rows {

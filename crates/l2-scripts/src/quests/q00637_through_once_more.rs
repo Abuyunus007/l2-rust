@@ -1,7 +1,5 @@
 //! Quest 637: Through the Gate Once More (Flauron at the Tower of Insolence; the necromancers
 //! of the Tower drop the necro hearts, the faded visitor's mark from Q00636 is the entry).
-// Java: dist/game/data/scripts/quests/Q00637_ThroughOnceMore/Q00637_ThroughOnceMore.java
-//
 // Pattern: a kill count with a fixed drop rate (`DROP_CHANCE` 90: one heart with 90 %, computed
 // as Java does with `chance / 100` and `chance % 100`) up to 10 hearts, a cond 2 at the limit,
 // and a reward that trades the faded mark and the hearts for the mark.

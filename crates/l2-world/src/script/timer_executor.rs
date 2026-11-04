@@ -1,25 +1,9 @@
 //! Java `TimerExecutor<String>` of a script (`getTimers()`): the newer timers with a parameter
 //! set, `onTimerEvent` and `onTimerCancel` (S-API-03).
-// Java: mechanics/script/timers/{TimerExecutor,TimerHolder,IEventTimerEvent,IEventTimerCancel}.java
-// Java: mechanics/script/Quest.java (onTimerEvent, onTimerCancel, getTimers)
-// Java: entity/actor/Npc.java (stopTimerHolders at onDecay), entity/actor/Player.java
-//       (stopAllTasks)
-//
 // # Differences from `QuestTimer` (`timers.rs`)
 // - The key is the event text only, compared with the NPC and the player by identity; adding an
 //   equal timer replaces (and cancels) the running one.
 // - `params` (Java `StatSet`) travel with the timer to the hook.
-//
-// NOTE(java-quirk): `TimerHolder.run` first calls `onTimerPostExecute`, which cancels the
-// one-shot holder that is running; `cancelTimer` finds the task not done yet, cancels it and
-// notifies `onTimerCancel`. So a one-shot timer calls `onTimerCancel` and then `onTimerEvent`.
-//
-// NOTE(java-quirk): `Npc.stopTimerHolders` (at decay) and `Player.stopAllTasks` only cancel the
-// tasks (`cancelTask`): the holders stay in the executor, `hasTimer` still says yes and no
-// `onTimerCancel` is sent. Adding an equal timer later removes the stale holder silently.
-//
-// NOTE(java-quirk): `TimerExecutor.cancelTimer(event, npc, player)` returns false even when it
-// stopped a timer; here it returns nothing.
 
 use std::collections::BTreeMap;
 

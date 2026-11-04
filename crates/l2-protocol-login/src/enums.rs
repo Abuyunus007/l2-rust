@@ -1,6 +1,5 @@
 //! Reason codes the login server sends to the client.
 //!
-//! Java: `loginserver/enums/{LoginFailReason,PlayFailReason,AccountKickedReason}.java`.
 //!
 //! Variant names are the Java names without the `REASON_` prefix, in CamelCase (spelling
 //! mistakes included). [`name`](LoginFailReason::name) returns the exact Java name.
@@ -104,8 +103,6 @@ reason_enum! {
 
 reason_enum! {
     /// Reason in `PlayFail` (one byte). Java: `PlayFailReason`.
-    ///
-    /// NOTE(java-quirk): same list as [`LoginFailReason`] but without `NotAuthed` (0x06).
     PlayFailReason: u8 {
         NoMessage = 0x00 => "REASON_NO_MESSAGE",
         SystemErrorLoginLater = 0x01 => "REASON_SYSTEM_ERROR_LOGIN_LATER",
