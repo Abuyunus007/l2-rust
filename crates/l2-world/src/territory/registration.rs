@@ -112,8 +112,8 @@ impl World {
 
     // ------------------------------------------------------------------ the lists
 
-    /// Java `changeRegistration(castleId, objId, delete)`; returns whether the row went out.
-    fn territory_change_registration(&mut self, castle_id: i32, registered_id: i32, delete: bool) -> bool {
+    /// Java `changeRegistration(castleId, objId, delete)`.
+    fn territory_change_registration(&mut self, castle_id: i32, registered_id: i32, delete: bool) {
         let write = if delete {
             TerritoryWrite::RegistrationDelete {
                 castle_id,
@@ -125,7 +125,7 @@ impl World {
                 registered_id,
             }
         };
-        self.territory_write(write)
+        self.territory_write(write);
     }
 
     /// Java `registerClan(castleId, clan)`.
@@ -139,15 +139,12 @@ impl World {
         {
             return;
         }
-        let written = self.territory_change_registration(castle_id, clan_id, false);
+        self.territory_change_registration(castle_id, clan_id, false);
         self.territory
             .registered_clans
             .entry(castle_id)
             .or_default()
-            .push(Registration {
-                id: clan_id,
-                unsaved: !written,
-            });
+            .push(Registration { id: clan_id });
     }
 
     /// Java `registerMerc(castleId, player)`.
@@ -162,15 +159,12 @@ impl World {
         {
             return;
         }
-        let written = self.territory_change_registration(castle_id, player.0, false);
+        self.territory_change_registration(castle_id, player.0, false);
         self.territory
             .registered_mercenaries
             .entry(castle_id)
             .or_default()
-            .push(Registration {
-                id: player.0,
-                unsaved: !written,
-            });
+            .push(Registration { id: player.0 });
     }
 
     /// Java `removeClan(castleId, clan)`.

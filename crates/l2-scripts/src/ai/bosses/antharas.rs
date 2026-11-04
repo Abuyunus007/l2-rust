@@ -6,10 +6,6 @@
 // The Java fields (static and not) are `AntharasState` (`ctx.state`). The constructor is
 // `on_load`. Statuses: 0 alive (idle in the nest), 1 waiting (players entered), 2 in fight, 3 dead.
 //
-// Side by side (D-54, `super` module): with `CycleDatabaseWrites` off the constructor restores the
-// boss only from an alive row (a dead row still waits for its respawn time), and `CLEAR_STATUS`
-// reads the row again and brings Antharas back only when the row says alive.
-//
 // Not ported: `unload` (D-16: no reload).
 
 use l2_protocol_game::NpcStringId;
@@ -19,7 +15,7 @@ use l2_world::mount::MountType;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey, TeleportTarget};
 use tracing::{info, warn};
 
-use super::{EVENT_ROW_READ, angle_from, date_time_string, distance_3d, row_lets_boss_run};
+use super::{angle_from, date_time_string, distance_3d};
 
 // NPC IDs.
 const ANTHARAS_NPC_ID: i32 = 29068; // Antharas.
@@ -206,11 +202,6 @@ impl Script for Antharas {
         let respawn_time = antharas_info.respawn_time;
 
         let status = get_status(ctx);
-        // D-54: a waiting or fighting row belongs to the other server's fight.
-        if status != STATUS_DEAD && !row_lets_boss_run(ctx, ANTHARAS_NPC_ID) {
-            info!("Antharas: the shared state row says {status}; the AI waits for an alive row (D-54).");
-            return;
-        }
         match status {
             STATUS_ALIVE => {
                 reset_fight_state(ctx);
@@ -258,9 +249,6 @@ impl Script for Antharas {
                 let remaining_time = respawn_time - ctx.now_ms();
                 if remaining_time > 0 {
                     ctx.start_quest_timer(EVENT_CLEAR_STATUS, remaining_time, None, None, false);
-                } else if !ctx.world().boss_writes_enabled() {
-                    // D-54: the respawn of a dead row waits for the other server's alive row.
-                    ctx.notify_event(EVENT_CLEAR_STATUS, None, None);
                 } else {
                     set_status(ctx, STATUS_ALIVE);
                     reset_fight_state(ctx);
@@ -603,35 +591,7 @@ impl Script for Antharas {
                 }
             }
             EVENT_CLEAR_STATUS => {
-                // D-54: on the shared database the row decides; read it again first.
-                if !ctx.world().boss_writes_enabled() {
-                    let name = self.name();
-                    ctx.world_mut()
-                        .reread_grand_boss_for_script(ANTHARAS_NPC_ID, name, EVENT_ROW_READ);
-                    return None;
-                }
                 clear_status(ctx);
-            }
-            EVENT_ROW_READ => {
-                // D-54: the answer of the read `CLEAR_STATUS` asked for.
-                match get_status(ctx) {
-                    STATUS_ALIVE => clear_status(ctx),
-                    STATUS_DEAD => {
-                        let respawn = ctx
-                            .world()
-                            .grand_boss_info(ANTHARAS_NPC_ID)
-                            .map_or(0, |i| i.respawn_time);
-                        let remaining_time = respawn - ctx.now_ms();
-                        if remaining_time > 0 {
-                            ctx.start_quest_timer(EVENT_CLEAR_STATUS, remaining_time, None, None, false);
-                        } else {
-                            info!("Antharas: the shared state row says dead; Antharas stays away (D-54).");
-                        }
-                    }
-                    status => {
-                        info!("Antharas: the shared state row says {status}; Antharas stays away (D-54).");
-                    }
-                }
             }
             EVENT_SKIP_WAITING => {
                 if get_status(ctx) == STATUS_WAITING {
@@ -1350,7 +1310,7 @@ fn inside_radius_3d(ctx: &ScriptCtx<'_>, a: ObjectId, b: ObjectId, radius: f64) 
 #[cfg(test)]
 mod tests {
     use l2_util::ObjectId as Oid;
-    use l2_world::{BossReadKind, BossReadThen, BossWrite, ScriptRegistry};
+    use l2_world::{BossWrite, ScriptRegistry};
 
     use super::*;
     use crate::ai::bosses::test_support::*;
@@ -1396,7 +1356,7 @@ mod tests {
         xml
     }
 
-    fn setup_rows(status: i32, respawn_time: i64, at: (i32, i32, i32), writes: bool) -> ScriptTest {
+    fn setup_rows(status: i32, respawn_time: i64, at: (i32, i32, i32)) -> ScriptTest {
         let mut registry = ScriptRegistry::new();
         registry.add(Antharas);
         let enter = r#"<html><body>13001<a action="bypass -h Script Antharas ENTER">Move to Antharas' Nest</a></body></html>"#;
@@ -1418,12 +1378,11 @@ mod tests {
             ITEMS,
             &pages,
             vec![row(ANTHARAS_NPC_ID, status, respawn_time, at)],
-            writes,
         )
     }
 
-    fn setup(status: i32, writes: bool) -> ScriptTest {
-        setup_rows(status, 0, (1, 2, 3), writes)
+    fn setup(status: i32) -> ScriptTest {
+        setup_rows(status, 0, (1, 2, 3))
     }
 
     fn has_timer(t: &mut ScriptTest, name: &str, npc: Option<Oid>) -> bool {
@@ -1465,7 +1424,7 @@ mod tests {
 
     #[test]
     fn the_heart_lets_a_player_with_the_portal_stone_in_and_the_wait_starts() {
-        let mut t = setup(STATUS_ALIVE, true);
+        let mut t = setup(STATUS_ALIVE);
         // The constructor: Antharas sleeps in its nest.
         let boss = t.world.grand_boss_npc(ANTHARAS_NPC_ID).unwrap();
         let (x, y, _) = t.world.position_of(boss).unwrap();
@@ -1507,7 +1466,7 @@ mod tests {
 
     #[test]
     fn the_wake_up_movie_runs_and_the_fight_starts() {
-        let mut t = setup(STATUS_ALIVE, true);
+        let mut t = setup(STATUS_ALIVE);
         enter_nest(&mut t, 2);
         t.take();
         t.take_boss();
@@ -1546,7 +1505,7 @@ mod tests {
 
     #[test]
     fn minion_waves_come_and_the_gm_removes_them() {
-        let mut t = setup(STATUS_ALIVE, true);
+        let mut t = setup(STATUS_ALIVE);
         let boss = awake(&mut t, 2);
         notify(&mut t, EVENT_SPAWN_MINION, Some(boss), None);
         assert_eq!(npcs_of(&t, ANTHARAS_BEHEMOTH_ID).len(), 1);
@@ -1566,7 +1525,7 @@ mod tests {
 
     #[test]
     fn fifteen_minutes_without_a_hit_send_everybody_out() {
-        let mut t = setup(STATUS_ALIVE, true);
+        let mut t = setup(STATUS_ALIVE);
         let boss = awake(&mut t, 2);
         let minion = t
             .world
@@ -1597,7 +1556,7 @@ mod tests {
 
     #[test]
     fn the_death_writes_the_state_and_the_gm_respawn_brings_antharas_back() {
-        let mut t = setup(STATUS_ALIVE, true);
+        let mut t = setup(STATUS_ALIVE);
         let boss = awake(&mut t, 2);
         t.take_boss();
         let before = now_ms();
@@ -1643,68 +1602,18 @@ mod tests {
     }
 
     #[test]
-    fn with_the_switch_off_nothing_is_written_and_the_row_decides_the_respawn() {
-        let mut t = setup(STATUS_ALIVE, false);
-        let boss = awake(&mut t, 2);
-        assert_eq!(status(&t), Some(STATUS_IN_FIGHT));
-        assert!(t.world.do_die(boss, Some(Oid(2))));
-        t.ticks(2);
-        assert_eq!(status(&t), Some(STATUS_DEAD));
-        assert!(grand_writes(&t.take_boss()).is_empty());
-
-        // The GM respawn (as the respawn timer) asks for the row first.
-        notify(&mut t, EVENT_RESPAWN_ANTHARAS, None, Some(2));
-        assert!(npcs_of(&t, ANTHARAS_NPC_ID).is_empty());
-        let then = BossReadThen::ScriptEvent {
-            script: "Antharas",
-            event: EVENT_ROW_READ,
-        };
-        assert_eq!(
-            rereads(&t.take_boss()),
-            [(BossReadKind::GrandBoss(ANTHARAS_NPC_ID), then)]
-        );
-
-        // The other server killed it too: wait for its respawn time.
-        let later = now_ms() + 3_600_000;
-        answer(
-            &mut t,
-            then,
-            ANTHARAS_NPC_ID,
-            row(ANTHARAS_NPC_ID, STATUS_DEAD, later, (1, 2, 3)),
-        );
-        assert!(npcs_of(&t, ANTHARAS_NPC_ID).is_empty());
-        assert!(has_timer(&mut t, EVENT_CLEAR_STATUS, None));
-
-        // The row says alive: Antharas is back, still without a write.
-        answer(
-            &mut t,
-            then,
-            ANTHARAS_NPC_ID,
-            row(ANTHARAS_NPC_ID, STATUS_ALIVE, 0, (1, 2, 3)),
-        );
-        assert_eq!(status(&t), Some(STATUS_ALIVE));
-        assert_eq!(npcs_of(&t, ANTHARAS_NPC_ID).len(), 1);
-        assert!(grand_writes(&t.take_boss()).is_empty());
-    }
-
-    #[test]
     fn the_constructor_restores_the_row() {
         let saved = (181000, 114000, -7600);
-        // In fight, this server writes: Antharas stands where it was.
-        let mut t = setup_rows(STATUS_IN_FIGHT, 0, saved, true);
+        // In fight: Antharas stands where it was.
+        let mut t = setup_rows(STATUS_IN_FIGHT, 0, saved);
         let boss = t.world.grand_boss_npc(ANTHARAS_NPC_ID).unwrap();
         let (x, y, _) = t.world.position_of(boss).unwrap();
         assert_eq!((x, y), (saved.0, saved.1));
         assert!(has_timer(&mut t, EVENT_CHECK_ATTACK, Some(boss)));
         assert!(has_timer(&mut t, EVENT_SPAWN_MINION, Some(boss)));
 
-        // D-54: the same row on the shared database is the other server's fight.
-        let t = setup_rows(STATUS_IN_FIGHT, 0, saved, false);
-        assert!(npcs_of(&t, ANTHARAS_NPC_ID).is_empty());
-        assert!(t.world.grand_boss_npc(ANTHARAS_NPC_ID).is_none());
-
-        // Dead with the respawn time over: alive at once, or after a read of the row.
-        let t = setup_rows(STATUS_DEAD, now_ms() - 1000, saved, true);
+        // Dead with the respawn time over: alive at once.
+        let t = setup_rows(STATUS_DEAD, now_ms() - 1000, saved);
         assert_eq!(status(&t), Some(STATUS_ALIVE));
         assert_eq!(npcs_of(&t, ANTHARAS_NPC_ID).len(), 1);
         assert_eq!(
@@ -1714,19 +1623,16 @@ mod tests {
                 status: STATUS_ALIVE
             }]
         );
-        let t = setup_rows(STATUS_DEAD, now_ms() - 1000, saved, false);
-        assert!(npcs_of(&t, ANTHARAS_NPC_ID).is_empty());
-        assert_eq!(rereads(&t.take_boss()).len(), 1);
 
         // Dead with time left: the timer.
-        let mut t = setup_rows(STATUS_DEAD, now_ms() + 3_600_000, saved, false);
+        let mut t = setup_rows(STATUS_DEAD, now_ms() + 3_600_000, saved);
         assert!(npcs_of(&t, ANTHARAS_NPC_ID).is_empty());
         assert!(has_timer(&mut t, EVENT_CLEAR_STATUS, None));
     }
 
     #[test]
     fn the_fear_phase_sends_the_bombers() {
-        let mut t = setup(STATUS_ALIVE, true);
+        let mut t = setup(STATUS_ALIVE);
         let boss = awake(&mut t, 2);
         notify(&mut t, EVENT_TID_USED_FEAR, Some(boss), None);
         assert!(t.world.is_core_ai_disabled(boss));
@@ -1750,7 +1656,7 @@ mod tests {
 
     #[test]
     fn the_gm_events_answer_when_they_cannot_run() {
-        let mut t = setup(STATUS_ALIVE, true);
+        let mut t = setup(STATUS_ALIVE);
         t.enter(5, 80, vec![]);
         t.take();
         for event in [

@@ -211,7 +211,6 @@ fn setup(settings: BossSettings) -> Setup {
 
 fn writes_on() -> BossSettings {
     BossSettings {
-        cycle_database_writes: true,
         ..BossSettings::default()
     }
 }
@@ -372,16 +371,6 @@ fn spawn_of_a_raid_boss_goes_through_the_manager() {
         ["You cannot spawn another instance of Raid One."]
     );
     assert_eq!(raids(&s, RAID).len(), 1);
-}
-
-/// With the switch off the same command spawns the boss but writes no row.
-#[test]
-fn spawn_of_a_raid_boss_writes_no_row_with_the_switch_off() {
-    let mut s = setup(BossSettings::default());
-    enter_gm(&mut s);
-    cmd(&mut s, "spawn 9002");
-    assert_eq!(raids(&s, RAID).len(), 1);
-    assert!(boss_writes(&s).is_empty());
 }
 
 /// NOTE(java-quirk): `setRespawnMinDelay(43200)` and `setRespawnMaxDelay(129600)` are

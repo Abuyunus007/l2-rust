@@ -490,19 +490,16 @@ impl DbPlayerLoader {
             Ok(refresh) => data.profile.mail_refresh = Some(Box::new(refresh)),
             Err(e) => warn!("Could not read the mails of {}: {e}", data.name),
         }
-        // The character's Seven Signs row and the status row (M8-SS-01, D-50, D-53: the Java game
-        // server runs the cycle and writes these rows). A failed read leaves the world's copies.
-        match (
-            self.seven_signs.load_player(char_id).await,
-            self.seven_signs.load_status().await,
-        ) {
-            (Ok(player), Ok(status)) => {
-                data.profile.seven_signs_refresh = Some(Box::new(l2_world::sevensigns::SevenSignsRefresh {
-                    player: player.map(crate::persist::signs_player_of),
-                    status: status.map(crate::persist::seven_signs_status_of),
-                }));
+        // The sky of the Seven Signs status row, for `SSQInfo` at `CharacterSelect` (M8-SS-01). A
+        // failed read leaves 0.
+        match self.seven_signs.load_status().await {
+            Ok(status) => {
+                data.profile.ssq_sky = status
+                    .map(crate::persist::seven_signs_status_of)
+                    .as_ref()
+                    .map_or(0, l2_world::sevensigns::ssq_info_state);
             }
-            (Err(e), _) | (_, Err(e)) => warn!("Could not read the Seven Signs data of {}: {e}", data.name),
+            Err(e) => warn!("Could not read the Seven Signs data of {}: {e}", data.name),
         }
         apply_restore_location(&mut data);
         Ok(data)

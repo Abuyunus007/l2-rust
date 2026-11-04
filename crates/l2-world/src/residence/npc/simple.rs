@@ -11,7 +11,7 @@ use tracing::{debug, warn};
 use super::seven_signs::SEAL_STRIFE;
 use super::{CABAL_DAWN, CABAL_DUSK, CastleScript, Reply, ScriptFailed, parse_int, words};
 use crate::clan::model::ClanAccess;
-use crate::residence::{ResidenceWrite, Writes};
+use crate::residence::ResidenceWrite;
 use crate::world::World;
 
 /// `CastleWarehouse.BLOOD_OATH`.
@@ -201,10 +201,7 @@ impl World {
                 if let Some(clan) = self.clan_mut(clan_id) {
                     clan.blood_alliance_count = 0;
                 }
-                self.write_residence(
-                    Writes::Player,
-                    ResidenceWrite::ClanBloodAllianceCount { clan_id, count: 0 },
-                );
+                self.residence_write(ResidenceWrite::ClanBloodAllianceCount { clan_id, count: 0 });
                 Ok(Some("warehouse-06.html".to_owned()))
             }
             "Exchange" => {

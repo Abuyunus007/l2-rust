@@ -1196,12 +1196,6 @@ impl Script for SeedOfDestruction {
         npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        if event == "alenos" {
-            // The continuation of Allenos' talk once `SoDState` is read again.
-            Self::alenos(ctx, player?);
-            return None;
-        }
-
         let object = npc.map(|n| n.object_id).or(player)?;
         // A deleted NPC has left its instance here; Java's `Npc` keeps its instance id, so
         // `KillTiatPart1` (bound to the deleted Tiat) finds her world by her.
@@ -1323,12 +1317,7 @@ impl Script for SeedOfDestruction {
         }
 
         if npc.id == ALENOS {
-            ctx.reread_global_variables(
-                &["SoDState", "SoDTiatKilled", "SoDLSCDate"],
-                "alenos",
-                Some(npc),
-                Some(player),
-            );
+            Self::alenos(ctx, player);
         } else if npc.id == TELEPORT {
             if let Some(instance_id) = world_of(ctx, npc.object_id) {
                 let into = ctx.world().instance_id_of(player);
@@ -1382,7 +1371,7 @@ impl Script for SeedOfDestruction {
 #[cfg(test)]
 mod tests {
     use l2_util::ObjectId as Oid;
-    use l2_world::{ScriptRegistry, WorldCommand};
+    use l2_world::ScriptRegistry;
 
     use super::*;
     use crate::ai::areas::gracia::seeds::SeedOfDestructionManager;
@@ -1405,14 +1394,13 @@ mod tests {
         <npc id="29162" type="Monster" level="82" name="Soldiers of Bravery"/>"#;
     const ITEMS: &str = r#"<item id="8871" type="EtcItem" name="Strategy Guide"/>"#;
 
-    fn setup(writes: bool, sod_state: &str) -> (ScriptTest, ScriptNpc) {
+    fn setup(sod_state: &str) -> (ScriptTest, ScriptNpc) {
         let mut registry = ScriptRegistry::new();
         registry.add(SeedOfDestructionManager);
         registry.add(SeedOfDestruction);
         let sod_state = sod_state.to_owned();
         let mut t = ScriptTest::new_with(registry, NPCS, ITEMS, &[], move |world, _| {
             world.set_script_settings(l2_world::ScriptSettings {
-                cycle_database_writes: writes,
                 gracia_seeds: l2_world::script::GraciaSeedsSettings {
                     min_tiat_players: 2,
                     sod_tiat_kill_count: 1,
@@ -1457,7 +1445,7 @@ mod tests {
 
     #[test]
     fn the_channel_fights_through_the_entrance_and_kills_tiat() {
-        let (mut t, alenos) = setup(true, "1");
+        let (mut t, alenos) = setup("1");
         talk(&mut t, 1, alenos);
         let instance = t.world.instance_id_of(Oid(1));
         assert!(instance > 0);
@@ -1514,7 +1502,7 @@ mod tests {
     /// owner, invulnerable, hidden, and not in the kill table.
     #[test]
     fn the_corridor_traps_are_traps() {
-        let (mut t, alenos) = setup(true, "1");
+        let (mut t, alenos) = setup("1");
         talk(&mut t, 1, alenos);
         let instance = t.world.instance_id_of(Oid(1));
         t.world.run_as_script(NAME, |ctx| {
@@ -1538,32 +1526,10 @@ mod tests {
     }
 
     #[test]
-    fn in_stage_2_allenos_sends_to_the_seed_and_waits_for_the_row_with_the_switch_off() {
-        let (mut t, alenos) = setup(false, "1");
-        talk(&mut t, 1, alenos);
-        // The decision waits for the row.
-        assert_eq!(t.world.instance_id_of(Oid(1)), 0);
-        assert_eq!(t.world.script_rereads_waiting(), 1);
-        // The Java GS moved the seed to stage 2: no instance, the energy seeds' place.
-        t.world.handle(WorldCommand::GlobalVariablesReread {
-            token: 1,
-            result: Ok(vec![("SoDState".to_owned(), Some("2".to_owned()))]),
-        });
-        assert_eq!(t.world.instance_id_of(Oid(1)), 0);
-        assert!(t.world.instances().all(|i| i.id <= 0));
-        assert_eq!(
-            t.world.position_of(Oid(1)).map(|p| (p.0, p.1)),
-            Some((-245800, 220488))
-        );
-    }
-
-    #[test]
     fn a_channel_under_the_minimum_stays_out() {
-        let (mut t, alenos) = setup(true, "1");
-        t.world.set_script_settings(l2_world::ScriptSettings {
-            cycle_database_writes: true,
-            ..Default::default()
-        });
+        let (mut t, alenos) = setup("1");
+        t.world
+            .set_script_settings(l2_world::ScriptSettings { ..Default::default() });
         talk(&mut t, 1, alenos);
         assert_eq!(t.world.instance_id_of(Oid(1)), 0);
     }

@@ -213,9 +213,7 @@ impl World {
     }
 
     /// Java `ClanTable.allianceCheck`: a clan in an alliance whose leading clan is gone leaves it.
-    /// D-49: the rows are left to the Java game server without `ClanMaintenanceDatabaseWrites`.
     fn alliance_check(&mut self) {
-        let write = self.clans.settings.maintenance_database_writes;
         let ids: Vec<i32> = self.clans.clans.keys().copied().collect();
         for id in ids {
             let Some(clan) = self.clan(id) else {
@@ -231,13 +229,11 @@ impl World {
                 // `changeAllyCrest(0, true)`: nobody is online to see it.
                 clan.ally_crest_id = 0;
             }
-            if write {
-                self.clan_write(ClanWrite::AllyCrestOfClan {
-                    clan_id: id,
-                    crest_id: 0,
-                });
-                self.update_clan_in_db(id);
-            }
+            self.clan_write(ClanWrite::AllyCrestOfClan {
+                clan_id: id,
+                crest_id: 0,
+            });
+            self.update_clan_in_db(id);
             info!("ClanTable: Removed alliance from clan: {}", self.clan_display(id));
         }
     }
@@ -487,17 +483,12 @@ impl World {
             return;
         };
         if clan.dissolving_expiry_time != 0 {
-            // D-49: the rows of a scheduled dissolution are left to the Java game server unless
-            // `ClanMaintenanceDatabaseWrites` is on.
-            let write = self.clans.settings.maintenance_database_writes;
-            self.destroy_clan(clan_id, write);
+            self.destroy_clan(clan_id);
         }
     }
 
-    /// Java `ClanTable.destroyClan(clanId)`. `write_db` false keeps every row as it is (D-49):
-    /// the clan goes from this world and its online members leave it; their own rows follow with
-    /// their next store.
-    pub fn destroy_clan(&mut self, clan_id: i32, write_db: bool) {
+    /// Java `ClanTable.destroyClan(clanId)`.
+    pub fn destroy_clan(&mut self, clan_id: i32) {
         let Some(clan) = self.clan(clan_id) else {
             return;
         };
@@ -516,12 +507,7 @@ impl World {
         // `for (FortSiege siege : getSieges()) siege.removeAttacker(clan)` of a clan without a
         // fortress (M7-FORT-01; the hall sieges' are removed below).
         if fort_id == 0 {
-            let writes = if write_db {
-                crate::residence::Writes::Player
-            } else {
-                crate::residence::Writes::Never
-            };
-            self.fort_sieges_remove_attacker(clan_id, writes);
+            self.fort_sieges_remove_attacker(clan_id);
         }
         // `hall.removeAttacker(clan)` of every conquerable hall for a clan without a hall
         // (M7-CHSIEGE-01).
@@ -529,14 +515,13 @@ impl World {
             self.hall_sieges_remove_attacker(clan_id);
         }
         // `auction.cancelBid(clan.getId())` (M7-CH-01).
-        self.auction_cancel_bid_of_destroyed_clan(clan_id, write_db);
+        self.auction_cancel_bid_of_destroyed_clan(clan_id);
         // `clan.getWarehouse().destroyAllItems(DESTROY, ...)`: each item is destroyed (its id is
-        // released) and its row deleted, with the clan's own rows (D-49: left alone without
-        // `write_db`).
+        // released) and its row deleted, with the clan's own rows.
         for object_id in &warehouse {
             self.release_item_id(*object_id);
         }
-        if write_db && !warehouse.is_empty() {
+        if !warehouse.is_empty() {
             let ops = warehouse
                 .into_iter()
                 .map(|object_id| crate::outbox::ItemRowOp::Delete { object_id })
@@ -545,7 +530,7 @@ impl World {
                 .persist(crate::outbox::PersistCommand::ItemRows { tracked: None, ops });
         }
         for member in members {
-            self.remove_clan_member(clan_id, member, 0, write_db);
+            self.remove_clan_member(clan_id, member, 0);
         }
         let leader = self
             .clans
@@ -558,19 +543,12 @@ impl World {
         {
             ids.release(ObjectId(clan_id));
         }
-        if write_db {
-            self.clan_write(ClanWrite::Delete { clan_id, castle_id });
-        }
+        self.clan_write(ClanWrite::Delete { clan_id, castle_id });
         // The fortress and the conquerable hall of the clan (M7-RES-01), written with the clan's
         // rows. NOTE(java-quirk): Java leaves an auctionable hall and the castle owner alone.
-        let writes = if write_db {
-            crate::residence::Writes::Player
-        } else {
-            crate::residence::Writes::Never
-        };
         let fort = crate::residence::FortId(fort_id);
         if fort_id != 0 && self.fort(fort).is_some_and(|f| f.owner_id == clan_id) {
-            self.fort_remove_owner_with(fort, true, writes);
+            self.fort_remove_owner(fort, true);
         }
         let hall = crate::residence::ClanHallId(hall_id);
         if hall_id != 0
@@ -578,7 +556,7 @@ impl World {
                 .clan_hall(hall)
                 .is_some_and(|h| h.is_siegable_hall() && h.owner_id == clan_id)
         {
-            self.clan_hall_free_with(hall, writes);
+            self.clan_hall_free(hall);
         }
         info!(
             "ClanTable: Clan {clan_id} destroyed (leader {}).",
@@ -588,30 +566,17 @@ impl World {
 
     // ------------------------------------------------------------------ shutdown, weekly
 
-    /// Java `ClanTable.shutdown()`: `updateClanInDB` of every clan. D-49: without
-    /// `ClanMaintenanceDatabaseWrites` only the clans this server changed are written.
+    /// Java `ClanTable.shutdown()`: `updateClanInDB` of every clan.
     pub(crate) fn clan_table_shutdown(&mut self) {
-        let all = self.clans.settings.maintenance_database_writes;
-        let ids: Vec<i32> = self
-            .clans
-            .clans
-            .values()
-            .filter(|c| all || c.changed)
-            .map(|c| c.id)
-            .collect();
+        let ids: Vec<i32> = self.clans.clans.values().map(|c| c.id).collect();
         for id in ids {
             self.update_clan_in_db(id);
         }
     }
 
     /// Java `DailyResetManager.clanLeaderApply` (the Wednesday part of the daily reset): the
-    /// leader changes asked at a village master happen. D-49: a job of every clan, so it runs only
-    /// with `ClanMaintenanceDatabaseWrites` (the Java game server applies them otherwise; this
-    /// server sees the new leaders at its next start).
+    /// leader changes asked at a village master happen.
     pub fn clan_leader_apply(&mut self) {
-        if !self.clans.settings.maintenance_database_writes {
-            return;
-        }
         let ids: Vec<i32> = self.clans.clans.keys().copied().collect();
         for id in ids {
             let Some(new_leader) = self.clan(id).map(|c| c.new_leader_id) else {

@@ -284,7 +284,7 @@ impl World {
                 if let Some(hall) = self.clan_hall_mut(id) {
                     hall.owner_id = 0;
                 }
-                self.siege_write(super::ResidenceWrite::ClanHall {
+                self.residence_write(super::ResidenceWrite::ClanHall {
                     hall_id: id.0,
                     owner_id: 0,
                     paid_until: 0,

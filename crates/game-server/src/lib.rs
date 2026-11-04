@@ -65,9 +65,8 @@ use crate::runtime::WorldRuntime;
 use crate::state::{ExitReason, GameState, ShutdownHandle};
 use crate::world_data::DatapackData;
 
-/// The clan values of `Player.ini`, `Feature.ini` and `Server.ini`, and `ClanMaintenanceDatabaseWrites`
-/// of `SideBySide.ini` (D-49).
-pub fn clan_settings(config: &GameConfig, config_dir: &Path) -> l2_world::ClanSettings {
+/// The clan values of `Player.ini`, `Feature.ini` and `Server.ini`.
+pub fn clan_settings(config: &GameConfig, _config_dir: &Path) -> l2_world::ClanSettings {
     let (player, feature) = (&config.player, &config.feature);
     let template = config.manual.server.clan_name_template.clone();
     l2_world::ClanSettings {
@@ -94,7 +93,6 @@ pub fn clan_settings(config: &GameConfig, config_dir: &Path) -> l2_world::ClanSe
             feature.clan_level_11_requirement,
         ],
         clan_name_template: Arc::new(move |name: &str| template.is_match(name)),
-        maintenance_database_writes: clan_maintenance_database_writes(config_dir),
         life_crystal_needed: player.life_crystal_needed,
         join_academy_min_rep_score: feature.join_academy_min_rep_score,
         join_academy_max_rep_score: feature.join_academy_max_rep_score,
@@ -110,83 +108,17 @@ pub fn clan_settings(config: &GameConfig, config_dir: &Path) -> l2_world::ClanSe
 
 /// The mail values of `General.ini` (`AllowMail`, `AllowAttachments`); the send interval is the
 /// `SendMail` flood protector ([`world_data::flood_settings`]).
-pub fn mail_settings(config: &GameConfig, config_dir: &Path) -> l2_world::MailSettings {
+pub fn mail_settings(config: &GameConfig, _config_dir: &Path) -> l2_world::MailSettings {
     l2_world::MailSettings {
         allow_mail: config.general.allow_mail,
         allow_attachments: config.general.allow_attachments,
-        expiry_database_writes: mail_expiry_database_writes(config_dir),
     }
 }
 
-/// `MailExpiryDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means the
-/// default). Off, the expiry task of the post box expires the mails in memory only and leaves the
-/// row deletes and the return of the attachments to the Java game server that shares the database
-/// (D-39, D-49). Logs the active mode.
-pub fn mail_expiry_database_writes(config_dir: &Path) -> bool {
-    let path = config_dir.join(world_data::SIDE_BY_SIDE_FILE);
-    let on = if path.exists() {
-        match IniFile::load(&path) {
-            Ok(ini) => ini.get_bool("MailExpiryDatabaseWrites", false),
-            Err(e) => {
-                warn!(
-                    "Cannot read {}: {e}; using MailExpiryDatabaseWrites = False.",
-                    path.display()
-                );
-                false
-            }
-        }
-    } else {
-        false
-    };
-    if on {
-        info!("SideBySide: MailExpiryDatabaseWrites = True, the mail expiry writes its rows.");
-    } else {
-        info!(
-            "SideBySide: MailExpiryDatabaseWrites = False, the mail expiry leaves its rows to the Java game server."
-        );
-    }
-    on
-}
-
-/// `ClanMaintenanceDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means
-/// the default). Off, the clan jobs that write rows on their own (a dissolution whose time ran
-/// out, the Wednesday leader change, the start-up alliance check, the shutdown save of every
-/// clan) leave the rows to the Java game server that shares the database (D-39, D-49). Logs the
-/// active mode.
-pub fn clan_maintenance_database_writes(config_dir: &Path) -> bool {
-    let path = config_dir.join(world_data::SIDE_BY_SIDE_FILE);
-    let on = if path.exists() {
-        match IniFile::load(&path) {
-            Ok(ini) => ini.get_bool("ClanMaintenanceDatabaseWrites", false),
-            Err(e) => {
-                warn!(
-                    "Cannot read {}: {e}; using ClanMaintenanceDatabaseWrites = False.",
-                    path.display()
-                );
-                false
-            }
-        }
-    } else {
-        false
-    };
-    if on {
-        info!(
-            "SideBySide: ClanMaintenanceDatabaseWrites = True, the clan maintenance jobs write their rows."
-        );
-    } else {
-        info!(
-            "SideBySide: ClanMaintenanceDatabaseWrites = False, the clan maintenance jobs leave their rows to the Java game server."
-        );
-    }
-    on
-}
-
-/// The residence values of `Player.ini` and `Feature.ini`, and `SiegeDatabaseWrites` of
-/// `SideBySide.ini` (D-51).
-pub fn residence_settings(config: &GameConfig, config_dir: &Path) -> l2_world::ResidenceSettings {
+/// The residence values of `Player.ini` and `Feature.ini`.
+pub fn residence_settings(config: &GameConfig, _config_dir: &Path) -> l2_world::ResidenceSettings {
     let (player, feature) = (&config.player, &config.feature);
     l2_world::ResidenceSettings {
-        siege_database_writes: siege_database_writes(config_dir),
         remove_castle_circlets: player.remove_castle_circlets,
         take_castle_points: feature.take_castle_points,
         loose_castle_points: feature.loose_castle_points,
@@ -257,8 +189,7 @@ pub fn fort_settings(config: &GameConfig, config_dir: &Path) -> l2_world::fort::
 }
 
 /// The manor values of `General.ini` (`AllowManor`, `AltManor*`) and `Rates.ini`
-/// (`RateDropManor`). The rows the manor writes on its own follow `SiegeDatabaseWrites`
-/// ([`siege_database_writes`], D-51).
+/// (`RateDropManor`).
 pub fn manor_settings(config: &GameConfig) -> l2_world::ManorSettings {
     let (general, rates) = (&config.general, &config.rates);
     l2_world::ManorSettings {
@@ -282,19 +213,16 @@ pub fn vehicle_settings(config: &GameConfig) -> l2_world::VehicleSettings {
     }
 }
 
-/// The cursed weapon values: `AllowCursedWeapons` of `General.ini` and the D-53 switch
-/// (`CycleDatabaseWrites`, [`cycle_database_writes`]).
-pub fn cursed_settings(config: &GameConfig, cycle_database_writes: bool) -> l2_world::CursedSettings {
+/// The cursed weapon values: `AllowCursedWeapons` of `General.ini`.
+pub fn cursed_settings(config: &GameConfig) -> l2_world::CursedSettings {
     l2_world::CursedSettings {
         allow_cursed_weapons: config.general.allow_cursed_weapons,
-        cycle_database_writes,
         clock_override_unix_ms: None,
     }
 }
 
-/// The Olympiad values (`Olympiad.ini`, the hand-ported lists of `manual.core.olympiad`) and the
-/// D-53 switch (`CycleDatabaseWrites`, [`cycle_database_writes`]).
-pub fn olympiad_settings(config: &GameConfig, cycle_database_writes: bool) -> l2_world::OlympiadSettings {
+/// The Olympiad values (`Olympiad.ini`, the hand-ported lists of `manual.core.olympiad`).
+pub fn olympiad_settings(config: &GameConfig) -> l2_world::OlympiadSettings {
     let o = &config.olympiad;
     let m = &config.manual.core.olympiad;
     l2_world::OlympiadSettings {
@@ -343,16 +271,14 @@ pub fn olympiad_settings(config: &GameConfig, cycle_database_writes: bool) -> l2
         period: o.olympiad_period.clone(),
         period_multiplier: o.olympiad_period_multiplier,
         competition_days: m.olympiad_competition_days.clone(),
-        cycle_database_writes,
         clock_override_unix_ms: None,
         zone_offset_override_ms: None,
     }
 }
 
 /// The minigame values (M8-GAMES-01): the Block Checker keys of `General.ini`,
-/// `UndergroundColiseum.ini` and the D-53 switch (`CycleDatabaseWrites`,
-/// [`cycle_database_writes`]).
-pub fn minigame_settings(config: &GameConfig, cycle_database_writes: bool) -> l2_world::MinigameSettings {
+/// `UndergroundColiseum.ini`.
+pub fn minigame_settings(config: &GameConfig) -> l2_world::MinigameSettings {
     l2_world::MinigameSettings {
         enable_block_checker_event: config.general.enable_block_checker_event,
         hbce_fair_play: config.general.hbce_fair_play,
@@ -363,7 +289,6 @@ pub fn minigame_settings(config: &GameConfig, cycle_database_writes: bool) -> l2
         uc_allow_announce: config.underground_coliseum.uc_allow_announce,
         uc_party_size: config.underground_coliseum.uc_party_size,
         uc_ress_time: config.underground_coliseum.uc_ress_time,
-        cycle_database_writes,
         clock_override_unix_ms: None,
     }
 }
@@ -510,39 +435,8 @@ pub fn clan_hall_settings(config: &GameConfig) -> l2_world::ClanHallSettings {
     }
 }
 
-/// `SiegeDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means the
-/// default). Off, the sieges, the residence owner changes, the castle tax income and the fees the
-/// clan warehouses pay change this world only and leave their rows to the Java game server that
-/// shares the database and runs the real sieges (D-39, D-51). Logs the active mode.
-pub fn siege_database_writes(config_dir: &Path) -> bool {
-    let path = config_dir.join(world_data::SIDE_BY_SIDE_FILE);
-    let on = if path.exists() {
-        match IniFile::load(&path) {
-            Ok(ini) => ini.get_bool("SiegeDatabaseWrites", false),
-            Err(e) => {
-                warn!(
-                    "Cannot read {}: {e}; using SiegeDatabaseWrites = False.",
-                    path.display()
-                );
-                false
-            }
-        }
-    } else {
-        false
-    };
-    if on {
-        info!("SideBySide: SiegeDatabaseWrites = True, the sieges and residences write their rows.");
-    } else {
-        info!(
-            "SideBySide: SiegeDatabaseWrites = False, the sieges and residences leave their rows to the Java game server."
-        );
-    }
-    on
-}
-
-/// The `Rates.ini` and `General.ini` values the script helpers read, and `CycleDatabaseWrites`
-/// of `SideBySide.ini` (D-54, [`cycle_database_writes`]).
-pub fn script_settings(config: &GameConfig, config_dir: &Path) -> l2_world::ScriptSettings {
+/// The `Rates.ini` and `General.ini` values the script helpers read.
+pub fn script_settings(config: &GameConfig, _config_dir: &Path) -> l2_world::ScriptSettings {
     let rates = &config.rates;
     l2_world::ScriptSettings {
         rate_quest_reward: rates.rate_quest_reward,
@@ -556,7 +450,6 @@ pub fn script_settings(config: &GameConfig, config_dir: &Path) -> l2_world::Scri
         rate_quest_reward_material: rates.rate_quest_reward_material,
         quest_item_drop_amount_multiplier: rates.quest_item_drop_amount_multiplier,
         autodelete_invalid_quest_data: config.general.autodelete_invalid_quest_data,
-        cycle_database_writes: cycle_database_writes(config_dir),
         bloodalliance_points: config.feature.bloodalliance_points,
         bloodoath_points: config.feature.bloodoath_points,
         knightsepaulette_points: config.feature.knightsepaulette_points,
@@ -597,15 +490,13 @@ pub fn gracia_seeds_settings(config: &GameConfig) -> l2_world::script::GraciaSee
     }
 }
 
-/// The Seven Signs values of `Feature.ini` and `Npc.ini`, and `CycleDatabaseWrites` of
-/// `SideBySide.ini` (D-53, [`cycle_database_writes`]).
+/// The Seven Signs values of `Feature.ini` and `Npc.ini`.
 pub fn seven_signs_settings(
     config: &GameConfig,
-    config_dir: &Path,
+    _config_dir: &Path,
 ) -> l2_world::sevensigns::SevenSignsSettings {
     let f = &config.feature;
     l2_world::sevensigns::SevenSignsSettings {
-        cycle_database_writes: cycle_database_writes(config_dir),
         lazy_update: f.alt_sevensigns_lazy_update,
         max_player_contrib: f.alt_maximum_player_contrib,
         strict: f.alt_strict_sevensigns,
@@ -652,73 +543,7 @@ pub fn rift_settings(config: &GameConfig) -> l2_world::sevensigns::RiftSettings 
     }
 }
 
-/// `CycleDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means the
-/// default). Off, the global cycles of M8 (Olympiad periods and nobles, heroes, Seven Signs, boss
-/// states, item auction ends, cursed weapons) stay in this server's memory and the Java game server
-/// that shares the database keeps running them (D-39, D-53). Logs the active mode.
-pub fn cycle_database_writes(config_dir: &Path) -> bool {
-    let path = config_dir.join(world_data::SIDE_BY_SIDE_FILE);
-    let on = if path.exists() {
-        match IniFile::load(&path) {
-            Ok(ini) => ini.get_bool("CycleDatabaseWrites", false),
-            Err(e) => {
-                warn!(
-                    "Cannot read {}: {e}; using CycleDatabaseWrites = False.",
-                    path.display()
-                );
-                false
-            }
-        }
-    } else {
-        false
-    };
-    if on {
-        info!(
-            "SideBySide: CycleDatabaseWrites = True, this server writes the Olympiad, Seven Signs, boss and other global cycle rows."
-        );
-    } else {
-        info!(
-            "SideBySide: CycleDatabaseWrites = False, the global cycles stay in memory (the Java game server runs them)."
-        );
-    }
-    on
-}
-
-/// `OfflineTradeDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means the
-/// default). Off, the offline traders live in memory until this server stops: it writes no row of
-/// `character_offline_trade` and `character_offline_trade_items`, removes none and restores none,
-/// so the Java game server that shares the database never brings this server's traders back (and
-/// this server never restores the ones Java wrote) (D-39, D-52). Logs the active mode.
-pub fn offline_trade_database_writes(config_dir: &Path) -> bool {
-    let path = config_dir.join(world_data::SIDE_BY_SIDE_FILE);
-    let on = if path.exists() {
-        match IniFile::load(&path) {
-            Ok(ini) => ini.get_bool("OfflineTradeDatabaseWrites", false),
-            Err(e) => {
-                warn!(
-                    "Cannot read {}: {e}; using OfflineTradeDatabaseWrites = False.",
-                    path.display()
-                );
-                false
-            }
-        }
-    } else {
-        false
-    };
-    if on {
-        info!(
-            "SideBySide: OfflineTradeDatabaseWrites = True, the offline traders are written to and restored from the database."
-        );
-    } else {
-        info!(
-            "SideBySide: OfflineTradeDatabaseWrites = False, the offline traders live in memory only (the Java game server owns the tables)."
-        );
-    }
-    on
-}
-
-/// `OfflineTrade.ini` (Java `OfflineTradeConfig`) and `OfflineTradeDatabaseWrites` of
-/// `SideBySide.ini`. `OfflineNameColor` is `Integer.decode("0x" + value)`; a value that does not
+/// `OfflineTrade.ini` (Java `OfflineTradeConfig`). `OfflineNameColor` is `Integer.decode("0x" + value)`; a value that does not
 /// read as hex falls back to the default with a warning (Java would not start).
 pub fn offline_settings(config: &GameConfig, config_dir: &Path) -> l2_world::OfflineSettings {
     let t = &config.offline_trade;
@@ -742,7 +567,6 @@ pub fn offline_settings(config: &GameConfig, config_dir: &Path) -> l2_world::Off
         offline_max_days: t.offline_max_days,
         offline_disconnect_finished: t.offline_disconnect_finished,
         store_offline_trade_in_realtime: t.store_offline_trade_in_realtime,
-        database_writes: offline_trade_database_writes(config_dir),
     }
 }
 
@@ -886,11 +710,7 @@ impl Server {
         let summon_settings = world_data::summon_settings(&config);
         let pc_cafe_settings = world_data::pc_cafe_settings(&config);
         // Java: the Custom/*.ini of M9-C02 (premium system, auto potions, auto play, offline play).
-        let custom_play = custom_play::custom_play_settings(
-            &config,
-            &paths.config_dir,
-            cycle_database_writes(&paths.config_dir),
-        );
+        let custom_play = custom_play::custom_play_settings(&config, &paths.config_dir);
         let pet_settings = world_data::pet_settings(&config, &paths.config_dir);
         let instance_settings = world_data::instance_settings(&config, &paths.config_dir);
         // Java: PetNameTable (the names of the pets that exist), read only.
@@ -915,13 +735,13 @@ impl Server {
             None
         };
         // Java: GlobalVariablesManager.getInstance (GameServer, section "World"): every row, read
-        // here; the scripts write them only with `CycleDatabaseWrites` (D-54, S-API-01).
+        // here; the scripts write them (S-API-01).
         let global_variables = persist::load_global_variables(&pool).await;
         // Java: SchemeBufferTable.getInstance (GameServer): the saved schemes, read here (M9-C03).
         let buffer_schemes = persist::load_buffer_schemes(&pool).await;
         let script_settings = script_settings(&config, &paths.config_dir);
         // Java: LotteryManager.getInstance (GameServer): the newest `lottery` row, read only here;
-        // the world writes it only with `CycleDatabaseWrites` (D-53, S-HAND-03).
+        // the world writes it (S-HAND-03).
         let lottery_settings = world_data::lottery_settings(&config, &paths.config_dir);
         let lottery_row = persist::load_lottery(&pool).await;
         // Java: CoupleManager.getInstance (GameServer, only with AllowWedding): the couples of
@@ -933,8 +753,7 @@ impl Server {
             Vec::new()
         };
         // Java: RaidBossPointsManager, GrandBossManager (+ initZones) and RaidBossSpawnManager
-        // (M8-BOSS-01): the boss tables, read only. With `CycleDatabaseWrites` off the rows stay
-        // the Java game server's (D-53).
+        // (M8-BOSS-01): the boss tables, read only.
         let boss_settings = world_data::boss_settings(&config, &paths.config_dir);
         let boss_load = persist::load_bosses(&pool).await;
         let raid_boss_rows = persist::load_raid_boss_rows(&pool).await;
@@ -952,7 +771,7 @@ impl Server {
             Vec::new()
         };
         // Java: OfflineTradeConfig, and OfflineTraderTable.restoreOfflineTraders (GameServer, with
-        // RESTORE_OFFLINERS; here also with OfflineTradeDatabaseWrites, D-52): the shops of the
+        // RESTORE_OFFLINERS): the shops of the
         // tables, with their characters, read only.
         let offline_settings = offline_settings(&config, &paths.config_dir);
         let offline_traders = if offline_settings.restore_wanted() {
@@ -961,10 +780,8 @@ impl Server {
             Vec::new()
         };
         // Java: OfflinePlayTable.restoreOfflinePlayers (GameServer, with EnableOfflinePlayCommand and
-        // RestoreAutoPlayOffliners; here also with OfflineTradeDatabaseWrites, D-52), read only.
-        let restore_offline_play = custom_play
-            .offline_play
-            .restore_wanted(offline_settings.database_writes);
+        // RestoreAutoPlayOffliners), read only.
+        let restore_offline_play = custom_play.offline_play.restore_wanted();
         let (offline_players, offline_play_groups) = if restore_offline_play {
             persist::load_offline_players(&pool).await
         } else {
@@ -1052,23 +869,23 @@ impl Server {
         let rift_rooms = persist::load_dimensional_rift_rooms(&pool).await;
         let rift_spawns = l2_data::RiftSpawns::load(&datapack_root);
         // Java: CursedWeaponsManager (data/CursedWeapons.xml, the `cursed_weapons` rows and
-        // `controlPlayers`), the rows only with `CycleDatabaseWrites` (D-53).
-        let cursed_settings = cursed_settings(&config, cycle_database_writes(&paths.config_dir));
-        let cursed_load = if cursed_settings.allow_cursed_weapons && cursed_settings.cycle_database_writes {
+        // `controlPlayers`).
+        let cursed_settings = cursed_settings(&config);
+        let cursed_load = if cursed_settings.allow_cursed_weapons {
             persist::load_cursed(&pool, &datapack.cursed_weapons).await
         } else {
             l2_world::CursedLoad::default()
         };
         // Java: Olympiad.getInstance (GameServer): `olympiad_data`, the nobles and the last ranking,
-        // read in both modes of `CycleDatabaseWrites` (D-53, M8-OLY-01).
-        let olympiad_settings = olympiad_settings(&config, cycle_database_writes(&paths.config_dir));
+        // read here (M8-OLY-01).
+        let olympiad_settings = olympiad_settings(&config);
         let olympiad_load = if olympiad_settings.enabled {
             persist::load_olympiad(&pool, olympiad_settings.min_matches).await
         } else {
             l2_world::OlympiadLoad::default()
         };
         // Java: Hero.getInstance (GameServer, right after the Olympiad): the `heroes` rows, the
-        // diary and the match history of the heroes, read in both modes (D-53, M8-HERO-01).
+        // diary and the match history of the heroes, read here (M8-HERO-01).
         let hero_load = if olympiad_settings.enabled {
             let before = l2_world::hero_fights_cutoff_ms(
                 l2_util::time::now_millis(),
@@ -1079,11 +896,10 @@ impl Server {
             l2_world::HeroLoad::default()
         };
         // Java: UndergroundColiseumManager.load (`UC_START_TIME`, `UC_STOP_TIME`) and
-        // restoreBestTeams. Read always: they are only read here (D-53).
-        let minigame_settings = minigame_settings(&config, cycle_database_writes(&paths.config_dir));
+        // restoreBestTeams. Read always: they are only read here.
+        let minigame_settings = minigame_settings(&config);
         let minigame_load = persist::load_minigames(&pool).await;
-        // Java: AirShipManager (the `airships` rows; the airships belong to a clan, not to one of
-        // the global cycles of D-53).
+        // Java: AirShipManager (the `airships` rows).
         let vehicle_load = persist::load_airships(&pool).await;
         // Java: BuyListData.getInstance (data/buylists, then the `buylists` table) and
         // MerchantPriceConfigTable.
@@ -1843,32 +1659,15 @@ mod tests {
     use super::*;
     use crate::test_support::idle_server;
 
-    /// D-52: the offline trade rows are off unless `SideBySide.ini` says so; the other keys come
-    /// from `OfflineTrade.ini` with Java's defaults (`OfflineNameColor` is hex).
+    /// The keys come from `OfflineTrade.ini` with Java's defaults (`OfflineNameColor` is hex).
     #[test]
-    fn offline_trade_database_writes_default_to_off_and_the_settings_follow_the_ini() {
+    fn the_offline_settings_follow_the_ini() {
         let dir = tempfile::tempdir().unwrap();
-        assert!(!offline_trade_database_writes(dir.path()));
-        let file = dir.path().join(world_data::SIDE_BY_SIDE_FILE);
-        let example = include_str!("../config-examples/SideBySide.ini");
-        assert!(example.contains("OfflineTradeDatabaseWrites = False"));
-        std::fs::write(&file, example).unwrap();
-        assert!(!offline_trade_database_writes(dir.path()));
-        std::fs::write(&file, "OfflineTradeDatabaseWrites = True\n").unwrap();
-        assert!(offline_trade_database_writes(dir.path()));
-
-        // Without OfflineTrade.ini: the Java defaults, with the switch from SideBySide.ini.
+        // Without OfflineTrade.ini: the Java defaults.
         let config = GameConfig::default();
         let settings = offline_settings(&config, dir.path());
-        assert!(settings.database_writes);
-        assert_eq!(
-            l2_world::OfflineSettings {
-                database_writes: false,
-                ..settings.clone()
-            },
-            l2_world::OfflineSettings::default()
-        );
-        // Restoring needs the switch, a trade key and RestoreOffliners.
+        assert_eq!(settings, l2_world::OfflineSettings::default());
+        // Restoring needs a trade key and RestoreOffliners.
         assert!(!settings.restore_wanted());
         let wanted = l2_world::OfflineSettings {
             offline_trade_enable: true,
@@ -1876,13 +1675,6 @@ mod tests {
             ..settings
         };
         assert!(wanted.restore_wanted());
-        assert!(
-            !l2_world::OfflineSettings {
-                database_writes: false,
-                ..wanted
-            }
-            .restore_wanted()
-        );
 
         // The name colour is hexadecimal.
         std::fs::create_dir_all(dir.path().join("Custom")).unwrap();
@@ -1899,22 +1691,10 @@ mod tests {
     }
 
     #[test]
-    fn siege_database_writes_defaults_to_off_and_reads_the_file() {
+    fn the_residence_values_come_from_player_ini_and_feature_ini() {
         let dir = tempfile::tempdir().unwrap();
-        // A missing file means the default (D-51).
-        assert!(!siege_database_writes(dir.path()));
-        let file = dir.path().join(world_data::SIDE_BY_SIDE_FILE);
-        std::fs::write(&file, "SiegeDatabaseWrites = True\n").unwrap();
-        assert!(siege_database_writes(dir.path()));
-        // The example file is the default and spells the key out.
-        let example = include_str!("../config-examples/SideBySide.ini");
-        assert!(example.contains("SiegeDatabaseWrites = False"));
-        std::fs::write(&file, example).unwrap();
-        assert!(!siege_database_writes(dir.path()));
-        // The other residence values come from Player.ini and Feature.ini.
         let config = GameConfig::default();
         let settings = residence_settings(&config, dir.path());
-        assert!(!settings.siege_database_writes);
         assert_eq!(settings.take_castle_points, config.feature.take_castle_points);
         assert_eq!(
             settings.remove_castle_circlets,

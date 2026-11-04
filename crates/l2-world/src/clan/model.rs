@@ -255,9 +255,6 @@ pub struct Clan {
     /// `_notice` (`null` until loaded or set).
     pub notice: Option<String>,
     pub notice_enabled: bool,
-    /// Something `updateClanInDB` writes changed since the load (the reputation above all: Java
-    /// writes it only with the next `updateClanInDB`, at the latest at shutdown).
-    pub(crate) changed: bool,
     /// Java `_warehouse` (`ClanWarehouse`): the `CLANWH` items of the clan, see `warehouse/`.
     pub warehouse: Vec<crate::player::ItemData>,
 }
@@ -305,7 +302,6 @@ impl Clan {
             sub_pledges: Vec::new(),
             notice: None,
             notice_enabled: false,
-            changed: false,
             warehouse: Vec::new(),
         }
     }

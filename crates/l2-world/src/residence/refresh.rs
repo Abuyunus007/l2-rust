@@ -102,8 +102,6 @@ pub enum ResidenceReadThen {
     SiegeAttackerList { player: ObjectId, castle_id: i32 },
     /// `RequestSiegeDefenderList` (M7-SIEGE-01).
     SiegeDefenderList { player: ObjectId, castle_id: i32 },
-    /// The Java GS ran the siege of a castle: start the schedule again (M7-SIEGE-01, D-51).
-    SiegeRestartSchedule { castle_id: i32 },
     /// A fortress NPC acts on the rows (M7-FORT-01, `fort/`).
     Fort(crate::fort::FortThen),
     /// A conquerable hall's registration or script acts on the rows (M7-CHSIEGE-01).
@@ -288,9 +286,6 @@ impl World {
             ResidenceReadThen::SiegeDefenderList { player, castle_id } => {
                 self.send_siege_defender_list(player, CastleId(castle_id));
             }
-            ResidenceReadThen::SiegeRestartSchedule { castle_id } => {
-                self.siege_restart_schedule(CastleId(castle_id));
-            }
             ResidenceReadThen::Fort(then) => self.on_fort_reread(then),
             ResidenceReadThen::HallSiege(then) => self.on_hall_siege_reread(then),
             ResidenceReadThen::Npc(then) => self.residence_npc_after_reread(then),
@@ -426,10 +421,6 @@ impl World {
         let Some(old) = self.castle(id).map(|c| c.owner_id) else {
             return;
         };
-        // The owner is the database's now (D-50).
-        self.residences
-            .world_only_owners
-            .remove(&ResidenceRef::Castle(id));
         if old == owner {
             return;
         }
@@ -469,8 +460,6 @@ impl World {
         let Some(old) = self.fort(id).map(|f| f.owner_id) else {
             return;
         };
-        // The owner is the database's now (D-50).
-        self.residences.world_only_owners.remove(&ResidenceRef::Fort(id));
         if old == owner {
             return;
         }
@@ -508,10 +497,6 @@ impl World {
         let Some(old) = self.clan_hall(id).map(|h| h.owner_id) else {
             return;
         };
-        // The owner is the database's now (D-50).
-        self.residences
-            .world_only_owners
-            .remove(&ResidenceRef::ClanHall(id));
         if let Some(hall) = self.clan_hall_mut(id) {
             hall.owner_id = owner;
             hall.is_free = owner == 0;

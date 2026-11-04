@@ -254,11 +254,6 @@ impl World {
         self.outbox.persist(PersistCommand::Olympiad(write));
     }
 
-    /// `CycleDatabaseWrites` (D-53).
-    pub(crate) fn olympiad_writes_cycles(&self) -> bool {
-        self.olympiad.settings.cycle_database_writes
-    }
-
     // ------------------------------------------------------------------------------- the load
 
     /// Java `new Olympiad()`: `load()` (the rows the game server read, see [`OlympiadLoad`]),
@@ -399,7 +394,7 @@ impl World {
             let player = ObjectId(char_id);
             if self.players.contains_key(&player) {
                 self.set_player_variable(player, UNCLAIMED_OLYMPIAD_PASSES_VAR, points);
-            } else if self.olympiad_writes_cycles() {
+            } else {
                 self.olympiad_write(OlympiadWrite::UnclaimedPoints { char_id, points });
             }
         }
@@ -755,12 +750,8 @@ impl World {
             self.olympiad_now_ms() + self.olympiad.settings.validation_period_ms;
 
         // `loadNoblesRank()` reads the copy `updateMonthlyData` just made of the nobles.
-        // D-53: with the switch off the Java game server hands the passes out (it writes the
-        // `character_variables` rows for every noble), so this server does not.
-        if self.olympiad_writes_cycles() {
-            let classified = self.classified_nobles();
-            self.load_nobles_rank(&classified);
-        }
+        let classified = self.classified_nobles();
+        self.load_nobles_rank(&classified);
         let delay = self.millis_to_validation_end();
         self.olympiad.validation_task =
             Some(self.schedule_olympiad_timer(OlympiadTimer::ValidationEnd, delay));
@@ -799,10 +790,9 @@ impl World {
         self.olympiad_init();
     }
 
-    /// Java `saveNobleData()`: every noble, `INSERT` for the new ones. Only with
-    /// `CycleDatabaseWrites` (D-53).
+    /// Java `saveNobleData()`: every noble, `INSERT` for the new ones.
     fn save_noble_data(&mut self) {
-        if self.olympiad.nobles.is_empty() || !self.olympiad_writes_cycles() {
+        if self.olympiad.nobles.is_empty() {
             return;
         }
         let rows: Vec<(i32, NobleStats)> = self
@@ -817,31 +807,24 @@ impl World {
         self.olympiad_write(OlympiadWrite::SaveNobles(rows));
     }
 
-    /// Java `saveOlympiadStatus()` (the competition end, the shutdown, `//saveolymp`). Only with
-    /// `CycleDatabaseWrites` (D-53).
+    /// Java `saveOlympiadStatus()` (the competition end, the shutdown, `//saveolymp`).
     pub fn save_olympiad_status(&mut self) {
         if !self.olympiad.loaded {
             return;
         }
         self.save_noble_data();
-        if self.olympiad_writes_cycles() {
-            let data = self.olympiad.data;
-            self.olympiad_write(OlympiadWrite::SaveData(data));
-        }
+        let data = self.olympiad.data;
+        self.olympiad_write(OlympiadWrite::SaveData(data));
     }
 
-    /// Java `updateMonthlyData()`. Only with `CycleDatabaseWrites` (D-53).
+    /// Java `updateMonthlyData()`.
     fn update_monthly_data(&mut self) {
-        if self.olympiad_writes_cycles() {
-            self.olympiad_write(OlympiadWrite::UpdateMonthlyData);
-        }
+        self.olympiad_write(OlympiadWrite::UpdateMonthlyData);
     }
 
-    /// Java `deleteNobles()`: the table (only with `CycleDatabaseWrites`, D-53) and the memory.
+    /// Java `deleteNobles()`: the table and the memory.
     fn delete_nobles(&mut self) {
-        if self.olympiad_writes_cycles() {
-            self.olympiad_write(OlympiadWrite::DeleteNobles);
-        }
+        self.olympiad_write(OlympiadWrite::DeleteNobles);
         self.olympiad.nobles.clear();
     }
 

@@ -59,11 +59,7 @@ impl World {
         }
     }
 
-    // D-49: without `MailExpiryDatabaseWrites` the memory is expired like Java does it, but no row is
-    // written: the Java GS, which loaded the same mails, deletes the rows and moves the attachments
-    // back to the sender on its own schedule, and doing it twice would hand the items out twice.
     fn mail_expire(&mut self, id: i32) {
-        let write_rows = self.mail.settings.expiry_database_writes;
         let Some(message) = self.mail.messages.get(&id) else {
             return;
         };
@@ -74,7 +70,7 @@ impl World {
             let sender_online = self.players.contains_key(&sender);
             let receiver_online = self.players.contains_key(&receiver);
             if sender_online {
-                self.mail_return_to_warehouse(id, sender_id, Some(sender), write_rows);
+                self.mail_return_to_warehouse(id, sender_id, Some(sender));
                 self.send(
                     sender,
                     &SystemMessage::new(SystemMessageId::TheMailWasReturnedDueToTheExceededWaitingTime),
@@ -82,10 +78,10 @@ impl World {
             } else if sender_id == -1 {
                 // Action House / Custom Mail.
                 if receiver_online {
-                    self.mail_return_to_warehouse(id, sender_id, Some(receiver), write_rows);
+                    self.mail_return_to_warehouse(id, sender_id, Some(receiver));
                 }
             } else {
-                self.mail_return_to_warehouse(id, sender_id, None, write_rows);
+                self.mail_return_to_warehouse(id, sender_id, None);
             }
 
             // `getAttachments().deleteMe()`: what is left is written once more and forgotten.
@@ -98,10 +94,8 @@ impl World {
                     item: item.clone(),
                 })
                 .collect();
-            if write_rows {
-                self.flush_item_rows(sender, leftovers);
-            }
-            self.mail_remove_attachments_rows(id, write_rows);
+            self.flush_item_rows(sender, leftovers);
+            self.mail_remove_attachments(id);
 
             if receiver_online {
                 self.send(
@@ -110,18 +104,12 @@ impl World {
                 );
             }
         }
-        self.mail_delete_message_rows(id, write_rows);
+        self.mail_delete_message(id);
     }
 
     /// Java `Mail.returnToWh(wh)`: every attachment moves to the private warehouse of `owner`, or
     /// (no `owner`: `wh == null`) goes to the `WAREHOUSE` location of the sender's own rows.
-    fn mail_return_to_warehouse(
-        &mut self,
-        id: i32,
-        sender_id: i32,
-        owner: Option<ObjectId>,
-        write_rows: bool,
-    ) {
+    fn mail_return_to_warehouse(&mut self, id: i32, sender_id: i32, owner: Option<ObjectId>) {
         let container = ContainerRef::Mail {
             message: id,
             sender: sender_id,
@@ -162,9 +150,7 @@ impl World {
                 }
             }
         }
-        if let Some(owner) = owner
-            && write_rows
-        {
+        if let Some(owner) = owner {
             self.flush_item_rows(owner, ops);
         }
     }

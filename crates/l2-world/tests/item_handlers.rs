@@ -964,9 +964,9 @@ fn a_bypass_item_shows_its_page() {
     );
 }
 
-/// `SpecialXMas`: `ShowXMasSeal(item id)`; `SevenSignsRecord`: the Seven Signs status, page 1.
+/// `SpecialXMas`: `ShowXMasSeal(item id)`; the item is not used up.
 #[test]
-fn the_seal_and_record_items_open_their_windows() {
+fn the_seal_item_opens_its_window() {
     let mut s = Scene::new(vec![item(0x100, 5004, 1), item(0x101, 5003, 1)]);
     s.me.take();
     s.use_item(0x100);
@@ -977,28 +977,6 @@ fn the_seal_and_record_items_open_their_windows() {
     );
     // Neither is used up.
     assert_eq!(s.inventory(), [(5003, 1), (5004, 1)]);
-
-    // The status is read again first (D-50) when this server does not write the cycle rows: the
-    // request for page 1 goes to the persistence task.
-    let persisted = Persisted::default();
-    let mut s = Scene::build_with(
-        player_data(vec![item(0x101, 5003, 1)]),
-        WorldSettings::default(),
-        None,
-        Box::new(persisted.clone()),
-    );
-    persisted.0.lock().unwrap().clear();
-    s.use_item(0x101);
-    let sent = persisted.0.lock().unwrap().clone();
-    assert!(
-        sent.iter().any(|c| matches!(
-            c,
-            PersistCommand::SevenSignsReadRequest {
-                then: l2_world::sevensigns::SevenSignsThen::Status { page: 1, .. }
-            }
-        )),
-        "{sent:?}"
-    );
 }
 
 /// `TeleportBookmark`: the book is used up, three slots are added, two messages; at 9 slots the

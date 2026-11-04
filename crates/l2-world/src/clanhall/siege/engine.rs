@@ -15,7 +15,7 @@ use super::{
 };
 use crate::clan::model::java_map_order;
 use crate::clanhall::ClanHallTimer;
-use crate::residence::{ClanHallId, ClanHallKind, ResidenceRef, Writes};
+use crate::residence::{ClanHallId, ClanHallKind, ResidenceRef};
 use crate::siege::{SiegeClan, SiegeClanType};
 use crate::timer::{TimerId, TimerKind, TimerWheel};
 use crate::world::World;
@@ -197,7 +197,7 @@ impl World {
     // still write this one at shutdown.
     pub(crate) fn hall_save_attackers(&mut self, id: ClanHallId) {
         let clans = self.hall_siege_attacker_clans(id);
-        self.siege_write(crate::residence::ResidenceWrite::HallSiege(
+        self.residence_write(crate::residence::ResidenceWrite::HallSiege(
             super::HallSiegeWrite::SaveAttackers { hall_id: id.0, clans },
         ));
     }
@@ -254,7 +254,7 @@ impl World {
         if let Some(ClanHallKind::Siegable { next_siege, .. }) = self.clan_hall_mut(id).map(|h| &mut h.kind) {
             *next_siege = next;
         }
-        self.clan_hall_update_db(id, Writes::Job);
+        self.clan_hall_update_db(id);
     }
 
     /// Java `setNextSiegeDate(date)` and `updateSiege()` and `updateDb()` (the GM's new date).
@@ -263,7 +263,7 @@ impl World {
             *next_siege = date;
         }
         self.hall_update_siege(id);
-        self.clan_hall_update_db(id, Writes::Job);
+        self.clan_hall_update_db(id);
     }
 
     /// Java `updateSiege()`: the task is armed again for the new date.
@@ -276,13 +276,8 @@ impl World {
         self.hall_set_task(id, HallSiegeTimer::PrepareOwner(id), delay);
     }
 
-    /// The automatic `PrepareOwner`: only with `SiegeDatabaseWrites` (D-51); without it the
-    /// Java game server runs the siege.
+    /// The automatic `PrepareOwner`.
     pub(crate) fn on_hall_prepare_owner_timer(&mut self, id: ClanHallId) {
-        if !self.siege_database_writes() {
-            tracing::debug!("SideBySide: {id} is not prepared (SiegeDatabaseWrites = False).");
-            return;
-        }
         self.hall_prepare_owner(id);
     }
 

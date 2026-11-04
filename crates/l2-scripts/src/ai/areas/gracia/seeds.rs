@@ -46,9 +46,6 @@ pub const SOI_NOTIFY_EKIMUS_KILL: &str = "notifyEkimusKill";
 /// `SeedOfInfinityManager.notifyHoEDefSuccess()`.
 pub const SOI_NOTIFY_HOE_DEF_SUCCESS: &str = "notifyHoEDefSuccess";
 
-/// The prefix of the events that run once the rows are re-read.
-const REREAD: &str = "reread ";
-
 // ---------------------------------------------------------------------------------- readers
 
 /// Java `SeedOfInfinityManager.getCurrentStage()`.
@@ -119,7 +116,6 @@ pub fn soi_teleport_in_seed(ctx: &mut ScriptCtx<'_>, player: ObjectId) {
 
 // ---------------------------------------------------------------------- Seed of Destruction
 
-const SOD_VARIABLES: [&str; 3] = ["SoDState", "SoDTiatKilled", "SoDLSCDate"];
 const EDRIC: i32 = 32527;
 const ENERGY_SEEDS: &str = "EnergySeeds";
 
@@ -269,25 +265,15 @@ impl Script for SeedOfDestructionManager {
         _npc: Option<ScriptNpc>,
         _player: Option<ObjectId>,
     ) -> Option<String> {
-        if let Some(decided) = event.strip_prefix(REREAD) {
-            if decided == SOD_INCREASE_TIAT_KILLED {
-                Self::increase_sod_tiat_killed(ctx);
-            } else if decided.starts_with("stage2End") {
-                Self::set_sod_state(ctx, 1, true);
-                Self::update_sod_state(ctx);
-            } else if let Some(value) = decided.strip_prefix("setSoDState ") {
-                if let Ok(value) = value.trim().parse::<i32>() {
-                    Self::set_sod_state(ctx, value, true);
-                }
+        if event == SOD_INCREASE_TIAT_KILLED {
+            Self::increase_sod_tiat_killed(ctx);
+        } else if event.starts_with("stage2End") {
+            Self::set_sod_state(ctx, 1, true);
+            Self::update_sod_state(ctx);
+        } else if let Some(value) = event.strip_prefix("setSoDState ") {
+            if let Ok(value) = value.trim().parse::<i32>() {
+                Self::set_sod_state(ctx, value, true);
             }
-            return None;
-        }
-        // Every decision first sees the rows of the other server (D-54).
-        if event == SOD_INCREASE_TIAT_KILLED
-            || event.starts_with("stage2End")
-            || event.starts_with("setSoDState ")
-        {
-            ctx.reread_global_variables(&SOD_VARIABLES, &format!("{REREAD}{event}"), None, None);
         }
         None
     }
@@ -295,13 +281,6 @@ impl Script for SeedOfDestructionManager {
 
 // ------------------------------------------------------------------------ Seed of Infinity
 
-const SOI_VARIABLES: [&str; 5] = [
-    "SoI_stage",
-    "SoI_opened",
-    "SoI_CohemenesCount",
-    "SoI_EkimusCount",
-    "SoI_hoedefkillcount",
-];
 const SOI_OPEN_TIME: i64 = 24 * 60 * 60 * 1000;
 const SOI_DOOR: i32 = 14240102;
 const SOI_ZONE: i32 = 60010;
@@ -462,34 +441,22 @@ impl Script for SeedOfInfinityManager {
         _npc: Option<ScriptNpc>,
         _player: Option<ObjectId>,
     ) -> Option<String> {
-        if let Some(decided) = event.strip_prefix(REREAD) {
-            match decided {
-                SOI_NOTIFY_COHEMENES_KILL => Self::notify_cohemenes_kill(ctx),
-                SOI_NOTIFY_EKIMUS_KILL => Self::notify_ekimus_kill(ctx),
-                SOI_NOTIFY_HOE_DEF_SUCCESS => Self::notify_hoe_def_success(ctx),
-                _ if decided.starts_with("closeSeed") => {
-                    Self::close_seed(ctx);
-                    Self::set_current_stage(ctx, 4);
-                }
-                _ => {
-                    if let Some(stage) = decided
-                        .strip_prefix("setCurrentStage ")
-                        .and_then(|v| v.trim().parse::<i32>().ok())
-                    {
-                        Self::set_current_stage(ctx, stage);
-                    }
+        match event {
+            SOI_NOTIFY_COHEMENES_KILL => Self::notify_cohemenes_kill(ctx),
+            SOI_NOTIFY_EKIMUS_KILL => Self::notify_ekimus_kill(ctx),
+            SOI_NOTIFY_HOE_DEF_SUCCESS => Self::notify_hoe_def_success(ctx),
+            _ if event.starts_with("closeSeed") => {
+                Self::close_seed(ctx);
+                Self::set_current_stage(ctx, 4);
+            }
+            _ => {
+                if let Some(stage) = event
+                    .strip_prefix("setCurrentStage ")
+                    .and_then(|v| v.trim().parse::<i32>().ok())
+                {
+                    Self::set_current_stage(ctx, stage);
                 }
             }
-            return None;
-        }
-        // Every decision first sees the rows of the other server (D-54).
-        let decides = matches!(
-            event,
-            SOI_NOTIFY_COHEMENES_KILL | SOI_NOTIFY_EKIMUS_KILL | SOI_NOTIFY_HOE_DEF_SUCCESS
-        ) || event.starts_with("closeSeed")
-            || event.starts_with("setCurrentStage ");
-        if decides {
-            ctx.reread_global_variables(&SOI_VARIABLES, &format!("{REREAD}{event}"), None, None);
         }
         None
     }
@@ -498,14 +465,14 @@ impl Script for SeedOfInfinityManager {
 #[cfg(test)]
 mod tests {
     use l2_world::script::GraciaSeedsSettings;
-    use l2_world::{ScriptRegistry, ScriptSettings, WorldCommand};
+    use l2_world::{ScriptRegistry, ScriptSettings};
 
     use super::*;
     use crate::testing::ScriptTest;
 
     const NPCS: &str = r#"<npc id="32527" type="Folk" level="70" name="Edric"/>"#;
 
-    fn world(writes: bool, rows: Vec<(&str, &str)>) -> ScriptTest {
+    fn world(rows: Vec<(&str, &str)>) -> ScriptTest {
         let mut registry = ScriptRegistry::new();
         registry.add(SeedOfDestructionManager);
         registry.add(SeedOfInfinityManager);
@@ -515,7 +482,6 @@ mod tests {
             .collect();
         ScriptTest::new_with(registry, NPCS, "", &[], move |world, _| {
             world.set_script_settings(ScriptSettings {
-                cycle_database_writes: writes,
                 gracia_seeds: GraciaSeedsSettings {
                     sod_tiat_kill_count: 2,
                     soi_ekimus_kill_count: 1,
@@ -547,7 +513,7 @@ mod tests {
 
     #[test]
     fn the_first_start_stores_the_initial_seed_of_destruction_values() {
-        let t = world(true, vec![]);
+        let t = world(vec![]);
         assert_eq!(var(&t, "SoDState").as_deref(), Some("1"));
         assert_eq!(var(&t, "SoDTiatKilled").as_deref(), Some("0"));
         assert!(var(&t, "SoDLSCDate").is_some());
@@ -555,8 +521,8 @@ mod tests {
     }
 
     #[test]
-    fn with_the_switch_on_tiat_kills_open_stage_2_and_spawn_edric() {
-        let mut t = world(true, vec![]);
+    fn tiat_kills_open_stage_2_and_spawn_edric() {
+        let mut t = world(vec![]);
         notify(&mut t, SOD_MANAGER, SOD_INCREASE_TIAT_KILLED);
         assert_eq!(var(&t, "SoDTiatKilled").as_deref(), Some("1"));
         assert_eq!(var(&t, "SoDState").as_deref(), Some("1"));
@@ -566,38 +532,6 @@ mod tests {
         // A kill in stage 2 counts nothing.
         notify(&mut t, SOD_MANAGER, SOD_INCREASE_TIAT_KILLED);
         assert_eq!(var(&t, "SoDTiatKilled").as_deref(), Some("2"));
-        // Nothing waited for a read.
-        assert_eq!(t.world.script_rereads_waiting(), 0);
-    }
-
-    #[test]
-    fn with_the_switch_off_the_tiat_kill_decides_on_the_rows_read_again() {
-        let mut t = world(
-            false,
-            vec![("SoDState", "1"), ("SoDTiatKilled", "0"), ("SoDLSCDate", "0")],
-        );
-        notify(&mut t, SOD_MANAGER, SOD_INCREASE_TIAT_KILLED);
-        // The decision waits for the rows.
-        assert_eq!(t.world.script_rereads_waiting(), 1);
-        assert_eq!(var(&t, "SoDTiatKilled").as_deref(), Some("0"));
-        // The Java GS counted a kill meanwhile: this one opens stage 2.
-        t.world.handle(WorldCommand::GlobalVariablesReread {
-            token: 1,
-            result: Ok(vec![
-                ("SoDState".to_owned(), Some("1".to_owned())),
-                ("SoDTiatKilled".to_owned(), Some("1".to_owned())),
-                ("SoDLSCDate".to_owned(), Some("0".to_owned())),
-            ]),
-        });
-        assert_eq!(var(&t, "SoDState").as_deref(), Some("2"));
-        assert_eq!(t.npcs_of(EDRIC).len(), 1);
-        // A failed read decides nothing.
-        notify(&mut t, SOD_MANAGER, "setSoDState 1");
-        t.world.handle(WorldCommand::GlobalVariablesReread {
-            token: 2,
-            result: Err(()),
-        });
-        assert_eq!(var(&t, "SoDState").as_deref(), Some("2"));
     }
 
     #[test]
@@ -613,7 +547,6 @@ mod tests {
             &[],
             |world, _| {
                 world.set_script_settings(ScriptSettings {
-                    cycle_database_writes: true,
                     gracia_seeds: GraciaSeedsSettings {
                         sod_stage_2_length: 1_000,
                         ..GraciaSeedsSettings::default()
@@ -637,7 +570,7 @@ mod tests {
 
     #[test]
     fn seed_of_infinity_stages_follow_the_kills() {
-        let mut t = world(true, vec![]);
+        let mut t = world(vec![]);
         for count in 1..=9 {
             notify(&mut t, SOI_MANAGER, SOI_NOTIFY_COHEMENES_KILL);
             assert_eq!(var(&t, "SoI_CohemenesCount"), Some(count.to_string()));
@@ -660,29 +593,12 @@ mod tests {
     }
 
     #[test]
-    fn with_the_switch_off_the_seed_of_infinity_waits_for_the_rows() {
-        let mut t = world(false, vec![("SoI_stage", "4")]);
-        notify(&mut t, SOI_MANAGER, SOI_NOTIFY_HOE_DEF_SUCCESS);
-        assert_eq!(t.world.script_rereads_waiting(), 1);
-        assert_eq!(var(&t, "SoI_hoedefkillcount"), None);
-        // The Java GS is at nine successes: this one moves the seed to stage 5.
-        t.world.handle(WorldCommand::GlobalVariablesReread {
-            token: 1,
-            result: Ok(vec![
-                ("SoI_stage".to_owned(), Some("4".to_owned())),
-                ("SoI_hoedefkillcount".to_owned(), Some("9".to_owned())),
-            ]),
-        });
-        assert_eq!(var(&t, "SoI_stage").as_deref(), Some("5"));
-        assert_eq!(var(&t, "SoI_hoedefkillcount").as_deref(), Some("0"));
-    }
-
-    #[test]
     fn the_time_to_the_next_state_change_is_known_in_stage_2_only() {
-        let mut t = world(
-            true,
-            vec![("SoDState", "2"), ("SoDTiatKilled", "0"), ("SoDLSCDate", "1000")],
-        );
+        let mut t = world(vec![
+            ("SoDState", "2"),
+            ("SoDTiatKilled", "0"),
+            ("SoDLSCDate", "1000"),
+        ]);
         t.world.run_as_script(SOD_MANAGER, |ctx| {
             // The stage ended long ago: the start moved it back to 1.
             assert_eq!(sod_state(ctx), 1);

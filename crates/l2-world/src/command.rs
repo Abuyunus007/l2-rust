@@ -372,13 +372,6 @@ pub enum WorldCommand {
         object_id: l2_util::ObjectId,
         done: Box<dyn FnOnce(bool) + Send>,
     },
-    /// The login server kicked an account that has no connection: its offline traders are stored
-    /// and deleted; `done` hears whether there was one (then the final store frees the account at
-    /// the login server, D-52).
-    ReleaseOfflineAccount {
-        account: String,
-        done: Box<dyn FnOnce(bool) + Send>,
-    },
     /// `CharSelectionInfo.loadCharacterSelectInfo`: an offline trader (`trader`,
     /// `OfflineDisconnectSameAccount`) or an offline player (`play`,
     /// `OfflinePlayDisconnectSameAccount`) of the account is stored and deleted; `done` hears
@@ -456,24 +449,11 @@ pub enum WorldCommand {
         result: Result<crate::lottery::LotteryReply, ()>,
         then: crate::lottery::LotteryThen,
     },
-    /// The answer to `PersistCommand::ItemAuctionRequest`: the rows of the instance, or `Err` when
-    /// the read failed (the request is then refused, L-05, D-50).
-    ItemAuctionReread {
-        instance_id: i32,
-        result: Result<Vec<crate::item_auction::ItemAuctionRecord>, ()>,
-        then: crate::item_auction::ItemAuctionThen,
-    },
     /// The answer to `PersistCommand::BossRereadRequest`: the rows, or `Err` when the read failed
     /// (the follow-up `then` is then refused, M8-BOSS-01).
     BossReread {
         result: Result<crate::boss::BossRereadRows, ()>,
         then: crate::boss::BossReadThen,
-    },
-    /// The answer to `PersistCommand::GlobalVariablesRereadRequest`: the `(var, value)` rows that
-    /// exist (a NULL value is `None`), or `Err` when the read failed (S-API-04).
-    GlobalVariablesReread {
-        token: u64,
-        result: Result<Vec<(String, Option<String>)>, ()>,
     },
     /// The answer to `PersistCommand::TransmogLoadRequest` (M9-C07).
     TransmogLoaded {
@@ -577,12 +557,6 @@ pub enum WorldCommand {
     LoginServerRegistered {
         name: String,
     },
-    /// The answer to `PersistCommand::SevenSignsReadRequest`: every Seven Signs row, or `Err` when
-    /// the read failed (the follow-up `then` is then refused, M8-SS-01).
-    SevenSignsLoaded {
-        result: Result<crate::sevensigns::SevenSignsLoad, ()>,
-        then: crate::sevensigns::SevenSignsThen,
-    },
     /// The answer to `PersistCommand::ClassIndexRequest`: the rows of the class index the player
     /// switches to (a part whose read failed is empty, S-SUB-01).
     ClassIndexLoaded {
@@ -609,7 +583,6 @@ impl fmt::Debug for WorldCommand {
             Self::Disconnected { session } => write!(f, "Disconnected({session:?})"),
             Self::Kick { account } => write!(f, "Kick({account})"),
             Self::FactionBalanceCheck { faction, .. } => write!(f, "FactionBalanceCheck({faction})"),
-            Self::ReleaseOfflineAccount { account, .. } => write!(f, "ReleaseOfflineAccount({account})"),
             Self::ReleaseOfflineTrader { object_id, .. } => write!(f, "ReleaseOfflineTrader({object_id})"),
             Self::ReleaseOfflineSameAccount { object_id, .. } => {
                 write!(f, "ReleaseOfflineSameAccount({object_id})")
@@ -675,23 +648,9 @@ impl fmt::Debug for WorldCommand {
                 "LotteryReread({then:?}, {})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
-            Self::ItemAuctionReread {
-                instance_id,
-                result,
-                then,
-            } => write!(
-                f,
-                "ItemAuctionReread({instance_id}, {then:?}, {})",
-                if result.is_ok() { "ok" } else { "failed" }
-            ),
             Self::BossReread { result, then } => write!(
                 f,
                 "BossReread({then:?}, {})",
-                if result.is_ok() { "ok" } else { "failed" }
-            ),
-            Self::GlobalVariablesReread { token, result } => write!(
-                f,
-                "GlobalVariablesReread({token}, {})",
                 if result.is_ok() { "ok" } else { "failed" }
             ),
             Self::TransmogLoaded { player, result } => write!(
@@ -770,11 +729,6 @@ impl fmt::Debug for WorldCommand {
             ),
             Self::SpawnsReloaded { spawns } => write!(f, "SpawnsReloaded({} spawns)", spawns.len()),
             Self::LoginServerRegistered { name } => write!(f, "LoginServerRegistered({name})"),
-            Self::SevenSignsLoaded { result, then } => write!(
-                f,
-                "SevenSignsLoaded({then:?}, {})",
-                if result.is_ok() { "ok" } else { "failed" }
-            ),
             Self::ClassIndexLoaded {
                 owner, class_index, ..
             } => write!(f, "ClassIndexLoaded({owner}, {class_index})"),

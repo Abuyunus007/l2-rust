@@ -3,10 +3,8 @@
 //! the hall's manager. Java: `Auctioneer`, `ClanHallAuction`, `ClanHallManager`,
 //! `ClanHallAuctionManager`, `AuctionableHall`.
 //!
-//! The bid is a player's own action and is written whatever the switch says. The end of the auction
-//! (the hall changes hands, the auction and its bids are deleted) is a job: its rows only with
-//! `SiegeDatabaseWrites = True` (D-51). The function is a player's write too, but not for an owner
-//! that exists only in this world: without the switch no function row is written.
+//! The bid is a player's own action; the end of the auction (the hall changes hands, the auction and
+//! its bids are deleted) is a job. The function is a player's write.
 
 use l2_protocol_game::server::{NpcHtmlMessage, NpcInfo, PledgeShowInfoUpdate};
 
@@ -23,9 +21,8 @@ const HP_LEVEL: i32 = 40;
 /// `ClanHallHpRegenerationFunctionFeeRatio`: one day.
 const FUNCTION_RATE: i64 = 86_400_000;
 
-pub fn opts(siege_writes: bool, auction_ms: i64) -> Opts {
+pub fn opts(auction_ms: i64) -> Opts {
     Opts {
-        siege_writes,
         positions: [m7_data::GM_POS, m7_data::BIDDER_POS, m7_data::GM_POS],
         auction_ms,
         flag_condition: false,
@@ -66,7 +63,7 @@ async fn follow<H: Harness>(h: &mut H, who: Who, page: &NpcHtmlMessage, command:
     all(&answer, "NPC_HTML_MESSAGE").remove(0)
 }
 
-pub async fn play<H: Harness>(h: &mut H, writes: bool) -> Played {
+pub async fn play<H: Harness>(h: &mut H) -> Played {
     // The clan and its warehouse come from the tables at CharacterSelect (D-50).
     let entered = h.enter(Who::Raider).await;
     let npcs = all::<NpcInfo>(&entered, "NPC_INFO");
@@ -164,30 +161,25 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool) -> Played {
         .expect("the clan window");
     assert_eq!(clan_info.hideout_id, HALL, "the clan owns the hall in this world");
     let rows_won = h.rows().await;
-    if writes {
-        // `AuctionableHall.setOwner` -> `updateDb`, `deleteAuctionFromDB`, `removeBids`,
-        // `setAuctionBiddedAt(0)`.
-        let hall = rows_won.hall(HALL);
-        assert_eq!(hall.owner_id, WOLVES);
-        assert!(hall.paid_until > won_at, "the rent is paid for a week: {hall:?}");
-        assert!(rows_won.auctions.is_empty() && rows_won.bids.is_empty());
-        assert_eq!(rows_won.clan(WOLVES).auction_bid_at, 0);
-        // The bid is the price; the rent task of the new owner takes the first week's lease from
-        // the clan warehouse at once (`AuctionableHall.FeeTask`).
-        assert_eq!(
-            rows_won.adena_of(WOLVES),
-            m7_seed::WOLVES_WAREHOUSE_ADENA - BID - i64::from(m7_seed::HALL_LEASE)
-        );
-        assert!(hall.paid, "{hall:?}");
-        // `_paidUntil = now + _chRate` (a week).
-        assert!(
-            (hall.paid_until - (won_at + 7 * m7_data::DAY_MS)).abs() < 60_000,
-            "{hall:?}"
-        );
-    } else {
-        // D-51: nothing of the end is written; the bid of the player stays as it was.
-        assert_eq!(rows_won, rows_bid);
-    }
+    // `AuctionableHall.setOwner` -> `updateDb`, `deleteAuctionFromDB`, `removeBids`,
+    // `setAuctionBiddedAt(0)`.
+    let hall = rows_won.hall(HALL);
+    assert_eq!(hall.owner_id, WOLVES);
+    assert!(hall.paid_until > won_at, "the rent is paid for a week: {hall:?}");
+    assert!(rows_won.auctions.is_empty() && rows_won.bids.is_empty());
+    assert_eq!(rows_won.clan(WOLVES).auction_bid_at, 0);
+    // The bid is the price; the rent task of the new owner takes the first week's lease from
+    // the clan warehouse at once (`AuctionableHall.FeeTask`).
+    assert_eq!(
+        rows_won.adena_of(WOLVES),
+        m7_seed::WOLVES_WAREHOUSE_ADENA - BID - i64::from(m7_seed::HALL_LEASE)
+    );
+    assert!(hall.paid, "{hall:?}");
+    // `_paidUntil = now + _chRate` (a week).
+    assert!(
+        (hall.paid_until - (won_at + 7 * m7_data::DAY_MS)).abs() < 60_000,
+        "{hall:?}"
+    );
 
     // ---- the manager serves the owner: the hall function ------------------------------------------------------------------
     let page = talk_to(h, Who::Raider, manager).await;
@@ -232,7 +224,7 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool) -> Played {
 /// The text of the auction pages that names the hall.
 const HALL_NAME_TEXT: &str = m7_seed::HALL_NAME;
 
-pub fn assert_played(played: &Played, writes: bool) {
+pub fn assert_played(played: &Played) {
     // `CH_HPREG*` fee: the owner paid one day from his own adena (an item of the player).
     assert_eq!(
         played.raider.count_of(ADENA_ID),
@@ -243,14 +235,6 @@ pub fn assert_played(played: &Played, writes: bool) {
     assert_eq!(played.rows_end.halls, played.rows_won.halls);
     assert_eq!(played.rows_end.bids, played.rows_won.bids);
     let functions = &played.rows_end.functions;
-    if !writes {
-        // D-51: the owner row of the hall is a job's and did not go out, so the database thinks the
-        // hall is free; the function the new owner bought exists in this world only (the purchase
-        // is a player's write, but a function row of a hall nobody owns there is not written).
-        assert_eq!(played.rows_end.hall(HALL).owner_id, 0);
-        assert!(functions.is_empty(), "{functions:?}");
-        return;
-    }
     // `ClanHallFunction.dbSave`: `REPLACE INTO clanhall_functions`, a player's write.
     assert_eq!(functions.len(), 1, "{functions:?}");
     let function = &functions[0];
@@ -278,108 +262,20 @@ pub fn assert_played(played: &Played, writes: bool) {
     );
 }
 
-/// D-50: the adena of a bid comes out of the clan warehouse as the database has it *now*. The Java
-/// game server took most of it out; the world, which remembers 5,000,000, reads the stack again,
-/// finds 100,000 and refuses the bid. When the adena is back the same bid is accepted.
-pub async fn play_sieghardt_took_the_adena<H: Harness>(h: &mut H) {
-    let entered = h.enter(Who::Raider).await;
-    let auctioneer = all::<NpcInfo>(&entered, "NPC_INFO")
-        .into_iter()
-        .find(|n| n.display_id == m7_data::AUCTIONEER_ID)
-        .expect("the auctioneer is in view")
-        .object_id;
-    h.collect_quiet(Who::Raider).await;
-    let page = talk_to(h, Who::Raider, auctioneer).await;
-    let list = follow(h, Who::Raider, &page, &format!("npc_{auctioneer}_list")).await;
-    let info = follow(h, Who::Raider, &list, &format!("npc_{auctioneer}_bidding {HALL}")).await;
-    let bid_page = follow(h, Who::Raider, &info, &format!("npc_{auctioneer}_bid1 {HALL}")).await;
-    let bid = format!("npc_{auctioneer}_bid {HALL} {BID}");
-    assert!(
-        bid_page
-            .html
-            .contains(&format!("npc_{auctioneer}_bid {HALL} $bid"))
-    );
-
-    h.sieghardt(Sieghardt::WolvesAdenaLeft { count: 100_000 }).await;
-    h.act(Who::Raider, act::bypass(&bid)).await;
-    let refused = h.collect_quiet(Who::Raider).await;
-    assert!(has_message(
-        &refused,
-        SystemMessageId::ThereIsNotEnoughAdenaInTheClanHallWarehouse
-    ));
-    assert!(!has_message(
-        &refused,
-        SystemMessageId::YourBidHasBeenSuccessfullyPlaced
-    ));
-    let rows = h.rows().await;
-    assert!(rows.bids.is_empty());
-    assert_eq!(rows.adena_of(WOLVES), 100_000, "what Sieghardt left");
-    assert_eq!(rows.clan(WOLVES).auction_bid_at, 0);
-
-    h.sieghardt(Sieghardt::WolvesAdenaLeft {
-        count: m7_seed::WOLVES_WAREHOUSE_ADENA,
-    })
-    .await;
-    h.act(Who::Raider, act::bypass(&bid)).await;
-    let placed = h.collect_quiet(Who::Raider).await;
-    assert!(has_message(
-        &placed,
-        SystemMessageId::YourBidHasBeenSuccessfullyPlaced
-    ));
-    let rows = h.rows().await;
-    assert_eq!(rows.bids.len(), 1);
-    assert_eq!(rows.adena_of(WOLVES), m7_seed::WOLVES_WAREHOUSE_ADENA - BID);
-    h.leave(Who::Raider).await;
-}
-
-#[tokio::test]
-async fn a_bid_reads_the_clan_warehouse_again_in_a_bare_world() {
-    let mut world = BareWorld::start(&opts(true, 600_000));
-    play_sieghardt_took_the_adena(&mut world).await;
-}
-
-#[tokio::test]
-async fn a_bid_reads_the_clan_warehouse_again_on_the_real_servers() {
-    let options = opts(true, 600_000);
-    let Some(mut net) = Net::start("e2em7h2", &options).await else {
-        return;
-    };
-    play_sieghardt_took_the_adena(&mut net).await;
-    net.finish().await;
-}
-
-#[tokio::test]
-async fn a_hall_auction_and_function_run_in_a_bare_world_without_global_writes() {
-    let mut world = BareWorld::start(&opts(false, 10_000));
-    let played = play(&mut world, false).await;
-    assert_played(&played, false);
-}
-
 #[tokio::test]
 async fn a_hall_auction_and_function_run_in_a_bare_world_and_write_javas_rows() {
-    let mut world = BareWorld::start(&opts(true, 10_000));
-    let played = play(&mut world, true).await;
-    assert_played(&played, true);
-}
-
-#[tokio::test]
-async fn a_hall_auction_and_function_run_on_the_real_servers_without_global_writes() {
-    let options = opts(false, 90_000);
-    let Some(mut net) = Net::start("e2em7h0", &options).await else {
-        return;
-    };
-    let played = play(&mut net, false).await;
-    assert_played(&played, false);
-    net.finish().await;
+    let mut world = BareWorld::start(&opts(10_000));
+    let played = play(&mut world).await;
+    assert_played(&played);
 }
 
 #[tokio::test]
 async fn a_hall_auction_and_function_run_on_the_real_servers_and_write_javas_rows() {
-    let options = opts(true, 90_000);
+    let options = opts(90_000);
     let Some(mut net) = Net::start("e2em7h1", &options).await else {
         return;
     };
-    let played = play(&mut net, true).await;
-    assert_played(&played, true);
+    let played = play(&mut net).await;
+    assert_played(&played);
     net.finish().await;
 }

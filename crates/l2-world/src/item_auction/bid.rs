@@ -141,14 +141,11 @@ impl World {
 
         let extension = self.item_auction_on_player_bid(instance_id, auction_id, player);
         // `updatePlayerBid(bid, false)`: a per-player row, written in both modes.
-        self.item_auction_write(
-            false,
-            ItemAuctionWrite::Bid {
-                auction_id,
-                player_obj_id,
-                bid: new_bid,
-            },
-        );
+        self.item_auction_write(ItemAuctionWrite::Bid {
+            auction_id,
+            player_obj_id,
+            bid: new_bid,
+        });
         self.send(
             player,
             &SystemMessage::new(SystemMessageId::YouHaveSubmittedABidForTheAuctionOfS1)
@@ -325,7 +322,7 @@ impl World {
                 bid: -1,
             }
         };
-        self.item_auction_write(false, write);
+        self.item_auction_write(write);
         self.send(
             player,
             &SystemMessage::new(SystemMessageId::YouHaveCanceledYourBid),

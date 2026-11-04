@@ -27,13 +27,8 @@ pub type BirthdayRow = (i32, String, i32);
 
 impl World {
     /// The query half of `CharacterBirthday.onDailyReset`: asks the persistence task for the
-    /// characters whose birthday came in the last 24 hours. Nothing happens without
-    /// `DailyResetDatabaseWrites` (D-49): the Java GS sends the same mails.
+    /// characters whose birthday came in the last 24 hours.
     pub fn request_birthday_gifts(&mut self) {
-        if !self.settings.daily_reset_database_writes {
-            info!("CharacterBirthday: DailyResetDatabaseWrites is off, no birthday gifts are sent (D-49).");
-            return;
-        }
         // Last 24 hours.
         let since_ms = unix_ms_now() - 24 * 60 * 60 * 1000;
         self.outbox
@@ -101,12 +96,8 @@ impl World {
     }
 
     /// The database half of `LongTimeEvent.destroyItemsOnEnd` for one item id: `DELETE FROM items
-    /// WHERE item_id=?`, the rows of the characters who are not online. Only with
-    /// `CycleDatabaseWrites` (D-53): the Java GS deletes the same rows when its event ends.
+    /// WHERE item_id=?`, the rows of the characters who are not online.
     pub fn delete_event_item_rows(&mut self, item_id: i32) {
-        if !self.scripts.settings.cycle_database_writes {
-            return;
-        }
         self.outbox
             .persist(PersistCommand::DeleteItemsOfItemId { item_id });
     }

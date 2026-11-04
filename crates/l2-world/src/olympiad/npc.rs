@@ -323,19 +323,10 @@ impl World {
         true
     }
 
-    /// `olympiadnoble 6` and `10`: Java reads the variable of the player. With
-    /// `CycleDatabaseWrites` off the Java game server writes it at the period end, so the row is
-    /// read again first (D-50).
+    /// `olympiadnoble 6` and `10`: Java reads the variable of the player.
     fn olympiad_passes(&mut self, player: ObjectId, npc: ObjectId, action: OlympiadRereadAction) {
-        if self.olympiad_writes_cycles() {
-            let passes = self.player_variable_int(player, UNCLAIMED_OLYMPIAD_PASSES_VAR);
-            self.olympiad_passes_with(player, npc, action, passes, false);
-        } else {
-            self.olympiad_reread(
-                OlympiadRereadRequest::UnclaimedPasses { char_id: player.0 },
-                OlympiadRereadThen { player, npc, action },
-            );
-        }
+        let passes = self.player_variable_int(player, UNCLAIMED_OLYMPIAD_PASSES_VAR);
+        self.olympiad_passes_with(player, npc, action, passes, false);
     }
 
     /// The variable as `getInt(name, 0)`.

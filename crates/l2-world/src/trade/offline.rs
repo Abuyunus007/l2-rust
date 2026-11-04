@@ -14,25 +14,17 @@
 // `World::players` that has no entry in `World::sinks`; the rest of the world already reads it so
 // (`siege/player.rs`, `pvp.rs`, `effects/buff_info.rs`). [`OfflineWorld::traders`] lists them with
 // the time they went offline (`getOfflineStartTime`). The connection is closed with `ServerClose`
-// like Java's `client.close(ServerClose.STATIC_PACKET)`. With `OfflineTradeDatabaseWrites` the
-// login server hears `PlayerLogout` at once (Java `GameClient.onDisconnection` -> `sendLogout`;
-// the account is free for a login while the trader stays). Without it (side by side, D-52) the
-// account stays on this server: the owner could otherwise log the character into the Java server,
-// which loads the items from the database while this trader still sells them. A login elsewhere
-// kicks the account, and the trader is stored and deleted then (`release_offline_account`; its
-// final `PlayerLeft` frees the account). The character is stored with `online = 2`
-// (`Player.isOnlineInt()` of a detached client).
+// like Java's `client.close(ServerClose.STATIC_PACKET)`. The login server hears `PlayerLogout` at once
+// (Java `GameClient.onDisconnection` -> `sendLogout`; the account is free for a login while the trader
+// stays). The character is stored with `online = 2` (`Player.isOnlineInt()` of a detached client).
 //
-// # The database rows (D-52)
-// `character_offline_trade` and `character_offline_trade_items` are shared with the Java game
-// server, which would restore the shops at its next start (the same character selling on two
-// servers). So every row this module writes or restores follows the Rust-only switch
-// `OfflineTradeDatabaseWrites` of `SideBySide.ini` ([`OfflineSettings::database_writes`], default
-// off): off, the trader lives until this server stops and no row is written, removed or restored.
+// # The database rows
+// `character_offline_trade` and `character_offline_trade_items` are written, removed and restored
+// as Java's `OfflineTraderTable` does.
 //
 // # Left out
 // - The buff shop (`isSellingBuffs`, type 9) is stored and restored like the other shops, under
-//   the same switch (M9-L01). The `.offline` command (`EnableOfflineCommand`) and
+//   as the others (M9-L01). The `.offline` command (`EnableOfflineCommand`) and
 //   `OfflineAbnormalEffect` are in `custom/offline_trade.rs` (M9-C02);
 //   `OfflineDisconnectSameAccount` is `release_offline_same_account` (`custom/offline_play.rs`).
 // - `OfflineMaxDays` is checked only when the shops are restored, like Java: a running trader
@@ -54,8 +46,7 @@ use crate::zones::ZoneId;
 
 const MS_PER_DAY: i64 = 86_400_000;
 
-/// `OfflineTrade.ini` (Java `OfflineTradeConfig`) and `OfflineTradeDatabaseWrites` of
-/// `SideBySide.ini`. `Default` is the Java default of each key.
+/// `OfflineTrade.ini` (Java `OfflineTradeConfig`). `Default` is the Java default of each key.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OfflineSettings {
     /// `OFFLINE_TRADE_ENABLE`.
@@ -78,9 +69,6 @@ pub struct OfflineSettings {
     pub offline_disconnect_finished: bool,
     /// `STORE_OFFLINE_TRADE_IN_REALTIME`.
     pub store_offline_trade_in_realtime: bool,
-    /// `OfflineTradeDatabaseWrites` (Rust-only, D-52): the rows of the two tables are written,
-    /// removed and restored. Off by default while the Java game server shares the database.
-    pub database_writes: bool,
 }
 
 impl Default for OfflineSettings {
@@ -96,19 +84,16 @@ impl Default for OfflineSettings {
             offline_max_days: 10,
             offline_disconnect_finished: true,
             store_offline_trade_in_realtime: true,
-            database_writes: false,
         }
     }
 }
 
 impl OfflineSettings {
     /// `GameServer`: "(OFFLINE_TRADE_ENABLE || OFFLINE_CRAFT_ENABLE) && RESTORE_OFFLINERS" ->
-    /// `restoreOfflineTraders()`, and only with `OfflineTradeDatabaseWrites`: whether the rows are
-    /// read at all (the caller asks before it touches the database).
+    /// `restoreOfflineTraders()`: whether the rows are read at all (the caller asks before
+    /// it touches the database).
     pub fn restore_wanted(&self) -> bool {
-        (self.offline_trade_enable || self.offline_craft_enable)
-            && self.restore_offliners
-            && self.database_writes
+        (self.offline_trade_enable || self.offline_craft_enable) && self.restore_offliners
     }
 }
 
@@ -127,8 +112,6 @@ pub(crate) struct OfflineWorld {
     pub(crate) settings: OfflineSettings,
     /// The players without a client (`World.OFFLINE_TRADE_COUNT` is its length).
     pub(crate) traders: HashMap<ObjectId, OfflineTrader>,
-    /// A release that must not tell the login server (the account is in use by a new session).
-    pub(crate) quiet_release: bool,
 }
 
 /// One line of `character_offline_trade_items`.
@@ -218,7 +201,7 @@ fn add_days_local(time_ms: i64, days: i32) -> i64 {
 }
 
 impl World {
-    /// Installs `OfflineTrade.ini` and the `SideBySide.ini` switch. Call before players enter.
+    /// Installs `OfflineTrade.ini`. Call before players enter.
     pub fn set_offline_settings(&mut self, settings: OfflineSettings) {
         self.offline.settings = settings;
     }
@@ -246,11 +229,6 @@ impl World {
             .and_then(|t| t.name_color)
             // A character that plays offline has its own colour (`OfflinePlay.ini`, M9-C02).
             .or_else(|| self.offline_play_name_color(id))
-    }
-
-    /// Whether the rows of the tables are written (`OfflineTradeDatabaseWrites`).
-    fn offline_writes(&self) -> bool {
-        self.offline.settings.database_writes
     }
 
     /// `(OFFLINE_TRADE_ENABLE || OFFLINE_CRAFT_ENABLE)`.
@@ -349,14 +327,8 @@ impl World {
             self.outbox
                 .persist(PersistCommand::StorePlayer(Box::new(snapshot)));
         }
-        // `GameClient.onDisconnection` -> `sendLogout(account)`: only with the database switch.
-        // Side by side (D-52) the account stays on this server for the login server: the owner
-        // could otherwise log the character into the Java server, which loads its items from the
-        // database while this trader keeps selling them. A login elsewhere kicks the account and
-        // the trader is released then (`release_offline_account`).
-        if self.offline.settings.database_writes
-            && let Some(account) = account
-        {
+        // `GameClient.onDisconnection` -> `sendLogout(account)`.
+        if let Some(account) = account {
             self.outbox.ls_event(LsEvent::PlayerLogout { account });
         }
         // `OfflineAbnormalEffect` (`OfflineTrade.ini`, M9-C02).
@@ -450,9 +422,6 @@ impl World {
 
     /// Java `OfflineTraderTable.onTransaction(trader, finished, firstCall)`.
     pub(crate) fn offline_on_transaction(&mut self, id: ObjectId, finished: bool, first_call: bool) {
-        if !self.offline_writes() {
-            return;
-        }
         let mut items = Vec::new();
         let mut status = None;
         // "Trade is done - clear info." Else the lines are written when the client is detached.
@@ -490,32 +459,10 @@ impl World {
 
     /// Java `OfflineTraderTable.removeTrader(objectId)`.
     fn offline_remove_trader(&mut self, id: ObjectId) {
-        if self.offline_writes() {
-            self.outbox
-                .persist(PersistCommand::OfflineTrade(OfflineTradeWrite::Remove {
-                    char_id: id,
-                }));
-        }
-    }
-
-    /// The login server kicked `account` and no connection of it exists: its offline traders are
-    /// stored and deleted (the final `PlayerLeft` then frees the account at the login server).
-    /// `true` when there was one.
-    pub(crate) fn release_offline_account(&mut self, account: &str) -> bool {
-        let mut ids: Vec<ObjectId> = self
-            .offline
-            .traders
-            .keys()
-            .copied()
-            .filter(|id| self.players.get(id).is_some_and(|p| p.data.account == account))
-            .collect();
-        // The characters that play offline (`custom/offline_play.rs`) are held the same way.
-        ids.extend(self.offline_play_of_account(account));
-        ids.sort();
-        for id in &ids {
-            self.leave(*id, LeaveReason::Disconnected);
-        }
-        !ids.is_empty()
+        self.outbox
+            .persist(PersistCommand::OfflineTrade(OfflineTradeWrite::Remove {
+                char_id: id,
+            }));
     }
 
     /// `CharacterSelect`: "Disconnect offline trader." The account is in use by the new session,
@@ -528,9 +475,7 @@ impl World {
         // the `OFFLINE_PLAY` limit of `CharacterSelect` needs from the player (M9-L01).
         self.offline_play_release_rows(id);
         self.offline_play_remember_release(id);
-        self.offline.quiet_release = true;
         self.leave(id, LeaveReason::Disconnected);
-        self.offline.quiet_release = false;
         true
     }
 
@@ -557,9 +502,7 @@ impl World {
     /// !STORE_OFFLINE_TRADE_IN_REALTIME" -> `storeOffliners()`.
     pub(crate) fn offline_store_offliners(&mut self) {
         let s = &self.offline.settings;
-        if !(self.offline_enabled() && s.restore_offliners && !s.store_offline_trade_in_realtime)
-            || !self.offline_writes()
-        {
+        if !(self.offline_enabled() && s.restore_offliners && !s.store_offline_trade_in_realtime) {
             return;
         }
         let mut ids: Vec<ObjectId> = self
@@ -632,7 +575,7 @@ impl World {
         info!("OfflineTraderTable: Loaded {restored} offline traders.");
         // `if (!STORE_OFFLINE_TRADE_IN_REALTIME)` the tables are emptied: the shops live in memory
         // now and `storeOffliners` writes them at shutdown.
-        if !self.offline.settings.store_offline_trade_in_realtime && self.offline_writes() {
+        if !self.offline.settings.store_offline_trade_in_realtime {
             self.outbox
                 .persist(PersistCommand::OfflineTrade(OfflineTradeWrite::StoreAll(
                     Vec::new(),
@@ -759,7 +702,6 @@ mod tests {
         assert_eq!(s.offline_name_color, 0x808080);
         assert_eq!(s.offline_max_days, 10);
         assert!(s.offline_disconnect_finished && s.store_offline_trade_in_realtime);
-        assert!(!s.database_writes);
     }
 
     #[test]

@@ -18,10 +18,6 @@
 //!   instead of time). The persistence commands the world sends are recorded, the reads the
 //!   world asks for are answered from a model of the rows, so the same row checks run here.
 //!
-//! Each scenario runs twice per half: with `CycleDatabaseWrites = False` (D-53: the global cycle
-//! rows stay with the Java game server; the world reads the shared rows again, D-50) and with
-//! `True` (the rows Java writes).
-//!
 //! A client action is an `Act`: the `ClientInput` for the bare world and the bytes of the packet
 //! the real client sends for `Net`. `every_act_decodes_on_the_wire` checks that the bytes decode
 //! as the packet each action stands for.
@@ -119,8 +115,8 @@ fn game_server_ini(ls_port: u16) -> String {
 
 /// Everything in the game server's `config` folder except `Database.ini`. Like the M7 rig (see
 /// `e2e_m4.rs` for the reasons), with a lot of starting adena, the admin rights, the item
-/// auctions and boats switched on and `SideBySide.ini` with the switch of the scenario (D-53).
-fn write_game_config(config_dir: &Path, ls_port: u16, cycle_writes: bool) {
+/// auctions and boats switched on.
+fn write_game_config(config_dir: &Path, ls_port: u16) {
     std::fs::create_dir_all(config_dir).unwrap();
     std::fs::write(config_dir.join("Server.ini"), game_server_ini(ls_port)).unwrap();
     std::fs::write(
@@ -154,14 +150,6 @@ fn write_game_config(config_dir: &Path, ls_port: u16, cycle_writes: bool) {
     std::fs::write(
         config_dir.join("ipconfig.xml"),
         "<gameserver address=\"127.0.0.1\" />\n",
-    )
-    .unwrap();
-    std::fs::write(
-        config_dir.join("SideBySide.ini"),
-        format!(
-            "CycleDatabaseWrites = {}\n",
-            if cycle_writes { "True" } else { "False" }
-        ),
     )
     .unwrap();
     m8_data::write_admin_config(config_dir);
@@ -390,11 +378,9 @@ enum Fact {
     SsContribution,
 }
 
-/// How a scenario starts: the switch of `SideBySide.ini` and where the GM stands.
+/// How a scenario starts: where the GM stands.
 #[derive(Clone, Copy, Debug)]
 struct Opts {
-    /// `CycleDatabaseWrites` (D-53).
-    cycle_writes: bool,
     position: (i32, i32, i32),
     /// Whether the GM is a Human Warrior (a class that went through the first class transfer).
     warrior: bool,
@@ -403,25 +389,23 @@ struct Opts {
 }
 
 impl Opts {
-    fn at_start(cycle_writes: bool) -> Self {
+    fn at_start() -> Self {
         Self {
-            cycle_writes,
             position: m3_data::START,
             warrior: true,
             olympiad: false,
         }
     }
 
-    fn with_olympiad(cycle_writes: bool) -> Self {
+    fn with_olympiad() -> Self {
         Self {
             olympiad: true,
-            ..Self::at_start(cycle_writes)
+            ..Self::at_start()
         }
     }
 
-    fn at_dock(cycle_writes: bool) -> Self {
+    fn at_dock() -> Self {
         Self {
-            cycle_writes,
             position: (
                 m8_data::TALKING_DOCK.0 + 50,
                 m8_data::TALKING_DOCK.1,
@@ -716,7 +700,7 @@ const DAY_MS: i64 = 86_400_000;
 
 /// The Olympiad of the config (`game_server::olympiad_settings`) with the clock of the tests: two
 /// players start a match, a short wait before the teleport, Adena as the reward.
-fn olympiad_test_settings(config: &GameConfig, cycle_writes: bool) -> OlympiadSettings {
+fn olympiad_test_settings(config: &GameConfig) -> OlympiadSettings {
     OlympiadSettings {
         classed: 2,
         non_classed: 2,
@@ -725,7 +709,7 @@ fn olympiad_test_settings(config: &GameConfig, cycle_writes: bool) -> OlympiadSe
         non_classed_reward: vec![[ADENA_ID, 40]],
         clock_override_unix_ms: Some(OLYMPIAD_BASE),
         zone_offset_override_ms: Some(0),
-        ..game_server::olympiad_settings(config, cycle_writes)
+        ..game_server::olympiad_settings(config)
     }
 }
 
@@ -733,7 +717,6 @@ struct BareWorld {
     world: World,
     log: Log,
     persisted: Persisted,
-    seed: Seed,
     /// How many of the persistence commands were looked at for reads that need an answer.
     answered: usize,
     players: Vec<PlayerData>,
@@ -750,7 +733,7 @@ impl BareWorld {
     fn start(opts: &Opts, players: usize, extra_items: &[(i32, i64)]) -> Self {
         let root = tempfile::tempdir().unwrap();
         let config_dir = root.path().join("config");
-        write_game_config(&config_dir, 4242, opts.cycle_writes);
+        write_game_config(&config_dir, 4242);
         let data_root = root.path().join("datapack");
         write_datapack(&data_root);
         let seed = Seed::new();
@@ -823,7 +806,7 @@ impl BareWorld {
         // Java: Olympiad.getInstance (GameServer; M8-OLY-01). The clock is the tests': a real
         // server has no clock override, so this half is bare only.
         if opts.olympiad {
-            world.set_olympiad_settings(olympiad_test_settings(&config, opts.cycle_writes));
+            world.set_olympiad_settings(olympiad_test_settings(&config));
             world.load_olympiad(OlympiadLoad {
                 data: Some(OlympiadData {
                     current_cycle: 1,
@@ -875,7 +858,6 @@ impl BareWorld {
             world,
             log: Log::default(),
             persisted,
-            seed,
             answered: 0,
             players,
             opts: *opts,
@@ -964,24 +946,6 @@ impl BareWorld {
             self.answered = commands.len();
             for command in new {
                 match command {
-                    PersistCommand::ItemAuctionRequest { instance_id, then } => {
-                        self.world.handle(WorldCommand::ItemAuctionReread {
-                            instance_id,
-                            result: Ok(vec![self.seed.auction_record()]),
-                            then,
-                        });
-                    }
-                    PersistCommand::SevenSignsReadRequest { then } => {
-                        let load = SevenSignsLoad {
-                            players: self.ss_members(),
-                            status: Some(self.seed.ss_status()),
-                            ..SevenSignsLoad::default()
-                        };
-                        self.world.handle(WorldCommand::SevenSignsLoaded {
-                            result: Ok(load),
-                            then,
-                        });
-                    }
                     PersistCommand::CrestIdsRequest { ticket } => {
                         self.world.handle(WorldCommand::CrestIdsLoaded {
                             ticket,
@@ -1157,7 +1121,7 @@ struct Rig {
 impl Rig {
     /// A throwaway database with both schemas and the rows of `seed`, the login server, and the
     /// game server registered with it. `None` (and a printed note) without `L2_TEST_DATABASE_URL`.
-    async fn start(tag: &str, seed: &Seed, opts: &Opts) -> Option<Self> {
+    async fn start(tag: &str, seed: &Seed) -> Option<Self> {
         let db = TestDb::create(tag).await?;
         for file in GAME_SCHEMA {
             let text: String = file
@@ -1189,7 +1153,7 @@ impl Rig {
 
         let gs_root = tempfile::tempdir().unwrap();
         db.write_server_folder(gs_root.path(), &game_server_ini(link_port));
-        write_game_config(&gs_root.path().join("config"), link_port, opts.cycle_writes);
+        write_game_config(&gs_root.path().join("config"), link_port);
         write_datapack(&gs_root.path().join("datapack"));
         let gs = Server::start(&Paths::resolve(gs_root.path(), Path::new("./config")))
             .await
@@ -1371,7 +1335,7 @@ impl Net {
     async fn start(tag: &str, opts: &Opts) -> Option<Self> {
         let turn = ONE_RIG_AT_A_TIME.lock().await;
         let seed = Seed::new();
-        let rig = Rig::start(tag, &seed, opts).await?;
+        let rig = Rig::start(tag, &seed).await?;
         let id = rig.create_character_and_leave(ACCOUNT_GM, NAME_GM).await;
         // A GM of level 10 who stands where the scenario wants him (with the HP, MP and CP of the
         // level: the numbers of `m6_data.rs`), in the class of the scenario.
@@ -1551,9 +1515,8 @@ async fn instance<H: Harness>(h: &mut H) {
     h.leave().await;
 }
 
-/// The GM kills the raid boss: the kill message, the raid points of the killer (written whatever
-/// the switch says), and the respawn time, a global row that only `CycleDatabaseWrites` writes.
-async fn raid_boss<H: Harness>(h: &mut H, cycle_writes: bool) {
+/// The GM kills the raid boss: the kill message, the raid points of the killer (written), and the respawn time.
+async fn raid_boss<H: Harness>(h: &mut H) {
     let entered = h.enter().await;
     let at = h.start_position();
     let boss = npc_object(&entered, m8_data::RAID_ID);
@@ -1581,23 +1544,17 @@ async fn raid_boss<H: Harness>(h: &mut H, cycle_writes: bool) {
     let points = h.fact(Fact::RaidPoints).await;
     assert!((30..=40).contains(&points), "{points}");
     // `RaidBossSpawnManager.updateStatus`: the respawn time is between a half and one and a
-    // half days from now, in the row only with the switch on (D-53).
+    // half days from now.
     let respawn = h.fact(Fact::RaidRespawnTime).await;
-    if cycle_writes {
-        assert!(
-            respawn >= before + 43_200_000 && respawn <= now_ms() + 129_600_000,
-            "{respawn}"
-        );
-    } else {
-        assert_eq!(respawn, 0, "the Java game server owns the row");
-    }
+    assert!(
+        respawn >= before + 43_200_000 && respawn <= now_ms() + 129_600_000,
+        "{respawn}"
+    );
     h.leave().await;
 }
 
-/// An item auction: the GM views it, then bids. The auction of the seed is the Java game
-/// server's; with the switch off the world reads the rows before it shows them and refuses a bid
-/// (D-50, D-53).
-async fn item_auction<H: Harness>(h: &mut H, cycle_writes: bool) {
+/// An item auction: the GM views it, then bids.
+async fn item_auction<H: Harness>(h: &mut H) {
     h.enter().await;
     let instance = m8_data::AUCTION_INSTANCE;
 
@@ -1617,24 +1574,19 @@ async fn item_auction<H: Harness>(h: &mut H, cycle_writes: bool) {
     assert_eq!(info.item.item_id, m8_data::AUCTION_ITEM);
     assert_eq!(info.item.count, 1);
 
-    // With the switch on the world makes the next auction itself (a global row); off it makes none.
+    // The world makes the next auction itself (a global row).
     let new_rows = h.fact(Fact::ItemAuctionNewRows).await;
-    assert_eq!(new_rows, i64::from(cycle_writes));
+    assert_eq!(new_rows, 1);
 
     h.act(act::auction_bid(instance, m8_data::AUCTION_INIT_BID + 50))
         .await;
     let bid = h.collect_quiet().await;
-    if cycle_writes {
-        assert!(
-            has_message(&bid, SystemMessageId::YouHaveSubmittedABidForTheAuctionOfS1),
-            "{:?}",
-            message_ids(&bid)
-        );
-        assert_eq!(h.fact(Fact::ItemAuctionBids).await, 1);
-    } else {
-        assert_eq!(texts(&bid), ["This feature is disabled."]);
-        assert_eq!(h.fact(Fact::ItemAuctionBids).await, 0);
-    }
+    assert!(
+        has_message(&bid, SystemMessageId::YouHaveSubmittedABidForTheAuctionOfS1),
+        "{:?}",
+        message_ids(&bid)
+    );
+    assert_eq!(h.fact(Fact::ItemAuctionBids).await, 1);
     h.leave().await;
 }
 
@@ -1875,10 +1827,9 @@ fn adena_of(w: &BareWorld, id: i32) -> i64 {
 
 /// A classed Olympiad match from the registration to the points: two nobles register, the game
 /// manager takes them to the stadium's instance, one falls, the points and the reward go to the
-/// nobles, and the match row is written. The rows of the global cycle (the nobles, the status)
-/// are written only with `CycleDatabaseWrites` (D-53). Bare only: see the module comment.
-fn olympiad_match(cycle_writes: bool) {
-    let mut w = BareWorld::start(&Opts::with_olympiad(cycle_writes), 3, &[]);
+/// nobles, and the match row is written. Bare only: see the module comment.
+fn olympiad_match() {
+    let mut w = BareWorld::start(&Opts::with_olympiad(), 3, &[]);
     let (a, b) = (BareWorld::id_of(1), BareWorld::id_of(2));
     w.enter_player(1);
     w.enter_player(2);
@@ -1941,7 +1892,7 @@ fn olympiad_match(cycle_writes: bool) {
     assert_eq!(adena_of(&w, one), m6_data::START_ADENA + 50);
     assert_eq!(adena_of(&w, two), m6_data::START_ADENA);
 
-    // The match row is the match of this server's players: written whatever the switch says.
+    // The match row is the match of this server's players.
     let fights: Vec<_> = olympiad_writes(&w)
         .into_iter()
         .filter_map(|write| match write {
@@ -1959,24 +1910,20 @@ fn olympiad_match(cycle_writes: bool) {
         ),
         (m8_data::DUELIST, m8_data::DUELIST, true)
     );
-    // The nobles and the cycle are global rows: nothing yet, and only with the switch on after
-    // the save of the status (`Olympiad.saveOlympiadStatus`, also the shutdown's).
+    // The nobles and the cycle are global rows: nothing yet, they come with the save of the
+    // status (`Olympiad.saveOlympiadStatus`, also the shutdown's).
     assert_eq!(olympiad_writes(&w).len(), 1);
     w.world.save_olympiad_status();
     let saved: Vec<_> = olympiad_writes(&w)
         .into_iter()
         .filter(|write| !matches!(write, OlympiadWrite::Fight(_)))
         .collect();
-    if cycle_writes {
-        match saved.as_slice() {
-            [OlympiadWrite::SaveNobles(nobles), OlympiadWrite::SaveData(data)] => {
-                assert_eq!(nobles.len(), 2);
-                assert_eq!((data.current_cycle, data.period), (1, 0));
-            }
-            other => panic!("{other:?}"),
+    match saved.as_slice() {
+        [OlympiadWrite::SaveNobles(nobles), OlympiadWrite::SaveData(data)] => {
+            assert_eq!(nobles.len(), 2);
+            assert_eq!((data.current_cycle, data.period), (1, 0));
         }
-    } else {
-        assert!(saved.is_empty(), "{saved:?}");
+        other => panic!("{other:?}"),
     }
 
     // 40 s later both are back where they stood, out of the olympiad mode.
@@ -1990,13 +1937,8 @@ fn olympiad_match(cycle_writes: bool) {
 }
 
 #[test]
-fn bare_olympiad_match_with_cycle_writes_off() {
-    olympiad_match(false);
-}
-
-#[test]
-fn bare_olympiad_match_with_cycle_writes_on() {
-    olympiad_match(true);
+fn bare_olympiad_match() {
+    olympiad_match();
 }
 
 /// A whole leg of the ferry from Talking Island to Gludin: the ticket is paid when the boat
@@ -2004,7 +1946,7 @@ fn bare_olympiad_match_with_cycle_writes_on() {
 /// game time, so the bare world only.
 #[test]
 fn bare_boat_leg() {
-    let mut w = BareWorld::start(&Opts::at_dock(false), 1, &[(m8_data::BOAT_TICKET, 1)]);
+    let mut w = BareWorld::start(&Opts::at_dock(), 1, &[(m8_data::BOAT_TICKET, 1)]);
     let me = ObjectId(BareWorld::id_of(0));
     let entered = w.enter_player(0);
     let boat = all::<VehicleInfo>(&entered, "VEHICLE_INFO")[0].object_id;
@@ -2053,36 +1995,32 @@ fn bare_boat_leg() {
 }
 
 macro_rules! scenario_tests {
-    ($($name:ident, $net:ident, $opts:ident, |$h:ident, $cycle:ident| $body:expr;)*) => {
+    ($($name:ident, $net:ident, $opts:ident, |$h:ident| $body:expr;)*) => {
         $(
             #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
             async fn $name() {
-                for $cycle in [false, true] {
-                    let mut $h = BareWorld::start(&Opts::$opts($cycle), 1, &[]);
-                    $body;
-                }
+                let mut $h = BareWorld::start(&Opts::$opts(), 1, &[]);
+                $body;
             }
 
             #[tokio::test(flavor = "multi_thread", worker_threads = 4)]
             async fn $net() {
-                for $cycle in [false, true] {
-                    let tag = format!("e2em8_{}_{}", stringify!($name), u8::from($cycle));
-                    let Some(mut $h) = Net::start(&tag, &Opts::$opts($cycle)).await else {
-                        println!("L2_TEST_DATABASE_URL is not set: skipping {}", stringify!($net));
-                        return;
-                    };
-                    $body;
-                    $h.finish().await;
-                }
+                let tag = format!("e2em8_{}", stringify!($name));
+                let Some(mut $h) = Net::start(&tag, &Opts::$opts()).await else {
+                    println!("L2_TEST_DATABASE_URL is not set: skipping {}", stringify!($net));
+                    return;
+                };
+                $body;
+                $h.finish().await;
             }
         )*
     };
 }
 
 scenario_tests! {
-    bare_instance, net_instance, at_start, |h, _cycle| instance(&mut h).await;
-    bare_raid_boss, net_raid_boss, at_start, |h, cycle| raid_boss(&mut h, cycle).await;
-    bare_item_auction, net_item_auction, at_start, |h, cycle| item_auction(&mut h, cycle).await;
-    bare_seven_signs, net_seven_signs, at_start, |h, _cycle| seven_signs(&mut h).await;
-    bare_boat, net_boat, at_dock, |h, _cycle| boat(&mut h).await;
+    bare_instance, net_instance, at_start, |h| instance(&mut h).await;
+    bare_raid_boss, net_raid_boss, at_start, |h| raid_boss(&mut h).await;
+    bare_item_auction, net_item_auction, at_start, |h| item_auction(&mut h).await;
+    bare_seven_signs, net_seven_signs, at_start, |h| seven_signs(&mut h).await;
+    bare_boat, net_boat, at_dock, |h| boat(&mut h).await;
 }

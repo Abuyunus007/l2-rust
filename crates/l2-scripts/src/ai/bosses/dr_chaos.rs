@@ -5,18 +5,12 @@
 // The Java constructor is `on_load`; the instance fields are `DrChaosState` (`ctx.state`). The
 // status of the grand boss row 25512: 0 normal (the doctor), 1 crazy (the golem), 2 dead.
 //
-// Side by side (D-54, `super` module): with `CycleDatabaseWrites` off the constructor starts the
-// doctor only from a row that says 0, and `reset_drchaos` reads the row again and brings him back
-// only when it says 0.
-//
 // Not modelled: nothing.
 
 use l2_protocol_game::server::{ChatType, PlaySound, SocialAction, SpecialCamera};
 use l2_util::ObjectId;
 use l2_world::{GrandBossInfo, Script, ScriptCtx, ScriptNpc, ScriptSetup, TeleportTarget};
-use tracing::{info, warn};
-
-use super::{EVENT_ROW_READ, row_lets_boss_run};
+use tracing::warn;
 
 // NPC identifiers.
 const DOCTOR_CHAOS_NPC_ID: i32 = 32033;
@@ -104,9 +98,6 @@ impl Script for DrChaos {
                 let remaining = info_row.respawn_time - ctx.now_ms();
                 if remaining > 0 {
                     ctx.start_quest_timer(EVENT_RESET_DRCHAOS, remaining, None, None, false);
-                } else if !ctx.world().boss_writes_enabled() {
-                    // D-54: the respawn of a dead row waits for the other server's alive row.
-                    ctx.notify_event(EVENT_RESET_DRCHAOS, None, None);
                 } else {
                     spawn_doctor_and_reset(ctx);
                 }
@@ -115,11 +106,6 @@ impl Script for DrChaos {
                 spawn_doctor_and_reset(ctx);
             }
         } else if status == STATUS_CRAZY {
-            // D-54: with the switch off a row that is not alive is the other server's.
-            if !row_lets_boss_run(ctx, CHAOS_GOLEM_NPC_ID) {
-                info!("DrChaos: the shared state row says {status}; the AI waits for an alive row (D-54).");
-                return;
-            }
             if let Some(info_row) = info_row {
                 let golem = ctx.add_spawn(
                     CHAOS_GOLEM_NPC_ID,
@@ -155,10 +141,6 @@ impl Script for DrChaos {
                 spawn_doctor_and_reset(ctx);
             }
         } else {
-            if !row_lets_boss_run(ctx, CHAOS_GOLEM_NPC_ID) {
-                info!("DrChaos: the shared state row says {status}; the AI waits for an alive row (D-54).");
-                return;
-            }
             spawn_doctor(ctx);
         }
     }
@@ -172,39 +154,7 @@ impl Script for DrChaos {
     ) -> Option<String> {
         match event {
             EVENT_RESET_DRCHAOS => {
-                // D-54: on the shared database the row decides; read it again first.
-                if !ctx.world().boss_writes_enabled() {
-                    ctx.world_mut().reread_grand_boss_for_script(
-                        CHAOS_GOLEM_NPC_ID,
-                        self.name(),
-                        EVENT_ROW_READ,
-                    );
-                    return None;
-                }
                 spawn_doctor_and_reset(ctx);
-            }
-            EVENT_ROW_READ => {
-                // D-54: the answer of the read `reset_drchaos` asked for.
-                match ctx.world().grand_boss_status(CHAOS_GOLEM_NPC_ID) {
-                    Some(STATUS_NORMAL) => {
-                        spawn_doctor(ctx);
-                    }
-                    Some(STATUS_DEAD) => {
-                        let respawn = ctx
-                            .world()
-                            .grand_boss_info(CHAOS_GOLEM_NPC_ID)
-                            .map_or(0, |i| i.respawn_time);
-                        let remaining = respawn - ctx.now_ms();
-                        if remaining > 0 {
-                            ctx.start_quest_timer(EVENT_RESET_DRCHAOS, remaining, None, None, false);
-                        } else {
-                            info!("DrChaos: the shared state row says dead; the doctor stays away (D-54).");
-                        }
-                    }
-                    status => {
-                        info!("DrChaos: the shared state row says {status:?}; the doctor stays away (D-54).")
-                    }
-                }
             }
             EVENT_GOLEM_DESPAWN => {
                 // Despawn the Chaos Golem after 30 minutes of inactivity since last hit.
@@ -538,7 +488,7 @@ fn distance_2d_to(ctx: &ScriptCtx<'_>, a: ObjectId, (x, y): (i32, i32)) -> f64 {
 
 #[cfg(test)]
 mod tests {
-    use l2_world::{BossReadKind, BossReadThen, BossWrite, ScriptRegistry};
+    use l2_world::{BossWrite, ScriptRegistry};
 
     use super::*;
     use crate::ai::bosses::test_support::*;
@@ -553,7 +503,7 @@ mod tests {
         )
     }
 
-    fn setup_row(status: i32, respawn_time: i64, writes: bool) -> ScriptTest {
+    fn setup_row(status: i32, respawn_time: i64) -> ScriptTest {
         let mut registry = ScriptRegistry::new();
         registry.add(DrChaos);
         boss_test(
@@ -567,7 +517,6 @@ mod tests {
                 respawn_time,
                 (96080, -110822, -3343),
             )],
-            writes,
         )
     }
 
@@ -610,7 +559,7 @@ mod tests {
 
     #[test]
     fn a_normal_row_spawns_the_doctor_who_starts_counting() {
-        let mut t = setup_row(STATUS_NORMAL, 0, true);
+        let mut t = setup_row(STATUS_NORMAL, 0);
         t.ticks(2);
         let doctor = t.npcs_of(DOCTOR_CHAOS_NPC_ID);
         assert_eq!(doctor.len(), 1);
@@ -623,18 +572,18 @@ mod tests {
 
     #[test]
     fn the_dead_row_waits_or_brings_the_doctor_back() {
-        let mut t = setup_row(STATUS_DEAD, now_ms() + 3_600_000, true);
+        let mut t = setup_row(STATUS_DEAD, now_ms() + 3_600_000);
         assert!(t.npcs_of(DOCTOR_CHAOS_NPC_ID).is_empty());
         assert!(has_timer(&mut t, EVENT_RESET_DRCHAOS, None));
 
-        let t = setup_row(STATUS_DEAD, now_ms() - 1000, true);
+        let t = setup_row(STATUS_DEAD, now_ms() - 1000);
         assert_eq!(t.npcs_of(DOCTOR_CHAOS_NPC_ID).len(), 1);
         assert_eq!(status(&t), Some(STATUS_NORMAL));
     }
 
     #[test]
     fn a_crazy_row_restores_the_golem_with_its_vitals_and_the_leash() {
-        let mut t = setup_row(STATUS_CRAZY, 0, true);
+        let mut t = setup_row(STATUS_CRAZY, 0);
         let golem = t.world.grand_boss_npc(CHAOS_GOLEM_NPC_ID).unwrap();
         assert_eq!(t.world.position_of(golem).unwrap(), (96080, -110822, -3343));
         assert_eq!(t.world.hp_and_max(golem).unwrap().0, 1000.0);
@@ -643,52 +592,8 @@ mod tests {
     }
 
     #[test]
-    fn with_the_switch_off_the_row_decides() {
-        // A row that is not 0 is the other server's.
-        let t = setup_row(STATUS_CRAZY, 0, false);
-        assert!(t.npcs_of(CHAOS_GOLEM_NPC_ID).is_empty());
-        assert!(t.npcs_of(DOCTOR_CHAOS_NPC_ID).is_empty());
-
-        // A dead row whose time has come asks for the row first.
-        let mut t = setup_row(STATUS_DEAD, now_ms() - 1000, false);
-        let then = BossReadThen::ScriptEvent {
-            script: "DrChaos",
-            event: EVENT_ROW_READ,
-        };
-        assert_eq!(
-            rereads(&t.take_boss()),
-            [(BossReadKind::GrandBoss(CHAOS_GOLEM_NPC_ID), then)]
-        );
-        assert!(t.npcs_of(DOCTOR_CHAOS_NPC_ID).is_empty());
-        answer(
-            &mut t,
-            then,
-            CHAOS_GOLEM_NPC_ID,
-            row(CHAOS_GOLEM_NPC_ID, STATUS_NORMAL, 0, (96080, -110822, -3343)),
-        );
-        assert_eq!(t.npcs_of(DOCTOR_CHAOS_NPC_ID).len(), 1);
-        assert!(grand_writes(&t.take_boss()).is_empty());
-
-        // The row stays dead: the doctor stays away.
-        let mut t = setup_row(STATUS_DEAD, now_ms() - 1000, false);
-        t.take_boss();
-        answer(
-            &mut t,
-            then,
-            CHAOS_GOLEM_NPC_ID,
-            row(
-                CHAOS_GOLEM_NPC_ID,
-                STATUS_DEAD,
-                now_ms() - 5,
-                (96080, -110822, -3343),
-            ),
-        );
-        assert!(t.npcs_of(DOCTOR_CHAOS_NPC_ID).is_empty());
-    }
-
-    #[test]
     fn talking_runs_the_countdown_down_through_three_pages_to_the_transformation() {
-        let mut t = setup_row(STATUS_NORMAL, 0, true);
+        let mut t = setup_row(STATUS_NORMAL, 0);
         t.ticks(2);
         let doctor = t.npcs_of(DOCTOR_CHAOS_NPC_ID)[0];
         let page = talk(&mut t, doctor);
@@ -718,7 +623,7 @@ mod tests {
 
     #[test]
     fn a_player_close_to_the_doctor_runs_the_countdown_each_second() {
-        let mut t = setup_row(STATUS_NORMAL, 0, true);
+        let mut t = setup_row(STATUS_NORMAL, 0);
         t.enter_with(player_at(1, (96320 + 100, -110912, -3328), vec![]));
         t.ticks(2);
         let doctor = t.npcs_of(DOCTOR_CHAOS_NPC_ID)[0];
@@ -733,7 +638,7 @@ mod tests {
 
     #[test]
     fn the_cinematic_ends_with_the_golem_and_without_the_doctor() {
-        let mut t = setup_row(STATUS_NORMAL, 0, true);
+        let mut t = setup_row(STATUS_NORMAL, 0);
         t.ticks(2);
         let doctor = t.npcs_of(DOCTOR_CHAOS_NPC_ID)[0];
         t.world.run_as_script("DrChaos", |ctx| {
@@ -758,7 +663,7 @@ mod tests {
 
     #[test]
     fn the_golem_goes_back_to_the_doctor_after_half_an_hour_without_a_hit() {
-        let mut t = setup_row(STATUS_CRAZY, 0, true);
+        let mut t = setup_row(STATUS_CRAZY, 0);
         let golem = t.world.grand_boss_npc(CHAOS_GOLEM_NPC_ID).unwrap();
         // A hit now: not yet.
         fire(&mut t, EVENT_GOLEM_DESPAWN, Some(golem));
@@ -774,7 +679,7 @@ mod tests {
 
     #[test]
     fn the_golem_s_death_stores_the_respawn_between_12_and_60_hours() {
-        let mut t = setup_row(STATUS_CRAZY, 0, true);
+        let mut t = setup_row(STATUS_CRAZY, 0);
         t.enter_with(player_at(1, (96080 + 50, -110822, -3343), vec![]));
         let golem = t.world.grand_boss_npc(CHAOS_GOLEM_NPC_ID).unwrap();
         let before = now_ms();
@@ -800,7 +705,7 @@ mod tests {
 
     #[test]
     fn a_far_away_golem_is_brought_back_to_its_spawn() {
-        let mut t = setup_row(STATUS_CRAZY, 0, true);
+        let mut t = setup_row(STATUS_CRAZY, 0);
         let golem = t.world.grand_boss_npc(CHAOS_GOLEM_NPC_ID).unwrap();
         t.world.tele_to_location(
             golem,

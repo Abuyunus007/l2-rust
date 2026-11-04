@@ -13,7 +13,7 @@ use super::{CropProcure, SeedProduction};
 use crate::clan::model::ClanAccess;
 use crate::flood::FloodKind;
 use crate::inventory::item_name_param;
-use crate::residence::{CastleId, Writes};
+use crate::residence::CastleId;
 use crate::world::World;
 
 /// The manor packets as the world gets them (`ClientInput::Manor`).
@@ -316,7 +316,7 @@ impl World {
         // Adding to treasury for Manor Castle.
         if total_price > 0 {
             // The treasury is the castle's own row: it follows the tax income (D-51).
-            self.castle_add_to_treasury_no_tax(CastleId(manor_id), total_price, Writes::Job);
+            self.castle_add_to_treasury_no_tax(CastleId(manor_id), total_price);
             self.send(
                 id,
                 &SystemMessage::new(SystemMessageId::S1AdenaDisappeared)

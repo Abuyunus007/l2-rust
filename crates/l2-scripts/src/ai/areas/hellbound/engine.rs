@@ -32,8 +32,6 @@ const DEREK: i32 = 18465;
 const ANNOUNCEMENT: &str = "Hellbound has reached level: %lvl%";
 const UPDATE_INTERVAL: i64 = 60_000; // 1 minute.
 const UPDATE_EVENT: &str = "UPDATE";
-/// The update after the re-read of the two variables (D-50).
-const UPDATE_RUN: &str = "UPDATE_RUN";
 
 /// The fields of Java's `HellboundEngine` and the `Spawn`s of `HellboundSpawns`.
 pub struct HbState {
@@ -283,10 +281,7 @@ impl Script for HellboundEngine {
         _npc: Option<ScriptNpc>,
         _player: Option<ObjectId>,
     ) -> Option<String> {
-        // D-50: the Java GS may have changed the two rows; read them, then run the update.
         if event == UPDATE_EVENT {
-            ctx.reread_global_variables(&["HBLevel", "HBTrust"], UPDATE_RUN, None, None);
-        } else if event == UPDATE_RUN {
             let mut lvl = level(ctx);
             let cached = ctx.shared_state::<HbState>().cached_level;
             if lvl > 0 && lvl == cached {
@@ -343,7 +338,6 @@ mod tests {
         // `CycleDatabaseWrites` on: the update's re-read of the two rows (D-50) runs at once.
         ScriptTest::new_with(registry, NPCS, "", &[], |world, _| {
             world.set_script_settings(l2_world::ScriptSettings {
-                cycle_database_writes: true,
                 ..l2_world::ScriptSettings::default()
             });
         })

@@ -16,9 +16,9 @@ use l2_net::{Decode, PacketReader};
 use l2_protocol_game::server::{NpcHtmlMessage, SsqInfo, SsqStatus, SystemMessage, SystemMessageParam};
 use l2_protocol_game::{ServerOpcode, SystemMessageId};
 use l2_world::sevensigns::{
-    AutoSpawnGroup, CABAL_DAWN, CABAL_DUSK, CABAL_NULL, PERIOD_COMP_RECRUITING, PERIOD_COMP_RESULTS,
-    PERIOD_COMPETITION, PERIOD_SEAL_VALIDATION, SEAL_AVARICE, SEAL_GNOSIS, SEAL_STRIFE, SevenSignsLoad,
-    SevenSignsSettings, SevenSignsStatus, SevenSignsThen, SevenSignsWrite, SignsPlayer,
+    AutoSpawnGroup, CABAL_DAWN, CABAL_NULL, PERIOD_COMP_RECRUITING, PERIOD_COMP_RESULTS, PERIOD_COMPETITION,
+    PERIOD_SEAL_VALIDATION, SEAL_AVARICE, SEAL_GNOSIS, SEAL_STRIFE, SevenSignsLoad, SevenSignsSettings,
+    SevenSignsStatus, SevenSignsWrite, SignsPlayer,
 };
 use l2_world::*;
 
@@ -156,7 +156,7 @@ struct Scene {
 }
 
 impl Scene {
-    fn new(cycle_writes: bool, status: SevenSignsStatus, players: Vec<SignsPlayer>) -> Self {
+    fn new(status: SevenSignsStatus, players: Vec<SignsPlayer>) -> Self {
         let root = tempfile::tempdir().unwrap();
         let write = |path: &str, text: &str| {
             let file = root.path().join(path);
@@ -221,10 +221,7 @@ impl Scene {
         let spawns = Arc::new(SpawnData::load(root.path(), &npcs, &SpawnLoadOptions::default()));
         world.set_npc_data(npcs, spawns);
         world.set_html_cache(Arc::new(HtmCache::load(root.path(), false)));
-        world.set_seven_signs_settings(SevenSignsSettings {
-            cycle_database_writes: cycle_writes,
-            ..SevenSignsSettings::default()
-        });
+        world.set_seven_signs_settings(SevenSignsSettings::default());
         world.load_seven_signs_at(
             SevenSignsLoad {
                 players,
@@ -420,7 +417,7 @@ fn member(char_id: i32, cabal: &str, seal: i32) -> SignsPlayer {
 /// The constructor: no change was missed, so the next one is Monday 18:00 local time.
 #[test]
 fn the_restore_schedules_the_next_monday() {
-    let s = Scene::new(false, competition(), vec![]);
+    let s = Scene::new(competition(), vec![]);
     assert_eq!(s.world.ss_current_period(), PERIOD_COMPETITION);
     // Wednesday noon to Monday 18:00 is five days and six hours (the seconds of now stay: 0).
     assert_eq!(
@@ -437,7 +434,7 @@ fn the_restore_schedules_the_next_monday() {
 /// Avarice, and the new row is inserted (a per-player write, so with the switch off too).
 #[test]
 fn joining_the_dawn_pays_the_fee_and_inserts_the_row() {
-    let mut s = Scene::new(false, competition(), vec![]);
+    let mut s = Scene::new(competition(), vec![]);
     s.enter(ALICE, "Alice", vec![(ADENA, 60_000)]);
     let priest = s.world.spawn_npc_at(DAWN_PRIEST, X + 20, Y, Z, 0).unwrap();
     s.take();
@@ -493,7 +490,7 @@ fn joining_needs_the_competition_period() {
         active_period: PERIOD_SEAL_VALIDATION,
         ..competition()
     };
-    let mut s = Scene::new(false, status, vec![]);
+    let mut s = Scene::new(status, vec![]);
     s.enter(ALICE, "Alice", vec![(ADENA, 60_000)]);
     let priest = s.world.spawn_npc_at(DAWN_PRIEST, X + 20, Y, Z, 0).unwrap();
     s.talk_to(ALICE, priest);
@@ -514,7 +511,7 @@ fn joining_needs_the_competition_period() {
 /// member's row.
 #[test]
 fn contributing_all_stones_counts_for_the_member_and_the_cabal() {
-    let mut s = Scene::new(false, competition(), vec![member(ALICE, "dawn", SEAL_AVARICE)]);
+    let mut s = Scene::new(competition(), vec![member(ALICE, "dawn", SEAL_AVARICE)]);
     s.enter(ALICE, "Alice", vec![(RED, 10), (BLUE, 2)]);
     let priest = s.world.spawn_npc_at(DAWN_PRIEST, X + 20, Y, Z, 0).unwrap();
     s.talk_to(ALICE, priest);
@@ -572,7 +569,7 @@ fn a_member_at_the_limit_may_not_contribute() {
         contribution_score: 1_000_000,
         ..member(ALICE, "dawn", SEAL_AVARICE)
     };
-    let mut s = Scene::new(false, competition(), vec![full]);
+    let mut s = Scene::new(competition(), vec![full]);
     s.enter(ALICE, "Alice", vec![(RED, 10)]);
     let priest = s.world.spawn_npc_at(DAWN_PRIEST, X + 20, Y, Z, 0).unwrap();
     s.talk_to(ALICE, priest);
@@ -600,7 +597,7 @@ fn the_winners_collect_their_ancient_adena() {
         contribution_score: 106,
         ..member(ALICE, "dawn", SEAL_AVARICE)
     };
-    let mut s = Scene::new(false, status, vec![row]);
+    let mut s = Scene::new(status, vec![row]);
     s.enter(ALICE, "Alice", vec![]);
     let priest = s.world.spawn_npc_at(DAWN_PRIEST, X + 20, Y, Z, 0).unwrap();
     s.talk_to(ALICE, priest);
@@ -658,9 +655,9 @@ fn dawn_wins() -> (SevenSignsStatus, Vec<SignsPlayer>) {
 }
 
 #[test]
-fn the_cycle_runs_and_writes_with_the_switch_on() {
+fn the_cycle_runs_and_writes() {
     let (status, players) = dawn_wins();
-    let mut s = Scene::new(true, status, players);
+    let mut s = Scene::new(status, players);
     s.enter(ALICE, "Alice", vec![]);
     s.take();
     let monday = s.world.ss_next_period_change();
@@ -726,88 +723,12 @@ fn the_cycle_runs_and_writes_with_the_switch_on() {
     assert_eq!(writes(&out).len(), 3);
 }
 
-/// The same change with the switch off (D-53): the world changes, but neither the table nor the
-/// status row is written.
-#[test]
-fn the_cycle_writes_nothing_global_with_the_switch_off() {
-    let (status, players) = dawn_wins();
-    let mut s = Scene::new(false, status, players);
-    s.world.ss_period_change_at(WEDNESDAY, utc);
-    let out = s.take();
-    assert_eq!(s.world.ss_current_period(), PERIOD_COMP_RESULTS);
-    assert_eq!(s.world.ss_seal_owner(SEAL_AVARICE), CABAL_DAWN);
-    assert!(writes(&out).is_empty(), "{:?}", writes(&out));
-    assert!(s.world.ss_has_period_timer());
-}
-
 // ---------------------------------------------------------------------------------- the record
 
-/// `RequestSSQStatus` with the switch off: the rows are read first (D-50); the page shows what the
-/// Java game server wrote. A failed read shows nothing. Page 4 is refused in the validation period.
+/// The record comes from memory at once.
 #[test]
-fn the_record_is_read_again_with_the_switch_off() {
-    let mut s = Scene::new(false, competition(), vec![]);
-    s.enter(ALICE, "Alice", vec![]);
-    s.take();
-    s.input(ALICE, ClientInput::SsqStatus { page: 1 });
-    let out = s.take();
-    assert!(of(&out, ALICE, "SSQ_STATUS").is_empty());
-    let then = out
-        .iter()
-        .find_map(|o| match o {
-            Out::Persist(PersistCommand::SevenSignsReadRequest { then }) => Some(then.clone()),
-            _ => None,
-        })
-        .unwrap();
-    assert_eq!(
-        then,
-        SevenSignsThen::Status {
-            player: ObjectId(ALICE),
-            page: 1
-        }
-    );
-
-    // A failed read: nothing.
-    s.world.handle(WorldCommand::SevenSignsLoaded {
-        result: Err(()),
-        then: then.clone(),
-    });
-    assert!(of(&s.take(), ALICE, "SSQ_STATUS").is_empty());
-
-    // Sieghardt moved on to the seal validation, the Dusk own the Seal of Strife and Bob joined.
-    let mut sieghardt = competition();
-    sieghardt.active_period = PERIOD_SEAL_VALIDATION;
-    sieghardt.dusk_stone_score = 50.0;
-    sieghardt.seal_owners[SEAL_STRIFE as usize] = CABAL_DUSK;
-    s.world.handle(WorldCommand::SevenSignsLoaded {
-        result: Ok(SevenSignsLoad {
-            players: vec![member(BOB, "dusk", SEAL_STRIFE)],
-            status: Some(sieghardt),
-            ..SevenSignsLoad::default()
-        }),
-        then,
-    });
-    let out = s.take();
-    let page: SsqStatus = decode(of(&out, ALICE, "SSQ_STATUS")[0]);
-    assert_eq!((page.page, page.period), (1, PERIOD_SEAL_VALIDATION as u8));
-    assert_eq!(s.world.seven_signs_strife_owner(), CABAL_DUSK);
-    assert_eq!(s.world.ss_total_members(CABAL_DUSK), 1);
-    // The next period change follows the new period: Monday 18:00.
-    assert!(s.world.ss_has_period_timer());
-
-    // Page 4 is not shown in the seal validation period.
-    s.input(ALICE, ClientInput::SsqStatus { page: 4 });
-    let out = s.take();
-    assert!(
-        !out.iter()
-            .any(|o| matches!(o, Out::Persist(PersistCommand::SevenSignsReadRequest { .. })))
-    );
-}
-
-/// With the switch on the record comes from memory at once.
-#[test]
-fn the_record_is_shown_at_once_with_the_switch_on() {
-    let mut s = Scene::new(true, competition(), vec![member(ALICE, "dawn", SEAL_GNOSIS)]);
+fn the_record_is_shown_at_once() {
+    let mut s = Scene::new(competition(), vec![member(ALICE, "dawn", SEAL_GNOSIS)]);
     s.enter(ALICE, "Alice", vec![]);
     s.take();
     s.input(ALICE, ClientInput::SsqStatus { page: 3 });
@@ -827,7 +748,6 @@ fn the_seal_of_avarice_opens_the_necropolis_to_the_winner_only() {
     status.dawn_stone_score = 10.0;
     status.seal_owners[SEAL_AVARICE as usize] = CABAL_DAWN;
     let mut s = Scene::new(
-        false,
         status,
         vec![
             member(ALICE, "dawn", SEAL_AVARICE),
@@ -862,7 +782,6 @@ fn the_seal_of_strife_stops_the_dusk_golems() {
     status.active_period = PERIOD_SEAL_VALIDATION;
     status.seal_owners[SEAL_STRIFE as usize] = CABAL_DAWN;
     let mut s = Scene::new(
-        false,
         status,
         vec![
             member(ALICE, "dawn", SEAL_STRIFE),
@@ -887,7 +806,7 @@ fn the_seal_of_strife_stops_the_dusk_golems() {
 #[test]
 fn the_merchant_of_mammon_follows_the_seal_of_avarice() {
     let (status, players) = dawn_wins();
-    let mut s = Scene::new(false, status, players);
+    let mut s = Scene::new(status, players);
     s.world.load_auto_spawns(vec![AutoSpawnGroup {
         npc_id: MAMMON_MERCHANT,
         count: 1,

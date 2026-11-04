@@ -14,14 +14,14 @@
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SsqInfo, SystemMessage};
 use l2_util::ObjectId;
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 
 use super::{
     CABAL_DAWN, CABAL_DUSK, CABAL_NULL, PERIOD_COMP_RECRUITING, PERIOD_COMP_RESULTS, PERIOD_COMPETITION,
     PERIOD_MAJOR_LENGTH, PERIOD_MINOR_LENGTH, PERIOD_SEAL_VALIDATION, PERIOD_START_HOUR, PERIOD_START_MINS,
-    SEAL_AVARICE, SEAL_GNOSIS, SEAL_NULL, SEAL_STRIFE, SevenSignsLoad, SevenSignsStatus, SevenSignsThen,
-    SevenSignsTimer, SevenSignsWrite, SignsPlayer, THE_VANQUISHED_OF_WAR, THE_VICTOR_OF_WAR, cabal_name,
-    cabal_short_name, java_round_f32, period_name, seal_name,
+    SEAL_AVARICE, SEAL_GNOSIS, SEAL_NULL, SEAL_STRIFE, SevenSignsLoad, SevenSignsStatus, SevenSignsTimer,
+    SevenSignsWrite, SignsPlayer, THE_VANQUISHED_OF_WAR, THE_VICTOR_OF_WAR, cabal_name, cabal_short_name,
+    java_round_f32, period_name, seal_name,
 };
 use crate::outbox::PersistCommand;
 use crate::residence::{CastleId, ResidenceWrite};
@@ -569,13 +569,9 @@ impl World {
         }
     }
 
-    /// A castle row the cycle changes: only with `CycleDatabaseWrites` (D-53).
+    /// A castle row the cycle changes.
     fn ss_cycle_residence_write(&mut self, write: ResidenceWrite) {
-        if self.seven_signs.settings.cycle_database_writes {
-            self.residence_write(write);
-        } else {
-            debug!("SideBySide: not written (CycleDatabaseWrites = False): {write:?}");
-        }
+        self.residence_write(write);
     }
 
     /// Java `teleLosingCabalFromDungeons(compWinner)`.
@@ -648,13 +644,8 @@ impl World {
         self.outbox.persist(PersistCommand::SevenSigns(write));
     }
 
-    /// Java `saveSevenSignsData()`: every member (a period change, the shutdown). Global: only
-    /// with `CycleDatabaseWrites` (D-53).
+    /// Java `saveSevenSignsData()`: every member (a period change, the shutdown).
     pub(crate) fn ss_save_data_all(&mut self) {
-        if !self.seven_signs.settings.cycle_database_writes {
-            debug!("SideBySide: seven_signs not saved (CycleDatabaseWrites = False)");
-            return;
-        }
         let rows: Vec<SignsPlayer> = self.seven_signs.players.values().cloned().collect();
         self.ss_write(SevenSignsWrite::UpdateAllPlayers(rows));
     }
@@ -666,19 +657,14 @@ impl World {
         }
     }
 
-    /// Java `saveSevenSignsStatus()`: `_lastSave` is now and the row is written. Global: only with
-    /// `CycleDatabaseWrites` (D-53); without it the row and `_lastSave` stay.
+    /// Java `saveSevenSignsStatus()`: `_lastSave` is now and the row is written.
     pub(crate) fn ss_save_status(&mut self) {
-        if !self.seven_signs.settings.cycle_database_writes {
-            debug!("SideBySide: seven_signs_status not saved (CycleDatabaseWrites = False)");
-            return;
-        }
         self.seven_signs.status.last_save = unix_ms_now();
         let status = self.seven_signs.status.clone();
         self.ss_write(SevenSignsWrite::UpdateStatus(status));
     }
 
-    /// Java `Shutdown.saveData`: "Save Seven Signs data before closing." (both global).
+    /// Java `Shutdown.saveData`: "Save Seven Signs data before closing." .
     pub(crate) fn seven_signs_shutdown(&mut self) {
         self.ss_save_data_all();
         info!("SevenSigns: Seven Signs data saved.");
@@ -764,106 +750,6 @@ impl World {
                 id,
                 "You have been teleported to the nearest town because you have not signed for any cabal.",
             );
-        }
-    }
-
-    // ------------------------------------------------------------------ D-50 re-reads
-
-    /// Applies what the session read at `CharacterSelect` (`PlayerProfile::seven_signs_refresh`):
-    /// only with `CycleDatabaseWrites = False`, when the Java game server may have changed the
-    /// rows. Called from `on_entered` before anything reads the member's cabal.
-    pub(crate) fn ss_refresh_player(&mut self, id: ObjectId) {
-        let Some(refresh) = self
-            .players
-            .get_mut(&id)
-            .and_then(|p| p.data.profile.seven_signs_refresh.take())
-        else {
-            return;
-        };
-        if self.seven_signs.settings.cycle_database_writes {
-            return;
-        }
-        match refresh.player {
-            Some(row) if row.char_id == id.0 => {
-                self.seven_signs.players.insert(id.0, row);
-            }
-            Some(_) => {}
-            None => {
-                self.seven_signs.players.remove(&id.0);
-            }
-        }
-        if let Some(status) = refresh.status {
-            self.ss_apply_status_read(status);
-        }
-    }
-
-    /// Asks the persistence task for every Seven Signs row (D-50); the answer comes back as
-    /// `WorldCommand::SevenSignsLoaded` and goes on with `then`.
-    pub(crate) fn ss_request_read(&mut self, then: SevenSignsThen) {
-        self.outbox
-            .persist(PersistCommand::SevenSignsReadRequest { then });
-    }
-
-    /// The answer to `PersistCommand::SevenSignsReadRequest`. A failed read changes nothing and
-    /// refuses the follow-up (D-50).
-    pub(crate) fn on_seven_signs_loaded(&mut self, result: Result<SevenSignsLoad, ()>, then: SevenSignsThen) {
-        let Ok(load) = result else {
-            warn!("SevenSigns: the rows could not be read again; {then:?} is refused.");
-            return;
-        };
-        if !self.seven_signs.settings.cycle_database_writes {
-            // The members who are online here keep the rows this server has (it writes them).
-            let online: std::collections::HashSet<i32> = self.players.keys().map(|p| p.0).collect();
-            self.seven_signs
-                .players
-                .retain(|char_id, _| online.contains(char_id));
-            for row in load.players {
-                if !online.contains(&row.char_id) {
-                    self.seven_signs.players.insert(row.char_id, row);
-                }
-            }
-            if let Some(status) = load.status {
-                self.ss_apply_status_read(status);
-            }
-            // The festival scores follow the Java game server's too (M8-FEST-01).
-            self.festival_apply_read(load.festival);
-        }
-        match then {
-            SevenSignsThen::Nothing => {}
-            SevenSignsThen::Status { player, page } => self.ss_send_status(player, page),
-            SevenSignsThen::FestivalPage { player, npc, page } => self.festival_show_page(npc, player, page),
-        }
-    }
-
-    /// The status row as the Java game server wrote it replaces this world's (D-50, D-53). A new
-    /// period moves the period change on the wheel and the Seven Signs NPCs follow a new state.
-    pub(crate) fn ss_apply_status_read(&mut self, status: SevenSignsStatus) {
-        let before = (
-            self.ss_current_period(),
-            self.seven_signs.status.seal_owners,
-            self.ss_cabal_highest_score(),
-        );
-        self.seven_signs.status = status;
-        let after = (
-            self.ss_current_period(),
-            self.seven_signs.status.seal_owners,
-            self.ss_cabal_highest_score(),
-        );
-        if before.0 != after.0 {
-            let now = unix_ms_now();
-            let status = &self.seven_signs.status;
-            // A 15 minute period ends 15 minutes after the Java GS saved its change; a week long
-            // one at the next Monday 18:00.
-            self.seven_signs.next_period_change = match status.active_period {
-                PERIOD_COMP_RECRUITING | PERIOD_COMP_RESULTS if status.last_save > 7 => {
-                    status.last_save.wrapping_add(PERIOD_MINOR_LENGTH)
-                }
-                period => next_period_change_ms(period, now, l2_util::time::local_offset_millis),
-            };
-            self.ss_schedule_period_change(self.seven_signs.next_period_change - now);
-        }
-        if before != after {
-            self.spawn_seven_signs_npc();
         }
     }
 }

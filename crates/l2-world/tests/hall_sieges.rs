@@ -489,16 +489,11 @@ fn guard_rows(npc_id: i32, count: i32, delay: i32, hall: i32) -> Vec<HallGuardRe
 }
 
 impl Scene {
-    fn new(siege_database_writes: bool, halls: Vec<SiegableHallRecord>, load: HallSiegeLoad) -> Self {
-        Self::with(siege_database_writes, halls, load, HallSiegeSettings::default())
+    fn new(halls: Vec<SiegableHallRecord>, load: HallSiegeLoad) -> Self {
+        Self::with(halls, load, HallSiegeSettings::default())
     }
 
-    fn with(
-        siege_database_writes: bool,
-        halls: Vec<SiegableHallRecord>,
-        load: HallSiegeLoad,
-        hall_settings: HallSiegeSettings,
-    ) -> Self {
+    fn with(halls: Vec<SiegableHallRecord>, load: HallSiegeLoad, hall_settings: HallSiegeSettings) -> Self {
         let root = tempfile::tempdir().unwrap();
         let write = |path: &str, text: &str| {
             let file = root.path().join(path);
@@ -565,7 +560,6 @@ impl Scene {
             ..SiegeSettings::default()
         });
         world.set_residence_settings(ResidenceSettings {
-            siege_database_writes,
             ..ResidenceSettings::default()
         });
         world.load_clans(
@@ -769,7 +763,6 @@ impl Scene {
                 .world
                 .flag_war_clans(H35)
                 .into_iter()
-                .filter(|(_, d)| d.written)
                 .map(|(clan, d)| FlagWarRecord {
                     clan_id: clan,
                     flag: d.flag,
@@ -958,7 +951,6 @@ fn base_load(hall: i32) -> HallSiegeHallLoad {
 #[test]
 fn an_engine_exists_for_each_hall_that_has_a_row() {
     let s = Scene::new(
-        false,
         vec![hall_row(21, 0, NOW + 3 * DAY), hall_row(34, 0, NOW + 3 * DAY)],
         hall_load(vec![]),
     );
@@ -973,7 +965,6 @@ fn an_engine_exists_for_each_hall_that_has_a_row() {
 #[test]
 fn no_quests_means_no_sieges() {
     let s = Scene::with(
-        false,
         all_halls(0),
         hall_load(vec![]),
         HallSiegeSettings {
@@ -985,43 +976,31 @@ fn no_quests_means_no_sieges() {
 }
 
 /// `SiegableHall` constructor: a next siege less than an hour away is moved by `schedule_config`
-/// (14 days at 18:30) and written (`updateDb`), only with `SiegeDatabaseWrites` (D-51).
+/// (14 days at 18:30) and written (`updateDb`), 
 #[test]
-fn a_siege_due_within_an_hour_is_moved_and_written_only_with_the_switch() {
-    for switch in [false, true] {
-        let scene = Scene::new(switch, vec![hall_row(21, 0, NOW + 1_800_000)], hall_load(vec![]));
-        let next = scene.world.hall_next_siege_time(H21);
-        // 2026-11-07T18:30:00.321Z.
-        assert_eq!(next, 1_794_076_200_321, "{next}");
-    }
+fn a_siege_due_within_an_hour_is_moved_and_written() {
+    let scene = Scene::new(vec![hall_row(21, 0, NOW + 1_800_000)], hall_load(vec![]));
+    let next = scene.world.hall_next_siege_time(H21);
+    // 2026-11-07T18:30:00.321Z.
+    assert_eq!(next, 1_794_076_200_321, "{next}");
+
     // The write: the scene's load output is not kept, so load again and look at the log.
-    let written = Scene::new(true, vec![hall_row(21, 0, NOW + 1_800_000)], hall_load(vec![]));
+    let written = Scene::new(vec![hall_row(21, 0, NOW + 1_800_000)], hall_load(vec![]));
     let out = written.log.take();
     assert_eq!(siegable_writes(&out), [(21, 0, 1_794_076_200_321)]);
-    let quiet = Scene::new(false, vec![hall_row(21, 0, NOW + 1_800_000)], hall_load(vec![]));
-    assert!(siegable_writes(&quiet.log.take()).is_empty());
     // A siege due later is left alone.
-    let later = Scene::new(true, vec![hall_row(21, 0, NOW + 2 * HOUR)], hall_load(vec![]));
+    let later = Scene::new(vec![hall_row(21, 0, NOW + 2 * HOUR)], hall_load(vec![]));
     assert_eq!(later.world.hall_next_siege_time(H21), NOW + 2 * HOUR);
     assert!(siegable_writes(&later.log.take()).is_empty());
 }
 
 // ---------------------------------------------------------------------------------- the schedule
 
-/// `PrepareOwner` runs an hour before the siege: with the switch only (D-51); it frees the hall,
+/// `PrepareOwner` runs an hour before the siege: it frees the hall,
 /// makes the owner an attacker, banishes the foreigners and tells everybody.
 #[test]
-fn the_registration_ends_an_hour_before_the_siege_with_the_switch() {
-    let mut off = Scene::new(
-        false,
-        vec![hall_row(21, LIONS, NOW + 2 * HOUR)],
-        hall_load(vec![]),
-    );
-    off.run_ms(65 * 60_000);
-    assert_eq!(off.world.hall_siege_status(H21), Some(SiegeStatus::Registering));
-    assert_eq!(off.hall(21).owner_id, LIONS);
-
-    let mut on = Scene::new(true, vec![hall_row(21, LIONS, NOW + 2 * HOUR)], hall_load(vec![]));
+fn the_registration_ends_an_hour_before_the_siege() {
+    let mut on = Scene::new(vec![hall_row(21, LIONS, NOW + 2 * HOUR)], hall_load(vec![]));
     on.enter(P1, LIONS, 21);
     on.enter_at(P5, BEARS, hall_xy(21).0 + 5, hall_xy(21).1, 0);
     on.take();
@@ -1062,7 +1041,7 @@ fn join_ids(s: &mut Scene, player: i32, hall: i32) -> Vec<SystemMessageId> {
 /// player gets `SiegeInfo` of the hall (`RequestJoinSiege`). The hall is read again first (D-50).
 #[test]
 fn a_clan_registers_in_javas_order_of_checks() {
-    let mut s = Scene::new(false, vec![hall_row(21, LIONS, NOW + 3 * DAY)], hall_load(vec![]));
+    let mut s = Scene::new(vec![hall_row(21, LIONS, NOW + 3 * DAY)], hall_load(vec![]));
     for (id, clan) in [(P1, LIONS), (P3, WOLVES), (P5, BEARS), (P7, TIGERS)] {
         s.enter(id, clan, 21);
     }
@@ -1125,7 +1104,7 @@ fn a_clan_registers_in_javas_order_of_checks() {
 /// not; in the waiting phase and during the battle the answers are the deadline and "not the time".
 #[test]
 fn one_hall_per_clan_and_the_phases() {
-    let mut s = Scene::new(false, all_halls(LIONS), hall_load(vec![]));
+    let mut s = Scene::new(all_halls(LIONS), hall_load(vec![]));
     s.enter(P3, WOLVES, 21);
     s.enter(P7, TIGERS, 21);
     s.enter(P1, LIONS, 21);
@@ -1165,7 +1144,6 @@ fn one_hall_per_clan_and_the_phases() {
 #[test]
 fn the_attacker_list_has_a_limit() {
     let mut s = Scene::with(
-        false,
         all_halls(0),
         hall_load(vec![]),
         HallSiegeSettings {
@@ -1185,7 +1163,7 @@ fn the_attacker_list_has_a_limit() {
 /// `unRegisterClan`: only while registering; `SiegeAttackerList` shows the clans.
 #[test]
 fn cancelling_and_the_attacker_list() {
-    let mut s = Scene::new(false, all_halls(0), hall_load(vec![]));
+    let mut s = Scene::new(all_halls(0), hall_load(vec![]));
     s.enter(P3, WOLVES, 21);
     s.enter(P7, TIGERS, 21);
     s.join(P3, 21, true);
@@ -1214,11 +1192,11 @@ fn cancelling_and_the_attacker_list() {
 /// `ClanTable.destroyClan`: a clan without a hall leaves every attacker list.
 #[test]
 fn a_destroyed_clan_leaves_the_lists() {
-    let mut s = Scene::new(false, all_halls(0), hall_load(vec![]));
+    let mut s = Scene::new(all_halls(0), hall_load(vec![]));
     s.enter(P3, WOLVES, 21);
     s.join(P3, 21, true);
     assert!(s.world.hall_siege_is_attacker(H21, WOLVES));
-    s.world.destroy_clan(WOLVES, false);
+    s.world.destroy_clan(WOLVES);
     assert!(!s.world.hall_siege_is_attacker(H21, WOLVES));
 }
 
@@ -1226,41 +1204,34 @@ fn a_destroyed_clan_leaves_the_lists() {
 /// clan), only with the switch (D-51).
 #[test]
 fn the_shutdown_saves_the_attackers_with_the_switch() {
-    for switch in [false, true] {
-        let mut s = Scene::new(switch, all_halls(0), hall_load(vec![]));
-        s.world.hall_add_attacker(H21, WOLVES);
-        s.world.hall_add_attacker(H21, TIGERS);
-        s.take();
-        s.world.handle(WorldCommand::Shutdown {
-            done: Box::new(|| ()),
-        });
-        let writes = hall_writes(&s.take());
-        if switch {
-            let saved: Vec<&HallSiegeWrite> = writes
-                .iter()
-                .filter(|w| matches!(w, HallSiegeWrite::SaveAttackers { hall_id: 21, .. }))
-                .collect();
-            match saved[0] {
-                HallSiegeWrite::SaveAttackers { clans, .. } => {
-                    let mut clans = clans.clone();
-                    clans.sort_unstable();
-                    assert_eq!(clans, [WOLVES, TIGERS]);
-                }
-                other => panic!("{other:?}"),
-            }
-            // A row set for every hall that has an engine.
-            assert_eq!(writes.len(), 6);
-        } else {
-            assert!(writes.is_empty());
+    let mut s = Scene::new(all_halls(0), hall_load(vec![]));
+    s.world.hall_add_attacker(H21, WOLVES);
+    s.world.hall_add_attacker(H21, TIGERS);
+    s.take();
+    s.world.handle(WorldCommand::Shutdown {
+        done: Box::new(|| ()),
+    });
+    let writes = hall_writes(&s.take());
+    let saved: Vec<&HallSiegeWrite> = writes
+        .iter()
+        .filter(|w| matches!(w, HallSiegeWrite::SaveAttackers { hall_id: 21, .. }))
+        .collect();
+    match saved[0] {
+        HallSiegeWrite::SaveAttackers { clans, .. } => {
+            let mut clans = clans.clone();
+            clans.sort_unstable();
+            assert_eq!(clans, [WOLVES, TIGERS]);
         }
+        other => panic!("{other:?}"),
     }
+    // A row set for every hall that has an engine.
+    assert_eq!(writes.len(), 6);
 }
 
 /// The attackers saved at the last shutdown are the attackers at startup (`loadAttackers`).
 #[test]
 fn the_attackers_are_loaded_at_startup() {
     let s = Scene::new(
-        false,
         all_halls(0),
         hall_load(vec![HallSiegeHallLoad {
             attackers: vec![WOLVES, TIGERS],
@@ -1277,9 +1248,8 @@ fn the_attackers_are_loaded_at_startup() {
 /// A siege of the Fortress of Resistance from the start to the end, driven by a GM (D-51): the
 /// owner is freed in `prepareOwner`, `startSiege` moves the attackers into the siege and spawns
 /// Nurka, the clan with the most damage wins the hall when Nurka dies (2.5 s after the kill).
-fn resistance_siege(switch: bool) -> (Scene, Vec<Out>) {
+fn resistance_siege() -> (Scene, Vec<Out>) {
     let mut s = Scene::new(
-        switch,
         vec![hall_row(21, LIONS, NOW + 3 * DAY)],
         hall_load(vec![HallSiegeHallLoad {
             guards: guard_rows(GUARD, 2, 60, 21),
@@ -1312,7 +1282,7 @@ fn resistance_siege(switch: bool) -> (Scene, Vec<Out>) {
 
 #[test]
 fn a_gm_siege_of_the_fortress_of_resistance_runs_to_its_end() {
-    let (mut s, out) = resistance_siege(true);
+    let (mut s, out) = resistance_siege();
     // The winner got the hall and the other messages went to everybody.
     assert_eq!(s.hall(21).owner_id, WOLVES);
     assert_eq!(s.clan(WOLVES).hideout_id, 21);
@@ -1349,21 +1319,11 @@ fn a_gm_siege_of_the_fortress_of_resistance_runs_to_its_end() {
     assert!(s.npcs_of(NURKA).is_empty());
 }
 
-/// Without the switch the same siege changes this world but writes nothing (D-51).
-#[test]
-fn the_same_siege_without_the_switch_writes_nothing() {
-    let (s, out) = resistance_siege(false);
-    assert_eq!(s.hall(21).owner_id, WOLVES);
-    assert!(siegable_writes(&out).is_empty());
-    assert!(hall_writes(&out).is_empty());
-}
-
 /// `startSiege`: the attackers are in the siege (state 1, hideout siege), the doors are repaired,
 /// the siege guards stand, the zone is active and the doors with a bar are enemies.
 #[test]
 fn the_start_of_a_siege_sets_the_attackers_and_the_zone() {
     let mut s = Scene::new(
-        false,
         vec![hall_row(21, 0, NOW + 3 * DAY)],
         hall_load(vec![HallSiegeHallLoad {
             guards: guard_rows(GUARD, 2, 60, 21),
@@ -1403,7 +1363,7 @@ fn the_start_of_a_siege_sets_the_attackers_and_the_zone() {
 /// no list and starts anyway).
 #[test]
 fn a_siege_without_attackers_is_cancelled_except_at_the_fortress_of_resistance() {
-    let mut s = Scene::new(true, all_halls(0), hall_load(vec![]));
+    let mut s = Scene::new(all_halls(0), hall_load(vec![]));
     s.enter(P3, WOLVES, 34);
     s.take();
     s.world.hall_start_siege(H34);
@@ -1426,7 +1386,7 @@ fn a_siege_without_attackers_is_cancelled_except_at_the_fortress_of_resistance()
 /// The forward command and `//chsiege_*`: the GM moves the hall through its three steps.
 #[test]
 fn chsiege_commands_drive_a_test_siege() {
-    let mut s = Scene::new(false, vec![hall_row(21, LIONS, NOW + 3 * DAY)], hall_load(vec![]));
+    let mut s = Scene::new(vec![hall_row(21, LIONS, NOW + 3 * DAY)], hall_load(vec![]));
     s.enter(P1, LIONS, 21);
     s.enter(P3, WOLVES, 21);
     s.enter_gm(GM);
@@ -1514,7 +1474,7 @@ fn chsiege_commands_drive_a_test_siege() {
 /// `admin_chsiege_setSiegeDate`: the format, the refusals and the new date.
 #[test]
 fn chsiege_set_siege_date() {
-    let mut s = Scene::new(true, vec![hall_row(21, 0, NOW + 3 * DAY)], hall_load(vec![]));
+    let mut s = Scene::new(vec![hall_row(21, 0, NOW + 3 * DAY)], hall_load(vec![]));
     s.enter_gm(GM);
     s.take();
     let gm = |s: &mut Scene, text: &str| {
@@ -1575,7 +1535,6 @@ fn chsiege_set_siege_date() {
 #[test]
 fn devastated_castle_is_won_with_the_most_damage_to_gustav() {
     let mut s = Scene::new(
-        false,
         all_halls(0),
         hall_load(vec![HallSiegeHallLoad {
             guards: vec![
@@ -1627,7 +1586,7 @@ fn devastated_castle_is_won_with_the_most_damage_to_gustav() {
 /// Fortress of the Dead starts at night only (game hours 0 to 6).
 #[test]
 fn the_fortress_of_the_dead_starts_at_night() {
-    let mut s = Scene::new(false, all_halls(0), hall_load(vec![]));
+    let mut s = Scene::new(all_halls(0), hall_load(vec![]));
     s.world.hall_add_attacker(H64, WOLVES);
     s.world.hall_start_siege(H64);
     let hour = (l2_world::game_time_minutes(
@@ -1650,7 +1609,6 @@ fn the_fortress_of_the_dead_starts_at_night() {
 #[test]
 fn lidia_ends_the_siege() {
     let mut s = Scene::new(
-        false,
         all_halls(0),
         hall_load(vec![HallSiegeHallLoad {
             guards: guard_rows(LIDIA, 1, 0, 64),
@@ -1676,12 +1634,12 @@ fn lidia_ends_the_siege() {
 
 // ---------------------------------------------------------------------------------- Bandit
 
-fn bandit_scene(switch: bool) -> Scene {
+fn bandit_scene() -> Scene {
     let mut halls = all_halls(0);
     halls[2].owner_id = LIONS;
     let mut load = base_load(35);
     load.guards = Vec::new();
-    Scene::new(switch, halls, hall_load(vec![load]))
+    Scene::new(halls, hall_load(vec![load]))
 }
 
 fn page_has(out: &[Out], player: i32, text: &str) -> bool {
@@ -1692,7 +1650,7 @@ fn page_has(out: &[Out], player: i32, text: &str) -> bool {
 /// registration with the quest item makes the clan an attacker with a flag and saves the rows.
 #[test]
 fn bandit_stronghold_registration_with_the_quest_item() {
-    let mut s = bandit_scene(true);
+    let mut s = bandit_scene();
     s.enter(P3, WOLVES, 35);
     s.enter(P7, TIGERS, 35);
     give(&mut s, P3, QUEST_REWARD, 1);
@@ -1746,7 +1704,7 @@ fn bandit_stronghold_registration_with_the_quest_item() {
 /// The refusals of the registration, the warrior choice and the quest check.
 #[test]
 fn bandit_stronghold_pages_follow_javas_chain() {
-    let mut s = bandit_scene(false);
+    let mut s = bandit_scene();
     s.enter(P3, WOLVES, 35);
     s.enter(P4, WOLVES, 35);
     s.enter(P5, BEARS, 35);
@@ -1765,7 +1723,7 @@ fn bandit_stronghold_pages_follow_javas_chain() {
     let out = s.take();
     assert!(s.world.hall_siege_is_attacker(H35, WOLVES));
     assert_eq!(s.world.adena_of(ObjectId(P3)), 800_000);
-    assert!(hall_writes(&out).is_empty(), "the switch is off");
+    assert!(!hall_writes(&out).is_empty());
     // An event that matches no branch is shown as a chat line (Java `showResult`).
     s.event(P3, "BanditStronghold", messenger, "Bogus");
     assert!(says_to(&s.take(), P3).iter().any(|t| t.contains("Bogus")));
@@ -1797,7 +1755,7 @@ fn bandit_stronghold_pages_follow_javas_chain() {
 /// The attackers' page lists every clan with the *player's* clan name (a Java quirk).
 #[test]
 fn bandit_stronghold_attackers_page_quirk() {
-    let mut s = bandit_scene(false);
+    let mut s = bandit_scene();
     s.enter(P3, WOLVES, 35);
     s.enter(P7, TIGERS, 35);
     let messenger = s.spawn_at_hall(BANDIT_MESSENGER, 35);
@@ -1829,7 +1787,7 @@ fn bandit_stronghold_attackers_page_quirk() {
 /// and five minutes later the doors close and it all begins again.
 #[test]
 fn bandit_stronghold_never_leaves_the_waiting_phase() {
-    let mut s = bandit_scene(true);
+    let mut s = bandit_scene();
     s.enter(P3, WOLVES, 35);
     s.enter(P7, TIGERS, 35);
     s.enter(P1, LIONS, 35);
@@ -1866,7 +1824,7 @@ fn bandit_stronghold_never_leaves_the_waiting_phase() {
 /// The teleport NPCs: the first click starts a 30 second teleport of the players in the zone.
 #[test]
 fn the_flag_war_teleport_npc_moves_the_zone_after_30_seconds() {
-    let mut s = bandit_scene(false);
+    let mut s = bandit_scene();
     let (x, y) = hall_xy(35);
     s.enter_at(P3, WOLVES, x - 300, y, 0);
     let tele = s.world.spawn_npc_at(BANDIT_TELEPORT, x - 290, y, Z, 0).unwrap();
@@ -1902,7 +1860,7 @@ fn flag_war_rows_load_and_reread() {
         ],
         ..base_load(35)
     };
-    let mut s = Scene::new(false, all_halls(0), hall_load(vec![load]));
+    let mut s = Scene::new(all_halls(0), hall_load(vec![load]));
     assert!(s.world.hall_siege_is_attacker(H35, WOLVES));
     assert!(!s.world.hall_siege_is_attacker(H35, 9999));
     let clans = s.world.flag_war_clans(H35);
@@ -1922,15 +1880,15 @@ fn flag_war_rows_load_and_reread() {
 
 // ---------------------------------------------------------------------------------- Rainbow
 
-fn rainbow_scene(switch: bool) -> Scene {
-    Scene::new(switch, all_halls(0), hall_load(vec![base_load(62)]))
+fn rainbow_scene() -> Scene {
+    Scene::new(all_halls(0), hall_load(vec![base_load(62)]))
 }
 
 /// The Rainbow Springs messenger: war decrees register the clan (the item is taken, the row
 /// written); NOTE(java-quirk): the first clan fills all four arenas.
 #[test]
 fn rainbow_springs_registration() {
-    let mut s = rainbow_scene(true);
+    let mut s = rainbow_scene();
     s.enter(P3, WOLVES, 62);
     s.enter(P7, TIGERS, 62);
     s.enter(P4, WOLVES, 62);
@@ -1947,7 +1905,7 @@ fn rainbow_springs_registration() {
 /// With enough members the war decrees are taken, the row is written and the arenas are filled.
 #[test]
 fn rainbow_springs_fills_the_arenas_with_the_first_clan() {
-    let mut s = rainbow_scene(true);
+    let mut s = rainbow_scene();
     // Wolves with five members.
     let mut clan = clan_record(WOLVES, "Wolves", 5, P3, P4);
     for id in [0x2000_0010, 0x2000_0011, 0x2000_0012] {
@@ -1995,7 +1953,7 @@ fn rainbow_springs_fills_the_arenas_with_the_first_clan() {
 /// letters.
 #[test]
 fn rainbow_springs_words_and_letters() {
-    let mut s = rainbow_scene(false);
+    let mut s = rainbow_scene();
     s.enter(P3, WOLVES, 62);
     let yeti = s.spawn_at_hall(YETI_1, 62);
     s.event(P3, "RainbowSpringsChateau", yeti, "seeItem");
@@ -2014,7 +1972,7 @@ fn rainbow_springs_words_and_letters() {
 /// The caretaker's `GoToArena` always ends without a page (Java returns null after the checks).
 #[test]
 fn rainbow_springs_go_to_arena_shows_pages_only_before_the_party_checks() {
-    let mut s = rainbow_scene(false);
+    let mut s = rainbow_scene();
     s.enter(P3, WOLVES, 62);
     s.enter(P4, WOLVES, 62);
     s.enter(P7, TIGERS, 62);
@@ -2035,7 +1993,7 @@ fn rainbow_springs_go_to_arena_shows_pages_only_before_the_party_checks() {
 /// `EnterWorld`: a member of an attacker clan of a hall in siege logs in on the attacking side.
 #[test]
 fn members_of_an_attacker_clan_log_in_on_the_attacking_side() {
-    let mut s = Scene::new(false, all_halls(0), hall_load(vec![]));
+    let mut s = Scene::new(all_halls(0), hall_load(vec![]));
     s.world.hall_add_attacker(H21, WOLVES);
     s.world.hall_start_siege(H21);
     s.enter(P3, WOLVES, 21);
@@ -2050,7 +2008,7 @@ fn members_of_an_attacker_clan_log_in_on_the_attacking_side() {
 /// (even before the battle); a hall's headquarters is placed by the clan leader.
 #[test]
 fn the_die_window_offers_the_headquarters_to_the_attackers() {
-    let mut s = Scene::new(false, all_halls(0), hall_load(vec![]));
+    let mut s = Scene::new(all_halls(0), hall_load(vec![]));
     s.enter(P3, WOLVES, 21);
     s.enter(P7, TIGERS, 21);
     s.world.hall_add_attacker(H21, WOLVES);
@@ -2062,7 +2020,7 @@ fn the_die_window_offers_the_headquarters_to_the_attackers() {
 /// `ClanHallManager.onBypassFeedback` does nothing for a hall in siege.
 #[test]
 fn the_hall_in_siege_has_no_use_of_its_manager() {
-    let s = Scene::new(false, all_halls(0), hall_load(vec![]));
+    let s = Scene::new(all_halls(0), hall_load(vec![]));
     assert!(!s.world.hall_is_in_siege(H21));
 }
 
@@ -2072,7 +2030,7 @@ fn the_hall_in_siege_has_no_use_of_its_manager() {
 /// was when the page was built (no object id: `NpcHtmlMessage()`).
 #[test]
 fn the_messenger_of_the_fortress_of_resistance_shows_the_date() {
-    let mut s = Scene::new(false, all_halls(0), hall_load(vec![]));
+    let mut s = Scene::new(all_halls(0), hall_load(vec![]));
     s.enter(P3, WOLVES, 21);
     let messenger = s.spawn_at_hall(MESSENGER_21, 21);
     s.take();
@@ -2088,7 +2046,7 @@ fn the_messenger_of_the_fortress_of_resistance_shows_the_date() {
 /// (its flag follows the clans that registered before).
 #[test]
 fn the_flag_war_registers_its_owner_when_the_registration_ends() {
-    let mut s = bandit_scene(true);
+    let mut s = bandit_scene();
     s.enter(P3, WOLVES, 35);
     let messenger = s.spawn_at_hall(BANDIT_MESSENGER, 35);
     s.event(P3, "BanditStronghold", messenger, "Register wFee");
@@ -2112,7 +2070,7 @@ fn rainbow_siege_scene() -> Scene {
         rainbow: vec![(WOLVES, 10), (TIGERS, 5)],
         ..base_load(62)
     };
-    let mut s = Scene::new(true, all_halls(0), hall_load(vec![load]));
+    let mut s = Scene::new(all_halls(0), hall_load(vec![load]));
     s.enter(P3, WOLVES, 62);
     s.enter(P7, TIGERS, 62);
     s
@@ -2136,7 +2094,7 @@ fn rainbow_springs_loads_its_registrations_with_javas_duplicates() {
 fn rainbow_springs_prepare_owner() {
     let mut halls = all_halls(0);
     halls[3].owner_id = LIONS;
-    let mut s = Scene::new(true, halls, hall_load(vec![base_load(62)]));
+    let mut s = Scene::new(halls, hall_load(vec![base_load(62)]));
     s.take();
     s.world.hall_prepare_owner(H62);
     let out = s.take();
@@ -2258,7 +2216,7 @@ fn rainbow_springs_the_party_goes_to_its_arena() {
 /// A flag war with one attacker is cancelled when it starts, and its tables are cleared.
 #[test]
 fn a_flag_war_that_cancels_for_lack_of_interest_clears_its_tables() {
-    let mut s = bandit_scene(true);
+    let mut s = bandit_scene();
     s.world.hall_add_attacker(H35, WOLVES);
     s.enter(P3, WOLVES, 35);
     s.take();
@@ -2277,7 +2235,7 @@ fn a_flag_war_that_cancels_for_lack_of_interest_clears_its_tables() {
 /// destroyed.") and comes back with all its HP at the start of the next siege.
 #[test]
 fn the_gates_of_a_hall_fall_and_come_back() {
-    let mut s = Scene::new(false, all_halls(0), hall_load(vec![]));
+    let mut s = Scene::new(all_halls(0), hall_load(vec![]));
     s.enter(P3, WOLVES, 21);
     let door = s.world.residence_doors(ResidenceRef::ClanHall(H21))[0];
     s.world.hall_add_attacker(H21, WOLVES);
@@ -2297,7 +2255,7 @@ fn the_gates_of_a_hall_fall_and_come_back() {
 /// touched and the "busy" page comes instead.
 #[test]
 fn the_doorman_of_a_siegable_hall_serves_its_owner_and_waits_for_the_siege_to_end() {
-    let mut s = Scene::new(false, all_halls(LIONS), hall_load(vec![]));
+    let mut s = Scene::new(all_halls(LIONS), hall_load(vec![]));
     s.enter(P1, LIONS, 21);
     s.enter(P3, WOLVES, 21);
     let doorman = s.spawn_at_hall(DOORMAN, 21);
@@ -2346,7 +2304,7 @@ fn the_doorman_of_a_siegable_hall_serves_its_owner_and_waits_for_the_siege_to_en
 /// enemy of the siege it does.
 #[test]
 fn a_hall_siege_guard_leaves_its_allied_players_alone() {
-    let mut s = Scene::new(false, all_halls(LIONS), hall_load(vec![]));
+    let mut s = Scene::new(all_halls(LIONS), hall_load(vec![]));
     let (x, y) = hall_xy(21);
     // Both stand a few units from the guards, well inside a sword's range.
     s.enter_at(P7, TIGERS, x + 40, y + 30, 0);

@@ -24,7 +24,7 @@ use l2_protocol_game::{ServerOpcode, SystemMessageId};
 use l2_world::clan::{ClanDataRecord, ClanMemberRecord};
 use l2_world::residence::{
     CastleRecord, ClanHallKind, ClanHallRecord, FortRecord, FunctionRecord, ResidenceReadThen,
-    ResidenceRereadRows, SiegableHallRecord, Writes,
+    ResidenceRereadRows, SiegableHallRecord,
 };
 use l2_world::*;
 
@@ -207,7 +207,7 @@ struct Scene {
 }
 
 impl Scene {
-    fn new(siege_database_writes: bool) -> Self {
+    fn new() -> Self {
         let root = tempfile::tempdir().unwrap();
         let write = |path: &str, text: &str| {
             let file = root.path().join(path);
@@ -242,7 +242,6 @@ impl Scene {
             .spawn_static_objects(&StaticObjectTemplates::from_xml(STATIC_OBJECTS).unwrap(), &ids)
             .unwrap();
         world.set_residence_settings(ResidenceSettings {
-            siege_database_writes,
             ..ResidenceSettings::default()
         });
         world.load_clans(vec![lions(1), wolves()], Vec::new());
@@ -521,7 +520,7 @@ fn standard_load() -> ResidenceLoad {
 /// whose owner is gone is freed, and the forts stop at the first one without a flag pole.
 #[test]
 fn loading_installs_owners_zones_and_flag_poles_like_java() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.world.load_residences(standard_load());
     let out = s.take();
 
@@ -607,22 +606,13 @@ fn loading_installs_owners_zones_and_flag_poles_like_java() {
     assert_eq!(h21.grade(), 0);
 }
 
-/// D-51: the start-up `free()` of a hall whose clan is gone is a siege-like job.
-#[test]
-fn loading_without_the_switch_writes_nothing() {
-    let mut s = Scene::new(false);
-    s.world.load_residences(standard_load());
-    assert!(residence_writes(&s.take()).is_empty());
-    assert_eq!(s.world.clan_hall(ClanHallId(37)).unwrap().owner_id, 0);
-}
-
 // ---------------------------------------------------------------------------------- skills
 
 /// `EnterWorld`'s "Residential skills support": a member of the castle's and the fortress's owner
 /// gets their skills (not stored) and a second `SkillList`.
 #[test]
 fn members_get_the_residential_skills_at_enter_world() {
-    let mut s = Scene::new(false);
+    let mut s = Scene::new();
     s.load(standard_load());
     s.enter(pdata(P2, LIONS, X));
     assert_eq!(s.skills_of(P2), [590, 591]);
@@ -639,78 +629,72 @@ fn members_get_the_residential_skills_at_enter_world() {
 /// written.
 #[test]
 fn a_new_castle_owner_takes_the_skills_and_the_circlets_go() {
-    for switch in [false, true] {
-        let mut s = Scene::new(switch);
-        s.load(standard_load());
-        let mut p2 = pdata(P2, LIONS, X);
-        p2.items.push(ItemData {
-            object_id: ObjectId(0x6000_2000),
-            item_id: GLUDIO_CIRCLET,
-            count: 1,
-            loc: "PAPERDOLL".to_owned(),
-            loc_data: 2,
-            ..Default::default()
-        });
-        s.enter(p2);
-        s.enter(pdata(P3, WOLVES, X));
-        s.run_ms(500);
-        s.take();
+    let mut s = Scene::new();
+    s.load(standard_load());
+    let mut p2 = pdata(P2, LIONS, X);
+    p2.items.push(ItemData {
+        object_id: ObjectId(0x6000_2000),
+        item_id: GLUDIO_CIRCLET,
+        count: 1,
+        loc: "PAPERDOLL".to_owned(),
+        loc_data: 2,
+        ..Default::default()
+    });
+    s.enter(p2);
+    s.enter(pdata(P3, WOLVES, X));
+    s.run_ms(500);
+    s.take();
 
-        s.world.castle_set_owner(CastleId(1), Some(WOLVES));
-        let out = s.take();
-        assert_eq!(s.world.castle(CastleId(1)).unwrap().owner_id, WOLVES);
-        assert_eq!(s.world.castle(CastleId(1)).unwrap().former_owner, Some(LIONS));
-        assert_eq!((s.clan(LIONS).castle_id, s.clan(WOLVES).castle_id), (0, 1));
-        assert_eq!(s.skills_of(P2), [591]);
-        assert_eq!(s.skills_of(P3), [590]);
-        // The online member's circlet "has disappeared".
-        assert!(
-            !s.world
-                .player(ObjectId(P2))
-                .unwrap()
-                .data
-                .items
-                .iter()
-                .any(|i| i.item_id == GLUDIO_CIRCLET)
-        );
-        assert!(
-            messages_to(&out, P2)
-                .iter()
-                .any(|m| m.id == SystemMessageId::S1HasDisappeared
-                    && m.params == [SystemMessageParam::ItemName(GLUDIO_CIRCLET)])
-        );
-        let sound = packets_to(&out, P3, "PLAY_SOUND");
-        assert_eq!(
-            decode::<PlaySound>(&sound[0]),
-            PlaySound::with_unknown1(1, "Siege_Victory")
-        );
-        assert!(!packets_to(&out, P3, "PLEDGE_SHOW_INFO_UPDATE").is_empty());
-        // The offline Lions member P1's circlet row, the owner rows: only with the switch.
-        let writes = residence_writes(&out);
-        if switch {
-            assert_eq!(
-                writes,
-                [
-                    ResidenceWrite::DeleteCirclets {
-                        owner_id: P1,
-                        item_id: GLUDIO_CIRCLET
-                    },
-                    ResidenceWrite::CastleOwner {
-                        castle_id: 1,
-                        clan_id: WOLVES
-                    },
-                ]
-            );
-        } else {
-            assert!(writes.is_empty());
-        }
-    }
+    s.world.castle_set_owner(CastleId(1), Some(WOLVES));
+    let out = s.take();
+    assert_eq!(s.world.castle(CastleId(1)).unwrap().owner_id, WOLVES);
+    assert_eq!(s.world.castle(CastleId(1)).unwrap().former_owner, Some(LIONS));
+    assert_eq!((s.clan(LIONS).castle_id, s.clan(WOLVES).castle_id), (0, 1));
+    assert_eq!(s.skills_of(P2), [591]);
+    assert_eq!(s.skills_of(P3), [590]);
+    // The online member's circlet "has disappeared".
+    assert!(
+        !s.world
+            .player(ObjectId(P2))
+            .unwrap()
+            .data
+            .items
+            .iter()
+            .any(|i| i.item_id == GLUDIO_CIRCLET)
+    );
+    assert!(
+        messages_to(&out, P2)
+            .iter()
+            .any(|m| m.id == SystemMessageId::S1HasDisappeared
+                && m.params == [SystemMessageParam::ItemName(GLUDIO_CIRCLET)])
+    );
+    let sound = packets_to(&out, P3, "PLAY_SOUND");
+    assert_eq!(
+        decode::<PlaySound>(&sound[0]),
+        PlaySound::with_unknown1(1, "Siege_Victory")
+    );
+    assert!(!packets_to(&out, P3, "PLEDGE_SHOW_INFO_UPDATE").is_empty());
+    // The offline Lions member P1's circlet row, the owner rows: only with the true.
+    let writes = residence_writes(&out);
+    assert_eq!(
+        writes,
+        [
+            ResidenceWrite::DeleteCirclets {
+                owner_id: P1,
+                item_id: GLUDIO_CIRCLET
+            },
+            ResidenceWrite::CastleOwner {
+                castle_id: 1,
+                clan_id: WOLVES
+            },
+        ]
+    );
 }
 
 /// `Castle.removeOwner(clan)`: nobody owns the castle, the clan loses it and its functions go.
 #[test]
 fn removing_the_castle_owner_drops_the_functions() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     let mut load = standard_load();
     load.castles[0].functions = vec![FunctionRecord {
         function_type: 2,
@@ -749,7 +733,7 @@ fn removing_the_castle_owner_drops_the_functions() {
 /// circlet, `RemoveCastleCirclets`).
 #[test]
 fn a_member_who_leaves_loses_the_residential_skills() {
-    let mut s = Scene::new(false);
+    let mut s = Scene::new();
     s.load(standard_load());
     s.enter(pdata(P1, LIONS, X));
     s.enter(pdata(P2, LIONS, X));
@@ -768,7 +752,7 @@ fn a_member_who_leaves_loses_the_residential_skills() {
 /// `MaxAdena` and refuses to go below 0.
 #[test]
 fn the_treasury_shares_the_income_with_rune_and_aden() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.world.load_clans(
         vec![ClanRecord {
             clan_id: 700,
@@ -820,38 +804,33 @@ fn the_treasury_shares_the_income_with_rune_and_aden() {
         ]
     );
     // Withdrawals: not more than there is.
-    assert!(
-        !s.world
-            .castle_add_to_treasury_no_tax(CastleId(1), -802, Writes::Player)
-    );
-    assert!(
-        s.world
-            .castle_add_to_treasury_no_tax(CastleId(1), -800, Writes::Player)
-    );
+    assert!(!s.world.castle_add_to_treasury_no_tax(CastleId(1), -802));
+    assert!(s.world.castle_add_to_treasury_no_tax(CastleId(1), -800));
     assert_eq!(treasury(&s, 1), 1);
     // `MaxAdena` (99,900,000,000 by default).
-    s.world
-        .castle_add_to_treasury_no_tax(CastleId(1), i64::MAX - 10, Writes::Player);
+    s.world.castle_add_to_treasury_no_tax(CastleId(1), i64::MAX - 10);
     assert_eq!(treasury(&s, 1), 99_900_000_000);
     // A castle without an owner takes nothing.
     s.world.castle_set_owner(CastleId(9), None);
-    assert!(
-        !s.world
-            .castle_add_to_treasury_no_tax(CastleId(9), 5, Writes::Player)
-    );
+    assert!(!s.world.castle_add_to_treasury_no_tax(CastleId(9), 5));
 }
 
-/// D-51: without the switch the tax income changes the treasury in this world only.
+/// The tax income changes the treasury and writes the row.
 #[test]
-fn the_tax_income_is_written_only_with_the_switch() {
-    let mut s = Scene::new(false);
+fn the_tax_income_is_written() {
+    let mut s = Scene::new();
     s.load(standard_load());
     s.world.castle_add_to_treasury(CastleId(1), 500);
     assert_eq!(s.world.castle(CastleId(1)).unwrap().treasury, 500);
-    assert!(residence_writes(&s.take()).is_empty());
+    assert_eq!(
+        residence_writes(&s.take()),
+        [ResidenceWrite::CastleTreasury {
+            castle_id: 1,
+            treasury: 500
+        }]
+    );
     // The castle lord's own deposit and the tax rate are player actions.
-    s.world
-        .castle_add_to_treasury_no_tax(CastleId(1), 100, Writes::Player);
+    s.world.castle_add_to_treasury_no_tax(CastleId(1), 100);
     s.world.castle_set_tax_percent(CastleId(1), 15);
     assert!((s.world.castle(CastleId(1)).unwrap().tax_rate - 0.15).abs() < f64::EPSILON);
     assert_eq!(
@@ -875,7 +854,7 @@ fn the_tax_income_is_written_only_with_the_switch() {
 /// next fee comes after `rate`; a warehouse that cannot pay loses the function.
 #[test]
 fn a_due_fee_is_paid_from_the_clan_warehouse_or_the_function_goes() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     let mut load = standard_load();
     load.castles[0].functions = vec![
         FunctionRecord {
@@ -931,35 +910,11 @@ fn a_due_fee_is_paid_from_the_clan_warehouse_or_the_function_goes() {
     assert!(s.world.residence_function(castle, 2).is_none());
 }
 
-/// D-51: without the switch the warehouse fee is Sieghardt's; the task only moves the time on.
-#[test]
-fn without_the_switch_a_fee_charges_nothing() {
-    let mut s = Scene::new(false);
-    let mut load = standard_load();
-    load.castles[0].functions = vec![FunctionRecord {
-        function_type: 2,
-        lvl: 40,
-        lease: 70_000,
-        rate: 1000,
-        end_time: 0,
-    }];
-    s.load(load);
-    s.run_ms(50);
-    let castle = ResidenceRef::Castle(CastleId(1));
-    let function = s.world.residence_function(castle, 2).unwrap();
-    assert!(function.end_time > 0);
-    assert_eq!(s.clan(LIONS).warehouse[0].count, 10_000);
-    let out = s.take();
-    assert!(residence_writes(&out).is_empty());
-    assert!(item_row_ops(&out).is_empty());
-}
-
 /// `updateFunctions`: the player pays the lease; the first run (paid by the player, `cwh` false)
-/// writes the row without charging the warehouse, like any player action, even without the
-/// switch. A lower lease changes the function in place; level 0 and lease 0 stops it.
+/// writes the row without charging the warehouse, like any player action. A lower lease changes the function in place; level 0 and lease 0 stops it.
 #[test]
 fn buying_a_function_writes_its_row() {
-    let mut s = Scene::new(false);
+    let mut s = Scene::new();
     s.load(standard_load());
     let mut p1 = pdata(P1, LIONS, X);
     p1.items.push(ItemData {
@@ -984,17 +939,24 @@ fn buying_a_function_writes_its_row() {
     );
     assert_eq!(s.world.adena_of(ObjectId(P1)), 99_000);
     s.run_ms(50);
-    let writes = residence_writes(&s.take());
-    assert!(matches!(
-        writes[..],
-        [ResidenceWrite::FunctionSave {
-            function_type: 4,
-            lvl: 1,
-            lease: 1000,
-            rate: 86_400_000,
-            ..
-        }]
-    ));
+    // The other writes of the time (the rent tasks of the halls) are not the subject here.
+    let writes: Vec<ResidenceWrite> = residence_writes(&s.take())
+        .into_iter()
+        .filter(|w| matches!(w, ResidenceWrite::FunctionSave { .. }))
+        .collect();
+    assert!(
+        matches!(
+            writes[..],
+            [ResidenceWrite::FunctionSave {
+                function_type: 4,
+                lvl: 1,
+                lease: 1000,
+                rate: 86_400_000,
+                ..
+            }]
+        ),
+        "{writes:?}"
+    );
     assert!(s.world.residence_function(castle, 4).unwrap().cwh);
     assert_eq!(s.clan(LIONS).warehouse[0].count, 10_000);
     // A lower lease changes the object and writes its row at once.
@@ -1030,7 +992,7 @@ fn buying_a_function_writes_its_row() {
 /// keeps its fee task, charges the clan warehouse and writes its row over the new one.
 #[test]
 fn a_replaced_function_keeps_charging_like_java() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.load(standard_load());
     let mut p1 = pdata(P1, LIONS, X);
     p1.items.push(ItemData {
@@ -1074,7 +1036,7 @@ fn a_replaced_function_keeps_charging_like_java() {
 /// high, teleport 1 is low).
 #[test]
 fn entering_a_clan_hall_shows_its_decorations() {
-    let mut s = Scene::new(false);
+    let mut s = Scene::new();
     s.load(standard_load());
     s.enter(pdata(P3, WOLVES, HALL_X));
     let out = s.take();
@@ -1096,7 +1058,7 @@ fn entering_a_clan_hall_shows_its_decorations() {
 /// switch; `AuctionableHall.free()` keeps the old paid values in the row (Java's order).
 #[test]
 fn a_hall_changes_hands_with_its_hideout_id() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.load(standard_load());
     s.world.clan_hall_table_set_free(ClanHallId(36));
     assert_eq!(s.clan(WOLVES).hideout_id, 0);
@@ -1140,7 +1102,7 @@ fn a_hall_changes_hands_with_its_hideout_id() {
 /// `EnterWorld`: an unpaid hall reminds the member of the rent (the lease as the number).
 #[test]
 fn an_unpaid_hall_reminds_the_members() {
-    let mut s = Scene::new(false);
+    let mut s = Scene::new();
     let mut load = standard_load();
     load.clan_halls[0].paid = false;
     s.load(load);
@@ -1157,7 +1119,7 @@ fn an_unpaid_hall_reminds_the_members() {
 /// `TakeFortPoints`, the fortress id, the flag stays up, everybody hears who won.
 #[test]
 fn a_fortress_changes_hands() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.load(standard_load());
     s.enter(pdata(P3, WOLVES, X));
     s.take();
@@ -1199,7 +1161,7 @@ fn a_fortress_changes_hands() {
 /// database (another castle, a lost fortress, a new hall).
 #[test]
 fn the_character_select_read_moves_the_clan_to_what_the_database_says() {
-    let mut s = Scene::new(false);
+    let mut s = Scene::new();
     s.load(standard_load());
     let mut p1 = pdata(P1, LIONS, X);
     p1.profile.residence_refresh = Some(Box::new(ResidenceRefresh {
@@ -1228,7 +1190,7 @@ fn the_character_select_read_moves_the_clan_to_what_the_database_says() {
 /// read changes nothing.
 #[test]
 fn a_reread_answer_replaces_the_rows() {
-    let mut s = Scene::new(false);
+    let mut s = Scene::new();
     s.load(standard_load());
     s.world
         .request_residence_reread(ResidenceRef::Castle(CastleId(1)), ResidenceReadThen::Nothing);
@@ -1261,9 +1223,9 @@ fn a_reread_answer_replaces_the_rows() {
 /// rows).
 #[test]
 fn a_destroyed_clan_frees_its_fortress() {
-    let mut s = Scene::new(false);
+    let mut s = Scene::new();
     s.load(standard_load());
-    s.world.destroy_clan(LIONS, true);
+    s.world.destroy_clan(LIONS);
     assert_eq!(s.world.fort(FortId(101)).unwrap().owner_id, 0);
     let writes = residence_writes(&s.take());
     assert!(writes.iter().any(|w| matches!(
@@ -1274,55 +1236,4 @@ fn a_destroyed_clan_frees_its_fortress() {
             ..
         }
     )));
-}
-
-/// M7-FU-02 (D-51): a castle that has its owner in this world only (a GM test siege without
-/// `SiegeDatabaseWrites`) gets no function row: the database thinks it is free. The purchase itself
-/// works in this world; with the switch the owner row went out and the function row follows.
-#[test]
-fn a_function_of_an_owner_that_exists_only_in_this_world_writes_no_row() {
-    for switch in [false, true] {
-        let mut s = Scene::new(switch);
-        s.load(standard_load());
-        let mut p1 = pdata(P1, LIONS, X);
-        p1.items.push(ItemData {
-            object_id: ObjectId(0x6000_3000),
-            item_id: ADENA,
-            count: 100_000,
-            loc: "INVENTORY".to_owned(),
-            ..Default::default()
-        });
-        s.enter(p1);
-        let dion = ResidenceRef::Castle(CastleId(2));
-        s.world.castle_set_owner(CastleId(2), Some(LIONS));
-        assert_eq!(s.world.residence_owner_world_only(dion), !switch);
-        // The startup owner of Gludio came from the database.
-        assert!(
-            !s.world
-                .residence_owner_world_only(ResidenceRef::Castle(CastleId(1)))
-        );
-        s.take();
-        assert!(
-            s.world
-                .residence_update_functions(ObjectId(P1), dion, 4, 1, 1000, 86_400_000, true)
-        );
-        s.run_ms(50);
-        assert!(s.world.residence_function(dion, 4).is_some());
-        let writes = residence_writes(&s.take());
-        let saves = writes
-            .iter()
-            .filter(|w| matches!(w, ResidenceWrite::FunctionSave { .. }))
-            .count();
-        assert_eq!(saves, usize::from(switch), "switch {switch}: {writes:?}");
-        // A removal by the player is not written either.
-        assert!(
-            s.world
-                .residence_update_functions(ObjectId(P1), dion, 4, 0, 0, 0, false)
-        );
-        let deletes = residence_writes(&s.take())
-            .iter()
-            .filter(|w| matches!(w, ResidenceWrite::FunctionDelete { .. }))
-            .count();
-        assert_eq!(deletes, usize::from(switch), "switch {switch}");
-    }
 }

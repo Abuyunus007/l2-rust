@@ -360,7 +360,7 @@ impl Script for Venom {
     }
 
     fn on_spawn(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
-        ctx.reread_global_variables(&["VenomStatus"], SPAWN_CHECKED, Some(npc), None);
+        ctx.notify_event(SPAWN_CHECKED, Some(npc), None);
     }
 
     fn on_attack(
@@ -470,10 +470,7 @@ mod tests {
         registry.add(Venom);
         let pages = Pages::of(&Venom).plain(&["35506-02.html", "35506.html", "29055.html"]);
         let mut t = ScriptTest::new_with(registry, NPCS, "", &[], |world, _| {
-            world.set_script_settings(ScriptSettings {
-                cycle_database_writes: true,
-                ..Default::default()
-            });
+            world.set_script_settings(ScriptSettings { ..Default::default() });
         });
         let _ = pages;
         if let Some(status) = status {

@@ -295,7 +295,6 @@ impl World {
         }
         if let Some(clan) = self.clan_mut(clan_id) {
             clan.reputation_score = value.clamp(-MAX_REPUTATION, MAX_REPUTATION);
-            clan.changed = true;
         }
         self.broadcast_clan_info_update(clan_id);
     }

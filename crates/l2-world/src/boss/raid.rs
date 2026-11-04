@@ -229,7 +229,7 @@ impl World {
         }
         self.boss.raid.spawns.insert(boss_id, entry);
 
-        if store_in_db && self.boss_writes_enabled() {
+        if store_in_db {
             self.boss_write(BossWrite::RaidBossInsert(RaidBossData {
                 respawn_time,
                 current_hp,
@@ -369,7 +369,7 @@ impl World {
                 current_mp: mp,
             });
         }
-        if self.boss_writes_enabled() && !rows.is_empty() {
+        if !rows.is_empty() {
             self.boss_write(BossWrite::RaidBossUpdate(rows));
         }
     }
@@ -387,14 +387,13 @@ impl World {
             self.timers.cancel(timer);
         }
         self.boss.raid.stored.remove(&boss_id);
-        if update_db && self.boss_writes_enabled() {
+        if update_db {
             self.boss_write(BossWrite::RaidBossDelete { boss_id });
         }
     }
 
     /// Java `AdminSpawn.spawnMonster` for a template of type `RaidBoss`: the spawn goes to the
-    /// manager with the delays 43200 and 129600 (`permanent` writes the row, with
-    /// `CycleDatabaseWrites`); a spawn that is not permanent or has no respawn delay stops
+    /// manager with the delays 43200 and 129600 (`permanent` writes the row); a spawn that is not permanent or has no respawn delay stops
     /// respawning right after.
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn admin_spawn_raid_boss(

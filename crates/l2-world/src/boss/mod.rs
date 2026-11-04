@@ -69,8 +69,6 @@ pub(crate) fn java_date(epoch_ms: i64) -> String {
 /// The configuration the managers read.
 #[derive(Debug, Clone, PartialEq)]
 pub struct BossSettings {
-    /// `CycleDatabaseWrites` of `config/SideBySide.ini` (D-53): the global boss rows are written.
-    pub cycle_database_writes: bool,
     /// `NpcConfig.RAID_MIN_RESPAWN_MULTIPLIER` (`RaidMinRespawnMultiplier`).
     pub raid_min_respawn_multiplier: f32,
     /// `NpcConfig.RAID_MAX_RESPAWN_MULTIPLIER` (`RaidMaxRespawnMultiplier`).
@@ -161,7 +159,6 @@ impl Default for GrandBossSettings {
 impl Default for BossSettings {
     fn default() -> Self {
         Self {
-            cycle_database_writes: false,
             raid_min_respawn_multiplier: 1.0,
             raid_max_respawn_multiplier: 1.0,
             raid_ranking: [1250, 900, 700, 600, 450, 350, 300, 200, 150, 100],
@@ -254,12 +251,6 @@ pub enum BossReadThen {
     Nothing,
     /// `AdminGrandBoss.manageHtml`: show the state page to this GM.
     ShowGrandBoss { gm: l2_util::ObjectId, boss_id: i32 },
-    /// A boss script decides on the row (D-54): `notifyEvent(event, null, null)` of the script
-    /// once the row is in memory. A failed read sends nothing.
-    ScriptEvent {
-        script: &'static str,
-        event: &'static str,
-    },
 }
 
 /// The answer of a read (`WorldCommand::BossReread`).
@@ -347,21 +338,6 @@ impl World {
         &self.boss.settings
     }
 
-    /// Asks for the `grandboss_data` row of `boss_id` again (D-50, D-54); when it is in memory the
-    /// script `script` gets `event` (`notifyEvent(event, null, null)`).
-    pub fn reread_grand_boss_for_script(&mut self, boss_id: i32, script: &'static str, event: &'static str) {
-        self.outbox
-            .persist(crate::outbox::PersistCommand::BossRereadRequest {
-                kind: BossReadKind::GrandBoss(boss_id),
-                then: BossReadThen::ScriptEvent { script, event },
-            });
-    }
-
-    /// Whether the D-53 switch lets this server write the global boss rows.
-    pub fn boss_writes_enabled(&self) -> bool {
-        self.boss.settings.cycle_database_writes
-    }
-
     /// Sends `write` to the persistence task.
     pub(crate) fn boss_write(&mut self, write: BossWrite) {
         self.outbox.persist(crate::outbox::PersistCommand::Boss(write));
@@ -383,15 +359,6 @@ impl World {
                     self.show_grand_boss_page(gm, boss_id);
                 } else {
                     self.send_sys_message(gm, "The boss state could not be read from the database.");
-                }
-            }
-            BossReadThen::ScriptEvent { script, event } => {
-                if ok {
-                    if let Some(id) = self.scripts.by_name(script) {
-                        self.script_notify_event(id, event, None, None);
-                    }
-                } else {
-                    tracing::warn!("{script}: the boss row could not be read; {event} is not run.");
                 }
             }
             BossReadThen::Nothing => {}

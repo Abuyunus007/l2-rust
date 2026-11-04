@@ -483,10 +483,6 @@ impl World {
                 let page = self.offline_play_select_refusal(object_id, ip, access_level);
                 done(page);
             }
-            WorldCommand::ReleaseOfflineAccount { account, done } => {
-                let released = self.release_offline_account(&account);
-                done(released);
-            }
             WorldCommand::Admin(query) => self.on_admin(query),
             WorldCommand::PathFound {
                 requester,
@@ -511,17 +507,9 @@ impl World {
             WorldCommand::CrestIdsLoaded { ticket, result } => self.on_crest_ids_loaded(ticket, result),
             WorldCommand::CrestInsertFailed { crest_id } => self.on_crest_insert_failed(crest_id),
             WorldCommand::LotteryReread { result, then } => self.on_lottery_reread(result, then),
-            WorldCommand::ItemAuctionReread {
-                instance_id,
-                result,
-                then,
-            } => self.on_item_auction_reread(instance_id, result, then),
             WorldCommand::ResidenceReread { result, then } => self.on_residence_reread(result, then),
             WorldCommand::OlympiadReread { result, then } => self.on_olympiad_reread(result, then),
             WorldCommand::BossReread { result, then } => self.on_boss_reread(result, then),
-            WorldCommand::GlobalVariablesReread { token, result } => {
-                self.on_global_variables_reread(token, result)
-            }
             WorldCommand::TransmogLoaded { player, result } => self.on_transmog_loaded(player, result),
             WorldCommand::BirthdayGiftsLoaded { result } => self.on_birthday_gifts_loaded(result),
             // Java: CustomMailManager, ChangePasswordResponse, CharacterSelect (M9-C06)
@@ -575,7 +563,6 @@ impl World {
                 self.on_fake_player_chat_reloaded(requester, chat);
             }
             WorldCommand::LoginServerRegistered { name } => self.on_login_server_registered(name),
-            WorldCommand::SevenSignsLoaded { result, then } => self.on_seven_signs_loaded(result, then),
             WorldCommand::ClassIndexLoaded {
                 owner,
                 class_index,

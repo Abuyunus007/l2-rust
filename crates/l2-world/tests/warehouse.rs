@@ -1519,16 +1519,10 @@ fn leaving_the_clan_forgets_the_active_warehouse() {
 }
 
 #[test]
-fn a_dissolved_clan_destroys_its_warehouse_rows_when_it_writes() {
+fn a_dissolved_clan_destroys_its_warehouse_rows() {
     let mut s = clan_scene(3, WorldSettings::default());
     s.log.take();
-    // D-49: without the maintenance switch the rows are left to the Java game server.
-    s.world.destroy_clan(CLAN, false);
-    assert!(rows(&s.log.take()).is_empty());
-
-    let mut s = clan_scene(3, WorldSettings::default());
-    s.log.take();
-    s.world.destroy_clan(CLAN, true);
+    s.world.destroy_clan(CLAN);
     let commands = rows(&s.log.take());
     assert_eq!(commands.len(), 1);
     assert_eq!(commands[0].0, None);

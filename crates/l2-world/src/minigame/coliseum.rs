@@ -235,11 +235,9 @@ impl World {
         }
     }
 
-    /// A row write, only with `CycleDatabaseWrites` (D-53).
+    /// A row write.
     fn minigame_write(&mut self, write: MinigameWrite) {
-        if self.minigames.settings.cycle_database_writes {
-            self.outbox.persist(PersistCommand::Minigame(write));
-        }
+        self.outbox.persist(PersistCommand::Minigame(write));
     }
 
     /// Java `switchStatus(isStart)`.

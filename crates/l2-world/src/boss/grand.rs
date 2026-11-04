@@ -190,9 +190,6 @@ impl World {
 
     /// Java `GrandBossManager.updateDb(bossId, statusOnly)`.
     fn grand_boss_update_db(&mut self, boss_id: i32, status_only: bool) {
-        if !self.boss_writes_enabled() {
-            return;
-        }
         let Some(status) = self.boss.grand.status.get(&boss_id).copied() else {
             // Java: `_bossStatus.get(bossId)` unboxes a null.
             warn!("GrandBossManager: Couldn't update grandbosses to database: no status for {boss_id}");
@@ -209,12 +206,8 @@ impl World {
         }
     }
 
-    /// Java `storeMe()`: the zone lists are replaced and every boss row updated (with
-    /// `CycleDatabaseWrites`).
+    /// Java `storeMe()`: the zone lists are replaced and every boss row updated.
     pub fn store_grand_bosses(&mut self) {
-        if !self.boss_writes_enabled() {
-            return;
-        }
         let list = self.boss_zone_list();
         let ids: Vec<i32> = self.boss.grand.stored.keys().copied().collect();
         let mut rows = Vec::with_capacity(ids.len());

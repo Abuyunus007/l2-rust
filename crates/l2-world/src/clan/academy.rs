@@ -86,7 +86,7 @@ impl World {
                 .with(SystemMessageParam::PlayerName(name.clone())),
         );
         self.broadcast_to_clan(clan_id, &PledgeShowMemberListDelete { player_name: name });
-        self.remove_clan_member(clan_id, player, 0, true);
+        self.remove_clan_member(clan_id, player, 0);
         self.send(
             player,
             &SystemMessage::new(

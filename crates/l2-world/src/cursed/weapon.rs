@@ -64,26 +64,25 @@ impl World {
             self.cursed.weapons.push(CursedWeapon::from_def(def, max_level));
         }
         // restore()
-        if self.cursed.settings.cycle_database_writes {
-            for row in load.rows {
-                let Some(index) = self.cursed.index_of(row.item_id) else {
-                    // NOTE(java-quirk): `_cursedWeapons.get(itemId)` is null for an item the XML
-                    // does not list; the NullPointerException ends the whole `restore()`.
-                    warn!(
-                        "Could not restore CursedWeapons data: unknown item {}.",
-                        row.item_id
-                    );
-                    break;
-                };
-                let weapon = &mut self.cursed.weapons[index];
-                weapon.player_id = row.char_id;
-                weapon.player_karma = row.player_karma;
-                weapon.player_pk_kills = row.player_pk_kills;
-                weapon.nb_kills = row.nb_kills;
-                weapon.end_time = row.end_time;
-                self.cursed_re_activate(index);
-            }
+        for row in load.rows {
+            let Some(index) = self.cursed.index_of(row.item_id) else {
+                // NOTE(java-quirk): `_cursedWeapons.get(itemId)` is null for an item the XML
+                // does not list; the NullPointerException ends the whole `restore()`.
+                warn!(
+                    "Could not restore CursedWeapons data: unknown item {}.",
+                    row.item_id
+                );
+                break;
+            };
+            let weapon = &mut self.cursed.weapons[index];
+            weapon.player_id = row.char_id;
+            weapon.player_karma = row.player_karma;
+            weapon.player_pk_kills = row.player_pk_kills;
+            weapon.nb_kills = row.nb_kills;
+            weapon.end_time = row.end_time;
+            self.cursed_re_activate(index);
         }
+
         info!(
             "CursedWeaponsManager: Loaded : {} cursed weapon(s).",
             self.cursed.weapons.len()
@@ -215,11 +214,6 @@ impl World {
 
     /// Java `CursedWeapon.checkDrop(attackable, player)`.
     fn cursed_weapon_check_drop(&mut self, index: usize, attackable: ObjectId, player: ObjectId) -> bool {
-        // D-53: the weapon is global, so this server drops none while Sieghardt owns the table;
-        // the chance is not even rolled.
-        if !self.cursed.settings.cycle_database_writes {
-            return false;
-        }
         let drop_rate = self.cursed.weapons[index].drop_rate;
         if self.rng().below(DROP_RATE_SCALE) >= drop_rate {
             return false;
@@ -738,12 +732,8 @@ impl World {
 
     // ------------------------------------------------------------------------ the table
 
-    /// Java `CursedWeapon.saveData()`: the row of a held weapon (D-53: only with
-    /// `CycleDatabaseWrites`).
+    /// Java `CursedWeapon.saveData()`: the row of a held weapon .
     pub(crate) fn cursed_save_data(&mut self, index: usize) {
-        if !self.cursed.settings.cycle_database_writes {
-            return;
-        }
         let weapon = &self.cursed.weapons[index];
         let write = CursedWrite::Save {
             item_id: weapon.item_id,
@@ -752,12 +742,10 @@ impl World {
         self.outbox.persist(PersistCommand::Cursed(write));
     }
 
-    /// Java `CursedWeaponsManager.removeFromDb(itemId)` (D-53: only with `CycleDatabaseWrites`).
+    /// Java `CursedWeaponsManager.removeFromDb(itemId)`.
     fn cursed_remove_from_db(&mut self, item_id: i32) {
-        if self.cursed.settings.cycle_database_writes {
-            self.outbox
-                .persist(PersistCommand::Cursed(CursedWrite::Remove { item_id }));
-        }
+        self.outbox
+            .persist(PersistCommand::Cursed(CursedWrite::Remove { item_id }));
     }
 
     /// Java `CursedWeaponsManager.saveData()` (the shutdown): every weapon's row.
@@ -837,10 +825,9 @@ impl World {
         }
     }
 
-    /// `EnterWorld`: "Remove demonic weapon if character is not cursed weapon equipped." D-53: not
-    /// while the table is Sieghardt's (the item is his weapon's).
+    /// `EnterWorld`: "Remove demonic weapon if character is not cursed weapon equipped."
     pub(crate) fn cursed_enter_world_cleanup(&mut self, player: ObjectId) {
-        if self.is_cursed_weapon_equipped(player) || !self.cursed.settings.cycle_database_writes {
+        if self.is_cursed_weapon_equipped(player) {
             return;
         }
         for item_id in [ZARICHE_ID, AKAMANAH_ID] {

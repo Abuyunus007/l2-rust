@@ -161,16 +161,13 @@ impl World {
 
     /// Java `resetRaidPoints()` on the local day `local_day` (days since 1970-01-01, which was a
     /// Thursday): only a Monday does anything. Clans get reputation by the ranking of their
-    /// members, then every point goes. Both are global jobs the Java game server runs as well
-    /// (D-49): without `CycleDatabaseWrites` this server only forgets the points in memory.
+    /// members, then every point goes.
     pub fn reset_raid_points_on_day(&mut self, local_day: i64) {
         // Thursday is 0 days after the epoch; Monday is `(day + 3) % 7 == 0`.
         if (local_day + 3).rem_euclid(7) != 0 {
             return;
         }
-        if self.boss_writes_enabled() {
-            self.reward_clan_reputation_by_ranking();
-        }
+        self.reward_clan_reputation_by_ranking();
         self.raid_points_clean_up();
         info!("RaidBossPointsManager: Reset task launched.");
     }
@@ -196,11 +193,9 @@ impl World {
         }
     }
 
-    /// Java `cleanUp()`: the rows are deleted (with `CycleDatabaseWrites`) and the points go.
+    /// Java `cleanUp()`: the rows are deleted and the points go.
     pub fn raid_points_clean_up(&mut self) {
-        if self.boss_writes_enabled() {
-            self.boss_write(super::BossWrite::RaidPointsDeleteAll);
-        }
+        self.boss_write(super::BossWrite::RaidPointsDeleteAll);
         self.boss.points.clear();
     }
 

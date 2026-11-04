@@ -631,9 +631,7 @@ impl World {
             );
         }
         // `updateHeroes(true)`.
-        if self.olympiad_writes_cycles() {
-            self.hero_write(HeroWrite::ResetPlayed);
-        }
+        self.hero_write(HeroWrite::ResetPlayed);
 
         // The heroes of the last period who are online lose the status and the items.
         for char_id in self.olympiad.heroes.ordered() {
@@ -646,10 +644,8 @@ impl World {
             self.broadcast_user_info(player);
         }
 
-        // `deleteItemsInDb`: every offline hero's items (D-53: the Java game server runs it).
-        if self.olympiad_writes_cycles() {
-            self.hero_write(HeroWrite::DeleteItems);
-        }
+        // `deleteItemsInDb`: every offline hero's items.
+        self.hero_write(HeroWrite::DeleteItems);
         self.olympiad.heroes.heroes.clear();
 
         if new_heroes.is_empty() {
@@ -695,19 +691,15 @@ impl World {
                 let (clan_id, ally_id) = self.hero_clan_ids(char_id);
                 (data.clan_name, data.clan_crest, data.ally_name, data.ally_crest) =
                     self.hero_clan_info(clan_id, ally_id);
-                if self.olympiad_writes_cycles() {
-                    self.hero_write(HeroWrite::Insert {
-                        char_id,
-                        class_id: data.class_id,
-                        count: data.count,
-                        played: data.played,
-                        claimed: data.claimed,
-                    });
-                }
+                self.hero_write(HeroWrite::Insert {
+                    char_id,
+                    class_id: data.class_id,
+                    count: data.count,
+                    played: data.played,
+                    claimed: data.claimed,
+                });
                 self.olympiad.heroes.all.insert(char_id, data);
-            } else if let Some(data) = self.olympiad.heroes.all.get(&char_id)
-                && self.olympiad_writes_cycles()
-            {
+            } else if let Some(data) = self.olympiad.heroes.all.get(&char_id) {
                 let write = HeroWrite::Update {
                     char_id,
                     class_id: data.class_id,
@@ -730,9 +722,6 @@ impl World {
 
     /// `updateHeroes(false)` for the heroes of the last period (`claimHero`): one UPDATE each.
     fn hero_update_heroes(&mut self) {
-        if !self.olympiad_writes_cycles() {
-            return;
-        }
         let writes: Vec<HeroWrite> = self
             .olympiad
             .heroes
@@ -864,15 +853,12 @@ impl World {
         }
     }
 
-    /// Java `Hero.shutdown()`: `saveHeroMessage` of every message. With `CycleDatabaseWrites`
-    /// off only the words this server changed go out (D-53).
+    /// Java `Hero.shutdown()`: `saveHeroMessage` of every message.
     pub(crate) fn hero_shutdown(&mut self) {
-        let all = self.olympiad_writes_cycles();
         let state = &mut self.olympiad.heroes;
         let writes: Vec<HeroWrite> = state
             .messages
             .iter()
-            .filter(|(char_id, _)| all || state.dirty_messages.contains(char_id))
             .map(|(char_id, message)| HeroWrite::Message {
                 char_id: *char_id,
                 message: message.clone(),
@@ -914,14 +900,9 @@ impl World {
         });
     }
 
-    /// Runs `action` now (the switch is on: the memory is the truth) or after a fresh read of the
-    /// hero tables (D-50).
+    /// Runs `action` now: the memory is the truth.
     fn hero_fresh(&mut self, player: ObjectId, npc: ObjectId, action: HeroAction) {
-        if self.olympiad_writes_cycles() {
-            self.hero_do(player, npc, action);
-        } else {
-            self.hero_reread(None, player, npc, action);
-        }
+        self.hero_do(player, npc, action);
     }
 
     /// The answer of a read of the hero tables: a failed read shows and does nothing (D-50).

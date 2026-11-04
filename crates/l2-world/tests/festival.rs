@@ -19,7 +19,7 @@ use l2_protocol_game::server::{NpcHtmlMessage, SsqStatus, SystemMessage, SystemM
 use l2_protocol_game::{ServerOpcode, SystemMessageId};
 use l2_world::sevensigns::{
     CABAL_DAWN, CABAL_DUSK, FestivalData, FestivalSettings, PERIOD_COMPETITION, PERIOD_SEAL_VALIDATION,
-    SevenSignsLoad, SevenSignsSettings, SevenSignsStatus, SevenSignsThen, SevenSignsWrite, SignsPlayer,
+    SevenSignsLoad, SevenSignsSettings, SevenSignsStatus, SevenSignsWrite, SignsPlayer,
 };
 use l2_world::teleport::TeleportTarget;
 use l2_world::*;
@@ -198,22 +198,17 @@ struct Scene {
 }
 
 impl Scene {
-    fn new(cycle_writes: bool, rows: Vec<FestivalData>) -> Self {
+    fn new(rows: Vec<FestivalData>) -> Self {
         let status = SevenSignsStatus {
             current_cycle: 4,
             active_period: PERIOD_COMPETITION,
             last_save: real_now() - 60_000,
             ..SevenSignsStatus::default()
         };
-        Self::with(cycle_writes, rows, status, Vec::new())
+        Self::with(rows, status, Vec::new())
     }
 
-    fn with(
-        cycle_writes: bool,
-        rows: Vec<FestivalData>,
-        status: SevenSignsStatus,
-        players: Vec<SignsPlayer>,
-    ) -> Self {
+    fn with(rows: Vec<FestivalData>, status: SevenSignsStatus, players: Vec<SignsPlayer>) -> Self {
         let root = tempfile::tempdir().unwrap();
         let write = |path: &str, text: &str| {
             let file = root.path().join(path);
@@ -297,7 +292,6 @@ impl Scene {
         world.set_npc_data(npcs, spawns);
         world.set_html_cache(Arc::new(HtmCache::load(root.path(), false)));
         world.set_seven_signs_settings(SevenSignsSettings {
-            cycle_database_writes: cycle_writes,
             festival: short_festival(),
             ..SevenSignsSettings::default()
         });
@@ -525,7 +519,7 @@ fn festival_writes(out: &[Out]) -> Vec<&Vec<FestivalData>> {
 /// start) and counts the cycle up; with no registration no arena is made.
 #[test]
 fn the_manager_starts_with_the_competition_and_an_empty_round_makes_no_arena() {
-    let mut s = Scene::new(true, rows_of(4));
+    let mut s = Scene::new(rows_of(4));
     // `new FestivalManager()` increments the cycle counter.
     assert_eq!(s.world.festival_cycle(), 1);
     assert!(!s.world.festival_initialized());
@@ -540,7 +534,7 @@ fn the_manager_starts_with_the_competition_and_an_empty_round_makes_no_arena() {
 /// five that pays the stones signs up (`Festival 2`), the stones go and the bonus grows.
 #[test]
 fn a_party_signs_up_at_the_guide() {
-    let mut s = Scene::new(true, rows_of(4));
+    let mut s = Scene::new(rows_of(4));
     s.party_of_five();
     // "Become a participant": the page with the fee of the range.
     s.bypass(P[0], "Festival 1");
@@ -571,7 +565,7 @@ fn a_party_signs_up_at_the_guide() {
 /// A party that is too small, or whose member is too high for the range, is turned away.
 #[test]
 fn a_small_party_is_refused() {
-    let mut s = Scene::new(true, rows_of(4));
+    let mut s = Scene::new(rows_of(4));
     s.enter(P[0], NAMES[0], Vec::new());
     for _ in 0..2 {
         s.input(
@@ -595,7 +589,7 @@ fn a_small_party_is_refused() {
 /// offering and the end that sends everybody back.
 #[test]
 fn a_festival_round_runs_from_the_signup_to_the_end() {
-    let mut s = Scene::new(true, rows_of(4));
+    let mut s = Scene::new(rows_of(4));
     s.party_of_five();
     // A stray blood offering of a member goes when he is taken to the arena.
     s.world.add_item(ObjectId(P[1]), OFFERING, 3, false);
@@ -700,7 +694,7 @@ fn a_festival_round_runs_from_the_signup_to_the_end() {
 /// the rows are written.
 #[test]
 fn the_leader_registers_the_score_and_the_rows_are_written_with_the_switch_on() {
-    let mut s = Scene::new(true, rows_of(4));
+    let mut s = Scene::new(rows_of(4));
     s.party_of_five();
     s.bypass(P[0], "Festival 2 6360");
     s.wait_ms(1_000 + 80_000 + 5_000);
@@ -756,66 +750,6 @@ fn the_leader_registers_the_score_and_the_rows_are_written_with_the_switch_on() 
     assert!(!s.world.festival_set_final_score(CABAL_DAWN, 0, 500));
 }
 
-/// With `CycleDatabaseWrites = False` (D-53) the score stays in memory and no festival row is
-/// written; the tables are read again when shown (D-50) and show what the Java game server has.
-#[test]
-fn with_the_switch_off_nothing_global_is_written_and_the_tables_are_read_again() {
-    let mut s = Scene::new(false, rows_of(4));
-    s.party_of_five();
-    s.bypass(P[0], "Festival 2 6360");
-    s.wait_ms(1_000 + 80_000 + 5_000);
-    let monsters = s.world.festival_monsters(CABAL_DAWN, 0);
-    s.kill(monsters[0], P[1]);
-    s.wait_ms(100_000 - 5_000 + 100);
-    s.take();
-
-    s.bypass(P[0], "Festival 3");
-    let out = s.take();
-    // The memory has the score, the database gets nothing.
-    assert_eq!(s.world.festival_highest_score(CABAL_DAWN, 0), 5);
-    assert!(festival_writes(&out).is_empty());
-    assert!(
-        !out.iter().any(|o| matches!(
-            o,
-            Out::Persist(PersistCommand::SevenSigns(SevenSignsWrite::UpdateStatus(_)))
-        )),
-        "the status row is global too"
-    );
-
-    // The score table (page 5) asks for the rows first.
-    s.bypass(P[0], "Festival 5");
-    let out = s.take();
-    assert!(pages(&out, P[0]).is_empty(), "nothing is shown before the answer");
-    let then = out
-        .iter()
-        .find_map(|o| match o {
-            Out::Persist(PersistCommand::SevenSignsReadRequest { then }) => Some(then.clone()),
-            _ => None,
-        })
-        .expect("a read request");
-    assert!(matches!(then, SevenSignsThen::FestivalPage { page: 5, .. }));
-    // The Java game server has a Dusk record of 77 in the lowest range and no Dawn record.
-    let mut sieghardt = rows_of(4);
-    sieghardt[0].score = 77;
-    sieghardt[0].members = "Sieg".into();
-    s.world.handle(WorldCommand::SevenSignsLoaded {
-        result: Ok(SevenSignsLoad {
-            festival: sieghardt,
-            ..SevenSignsLoad::default()
-        }),
-        then,
-    });
-    let page = pages(&s.take(), P[0]).pop().expect("the table once it is read");
-    // `getStatsTable`: Dusk 77, Dawn 0 (Kain's own 5 was replaced), "Children of Dusk" win.
-    assert!(page.contains("Level 31 or lower"), "{page}");
-    assert!(
-        page.contains(">77<") && page.contains("Children of Dusk"),
-        "{page}"
-    );
-    assert_eq!(s.world.festival_highest_score(CABAL_DAWN, 0), 0);
-    assert_eq!(s.world.festival_highest_score(CABAL_DUSK, 0), 77);
-}
-
 /// The accumulated bonus: the share of a winner's party, off the festival's bonus, in the seal
 /// validation period (Java pays nothing out; only the page and the bonus change).
 #[test]
@@ -841,7 +775,7 @@ fn the_winning_cabal_collects_its_share_of_the_bonus_in_the_validation_period() 
         cabal: "dawn".into(),
         ..SignsPlayer::default()
     };
-    let mut s = Scene::with(true, rows, status, vec![alpha]);
+    let mut s = Scene::with(rows, status, vec![alpha]);
     s.enter(P[0], NAMES[0], Vec::new());
     s.enter(P[1], NAMES[1], Vec::new());
     for id in [P[0], P[1]] {
@@ -883,7 +817,7 @@ fn the_record_shows_the_festival_scores() {
         .unwrap();
     dusk1.score = 321;
     dusk1.members = "Anna,Bert".into();
-    let mut s = Scene::new(true, rows);
+    let mut s = Scene::new(rows);
     s.enter(P[0], NAMES[0], Vec::new());
     s.take();
     s.input(P[0], ClientInput::SsqStatus { page: 2 });
@@ -910,7 +844,7 @@ fn the_record_shows_the_festival_scores() {
 /// The shout and the countdown of the NPC pages (`%festivalMins%`).
 #[test]
 fn the_pages_of_the_npcs_show_the_minutes_to_the_next_festival() {
-    let mut s = Scene::new(true, rows_of(4));
+    let mut s = Scene::new(rows_of(4));
     s.enter(P[0], NAMES[0], Vec::new());
     for _ in 0..2 {
         s.input(

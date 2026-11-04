@@ -9,11 +9,9 @@
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
 use l2_util::ObjectId;
-use tracing::{info, warn};
+use tracing::warn;
 
-use super::{
-    TERRITORY_ID_BASE, TerritoryThen, TerritoryTimer, TerritoryWard, TerritoryWrite, WARD_ITEM_BASE,
-};
+use super::{TERRITORY_ID_BASE, TerritoryTimer, TerritoryWard, TerritoryWrite, WARD_ITEM_BASE};
 use crate::residence::{CastleId, FortId, ResidenceRef};
 use crate::siege::{SiegeZoneSiege, next_siege_date};
 use crate::world::World;
@@ -121,22 +119,12 @@ impl World {
         } else if remaining + self.territory.settings.war_length_ms > 0 {
             self.territory.channel_open = true;
             self.territory.registration_over = true;
-            if self.siege_database_writes() || self.territory.gm_start {
-                self.territory.gm_start = false;
-                self.tw_start_territory_war();
-                // Prepare task for TW end.
-                self.territory.end_task = Some(self.schedule_territory_timer(TerritoryTimer::EndTw, 1000));
-                self.territory.reward_task =
-                    Some(self.schedule_territory_timer(TerritoryTimer::RewardOnline, 60_000));
-            } else {
-                // D-51: the Java game server runs the real war. This world reads the rows again
-                // once that war and its channel (ten minutes after its end) are over.
-                info!(
-                    "SideBySide: the Territory War runs on the Java game server (SiegeDatabaseWrites = False)."
-                );
-                let until_closed = remaining + self.territory.settings.war_length_ms + 600_000;
-                self.schedule_territory_timer(TerritoryTimer::SideBySideReread, until_closed);
-            }
+            self.territory.gm_start = false;
+            self.tw_start_territory_war();
+            // Prepare task for TW end.
+            self.territory.end_task = Some(self.schedule_territory_timer(TerritoryTimer::EndTw, 1000));
+            self.territory.reward_task =
+                Some(self.schedule_territory_timer(TerritoryTimer::RewardOnline, 60_000));
         }
         // NOTE(java-quirk): a start date more than `WarLength` in the past arms nothing; the
         // schedule stays stopped until a GM or a restart sets a new date.
@@ -221,14 +209,6 @@ impl World {
         }
         self.territory.reward_task =
             Some(self.schedule_territory_timer(TerritoryTimer::RewardOnline, 60_000));
-    }
-
-    /// Side by side (D-51): Sieghardt's war is over. The channel closes like Java's
-    /// `closeTerritoryChannelTask`, then the rows are read again and the schedule starts from the
-    /// date read.
-    pub(crate) fn on_tw_side_by_side_reread(&mut self) {
-        self.on_tw_close_channel();
-        self.territory_request_reread(TerritoryThen::RestartSchedule);
     }
 
     // ------------------------------------------------------------------ start and end

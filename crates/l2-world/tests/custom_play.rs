@@ -569,28 +569,23 @@ fn premium_on_a_row_in_the_future_is_the_status() {
 /// `CycleDatabaseWrites` (D-53).
 #[test]
 fn premium_on_an_expired_row_is_removed_only_with_cycle_writes() {
-    for cycle in [false, true] {
-        let mut s = Scene::new(Switches {
-            premium: Some(PremiumSettings {
-                cycle_database_writes: cycle,
-                ..premium_on()
-            }),
-            ..Switches::default()
-        });
-        s.out.take();
-        s.world.handle(WorldCommand::PremiumLoaded {
-            player: ME,
-            key: ACCOUNT.to_owned(),
-            result: Ok(Some(1_000)),
-        });
-        assert!(!s.world.has_premium_status(ME));
-        let deleted = s.out.take().into_iter().any(|c| {
-            c == PersistCommand::Premium(PremiumWrite::Delete {
-                account: ACCOUNT.to_owned(),
-            })
-        });
-        assert_eq!(deleted, cycle);
-    }
+    let mut s = Scene::new(Switches {
+        premium: Some(PremiumSettings { ..premium_on() }),
+        ..Switches::default()
+    });
+    s.out.take();
+    s.world.handle(WorldCommand::PremiumLoaded {
+        player: ME,
+        key: ACCOUNT.to_owned(),
+        result: Ok(Some(1_000)),
+    });
+    assert!(!s.world.has_premium_status(ME));
+    let deleted = s.out.take().into_iter().any(|c| {
+        c == PersistCommand::Premium(PremiumWrite::Delete {
+            account: ACCOUNT.to_owned(),
+        })
+    });
+    assert_eq!(deleted, true);
 }
 
 /// `addPremiumTime`: at least from now, the row is replaced, and the first online player of the
@@ -1081,7 +1076,6 @@ fn offline_command_follows_the_trade_keys() {
 
 fn offline_writes_on() -> OfflineSettings {
     OfflineSettings {
-        database_writes: true,
         ..OfflineSettings::default()
     }
 }

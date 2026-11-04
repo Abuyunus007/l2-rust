@@ -16,7 +16,7 @@ use l2_protocol_game::server::{PlaySound, SystemMessage, SystemMessageParam};
 use l2_util::ObjectId;
 use tracing::warn;
 
-use super::{FortId, ResidenceRef, ResidenceWrite, Writes};
+use super::{FortId, ResidenceRef, ResidenceWrite};
 use crate::world::{World, unix_ms_now};
 
 /// A fortress (Java `Fort` without its siege and spawns).
@@ -222,9 +222,8 @@ impl World {
         }
     }
 
-    /// Java `Fort.saveFortVariables()`: the supply level row (`FortUpdater` and the owner changes
-    /// are [`Writes::Job`]s, D-51).
-    pub fn fort_save_variables(&mut self, id: FortId, writes: Writes) {
+    /// Java `Fort.saveFortVariables()`: the supply level row.
+    pub fn fort_save_variables(&mut self, id: FortId) {
         let Some(supply_level) = self.fort(id).map(|f| f.supply_level) else {
             return;
         };
@@ -232,13 +231,12 @@ impl World {
             fort_id: id.0,
             supply_level,
         };
-        self.write_residence(writes, write);
+        self.residence_write(write);
     }
 
     /// Java `Fort.setFortState(state, castleId)`: 0 not decided, 1 independent, 2 contracted with
-    /// `castle_id`. The reset of an owner change is a [`Writes::Job`]; the owner's choice at an
-    /// envoy a [`Writes::Player`].
-    pub fn fort_set_state(&mut self, id: FortId, state: i32, castle_id: i32, writes: Writes) {
+    /// `castle_id`.
+    pub fn fort_set_state(&mut self, id: FortId, state: i32, castle_id: i32) {
         let Some(fort) = self.fort_mut(id) else {
             return;
         };
@@ -249,7 +247,7 @@ impl World {
             state,
             castle_id,
         };
-        self.write_residence(writes, write);
+        self.residence_write(write);
     }
 
     /// Java `Fort.updateClansReputation(owner, removePoints)`.
@@ -299,7 +297,7 @@ impl World {
             self.fort_remove_owner(id, true);
         }
         // Initialize fort state.
-        self.fort_set_state(id, 0, 0, Writes::Job);
+        self.fort_set_state(id, 0, 0);
         // If clan already have castle, don't store him in fortress.
         if self.clan(clan_id).is_some_and(|c| c.castle_id > 0) {
             self.fort_siege_announce(
@@ -324,8 +322,8 @@ impl World {
         self.fort_set_supply_level(id, 0);
         self.fort_set_owner_clan(id, Some(clan_id));
         // Update in database.
-        self.fort_update_owner_in_db(id, Writes::Job);
-        self.fort_save_variables(id, Writes::Job);
+        self.fort_update_owner_in_db(id);
+        self.fort_save_variables(id);
         if self.fort_siege_in_progress(id) {
             self.fort_end_siege(id);
         }
@@ -339,11 +337,6 @@ impl World {
     /// Java `Fort.removeOwner(updateDB)`: the owner loses the fortress (residential skills,
     /// `PledgeShowInfoUpdate`), the flag comes down, the supply level and the functions go.
     pub fn fort_remove_owner(&mut self, id: FortId, update_db: bool) {
-        self.fort_remove_owner_with(id, update_db, Writes::Job);
-    }
-
-    /// [`Self::fort_remove_owner`] with its rows written as `writes` says.
-    pub(crate) fn fort_remove_owner_with(&mut self, id: FortId, update_db: bool, writes: Writes) {
         let Some(clan_id) = self.fort(id).map(|f| f.owner_id).filter(|c| *c != 0) else {
             return;
         };
@@ -357,17 +350,17 @@ impl World {
         self.broadcast_clan_info_update(clan_id);
         self.fort_set_owner_clan(id, None);
         self.fort_set_supply_level(id, 0);
-        self.fort_save_variables(id, writes);
-        self.residence_remove_all_functions_with(ResidenceRef::Fort(id), writes);
+        self.fort_save_variables(id);
+        self.residence_remove_all_functions(ResidenceRef::Fort(id));
         if update_db {
-            self.fort_update_owner_in_db(id, writes);
+            self.fort_update_owner_in_db(id);
         }
     }
 
-    /// Java `Fort.updateOwnerInDB()`: the owner row (D-51: only with `SiegeDatabaseWrites`), and
+    /// Java `Fort.updateOwnerInDB()`: the owner row, and
     /// for an owner its fortress id, the victory message to everybody, `PledgeShowInfoUpdate`
     /// and the `Siege_Victory` sound to its members.
-    fn fort_update_owner_in_db(&mut self, id: FortId, writes: Writes) {
+    fn fort_update_owner_in_db(&mut self, id: FortId) {
         let Some(owner) = self.fort(id).map(|f| f.owner_id) else {
             return;
         };
@@ -376,15 +369,11 @@ impl World {
         if let Some(fort) = self.fort_mut(id) {
             fort.last_owned_time = last_owned_time;
         }
-        let written = self.write_residence(
-            writes,
-            ResidenceWrite::FortOwner {
-                fort_id: id.0,
-                owner: clan.as_ref().map_or(0, |c| c.0),
-                last_owned_time,
-            },
-        );
-        self.set_residence_owner_source(ResidenceRef::Fort(id), written);
+        self.residence_write(ResidenceWrite::FortOwner {
+            fort_id: id.0,
+            owner: clan.as_ref().map_or(0, |c| c.0),
+            last_owned_time,
+        });
         // Announce to clan members.
         if let Some((clan_id, name)) = clan {
             if let Some(c) = self.clan_mut(clan_id) {

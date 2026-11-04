@@ -21,7 +21,7 @@
 use tracing::warn;
 
 use super::{FortTimer, siege::FortSiegeWrite};
-use crate::residence::{CastleId, FortId, Writes};
+use crate::residence::{CastleId, FortId};
 use crate::timer::{TimerId, TimerKind, TimerWheel};
 use crate::world::{World, unix_ms_now};
 
@@ -222,7 +222,7 @@ impl World {
                 let owned = self.fort(fort).map_or(0, |f| f.owned_time(unix_ms_now()));
                 if i64::from(owned) > i64::from(self.fort.settings.fs_max_own_time) * 3600 {
                     self.fort_remove_owner(fort, true);
-                    self.fort_set_state(fort, 0, 0, Writes::Job);
+                    self.fort_set_state(fort, 0, 0);
                 }
             }
         }
@@ -235,27 +235,25 @@ impl World {
         if let Some(c) = self.clan_mut(clan) {
             c.blood_oath_count += add;
             let count = c.blood_oath_count;
-            self.siege_write(crate::residence::ResidenceWrite::FortSiege(
+            self.residence_write(crate::residence::ResidenceWrite::FortSiege(
                 FortSiegeWrite::BloodOathCount { clan_id: clan, count },
             ));
         }
         let (state, castle) = self.fort(fort).map_or((0, 0), |f| (f.state, f.castle_id));
-        // The part that moves adena runs where Java's does: this world is the one that charges
-        // (D-51).
-        if state == 2 && self.siege_database_writes() {
+        if state == 2 {
             let fee = i64::from(self.fort.settings.fs_fee_for_castle);
             if self.clan_warehouse_adena(clan) >= fee {
                 self.clan_warehouse_destroy_adena(clan, fee);
                 if self.castle(CastleId(castle)).is_some() {
-                    self.castle_add_to_treasury_no_tax(CastleId(castle), fee, Writes::Job);
+                    self.castle_add_to_treasury_no_tax(CastleId(castle), fee);
                 } else {
                     warn!("{fort}: the contracted castle {castle} does not exist.");
                 }
                 self.fort_raise_supply_level(fort);
             } else {
-                self.fort_set_state(fort, 1, 0, Writes::Job);
+                self.fort_set_state(fort, 1, 0);
             }
         }
-        self.fort_save_variables(fort, Writes::Job);
+        self.fort_save_variables(fort);
     }
 }

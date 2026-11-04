@@ -7,11 +7,6 @@
 // fields are `SailrenState` (`ctx.state`). Java disables the script when the zone 70049 is not
 // there: `enabled` does the same.
 //
-// Side by side (D-54): `SailrenRespawn` is a global variable the Java GS writes too. `ENTER`
-// reads it again before it decides (`ctx.reread_global_variables`); a respawn time in the future
-// that was not known before marks the raid dead. A raid this server killed or started itself keeps
-// its own status.
-//
 // Not modelled: `unload` (D-16: no reload).
 
 use l2_protocol_game::server::SpecialCamera;
@@ -82,8 +77,6 @@ const EVENT_ATTACK: &str = "ATTACK";
 const EVENT_CLEAR_STATUS: &str = "CLEAR_STATUS";
 const EVENT_TIMEOUT: &str = "TIME_OUT";
 const EVENT_CHECK_INACTIVITY: &str = "CHECK_ATTACK";
-/// Not a Java event: the continuation of the D-54 re-read `ENTER` asks for.
-const EVENT_ENTER_ROW_READ: &str = "D54_ENTER_ROW_READ";
 
 // Global variable key.
 const GLOBAL_VAR_RESPAWN_TIME: &str = "SailrenRespawn";
@@ -159,14 +152,7 @@ impl Script for Sailren {
             "32109-01.html" | "32109-01a.html" | "32109-02a.html" | "32109-03a.html" => {
                 return Some(event.to_owned());
             }
-            EVENT_ENTER => {
-                // D-54: the respawn row decides, so it is read again first.
-                ctx.reread_global_variables(&[GLOBAL_VAR_RESPAWN_TIME], EVENT_ENTER_ROW_READ, npc, player);
-            }
-            EVENT_ENTER_ROW_READ => {
-                sync_with_respawn_row(ctx);
-                return handle_enter_event(ctx, npc, player);
-            }
+            EVENT_ENTER => return handle_enter_event(ctx, npc, player),
             EVENT_EXIT => {
                 if let Some(player) = player {
                     ctx.world_mut()
@@ -355,9 +341,8 @@ impl Script for Sailren {
     }
 }
 
-/// D-54: the respawn row as it is now. A time in the future that this server did not know marks
-/// the raid dead until then; a raid in a fight keeps its status. This is the constructor's
-/// `storedRespawnTime` test as well.
+/// The respawn row as it is now: a time in the future marks the raid dead until then. This is the
+/// constructor's `storedRespawnTime` test.
 fn sync_with_respawn_row(ctx: &mut ScriptCtx<'_>) {
     let stored_respawn_time = ctx.global_variables().get_long(GLOBAL_VAR_RESPAWN_TIME, 0);
     let remaining_delay = stored_respawn_time - ctx.now_ms();
@@ -598,7 +583,7 @@ fn camera(
 
 #[cfg(test)]
 mod tests {
-    use l2_world::{ScriptRegistry, ScriptSettings, WorldCommand};
+    use l2_world::ScriptRegistry;
 
     use super::*;
     use crate::testing::{ScriptTest, item};
@@ -642,7 +627,7 @@ mod tests {
         ),
     ];
 
-    fn world_with(zones: bool, writes: bool, rows: Vec<(String, Option<String>)>) -> ScriptTest {
+    fn world_with(zones: bool, rows: Vec<(String, Option<String>)>) -> ScriptTest {
         let mut registry = ScriptRegistry::new();
         registry.add(Sailren);
         let pages: &[(&str, &str)] = if zones { &PAGES } else { &PAGES[1..] };
@@ -651,16 +636,12 @@ mod tests {
                 std::sync::Arc::new(l2_data::Zones::load(root)),
                 std::sync::Arc::new(l2_data::MapRegions::load(root)),
             );
-            world.set_script_settings(ScriptSettings {
-                cycle_database_writes: writes,
-                ..ScriptSettings::default()
-            });
             world.set_global_variables(rows);
         })
     }
 
     fn world() -> ScriptTest {
-        world_with(true, true, vec![])
+        world_with(true, vec![])
     }
 
     fn now_ms() -> i64 {
@@ -713,7 +694,7 @@ mod tests {
 
     #[test]
     fn without_the_zone_the_script_is_not_installed() {
-        let t = world_with(false, true, vec![]);
+        let t = world_with(false, vec![]);
         assert!(!t.world.has_script("Sailren"));
         let t = world();
         assert!(t.world.has_script("Sailren"));
@@ -941,7 +922,6 @@ mod tests {
     fn a_future_respawn_row_marks_the_raid_dead_at_start() {
         let mut t = world_with(
             true,
-            true,
             vec![(
                 GLOBAL_VAR_RESPAWN_TIME.to_owned(),
                 Some((now_ms() + 600_000).to_string()),
@@ -951,32 +931,11 @@ mod tests {
         assert!(has_timer(&mut t, EVENT_CLEAR_STATUS));
         let mut t = world_with(
             true,
-            true,
             vec![(
                 GLOBAL_VAR_RESPAWN_TIME.to_owned(),
                 Some((now_ms() - 600_000).to_string()),
             )],
         );
         assert_eq!(st(&mut t, |s| s.raid_status), STATUS_ALIVE);
-    }
-
-    #[test]
-    fn with_the_switch_off_the_entry_reads_the_row_first() {
-        let mut t = world_with(true, false, vec![]);
-        let statue = party_of_two(&mut t, true);
-        event(&mut t, EVENT_ENTER, Some(1), Some(statue));
-        assert_eq!(t.world.script_rereads_waiting(), 1);
-        assert_eq!(st(&mut t, |s| s.raid_status), STATUS_ALIVE);
-        // The Java GS killed Sailren a moment ago: the row says so.
-        t.world.handle(WorldCommand::GlobalVariablesReread {
-            token: 1,
-            result: Ok(vec![(
-                GLOBAL_VAR_RESPAWN_TIME.to_owned(),
-                Some((now_ms() + 3_000_000).to_string()),
-            )]),
-        });
-        assert_eq!(st(&mut t, |s| s.raid_status), STATUS_DEAD);
-        assert_eq!(t.count(1, GAZKH_ITEM_ID), 1);
-        assert!(has_timer(&mut t, EVENT_CLEAR_STATUS));
     }
 }

@@ -58,7 +58,6 @@ pub mod packets;
 pub mod player_help;
 pub mod qs;
 pub mod quest_helpers;
-pub mod reread;
 mod residence_api;
 mod see;
 pub mod setup;
@@ -148,9 +147,6 @@ pub struct ScriptSettings {
     /// see `World::script_player_enter`: rows of scripts this server does not have are never
     /// deleted (D-39).
     pub autodelete_invalid_quest_data: bool,
-    /// `CycleDatabaseWrites` of `config/SideBySide.ini` (D-53, D-54): the global variables are
-    /// written only when this is on.
-    pub cycle_database_writes: bool,
     /// `FeatureConfig.BLOODALLIANCE_POINTS` (`BloodAlliancePoints`, ClanTrader; S-AI-05).
     pub bloodalliance_points: i32,
     /// `FeatureConfig.BLOODOATH_POINTS` (`BloodOathPoints`).
@@ -250,7 +246,6 @@ impl Default for ScriptSettings {
             rate_quest_reward_material: 1.0,
             quest_item_drop_amount_multiplier: 1.0,
             autodelete_invalid_quest_data: false,
-            cycle_database_writes: false,
             alt_birthday_gift: 22187,
             alt_birthday_mail_subject: "Happy Birthday!".to_owned(),
             alt_birthday_mail_text: String::new(),
@@ -292,8 +287,6 @@ pub(crate) struct ScriptWorld {
     pub(crate) npc_extras: npc_extra::NpcExtras,
     /// The listeners added to single objects (S-API-04).
     pub(crate) object_listeners: events::ObjectListeners,
-    /// The global variable re-reads waiting for their rows (S-API-04).
-    pub(crate) rereads: reread::Rereads,
     /// The quest states of every online player (Java `Player._quests`).
     pub(crate) players: HashMap<ObjectId, PlayerQuests>,
     pub(crate) timers: timers::QuestTimers,

@@ -829,7 +829,6 @@ mod tests {
 
         let mut t = world(&PASSED);
         t.world.set_script_settings(ScriptSettings {
-            cycle_database_writes: true,
             ..ScriptSettings::default()
         });
         t.take_boss();

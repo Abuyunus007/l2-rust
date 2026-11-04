@@ -6,10 +6,6 @@
 // The Java constructor is `on_load`; the fields are `QueenAntState` (`ctx.state`). Statuses: 0
 // alive, 1 dead.
 //
-// Side by side (D-54, `super` module): with `CycleDatabaseWrites` off the constructor restores
-// the boss only from an alive row, and `queen_unlock` reads the row again and brings the Queen back
-// only when the row says alive.
-//
 // Not modelled: `unload` (D-16: no reload).
 
 use l2_protocol_game::server::{PlaySound, SocialAction};
@@ -17,7 +13,7 @@ use l2_util::ObjectId;
 use l2_world::{Intention, Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};
 use tracing::{info, warn};
 
-use super::{EVENT_ROW_READ, date_time_string, row_lets_boss_run};
+use super::date_time_string;
 
 // Boss and minion identifiers.
 const QUEEN_ANT_ID: i32 = 29001;
@@ -123,20 +119,10 @@ impl Script for QueenAnt {
             let remaining_delay = boss_info.respawn_time - ctx.now_ms();
             if remaining_delay > 0 {
                 ctx.start_quest_timer(EVENT_QUEEN_UNLOCK, remaining_delay, None, None, false);
-            } else if !ctx.world().boss_writes_enabled() {
-                // D-54: the respawn of a dead row waits for the other server's alive row.
-                ctx.notify_event(EVENT_QUEEN_UNLOCK, None, None);
             } else {
                 spawn_queen_at_nest(ctx);
             }
         } else {
-            // D-54: with the switch off a row that is not alive is the other server's.
-            if !row_lets_boss_run(ctx, QUEEN_ANT_ID) {
-                info!(
-                    "QueenAnt: the shared state row says {current_status}; the AI waits for an alive row (D-54)."
-                );
-                return;
-            }
             let (mut loc_x, mut loc_y, mut loc_z) = (boss_info.loc_x, boss_info.loc_y, boss_info.loc_z);
             // Java: `_queenNestZone` is null without the zone and the constructor throws; the
             // default place is the safe reading.
@@ -182,34 +168,7 @@ impl Script for QueenAnt {
                 }
             }
             EVENT_QUEEN_UNLOCK => {
-                // D-54: on the shared database the row decides; read it again first.
-                if !ctx.world().boss_writes_enabled() {
-                    ctx.world_mut()
-                        .reread_grand_boss_for_script(QUEEN_ANT_ID, self.name(), EVENT_ROW_READ);
-                    return None;
-                }
                 spawn_queen_at_nest(ctx);
-            }
-            EVENT_ROW_READ => {
-                // D-54: the answer of the read `queen_unlock` asked for.
-                match ctx.world().grand_boss_status(QUEEN_ANT_ID) {
-                    Some(STATUS_ALIVE) => spawn_queen_at_nest(ctx),
-                    Some(STATUS_DEAD) => {
-                        let respawn = ctx
-                            .world()
-                            .grand_boss_info(QUEEN_ANT_ID)
-                            .map_or(0, |i| i.respawn_time);
-                        let remaining = respawn - ctx.now_ms();
-                        if remaining > 0 {
-                            ctx.start_quest_timer(EVENT_QUEEN_UNLOCK, remaining, None, None, false);
-                        } else {
-                            info!("QueenAnt: the shared state row says dead; the Queen stays away (D-54).");
-                        }
-                    }
-                    status => {
-                        info!("QueenAnt: the shared state row says {status:?}; the Queen stays away (D-54).")
-                    }
-                }
             }
             EVENT_DISTANCE_CHECK => {
                 let queen = ctx.state::<QueenAntState>().queen;
@@ -550,7 +509,7 @@ fn handle_heal(ctx: &mut ScriptCtx<'_>) {
 #[cfg(test)]
 mod tests {
     use l2_util::ObjectId as Oid;
-    use l2_world::{BossReadKind, BossReadThen, BossWrite, GrandBossData, ScriptRegistry};
+    use l2_world::{BossWrite, GrandBossData, ScriptRegistry};
 
     use super::*;
     use crate::ai::bosses::test_support::*;
@@ -571,7 +530,7 @@ mod tests {
 
     const NEST: (i32, i32, i32) = (QUEEN_NEST_X, QUEEN_NEST_Y, QUEEN_NEST_Z);
 
-    fn setup_row(status: i32, respawn_time: i64, writes: bool, at: (i32, i32, i32)) -> ScriptTest {
+    fn setup_row(status: i32, respawn_time: i64, at: (i32, i32, i32)) -> ScriptTest {
         let mut registry = ScriptRegistry::new();
         registry.add(QueenAnt);
         // The nest zone of `custom_boss.xml`.
@@ -595,7 +554,6 @@ mod tests {
             "",
             &[("data/zones/queen.xml", zone)],
             vec![row(QUEEN_ANT_ID, status, respawn_time, at)],
-            writes,
         )
     }
 
@@ -642,7 +600,7 @@ mod tests {
 
     #[test]
     fn the_queen_spawns_with_her_larva_nurses_and_royal_guards() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true, NEST);
+        let mut t = setup_row(STATUS_ALIVE, 0, NEST);
         let queen = t.world.grand_boss_npc(QUEEN_ANT_ID).unwrap();
         assert_eq!(xy(&t, queen), (NEST.0, NEST.1));
         let larva = alive(&t, LARVA_ID);
@@ -669,11 +627,11 @@ mod tests {
 
     #[test]
     fn a_row_outside_the_nest_puts_her_back_at_the_nest() {
-        let t = setup_row(STATUS_ALIVE, 0, true, (0, 0, 0));
+        let t = setup_row(STATUS_ALIVE, 0, (0, 0, 0));
         let queen = t.world.grand_boss_npc(QUEEN_ANT_ID).unwrap();
         assert_eq!(xy(&t, queen), (NEST.0, NEST.1));
         // A row inside keeps its place.
-        let t = setup_row(STATUS_ALIVE, 0, true, (-21600, 181000, -5734));
+        let t = setup_row(STATUS_ALIVE, 0, (-21600, 181000, -5734));
         let queen = t.world.grand_boss_npc(QUEEN_ANT_ID).unwrap();
         assert_eq!(xy(&t, queen), (-21600, 181000));
     }
@@ -684,7 +642,7 @@ mod tests {
         registry.add(QueenAnt);
         // A dead row whose time is over: the queen spawns after the player stands in the nest?
         // The player enters first, then the unlock event runs.
-        let mut t = setup_row(STATUS_DEAD, now_ms() + 3_600_000, true, NEST);
+        let mut t = setup_row(STATUS_DEAD, now_ms() + 3_600_000, NEST);
         t.world.allow_boss_zone_entry(12012, Oid(1), 3600);
         t.enter_with(player_at(1, (-21600, 181000, -5734), vec![]));
         assert!(t.world.zone_players_inside(12012, "BossZone").contains(&Oid(1)));
@@ -704,44 +662,18 @@ mod tests {
     }
 
     #[test]
-    fn with_the_switch_off_the_row_decides_the_unlock() {
-        let mut t = setup_row(STATUS_DEAD, now_ms() - 1000, false, NEST);
-        assert!(npcs_of(&t, QUEEN_ANT_ID).is_empty());
-        let then = BossReadThen::ScriptEvent {
-            script: "QueenAnt",
-            event: EVENT_ROW_READ,
-        };
-        assert_eq!(
-            rereads(&t.take_boss()),
-            [(BossReadKind::GrandBoss(QUEEN_ANT_ID), then)]
-        );
-        answer(
-            &mut t,
-            then,
-            QUEEN_ANT_ID,
-            row(QUEEN_ANT_ID, STATUS_ALIVE, 0, NEST),
-        );
-        assert_eq!(status(&t), Some(STATUS_ALIVE));
-        assert_eq!(npcs_of(&t, QUEEN_ANT_ID).len(), 1);
-        assert!(grand_writes(&t.take_boss()).is_empty());
-
-        let t = setup_row(STATUS_DEAD + 1, 0, false, NEST);
-        assert!(npcs_of(&t, QUEEN_ANT_ID).is_empty());
-    }
-
-    #[test]
     fn a_dead_row_waits_for_its_time() {
-        let mut t = setup_row(STATUS_DEAD, now_ms() + 3_600_000, true, NEST);
+        let mut t = setup_row(STATUS_DEAD, now_ms() + 3_600_000, NEST);
         assert!(npcs_of(&t, QUEEN_ANT_ID).is_empty());
         assert!(has_timer(&mut t, EVENT_QUEEN_UNLOCK, None));
-        let t = setup_row(STATUS_DEAD, now_ms() - 10, true, NEST);
+        let t = setup_row(STATUS_DEAD, now_ms() - 10, NEST);
         assert_eq!(npcs_of(&t, QUEEN_ANT_ID).len(), 1);
         assert_eq!(status(&t), Some(STATUS_ALIVE));
     }
 
     #[test]
     fn the_queen_s_death_writes_the_row_and_the_larva_goes() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true, NEST);
+        let mut t = setup_row(STATUS_ALIVE, 0, NEST);
         t.enter_with(player_at(1, (NEST.0 + 50, NEST.1, NEST.2), vec![]));
         let queen = t.world.grand_boss_npc(QUEEN_ANT_ID).unwrap();
         let larva = alive(&t, LARVA_ID)[0];
@@ -775,7 +707,7 @@ mod tests {
 
     #[test]
     fn a_dead_royal_guard_and_nurse_return_through_the_minion_list() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true, NEST);
+        let mut t = setup_row(STATUS_ALIVE, 0, NEST);
         t.enter_with(player_at(1, (NEST.0 + 50, NEST.1, NEST.2), vec![]));
         let royal = alive(&t, ROYAL_ID)[0];
         let nurse = alive(&t, NURSE_ID)[0];
@@ -795,7 +727,7 @@ mod tests {
 
     #[test]
     fn the_distance_check_brings_a_stray_queen_home() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true, NEST);
+        let mut t = setup_row(STATUS_ALIVE, 0, NEST);
         let queen = t.world.grand_boss_npc(QUEEN_ANT_ID).unwrap();
         t.world.tele_to_location(
             queen,
@@ -813,7 +745,7 @@ mod tests {
 
     #[test]
     fn the_nurses_target_the_hurt_larva_first_then_the_queen() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true, NEST);
+        let mut t = setup_row(STATUS_ALIVE, 0, NEST);
         let queen = t.world.grand_boss_npc(QUEEN_ANT_ID).unwrap();
         let larva = alive(&t, LARVA_ID)[0];
         let nurses = alive(&t, NURSE_ID);
@@ -835,7 +767,7 @@ mod tests {
 
     #[test]
     fn a_much_higher_level_player_entering_gets_the_curse_roll_and_loses_hate() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true, NEST);
+        let mut t = setup_row(STATUS_ALIVE, 0, NEST);
         t.enter_with(player_at(1, (NEST.0 + 50, NEST.1, NEST.2), vec![]));
         let queen = t.world.grand_boss_npc(QUEEN_ANT_ID).unwrap();
         t.world.add_damage_hate(queen, Oid(1), 0, 100);

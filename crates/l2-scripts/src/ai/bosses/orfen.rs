@@ -6,10 +6,6 @@
 // The Java constructor is `on_load`; the static fields are `OrfenState` (`ctx.state`). Statuses: 0
 // alive, 1 dead.
 //
-// Side by side (D-54, `super` module): with `CycleDatabaseWrites` off the constructor restores
-// the boss only from an alive row, and `orfen_unlock` reads the row again and brings Orfen back
-// only when the row says alive.
-//
 // Not modelled: `unload` (D-16: no reload).
 
 use l2_protocol_game::NpcStringId;
@@ -18,7 +14,7 @@ use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey, TeleportTarget};
 use tracing::{info, warn};
 
-use super::{EVENT_ROW_READ, date_time_string, row_lets_boss_run};
+use super::date_time_string;
 
 // NPC identifiers.
 const ORFEN_NPC_ID: i32 = 29014;
@@ -131,19 +127,11 @@ impl Script for Orfen {
             // If Orfen is locked until a certain time, start unlock timer if time has not yet expired.
             if remaining_millis > 0 {
                 ctx.start_quest_timer(EVENT_ORFEN_UNLOCK, remaining_millis, None, None, false);
-            } else if !ctx.world().boss_writes_enabled() {
-                // D-54: the respawn of a dead row waits for the other server's alive row.
-                ctx.notify_event(EVENT_ORFEN_UNLOCK, None, None);
             } else {
                 // Respawn time has already elapsed while the server was offline. Spawn Orfen immediately.
                 spawn_orfen_at_random_nest(ctx);
             }
         } else {
-            // D-54: with the switch off a row that is not alive is the other server's.
-            if !row_lets_boss_run(ctx, ORFEN_NPC_ID) {
-                info!("Orfen: the shared state row says {status}; the AI waits for an alive row (D-54).");
-                return;
-            }
             let Some(orfen) = ctx.add_spawn(
                 ORFEN_NPC_ID,
                 info.loc_x,
@@ -171,32 +159,7 @@ impl Script for Orfen {
     ) -> Option<String> {
         match event {
             EVENT_ORFEN_UNLOCK => {
-                // D-54: on the shared database the row decides; read it again first.
-                if !ctx.world().boss_writes_enabled() {
-                    ctx.world_mut()
-                        .reread_grand_boss_for_script(ORFEN_NPC_ID, self.name(), EVENT_ROW_READ);
-                    return None;
-                }
                 spawn_orfen_at_random_nest(ctx);
-            }
-            EVENT_ROW_READ => {
-                // D-54: the answer of the read `orfen_unlock` asked for.
-                match ctx.world().grand_boss_status(ORFEN_NPC_ID) {
-                    Some(STATUS_ALIVE) => spawn_orfen_at_random_nest(ctx),
-                    Some(STATUS_DEAD) => {
-                        let respawn = ctx
-                            .world()
-                            .grand_boss_info(ORFEN_NPC_ID)
-                            .map_or(0, |i| i.respawn_time);
-                        let remaining = respawn - ctx.now_ms();
-                        if remaining > 0 {
-                            ctx.start_quest_timer(EVENT_ORFEN_UNLOCK, remaining, None, None, false);
-                        } else {
-                            info!("Orfen: the shared state row says dead; Orfen stays away (D-54).");
-                        }
-                    }
-                    status => info!("Orfen: the shared state row says {status:?}; Orfen stays away (D-54)."),
-                }
             }
             EVENT_CHECK_ORFEN_POSITION => {
                 let npc = npc?;
@@ -523,7 +486,7 @@ fn spawn_boss(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc) {
 #[cfg(test)]
 mod tests {
     use l2_util::ObjectId as Oid;
-    use l2_world::{BossReadKind, BossReadThen, BossWrite, GrandBossData, ScriptRegistry};
+    use l2_world::{BossWrite, GrandBossData, ScriptRegistry};
 
     use super::*;
     use crate::ai::bosses::test_support::*;
@@ -552,7 +515,7 @@ mod tests {
 </list>
 "#;
 
-    fn setup_row(status: i32, respawn_time: i64, writes: bool) -> ScriptTest {
+    fn setup_row(status: i32, respawn_time: i64) -> ScriptTest {
         let mut registry = ScriptRegistry::new();
         registry.add(Orfen);
         boss_test(
@@ -561,7 +524,6 @@ mod tests {
             "",
             &[("data/zones/orfen.xml", ORFEN_ZONE)],
             vec![row(ORFEN_NPC_ID, status, respawn_time, ORFEN_SPAWN_LOCATIONS[0])],
-            writes,
         )
     }
 
@@ -606,7 +568,7 @@ mod tests {
 
     #[test]
     fn an_alive_row_restores_orfen_and_four_minions() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true);
+        let mut t = setup_row(STATUS_ALIVE, 0);
         let orfen = t.world.grand_boss_npc(ORFEN_NPC_ID).unwrap();
         assert_eq!(
             xy(&t, orfen),
@@ -633,11 +595,11 @@ mod tests {
 
     #[test]
     fn a_dead_row_waits_or_spawns_orfen_at_a_roaming_nest() {
-        let mut t = setup_row(STATUS_DEAD, now_ms() + 3_600_000, true);
+        let mut t = setup_row(STATUS_DEAD, now_ms() + 3_600_000);
         assert!(npcs_of(&t, ORFEN_NPC_ID).is_empty());
         assert!(has_timer(&mut t, EVENT_ORFEN_UNLOCK, None));
 
-        let t = setup_row(STATUS_DEAD, now_ms() - 1000, true);
+        let t = setup_row(STATUS_DEAD, now_ms() - 1000);
         let orfen = t.world.grand_boss_npc(ORFEN_NPC_ID).unwrap();
         let at = xy(&t, orfen);
         assert!(
@@ -649,45 +611,8 @@ mod tests {
     }
 
     #[test]
-    fn with_the_switch_off_the_row_decides_the_unlock() {
-        let mut t = setup_row(STATUS_DEAD, now_ms() - 1000, false);
-        assert!(npcs_of(&t, ORFEN_NPC_ID).is_empty());
-        let then = BossReadThen::ScriptEvent {
-            script: "Orfen",
-            event: EVENT_ROW_READ,
-        };
-        assert_eq!(
-            rereads(&t.take_boss()),
-            [(BossReadKind::GrandBoss(ORFEN_NPC_ID), then)]
-        );
-        answer(
-            &mut t,
-            then,
-            ORFEN_NPC_ID,
-            row(ORFEN_NPC_ID, STATUS_ALIVE, 0, ORFEN_SPAWN_LOCATIONS[0]),
-        );
-        assert_eq!(status(&t), Some(STATUS_ALIVE));
-        assert_eq!(npcs_of(&t, ORFEN_NPC_ID).len(), 1);
-        assert!(grand_writes(&t.take_boss()).is_empty());
-
-        // The row stays dead: Orfen stays away.
-        let mut t = setup_row(STATUS_DEAD, now_ms() - 1000, false);
-        t.take_boss();
-        answer(
-            &mut t,
-            then,
-            ORFEN_NPC_ID,
-            row(ORFEN_NPC_ID, STATUS_DEAD, now_ms() - 5, ORFEN_SPAWN_LOCATIONS[0]),
-        );
-        assert!(npcs_of(&t, ORFEN_NPC_ID).is_empty());
-
-        let t = setup_row(STATUS_DEAD + 1, 0, false);
-        assert!(npcs_of(&t, ORFEN_NPC_ID).is_empty());
-    }
-
-    #[test]
     fn below_half_hp_orfen_goes_to_its_lair_and_returns_when_healed() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true);
+        let mut t = setup_row(STATUS_ALIVE, 0);
         t.enter_with(player_at(1, (43800, 17300, -4342), vec![]));
         let orfen = t.world.grand_boss_npc(ORFEN_NPC_ID).unwrap();
         // The nest is the lair of location 0: 510 - 20 < 500 sends it back there at once.
@@ -743,7 +668,7 @@ mod tests {
 
     #[test]
     fn a_hit_from_afar_can_pull_the_attacker_to_orfen() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true);
+        let mut t = setup_row(STATUS_ALIVE, 0);
         t.enter_with(player_at(1, (43728 + 600, 17220, -4342), vec![]));
         let orfen = t.world.grand_boss_npc(ORFEN_NPC_ID).unwrap();
         t.take();
@@ -767,7 +692,7 @@ mod tests {
 
     #[test]
     fn a_skill_without_effect_point_data_does_not_move_the_caster() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true);
+        let mut t = setup_row(STATUS_ALIVE, 0);
         t.enter_with(player_at(1, (43728 + 600, 17220, -4342), vec![]));
         let orfen = t.world.grand_boss_npc(ORFEN_NPC_ID).unwrap();
         for _ in 0..50 {
@@ -782,7 +707,7 @@ mod tests {
 
     #[test]
     fn orfen_death_writes_the_row_and_sends_the_minions_away() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true);
+        let mut t = setup_row(STATUS_ALIVE, 0);
         t.enter_with(player_at(1, (43800, 17300, -4342), vec![]));
         let orfen = t.world.grand_boss_npc(ORFEN_NPC_ID).unwrap();
         t.take();
@@ -825,7 +750,7 @@ mod tests {
 
     #[test]
     fn raikel_leos_kills_never_reach_the_script() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true);
+        let mut t = setup_row(STATUS_ALIVE, 0);
         t.enter_with(player_at(1, (43800, 17300, -4342), vec![]));
         let minion = live_minions(&t)[0];
         let at = xy(&t, minion);
@@ -844,7 +769,7 @@ mod tests {
 
     #[test]
     fn a_minion_that_strayed_is_brought_back_to_orfen() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true);
+        let mut t = setup_row(STATUS_ALIVE, 0);
         let orfen = t.world.grand_boss_npc(ORFEN_NPC_ID).unwrap();
         let minion = live_minions(&t)[0];
         t.world.tele_to_location(
@@ -858,7 +783,7 @@ mod tests {
 
     #[test]
     fn riba_iren_heals_the_hurt_orfen() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true);
+        let mut t = setup_row(STATUS_ALIVE, 0);
         t.enter_with(player_at(1, (43800, 17300, -4342), vec![]));
         let orfen = t.world.grand_boss_npc(ORFEN_NPC_ID).unwrap();
         let riba = t

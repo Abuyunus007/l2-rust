@@ -11,7 +11,7 @@ use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{PlaySound, SystemMessage, SystemMessageParam};
 use l2_util::ObjectId;
 
-use super::{CastleId, ResidenceRef, ResidenceWrite, Writes};
+use super::{CastleId, ResidenceRef, ResidenceWrite};
 use crate::world::World;
 
 /// A castle (Java `Castle` without its siege).
@@ -274,14 +274,12 @@ impl World {
                 amount -= aden_tax;
             }
         }
-        self.castle_add_to_treasury_no_tax(id, amount, Writes::Job);
+        self.castle_add_to_treasury_no_tax(id, amount);
     }
 
     /// Java `Castle.addToTreasuryNoTax(amount)`: a negative amount takes adena out (`false` when
-    /// the treasury has less), a positive one stops at `MaxAdena`. The tax income is a
-    /// [`Writes::Job`] (D-51); the castle lord's own deposit or withdrawal at the chamberlain is a
-    /// [`Writes::Player`].
-    pub fn castle_add_to_treasury_no_tax(&mut self, id: CastleId, amount: i64, writes: Writes) -> bool {
+    /// the treasury has less), a positive one stops at `MaxAdena`.
+    pub fn castle_add_to_treasury_no_tax(&mut self, id: CastleId, amount: i64) -> bool {
         let max_adena = self.settings.ground.max_adena;
         let Some(castle) = self.castle_mut(id) else {
             return false;
@@ -304,13 +302,12 @@ impl World {
             castle_id: id.0,
             treasury: castle.treasury,
         };
-        self.write_residence(writes, write);
+        self.residence_write(write);
         true
     }
 
-    /// Java `Castle.setShowNpcCrest(showNpcCrest)`: the castle's crest on its NPCs (the reset of an
-    /// owner change is a [`Writes::Job`], the castle lord's choice a [`Writes::Player`]).
-    pub fn castle_set_show_npc_crest(&mut self, id: CastleId, show: bool, writes: Writes) {
+    /// Java `Castle.setShowNpcCrest(showNpcCrest)`: the castle's crest on its NPCs.
+    pub fn castle_set_show_npc_crest(&mut self, id: CastleId, show: bool) {
         let Some(castle) = self.castle_mut(id) else {
             return;
         };
@@ -322,7 +319,7 @@ impl World {
             castle_id: id.0,
             show,
         };
-        self.write_residence(writes, write);
+        self.residence_write(write);
     }
 
     /// Java `Castle.setTicketBuyCount(count)`: the mercenary tickets exchanged (a player's
@@ -358,7 +355,7 @@ impl World {
                         castle.former_owner = Some(owner_id);
                     }
                     if self.residences.settings.remove_castle_circlets {
-                        self.remove_clan_circlets(owner_id, id.0, Writes::Job);
+                        self.remove_clan_circlets(owner_id, id.0);
                     }
                 }
                 // The old leader on a wyvern dismounts.
@@ -380,7 +377,7 @@ impl World {
         }
         // Update in database.
         self.castle_update_owner_in_db(id, clan);
-        self.castle_set_show_npc_crest(id, false, Writes::Job);
+        self.castle_set_show_npc_crest(id, false);
         // If clan have fortress, remove it.
         if let Some(clan_id) = clan
             && self.clan(clan_id).is_some_and(|c| c.fort_id > 0)
@@ -415,7 +412,7 @@ impl World {
                 castle.former_owner = Some(clan_id);
             }
             if self.residences.settings.remove_castle_circlets {
-                self.remove_clan_circlets(clan_id, id.0, Writes::Job);
+                self.remove_clan_circlets(clan_id, id.0);
             }
             for member in self.clan_online_members(clan_id, 0) {
                 self.remove_residential_skills(ResidenceRef::Castle(id), member);
@@ -434,8 +431,7 @@ impl World {
         self.residence_remove_all_functions(ResidenceRef::Castle(id));
     }
 
-    /// Java `Castle.updateOwnerInDB(clan)`: the owner id, the two `clan_data` updates (D-51:
-    /// only with `SiegeDatabaseWrites`), and for a new owner its castle id,
+    /// Java `Castle.updateOwnerInDB(clan)`: the owner id, the two `clan_data` updates, and for a new owner its castle id,
     /// `PledgeShowInfoUpdate` and the `Siege_Victory` sound to its online members.
     fn castle_update_owner_in_db(&mut self, id: CastleId, clan: Option<i32>) {
         let owner_id = clan.unwrap_or(0);
@@ -446,11 +442,10 @@ impl World {
             // Remove owner: the castle loses its manor.
             self.manor_reset_data(id.0);
         }
-        let written = self.siege_write(ResidenceWrite::CastleOwner {
+        self.residence_write(ResidenceWrite::CastleOwner {
             castle_id: id.0,
             clan_id: owner_id,
         });
-        self.set_residence_owner_source(ResidenceRef::Castle(id), written);
         // Announce to clan members.
         if let Some(clan_id) = clan
             && self.clan(clan_id).is_some()
@@ -519,33 +514,26 @@ impl World {
     // ------------------------------------------------------------------ circlets
 
     /// Java `CastleManager.removeCirclet(clan, castleId)`: every member of the clan loses the
-    /// castle's circlet; `writes` decides about the rows of offline members.
-    pub(crate) fn remove_clan_circlets(&mut self, clan_id: i32, castle_id: i32, writes: Writes) {
+    /// castle's circlet.
+    pub(crate) fn remove_clan_circlets(&mut self, clan_id: i32, castle_id: i32) {
         let members: Vec<ObjectId> = self
             .clan(clan_id)
             .map(|c| c.members().iter().map(|m| m.object_id).collect())
             .unwrap_or_default();
         for member in members {
-            self.remove_member_circlet(clan_id, member, castle_id, writes);
+            self.remove_member_circlet(clan_id, member, castle_id);
         }
     }
 
     /// Java `CastleManager.removeCirclet(member, castleId)`: an online member's circlet is taken
-    /// off and destroyed ("... has disappeared"); an offline member's rows are deleted as
-    /// `writes` says.
-    pub(crate) fn remove_member_circlet(
-        &mut self,
-        clan_id: i32,
-        member: ObjectId,
-        castle_id: i32,
-        writes: Writes,
-    ) {
+    /// off and destroyed ("... has disappeared"); an offline member's rows are deleted.
+    pub(crate) fn remove_member_circlet(&mut self, clan_id: i32, member: ObjectId, castle_id: i32) {
         let online = self
             .clan(clan_id)
             .and_then(|c| c.member(member))
             .is_some_and(|m| m.has_player)
             && self.players.contains_key(&member);
-        self.remove_circlet_of(member, castle_id, online, writes);
+        self.remove_circlet_of(member, castle_id, online);
     }
 
     /// `Clan.removeClanMember`'s `CastleManager.removeCirclet(exMember, getCastleId())`: the member
@@ -556,10 +544,10 @@ impl World {
         castle_id: i32,
         online: bool,
     ) {
-        self.remove_circlet_of(member, castle_id, online, Writes::Player);
+        self.remove_circlet_of(member, castle_id, online);
     }
 
-    fn remove_circlet_of(&mut self, member: ObjectId, castle_id: i32, online: bool, writes: Writes) {
+    fn remove_circlet_of(&mut self, member: ObjectId, castle_id: i32, online: bool) {
         let circlet = l2_data::residence::circlet_by_castle_id(castle_id);
         if circlet == 0 {
             return;
@@ -579,6 +567,6 @@ impl World {
             owner_id: member.0,
             item_id: circlet,
         };
-        self.write_residence(writes, write);
+        self.residence_write(write);
     }
 }

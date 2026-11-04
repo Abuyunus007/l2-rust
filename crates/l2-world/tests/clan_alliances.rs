@@ -627,7 +627,6 @@ fn crests_load_like_crest_table_and_clans_lose_the_ones_that_are_gone() {
     // With the switch: the unused crest 1 is deleted, the clan columns of the missing crests are
     // cleared.
     let mut s = Scene::with(ClanSettings {
-        maintenance_database_writes: true,
         ..ClanSettings::default()
     });
     s.load(records());
@@ -658,14 +657,6 @@ fn crests_load_like_crest_table_and_clans_lose_the_ones_that_are_gone() {
             }),
         ]
     );
-
-    // Without it (D-49) the same state, and the rows are left to the Java game server.
-    let mut s = Scene::new();
-    s.load(records());
-    s.world.load_crests(crests);
-    assert!(s.world.crest(1).is_none());
-    assert_eq!((s.clan().crest_large_id, s.clan().ally_crest_id), (0, 0));
-    assert!(clan_writes(&s.outs.take()).is_empty());
 }
 
 #[test]

@@ -17,9 +17,6 @@
 //!   instead of time). The persistence commands the world sends are applied to a model of the
 //!   tables (`m7_db.rs`) that also answers the reads (D-50), so the same row checks run here.
 //!
-//! Each scenario runs twice per half: with `SiegeDatabaseWrites = False` (D-51: the siege-like
-//! results change this world only, no global row changes) and with `True` (the rows Java writes).
-//!
 //! A client action is an `Act`: the `ClientInput` for the bare world and the bytes of the packet
 //! the real client sends for `Net`. `every_act_decodes_on_the_wire` checks that the bytes decode
 //! as the packet each action stands for.
@@ -142,8 +139,8 @@ fn fort_siege_ini() -> String {
 
 /// Everything in the game server's `config` folder except `Database.ini`. Like the M6 rig (see
 /// `e2e_m4.rs` for the reasons), with a lot of starting adena, the admin rights, `Siege.ini`,
-/// `FortSiege.ini` and `SideBySide.ini` with the switch of the scenario (D-51).
-fn write_game_config(config_dir: &Path, ls_port: u16, siege_writes: bool) {
+/// and `FortSiege.ini`.
+fn write_game_config(config_dir: &Path, ls_port: u16) {
     std::fs::create_dir_all(config_dir).unwrap();
     std::fs::write(config_dir.join("Server.ini"), game_server_ini(ls_port)).unwrap();
     std::fs::write(
@@ -177,14 +174,6 @@ fn write_game_config(config_dir: &Path, ls_port: u16, siege_writes: bool) {
     std::fs::write(
         config_dir.join("ipconfig.xml"),
         "<gameserver address=\"127.0.0.1\" />\n",
-    )
-    .unwrap();
-    std::fs::write(
-        config_dir.join("SideBySide.ini"),
-        format!(
-            "SiegeDatabaseWrites = {}\n",
-            if siege_writes { "True" } else { "False" }
-        ),
     )
     .unwrap();
     std::fs::write(
@@ -524,12 +513,9 @@ impl Left {
     }
 }
 
-/// How a scenario starts: the switch of `SideBySide.ini`, where the three players stand and how
-/// long the hall auction runs.
+/// How a scenario starts: where the three players stand and how long the hall auction runs.
 #[derive(Clone, Copy, Debug)]
 struct Opts {
-    /// `SiegeDatabaseWrites` (D-51).
-    siege_writes: bool,
     /// Where the lord, the raider and the GM stand when they enter.
     positions: [(i32, i32, i32); 3],
     /// How long the auction of the hall runs, in milliseconds. The bare world needs a few
@@ -561,55 +547,6 @@ trait Harness {
     async fn leave(&mut self, who: Who) -> Left;
     /// The residence tables as the store has them now.
     async fn rows(&mut self) -> Rows;
-    /// The Java game server (Sieghardt) changes a shared table while this one runs (D-39).
-    async fn sieghardt(&mut self, change: Sieghardt);
-}
-
-/// What the Java game server does to the tables the two game servers share.
-#[derive(Debug, Clone, Copy)]
-enum Sieghardt {
-    /// `Siege.saveSiegeClan`: a clan registers as an attacker (`siege_clans`, type 1).
-    RegisterAttacker { castle_id: i32, clan_id: i32 },
-    /// A withdrawal from the clan warehouse of the Wolves leaves this much adena in the stack.
-    WolvesAdenaLeft { count: i64 },
-}
-
-impl Sieghardt {
-    /// The statement of Java.
-    fn sql(self) -> String {
-        match self {
-            Sieghardt::WolvesAdenaLeft { count } => format!(
-                "UPDATE items SET `count` = {count} WHERE object_id = {}",
-                m7_seed::WOLVES_WAREHOUSE_ITEM
-            ),
-            Sieghardt::RegisterAttacker { castle_id, clan_id } => format!(
-                "INSERT INTO siege_clans (clan_id, castle_id, `type`, castle_owner) VALUES ({clan_id}, {castle_id}, 1, 0)"
-            ),
-        }
-    }
-
-    /// The same change for the model of the tables of the bare world.
-    fn command(self) -> PersistCommand {
-        match self {
-            Sieghardt::RegisterAttacker { castle_id, clan_id } => {
-                PersistCommand::Residence(l2_world::ResidenceWrite::SiegeClanInsert {
-                    clan_id,
-                    castle_id,
-                    kind: 1,
-                })
-            }
-            Sieghardt::WolvesAdenaLeft { count } => PersistCommand::ItemRows {
-                tracked: None,
-                ops: vec![l2_world::ItemRowOp::Update {
-                    owner_id: m7_seed::WOLVES,
-                    item: ItemData {
-                        count,
-                        ..Seed::warehouse_adena()
-                    },
-                }],
-            },
-        }
-    }
 }
 
 // ------------------------------------------------------------------------------------------
@@ -802,7 +739,7 @@ impl BareWorld {
     fn start(opts: &Opts) -> Self {
         let root = tempfile::tempdir().unwrap();
         let config_dir = root.path().join("config");
-        write_game_config(&config_dir, 4242, opts.siege_writes);
+        write_game_config(&config_dir, 4242);
         let data_root = root.path().join("datapack");
         write_datapack(&data_root, opts.flag_condition);
         let seed = Seed::new(now_ms(), opts.auction_ms);
@@ -1097,11 +1034,6 @@ impl Harness for BareWorld {
     async fn rows(&mut self) -> Rows {
         self.db().rows()
     }
-
-    async fn sieghardt(&mut self, change: Sieghardt) {
-        // Into the history of the tables, not to the world: it learns of it by reading.
-        self.persisted.0.lock().unwrap().push(change.command());
-    }
 }
 
 // ------------------------------------------------------------------------------------------
@@ -1155,7 +1087,7 @@ impl Rig {
                 db.exec(statement).await;
             }
         }
-        // The residences Sieghardt (the Java game server) keeps in the shared database (D-39).
+        // The residences in the database.
         for statement in seed.startup_sql() {
             db.exec(&statement).await;
         }
@@ -1175,7 +1107,7 @@ impl Rig {
 
         let gs_root = tempfile::tempdir().unwrap();
         db.write_server_folder(gs_root.path(), &game_server_ini(link_port));
-        write_game_config(&gs_root.path().join("config"), link_port, opts.siege_writes);
+        write_game_config(&gs_root.path().join("config"), link_port);
         write_datapack(&gs_root.path().join("datapack"), opts.flag_condition);
         let gs = Server::start(&Paths::resolve(gs_root.path(), Path::new("./config")))
             .await
@@ -1691,10 +1623,6 @@ impl Harness for Net {
     async fn rows(&mut self) -> Rows {
         self.rig.settle().await;
         self.rig.rows().await
-    }
-
-    async fn sieghardt(&mut self, change: Sieghardt) {
-        self.rig.db.exec(&change.sql()).await;
     }
 }
 

@@ -47,8 +47,6 @@ pub struct PremiumSettings {
     pub account_wide: bool,
     /// `PcCafeRetailLike` (`//premium_add*` starts the PC cafe timer of the account's player).
     pub pc_cafe_retail_like: bool,
-    /// `CycleDatabaseWrites` of `SideBySide.ini` (D-53).
-    pub cycle_database_writes: bool,
     /// `Rates.ini` `RateXp` and `RateSp`, `DeathDropChanceMultiplier`, ... for the `.premium` page.
     pub shown_rates: ShownRates,
     /// The multipliers.
@@ -120,7 +118,6 @@ impl Default for PremiumSettings {
             enabled: false,
             account_wide: true,
             pc_cafe_retail_like: true,
-            cycle_database_writes: false,
             shown_rates: ShownRates::default(),
             rates: PremiumRates::default(),
         }
@@ -442,12 +439,8 @@ impl World {
             }
         }
         self.premium.data.remove(&key);
-        // The clean-up of an expired row is a global write (D-53); an admin's removal is the
-        // explicit action of one account and always written.
-        if check_online || self.premium.settings.cycle_database_writes {
-            self.outbox
-                .persist(PersistCommand::Premium(PremiumWrite::Delete { account: key }));
-        }
+        self.outbox
+            .persist(PersistCommand::Premium(PremiumWrite::Delete { account: key }));
     }
 
     // ------------------------------------------------------------------ `.premium`

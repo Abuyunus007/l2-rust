@@ -65,8 +65,6 @@ pub struct LotterySettings {
     pub rate_3: f32,
     /// `ALT_LOTTERY_2_AND_1_NUMBER_PRIZE` (`AltLottery2and1NumberPrize`).
     pub two_and_one_prize: i64,
-    /// `CycleDatabaseWrites` of `config/SideBySide.ini` (D-53), see the module notes.
-    pub cycle_database_writes: bool,
 }
 
 impl Default for LotterySettings {
@@ -79,7 +77,6 @@ impl Default for LotterySettings {
             rate_4: 0.2,
             rate_3: 0.2,
             two_and_one_prize: 200,
-            cycle_database_writes: false,
         }
     }
 }
@@ -87,7 +84,7 @@ impl Default for LotterySettings {
 impl LotterySettings {
     /// Whether this server runs the draws (starts, sells and finishes lotteries).
     pub fn runs(&self) -> bool {
-        self.allow_lottery && self.cycle_database_writes
+        self.allow_lottery
     }
 }
 

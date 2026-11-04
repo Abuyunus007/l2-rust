@@ -552,7 +552,7 @@ fn residence_writes(out: &[Out]) -> usize {
 /// to everybody who sees it, sent targetable because it is a castle door); the last hit kills it
 /// (`Creature.doDie`): "The castle gate has been destroyed." to everybody who sees it, no `Die`
 /// (`DoorAI.notifyActionDeath` does nothing), and the dead gate stops blocking. The siege's end
-/// (`spawnDoor`) brings it back with full HP (`doRevive`: `Revive`). D-51: nothing is written.
+/// (`spawnDoor`) brings it back with full HP (`doRevive`: `Revive`).
 #[test]
 fn attackers_break_the_gate_and_the_siege_end_repairs_it() {
     let mut s = Scene::new(Vec::new());
@@ -627,7 +627,6 @@ fn attackers_break_the_gate_and_the_siege_end_repairs_it() {
     assert_eq!((last.current_hp, last.damage, last.is_enemy), (1000, 0, true));
     assert!(!s.world.door(gate).unwrap().is_enemy());
     assert_eq!(s.world.door_snapshot().door_count(), blocking_before);
-    assert_eq!(residence_writes(&out), 0, "D-51");
 }
 
 /// `Door.reduceCurrentHp`: a wall outside an instance takes damage only from a servitor of race

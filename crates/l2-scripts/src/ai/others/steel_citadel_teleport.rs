@@ -100,7 +100,7 @@ mod tests {
 <node X="11214" Y="205578" /><node X="20607" Y="205578" /><node X="20648" Y="220271" /><node X="11172" Y="220271" /></zone></list>
 "#;
         let rows: Vec<GrandBossData> = vec![row(BELETH, status, 0, (16323, 213170, -9357))];
-        let mut t = boss_test(registry, NPCS, "", &[("data/zones/beleth.xml", zone)], rows, true);
+        let mut t = boss_test(registry, NPCS, "", &[("data/zones/beleth.xml", zone)], rows);
         t.enter(1, 80, vec![]);
         let cube = t.spawn(NAIA_CUBE, 20);
         (t, cube)

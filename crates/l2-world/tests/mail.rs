@@ -274,7 +274,6 @@ impl Scene {
         // The flood protector is off here (the default of a world); a player sends mail after mail.
         world.set_mail_settings(MailSettings {
             // The expiry tests check the rows; the switch has its own test.
-            expiry_database_writes: true,
             ..MailSettings::default()
         });
         world.load_mail(MailLoad {
@@ -1871,15 +1870,11 @@ fn an_answer_nobody_asked_for_is_dropped() {
     assert!(s.inventory_of(B).is_empty());
 }
 
-/// D-49: without `MailExpiryDatabaseWrites` the mails expire in memory (the attachments go to the
-/// online sender, the messages are sent) but no row is written.
+/// The mails expire: the attachments go to the online sender, the messages are sent, and the rows
+/// are deleted.
 #[test]
-fn expiry_writes_respect_the_switch() {
+fn expired_mails_are_deleted_and_returned() {
     let mut s = Scene::new();
-    s.world.set_mail_settings(MailSettings {
-        expiry_database_writes: false,
-        ..MailSettings::default()
-    });
     s.enter(player(A, "Alice", alice_items()));
     s.enter(player(B, "Bob", vec![]));
     s.world.load_mail(MailLoad {
@@ -1895,8 +1890,15 @@ fn expiry_writes_respect_the_switch() {
     s.advance(10_100);
     let out = s.log.take();
 
-    assert!(mail_writes(&out).is_empty(), "{:?}", mail_writes(&out));
-    assert!(rows(&out).is_empty(), "{:?}", rows(&out));
+    assert_eq!(
+        mail_writes(&out),
+        [
+            MailWrite::RemoveAttachments(500),
+            MailWrite::Delete(500),
+            MailWrite::RemoveAttachments(502),
+            MailWrite::Delete(502)
+        ]
+    );
     assert!(s.world.mail_message(500).is_none());
     assert!(s.world.mail_message(502).is_none());
     assert!(s.world.mail_message(501).is_some());

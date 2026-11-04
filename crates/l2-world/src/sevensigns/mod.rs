@@ -207,8 +207,6 @@ pub(crate) fn java_round_f32(value: f32) -> i32 {
 /// `CycleDatabaseWrites` of `SideBySide.ini`). `Default` is the Java default of each key.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SevenSignsSettings {
-    /// `CycleDatabaseWrites` (D-53): the global rows are written only with it.
-    pub cycle_database_writes: bool,
     /// `AltSevenSignsLazyUpdate`.
     pub lazy_update: bool,
     /// `AltMaxPlayerContrib`.
@@ -234,7 +232,6 @@ pub struct SevenSignsSettings {
 impl Default for SevenSignsSettings {
     fn default() -> Self {
         Self {
-            cycle_database_writes: false,
             lazy_update: true,
             max_player_contrib: 1_000_000,
             strict: true,
@@ -382,14 +379,6 @@ pub struct SevenSignsLoad {
     pub festival: Vec<FestivalData>,
 }
 
-/// What the session read at `CharacterSelect` (`PlayerProfile::seven_signs_refresh`): the member's
-/// row (`None`: no row) and the status row (`None`: no row).
-#[derive(Debug, Clone, PartialEq, Default)]
-pub struct SevenSignsRefresh {
-    pub player: Option<SignsPlayer>,
-    pub status: Option<SevenSignsStatus>,
-}
-
 /// A Seven Signs row write with Java's statement (`PersistCommand::SevenSigns`).
 #[derive(Debug, Clone, PartialEq)]
 pub enum SevenSignsWrite {
@@ -404,21 +393,6 @@ pub enum SevenSignsWrite {
     /// `SevenSignsFestival.saveFestivalData()`: `REPLACE INTO seven_signs_festival` of every row
     /// (global, only with `CycleDatabaseWrites`, M8-FEST-01).
     ReplaceFestival(Vec<FestivalData>),
-}
-
-/// What the world does once the Seven Signs rows were read again (D-50).
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum SevenSignsThen {
-    /// Only bring this world up to date.
-    Nothing,
-    /// `RequestSSQStatus`: show the page.
-    Status { player: ObjectId, page: i8 },
-    /// A festival guide's score page (4, 5 or 6): show it (M8-FEST-01).
-    FestivalPage {
-        player: ObjectId,
-        npc: ObjectId,
-        page: i32,
-    },
 }
 
 /// The Seven Signs timers (one `TimerKind::SevenSigns`).
@@ -673,7 +647,7 @@ mod tests {
     #[test]
     fn the_defaults_are_the_java_defaults() {
         let s = SevenSignsSettings::default();
-        assert!(!s.cycle_database_writes && s.lazy_update && s.strict);
+        assert!(s.lazy_update && s.strict);
         assert!(!s.open_catacombs && !s.open_necropolis);
         assert!(s.castle_for_dawn && s.castle_for_dusk);
         assert_eq!(

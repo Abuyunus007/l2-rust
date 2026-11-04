@@ -148,26 +148,9 @@ impl fmt::Display for ResidenceRef {
     }
 }
 
-/// Who decides whether a residence row is written (D-49, D-51).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Writes {
-    /// What a player does himself (a function bought, a tax rate set, a deposit to the
-    /// treasury): always written.
-    Player,
-    /// A siege-like job (an owner change, the tax income, a fee the clan warehouse pays): only
-    /// with `SiegeDatabaseWrites`.
-    Job,
-    /// Not written: the job of another switch that is off (a clan dissolution without
-    /// `ClanMaintenanceDatabaseWrites`).
-    Never,
-}
-
 /// The configuration values the residence code reads.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ResidenceSettings {
-    /// `SiegeDatabaseWrites` of `config/SideBySide.ini` (D-51): the residence and siege jobs
-    /// write their global rows (owner changes, the treasury, fees the clan warehouse pays).
-    pub siege_database_writes: bool,
     /// `RemoveCastleCirclets` (`Player.ini`).
     pub remove_castle_circlets: bool,
     /// `TakeCastlePoints` (`Feature.ini`).
@@ -185,10 +168,9 @@ pub struct ResidenceSettings {
 }
 
 impl Default for ResidenceSettings {
-    /// Java's defaults; side by side (no global writes).
+    /// Java's defaults.
     fn default() -> Self {
         Self {
-            siege_database_writes: false,
             remove_castle_circlets: true,
             take_castle_points: 1500,
             loose_castle_points: 3000,
@@ -215,10 +197,6 @@ pub struct ResidenceWorld {
     /// The function objects (see `functions.rs`), by their own key.
     pub(crate) function_objects: BTreeMap<u64, functions::FunctionTask>,
     pub(crate) next_function_task: u64,
-    /// The residences whose current owner exists only in this world (D-51): a GM test siege or
-    /// `//clanhallset` gave it with `SiegeDatabaseWrites` off, so the owner row was not written.
-    /// A residence not in the set has the owner the database has (startup, or a D-50 re-read).
-    pub(crate) world_only_owners: std::collections::HashSet<ResidenceRef>,
 }
 
 /// The residence timers (one `TimerKind::Residence`).
@@ -366,12 +344,6 @@ impl World {
         &self.residences.settings
     }
 
-    /// `SiegeDatabaseWrites` of `SideBySide.ini` (D-51): whether the siege-like jobs write their
-    /// global rows. The siege, fortress, clan hall, manor and territory cards ask this.
-    pub fn siege_database_writes(&self) -> bool {
-        self.residences.settings.siege_database_writes
-    }
-
     /// Installs `config/SiegeSchedule.xml` (Java `SiegeScheduleData`).
     pub fn set_siege_schedule(&mut self, schedule: Arc<SiegeSchedule>) {
         self.residences.siege_schedule = schedule;
@@ -382,54 +354,9 @@ impl World {
         &self.residences.siege_schedule
     }
 
-    /// Hands a residence row write to the persistence task: what a player does himself and
-    /// what Java writes outside of the siege-like jobs.
+    /// Hands a residence row write to the persistence task.
     pub(crate) fn residence_write(&mut self, write: ResidenceWrite) {
         self.outbox.persist(PersistCommand::Residence(write));
-    }
-
-    /// Hands a residence row write of a siege-like job to the persistence task, only with
-    /// `SiegeDatabaseWrites` (D-51). Returns whether it went out. The siege cards use this for
-    /// every global write of theirs.
-    pub fn siege_write(&mut self, write: ResidenceWrite) -> bool {
-        if self.residences.settings.siege_database_writes {
-            self.residence_write(write);
-            true
-        } else {
-            tracing::debug!("SideBySide: not written (SiegeDatabaseWrites = False): {write:?}");
-            false
-        }
-    }
-
-    /// Whether the current owner of a residence exists only in this world (see
-    /// `ResidenceWorld::world_only_owners`).
-    pub fn residence_owner_world_only(&self, residence: ResidenceRef) -> bool {
-        self.residences.world_only_owners.contains(&residence)
-    }
-
-    /// Records where the owner a residence has now came from: `in_database` when its owner row
-    /// went out (or the owner was read from the database), else only this world has it. A residence
-    /// without an owner has no source.
-    pub(crate) fn set_residence_owner_source(&mut self, residence: ResidenceRef, in_database: bool) {
-        let owned = self.residence_owner_id(residence) != 0;
-        if in_database || !owned {
-            self.residences.world_only_owners.remove(&residence);
-        } else {
-            self.residences.world_only_owners.insert(residence);
-        }
-    }
-
-    /// Hands a residence row write to the persistence task as `writes` says. Returns whether it
-    /// went out.
-    pub fn write_residence(&mut self, writes: Writes, write: ResidenceWrite) -> bool {
-        match writes {
-            Writes::Player => {
-                self.residence_write(write);
-                true
-            }
-            Writes::Job => self.siege_write(write),
-            Writes::Never => false,
-        }
     }
 
     /// The residence timers.

@@ -250,7 +250,6 @@ impl StaticData for Data {
 // ---------------------------------------------------------------------------------- scene
 
 struct Options {
-    siege_database_writes: bool,
     manor: ManorSettings,
     settings: WorldSettings,
     /// The two castles' treasuries and the Lions' clan warehouse (an adena stack).
@@ -264,7 +263,6 @@ struct Options {
 impl Default for Options {
     fn default() -> Self {
         Self {
-            siege_database_writes: false,
             manor: ManorSettings::default(),
             settings: WorldSettings::default(),
             treasury_1: 1_000_000,
@@ -371,7 +369,6 @@ impl Scene {
             Arc::new(MapRegions::load(root.path())),
         );
         world.set_residence_settings(ResidenceSettings {
-            siege_database_writes: options.siege_database_writes,
             ..ResidenceSettings::default()
         });
         world.load_clans(
@@ -820,14 +817,10 @@ fn two_castle_rows() -> ManorLoad {
 
 /// `changeMode` APPROVED: the crops bought go to the clan warehouse (`(start - amount) * 0.9`),
 /// what was not bought goes to the treasury (`amount * price`), the next period is the current one
-/// with its amounts reset, and `storeMe` writes both tables. With `SiegeDatabaseWrites` all of it
-/// goes out.
+/// with its amounts reset, and `storeMe` writes both tables.
 #[test]
-fn the_change_at_eight_in_the_evening_pays_out_with_the_switch() {
-    let mut s = Scene::new(Options {
-        siege_database_writes: true,
-        ..Options::default()
-    });
+fn the_change_at_eight_in_the_evening_pays_out() {
+    let mut s = Scene::new(Options { ..Options::default() });
     s.load_at(two_castle_rows(), at(19, 59) + 59_000);
     s.world.manor_change_mode_at(at(20, 0), utc);
     let out = s.take();
@@ -874,26 +867,6 @@ fn the_change_at_eight_in_the_evening_pays_out_with_the_switch() {
     assert!(s.world.manor_seed_production(2, false).unwrap().is_empty());
 }
 
-/// Without `SiegeDatabaseWrites` the Java game server does the same at the same hour: this world
-/// moves the lists on, but touches no clan warehouse row, no treasury row and no manor table.
-#[test]
-fn the_change_at_eight_in_the_evening_writes_nothing_without_the_switch() {
-    let mut s = Scene::new(Options::default());
-    s.load_at(two_castle_rows(), at(19, 59) + 59_000);
-    s.world.manor_change_mode_at(at(20, 0), utc);
-    let out = s.take();
-    assert!(s.world.manor_is_under_maintenance());
-    // The lists moved on.
-    assert_eq!(s.world.manor_crop_procure(1, false).unwrap()[0].amount, 80);
-    // The treasury is this world's copy, not written.
-    assert_eq!(s.treasury(1), 1_000_000 + 270);
-    assert!(residence_writes(&out).is_empty());
-    // The warehouse and the tables are Sieghardt's.
-    assert_eq!(s.warehouse_count(LIONS, MATURE_1), 0);
-    assert!(item_ops(&out).is_empty());
-    assert!(manor_writes(&out).is_empty());
-}
-
 /// `changeMode` APPROVED: when the treasury cannot pay for the period that starts, its lists are
 /// emptied (`getManorCost(castleId, false) > treasury`).
 #[test]
@@ -933,10 +906,7 @@ fn the_leader_hears_that_the_manor_was_updated() {
 /// warehouse a short treasury is not enough to lose it, and the payment fails quietly.)
 #[test]
 fn the_next_period_is_paid_when_it_is_approved() {
-    let mut s = Scene::new(Options {
-        siege_database_writes: true,
-        ..Options::default()
-    });
+    let mut s = Scene::new(Options { ..Options::default() });
     s.load_at(two_castle_rows(), at(23, 30));
     assert!(s.world.manor_is_modifiable());
     s.world.manor_change_mode_at(at(4, 30), utc);
@@ -988,18 +958,10 @@ fn a_poor_castle_with_a_full_warehouse_loses_the_next_period() {
 /// `storeMe` on the automatic save and at shutdown: a job of the manor, only with the switch.
 #[test]
 fn store_me_follows_the_switch() {
-    let mut on = Scene::new(Options {
-        siege_database_writes: true,
-        ..Options::default()
-    });
+    let mut on = Scene::new(Options { ..Options::default() });
     on.load_at(two_castle_rows(), at(12, 0));
-    assert!(on.world.manor_store_me());
+    on.world.manor_store_me();
     assert_eq!(manor_writes(&on.take()).len(), 1);
-
-    let mut off = Scene::new(Options::default());
-    off.load_at(two_castle_rows(), at(12, 0));
-    assert!(!off.world.manor_store_me());
-    assert!(manor_writes(&off.take()).is_empty());
 }
 
 /// `resetManorData`: a castle that loses its owner loses its lists (the rows follow only with
@@ -1007,7 +969,6 @@ fn store_me_follows_the_switch() {
 #[test]
 fn a_castle_that_loses_its_owner_loses_its_manor() {
     let mut s = Scene::new(Options {
-        siege_database_writes: true,
         manor: ManorSettings {
             save_all_actions: true,
             ..ManorSettings::default()
@@ -1021,21 +982,6 @@ fn a_castle_that_loses_its_owner_loses_its_manor() {
     assert!(s.world.manor_seed_production(1, true).unwrap().is_empty());
     assert!(s.world.manor_crop_procure(1, false).unwrap().is_empty());
     assert_eq!(manor_writes(&out), [ManorWrite::DeleteCastle { castle_id: 1 }]);
-}
-
-#[test]
-fn the_reset_rows_need_the_switch() {
-    let mut s = Scene::new(Options {
-        manor: ManorSettings {
-            save_all_actions: true,
-            ..ManorSettings::default()
-        },
-        ..Options::default()
-    });
-    s.load_at(two_castle_rows(), at(12, 0));
-    s.world.castle_remove_owner(CastleId(1), Some(LIONS));
-    assert!(s.world.manor_seed_production(1, false).unwrap().is_empty());
-    assert!(manor_writes(&s.take()).is_empty());
 }
 
 // ---------------------------------------------------------------------------------- RequestManorList
@@ -1318,13 +1264,7 @@ fn buy(manor_id: i32, items: &[(i32, i64)]) -> ManorInput {
 /// down, and the adena goes to the treasury (`addToTreasuryNoTax`, a job of the switch).
 #[test]
 fn a_seed_purchase_pays_the_castle() {
-    let (mut s, _) = buyer_scene(
-        Options {
-            siege_database_writes: true,
-            ..Options::default()
-        },
-        1000,
-    );
+    let (mut s, _) = buyer_scene(Options { ..Options::default() }, 1000);
     s.manor(FARMER, buy(1, &[(SEED_1, 10)]));
     let out = s.take();
     assert_eq!(s.adena(FARMER), 1000 - 70);
@@ -1343,16 +1283,6 @@ fn a_seed_purchase_pays_the_castle() {
     ));
     // `AltManorSaveAllActions` is off: no row of the manor.
     assert!(manor_writes(&out).is_empty());
-}
-
-#[test]
-fn the_treasury_of_a_purchase_needs_the_switch() {
-    let (mut s, _) = buyer_scene(Options::default(), 1000);
-    s.manor(FARMER, buy(1, &[(SEED_1, 10)]));
-    let out = s.take();
-    assert_eq!(s.count(FARMER, SEED_1), 10);
-    assert_eq!(s.treasury(1), 1_000_070, "this world's copy");
-    assert!(residence_writes(&out).is_empty());
 }
 
 #[test]
@@ -2262,7 +2192,6 @@ fn a_sown_monster_refuses_another_seed() {
 #[test]
 fn the_crops_join_the_stack_in_the_warehouse() {
     let mut s = Scene::new(Options {
-        siege_database_writes: true,
         lions_warehouse: vec![ItemData {
             loc: "CLANWH".into(),
             ..item(0x6000_1000, MATURE_1, 5)
@@ -2290,7 +2219,6 @@ fn a_single_crop_bought_is_a_gamble() {
     let (mut got, mut missed) = (0, 0);
     for seed in 0..40_u64 {
         let mut s = Scene::new(Options {
-            siege_database_writes: true,
             seed,
             ..Options::default()
         });
@@ -2313,14 +2241,11 @@ fn a_single_crop_bought_is_a_gamble() {
 }
 
 /// `scheduleAtFixedRate(this::storeMe, rate hours)`: every `AltManorSavePeriodRate` hours the
-/// tables are written (only with the switch), unless every action is saved at once.
+/// tables are written, unless every action is saved at once.
 #[test]
 fn the_tables_are_saved_every_two_hours() {
     let two_hours = 144_000;
-    let mut s = Scene::new(Options {
-        siege_database_writes: true,
-        ..Options::default()
-    });
+    let mut s = Scene::new(Options { ..Options::default() });
     s.load_at(two_castle_rows(), at(12, 0));
     s.ticks(two_hours - 10);
     assert!(manor_writes(&s.take()).is_empty());
@@ -2329,15 +2254,8 @@ fn the_tables_are_saved_every_two_hours() {
     s.ticks(two_hours);
     assert_eq!(manor_writes(&s.take()).len(), 1, "and again two hours later");
 
-    // Without the switch Sieghardt's rows stay.
-    let mut s = Scene::new(Options::default());
-    s.load_at(two_castle_rows(), at(12, 0));
-    s.ticks(two_hours + 10);
-    assert!(manor_writes(&s.take()).is_empty());
-
     // With every action saved there is no timer.
     let mut s = Scene::new(Options {
-        siege_database_writes: true,
         manor: ManorSettings {
             save_all_actions: true,
             ..ManorSettings::default()
@@ -2358,25 +2276,17 @@ fn the_shutdown_saves_the_manor() {
         });
         s.take()
     };
-    let mut s = Scene::new(Options {
-        siege_database_writes: true,
-        ..Options::default()
-    });
+    let mut s = Scene::new(Options { ..Options::default() });
     s.load_at(two_castle_rows(), at(12, 0));
     assert_eq!(manor_writes(&shutdown(&mut s)).len(), 1);
 
     let mut s = Scene::new(Options {
-        siege_database_writes: true,
         manor: ManorSettings {
             save_all_actions: true,
             ..ManorSettings::default()
         },
         ..Options::default()
     });
-    s.load_at(two_castle_rows(), at(12, 0));
-    assert!(manor_writes(&shutdown(&mut s)).is_empty());
-
-    let mut s = Scene::new(Options::default());
     s.load_at(two_castle_rows(), at(12, 0));
     assert!(manor_writes(&shutdown(&mut s)).is_empty());
 }

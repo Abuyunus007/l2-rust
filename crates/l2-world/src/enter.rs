@@ -450,9 +450,6 @@ impl World {
         // The residences of the clan as the session read them at `CharacterSelect` (M7-RES-01,
         // D-51: the Java GS runs the real sieges).
         self.residence_refresh_player(id);
-        // The Seven Signs rows the session read at `CharacterSelect` (M8-SS-01, D-50, D-53: the
-        // Java GS runs the cycle).
-        self.ss_refresh_player(id);
         // The siege state of a fortress siege that is going on, and "Remove combat flag before
         // teleporting" (M7-FORT-01).
         self.fort_player_entered(id);

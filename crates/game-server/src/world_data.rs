@@ -1433,7 +1433,6 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
             None => warn!("{key} = {text} is not ON, OFF, GM or GLOBAL; using ON."),
         }
     }
-    settings.daily_reset_database_writes = daily_reset_database_writes(config_dir);
     settings.custom_misc = crate::custom_misc_data::custom_misc_settings(
         config,
         crate::hexid::load(config_dir).map_or(0, |h| h.server_id),
@@ -1442,12 +1441,10 @@ pub fn world_settings(config: &GameConfig, config_dir: &Path) -> WorldSettings {
 }
 
 /// The values of the boss managers: `RaidMinRespawnMultiplier` and `RaidMaxRespawnMultiplier`
-/// (`NpcConfig`), the raid ranking rewards (`FeatureConfig`) and `CycleDatabaseWrites` of
-/// `SideBySide.ini` (D-53, read by `cycle_database_writes`).
-pub fn boss_settings(config: &GameConfig, config_dir: &Path) -> l2_world::BossSettings {
+/// (`NpcConfig`) and the raid ranking rewards (`FeatureConfig`).
+pub fn boss_settings(config: &GameConfig, _config_dir: &Path) -> l2_world::BossSettings {
     let (n, f) = (&config.npc, &config.feature);
     l2_world::BossSettings {
-        cycle_database_writes: crate::cycle_database_writes(config_dir),
         raid_min_respawn_multiplier: n.raid_min_respawn_multiplier,
         raid_max_respawn_multiplier: n.raid_max_respawn_multiplier,
         raid_ranking: [
@@ -1494,12 +1491,8 @@ fn grand_boss_settings(g: &l2_config::generated::game::GrandBossConfig) -> l2_wo
     }
 }
 
-/// Name of the Rust-only side-by-side settings file in the config folder (D-36).
-pub const SIDE_BY_SIDE_FILE: &str = "SideBySide.ini";
-
-/// The fishing values of `General.ini` (`AllowFishing`, the `AltFishChampionship*` keys) and
-/// `FishingChampionshipDatabaseWrites` of `SideBySide.ini` (D-49).
-pub fn fishing_settings(config: &GameConfig, config_dir: &Path) -> l2_world::FishingSettings {
+/// The fishing values of `General.ini` (`AllowFishing`, the `AltFishChampionship*` keys).
+pub fn fishing_settings(config: &GameConfig, _config_dir: &Path) -> l2_world::FishingSettings {
     let g = &config.general;
     l2_world::FishingSettings {
         allow_fishing: g.allow_fishing,
@@ -1512,79 +1505,9 @@ pub fn fishing_settings(config: &GameConfig, config_dir: &Path) -> l2_world::Fis
             g.alt_fish_championship_reward_4,
             g.alt_fish_championship_reward_5,
         ],
-        championship_database_writes: fishing_championship_database_writes(config_dir),
         clock_override_night: None,
         clock_override_unix_ms: None,
     }
-}
-
-/// `FishingChampionshipDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file
-/// means the default). Off, the championship keeps its ranking in memory and leaves the
-/// `fishing_championship` rows and the `fishChampionshipEnd` variable to the Java game server that
-/// shares the database (D-39, D-49): its `shutdown()` deletes and rewrites every row. Logs the
-/// active mode.
-pub fn fishing_championship_database_writes(config_dir: &Path) -> bool {
-    use l2_config::IniFile;
-
-    let path = config_dir.join(SIDE_BY_SIDE_FILE);
-    let on = if path.exists() {
-        match IniFile::load(&path) {
-            Ok(ini) => ini.get_bool("FishingChampionshipDatabaseWrites", false),
-            Err(e) => {
-                warn!(
-                    "Cannot read {}: {e}; using FishingChampionshipDatabaseWrites = False.",
-                    path.display()
-                );
-                false
-            }
-        }
-    } else {
-        false
-    };
-    if on {
-        info!(
-            "SideBySide: FishingChampionshipDatabaseWrites = True, the fishing championship writes its rows."
-        );
-    } else {
-        info!(
-            "SideBySide: FishingChampionshipDatabaseWrites = False, the fishing championship leaves its rows to the Java game server."
-        );
-    }
-    on
-}
-
-/// `DailyResetDatabaseWrites` of `config/SideBySide.ini` (default False; a missing file means the
-/// default). Off, the daily reset leaves the global `character_reco_bonus` `UPDATE`s to the Java
-/// game server that shares the database (D-39); on, this server runs them (it runs alone).
-/// Logs the active mode.
-pub fn daily_reset_database_writes(config_dir: &Path) -> bool {
-    use l2_config::IniFile;
-
-    let path = config_dir.join(SIDE_BY_SIDE_FILE);
-    let on = if path.exists() {
-        match IniFile::load(&path) {
-            Ok(ini) => ini.get_bool("DailyResetDatabaseWrites", false),
-            Err(e) => {
-                warn!(
-                    "Cannot read {}: {e}; using DailyResetDatabaseWrites = False.",
-                    path.display()
-                );
-                false
-            }
-        }
-    } else {
-        false
-    };
-    if on {
-        info!(
-            "SideBySide: DailyResetDatabaseWrites = True, the daily reset updates character_reco_bonus for every character."
-        );
-    } else {
-        info!(
-            "SideBySide: DailyResetDatabaseWrites = False, the daily reset leaves the character_reco_bonus UPDATEs to the Java game server."
-        );
-    }
-    on
 }
 
 /// The skill loader's options (Java `GeneralConfig.CUSTOM_SKILLS_LOAD`, `PlayerConfig`'s abnormal
@@ -2049,62 +1972,6 @@ BotReportPointsResetHour = noon
             (rates.dynamic_exp_rate(85), rates.dynamic_sp_rate(85)),
             (0.5, 2.0)
         );
-    }
-
-    #[test]
-    fn the_side_by_side_switch_defaults_to_off_and_reads_the_file() {
-        let dir = tempfile::tempdir().unwrap();
-        // A missing file means the default.
-        assert!(!daily_reset_database_writes(dir.path()));
-        let file = dir.path().join(SIDE_BY_SIDE_FILE);
-        std::fs::write(
-            &file,
-            "# nothing set
-",
-        )
-        .unwrap();
-        assert!(!daily_reset_database_writes(dir.path()));
-        std::fs::write(
-            &file,
-            "DailyResetDatabaseWrites = True
-",
-        )
-        .unwrap();
-        assert!(daily_reset_database_writes(dir.path()));
-        std::fs::write(
-            &file,
-            "DailyResetDatabaseWrites = False
-",
-        )
-        .unwrap();
-        assert!(!daily_reset_database_writes(dir.path()));
-    }
-
-    #[test]
-    fn the_example_file_is_the_default() {
-        let dir = tempfile::tempdir().unwrap();
-        let example = include_str!("../config-examples/SideBySide.ini");
-        std::fs::write(dir.path().join(SIDE_BY_SIDE_FILE), example).unwrap();
-        assert!(!daily_reset_database_writes(dir.path()));
-        // The example text is also the only place the key is spelled out for owners.
-        assert!(example.contains("DailyResetDatabaseWrites = False"));
-    }
-
-    #[test]
-    fn the_fishing_championship_switch_defaults_to_off() {
-        let dir = tempfile::tempdir().unwrap();
-        assert!(!fishing_championship_database_writes(dir.path()));
-        let example = include_str!("../config-examples/SideBySide.ini");
-        std::fs::write(dir.path().join(SIDE_BY_SIDE_FILE), example).unwrap();
-        assert!(!fishing_championship_database_writes(dir.path()));
-        assert!(example.contains("FishingChampionshipDatabaseWrites = False"));
-        std::fs::write(
-            dir.path().join(SIDE_BY_SIDE_FILE),
-            "FishingChampionshipDatabaseWrites = True
-",
-        )
-        .unwrap();
-        assert!(fishing_championship_database_writes(dir.path()));
     }
 
     fn test_player() -> PlayerData {
@@ -3196,8 +3063,8 @@ mod siege_tests {
     }
 }
 
-/// The values the lottery reads (`General.ini`, and `SideBySide.ini` for the D-53 switch).
-pub fn lottery_settings(config: &GameConfig, config_dir: &std::path::Path) -> l2_world::LotterySettings {
+/// The values the lottery reads (`General.ini`).
+pub fn lottery_settings(config: &GameConfig, _config_dir: &std::path::Path) -> l2_world::LotterySettings {
     let g = &config.general;
     l2_world::LotterySettings {
         allow_lottery: g.allow_lottery,
@@ -3207,6 +3074,5 @@ pub fn lottery_settings(config: &GameConfig, config_dir: &std::path::Path) -> l2
         rate_4: g.alt_lottery_4_number_rate,
         rate_3: g.alt_lottery_3_number_rate,
         two_and_one_prize: g.alt_lottery_2_and_1_number_prize,
-        cycle_database_writes: crate::cycle_database_writes(config_dir),
     }
 }

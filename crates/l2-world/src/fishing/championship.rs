@@ -218,11 +218,10 @@ impl World {
     }
 
     /// Java `FishingChampionshipManager.shutdown()`: `fishChampionshipEnd` and the rows, winners
-    /// first. Called when a period ends and when the server stops; writes only with
-    /// `FishingChampionshipDatabaseWrites` (D-49).
+    /// first. Called when a period ends and when the server stops.
     pub(crate) fn championship_shutdown(&mut self) {
         let championship = &self.fishing.championship;
-        if !championship.started || !self.settings.fishing.championship_database_writes {
+        if !championship.started {
             return;
         }
         let mut rows = championship.win_players.clone();

@@ -96,8 +96,6 @@ pub struct MinigameSettings {
     pub uc_party_size: i32,
     /// `UC_RESS_TIME` (`ResurrectionTime`, seconds).
     pub uc_ress_time: i32,
-    /// `CycleDatabaseWrites` of `config/SideBySide.ini` (D-53), `game_server::cycle_database_writes`.
-    pub cycle_database_writes: bool,
     /// Tests only: the wall clock at world tick 0 (the clock then runs with the ticks).
     pub clock_override_unix_ms: Option<i64>,
 }
@@ -115,7 +113,6 @@ impl Default for MinigameSettings {
             uc_allow_announce: false,
             uc_party_size: 7,
             uc_ress_time: 10,
-            cycle_database_writes: false,
             clock_override_unix_ms: None,
         }
     }
