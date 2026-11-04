@@ -3,16 +3,14 @@
 A Lineage 2 **High Five** server (login server, game server and admin tools) written in Rust: a
 port of [L2JMobius](https://l2jmobius.org/) CT 2.6 High Five from Java.
 
-The goal is a retail-like server that behaves like the Java one. It uses the same database
-schema, the same `.ini` configuration files and the same datapack, and runs on Windows and
-Linux. **The Java source is the spec:** behaviour, packets, messages, HTML pages and database
-rows are ported as they are, Java quirks included (marked `NOTE(java-quirk)` in the code).
-
-The Rust servers are the only servers on their database (a Java game server must never run on it
-again); the database schema and the `.ini` keys stay those of Java.
+A retail-like server on Windows and Linux. Behaviour, packets, messages, HTML pages and database
+rows follow the original L2JMobius server, and the tests protect them. It uses the same database
+schema and `.ini` keys as a format, but it needs no Java: the Rust servers are the only servers on
+their database. **A Java game server must never run on the same database**, because both would run
+the global jobs (daily reset, Olympiad, Seven Signs, sieges, boss states).
 
 > Status: every planned milestone, M9 included, is ported and passes its automated tests
-> (8878 tests). The Java custom features are all there, off by default as in Java. In-game testing
+> (8759 tests). The Java custom features are all there, off by default as in Java. In-game testing
 > of the later milestones is ongoing.
 > See the [progress log](#progress-log).
 
@@ -33,8 +31,7 @@ again); the database schema and the `.ini` keys stay those of Java.
 
 ## Features
 
-- **Login server**: accounts, server list, game server registration (the Java game server
-  works with it unchanged), bans, auto-create accounts.
+- **Login server**: accounts, server list, game server registration, bans, auto-create accounts.
 - **Game server**:
   - Character creation and selection, entering the world, geodata movement and pathfinding.
   - Combat, NPC AI, experience, skills and effects.
@@ -319,7 +316,8 @@ cargo test --workspace
 | M8 Big systems | Olympiad, heroes, Seven Signs, festival, rift, instances, boats, raid and grand bosses, cursed weapons, mini games, weddings | 2026-10-27 | ✅ automated tests |
 | Scripts | Script engine; all 509 quests; area, NPC and boss AIs; instances (Kamaloka, Pailaka, Crystal Caverns, Gracia, ...); class change and subclasses; Territory War quests; 10 seasonal events; decoys and traps; drop search board; quest admin commands | 2026-10-31 | ✅ automated tests, including end-to-end; in-game tests pending |
 | G Admin GUI | The GUI starts the supervisor itself (no token on this PC), setup wizard with database installer, game admin (players, punishments, announcements, console, shutdown), accounts, settings editor with topics, sliders and switches, forms for the XML configs, backups, why a server stopped | 2026-11-03 | ✅ automated tests |
-| M9 Customs, hardening, switch from Java | All 44 `Custom/*.ini` features and the custom scripts and events (champions, premium, auto play, offline play, scheme buffer, community board, faction, fake players, PvP rewards, rebirth, captcha, banking, transmog, CTF, TvT, deathmatch, ...), all off by default; scheduled database backups; load test tool; multilingual texts; dynamic exp rates | 2026-11-03 | ✅ automated tests; in-game tests pending |
+| M9 Customs and hardening | All 44 `Custom/*.ini` features and the custom scripts and events (champions, premium, auto play, offline play, scheme buffer, community board, faction, fake players, PvP rewards, rebirth, captcha, banking, transmog, CTF, TvT, deathmatch, ...), all off by default; scheduled database backups; load test tool; multilingual texts; dynamic exp rates | 2026-11-03 | ✅ automated tests; in-game tests pending |
+| Rust only (D-58) | Java tools, code generator, side-by-side mode and Java notes removed; every global job always runs | 2026-11-04 | ✅ automated tests; in-game tests pending |
 
 How each milestone is tested in game: [`docs/runbooks/`](docs/runbooks/). Task cards and
 their status: [`docs/tasks/BOARD.md`](docs/tasks/BOARD.md).

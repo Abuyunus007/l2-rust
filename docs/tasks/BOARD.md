@@ -519,7 +519,7 @@ Owner: "Ja, starten" on `docs/tasks/archive/S/DRAFT.md`: all 505 quests, AIs, in
 |---|---|---|---|---|---|
 | [T-RM-01](T/T-RM-01.md) | Remove the Java tools | sonnet | spot | — | merged |
 | [T-RM-02](T/T-RM-02.md) | Remove the side-by-side mode | sonnet | full | — | merged |
-| T-RM-03 | Remove the Java comments | opus | spot | T-RM-01, T-RM-02 | ready |
+| T-RM-03 | Remove the Java comments | opus | spot | T-RM-01, T-RM-02 | merged |
 
 ## Milestone test results
 
