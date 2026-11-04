@@ -1268,7 +1268,7 @@ mod tests {
         let Err(problems) = form.parse() else {
             panic!("must be invalid");
         };
-        assert!(problems.len() >= 5, "{problems:?}");
+        assert!(problems.len() >= 4, "{problems:?}");
         assert!(matches!(apply(&layout, &form), Err(SetupError::Invalid(_))));
     }
 

@@ -225,9 +225,12 @@ mod tests {
             minion = ctx.spawn_minion(master, 22450);
         });
         let minion = minion.unwrap();
+        // The engine's update first moves the trust to the minimum of the new level.
+        t.wait_ms(1_100);
+        let before = t.world.global_variables().get_int("HBTrust", 0);
         t.kill(1, boss);
         // Each live minion is worth 30 trust points and is deleted.
-        assert_eq!(t.world.global_variables().get_int("HBTrust", 0), 30);
+        assert_eq!(t.world.global_variables().get_int("HBTrust", 0), before + 30);
         assert!(!t.in_world(minion.object_id));
     }
 }
