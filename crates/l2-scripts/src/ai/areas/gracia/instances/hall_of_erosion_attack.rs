@@ -630,7 +630,6 @@ mod tests {
         registry.add(Quest696);
         let mut t = ScriptTest::new_with(registry, NPCS, ITEMS, &[], |world, _| {
             world.set_script_settings(l2_world::ScriptSettings {
-                cycle_database_writes: true,
                 gracia_seeds: l2_world::script::GraciaSeedsSettings {
                     erosion_attack_min_players: 2,
                     ..Default::default()

@@ -3,8 +3,7 @@
 //! costs 20 % more, and the castle's 10 % go to the treasury of its owner (the Lions). Java:
 //! `MerchantPriceConfig`, `RequestBuyItem`, `Castle.addToTreasury`.
 //!
-//! The treasury of a castle is a global row: while the Java game server collects the real tax it
-//! changes only with `SiegeDatabaseWrites = True` (D-51); the price the buyer pays is the same.
+//! The treasury of a castle is a global row that changes with every sale.
 
 use l2_protocol_game::server::{BuyList, ItemList, NpcHtmlMessage, NpcInfo};
 
@@ -15,11 +14,10 @@ const SHOTS: i64 = 5;
 const POTIONS: i64 = 1;
 const POTION_PRICE: i64 = 50;
 
-pub fn opts(siege_writes: bool) -> Opts {
+pub fn opts() -> Opts {
     // The buyer and the lord stand at the start, next to the smith; the GM stays out of it.
     let start = m3_data::START;
     Opts {
-        siege_writes,
         positions: [
             (start.0 - 50, start.1 - 100, start.2),
             (start.0 + 50, start.1 - 100, start.2),
@@ -125,8 +123,8 @@ pub async fn play<H: Harness>(h: &mut H) -> Played {
     }
 }
 
-pub fn assert_played(played: &Played, writes: bool) {
-    // The buyer paid the taxed price in both modes.
+pub fn assert_played(played: &Played) {
+    // The buyer paid the taxed price.
     assert_eq!(
         played.raider.count_of(ADENA_ID),
         m6_data::START_ADENA - played.price_with_tax
@@ -139,52 +137,29 @@ pub fn assert_played(played: &Played, writes: bool) {
         played.rows_start.castle(m7_data::GLUDIO),
         played.rows_end.castle(m7_data::GLUDIO),
     );
-    if writes {
-        // `Castle.addToTreasury(subTotal * castleTaxRate)`: 10 % of 180 = 18.
-        assert_eq!(end.treasury, start.treasury + 18);
-        // Nothing else of the castle changed.
-        assert_eq!(
-            (end.tax_percent, end.siege_date, end.ticket_buy_count),
-            (start.tax_percent, start.siege_date, start.ticket_buy_count)
-        );
-    } else {
-        // D-51: the Java game server collects the real tax.
-        assert_eq!(played.rows_end, played.rows_start);
-    }
-}
-
-#[tokio::test]
-async fn the_castle_tax_is_paid_in_a_bare_world_without_global_writes() {
-    let mut world = BareWorld::start(&opts(false));
-    let played = play(&mut world).await;
-    assert_played(&played, false);
+    // `Castle.addToTreasury(subTotal * castleTaxRate)`: 10 % of 180 = 18.
+    assert_eq!(end.treasury, start.treasury + 18);
+    // Nothing else of the castle changed.
+    assert_eq!(
+        (end.tax_percent, end.siege_date, end.ticket_buy_count),
+        (start.tax_percent, start.siege_date, start.ticket_buy_count)
+    );
 }
 
 #[tokio::test]
 async fn the_castle_tax_is_paid_in_a_bare_world_and_the_treasury_row_is_written() {
-    let mut world = BareWorld::start(&opts(true));
+    let mut world = BareWorld::start(&opts());
     let played = play(&mut world).await;
-    assert_played(&played, true);
-}
-
-#[tokio::test]
-async fn the_castle_tax_is_paid_on_the_real_servers_without_global_writes() {
-    let options = opts(false);
-    let Some(mut net) = Net::start("e2em7t0", &options).await else {
-        return;
-    };
-    let played = play(&mut net).await;
-    assert_played(&played, false);
-    net.finish().await;
+    assert_played(&played);
 }
 
 #[tokio::test]
 async fn the_castle_tax_is_paid_on_the_real_servers_and_the_treasury_row_is_written() {
-    let options = opts(true);
+    let options = opts();
     let Some(mut net) = Net::start("e2em7t1", &options).await else {
         return;
     };
     let played = play(&mut net).await;
-    assert_played(&played, true);
+    assert_played(&played);
     net.finish().await;
 }

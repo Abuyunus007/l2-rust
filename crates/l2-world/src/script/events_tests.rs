@@ -1,5 +1,5 @@
 //! Unit tests of the S-API-04 engine parts that need no world data: the new events, the
-//! per-object listeners, the global variable re-read, `Script::enabled` and the NPC extras.
+//! per-object listeners, `Script::enabled` and the NPC extras.
 
 use std::sync::{Arc, Mutex};
 
@@ -17,21 +17,11 @@ fn lines(log: &Log) -> Vec<String> {
     log.lock().unwrap_or_else(|e| e.into_inner()).clone()
 }
 
-/// Keeps the global variable re-read requests.
-type Request = (u64, Vec<String>);
-
-#[derive(Clone, Default)]
-struct Capture(Arc<Mutex<Vec<Request>>>);
+#[derive(Clone)]
+struct Capture;
 
 impl Outbox for Capture {
-    fn persist(&mut self, command: PersistCommand) {
-        if let PersistCommand::GlobalVariablesRereadRequest { token, names } = command {
-            self.0
-                .lock()
-                .unwrap_or_else(|e| e.into_inner())
-                .push((token, names));
-        }
-    }
+    fn persist(&mut self, _command: PersistCommand) {}
     fn ls_event(&mut self, _event: LsEvent) {}
 }
 
@@ -204,7 +194,7 @@ impl Script for Recorder {
 
 fn recorder_world(terminate: bool) -> (World, Log) {
     let log = Log::default();
-    let mut w = world(&Capture::default());
+    let mut w = world(&Capture);
     let mut registry = ScriptRegistry::new();
     registry.add(Recorder {
         log: Arc::clone(&log),
@@ -388,7 +378,7 @@ fn a_terminate_answer_reaches_the_caller() {
 /// An object with no listener of the kind and no global one costs nothing and answers nothing.
 #[test]
 fn no_listener_no_answer() {
-    let mut w = world(&Capture::default());
+    let mut w = world(&Capture);
     assert_eq!(w.script_fire(ScriptEvent::DailyReset, None), None);
     assert!(!w.script_has_listener(EventKind::PlayerSit, Some(A)));
 }
@@ -397,7 +387,7 @@ fn no_listener_no_answer() {
 #[test]
 fn the_manor_bypass_is_heard_by_npc_id_only() {
     let log = Log::default();
-    let mut w = world(&Capture::default());
+    let mut w = world(&Capture);
     let mut registry = ScriptRegistry::new();
     registry.add(Recorder {
         log: Arc::clone(&log),
@@ -437,7 +427,7 @@ impl Script for Watcher {
 #[test]
 fn object_listeners_hear_only_their_object_and_can_be_removed_by_tag() {
     let log = Log::default();
-    let mut w = world(&Capture::default());
+    let mut w = world(&Capture);
     let mut registry = ScriptRegistry::new();
     registry.add(Watcher {
         log: Arc::clone(&log),
@@ -502,7 +492,7 @@ impl Script for Answers {
 #[test]
 fn answers_follow_java_override_and_abort() {
     let log = Log::default();
-    let mut w = world(&Capture::default());
+    let mut w = world(&Capture);
     let mut registry = ScriptRegistry::new();
     let answer = |terminate, override_, abort| TerminateReturn {
         terminate,
@@ -533,111 +523,6 @@ fn answers_follow_java_override_and_abort() {
     assert_eq!(r, Some(answer(false, false, false)));
 }
 
-/// D-50: with the switch off a re-read goes out, the answer replaces the copy (a row the Java
-/// GS changed, one it deleted) and only then the continuation runs.
-struct Decider {
-    log: Log,
-}
-
-impl Script for Decider {
-    fn name(&self) -> &'static str {
-        "Decider"
-    }
-    fn path(&self) -> &'static str {
-        "ai/others/Decider"
-    }
-    fn setup(&self, _s: &mut ScriptSetup) {}
-    fn on_event(
-        &self,
-        ctx: &mut ScriptCtx<'_>,
-        event: &str,
-        _npc: Option<ScriptNpc>,
-        _player: Option<ObjectId>,
-    ) -> Option<String> {
-        push(
-            &self.log,
-            format!(
-                "{event} {} {}",
-                ctx.global_variables().get_long("Respawn", 0),
-                ctx.global_variables().has_variable("Gone")
-            ),
-        );
-        None
-    }
-    fn on_global_variables_reread_failed(
-        &self,
-        _ctx: &mut ScriptCtx<'_>,
-        event: &str,
-        _npc: Option<ScriptNpc>,
-        _player: Option<ObjectId>,
-    ) {
-        push(&self.log, format!("failed {event}"));
-    }
-}
-
-fn decider_world(cycle: bool) -> (World, Log, Capture) {
-    let log = Log::default();
-    let capture = Capture::default();
-    let mut w = world(&capture);
-    w.set_script_settings(super::ScriptSettings {
-        cycle_database_writes: cycle,
-        ..super::ScriptSettings::default()
-    });
-    w.set_global_variables(vec![
-        ("Respawn".to_owned(), Some("100".to_owned())),
-        ("Gone".to_owned(), Some("1".to_owned())),
-    ]);
-    let mut registry = ScriptRegistry::new();
-    registry.add(Decider {
-        log: Arc::clone(&log),
-    });
-    w.install_scripts(registry);
-    (w, log, capture)
-}
-
-#[test]
-fn the_reread_replaces_the_copy_before_the_script_decides() {
-    let (mut w, log, capture) = decider_world(false);
-    w.run_as_script("Decider", |ctx| {
-        ctx.reread_global_variables(&["Respawn", "Gone"], "decide", None, None);
-    });
-    // The request is out, the script waits.
-    let requests = capture.0.lock().unwrap_or_else(|e| e.into_inner()).clone();
-    assert_eq!(requests, [(1, vec!["Respawn".to_owned(), "Gone".to_owned()])]);
-    assert_eq!(w.script_rereads_waiting(), 1);
-    assert!(lines(&log).is_empty());
-    // The other server changed `Respawn` and deleted `Gone`.
-    w.on_global_variables_reread(1, Ok(vec![("Respawn".to_owned(), Some("999".to_owned()))]));
-    w.script_drain();
-    assert_eq!(lines(&log), ["decide 999 false"]);
-    assert_eq!(w.script_rereads_waiting(), 0);
-    // Nothing of it is written back at the next store (the marks are clear).
-    assert!(w.scripts.globals.take_writes().is_empty());
-}
-
-#[test]
-fn a_failed_reread_refuses_the_action() {
-    let (mut w, log, _capture) = decider_world(false);
-    w.run_as_script("Decider", |ctx| {
-        ctx.reread_global_variables(&["Respawn"], "decide", None, None);
-    });
-    w.on_global_variables_reread(1, Err(()));
-    w.script_drain();
-    // The continuation did not run; the copy is what it was.
-    assert_eq!(lines(&log), ["failed decide"]);
-    assert_eq!(w.global_variables().get_long("Respawn", 0), 100);
-}
-
-#[test]
-fn with_the_switch_on_the_copy_is_the_truth_and_nothing_is_read() {
-    let (mut w, log, capture) = decider_world(true);
-    w.run_as_script("Decider", |ctx| {
-        ctx.reread_global_variables(&["Respawn"], "decide", None, None);
-    });
-    assert!(capture.0.lock().unwrap_or_else(|e| e.into_inner()).is_empty());
-    assert_eq!(lines(&log), ["decide 100 true"]);
-}
-
 /// `Script::enabled`: a script whose Java `main` is skipped is not installed.
 struct Gated(bool);
 
@@ -659,7 +544,7 @@ impl Script for Gated {
 #[test]
 fn a_disabled_script_is_not_installed() {
     for enabled in [false, true] {
-        let mut w = world(&Capture::default());
+        let mut w = world(&Capture);
         let mut registry = ScriptRegistry::new();
         registry.add(Gated(enabled));
         w.install_scripts(registry);
@@ -671,7 +556,7 @@ fn a_disabled_script_is_not_installed() {
 /// `Npc.getVariables()`, the script value, `setLethalable` and the over-hit values.
 #[test]
 fn npc_extras_are_kept_per_npc_and_go_with_it() {
-    let mut w = world(&Capture::default());
+    let mut w = world(&Capture);
     assert!(!w.npc_has_variables(A));
     w.npc_variables_mut(A).set_int("count", 3);
     assert!(w.npc_has_variables(A));

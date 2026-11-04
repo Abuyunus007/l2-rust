@@ -22,14 +22,13 @@ use super::setup_core::{
     self as core, Check, CopyPlan, DbTest, Form, Layout, LayoutKind, Status, count_geodata, execute_copy,
     plan_copy, run_checks,
 };
-use super::switch::SwitchAssistant;
 use crate::app::AppCtx;
 use crate::bridge::BridgeEvent;
 use crate::launch::{self, LaunchState};
 
 /// How often the checks are read again (they look at the disk).
 const CHECK_INTERVAL: Duration = Duration::from_secs(2);
-/// Servers "Start servers" starts, in this order. The Java game server is started by hand.
+/// Servers "Start servers" starts, in this order.
 const START_ORDER: [&str; 2] = ["login", "game"];
 
 #[derive(Default)]
@@ -79,7 +78,6 @@ struct State {
     starting: Starting,
     checks: Vec<Check>,
     checked_at: Option<Instant>,
-    switch: SwitchAssistant,
 }
 
 impl SetupView {
@@ -125,7 +123,6 @@ impl State {
             starting: Starting::default(),
             checks: Vec::new(),
             checked_at: None,
-            switch: SwitchAssistant::default(),
         }
     }
 
@@ -242,16 +239,12 @@ impl View for SetupView {
                 egui::CollapsingHeader::new("5. Check and start")
                     .default_open(true)
                     .show(ui, |ui| state.step_check(ui, &layout, cx));
-                egui::CollapsingHeader::new("6. Switch to Rust (M9)")
-                    .default_open(false)
-                    .show(ui, |ui| state.switch.ui(ui, &layout, cx));
             });
         state.question_window(ui.ctx());
     }
 
     fn on_event(&mut self, event: &BridgeEvent) {
         let Some(state) = &mut self.state else { return };
-        state.switch.on_event(event);
         if let BridgeEvent::Response { id, result } = event
             && let Some((inflight, name)) = state.starting.inflight
             && inflight == *id
@@ -336,9 +329,6 @@ impl State {
             });
             self.plan = plan_copy(layout).unwrap_or_default();
             self.overwrite = false;
-            if self.form.switches.is_empty() {
-                self.form.switches = core::load_switches(&layout.game_config("SideBySide.ini"));
-            }
             self.checked_at = None;
         }
         message(ui, &self.copy_message);
@@ -541,30 +531,6 @@ impl State {
                 );
             } else {
                 ui.label(format!("{found} geodata region files found."));
-            }
-        }
-
-        ui.add_space(6.0);
-        ui.checkbox(
-            &mut self.form.java_enabled,
-            "A Java game server runs next to this one (same database)",
-        );
-        if self.form.java_enabled {
-            ui.label("Use another game port and server id than the Java server (for example 7778 and 3 when Java has 7777 and 1). The Java entry is added to supervisor.ini; start it by hand.");
-            egui::Grid::new("java_fields")
-                .num_columns(2)
-                .spacing([12.0, 6.0])
-                .show(ui, |ui| {
-                    field(ui, "Java game server folder", &mut self.form.java_folder, 420.0);
-                });
-            ui.label("The folder with java.cfg (the libs/ folder is next to it).");
-            if self.form.switches.is_empty() {
-                ui.label("SideBySide.ini is not in the run folder yet (step 1).");
-            }
-            ui.label("SideBySide.ini switches. Leave them off while Java runs; turn one on only when this server is the only one on the database:");
-            for switch in &mut self.form.switches {
-                ui.checkbox(&mut switch.value, &switch.key);
-                ui.label(RichText::new(&switch.help).weak().small());
             }
         }
     }

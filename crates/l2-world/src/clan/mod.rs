@@ -97,9 +97,6 @@ pub struct ClanSettings {
     pub clan_level_requirements: [i32; 6],
     /// `ClanNameTemplate` (Java `CLAN_NAME_TEMPLATE_PATTERN.matcher(name).matches()`).
     pub clan_name_template: Arc<dyn Fn(&str) -> bool + Send + Sync>,
-    /// `ClanMaintenanceDatabaseWrites` of `SideBySide.ini` (D-49): the clan jobs that write rows
-    /// on their own run their database part.
-    pub maintenance_database_writes: bool,
     /// `LifeCrystalNeeded` (`Player.ini`): a clan skill costs the life crystal of its tree line.
     pub life_crystal_needed: bool,
     /// `CompleteAcademyMinPoints` (`Feature.ini`): the reputation a graduate who joined the
@@ -137,7 +134,6 @@ impl Default for ClanSettings {
             clan_level_costs: [5000, 10000, 20000, 40000, 40000, 75000],
             clan_level_requirements: [30, 50, 80, 120, 140, 170],
             clan_name_template: Arc::new(|_| true),
-            maintenance_database_writes: false,
             life_crystal_needed: true,
             join_academy_min_rep_score: 190,
             join_academy_max_rep_score: 650,
@@ -166,7 +162,6 @@ impl fmt::Debug for ClanSettings {
             .field("knight_unit_cost", &self.knight_unit_cost)
             .field("clan_level_costs", &self.clan_level_costs)
             .field("clan_level_requirements", &self.clan_level_requirements)
-            .field("maintenance_database_writes", &self.maintenance_database_writes)
             .field("life_crystal_needed", &self.life_crystal_needed)
             .field("join_academy_min_rep_score", &self.join_academy_min_rep_score)
             .field("join_academy_max_rep_score", &self.join_academy_max_rep_score)
@@ -862,7 +857,6 @@ impl World {
         let Some(clan) = self.clan_mut(clan_id) else {
             return;
         };
-        clan.changed = false;
         let row = ClanUpdateRow {
             clan_id: clan.id,
             leader_id: clan.leader_id(),

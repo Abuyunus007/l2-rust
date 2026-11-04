@@ -423,7 +423,7 @@ struct Scene {
 }
 
 impl Scene {
-    fn new(siege_database_writes: bool) -> Self {
+    fn new() -> Self {
         let root = tempfile::tempdir().unwrap();
         let write = |path: &str, text: &str| {
             let file = root.path().join(path);
@@ -463,7 +463,6 @@ impl Scene {
             .spawn_static_objects(&StaticObjectTemplates::from_xml("<list></list>").unwrap(), &ids)
             .unwrap();
         world.set_residence_settings(ResidenceSettings {
-            siege_database_writes,
             ..ResidenceSettings::default()
         });
         world.load_clans(vec![lions(), wolves(), bears()], Vec::new());
@@ -908,7 +907,7 @@ fn lease_of(s: &Scene, hall: i32) -> (i64, bool) {
 /// week on (`CH_RATE`) from where it was, the row is written.
 #[test]
 fn a_due_rent_is_taken_from_the_clan_warehouse() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     let before = now_ms();
     s.load(vec![hall(36, WOLVES, 500_000, 2, before - 1000, true)], vec![]);
     s.enter(pdata(P3, WOLVES, HALL_X, 0, 0));
@@ -943,7 +942,7 @@ fn a_due_rent_is_taken_from_the_clan_warehouse() {
 /// so it never comes.
 #[test]
 fn a_clan_that_cannot_pay_is_reminded_and_keeps_the_hall() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     let before = now_ms();
     let mut poor = wolves();
     poor.warehouse.clear();
@@ -981,7 +980,7 @@ fn a_clan_that_cannot_pay_is_reminded_and_keeps_the_hall() {
 /// A rent a week late takes the hall away: `initNPC`, `setFree`, the message to the clan.
 #[test]
 fn a_rent_a_week_late_takes_the_hall_and_puts_it_up_for_auction() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     let before = now_ms();
     let mut poor = wolves();
     poor.warehouse.clear();
@@ -1038,35 +1037,11 @@ fn a_rent_a_week_late_takes_the_hall_and_puts_it_up_for_auction() {
     )));
 }
 
-/// D-51: without `SiegeDatabaseWrites` the rent only moves the paid time on: nothing is taken,
-/// nothing is written, a hall that cannot pay stays (the Java game server decides).
-#[test]
-fn without_the_switch_the_rent_charges_and_writes_nothing() {
-    let mut s = Scene::new(false);
-    let before = now_ms();
-    s.load(
-        vec![
-            hall(36, WOLVES, 500_000, 2, before - 1000, true),
-            hall(37, LIONS, 500_000, 2, before - WEEK - 10_000, false),
-        ],
-        vec![],
-    );
-    s.run_ms(100);
-    let out = s.take();
-    assert!(residence_writes(&out).is_empty());
-    assert!(item_row_ops(&out).is_empty());
-    assert_eq!(warehouse_adena(&s, WOLVES), 2_000_000);
-    assert_eq!(lease_of(&s, 36), (before - 1000 + WEEK, true));
-    // The late hall is not taken away either.
-    assert!(!s.world.clan_hall(ClanHallId(37)).unwrap().is_free);
-    assert_eq!(s.clan(LIONS).hideout_id, 37);
-}
-
 /// A hall that has just been won starts its rent at once (`initialyzeTask(true)`): the first week
 /// is charged right away and `paidUntil` is a week from then.
 #[test]
 fn a_new_owner_pays_the_first_week_at_once() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.load(vec![hall(38, 0, 100_000, 1, 0, false)], vec![]);
     s.world.clan_hall_table_set_owner(ClanHallId(38), LIONS);
     s.take();
@@ -1093,7 +1068,7 @@ fn a_new_owner_pays_the_first_week_at_once() {
 /// (`ITEM_INIT_DATA`); one with an auction row, one without a lease and an owned one do not.
 #[test]
 fn loading_starts_the_npc_auctions_of_free_halls() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     let before = now_ms();
     s.world.load_residences(ResidenceLoad {
         clan_halls: vec![
@@ -1136,7 +1111,7 @@ fn loading_starts_the_npc_auctions_of_free_halls() {
 /// `loadBid`: the highest bid is the first row; the bidders are all of them.
 #[test]
 fn the_loaded_bids_name_the_highest_bidder() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.load_halls(vec![hall(39, 0, 100_000, 1, 0, false)]);
     let mut record = auction_record(39, 1000, now_ms() + 3_600_000);
     record.bidders = vec![
@@ -1169,8 +1144,8 @@ fn the_clan_hall_settings_default_to_javas_fees() {
 
 /// A scene with the auctioneer at the town: hall 36 is the Wolves', hall 39 is for sale (an NPC
 /// auction from 1,000 adena that ends in an hour). Everybody stands next to the auctioneer.
-fn auction_scene(switch: bool) -> (Scene, ObjectId) {
-    let mut s = Scene::new(switch);
+fn auction_scene() -> (Scene, ObjectId) {
+    let mut s = Scene::new();
     s.load(
         vec![
             hall(36, WOLVES, 500_000, 2, FAR_FUTURE, true),
@@ -1237,7 +1212,7 @@ fn place_bid(
 /// row is inserted, the clan remembers the auction, the highest bidder is the clan's leader.
 #[test]
 fn a_bid_takes_the_adena_from_the_clan_warehouse() {
-    let (mut s, npc) = auction_scene(true);
+    let (mut s, npc) = auction_scene();
     let out = place_bid(
         &mut s,
         npc,
@@ -1279,7 +1254,7 @@ fn a_bid_takes_the_adena_from_the_clan_warehouse() {
 /// Below the starting bid, and below the highest bid: "price must be higher", nothing is taken.
 #[test]
 fn a_low_bid_is_refused_with_the_message() {
-    let (mut s, npc) = auction_scene(true);
+    let (mut s, npc) = auction_scene();
     let out = place_bid(
         &mut s,
         npc,
@@ -1301,7 +1276,7 @@ fn a_low_bid_is_refused_with_the_message() {
 /// D-50: the bid of another clan on the Java game server counts: this world's copy had no bid.
 #[test]
 fn the_auction_is_read_again_so_a_bid_of_the_other_server_counts() {
-    let (mut s, npc) = auction_scene(true);
+    let (mut s, npc) = auction_scene();
     let out = place_bid(
         &mut s,
         npc,
@@ -1325,7 +1300,7 @@ fn the_auction_is_read_again_so_a_bid_of_the_other_server_counts() {
 /// More than the clan warehouse holds: "not enough adena in the clan hall warehouse".
 #[test]
 fn a_bid_the_warehouse_cannot_pay_is_refused() {
-    let (mut s, npc) = auction_scene(true);
+    let (mut s, npc) = auction_scene();
     let out = place_bid(
         &mut s,
         npc,
@@ -1347,7 +1322,7 @@ fn a_bid_the_warehouse_cannot_pay_is_refused() {
 /// the highest bidder's name with the leader's), and its row is updated with the leader's name.
 #[test]
 fn a_row_with_the_players_name_makes_the_clan_pay_the_whole_bid_again() {
-    let (mut s, npc) = auction_scene(true);
+    let (mut s, npc) = auction_scene();
     let out = place_bid(
         &mut s,
         npc,
@@ -1368,7 +1343,7 @@ fn a_row_with_the_players_name_makes_the_clan_pay_the_whole_bid_again() {
 /// The row names the leader (a bid raised before): only the difference is taken.
 #[test]
 fn the_leaders_name_makes_the_clan_pay_only_the_difference() {
-    let (mut s, npc) = auction_scene(true);
+    let (mut s, npc) = auction_scene();
     let out = place_bid(
         &mut s,
         npc,
@@ -1389,7 +1364,7 @@ fn the_leaders_name_makes_the_clan_pay_only_the_difference() {
 /// A new clan outbids: the old highest bidder's leader hears it, the new row names the player.
 #[test]
 fn another_clan_outbids_and_the_old_leader_hears_it() {
-    let (mut s, npc) = auction_scene(true);
+    let (mut s, npc) = auction_scene();
     let out = place_bid(
         &mut s,
         npc,
@@ -1413,7 +1388,7 @@ fn another_clan_outbids_and_the_old_leader_hears_it() {
 /// A failed read refuses the bid (D-50): nothing is taken from the memory's copy.
 #[test]
 fn a_failed_read_refuses_the_bid() {
-    let (mut s, npc) = auction_scene(true);
+    let (mut s, npc) = auction_scene();
     s.talk(P2, npc);
     s.take();
     s.bypass(P2, npc, "bid 39 1500");
@@ -1436,7 +1411,7 @@ fn a_failed_read_refuses_the_bid() {
 /// The auction is gone from the database ("Invalid bid!"), and from this world.
 #[test]
 fn a_bid_on_an_auction_the_other_server_ended_is_invalid() {
-    let (mut s, npc) = auction_scene(true);
+    let (mut s, npc) = auction_scene();
     s.talk(P2, npc);
     s.take();
     s.bypass(P2, npc, "bid 39 1500");
@@ -1450,7 +1425,7 @@ fn a_bid_on_an_auction_the_other_server_ended_is_invalid() {
 /// Bad numbers and unknown auctions end in the messages Java catches them with.
 #[test]
 fn the_bid_command_answers_bad_input_with_javas_messages() {
-    let (mut s, npc) = auction_scene(true);
+    let (mut s, npc) = auction_scene();
     s.talk(P2, npc);
     s.take();
     s.bypass(P2, npc, "bid x 100");
@@ -1471,7 +1446,7 @@ fn the_bid_command_answers_bad_input_with_javas_messages() {
 /// forgets the auction.
 #[test]
 fn cancelling_a_bid_gives_back_ninety_percent() {
-    let (mut s, npc) = auction_scene(true);
+    let (mut s, npc) = auction_scene();
     place_bid(
         &mut s,
         npc,
@@ -1523,36 +1498,30 @@ fn cancelling_a_bid_gives_back_ninety_percent() {
 /// `ClanTable.destroyClan`: the bid of a dissolved clan is cancelled.
 #[test]
 fn a_dissolved_clan_loses_its_bid() {
-    for write_db in [true, false] {
-        let (mut s, npc) = auction_scene(true);
-        place_bid(
-            &mut s,
-            npc,
-            P2,
-            39,
-            1500,
-            db_auction(39, vec![]),
-            vec![adena_item(0x6000_1000, 100_000, "CLANWH")],
-        );
-        s.take();
-        s.world.destroy_clan(LIONS, write_db);
-        let out = s.take();
-        // The row goes only with the clan maintenance switch (D-49); the bid always.
-        assert_eq!(
-            auction_writes(&out).contains(&AuctionWrite::BidDelete {
-                auction_id: 39,
-                bidder_id: LIONS
-            }),
-            write_db
-        );
-        assert!(s.world.clan_hall_auction(39).unwrap().bidders.is_empty());
-    }
+    let (mut s, npc) = auction_scene();
+    place_bid(
+        &mut s,
+        npc,
+        P2,
+        39,
+        1500,
+        db_auction(39, vec![]),
+        vec![adena_item(0x6000_1000, 100_000, "CLANWH")],
+    );
+    s.take();
+    s.world.destroy_clan(LIONS);
+    let out = s.take();
+    assert!(auction_writes(&out).contains(&AuctionWrite::BidDelete {
+        auction_id: 39,
+        bidder_id: LIONS
+    }));
+    assert!(s.world.clan_hall_auction(39).unwrap().bidders.is_empty());
 }
 
 /// `bid1`: only clans of level 2 and up bid, and only one auction, and not with a hall.
 #[test]
 fn the_bid_page_checks_the_clan() {
-    let (mut s, npc) = auction_scene(true);
+    let (mut s, npc) = auction_scene();
     for player in [P5, P3, GM, P2] {
         s.talk(player, npc);
     }
@@ -1587,7 +1556,7 @@ fn the_bid_page_checks_the_clan() {
 /// `bidding`: the page of one auction with the hall's values.
 #[test]
 fn the_auction_page_shows_the_hall() {
-    let (mut s, npc) = auction_scene(true);
+    let (mut s, npc) = auction_scene();
     s.talk(P2, npc);
     s.take();
     s.bypass(P2, npc, "bidding 39");
@@ -1634,7 +1603,7 @@ fn the_auction_page_shows_the_hall() {
 /// `list`: 15 auctions to a page and a link per page.
 #[test]
 fn the_list_has_fifteen_auctions_to_a_page() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     let halls: Vec<ClanHallRecord> = (40..=55).map(|id| hall(id, 0, 0, 1, 0, false)).collect();
     let auctions: Vec<AuctionRecord> = (40..=55)
         .map(|id| auction_record(id, 1000 + i64::from(id), now_ms() + 3_600_000))
@@ -1666,7 +1635,7 @@ fn the_list_has_fifteen_auctions_to_a_page() {
 /// M7-FU-03 (D-50): the list is built from `auction` rows read just now, not from memory.
 #[test]
 fn the_list_is_built_from_rows_read_again() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     let halls: Vec<ClanHallRecord> = (40..=43).map(|id| hall(id, 0, 0, 1, 0, false)).collect();
     let auctions: Vec<AuctionRecord> = (40..=42)
         .map(|id| auction_record(id, 1000 + i64::from(id), now_ms() + 3_600_000))
@@ -1725,7 +1694,7 @@ fn the_list_is_built_from_rows_read_again() {
 /// M7-FU-03: a read that fails shows no list (never the copy in memory).
 #[test]
 fn a_failed_read_shows_no_auction_list() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.load(
         vec![hall(40, 0, 0, 1, 0, false)],
         vec![auction_record(40, 1040, now_ms() + 3_600_000)],
@@ -1750,7 +1719,7 @@ fn a_failed_read_shows_no_auction_list() {
 /// `bidlist`: the clans that bid with the date of the bid (no padding).
 #[test]
 fn the_bidder_list_shows_the_bids() {
-    let (mut s, npc) = auction_scene(true);
+    let (mut s, npc) = auction_scene();
     let mut record = db_auction(39, vec![bid_record(LIONS, "P1", "Lions", 3000)]);
     // 2023-11-15T12:00:00Z: the 15th (or at the edge of the zones, the 16th).
     record.bidders[0].time_bid = 1_700_049_600_000;
@@ -1775,7 +1744,7 @@ fn the_bidder_list_shows_the_bids() {
 /// `selectedItems`: what the clan has to do with the board.
 #[test]
 fn the_overview_page_follows_the_clan() {
-    let (mut s, npc) = auction_scene(true);
+    let (mut s, npc) = auction_scene();
     for player in [P2, P3, GM] {
         s.talk(player, npc);
     }
@@ -1827,7 +1796,7 @@ fn the_overview_page_follows_the_clan() {
 /// it. Java's `days * 86400000` is an int, so 30 days wrap.
 #[test]
 fn a_clan_puts_its_hall_up_for_sale() {
-    let (mut s, npc) = auction_scene(true);
+    let (mut s, npc) = auction_scene();
     s.talk(P3, npc);
     s.take();
     let before = now_ms();
@@ -1895,7 +1864,7 @@ fn a_clan_puts_its_hall_up_for_sale() {
 /// The sale pages need the privilege for the hall auction: the leader has it, a member does not.
 #[test]
 fn the_sale_pages_need_the_privilege() {
-    let (mut s, npc) = auction_scene(true);
+    let (mut s, npc) = auction_scene();
     for player in [P3, P4] {
         s.talk(player, npc);
     }
@@ -1929,7 +1898,7 @@ fn the_sale_pages_need_the_privilege() {
 /// without a hall get 90% back.
 #[test]
 fn the_owner_can_cancel_its_auction() {
-    let (mut s, npc) = auction_scene(true);
+    let (mut s, npc) = auction_scene();
     s.talk(P3, npc);
     s.take();
     s.bypass(P3, npc, "auction 3 5000");
@@ -1978,8 +1947,8 @@ fn ending(id: i32, seller: i32, seller_clan: &str, bidders: Vec<AuctionBidRecord
 }
 
 /// A scene whose hall-39 auction is due in 60 ms.
-fn ending_scene(switch: bool, record: AuctionRecord) -> Scene {
-    let mut s = Scene::new(switch);
+fn ending_scene(record: AuctionRecord) -> Scene {
+    let mut s = Scene::new();
     s.load(
         vec![
             hall(36, WOLVES, 500_000, 2, FAR_FUTURE, true),
@@ -2026,7 +1995,7 @@ fn the_highest_bidder_wins_the_hall() {
         bid_record(BEARS, "P5", "Bears", 3000),
     ];
     let record = ending(39, 0, "NPC Clan", bidders);
-    let mut s = ending_scene(true, record.clone());
+    let mut s = ending_scene(record.clone());
     let out = end_it(&mut s, record);
     assert!(s.world.clan_hall_auction(39).is_none());
     let hall = s.world.clan_hall(ClanHallId(39)).unwrap();
@@ -2076,7 +2045,7 @@ fn the_highest_bidder_wins_the_hall() {
 #[test]
 fn the_seller_gets_the_price_and_the_deposit() {
     let record = ending(39, P3, "Wolves", vec![bid_record(LIONS, "P1", "Lions", 5000)]);
-    let mut s = ending_scene(true, record.clone());
+    let mut s = ending_scene(record.clone());
     let out = end_it(&mut s, record);
     // 4,500 (90% of 5,000) and the lease of hall 39 (100,000) in full.
     assert_eq!(warehouse_adena(&s, WOLVES), 2_104_500);
@@ -2084,31 +2053,11 @@ fn the_seller_gets_the_price_and_the_deposit() {
     assert_eq!(item_row_ops(&out).len(), 2);
 }
 
-/// D-51: without `SiegeDatabaseWrites` the end of an auction changes this world only.
-#[test]
-fn without_the_switch_an_auction_ends_in_this_world_only() {
-    let record = ending(
-        39,
-        P3,
-        "Wolves",
-        vec![
-            bid_record(LIONS, "P1", "Lions", 5000),
-            bid_record(BEARS, "P5", "Bears", 3000),
-        ],
-    );
-    let mut s = ending_scene(false, record.clone());
-    let out = end_it(&mut s, record);
-    assert_eq!(s.world.clan_hall(ClanHallId(39)).unwrap().owner_id, LIONS);
-    assert!(s.world.clan_hall_auction(39).is_none());
-    assert!(residence_writes(&out).is_empty());
-    assert!(item_row_ops(&out).is_empty());
-}
-
 /// An NPC auction without a bid goes on for a week (`startAutoTask`, the end date row).
 #[test]
 fn an_auction_without_bids_is_extended_a_week() {
     let record = ending(39, 0, "NPC Clan", vec![]);
-    let mut s = ending_scene(true, record.clone());
+    let mut s = ending_scene(record.clone());
     let out = end_it(&mut s, record);
     let auction = s.world.clan_hall_auction(39).unwrap();
     assert!(auction.end_date > now_ms() + WEEK - 5000);
@@ -2125,7 +2074,7 @@ fn an_auction_without_bids_is_extended_a_week() {
 #[test]
 fn an_unsold_auction_leaves_only_the_list() {
     let record = ending(39, P3, "Wolves", vec![]);
-    let mut s = ending_scene(true, record.clone());
+    let mut s = ending_scene(record.clone());
     let out = end_it(&mut s, record);
     assert!(s.world.clan_hall_auction(39).is_none());
     assert!(auction_writes(&out).is_empty());
@@ -2137,7 +2086,7 @@ fn an_unsold_auction_leaves_only_the_list() {
 fn the_end_reads_the_auction_again() {
     let record = ending(39, 0, "NPC Clan", vec![bid_record(LIONS, "P1", "Lions", 5000)]);
     // Moved on: the auction stays, nothing is decided.
-    let mut s = ending_scene(true, record.clone());
+    let mut s = ending_scene(record.clone());
     s.run_ms(200);
     let out = s.take();
     s.answer_auction_read(
@@ -2151,7 +2100,7 @@ fn the_end_reads_the_auction_again() {
     assert!(s.world.clan_hall_auction(39).is_some());
     assert!(s.world.clan_hall(ClanHallId(39)).unwrap().is_free);
     // Gone: the auction leaves the list.
-    let mut s = ending_scene(true, record);
+    let mut s = ending_scene(record);
     s.run_ms(200);
     let out = s.take();
     s.answer_auction_read(&out, None);
@@ -2163,7 +2112,7 @@ fn the_end_reads_the_auction_again() {
 #[test]
 fn a_failed_read_delays_the_end() {
     let record = ending(39, 0, "NPC Clan", vec![bid_record(LIONS, "P1", "Lions", 5000)]);
-    let mut s = ending_scene(true, record);
+    let mut s = ending_scene(record);
     s.run_ms(200);
     let out = s.take();
     let then = out
@@ -2194,8 +2143,8 @@ fn a_failed_read_delays_the_end() {
 /// Hall 36 (grade 2, the Wolves') with the manager and the doorman beside it; P3 (leader, with
 /// 10,000 adena), P4 (member without privileges), P1 (another clan), the GM and a clanless player
 /// stand in the hall.
-fn hall_scene(switch: bool, functions: Vec<FunctionRecord>) -> (Scene, ObjectId, ObjectId) {
-    let mut s = Scene::new(switch);
+fn hall_scene(functions: Vec<FunctionRecord>) -> (Scene, ObjectId, ObjectId) {
+    let mut s = Scene::new();
     let mut owned = hall(36, WOLVES, 500_000, 2, FAR_FUTURE, true);
     owned.functions = functions;
     s.load(vec![owned], vec![]);
@@ -2216,7 +2165,7 @@ fn hall_scene(switch: bool, functions: Vec<FunctionRecord>) -> (Scene, ObjectId,
 fn the_owner_of_a_hall_is_asked_to_open_and_close_its_door() {
     use l2_protocol_game::server::ConfirmDlg;
 
-    let (mut s, _manager, _doorman) = hall_scene(true, vec![]);
+    let (mut s, _manager, _doorman) = hall_scene(vec![]);
     // The door of hall 36 (`clanhall_id`), next to the people in the hall (not in `hall_scene`:
     // another spawn would shift the other tests' random numbers).
     let doors = l2_data::DoorTemplates::from_xml(&format!(
@@ -2329,7 +2278,7 @@ fn is_page(html: &str, file: &str) -> bool {
 /// `showChatWindow`: the owner gets the chamberlain, another clan "of", a stranger "no".
 #[test]
 fn the_chamberlain_greets_the_owner_the_others_and_strangers() {
-    let (mut s, manager, _) = hall_scene(true, vec![]);
+    let (mut s, manager, _) = hall_scene(vec![]);
     for (player, page) in [
         (P3, "clanHallManager/chamberlain.htm"),
         (GM, "clanHallManager/chamberlain.htm"),
@@ -2353,7 +2302,7 @@ fn the_chamberlain_greets_the_owner_the_others_and_strangers() {
 /// Only the owner (or a GM) is answered; everybody else gets nothing, not even the generic commands.
 #[test]
 fn only_the_owner_uses_the_manager() {
-    let (mut s, manager, _) = hall_scene(true, vec![]);
+    let (mut s, manager, _) = hall_scene(vec![]);
     s.talk(P3, manager);
     s.talk(P1, manager);
     s.talk(P5, manager);
@@ -2372,14 +2321,11 @@ fn only_the_owner_uses_the_manager() {
 /// the support page with the manager's mana.
 #[test]
 fn the_functions_pages_show_the_hall() {
-    let (mut s, manager, _) = hall_scene(
-        true,
-        vec![
-            function(3, 260, 1000, 86_400_000),
-            function(1, 1, 7000, WEEK),
-            function(6, 1, 2500, 86_400_000),
-        ],
-    );
+    let (mut s, manager, _) = hall_scene(vec![
+        function(3, 260, 1000, 86_400_000),
+        function(1, 1, 7000, WEEK),
+        function(6, 1, 2500, 86_400_000),
+    ]);
     s.talk(P3, manager);
     s.take();
     s.bypass(P3, manager, "functions");
@@ -2411,7 +2357,7 @@ fn the_functions_pages_show_the_hall() {
 /// `door`, `manage_vault` and `banish_foreigner` need their privileges.
 #[test]
 fn the_hall_commands_need_their_privileges() {
-    let (mut s, manager, _) = hall_scene(true, vec![]);
+    let (mut s, manager, _) = hall_scene(vec![]);
     s.talk(P3, manager);
     s.talk(P4, manager);
     s.take();
@@ -2448,7 +2394,7 @@ fn the_hall_commands_need_their_privileges() {
 /// `manage recovery`: the overview of the functions by hall grade, with the current one.
 #[test]
 fn the_recovery_overview_lists_the_levels_of_the_grade() {
-    let (mut s, manager, _) = hall_scene(true, vec![function(3, 260, 1000, 86_400_000)]);
+    let (mut s, manager, _) = hall_scene(vec![function(3, 260, 1000, 86_400_000)]);
     s.talk(P3, manager);
     s.take();
     s.bypass(P3, manager, "manage recovery");
@@ -2493,7 +2439,7 @@ fn the_recovery_overview_lists_the_levels_of_the_grade() {
 /// `edit_hp 80`: the page with the cost of the level (Feature.ini) and what to send to buy it.
 #[test]
 fn the_edit_page_shows_the_cost() {
-    let (mut s, manager, _) = hall_scene(true, vec![]);
+    let (mut s, manager, _) = hall_scene(vec![]);
     s.talk(P3, manager);
     s.take();
     s.bypass(P3, manager, "manage recovery edit_hp 80");
@@ -2528,7 +2474,7 @@ fn the_edit_page_shows_the_cost() {
 /// level again says so; level 0 cancels.
 #[test]
 fn a_function_is_bought_changed_and_cancelled() {
-    let (mut s, manager, _) = hall_scene(true, vec![]);
+    let (mut s, manager, _) = hall_scene(vec![]);
     s.talk(P3, manager);
     s.take();
     s.bypass(P3, manager, "manage recovery hp 80");
@@ -2591,7 +2537,7 @@ fn a_function_is_bought_changed_and_cancelled() {
 /// A player without the adena gets the "low adena" page, twice (Java sends it twice).
 #[test]
 fn a_function_without_adena_shows_the_low_adena_page_twice() {
-    let (mut s, manager, _) = hall_scene(true, vec![]);
+    let (mut s, manager, _) = hall_scene(vec![]);
     s.talk(P3, manager);
     s.take();
     // The leader has 10,000 adena; the support level 8 costs 52,000.
@@ -2613,7 +2559,7 @@ fn a_function_without_adena_shows_the_low_adena_page_twice() {
 /// A member without the privilege to manage functions cannot buy.
 #[test]
 fn the_functions_need_the_manage_privilege() {
-    let (mut s, manager, _) = hall_scene(true, vec![]);
+    let (mut s, manager, _) = hall_scene(vec![]);
     s.talk(P4, manager);
     s.take();
     s.bypass(P4, manager, "manage recovery hp 80");
@@ -2632,7 +2578,7 @@ fn the_functions_need_the_manage_privilege() {
 /// answered with Java's message.
 #[test]
 fn the_support_buff_needs_mana_or_the_free_setting() {
-    let (mut s, manager, _) = hall_scene(true, vec![function(6, 1, 2500, 86_400_000)]);
+    let (mut s, manager, _) = hall_scene(vec![function(6, 1, 2500, 86_400_000)]);
     s.talk(P3, manager);
     s.take();
     // Skill 5000 costs 50 + 10 mana; the manager has 30.
@@ -2662,14 +2608,14 @@ fn the_support_buff_needs_mana_or_the_free_setting() {
 /// The mirror teleports a clan member to the place of its stage.
 #[test]
 fn the_mirror_teleports_the_clan() {
-    let (mut s, manager, _) = hall_scene(true, vec![function(1, 1, 7000, WEEK)]);
+    let (mut s, manager, _) = hall_scene(vec![function(1, 1, 7000, WEEK)]);
     s.talk(P3, manager);
     s.take();
     s.bypass(P3, manager, "goto 0");
     let out = s.take();
     assert_eq!(packets_to(&out, P3, "TELEPORT_TO_LOCATION").len(), 1);
     // Without the function nothing happens.
-    let (mut s, manager, _) = hall_scene(true, vec![]);
+    let (mut s, manager, _) = hall_scene(vec![]);
     s.talk(P3, manager);
     s.take();
     s.bypass(P3, manager, "goto 0");
@@ -2682,7 +2628,7 @@ fn the_mirror_teleports_the_clan() {
 /// for the others with the leader's name, the empty hall's page.
 #[test]
 fn the_doorman_greets_by_clan() {
-    let (mut s, _, doorman) = hall_scene(true, vec![]);
+    let (mut s, _, doorman) = hall_scene(vec![]);
     s.talk(P3, doorman);
     let page = last_page(&s.take(), P3);
     assert!(is_page(&page, "clanHallDoorman/doorman2.htm"));
@@ -2704,7 +2650,7 @@ fn the_doorman_greets_by_clan() {
 /// The doors open and close for the owner only; `tele` and `evolve` too.
 #[test]
 fn the_doorman_serves_only_the_owner() {
-    let (mut s, _, doorman) = hall_scene(true, vec![]);
+    let (mut s, _, doorman) = hall_scene(vec![]);
     s.talk(P3, doorman);
     s.talk(P1, doorman);
     s.take();
@@ -2740,13 +2686,10 @@ fn the_doorman_serves_only_the_owner() {
 /// `1 + level / 100` times as fast as anybody else.
 #[test]
 fn the_hall_functions_speed_up_the_regeneration_of_the_owners() {
-    let (mut s, _, _) = hall_scene(
-        true,
-        vec![
-            function(3, 100, 1000, 86_400_000),
-            function(4, 50, 1000, 86_400_000),
-        ],
-    );
+    let (mut s, _, _) = hall_scene(vec![
+        function(3, 100, 1000, 86_400_000),
+        function(4, 50, 1000, 86_400_000),
+    ]);
     for id in [P3, P1] {
         s.world.set_current_hp_mp(ObjectId(id), 10.0, 5.0);
     }
@@ -2766,7 +2709,7 @@ fn the_hall_functions_speed_up_the_regeneration_of_the_owners() {
 /// `RequestRestartPoint`: the exp-recovery function of the clan's hall.
 #[test]
 fn the_exp_function_level_is_what_a_resurrection_gives_back() {
-    let (s, _, _) = hall_scene(true, vec![function(5, 25, 1000, 86_400_000)]);
+    let (s, _, _) = hall_scene(vec![function(5, 25, 1000, 86_400_000)]);
     assert_eq!(s.world.clan_hall_restore_exp_level(WOLVES), Some(25));
     assert_eq!(s.world.clan_hall_restore_exp_level(LIONS), None);
 }
@@ -2775,7 +2718,7 @@ fn the_exp_function_level_is_what_a_resurrection_gives_back() {
 /// waits for fresh rows, M6-SYNC-01); another clan gets nothing.
 #[test]
 fn the_manager_keeps_the_clan_warehouse() {
-    let (mut s, manager, _) = hall_scene(true, vec![]);
+    let (mut s, manager, _) = hall_scene(vec![]);
     s.talk(P3, manager);
     s.talk(P1, manager);
     s.take();
@@ -2797,7 +2740,7 @@ fn the_manager_keeps_the_clan_warehouse() {
 /// `new AuctionableHall(set)` does; a hall that went back to nobody stops paying.
 #[test]
 fn a_hall_read_again_with_an_owner_starts_its_rent() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.load(vec![hall(39, 0, 100_000, 1, 0, false)], vec![]);
     s.run_ms(100);
     s.take();
@@ -2839,7 +2782,7 @@ fn a_hall_read_again_with_an_owner_starts_its_rent() {
 #[test]
 fn the_clan_hall_list_names_the_owners() {
     use l2_protocol_game::server::ExShowAgitInfo;
-    let (mut s, _) = auction_scene(true);
+    let (mut s, _) = auction_scene();
     s.world.handle(WorldCommand::Input {
         session: SessionId(u64::try_from(P2).unwrap()),
         input: ClientInput::AllAgitInfo,
@@ -2883,7 +2826,7 @@ fn real_pages(s: &mut Scene) -> bool {
 
 #[test]
 fn the_real_auction_pages_lead_to_a_bid() {
-    let (mut s, npc) = auction_scene(true);
+    let (mut s, npc) = auction_scene();
     if !real_pages(&mut s) {
         return;
     }
@@ -2910,7 +2853,7 @@ fn the_real_auction_pages_lead_to_a_bid() {
 
 #[test]
 fn the_real_chamberlain_pages_lead_to_a_purchase() {
-    let (mut s, manager, _) = hall_scene(true, vec![]);
+    let (mut s, manager, _) = hall_scene(vec![]);
     if !real_pages(&mut s) {
         return;
     }

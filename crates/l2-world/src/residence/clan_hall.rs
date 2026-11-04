@@ -21,7 +21,7 @@ use super::functions::{
     HALL_FUNC_DECO_CURTAINS, HALL_FUNC_DECO_FRONTPLATEFORM, HALL_FUNC_ITEM_CREATE, HALL_FUNC_RESTORE_EXP,
     HALL_FUNC_RESTORE_HP, HALL_FUNC_RESTORE_MP, HALL_FUNC_SUPPORT, HALL_FUNC_TELEPORT,
 };
-use super::{ClanHallId, ResidenceRef, ResidenceWrite, Writes};
+use super::{ClanHallId, ResidenceRef, ResidenceWrite};
 use crate::world::{World, unix_ms_now};
 
 /// What kind of hall, with the values only that kind has.
@@ -236,8 +236,7 @@ impl World {
             }
             // Announce to Online member new ClanHall.
             self.broadcast_clan_info_update(clan_id);
-            let written = self.clan_hall_update_db(id, Writes::Job);
-            self.set_residence_owner_source(ResidenceRef::ClanHall(id), written);
+            self.clan_hall_update_db(id);
         }
         // `AuctionableHall.setOwner`: `_paidUntil = now` even when the hall was not free.
         if let Some(ClanHallKind::Auctionable { paid_until, .. }) =
@@ -260,13 +259,8 @@ impl World {
     }
 
     /// Java `ClanHall.free()` (and `AuctionableHall.free()`): no owner, the functions go, the row
-    /// is written (D-51: only with `SiegeDatabaseWrites`).
+    /// is written .
     pub fn clan_hall_free(&mut self, id: ClanHallId) {
-        self.clan_hall_free_with(id, Writes::Job);
-    }
-
-    /// [`Self::clan_hall_free`] with the rows written as `writes` says.
-    pub(crate) fn clan_hall_free_with(&mut self, id: ClanHallId, writes: Writes) {
         if let Some(hall) = self.clan_hall_mut(id) {
             hall.owner_id = 0;
             hall.is_free = true;
@@ -275,11 +269,10 @@ impl World {
         }
         // A free hall pays no rent (the task would find `isFree()` and end).
         self.clan_hall_cancel_rent_task(id);
-        self.residence_remove_all_functions_with(ResidenceRef::ClanHall(id), writes);
+        self.residence_remove_all_functions(ResidenceRef::ClanHall(id));
         // NOTE(java-quirk): `ClanHall.free()` writes the row before `AuctionableHall.free()` resets
         // `paidUntil` and `paid`, so the row keeps the old values with owner 0.
-        self.clan_hall_update_db(id, writes);
-        self.set_residence_owner_source(ResidenceRef::ClanHall(id), true);
+        self.clan_hall_update_db(id);
         if let Some(ClanHallKind::Auctionable { paid_until, paid, .. }) =
             self.clan_hall_mut(id).map(|h| &mut h.kind)
         {
@@ -289,9 +282,9 @@ impl World {
     }
 
     /// Java `updateDb()` of the hall's class (D-51: only with `SiegeDatabaseWrites`).
-    pub(crate) fn clan_hall_update_db(&mut self, id: ClanHallId, writes: Writes) -> bool {
+    pub(crate) fn clan_hall_update_db(&mut self, id: ClanHallId) {
         let Some(hall) = self.clan_hall(id) else {
-            return false;
+            return;
         };
         let write = match &hall.kind {
             ClanHallKind::Auctionable { paid_until, paid, .. } => ResidenceWrite::ClanHall {
@@ -306,7 +299,7 @@ impl World {
                 next_siege: *next_siege,
             },
         };
-        self.write_residence(writes, write)
+        self.residence_write(write)
     }
 
     // ------------------------------------------------------------------ doors and zone

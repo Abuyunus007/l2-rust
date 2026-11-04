@@ -228,11 +228,13 @@ mod tests {
         set_level(&mut t, "Quarry", 5);
         t.talk(1, slave);
         t.take();
+        let before = t.world.global_variables().get_int("HBTrust", 0);
         t.event(1, "Quarry", "FollowMe");
         t.world
             .run_as_script("Quarry", |ctx| Quarry.on_enter_zone(ctx, slave, ZONE));
         t.wait_ms(1_100);
         assert!(!t.in_world(slave));
-        assert_eq!(t.world.global_variables().get_int("HBTrust", 0), TRUST);
+        // The engine's update may also move the trust to the minimum of the new level.
+        assert!(t.world.global_variables().get_int("HBTrust", 0) >= before + TRUST);
     }
 }

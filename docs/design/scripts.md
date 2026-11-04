@@ -338,18 +338,15 @@ test loops "kill until the count is reached" instead of guessing the number of k
 - **`Pages`**: an event not linked from the last page is refused silently (`t.event` returns
   an empty string).
 
-## Persistence and side by side (D-15, D-39, D-54)
+## Persistence (D-15)
 
 - `character_quests`: read at `CharacterSelect` (`PlayerProfile::quests`, the two queries of
   `Quest.playerEnter`), installed at `EnterWorld` before `QuestList`, written per statement
   (`PersistCommand::Quest`). Per-player rows: written as Java writes them. Rows of scripts this
-  server does not have are never deleted (Java's `AutoDeleteInvalidQuestData` would delete them,
-  and they belong to quests the Java GS still runs).
-- `global_variables`: read at startup; scripts change the copy in memory; written only with
-  `CycleDatabaseWrites = True` at shutdown, as `REPLACE`/`DELETE` of the changed names (not Java's
-  whole-table rewrite, which would clobber the rows other systems of this server write).
-- Boss and event scripts that decide on a global row follow D-53/D-54 (re-read, no writes with the
-  switch off); their cards bring the re-read requests.
+  server does not have are never deleted.
+- `global_variables`: read at startup; scripts change the copy in memory; written at
+  shutdown, as `REPLACE`/`DELETE` of the changed names (not Java's whole-table rewrite, which would
+  clobber the rows other systems of this server write).
 
 ## Added by S-API-03
 
@@ -369,10 +366,6 @@ test loops "kill until the count is reached" instead of guessing the number of k
 - **Config-gated scripts:** `Script::enabled(&World)` (default true). A script whose Java `main` tests a config key
   (`MonumentOfHeroes`: `OlympiadEnabled`, `HandysBlockCheckerEvent`: `EnableBlockCheckerEvent`) returns it there; when false it is not
   installed (no listeners, no `on_load`). The settings are in the world before `install_scripts`.
-- **D-50 re-read of `global_variables`:** `ctx.reread_global_variables(&["Name"], "event", npc, player)`. With `CycleDatabaseWrites` off the
-  rows are read again (`PersistCommand::GlobalVariablesRereadRequest`, `WorldCommand::GlobalVariablesReread`), the copy is replaced (a row
-  the other server deleted is removed, nothing is written back) and then the script's own `on_event("event", npc, player)` runs. A failed
-  read does not run it: `on_global_variables_reread_failed` is called instead. With the switch on it runs at once (queued).
 - **More events** (`events.rs`, `ScriptEvent`, `TerminateReturn`): `ON_CREATURE_ATTACK/ATTACKED/ATTACK_AVOID/SKILL_USE/DAMAGE_DEALT/
   DAMAGE_RECEIVED/KILLED`, `ON_PLAYER_SIT/LEVEL_CHANGED/ITEM_ADD/ITEM_PICKUP/PROFESSION_CHANGE/SUMMON_TALK`, `ON_PLAYABLE_EXP_CHANGED`,
   `ON_NPC_MANOR_BYPASS`, `ON_TRAP_ACTION`, `ON_DAILY_RESET`, `ON_CLAN_WAR_START/FINISH`, `ON_CASTLE_SIEGE_START/FINISH/OWNER_CHANGE`,

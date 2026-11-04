@@ -23,7 +23,7 @@ use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::SystemMessage;
 use l2_util::ObjectId;
 
-use crate::residence::{CastleId, FortId, ResidenceRef, ResidenceWrite, Writes};
+use crate::residence::{CastleId, FortId, ResidenceRef, ResidenceWrite};
 use crate::world::World;
 
 /// `DoorAI.notifyActionAttacked`: the hate a defender near a hit door gets for the attacker.
@@ -47,14 +47,11 @@ impl World {
         let max = self.door(door).map_or(0, |d| d.max_hp());
         self.set_door_current_hp(door, f64::from(max));
         if save {
-            self.write_residence(
-                Writes::Player,
-                ResidenceWrite::CastleDoorUpgrade {
-                    door_id,
-                    ratio,
-                    castle_id: id.0,
-                },
-            );
+            self.residence_write(ResidenceWrite::CastleDoorUpgrade {
+                door_id,
+                ratio,
+                castle_id: id.0,
+            });
         }
     }
 

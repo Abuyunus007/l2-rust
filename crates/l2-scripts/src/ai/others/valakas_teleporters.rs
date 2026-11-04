@@ -1,11 +1,6 @@
 //! The teleporters of Valakas: into the Hall of Flames, into the Lair (the first one starts the
 //! encounter timer of the Valakas script) and out of it.
 // Java: dist/game/data/scripts/ai/others/ValakasTeleporters/ValakasTeleporters.java
-//
-// Side by side (D-50, D-54): the status of the boss decides who may enter, so with
-// `CycleDatabaseWrites` off the `grandboss_data` row is read again first; the entry goes on when the
-// answer comes (`ENTER_LAIR_READ`), and the page is shown then. The boss status itself is written
-// by `set_grand_boss_status`, which keeps it in memory with the switch off.
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
@@ -28,14 +23,10 @@ const TELEPORT_OUT_OF_VALAKAS_LAIR: (i32, i32, i32) = (150037, -57720, -2976);
 
 /// Java `Valakas`' grand boss id.
 const VALAKAS_ID: i32 = 29028;
-/// The event the answer of the re-read row comes back as.
-const ENTER_LAIR_READ: &str = "ENTER_LAIR_READ";
-
-/// Java's `static int playerCount` and the entries waiting for the re-read row.
+/// Java's `static int playerCount`.
 #[derive(Default)]
 struct Entries {
     player_count: i32,
-    waiting: Vec<(ObjectId, ScriptNpc)>,
 }
 
 /// The `ENTER_LAIR` event once the status is known. The returned page is Java's `htmltext`.
@@ -122,17 +113,7 @@ impl Script for ValakasTeleporters {
         npc: Option<ScriptNpc>,
         player: Option<ObjectId>,
     ) -> Option<String> {
-        if event == ENTER_LAIR_READ {
-            // The re-read row is in: the entries that waited go on, each with its page.
-            let waiting = std::mem::take(&mut ctx.state::<Entries>().waiting);
-            for (waiting_player, waiting_npc) in waiting {
-                let htmltext = enter_lair(ctx, waiting_player);
-                ctx.show_result(waiting_player, Some(&htmltext), Some(waiting_npc));
-            }
-            return None;
-        }
-
-        let (npc, player) = (npc?, player?);
+        let (_npc, player) = (npc?, player?);
         let qs = ctx.get_quest_state(player, true)?;
         let mut htmltext = String::new();
 
@@ -147,19 +128,7 @@ impl Script for ValakasTeleporters {
                 }
             }
             "ENTER_LAIR" => {
-                if ctx.world().boss_writes_enabled() {
-                    htmltext = enter_lair(ctx, player);
-                } else {
-                    // D-54: the row decides; read it again first.
-                    ctx.state::<Entries>().waiting.retain(|(p, _)| *p != player);
-                    ctx.state::<Entries>().waiting.push((player, npc));
-                    ctx.world_mut().reread_grand_boss_for_script(
-                        VALAKAS_ID,
-                        "ValakasTeleporters",
-                        ENTER_LAIR_READ,
-                    );
-                    return None;
-                }
+                htmltext = enter_lair(ctx, player);
             }
             "OPEN_DOOR_1" => ctx.open_door(24210004, 0),
             "OPEN_DOOR_2" => ctx.open_door(24210005, 0),
@@ -202,7 +171,7 @@ impl Script for ValakasTeleporters {
 
 #[cfg(test)]
 mod tests {
-    use l2_world::{PersistCommand, ScriptRegistry};
+    use l2_world::ScriptRegistry;
 
     use super::*;
     use crate::testing::{ScriptTest, item};
@@ -297,30 +266,8 @@ mod tests {
     }
 
     #[test]
-    fn the_lair_waits_for_the_re_read_row_when_the_cycle_writes_are_off() {
-        let (mut t, npc) = setup(true);
-        t.take_boss();
-        assert_eq!(event(&mut t, npc, "ENTER_LAIR"), None);
-        let asked = t
-            .take_boss()
-            .iter()
-            .filter(|c| matches!(c, PersistCommand::BossRereadRequest { .. }))
-            .count();
-        assert_eq!(asked, 1);
-        // The row has no Valakas here: Java throws on the unboxed status, the player stays.
-        t.world.run_as_script("ValakasTeleporters", |ctx| {
-            ValakasTeleporters.on_event(ctx, ENTER_LAIR_READ, None, None);
-        });
-        let at = t.world.position_of(ObjectId(1)).unwrap();
-        assert_ne!((at.0, at.1), (204328, -111874));
-    }
-
-    #[test]
     fn without_the_valakas_script_the_lair_page_says_so() {
-        let (mut t, npc) = setup(false);
-        t.world.run_as_script("ValakasTeleporters", |ctx| {
-            ctx.state::<Entries>().waiting.push((ObjectId(1), npc));
-        });
+        let (mut t, _npc) = setup(false);
         let mut page = None;
         t.world.run_as_script("ValakasTeleporters", |ctx| {
             page = Some(enter_lair(ctx, ObjectId(1)))

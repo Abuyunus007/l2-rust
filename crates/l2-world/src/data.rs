@@ -424,10 +424,6 @@ pub struct WorldSettings {
     pub augment: crate::augment::AugmentSettings,
     /// The fishing switches and the championship prizes (M6-FU-08).
     pub fishing: crate::fishing::FishingSettings,
-    /// Rust-only (`SideBySide.ini`, `DailyResetDatabaseWrites`, D-36; M5-FU-03): whether the daily
-    /// reset runs the global `character_reco_bonus` `UPDATE`s. False while the Java game server
-    /// shares the database and runs them itself (D-39).
-    pub daily_reset_database_writes: bool,
     /// The values of the L-02 packets (the wear shop, the dispel of dances), see `leftover.rs`.
     pub leftover: crate::leftover::LeftoverSettings,
     /// The subclass values of `Player.ini` (S-SUB-01).
@@ -503,7 +499,6 @@ impl Default for WorldSettings {
             enchant: crate::enchant::EnchantSettings::default(),
             augment: crate::augment::AugmentSettings::default(),
             fishing: crate::fishing::FishingSettings::default(),
-            daily_reset_database_writes: false,
             leftover: crate::leftover::LeftoverSettings::default(),
             subclass: crate::subclass::SubclassSettings::default(),
             custom_misc: crate::custom::CustomMiscSettings::default(),

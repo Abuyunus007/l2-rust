@@ -351,8 +351,7 @@ mod tests {
         let cfg = parse(text).unwrap();
         assert_eq!(cfg.servers.len(), 2);
         assert_eq!(cfg.servers[1].name, "game");
-        assert_eq!(cfg.servers[1].command, "java");
-        assert_eq!(cfg.servers[1].args[0], "@java.cfg");
+        assert!(cfg.servers[1].command.ends_with("game-server"));
         assert_eq!(cfg.servers[0].admin_endpoint.as_deref(), Some("127.0.0.1:7901"));
         assert!(cfg.token.is_empty());
     }

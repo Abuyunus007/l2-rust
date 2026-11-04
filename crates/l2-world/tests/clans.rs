@@ -579,8 +579,8 @@ fn clans_load_like_clan_restore() {
     assert_eq!(tigers.at_war_attackers, [CLAN]);
     // A penalty still running stays.
     assert!(tigers.char_penalty_expiry_time > now_ms());
-    // Side by side the start-up check leaves the rows to the Java game server (D-49).
-    assert!(clan_writes(&s.outs.take()).is_empty());
+    // The start-up check writes the clan that lost its alliance.
+    assert!(!clan_writes(&s.outs.take()).is_empty());
 
     // The ranks come one second later: level 5 is first, level 2 has none.
     assert_eq!(s.clan().rank, 0);
@@ -591,7 +591,6 @@ fn clans_load_like_clan_restore() {
 #[test]
 fn the_alliance_check_writes_with_the_maintenance_switch() {
     let mut s = Scene::with(ClanSettings {
-        maintenance_database_writes: true,
         ..ClanSettings::default()
     });
     let mut record = lions(5, vec![member(P1, 1, 0)]);
@@ -1725,9 +1724,6 @@ fn a_leader_change_waits_for_wednesday_without_instant_activation() {
             .html
             .contains("9000-07-in-progress")
     );
-    // Without `ClanMaintenanceDatabaseWrites` the weekly job is the Java game server's.
-    s.world.clan_leader_apply();
-    assert_eq!(s.clan().leader, Some(ObjectId(P1)));
     s.vm_command(P1, "cancel_clan_leader_change");
     assert!(
         decoded::<NpcHtmlMessage>(&s.take(), P1, "NPC_HTML_MESSAGE")[0]
@@ -1763,7 +1759,6 @@ fn a_leader_change_waits_for_wednesday_without_instant_activation() {
 #[test]
 fn the_weekly_leader_change_runs_with_the_maintenance_switch() {
     let mut s = Scene::with(ClanSettings {
-        maintenance_database_writes: true,
         ..ClanSettings::default()
     });
     let mut record = lions_of_three(5, 0x2);
@@ -2012,7 +2007,7 @@ fn sub_pledges_are_created_renamed_and_led() {
 // ---------------------------------------------------------------------------------- dissolve
 
 #[test]
-fn a_dissolution_waits_and_leaves_the_rows_to_java_side_by_side() {
+fn a_dissolution_waits_and_then_deletes_the_rows() {
     let mut s = Scene::with(ClanSettings {
         alt_clan_dissolve_days: 0,
         ..ClanSettings::default()
@@ -2045,12 +2040,14 @@ fn a_dissolution_waits_and_leaves_the_rows_to_java_side_by_side() {
     assert_eq!(s.world.clan_id_of(ObjectId(P1)), 0);
     // The leader waits 10 days for a new clan.
     assert!(s.state(P1).clan_create_expiry_time > now_ms() + 9 * DAY_MS);
-    // D-49: no `DELETE`s and no member rows from this server.
+    // The clan row and the member rows go.
     let writes = clan_writes(&s.outs.take());
     assert!(
-        !writes
-            .iter()
-            .any(|w| matches!(w, ClanWrite::Delete { .. } | ClanWrite::RemoveMember { .. })),
+        writes.iter().any(|w| matches!(w, ClanWrite::Delete { .. })),
+        "{writes:?}"
+    );
+    assert!(
+        writes.iter().any(|w| matches!(w, ClanWrite::RemoveMember { .. })),
         "{writes:?}"
     );
 }
@@ -2059,7 +2056,6 @@ fn a_dissolution_waits_and_leaves_the_rows_to_java_side_by_side() {
 fn a_dissolution_deletes_the_rows_with_the_maintenance_switch() {
     let mut s = Scene::with(ClanSettings {
         alt_clan_dissolve_days: 0,
-        maintenance_database_writes: true,
         ..ClanSettings::default()
     });
     s.load(vec![lions_of_three(5, 0)]);

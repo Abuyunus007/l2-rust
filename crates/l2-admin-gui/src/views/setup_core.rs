@@ -21,16 +21,13 @@ use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
-use l2_config::ini_edit::{self, IniDoc, IniEditError};
+use l2_config::ini_edit::{self, IniEditError};
 use l2_config::{IniFile, JdbcUrl};
 use l2_supervisor::launcher::supervisor_exe_name;
 
 /// The part of the Java `URL` after the `?` (Java default of `Database.ini`); only host, port and
 /// database name of the URL change.
 pub const DEFAULT_URL_QUERY: &str = "useUnicode=true&characterEncoding=utf-8&allowPublicKeyRetrieval=true&useSSL=false&connectTimeout=10000&interactiveClient=true&sessionVariables=wait_timeout=600,interactive_timeout=600&autoReconnect=true";
-
-/// Name of the optional Java game server in `supervisor.ini`.
-pub const JAVA_SERVER_NAME: &str = "javagame";
 
 /// Java defaults of the keys the wizard sets.
 pub const DEFAULT_DB_HOST: &str = "localhost";
@@ -284,16 +281,6 @@ pub fn execute_copy(plan: &CopyPlan, overwrite: bool) -> io::Result<CopyResult> 
 // ---------------------------------------------------------------------------------------------
 // The form
 
-/// One switch of `SideBySide.ini`, with the help text of the file.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct Switch {
-    pub key: String,
-    pub help: String,
-    pub value: bool,
-    /// The value in the file when it was read; only a changed switch is written.
-    pub original: bool,
-}
-
 /// What the user can set. The password lives only here (and in `Database.ini`): it is not part of
 /// the GUI settings and `Debug` leaves it out.
 #[derive(Clone, PartialEq, Eq)]
@@ -312,9 +299,6 @@ pub struct Form {
     pub server_id: String,
     pub datapack_root: String,
     pub geodata_dir: String,
-    pub java_enabled: bool,
-    pub java_folder: String,
-    pub switches: Vec<Switch>,
     /// Write `supervisor.ini` even if the file exists (the old one is kept as `.bak`).
     pub rewrite_supervisor: bool,
 }
@@ -333,7 +317,6 @@ impl std::fmt::Debug for Form {
             .field("server_id", &self.server_id)
             .field("datapack_root", &self.datapack_root)
             .field("geodata_dir", &self.geodata_dir)
-            .field("java_enabled", &self.java_enabled)
             .finish_non_exhaustive()
     }
 }
@@ -363,9 +346,6 @@ impl Form {
             server_id: "1".into(),
             datapack_root: datapack,
             geodata_dir: fwd(&geodata),
-            java_enabled: false,
-            java_folder: String::new(),
-            switches: Vec::new(),
             rewrite_supervisor: true,
         }
     }
@@ -423,13 +403,6 @@ impl Form {
         }
 
         form.rewrite_supervisor = !layout.supervisor_ini().is_file();
-        if let Ok(config) = l2_supervisor::config::SupervisorConfig::load(&layout.supervisor_ini())
-            && let Some(java) = config.servers.iter().find(|s| s.name == JAVA_SERVER_NAME)
-        {
-            form.java_enabled = true;
-            form.java_folder = java.working_dir.as_deref().map(fwd).unwrap_or_default();
-        }
-        form.switches = load_switches(&layout.game_config("SideBySide.ini"));
         form
     }
 
@@ -495,9 +468,6 @@ impl Form {
         if game_port != 0 && (game_port == login_client_port || game_port == login_server_port) {
             problems.push("The game port must differ from the login ports".into());
         }
-        if self.java_enabled && self.java_folder.trim().is_empty() {
-            problems.push("Java game server: the folder is empty".into());
-        }
         if problems.is_empty() {
             Ok(Values {
                 db_port,
@@ -520,37 +490,6 @@ pub struct Values {
     pub login_server_port: u16,
     pub game_port: u16,
     pub server_id: u8,
-}
-
-/// The True/False keys of `SideBySide.ini` with their help text (comment lines above the key).
-pub fn load_switches(path: &Path) -> Vec<Switch> {
-    let Ok(text) = fs::read_to_string(path) else {
-        return Vec::new();
-    };
-    IniDoc::parse(&text)
-        .entries()
-        .into_iter()
-        .filter_map(|entry| {
-            let value = match entry.value.trim().to_ascii_lowercase().as_str() {
-                "true" => true,
-                "false" => false,
-                _ => return None,
-            };
-            let help = entry
-                .help
-                .iter()
-                .map(|l| l.trim())
-                .filter(|l| !l.starts_with("Default:"))
-                .collect::<Vec<_>>()
-                .join(" ");
-            Some(Switch {
-                key: entry.key,
-                help,
-                value,
-                original: value,
-            })
-        })
-        .collect()
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -671,20 +610,6 @@ pub fn plan_edits(layout: &Layout, form: &Form, values: &Values) -> Vec<FileEdit
         });
     }
 
-    if form.java_enabled {
-        let changed: Vec<_> = form
-            .switches
-            .iter()
-            .filter(|s| s.value != s.original)
-            .map(|s| (s.key.clone(), if s.value { "True" } else { "False" }.to_owned()))
-            .collect();
-        if !changed.is_empty() {
-            edits.push(FileEdit {
-                path: layout.game_config("SideBySide.ini"),
-                changes: changed,
-            });
-        }
-    }
     edits
 }
 
@@ -746,7 +671,7 @@ pub fn apply(layout: &Layout, form: &Form) -> Result<ApplyReport, SetupError> {
             backup.push(".bak");
             fs::copy(&ini_path, PathBuf::from(backup)).map_err(io_err)?;
         }
-        let content = supervisor_ini_text(layout, form);
+        let content = supervisor_ini_text(layout);
         ini_edit::write_atomic(&ini_path, &content).map_err(|e| match e {
             IniEditError::Io(source) => io_err(source),
             other => SetupError::Ini {
@@ -764,7 +689,7 @@ pub fn apply(layout: &Layout, form: &Form) -> Result<ApplyReport, SetupError> {
 
 /// Text of `supervisor.ini`. `Listen` and the admin endpoints are kept from the existing files
 /// (defaults 127.0.0.1:7900, :7901 and :7902); `Token` and `AdminToken` stay empty (D-56).
-pub fn supervisor_ini_text(layout: &Layout, form: &Form) -> String {
+pub fn supervisor_ini_text(layout: &Layout) -> String {
     let paths = layout.supervisor_paths();
     let listen = l2_supervisor::config::SupervisorConfig::load(&layout.supervisor_ini())
         .map(|c| c.listen.to_string())
@@ -777,13 +702,9 @@ pub fn supervisor_ini_text(layout: &Layout, form: &Form) -> String {
     };
     let login_admin = bind(layout.login_config("Admin.ini"), "127.0.0.1:7901");
     let game_admin = bind(layout.game_config("Admin.ini"), "127.0.0.1:7902");
-    let servers = if form.java_enabled {
-        format!("login, game, {JAVA_SERVER_NAME}")
-    } else {
-        "login, game".to_owned()
-    };
+    let servers = "login, game";
 
-    let mut out = format!(
+    let out = format!(
         "# Supervisor settings, written by the setup wizard (D-36). Same syntax as the Java .ini files.\n\
          # Relative paths are relative to this file's folder.\n\
          \n\
@@ -821,18 +742,6 @@ pub fn supervisor_ini_text(layout: &Layout, form: &Form) -> String {
         gc = paths.game_command,
         gd = paths.game_dir,
     );
-    if form.java_enabled {
-        // Same command line as GameServer.sh / GameServer.vbs; needs `java` on the PATH.
-        let folder = fwd(Path::new(form.java_folder.trim()));
-        out.push_str(&format!(
-            "\n# The Java game server next to the Rust one (side by side, D-39). Start it by hand.\n\
-             Server.{JAVA_SERVER_NAME}.Command = java\n\
-             Server.{JAVA_SERVER_NAME}.Args = @java.cfg -jar ../libs/GameServer.jar\n\
-             Server.{JAVA_SERVER_NAME}.WorkingDir = {folder}\n\
-             Server.{JAVA_SERVER_NAME}.Autostart = False\n\
-             Server.{JAVA_SERVER_NAME}.RestartOnExitCode = 2\n"
-        ));
-    }
     out
 }
 
@@ -1062,10 +971,6 @@ mod tests {
             "# g\nGeoDataPath = ./data/geodata/\n",
         );
         write(
-            &dist.join("game/config/SideBySide.ini"),
-            "# Daily reset.\n# Set True only alone.\n# Default: False\nDailyResetDatabaseWrites = False\n\nMailExpiryDatabaseWrites = False\n",
-        );
-        write(
             &dist.join("game/config/Custom/Banking.ini"),
             "BankingEnabled = False\n",
         );
@@ -1183,7 +1088,6 @@ mod tests {
         let mut form = Form::load(&layout);
         assert_eq!(form.db_name, "l2jmobiush5");
         assert_eq!(form.datapack_root, fwd(&layout.datapack_root));
-        assert!(!form.switches.is_empty(), "SideBySide.ini switches");
         form.db_host = "db.example".into();
         form.db_name = "other".into();
         form.db_password = "pw#1".into();
@@ -1361,43 +1265,17 @@ mod tests {
         form.game_port = "2106".into();
         form.server_id = "0".into();
         form.db_password = " lead".into();
-        form.java_enabled = true;
         let Err(problems) = form.parse() else {
             panic!("must be invalid");
         };
-        assert!(problems.len() >= 5, "{problems:?}");
+        assert!(problems.len() >= 4, "{problems:?}");
         assert!(matches!(apply(&layout, &form), Err(SetupError::Invalid(_))));
-    }
-
-    #[test]
-    fn side_by_side_switches_come_with_help_and_only_changes_are_written() {
-        let (_dir, layout) = fake_repo();
-        copied(&layout);
-        let mut form = Form::load(&layout);
-        assert_eq!(form.switches.len(), 2);
-        assert_eq!(form.switches[0].key, "DailyResetDatabaseWrites");
-        assert_eq!(form.switches[0].help, "Daily reset. Set True only alone.");
-        form.switches[1].value = true;
-        // Not used while the Java entry is off.
-        apply(&layout, &form).unwrap();
-        assert!(
-            fs::read_to_string(layout.game_config("SideBySide.ini"))
-                .unwrap()
-                .contains("MailExpiryDatabaseWrites = False")
-        );
-        form.java_enabled = true;
-        form.java_folder = "C:/java/game".into();
-        apply(&layout, &form).unwrap();
-        let text = fs::read_to_string(layout.game_config("SideBySide.ini")).unwrap();
-        assert!(text.contains("MailExpiryDatabaseWrites = True"));
-        assert!(text.contains("DailyResetDatabaseWrites = False"));
     }
 
     #[test]
     fn repo_supervisor_ini_parses_and_has_no_token() {
         let (_dir, layout) = fake_repo();
-        let mut form = Form::defaults(&layout);
-        let text = supervisor_ini_text(&layout, &form);
+        let text = supervisor_ini_text(&layout);
         let ini = IniFile::parse("supervisor.ini", &text).unwrap();
         let config = l2_supervisor::config::SupervisorConfig::from_ini(&ini, &layout.run_folder).unwrap();
         assert_eq!(config.token, "");
@@ -1419,18 +1297,6 @@ mod tests {
         assert_eq!(config.servers[1].args, ["--root", "."]);
         assert!(!config.servers.iter().any(|s| s.autostart));
         assert!(config.servers.iter().all(|s| s.admin_token.is_empty()));
-
-        form.java_enabled = true;
-        form.java_folder = "C:\\java\\game".into();
-        let text = supervisor_ini_text(&layout, &form);
-        let ini = IniFile::parse("supervisor.ini", &text).unwrap();
-        let config = l2_supervisor::config::SupervisorConfig::from_ini(&ini, &layout.run_folder).unwrap();
-        assert_eq!(config.servers.len(), 3);
-        let java = &config.servers[2];
-        assert_eq!(java.name, JAVA_SERVER_NAME);
-        assert_eq!(java.command, "java");
-        assert_eq!(java.args, ["@java.cfg", "-jar", "../libs/GameServer.jar"]);
-        assert!(text.contains("Server.javagame.WorkingDir = C:/java/game\n"));
     }
 
     #[test]
@@ -1438,7 +1304,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let bin = dir.path().join("bin");
         let layout = Layout::package(dir.path(), &bin);
-        let text = supervisor_ini_text(&layout, &Form::defaults(&layout));
+        let text = supervisor_ini_text(&layout);
         assert!(text.contains("Server.login.WorkingDir = ../login\n"));
         assert!(text.contains("Server.game.WorkingDir = ../game\n"));
         assert!(text.contains(&format!(

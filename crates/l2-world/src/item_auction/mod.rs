@@ -26,22 +26,6 @@
 // with the Java GS. Statements are Java's, as [`ItemAuctionWrite`] through
 // `PersistCommand::ItemAuction`. The winner's item is a new `items` row (`loc = WAREHOUSE`).
 //
-// # Side by side (D-53)
-// `item_auction` rows and the end of an auction are global: with `CycleDatabaseWrites = False`
-// ([`ItemAuctionSettings::cycle_database_writes`]) this server
-// - writes no `item_auction` row and deletes none (new auctions, the start and the end, expired
-//   or invalid rows),
-// - hands out no winner's item and clears no canceled bid at the end (the Java GS does, from the
-//   shared `item_auction_bid` rows),
-// - reads the auctions of an instance again before it shows them, takes a bid or returns a
-//   canceled one is refused ("This feature is disabled."): a bid or a return Java's memory
-//   never saw would lose the adena when Java ends the auction,
-// - reads the auctions of an instance again before it shows them
-//   (`PersistCommand::ItemAuctionRequest` / `WorldCommand::ItemAuctionReread`, D-50: a failed
-//   read refuses the action),
-// - makes no auction of its own, keeps the states in memory and moves them with its own timers,
-//   so a player sees the countdown; what the Java GS wrote (a state further on) wins at every
-//   re-read.
 //
 // # Left out on purpose
 // - Java sends the "bidder exists" extension message from a thread pool task; it is sent at once
@@ -174,8 +158,6 @@ pub struct ItemAuctionSettings {
     /// `ALT_ITEM_AUCTION_TIME_EXTENDS_ON_BID` (`AltItemAuctionTimeExtendsOnBid` * 1000),
     /// milliseconds.
     pub time_extends_on_bid_ms: i64,
-    /// `CycleDatabaseWrites` of `config/SideBySide.ini` (D-53), see the module notes.
-    pub cycle_database_writes: bool,
 }
 
 impl Default for ItemAuctionSettings {
@@ -184,7 +166,6 @@ impl Default for ItemAuctionSettings {
             enabled: true,
             expired_after_days: 14,
             time_extends_on_bid_ms: 0,
-            cycle_database_writes: false,
         }
     }
 }
@@ -223,15 +204,6 @@ pub enum ItemAuctionWrite {
     /// `ItemAuctionManager.deleteAuction`: `DELETE FROM item_auction WHERE auctionId=?`, then
     /// `DELETE FROM item_auction_bid WHERE auctionId=?`. Global.
     DeleteAuction { auction_id: i32 },
-}
-
-/// What to do when the re-read of an instance's rows is answered (D-50).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ItemAuctionThen {
-    /// `RequestInfoItemAuction`.
-    Info { player: ObjectId },
-    /// The `ItemAuction show` bypass.
-    Show { player: ObjectId },
 }
 
 /// The item auction timers (one `TimerKind::ItemAuction`).

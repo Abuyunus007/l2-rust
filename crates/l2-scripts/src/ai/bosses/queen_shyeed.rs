@@ -4,10 +4,6 @@
 //
 // The Java constructor is `on_load` (it decides on the `QueenShyeedRespawn` row loaded at start).
 //
-// Side by side (D-54): the row is a global variable. `respawn` reads it again before it decides
-// (`ctx.reread_global_variables`); with `CycleDatabaseWrites` off the row written here stays in
-// memory.
-//
 // The zones 200103 (`MOB_BUFF_ZONE`) is commented out in Java and is not touched here either.
 
 use l2_protocol_game::NpcStringId;
@@ -33,8 +29,6 @@ const RESPAWN_VARIABLE: &str = "QueenShyeedRespawn";
 // Events.
 const EVENT_RESPAWN: &str = "respawn";
 const EVENT_DESPAWN: &str = "despawn";
-/// Not a Java event: the continuation of the D-54 re-read `respawn` asks for.
-const EVENT_RESPAWN_ROW_READ: &str = "D54_RESPAWN_ROW_READ";
 
 /// Java `ai.bosses.QueenShyeed.QueenShyeed`.
 pub struct QueenShyeed;
@@ -65,11 +59,7 @@ impl Script for QueenShyeed {
         _player: Option<ObjectId>,
     ) -> Option<String> {
         match event {
-            EVENT_RESPAWN => {
-                // D-54: the row decides, so it is read again first.
-                ctx.reread_global_variables(&[RESPAWN_VARIABLE], EVENT_RESPAWN_ROW_READ, None, None);
-            }
-            EVENT_RESPAWN_ROW_READ => spawn_shyeed(ctx),
+            EVENT_RESPAWN => spawn_shyeed(ctx),
             EVENT_DESPAWN => {
                 // Java: `npc.isDead()` on the NPC the timer was started with.
                 let npc = npc?;
@@ -128,7 +118,7 @@ fn start_respawn(ctx: &mut ScriptCtx<'_>) {
 
 #[cfg(test)]
 mod tests {
-    use l2_world::{ScriptRegistry, ScriptSettings, WorldCommand};
+    use l2_world::{ScriptRegistry, ScriptSettings};
 
     use super::*;
     use crate::testing::ScriptTest;
@@ -183,7 +173,6 @@ mod tests {
                     std::sync::Arc::new(l2_data::MapRegions::load(root)),
                 );
                 world.set_script_settings(ScriptSettings {
-                    cycle_database_writes: true,
                     ..ScriptSettings::default()
                 });
                 world.set_global_variables(rows);
@@ -267,32 +256,5 @@ mod tests {
         assert!(!t.in_world(shyeed));
         assert!(row(&t) > now_ms());
         assert!(!t.world.is_effect_zone_enabled(MOB_BUFF_DISPLAY_ZONE));
-    }
-
-    #[test]
-    fn the_respawn_event_reads_the_row_again_with_the_switch_off() {
-        let mut registry = ScriptRegistry::new();
-        registry.add(QueenShyeed);
-        let mut t = ScriptTest::new_with(registry, NPCS, "", &[], |world, _| {
-            world.set_script_settings(ScriptSettings {
-                cycle_database_writes: false,
-                ..ScriptSettings::default()
-            });
-        });
-        // Started without a row: she is there. A respawn asks for the row first.
-        let first = t.npcs_of(SHYEED)[0];
-        t.world.run_as_script("QueenShyeed", |ctx| {
-            ctx.notify_event(EVENT_RESPAWN, None, None);
-        });
-        assert_eq!(t.world.script_rereads_waiting(), 1);
-        // The Java GS stored a respawn in the future: she does not come again.
-        t.world.handle(WorldCommand::GlobalVariablesReread {
-            token: 1,
-            result: Ok(vec![(
-                RESPAWN_VARIABLE.to_owned(),
-                Some((now_ms() + 7_200_000).to_string()),
-            )]),
-        });
-        assert_eq!(t.npcs_of(SHYEED), vec![first]);
     }
 }

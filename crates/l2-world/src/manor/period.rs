@@ -12,7 +12,7 @@ use tracing::{info, warn};
 
 use super::{CropProcure, ManorLoad, ManorMode, ManorSettings, ManorTimer, SeedProduction};
 use crate::outbox::{ItemRowOp, PersistCommand};
-use crate::residence::{CastleId, Writes};
+use crate::residence::CastleId;
 use crate::timer::{TimerKind, TimerWheel};
 use crate::warehouse::ContainerRef;
 use crate::world::{World, unix_ms_now};
@@ -385,7 +385,6 @@ impl World {
                     self.castle_add_to_treasury_no_tax(
                         CastleId(castle_id),
                         crop.amount.wrapping_mul(crop.price),
-                        Writes::Job,
                     );
                 }
             }
@@ -472,26 +471,14 @@ impl World {
                 );
             } else {
                 // Deduct manor cost from treasury.
-                self.castle_add_to_treasury_no_tax(
-                    CastleId(castle_id),
-                    manor_cost.wrapping_neg(),
-                    Writes::Job,
-                );
+                self.castle_add_to_treasury_no_tax(CastleId(castle_id), manor_cost.wrapping_neg());
             }
         }
     }
 
     /// Java `ClanWarehouse.addItem(REWARD, itemId, count, null, null)`: the harvested crops join
-    /// the clan warehouse. Only with `SiegeDatabaseWrites` (D-49, D-51): the clan warehouse is read
-    /// from the database at every window (M6-SYNC-01) and the Java game server hands the same crops
-    /// out at the same hour, so a copy in memory would only be lost at the next window.
+    /// the clan warehouse.
     fn manor_reward_clan_warehouse(&mut self, clan_id: i32, item_id: i32, count: i64) {
-        if !self.siege_database_writes() {
-            tracing::debug!(
-                "SideBySide: {count} of item {item_id} not added to the warehouse of clan {clan_id} (SiegeDatabaseWrites = False)"
-            );
-            return;
-        }
         let Some(templates) = self.item_templates() else {
             return;
         };

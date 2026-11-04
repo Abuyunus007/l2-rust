@@ -52,8 +52,6 @@ pub struct CursedSettings {
     /// Java `GeneralConfig.ALLOW_CURSED_WEAPONS` (`AllowCursedWeapons`, default True): without it
     /// the manager loads nothing.
     pub allow_cursed_weapons: bool,
-    /// `CycleDatabaseWrites` of `config/SideBySide.ini` (D-53, `game_server::cycle_database_writes`).
-    pub cycle_database_writes: bool,
     /// Tests: the unix time (ms) the world clock starts at, so end times are reproducible.
     /// `None` reads the system clock.
     pub clock_override_unix_ms: Option<i64>,

@@ -435,9 +435,8 @@ impl Script for TowerOfNaia {
         s.controller = controller;
         s.counter = 90;
         init_spore_challenge(ctx);
-        // `spawnElpy()` decides on the `elpy_respawn_time` row, which the Java GS may have
-        // changed (D-50): read it first.
-        ctx.reread_global_variables(&["elpy_respawn_time"], "spawn_elpy", None, None);
+        // `spawnElpy()` decides on the `elpy_respawn_time` row.
+        ctx.notify_event("spawn_elpy", None, None);
     }
 
     fn on_first_talk(&self, ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, player: ObjectId) -> Option<String> {

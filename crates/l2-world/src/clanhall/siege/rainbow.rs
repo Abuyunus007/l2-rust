@@ -337,8 +337,8 @@ impl World {
         self.rainbow().map_or(-1, |s| s.generated)
     }
 
-    fn rainbow_write(&mut self, write: HallSiegeWrite) -> bool {
-        self.siege_write(ResidenceWrite::HallSiege(write))
+    fn rainbow_write(&mut self, write: HallSiegeWrite) {
+        self.residence_write(ResidenceWrite::HallSiege(write));
     }
 
     fn page(&self, player: ObjectId, name: &str) -> String {

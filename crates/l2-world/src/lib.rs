@@ -195,8 +195,7 @@ pub use inventory::handlers::SavedItemReuse;
 pub use inventory::handlers::shots::{ShotHandler, ShotType};
 pub use item_auction::{
     AuctionItemDef, DateGenerator, InstanceDef, ItemAuctionInput, ItemAuctionLoad, ItemAuctionRecord,
-    ItemAuctionSettings, ItemAuctionState, ItemAuctionThen, ItemAuctionTimer, ItemAuctionWorld,
-    ItemAuctionWrite,
+    ItemAuctionSettings, ItemAuctionState, ItemAuctionTimer, ItemAuctionWorld, ItemAuctionWrite,
 };
 pub use l2_util::{ObjectId, WorldRng};
 pub use leftover::{LeftoverInput, LeftoverSettings, LeftoverState, LeftoverTimer};

@@ -1,8 +1,6 @@
 # Design: castles, sieges, fortresses, clan halls, manor, Territory War (M7)
 
-Builds on `docs/design/m6-social.md`. Owner decisions (2026-10-23): Sieghardt runs the real sieges
-while both servers share the DB (D-51); Kain runs GM-started test sieges and writes their results
-only with `SiegeDatabaseWrites = True`. Order inside M7: residences core, castle sieges and the
+Builds on `docs/design/m6-social.md`. The Rust server runs and writes every siege (D-58). Order inside M7: residences core, castle sieges and the
 castle NPCs, fortresses and clan halls, the manor, Territory War last.
 
 ## Where it lives
@@ -21,14 +19,7 @@ castle NPCs, fortresses and clan halls, the manor, Territory War last.
 ## Rules
 - Residence, siege and clan references are ids; no back pointers. The `// M7:` markers in M5/M6
   code are the integration points: each card lists the ones it resolves.
-- **Side by side (D-49, D-51):** every scheduled siege/fort/hall/manor/territory job that writes
-  global rows runs its DB part only with its `SideBySide.ini` switch on (`SiegeDatabaseWrites`,
-  default `False`; one switch for all siege-like results is enough). Without it the job still runs
-  in this world (a GM test siege works end to end) but writes nothing global. Per-player writes
-  (a player's items, a clan's own reputation from a kill) follow the normal rules.
-- **Shared rows (D-50):** residence owners and siege registrations change on Sieghardt while Kain
-  runs; Kain re-reads them at startup and before acting on them (registration windows, chamberlain
-  pages, tax collection), through the outbox and a world command back, never inside a tick.
+- Every scheduled siege/fort/hall/manor/territory job writes its global rows; per-player writes follow the normal rules. Residence owners and registrations are read at startup and before a card acts on them (registration windows, chamberlain pages), through the outbox and a world command back, never inside a tick.
 - Castle tax: `getTotalTaxRate` and the treasury share in shops and multisell (`// M7:` markers of
   SHOP-01 and MULTISELL-01). The treasury add is a per-castle write: only with the switch on while
   both run (Sieghardt collects the real tax).
@@ -37,10 +28,10 @@ castle NPCs, fortresses and clan halls, the manor, Territory War last.
 All on `World`; types in `l2_world::residence`.
 - Ids/refs: `CastleId`, `FortId`, `ClanHallId`, `ResidenceRef::{Castle,Fort,ClanHall}`; public fields on `Castle`, `Fort`, `ClanHall` (`ClanHallKind::{Auctionable,Siegable}`): `owner_id`, `siege_date`, `time_registration_over(_date)`, `doors`, zone ids, `former_owner`, `first_mid_victory`, `ticket_buy_count`, `state`, `castle_id`, `supply_level`, `last_owned_time`.
 - Lookups: `castle/castles/castle_by_owner/castle_by_name/castle_index/castle_at/castle_contains/castle_distance/nearest_castle/has_owned_castle`, `npc_castle/npc_is_in_town/npc_castle_and_town`; `fort/forts/fort_by_owner/fort_by_name/fort_at/fort_contains/nearest_fort/npc_fort`; `clan_hall/clan_halls/clan_hall_is_free/auctionable_hall_by_owner/clan_hall_by_owner/clan_hall_at/nearby_auctionable_hall/nearby_clan_hall`; `residence_name`, `residence_owner_id`, `residence_doors`, `residence_door`.
-- D-51 writes: `siege_database_writes()`, `siege_write(ResidenceWrite) -> bool` for every global siege-like write, `write_residence(Writes::{Player,Job,Never}, ResidenceWrite)`; `ResidenceWrite` carries Java's statements (incl. `CastleTicketBuyCount`, `FortState`, `FortSupplyLevel`, `SiegableHall`). Add new variants there for new tables.
+- Writes: `residence_write(ResidenceWrite)`; `ResidenceWrite` carries Java's statements (incl. `CastleTicketBuyCount`, `FortState`, `FortSupplyLevel`, `SiegableHall`). Add new variants there for new tables.
 - Owners: `castle_set_owner`, `castle_remove_owner`, `castle_update_clans_reputation`; `fort_set_owner(id, clan, update_rep) -> bool`, `fort_remove_owner`, `fort_set_state`, `fort_raise_supply_level`, `fort_set_supply_level`, `fort_save_variables`, `fort_update_clans_reputation`, `fort_set_visible_flag`; `clan_hall_table_set_owner`, `clan_hall_table_set_free`, `clan_hall_set_owner`, `clan_hall_free`.
-- Treasury/tax: `castle_add_to_treasury` (Job), `castle_add_to_treasury_no_tax(id, amount, Writes)`, `castle_set_tax_percent`, `castle_set_show_npc_crest`, `castle_set_ticket_buy_count`.
-- Functions: `residence_function(res, type)`, `residence_functions`, `residence_update_functions(..)`, `residence_remove_function(res, type, Writes)`, `CASTLE_FUNC_*`, `HALL_FUNC_*`.
+- Treasury/tax: `castle_add_to_treasury`, `castle_add_to_treasury_no_tax(id, amount)`, `castle_set_tax_percent`, `castle_set_show_npc_crest`, `castle_set_ticket_buy_count`.
+- Functions: `residence_function(res, type)`, `residence_functions`, `residence_update_functions(..)`, `residence_remove_function(res, type)`, `CASTLE_FUNC_*`, `HALL_FUNC_*`.
 - Doors/zones: `residence_open_close_door`, `clan_hall_open_close_doors`, `residence_banish_foreigners`, `castle_oust_all_players`, `agit_deco_info`.
 - Skills: `give_residential_skills` / `remove_residential_skills(res, player)`.
 - Re-read before acting (D-50): `request_residence_reread(res, ResidenceReadThen)` → `WorldCommand::ResidenceReread` → `on_residence_reread`; add your own `ResidenceReadThen` variants; a failed read refuses the follow-up.
@@ -51,8 +42,8 @@ All on `World`; types in `l2_world::residence`.
 In `l2_world::fort` (`World::fort_*`); state in `FortWorld` (`world.fort`), timers `TimerKind::Fort(FortTimer)`, client input `ClientInput::Fort(FortInput)`.
 - Siege: `fort_add_attacker/fort_remove_attacker`, `fort_start_siege/fort_end_siege`, `fort_siege_in_progress`, `fort_player_in_siege`, `fort_clan_is_registered`, `fort_sieges_remove_attacker` (clan destroyed), `fort_killed_commander`, `fort_siege_add_flag/fort_siege_killed_flag/fort_siege_flags` (for castle-side `SiegeFlag`/headquarters), `fort_reset_doors`, `fort_player_left`.
 - Zone: `fort_siege_zone_on_enter/on_exit` are called from `zones.rs` for `ZoneKind::Siege` zones with a `fortId`; castle zones stay with SIEGE-01.
-- Updater: `fort_start_updaters_on_load`, `fort_restart_updaters`, `fort_time_till_next_update`; the money-moving part runs only with `SiegeDatabaseWrites` (D-51), blood oath counts go up in memory regardless.
-- Writes: `ResidenceWrite::FortSiege(FortSiegeWrite)` (siege date, attacker rows, clear, blood oath count). Re-reads: `ResidenceReadKind::FortSiege`, `ResidenceReadThen::Fort(FortThen)`; the automatic start chain does nothing without the switch, `//startfortsiege` always works.
+- Updater: `fort_start_updaters_on_load`, `fort_restart_updaters`, `fort_time_till_next_update`.
+- Writes: `ResidenceWrite::FortSiege(FortSiegeWrite)` (siege date, attacker rows, clear, blood oath count). Re-reads: `ResidenceReadKind::FortSiege`, `ResidenceReadThen::Fort(FortThen)`.
 - Combat flag: `CombatFlag` items are tracked in `FortState`; hooks in pickup, equip, death, logout and the `TakeFort`/`TakeFortStart` effects.
 - NPCs: FortManager/FortDoorman/FortLogistics/FortCommander are dispatched from `fort_npc_bypass_feedback` and `fort_show_chat_window`; the scripts FortressSiegeManager and FortressArcherCaptain are built in (`fort_script_first_talk/fort_script_event`).
 - Left: Territory War checks (`M7-TW-01`, in `fort_add_attacker`). Done since: guard AIs and door damage/repair (SIEGE-02), the fort restart point (SIEGE-01), the `CastleAmbassador` dialog (NPC-01).
@@ -68,7 +59,7 @@ In `l2_world::clanhall::siege` (`World::hall_*`); state in `HallSiegeWorld` (`wo
 - Queries: `hall_has_siege`, `hall_siege_status` (`SiegeStatus::{Registering,WaitingBattle,Running}`), `hall_is_in_siege/_registering/_waiting_battle`, `hall_next_siege_time`, `hall_siege_attacker_clans`, `hall_siege_is_attacker`, `hall_siege_attacker_clan`, `hall_siege_near(x, y)`, `hall_siege_allies_of(npc)` (the list `SpecialSiegeGuardAI.getAlly()` keeps for M7-SIEGE-02).
 - GM / admin (`admin/chsiege.rs` uses them): `hall_prepare_owner`, `hall_start_siege`, `hall_end_siege`, `hall_cancel_siege_task`, `hall_set_next_siege_date`, `hall_add_attacker/_remove_attacker/_clear_attackers`, `hall_update_next_siege`.
 - Registration: `RequestJoinSiege` / `RequestSiegeAttackerList` of a hall id (`hall_register_clan`, `hall_unregister_clan`, `hall_siege_info_packet`, `hall_attacker_list_packet`); the hall row is read again first (`ResidenceReadThen::HallSiege`), the flag war and Rainbow Springs tables before a messenger event (`ResidenceReadKind::HallSiege`).
-- Writes: `ResidenceWrite::HallSiege(HallSiegeWrite)` plus the existing `SiegableHall` row, all behind `SiegeDatabaseWrites` (D-51); the automatic `PrepareOwner` chain does nothing without the switch.
+- Writes: `ResidenceWrite::HallSiege(HallSiegeWrite)` plus the existing `SiegableHall` row; the automatic `PrepareOwner` chain does nothing without the switch.
 - For the later cards: `hall_open_close_door(hall, door_id, open)` and `hall_is_in_siege` for the `CastleDoorman` hall branch (M7-NPC-01); `SpecialSiegeGuardAI` (M7-SIEGE-02) reads `hall_siege_allies_of`.
 - Java quirks kept: Bandit Stronghold and Wild Beast Reserve never start their battle (`startSiege()` calls itself), `_firstPhase` is never true, Rainbow Springs fills all arenas with the first clan, the cancelled siege schedules `PrepareOwner` with the date as its delay, and so on (`NOTE(java-quirk)` in the code).
 
@@ -80,5 +71,5 @@ In `l2_world::territory` (`World::territory_*`, `tw_*`); state in `TerritoryWorl
 - Wards: `is_ward_carrier` (part of `is_combat_flag_equipped`), `territory_drop_combat_flag(player, killed, spawn_back)`, the ward NPC rules in `siege_npc_auto_attackable`, `siege_npc_click`, `reduce_current_hp`, the skill damage paths and `do_die_chain`; `territory_on_skill_see` (Ward Transport 847, Outpost Demolition 845 on the outpost 36590).
 - Outposts and flags: `territory_create_outpost`, `territory_destroy_outpost`, `territory_take_flag`, `cond_can_create_outpost`, `territory_hq_for_clan`, `territory_hq`, `territory_flag_for_clan`; `siege_create_headquarters` makes a flag without a siege during the war.
 - Packets: `dominion_registry_packet`, `dominion_info_packet`, `ownthing_pos_packet` (`ExShowOwnthingPos` is new in `server/territory.rs`).
-- Writes: `ResidenceWrite::Territory(TerritoryWrite)` (registrations, `ownedWardIds`, `nextTWStartDate`), all behind `SiegeDatabaseWrites` (D-51). Re-reads: `ResidenceReadKind::Territory`, `ResidenceReadThen::Territory(TerritoryThen)` before every `RequestJoinDominionWar` (D-50) and after Sieghardt's war (`TerritoryTimer::SideBySideReread`); the schedule's start of the war runs only with the switch, `//territory_war_start` always.
+- Writes: `ResidenceWrite::Territory(TerritoryWrite)` (registrations, `ownedWardIds`, `nextTWStartDate`). Re-reads: `ResidenceReadKind::Territory`, `ResidenceReadThen::Territory(TerritoryThen)` before every `RequestJoinDominionWar` (D-50) and after Sieghardt's war (`TerritoryTimer::SideBySideReread`); the schedule's start of the war runs only with the switch, `//territory_war_start` always.
 - Left: the Territory War quests (`TerritoryWarSuperClass` children, D-05), `MakeMeNoble` of the managers (the noblesse quests and the stored `nobless` column), the olympiad check of the ward skills (M8).

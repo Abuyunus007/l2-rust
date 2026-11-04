@@ -813,25 +813,11 @@ mod tests {
     }
 
     #[test]
-    fn the_item_rows_are_deleted_only_with_the_cycle_switch_on() {
+    fn the_item_rows_are_deleted() {
         use l2_world::outbox::PersistCommand;
-        use l2_world::script::ScriptSettings;
 
         // `destroyItemsOnEnd` lists 15366 (it exists) and 99999 (it does not: no delete).
         let mut t = world(&PASSED);
-        assert!(!period(&mut t));
-        assert!(
-            t.take_boss()
-                .iter()
-                .all(|c| !matches!(c, PersistCommand::DeleteItemsOfItemId { .. })),
-            "the switch is off by default"
-        );
-
-        let mut t = world(&PASSED);
-        t.world.set_script_settings(ScriptSettings {
-            cycle_database_writes: true,
-            ..ScriptSettings::default()
-        });
         t.take_boss();
         t.world.run_as_script("TestEvent", |ctx| load(ctx, &PASSED));
         let deleted: Vec<i32> = t

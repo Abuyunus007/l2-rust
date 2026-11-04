@@ -15,10 +15,10 @@
 
 use l2_protocol_game::SystemMessageId;
 use l2_protocol_game::server::{SystemMessage, SystemMessageParam};
-use tracing::{info, warn};
+use tracing::warn;
 
 use super::SiegeTimer;
-use crate::residence::{CastleId, ResidenceReadThen, ResidenceRef, ResidenceWrite};
+use crate::residence::{CastleId, ResidenceWrite};
 use crate::world::World;
 
 const SECOND_MS: i64 = 1000;
@@ -280,17 +280,8 @@ impl World {
             self.siege_rearm_start(id, remaining - 10_000);
         } else if remaining > 0 {
             self.siege_rearm_start(id, remaining);
-        } else if self.siege_database_writes() {
-            self.start_siege(id);
         } else {
-            // D-51: the Java game server runs the real siege; this world reads the castle and its
-            // registrations again once that siege is over.
-            info!(
-                "SideBySide: the siege of {} runs on the Java game server (SiegeDatabaseWrites = False).",
-                self.residence_name(ResidenceRef::Castle(id))
-            );
-            let length_ms = i64::from(self.sieges.settings.siege_length) * MINUTE_MS;
-            self.schedule_siege_timer(SiegeTimer::SideBySideReread(id), length_ms + 10 * MINUTE_MS);
+            self.start_siege(id);
         }
     }
 
@@ -356,28 +347,6 @@ impl World {
         } else {
             self.end_siege(id);
         }
-    }
-
-    /// D-51: the siege of the Java game server is over; the castle (owner, dates) and the
-    /// registrations are read again, then the schedule starts again from the new date.
-    pub(crate) fn on_side_by_side_reread_timer(&mut self, id: CastleId) {
-        if self.castle_siege(id).is_some_and(|s| s.in_progress) {
-            return;
-        }
-        self.request_siege_reread(id, ResidenceReadThen::SiegeRestartSchedule { castle_id: id.0 });
-    }
-
-    /// The follow-up of [`Self::on_side_by_side_reread_timer`].
-    pub(crate) fn siege_restart_schedule(&mut self, id: CastleId) {
-        let enabled = self
-            .siege_schedule()
-            .for_castle(id.0)
-            .is_some_and(|s| s.siege_enabled);
-        if !enabled {
-            return;
-        }
-        let now = self.siege_now_ms();
-        self.siege_start_auto_task_at(id, now);
     }
 
     /// `RequestSetCastleSiegeTime.runImpl`: the castle lord picks the hour of the siege.

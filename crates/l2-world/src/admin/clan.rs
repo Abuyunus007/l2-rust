@@ -263,7 +263,7 @@ fn admin_pledge(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
         "create" => pledge_create(world, gm, player, parameter),
         "dismiss" => {
             let clan_id = clan_id_of(world, player).unwrap_or(0);
-            world.destroy_clan(clan_id, true);
+            world.destroy_clan(clan_id);
             if world.clan_of(player).is_none() {
                 world.send_sys_message(gm, "Clan disbanded.");
             } else {

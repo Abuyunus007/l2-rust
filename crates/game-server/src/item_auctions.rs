@@ -25,7 +25,7 @@ use tracing::{error, info, warn};
 pub const ITEM_AUCTIONS_FILE: &str = "data/ItemAuctions.xml";
 
 /// `AltItemAuctionEnabled`, `AltItemAuctionExpiredAfter` and `AltItemAuctionTimeExtendsOnBid` of
-/// `General.ini`, and `CycleDatabaseWrites` of `config/SideBySide.ini` (D-53).
+/// `General.ini`.
 ///
 /// The config generator leaves `AltItemAuctionTimeExtendsOnBid` out (a post-processed `long`), so
 /// it is read from `General.ini` here: seconds in the file, milliseconds in Java's constant.
@@ -45,7 +45,6 @@ pub fn item_auction_settings(config: &GameConfig, config_dir: &Path) -> ItemAuct
         enabled: config.general.alt_item_auction_enabled,
         expired_after_days: config.general.alt_item_auction_expired_after,
         time_extends_on_bid_ms: i64::from(extends_seconds) * 1000,
-        cycle_database_writes: crate::cycle_database_writes(config_dir),
     }
 }
 

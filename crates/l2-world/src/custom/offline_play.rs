@@ -9,16 +9,11 @@
 //
 // # The character stays without a client
 // Like an offline trader (`trade/offline.rs`): the player is in `World::players` without an entry
-// in `World::sinks`. `OfflineTradeDatabaseWrites` (D-52) decides the account hold too: only with
-// it does the login server hear `PlayerLogout` at once; without it the account stays on this
-// server, a login of that account anywhere kicks the character (`release_offline_account`) and
-// its final `PlayerLeft` frees the account.
+// in `World::sinks`; the login server hears `PlayerLogout` at once.
 //
 // # The rows (M9-L01)
-// `character_offline_play` and `character_offline_play_group` are shared with the Java game server,
-// which would restore the characters at its next start. So, like the offline trade rows (D-52),
-// they are written, removed and restored only with `OfflineTradeDatabaseWrites` of
-// `SideBySide.ini` (`OfflineSettings::database_writes`) and `RestoreAutoPlayOffliners`.
+// `character_offline_play` and `character_offline_play_group` are written, removed and restored
+// with `RestoreAutoPlayOffliners`.
 // The save is `storeOfflinePlay` (on `startOfflinePlay`), the removal `removeOfflinePlay` (auto
 // play stopped, `CharacterSelect`), the groups are written by `storeOfflineGroups` at shutdown and
 // the whole group table is emptied after the restore.
@@ -125,9 +120,9 @@ pub struct OfflinePlaySettings {
 
 impl OfflinePlaySettings {
     /// `GameServer`: "ENABLE_OFFLINE_PLAY_COMMAND && RESTORE_AUTO_PLAY_OFFLINERS" ->
-    /// `restoreOfflinePlayers()`, and only with `OfflineTradeDatabaseWrites` (`database_writes`, D-52).
-    pub fn restore_wanted(&self, database_writes: bool) -> bool {
-        self.enable_offline_play_command && self.restore_auto_play_offliners && database_writes
+    /// `restoreOfflinePlayers()`.
+    pub fn restore_wanted(&self) -> bool {
+        self.enable_offline_play_command && self.restore_auto_play_offliners
     }
 }
 
@@ -173,10 +168,9 @@ impl World {
         self.offline_play.settings = settings;
     }
 
-    /// Whether the rows of the two tables are written: `RestoreAutoPlayOffliners` and the side by
-    /// side switch of the offline trade (D-52).
+    /// Whether the rows of the two tables are written: `RestoreAutoPlayOffliners`.
     fn offline_play_writes(&self) -> bool {
-        self.offline_play.settings.restore_auto_play_offliners && self.offline.settings.database_writes
+        self.offline_play.settings.restore_auto_play_offliners
     }
 
     /// Java `Player.isOfflinePlay()`.
@@ -365,11 +359,8 @@ impl World {
             self.start_abnormal_visual_effect(id, &[effect]);
         }
         self.broadcast_user_info(id);
-        // `GameClient.onDisconnection` -> `sendLogout(account)`: only with the database switch
-        // (D-52); see the module comment.
-        if self.offline.settings.database_writes
-            && let Some(account) = account
-        {
+        // `GameClient.onDisconnection` -> `sendLogout(account)`.
+        if let Some(account) = account {
             self.outbox.ls_event(LsEvent::PlayerLogout { account });
         }
         // `if (RESTORE_AUTO_PLAY_OFFLINERS) storeOfflinePlay(this)`.
@@ -579,21 +570,8 @@ impl World {
     /// `CharacterSelect`: "if (RESTORE_AUTO_PLAY_OFFLINERS && player.isAutoPlaying())
     /// removeOfflinePlay(player)".
     pub(crate) fn offline_play_release_rows(&mut self, id: ObjectId) {
-        if self.offline_play.settings.restore_auto_play_offliners
-            && self.is_auto_playing(id)
-            && self.offline.settings.database_writes
-        {
+        if self.offline_play.settings.restore_auto_play_offliners && self.is_auto_playing(id) {
             self.offline_play_remove_rows(id);
         }
-    }
-
-    /// The offline players of an account, for `release_offline_account`.
-    pub(crate) fn offline_play_of_account(&self, account: &str) -> Vec<ObjectId> {
-        self.offline_play
-            .players
-            .iter()
-            .copied()
-            .filter(|id| self.players.get(id).is_some_and(|p| p.data.account == account))
-            .collect()
     }
 }

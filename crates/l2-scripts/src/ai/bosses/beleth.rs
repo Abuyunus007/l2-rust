@@ -6,10 +6,6 @@
 // (entry open), 1 init (the entry script let a party in), 2 fight, 3 dead. Setting status 1 is the
 // entry script's job (not in this folder).
 //
-// Side by side (D-54, `super` module): with `CycleDatabaseWrites` off the constructor leaves a
-// row that is not alive alone (Java would write ALIVE over it), and `BELETH_UNLOCK` reads the
-// row again and opens the chamber only when the row says alive.
-//
 // Not ported (and why):
 // - `setShowSummonAnimation(true)` of the fake Belethes and the priest: a visual flag the NPC
 //   packet of this server does not carry.
@@ -25,9 +21,7 @@
 use l2_protocol_game::server::{PlaySound, SocialAction, SpecialCamera};
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey, TeleportTarget, TeleportWhereType};
-use tracing::{info, warn};
-
-use super::{EVENT_ROW_READ, row_lets_boss_run};
+use tracing::warn;
 
 // Status.
 const ALIVE: i32 = 0;
@@ -116,18 +110,10 @@ impl Script for Beleth {
             }
             Some(info) => {
                 let status = ctx.world().grand_boss_status(REAL_BELETH).unwrap_or(-1);
-                if !row_lets_boss_run(ctx, REAL_BELETH) && status != DEAD {
-                    // D-54: the row is the other server's fight; Java would write ALIVE over it.
-                    info!(
-                        "Beleth: the shared state row says {status}; the AI waits for an alive row (D-54)."
-                    );
-                } else if status == DEAD {
+                if status == DEAD {
                     let time = info.respawn_time - ctx.now_ms();
                     if time > 0 {
                         ctx.start_quest_timer("BELETH_UNLOCK", time, None, None, false);
-                    } else if !ctx.world().boss_writes_enabled() {
-                        // D-54: the unlock waits for the other server's alive row.
-                        ctx.notify_event("BELETH_UNLOCK", None, None);
                     } else {
                         ctx.world_mut().set_grand_boss_status(REAL_BELETH, ALIVE);
                     }
@@ -149,38 +135,8 @@ impl Script for Beleth {
     ) -> Option<String> {
         match event {
             "BELETH_UNLOCK" => {
-                // D-54: on the shared database the row decides; read it again first.
-                if !ctx.world().boss_writes_enabled() {
-                    ctx.world_mut()
-                        .reread_grand_boss_for_script(REAL_BELETH, self.name(), EVENT_ROW_READ);
-                    return None;
-                }
                 ctx.world_mut().set_grand_boss_status(REAL_BELETH, ALIVE);
                 ctx.open_door(DOOR1, 0);
-            }
-            EVENT_ROW_READ => {
-                // D-54: the answer of the read `BELETH_UNLOCK` asked for.
-                match ctx.world().grand_boss_status(REAL_BELETH) {
-                    Some(ALIVE) => {
-                        ctx.world_mut().set_grand_boss_status(REAL_BELETH, ALIVE);
-                        ctx.open_door(DOOR1, 0);
-                    }
-                    Some(DEAD) => {
-                        let respawn = ctx
-                            .world()
-                            .grand_boss_info(REAL_BELETH)
-                            .map_or(0, |i| i.respawn_time);
-                        let remaining = respawn - ctx.now_ms();
-                        if remaining > 0 {
-                            ctx.start_quest_timer("BELETH_UNLOCK", remaining, None, None, false);
-                        } else {
-                            info!("Beleth: the shared state row says dead; the chamber stays shut (D-54).");
-                        }
-                    }
-                    status => {
-                        info!("Beleth: the shared state row says {status:?}; the chamber stays shut (D-54).")
-                    }
-                }
             }
             "CAST" => {
                 if let Some(npc) = npc
@@ -961,7 +917,7 @@ fn spawn_fakes(ctx: &mut ScriptCtx<'_>) {
 #[cfg(test)]
 mod tests {
     use l2_util::ObjectId as Oid;
-    use l2_world::{BossReadKind, BossReadThen, BossWrite, GrandBossData, ScriptRegistry};
+    use l2_world::{BossWrite, GrandBossData, ScriptRegistry};
 
     use super::*;
     use crate::ai::bosses::test_support::*;
@@ -999,7 +955,7 @@ mod tests {
         ]
     }
 
-    fn setup_row(status: i32, respawn_time: i64, writes: bool) -> ScriptTest {
+    fn setup_row(status: i32, respawn_time: i64) -> ScriptTest {
         let mut registry = ScriptRegistry::new();
         registry.add(Beleth);
         let zone = r#"<?xml version="1.0" encoding="UTF-8"?>
@@ -1021,7 +977,6 @@ mod tests {
             "<item id=\"10314\" type=\"EtcItem\" name=\"Beleth's Ring\"/>",
             &pages,
             vec![row(REAL_BELETH, status, respawn_time, HOME)],
-            writes,
         )
     }
 
@@ -1053,35 +1008,14 @@ mod tests {
     #[test]
     fn the_constructor_resets_the_row_to_alive() {
         // A fight that was running is over after a restart (writes on).
-        let t = setup_row(FIGHT, 0, true);
+        let t = setup_row(FIGHT, 0);
         assert_eq!(status(&t), Some(ALIVE));
         // A dead row waits for its time, or wakes up.
-        let mut t = setup_row(DEAD, now_ms() + 3_600_000, true);
+        let mut t = setup_row(DEAD, now_ms() + 3_600_000);
         assert_eq!(status(&t), Some(DEAD));
         assert!(has_timer(&mut t, "BELETH_UNLOCK"));
-        let t = setup_row(DEAD, now_ms() - 10, true);
+        let t = setup_row(DEAD, now_ms() - 10);
         assert_eq!(status(&t), Some(ALIVE));
-    }
-
-    #[test]
-    fn with_the_switch_off_the_row_decides() {
-        // The other server's fight stays as it is.
-        let t = setup_row(FIGHT, 0, false);
-        assert_eq!(status(&t), Some(FIGHT));
-        assert!(grand_writes(&t.take_boss()).is_empty());
-        // A dead row whose time is over asks the database.
-        let mut t = setup_row(DEAD, now_ms() - 10, false);
-        let then = BossReadThen::ScriptEvent {
-            script: "Beleth",
-            event: EVENT_ROW_READ,
-        };
-        assert_eq!(
-            rereads(&t.take_boss()),
-            [(BossReadKind::GrandBoss(REAL_BELETH), then)]
-        );
-        answer(&mut t, then, REAL_BELETH, row(REAL_BELETH, ALIVE, 0, HOME));
-        assert_eq!(status(&t), Some(ALIVE));
-        assert!(grand_writes(&t.take_boss()).is_empty());
     }
 
     /// The first player walks in with the status at INIT: the fight starts after five minutes and
@@ -1096,7 +1030,7 @@ mod tests {
 
     #[test]
     fn the_opening_movie_ends_with_the_fake_belethes_and_a_free_chamber() {
-        let mut t = setup_row(ALIVE, 0, true);
+        let mut t = setup_row(ALIVE, 0);
         start_fight(&mut t);
         t.take();
         run_ms(&mut t, 300_000 + 400);
@@ -1129,7 +1063,7 @@ mod tests {
 
     #[test]
     fn killing_the_allowed_fake_calls_the_next_wave_and_the_fifth_the_real_beleth() {
-        let mut t = setup_row(ALIVE, 0, true);
+        let mut t = setup_row(ALIVE, 0);
         start_fight(&mut t);
         fire(&mut t, "SPAWN25");
         for wave in 1..=5 {
@@ -1160,7 +1094,7 @@ mod tests {
 
     #[test]
     fn the_real_beleth_s_death_writes_the_row_and_the_coffin_gives_the_ring_once() {
-        let mut t = setup_row(ALIVE, 0, true);
+        let mut t = setup_row(ALIVE, 0);
         start_fight(&mut t);
         fire(&mut t, "SPAWN_REAL");
         let real = t.world.grand_boss_npc(REAL_BELETH).unwrap();
@@ -1205,7 +1139,7 @@ mod tests {
 
     #[test]
     fn fifteen_minutes_after_the_movie_the_chamber_is_reset() {
-        let mut t = setup_row(ALIVE, 0, true);
+        let mut t = setup_row(ALIVE, 0);
         start_fight(&mut t);
         fire(&mut t, "SPAWN24");
         t.world.run_as_script("Beleth", |ctx| {

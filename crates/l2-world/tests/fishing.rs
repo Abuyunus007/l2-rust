@@ -1955,7 +1955,6 @@ fn championship_opts(rewards: [i32; 5]) -> Opts {
     Opts {
         fishing: FishingSettings {
             championship_rewards: rewards,
-            championship_database_writes: true,
             clock_override_unix_ms: Some(NOW),
             ..FishingSettings::default()
         },
@@ -2170,7 +2169,7 @@ fn the_ranking_page_is_rebuilt_at_most_once_a_minute() {
 
 /// The end of a period (`finishChamp`): the running week becomes the winners (`rewarded` 1, the
 /// longest first), the end moves to the Tuesday 19:00 after 6 days, and the rows go to the
-/// database (when the owner allowed it, D-49) with the variable.
+/// database with the variable.
 #[test]
 fn the_end_of_a_period_makes_the_winners_and_saves_them() {
     let fx = Fixture::new();
@@ -2210,26 +2209,6 @@ fn the_end_of_a_period_makes_the_winners_and_saves_them() {
     assert_eq!(saved.len(), 1);
     assert_eq!(saved[0].end_date, expected_end);
     assert_eq!(saved[0].rows, [row("Alpha", 88.25, 1), row("Bravo", 71.5, 1)]);
-
-    // Without the switch nothing is written (the Java server shares the rows).
-    let mut s = Scene::new(&fx, &Opts::default());
-    s.world.load_fishing_championship_at(
-        ChampionshipData {
-            end_date: NOW - 1,
-            rows: vec![row("Alpha", 88.25, 0)],
-        },
-        NOW,
-        utc,
-    );
-    assert_eq!(s.world.fishing_championship_rows().1, [row("Alpha", 88.25, 1)]);
-    assert!(
-        !s.persisted
-            .0
-            .lock()
-            .unwrap()
-            .iter()
-            .any(|c| matches!(c, PersistCommand::FishingChampionship(_)))
-    );
 }
 
 /// A period that is not over is kept: the rows as read, the end as read, and the timer fires at

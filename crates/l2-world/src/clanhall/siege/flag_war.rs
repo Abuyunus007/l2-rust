@@ -170,8 +170,6 @@ pub struct FlagWarData {
     pub warrior: Option<usize>,
     /// `flagInstance`: its spawn.
     pub flag_instance: Option<usize>,
-    /// Whether the registration's row went out (kept over a re-read, D-50).
-    pub written: bool,
 }
 
 /// What the script keeps.
@@ -228,8 +226,8 @@ impl World {
             .collect()
     }
 
-    fn flag_war_write(&mut self, write: HallSiegeWrite) -> bool {
-        self.siege_write(ResidenceWrite::HallSiege(write))
+    fn flag_war_write(&mut self, write: HallSiegeWrite) {
+        self.residence_write(ResidenceWrite::HallSiege(write));
     }
 
     /// Java `registerClan(clan)`.
@@ -246,22 +244,21 @@ impl World {
         self.hall_add_attacker(hall, clan_id);
         let size = self.flag_war(hall).map_or(0, |s| s.data.len());
         let flag = royal + i32::try_from(size).unwrap_or(0);
-        let mut data = FlagWarData {
+        let data = FlagWarData {
             flag,
             players: vec![leader],
             ..FlagWarData::default()
         };
-        let clan_written = self.flag_war_write(HallSiegeWrite::FlagWarClan {
+        self.flag_war_write(HallSiegeWrite::FlagWarClan {
             hall_id: hall.0,
             flag,
             clan_id,
         });
-        let member_written = self.flag_war_write(HallSiegeWrite::FlagWarMember {
+        self.flag_war_write(HallSiegeWrite::FlagWarMember {
             hall_id: hall.0,
             clan_id,
             object_id: leader,
         });
-        data.written = clan_written && member_written;
         if let Some(state) = self.flag_war_mut(hall) {
             // `_data.put(clanId, data)`: a known clan keeps its place in the map.
             match state.data_mut(clan_id) {
@@ -896,7 +893,6 @@ pub(super) fn new_state(
                 flag: row.flag,
                 npc: row.npc,
                 players: row.members.clone(),
-                written: true,
                 ..FlagWarData::default()
             },
         ));
@@ -906,13 +902,12 @@ pub(super) fn new_state(
     (state, attackers)
 }
 
-/// D-50: the flag war tables as the database has them now. A registration this world holds
-/// without a row (the switch was off) stays.
+/// D-50: the flag war tables as the database has them now.
 pub(super) fn apply_rows(world: &mut World, hall: ClanHallId, rows: &[FlagWarRecord]) {
     let Some(state) = world.flag_war_mut(hall) else {
         return;
     };
-    state.data.retain(|(_, d)| !d.written);
+    state.data.clear();
     let mut added = Vec::new();
     for row in rows {
         if state.data_of(row.clan_id).is_some() {
@@ -924,7 +919,6 @@ pub(super) fn apply_rows(world: &mut World, hall: ClanHallId, rows: &[FlagWarRec
                 flag: row.flag,
                 npc: row.npc,
                 players: row.members.clone(),
-                written: true,
                 ..FlagWarData::default()
             },
         ));

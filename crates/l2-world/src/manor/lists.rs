@@ -4,7 +4,6 @@
 
 use super::{CropProcure, ManorProcureRow, ManorProductionRow, ManorWrite, SeedProduction};
 use crate::outbox::PersistCommand;
-use crate::residence::Writes;
 use crate::world::World;
 
 impl World {
@@ -105,20 +104,9 @@ impl World {
         total_cost
     }
 
-    /// Hands a manor row write to the persistence task as `writes` says (D-49, D-51). Returns
-    /// whether it went out.
-    pub(crate) fn manor_write(&mut self, writes: Writes, write: ManorWrite) -> bool {
-        let go = match writes {
-            Writes::Player => true,
-            Writes::Job => self.siege_database_writes(),
-            Writes::Never => false,
-        };
-        if go {
-            self.outbox.persist(PersistCommand::Manor(write));
-        } else {
-            tracing::debug!("SideBySide: not written (SiegeDatabaseWrites = False): {write:?}");
-        }
-        go
+    /// Hands a manor row write to the persistence task.
+    pub(crate) fn manor_write(&mut self, write: ManorWrite) {
+        self.outbox.persist(PersistCommand::Manor(write));
     }
 
     /// The current and next period rows of a castle (`storeMe`'s inserts, one castle at a time).
@@ -154,9 +142,8 @@ impl World {
     }
 
     /// Java `storeMe()`: both tables are written whole, the current period of every castle first,
-    /// then the next. A job of the manor, written only with `SiegeDatabaseWrites` (D-51); the
-    /// answer is whether it went out.
-    pub fn manor_store_me(&mut self) -> bool {
+    /// then the next. A job of the manor.
+    pub fn manor_store_me(&mut self) {
         let mut production = Vec::new();
         for castle_id in self.manor.production.keys().copied().collect::<Vec<_>>() {
             production.extend(self.manor_production_rows(castle_id, false));
@@ -171,7 +158,7 @@ impl World {
         for castle_id in self.manor.procure_next.keys().copied().collect::<Vec<_>>() {
             procure.extend(self.manor_procure_rows(castle_id, true));
         }
-        self.manor_write(Writes::Job, ManorWrite::StoreAll { production, procure })
+        self.manor_write(ManorWrite::StoreAll { production, procure });
     }
 
     /// Java `setNextSeedProduction(list, castleId)`: the lord's seeds for the next period. With
@@ -180,10 +167,7 @@ impl World {
         self.manor.production_next.insert(castle_id, list);
         if self.manor.settings.save_all_actions {
             let rows = self.manor_production_rows(castle_id, true);
-            self.manor_write(
-                Writes::Player,
-                ManorWrite::ReplaceNextProduction { castle_id, rows },
-            );
+            self.manor_write(ManorWrite::ReplaceNextProduction { castle_id, rows });
         }
     }
 
@@ -192,25 +176,19 @@ impl World {
         self.manor.procure_next.insert(castle_id, list);
         if self.manor.settings.save_all_actions {
             let rows = self.manor_procure_rows(castle_id, true);
-            self.manor_write(Writes::Player, ManorWrite::ReplaceNextProcure { castle_id, rows });
+            self.manor_write(ManorWrite::ReplaceNextProcure { castle_id, rows });
         }
     }
 
     /// Java `updateCurrentProduction(castleId, items)`: the amounts left of the seeds just sold,
     /// `(seed id, amount)` (with `AltManorSaveAllActions`; a player's action).
     pub(crate) fn manor_update_current_production(&mut self, castle_id: i32, amounts: Vec<(i32, i64)>) {
-        self.manor_write(
-            Writes::Player,
-            ManorWrite::UpdateCurrentProduction { castle_id, amounts },
-        );
+        self.manor_write(ManorWrite::UpdateCurrentProduction { castle_id, amounts });
     }
 
     /// Java `updateCurrentProcure(castleId, items)`: `(crop id, amount)`.
     pub(crate) fn manor_update_current_procure(&mut self, castle_id: i32, amounts: Vec<(i32, i64)>) {
-        self.manor_write(
-            Writes::Player,
-            ManorWrite::UpdateCurrentProcure { castle_id, amounts },
-        );
+        self.manor_write(ManorWrite::UpdateCurrentProcure { castle_id, amounts });
     }
 
     /// Java `resetManorData(castleId)`: a castle that lost its owner loses its manor. The rows go
@@ -231,7 +209,7 @@ impl World {
             }
         }
         if self.manor.settings.save_all_actions {
-            self.manor_write(Writes::Job, ManorWrite::DeleteCastle { castle_id });
+            self.manor_write(ManorWrite::DeleteCastle { castle_id });
         }
     }
 }

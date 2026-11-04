@@ -194,7 +194,6 @@ impl World {
     /// Java `CrestTable.load()`, after `ClanTable`: the cache from the `crests` rows, the
     /// deletion of the crests nobody uses, and the clans whose crest is gone lose it.
     pub fn load_crests(&mut self, mut records: Vec<CrestRecord>) {
-        let write = self.clans.settings.maintenance_database_writes;
         let mut table = CrestTable::default();
         let mut in_use = HashSet::new();
         for clan in self.clans.clans.values() {
@@ -234,10 +233,8 @@ impl World {
         }
         info!("CrestTable: Loaded {} Crests.", table.crests.len());
         self.clans.crests = table;
-        if write {
-            for crest_id in removals {
-                self.clan_write(ClanWrite::Crest(CrestWrite::Delete { crest_id }));
-            }
+        for crest_id in removals {
+            self.clan_write(ClanWrite::Crest(CrestWrite::Delete { crest_id }));
         }
 
         let ids: Vec<i32> = self.clans.clans.keys().copied().collect();
@@ -257,21 +254,21 @@ impl World {
                 if let Some(c) = self.clan_mut(clan_id) {
                     c.crest_id = 0;
                 }
-                self.change_clan_crest_inner(clan_id, 0, write);
+                self.change_clan_crest(clan_id, 0);
             }
             if large != 0 && self.crest(large).is_none() {
                 info!("Removing non-existent large crest for clan {name} [{clan_id}], crestLargeId:{large}");
                 if let Some(c) = self.clan_mut(clan_id) {
                     c.crest_large_id = 0;
                 }
-                self.change_large_crest_inner(clan_id, 0, write);
+                self.change_large_crest(clan_id, 0);
             }
             if ally != 0 && self.crest(ally).is_none() {
                 info!("Removing non-existent ally crest for clan {name} [{clan_id}], allyCrestId:{ally}");
                 if let Some(c) = self.clan_mut(clan_id) {
                     c.ally_crest_id = 0;
                 }
-                self.change_ally_crest_inner(clan_id, 0, true, write);
+                self.change_ally_crest(clan_id, 0, true);
             }
         }
     }
@@ -485,24 +482,16 @@ impl World {
 
     /// Java `Clan.changeClanCrest(crestId)`: 0 removes the crest.
     pub(crate) fn change_clan_crest(&mut self, clan_id: i32, crest_id: i32) {
-        self.change_clan_crest_inner(clan_id, crest_id, true);
-    }
-
-    fn change_clan_crest_inner(&mut self, clan_id: i32, crest_id: i32, write: bool) {
-        self.change_own_crest(clan_id, crest_id, write, ClanCrestColumn::Pledge);
+        self.change_own_crest(clan_id, crest_id, ClanCrestColumn::Pledge);
     }
 
     /// Java `Clan.changeLargeCrest(crestId)`.
     pub(crate) fn change_large_crest(&mut self, clan_id: i32, crest_id: i32) {
-        self.change_large_crest_inner(clan_id, crest_id, true);
-    }
-
-    fn change_large_crest_inner(&mut self, clan_id: i32, crest_id: i32, write: bool) {
-        self.change_own_crest(clan_id, crest_id, write, ClanCrestColumn::PledgeLarge);
+        self.change_own_crest(clan_id, crest_id, ClanCrestColumn::PledgeLarge);
     }
 
     /// `changeClanCrest` and `changeLargeCrest`: they differ in the column only.
-    fn change_own_crest(&mut self, clan_id: i32, crest_id: i32, write: bool, column: ClanCrestColumn) {
+    fn change_own_crest(&mut self, clan_id: i32, crest_id: i32, column: ClanCrestColumn) {
         let Some(clan) = self.clan(clan_id) else {
             return;
         };
@@ -519,12 +508,10 @@ impl World {
                 ClanCrestColumn::PledgeLarge => clan.crest_large_id = crest_id,
             }
         }
-        if write {
-            self.clan_write(ClanWrite::Crest(match column {
-                ClanCrestColumn::Pledge => CrestWrite::ClanCrest { clan_id, crest_id },
-                ClanCrestColumn::PledgeLarge => CrestWrite::ClanLargeCrest { clan_id, crest_id },
-            }));
-        }
+        self.clan_write(ClanWrite::Crest(match column {
+            ClanCrestColumn::Pledge => CrestWrite::ClanCrest { clan_id, crest_id },
+            ClanCrestColumn::PledgeLarge => CrestWrite::ClanLargeCrest { clan_id, crest_id },
+        }));
         for member in self.clan_online_members(clan_id, 0) {
             self.broadcast_user_info(member);
         }
@@ -532,21 +519,15 @@ impl World {
 
     /// Java `Clan.changeAllyCrest(crestId, onlyThisClan)`.
     pub(crate) fn change_ally_crest(&mut self, clan_id: i32, crest_id: i32, only_this_clan: bool) {
-        self.change_ally_crest_inner(clan_id, crest_id, only_this_clan, true);
-    }
-
-    fn change_ally_crest_inner(&mut self, clan_id: i32, crest_id: i32, only_this_clan: bool, write: bool) {
         let Some(clan) = self.clan(clan_id) else {
             return;
         };
         let (own_crest, ally_id) = (clan.ally_crest_id, clan.ally_id);
         if only_this_clan {
-            if write {
-                self.clan_write(ClanWrite::Crest(CrestWrite::AllyCrestOfClan {
-                    clan_id,
-                    crest_id,
-                }));
-            }
+            self.clan_write(ClanWrite::Crest(CrestWrite::AllyCrestOfClan {
+                clan_id,
+                crest_id,
+            }));
             if let Some(clan) = self.clan_mut(clan_id) {
                 clan.ally_crest_id = crest_id;
             }
@@ -557,12 +538,10 @@ impl World {
             if own_crest != 0 {
                 self.remove_crest(own_crest);
             }
-            if write {
-                self.clan_write(ClanWrite::Crest(CrestWrite::AllyCrestOfAlly {
-                    ally_id,
-                    crest_id,
-                }));
-            }
+            self.clan_write(ClanWrite::Crest(CrestWrite::AllyCrestOfAlly {
+                ally_id,
+                crest_id,
+            }));
             // NOTE(java-quirk): `dissolveAlly` sets the clan's ally id to 0 before it calls this,
             // so the statement above is `WHERE ally_id = 0` and the loop below walks the clans of
             // alliance 0, which are none: the clan keeps its old `_allyCrestId`.

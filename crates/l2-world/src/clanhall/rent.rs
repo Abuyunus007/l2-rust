@@ -19,7 +19,7 @@
 use tracing::error;
 
 use super::ClanHallTimer;
-use crate::residence::{ClanHallId, ClanHallKind, Writes};
+use crate::residence::{ClanHallId, ClanHallKind};
 use crate::timer::{TimerKind, TimerWheel};
 use crate::world::{World, unix_ms_now};
 use l2_protocol_game::SystemMessageId;
@@ -117,21 +117,6 @@ impl World {
             self.schedule_rent_task(id, paid_until - now);
             return;
         }
-        let writes = self.siege_database_writes();
-        if !writes {
-            // D-51: the Java game server charges the real clan warehouse. Move the paid time on
-            // as if the rent had been paid.
-            if paid_until != 0 {
-                while paid_until <= now {
-                    paid_until += CH_RATE;
-                }
-            } else {
-                paid_until = now + CH_RATE;
-            }
-            self.set_rent_paid(id, paid_until, true);
-            self.schedule_rent_task(id, paid_until - now);
-            return;
-        }
         // `ClanTable.getClan(getOwnerId()).getWarehouse()` throws for a clan that is gone: logged,
         // the task is over.
         if self.clan(owner).is_none() {
@@ -149,7 +134,7 @@ impl World {
             self.set_rent_paid(id, paid_until, true);
             self.clan_warehouse_destroy_adena(owner, i64::from(lease));
             self.schedule_rent_task(id, paid_until - now);
-            self.clan_hall_update_db(id, Writes::Job);
+            self.clan_hall_update_db(id);
             return;
         }
         // The clan cannot pay.
@@ -168,7 +153,7 @@ impl World {
                 self.schedule_rent_task(id, 3000);
             }
         } else {
-            self.clan_hall_update_db(id, Writes::Job);
+            self.clan_hall_update_db(id);
             let message = SystemMessage::new(
                 SystemMessageId::PaymentForYourClanHallHasNotBeenMadePleaseMakePaymentToYourClanWarehouseByS1Tomorrow,
             )

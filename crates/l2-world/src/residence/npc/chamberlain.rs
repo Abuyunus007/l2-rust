@@ -603,7 +603,7 @@ impl World {
                     if self.adena_of(player) >= amount {
                         self.script_take_items(player, l2_data::item::ADENA_ID, amount);
                         // A player's own deposit: written (D-51).
-                        self.castle_add_to_treasury_no_tax(castle, amount, crate::residence::Writes::Player);
+                        self.castle_add_to_treasury_no_tax(castle, amount);
                     } else {
                         self.send(
                             player,
@@ -625,11 +625,7 @@ impl World {
                 // NOTE(java-quirk): a negative amount passes this check; it adds that much to the
                 // treasury and gives the player nothing (`giveItems` ignores a count below 1).
                 if amount <= treasury {
-                    self.castle_add_to_treasury_no_tax(
-                        castle,
-                        amount.wrapping_neg(),
-                        crate::residence::Writes::Player,
-                    );
+                    self.castle_add_to_treasury_no_tax(castle, amount.wrapping_neg());
                     self.script_give_items(player, l2_data::item::ADENA_ID, amount);
                     page("chamberlain-01.html")
                 } else {

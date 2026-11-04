@@ -66,11 +66,6 @@ pub struct FishingSettings {
     pub championship_reward_item: i32,
     /// `ALT_FISH_CHAMPIONSHIP_REWARD_1` to `_5` (`AltFishChampionshipReward1` ...).
     pub championship_rewards: [i32; 5],
-    /// Rust-only (`SideBySide.ini`, `FishingChampionshipDatabaseWrites`, D-36, D-49): whether the
-    /// weekly end of the championship and the shutdown write `fishing_championship`. False while
-    /// the Java game server shares the database (its `DELETE FROM fishing_championship` and the
-    /// re-inserts would clobber the other server's ranking).
-    pub championship_database_writes: bool,
     /// Tests only (like `TalkSettings::clock_override_unix_ms`): pins `GameTimeTaskManager`'s
     /// `isNight()`, which the game clock would switch with the wall clock.
     pub clock_override_night: Option<bool>,
@@ -86,7 +81,6 @@ impl Default for FishingSettings {
             championship_enabled: true,
             championship_reward_item: 57,
             championship_rewards: [800_000, 500_000, 300_000, 200_000, 100_000],
-            championship_database_writes: false,
             clock_override_night: None,
             clock_override_unix_ms: None,
         }

@@ -135,7 +135,7 @@ impl World {
         match load.registrations {
             Some(rows) => {
                 for row in rows {
-                    self.territory_add_registration_row(row.castle_id, row.registered_id, false);
+                    self.territory_add_registration_row(row.castle_id, row.registered_id);
                 }
             }
             None => warn!("TerritoryWarManager: registration list error"),
@@ -186,11 +186,8 @@ impl World {
 
     /// One registration row: a clan the table knows is a clan registration, anything else a
     /// mercenary.
-    fn territory_add_registration_row(&mut self, castle_id: i32, registered_id: i32, unsaved: bool) {
-        let entry = Registration {
-            id: registered_id,
-            unsaved,
-        };
+    fn territory_add_registration_row(&mut self, castle_id: i32, registered_id: i32) {
+        let entry = Registration { id: registered_id };
         if self.clan(registered_id).is_some() {
             self.territory
                 .registered_clans
@@ -219,8 +216,7 @@ impl World {
             });
     }
 
-    /// The war's rows as the database has them now: the registrations (this world's unsaved ones
-    /// stay), the wards each territory owns and the next war date. Nothing changes while the war
+    /// The war's rows as the database has them now: the registrations, the wards each territory owns and the next war date. Nothing changes while the war
     /// runs in this world.
     pub(crate) fn apply_territory_rows(&mut self, rows: &TerritoryRows) {
         if self.territory.in_progress {
@@ -228,26 +224,10 @@ impl World {
         }
         self.territory.next_tw_start_date = rows.next_tw_start_date;
         // The registrations.
-        let keep = |list: &std::collections::BTreeMap<i32, Vec<Registration>>| -> Vec<(i32, i32)> {
-            list.iter()
-                .flat_map(|(castle, regs)| regs.iter().filter(|r| r.unsaved).map(move |r| (*castle, r.id)))
-                .filter(|(castle, id)| {
-                    !rows
-                        .registrations
-                        .iter()
-                        .any(|r| r.castle_id == *castle && r.registered_id == *id)
-                })
-                .collect()
-        };
-        let mut unsaved = keep(&self.territory.registered_clans);
-        unsaved.extend(keep(&self.territory.registered_mercenaries));
         self.territory.registered_clans.clear();
         self.territory.registered_mercenaries.clear();
         for row in &rows.registrations {
-            self.territory_add_registration_row(row.castle_id, row.registered_id, false);
-        }
-        for (castle, id) in unsaved {
-            self.territory_add_registration_row(castle, id, true);
+            self.territory_add_registration_row(row.castle_id, row.registered_id);
         }
         // The wards.
         for row in &rows.territories {
@@ -272,9 +252,6 @@ impl World {
                 is_clan,
                 is_joining,
             } => self.territory_join_after_reread(player, territory_id, is_clan, is_joining),
-            TerritoryThen::RestartSchedule => {
-                self.tw_set_next_tw_date();
-            }
         }
     }
 }

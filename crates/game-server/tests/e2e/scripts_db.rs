@@ -252,16 +252,6 @@ impl Rows {
     /// What the persistence task answers to a command that asks a question (D-50).
     pub fn answer(&self, world: &mut World, command: &PersistCommand) {
         match command {
-            PersistCommand::GlobalVariablesRereadRequest { token, names } => {
-                let rows = names
-                    .iter()
-                    .filter_map(|n| self.globals.get(n).map(|v| (n.clone(), Some(v.clone()))))
-                    .collect();
-                world.handle(WorldCommand::GlobalVariablesReread {
-                    token: *token,
-                    result: Ok(rows),
-                });
-            }
             PersistCommand::BossRereadRequest { kind, then } => {
                 let rows = match kind {
                     BossReadKind::GrandBoss(boss_id) => BossRereadRows::GrandBoss {

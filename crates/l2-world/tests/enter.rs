@@ -1075,9 +1075,7 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                 Out::Persist(PersistCommand::PetRowRequest { .. }) => "pet row",
                 Out::Persist(PersistCommand::Friend(_)) => "friend",
                 Out::Persist(PersistCommand::Henna(_)) => "henna",
-                Out::Persist(PersistCommand::ItemAuction(_) | PersistCommand::ItemAuctionRequest { .. }) => {
-                    "item auction"
-                }
+                Out::Persist(PersistCommand::ItemAuction(_)) => "item auction",
                 Out::Persist(PersistCommand::InstanceTime(_)) => "instance time",
                 Out::Persist(PersistCommand::Quest(_)) => "quest",
                 Out::Persist(PersistCommand::GlobalVariables(_)) => "global variables",
@@ -1106,11 +1104,7 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                     "offline trade"
                 }
                 Out::Persist(PersistCommand::Manor(_)) => "manor",
-                Out::Persist(
-                    PersistCommand::Boss(_)
-                    | PersistCommand::BossRereadRequest { .. }
-                    | PersistCommand::GlobalVariablesRereadRequest { .. },
-                ) => "boss",
+                Out::Persist(PersistCommand::Boss(_) | PersistCommand::BossRereadRequest { .. }) => "boss",
                 Out::Persist(
                     PersistCommand::DeleteItemsOfItemId { .. } | PersistCommand::BirthdayGiftsRequest { .. },
                 ) => "event",
@@ -1129,9 +1123,7 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                 Out::Persist(PersistCommand::Premium(_) | PersistCommand::PremiumRequest { .. }) => "premium",
                 Out::Persist(PersistCommand::Minigame(_)) => "minigame",
                 Out::Persist(PersistCommand::Vehicle(_)) => "vehicle",
-                Out::Persist(
-                    PersistCommand::SevenSigns(_) | PersistCommand::SevenSignsReadRequest { .. },
-                ) => "seven signs",
+                Out::Persist(PersistCommand::SevenSigns(_)) => "seven signs",
                 Out::Persist(PersistCommand::Subclass(_) | PersistCommand::ClassIndexRequest { .. }) => {
                     "subclass"
                 }
@@ -1145,6 +1137,15 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
                 Out::Ls(_) => "ls",
             })
             .collect();
+        // The shutdown saves the global tables as well; only the way out of the player is compared.
+        let kinds: Vec<&str> = if what == "shutdown" {
+            kinds
+                .into_iter()
+                .filter(|k| matches!(*k, "store" | "left" | "packet" | "sink"))
+                .collect()
+        } else {
+            kinds
+        };
         // The kick message is sent before the store (Java sends it with `storeAndDeleteWith`,
         // after the store; the order of an already queued packet does not matter to the client).
         if what == "kick" {
@@ -1163,7 +1164,11 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
             )),
             "{what}"
         );
-        assert_eq!(out.last(), Some(&Out::Left(1, reason)), "{what}");
+        if what == "shutdown" {
+            assert!(out.contains(&Out::Left(1, reason)), "{what}");
+        } else {
+            assert_eq!(out.last(), Some(&Out::Left(1, reason)), "{what}");
+        }
         assert_eq!(w.online_count(), 0);
     }
 }

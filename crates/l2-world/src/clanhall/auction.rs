@@ -36,7 +36,7 @@ use tracing::{error, info, warn};
 
 use super::ClanHallTimer;
 use crate::outbox::{ItemRowOp, PersistCommand};
-use crate::residence::{ClanHallId, ResidenceReadKind, ResidenceReadThen, ResidenceWrite, Writes};
+use crate::residence::{ClanHallId, ResidenceReadKind, ResidenceReadThen, ResidenceWrite};
 use crate::timer::{TimerKind, TimerWheel};
 use crate::warehouse::PendingClanWindow;
 use crate::world::{World, unix_ms_now};
@@ -387,15 +387,12 @@ impl World {
             warn!("ClanHallAuctionManager: Clan Hall auction not found for Id :{hall_id}");
             return;
         };
-        self.auction_write(
-            Writes::Job,
-            AuctionWrite::NpcAuctionInsert {
-                hall_id,
-                name: name.to_owned(),
-                starting_bid,
-                end_date,
-            },
-        );
+        self.auction_write(AuctionWrite::NpcAuctionInsert {
+            hall_id,
+            name: name.to_owned(),
+            starting_bid,
+            end_date,
+        });
         // `new ClanHallAuction(id)` reads the row it just wrote.
         let record = AuctionRecord {
             id: hall_id,
@@ -426,24 +423,17 @@ impl World {
 
     // ------------------------------------------------------------------ writes
 
-    /// An auction row write as `writes` says.
-    pub(crate) fn auction_write(&mut self, writes: Writes, write: AuctionWrite) {
-        self.write_residence(writes, ResidenceWrite::ClanHallAuction(write));
+    /// An auction row write.
+    pub(crate) fn auction_write(&mut self, write: AuctionWrite) {
+        self.residence_write(ResidenceWrite::ClanHallAuction(write));
     }
 
-    /// Java `Clan.setAuctionBiddedAt(id, storeInDb)`; `writes` `None` is `storeInDb` false.
-    pub(crate) fn clan_set_auction_bidded_at(
-        &mut self,
-        clan_id: i32,
-        auction_id: i32,
-        writes: Option<Writes>,
-    ) {
+    /// Java `Clan.setAuctionBiddedAt(id, storeInDb)` with `storeInDb` true.
+    pub(crate) fn clan_set_auction_bidded_at(&mut self, clan_id: i32, auction_id: i32) {
         if let Some(clan) = self.clan_mut(clan_id) {
             clan.auction_bid_at = auction_id;
         }
-        if let Some(writes) = writes {
-            self.auction_write(writes, AuctionWrite::ClanBidAt { clan_id, auction_id });
-        }
+        self.auction_write(AuctionWrite::ClanBidAt { clan_id, auction_id });
     }
 
     // ------------------------------------------------------------------ the end task
@@ -461,13 +451,10 @@ impl World {
             if let Some(auction) = self.auction_by_key_mut(key) {
                 auction.end_date = new_end;
             }
-            self.auction_write(
-                Writes::Job,
-                AuctionWrite::EndDate {
-                    id,
-                    end_date: new_end,
-                },
-            );
+            self.auction_write(AuctionWrite::EndDate {
+                id,
+                end_date: new_end,
+            });
             0
         } else {
             end_date - now
@@ -557,7 +544,6 @@ impl World {
             .clan_hall_auctions()
             .iter()
             .filter(|a| !records.iter().any(|r| r.id == a.id))
-            .filter(|a| a.seller_id != 0 || self.residences.settings.siege_database_writes)
             .map(|a| a.id)
             .collect();
         for id in gone {
@@ -594,8 +580,7 @@ impl World {
             ResidenceReadThen::SiegeJoin { .. }
             | ResidenceReadThen::SiegeConfirmWaiting { .. }
             | ResidenceReadThen::SiegeAttackerList { .. }
-            | ResidenceReadThen::SiegeDefenderList { .. }
-            | ResidenceReadThen::SiegeRestartSchedule { .. } => {}
+            | ResidenceReadThen::SiegeDefenderList { .. } => {}
         }
     }
 
@@ -637,12 +622,7 @@ impl World {
             return;
         };
         if seller_id > 0 {
-            self.return_item(
-                &auction.seller_clan_name,
-                auction.highest_bidder_max_bid,
-                true,
-                Writes::Job,
-            );
+            self.return_item(&auction.seller_clan_name, auction.highest_bidder_max_bid, true);
             // `getAuctionableHallById(_itemId).getLease()` throws for an unknown hall: the end
             // stops after the first refund.
             let Some(lease) = self
@@ -656,9 +636,9 @@ impl World {
                 );
                 return;
             };
-            self.return_item(&auction.seller_clan_name, i64::from(lease), false, Writes::Job);
+            self.return_item(&auction.seller_clan_name, i64::from(lease), false);
         }
-        self.delete_auction_from_db(key, auction.item_id, Writes::Job);
+        self.delete_auction_from_db(key, auction.item_id);
         // `_bidders.get(_highestBidderId).getClanName()` throws when the highest bidder is not
         // among the bidders.
         let Some(winner_name) = auction.bidders.get(&highest_id).map(|b| b.clan_name.clone()) else {
@@ -670,15 +650,15 @@ impl World {
             return;
         };
         auction.bidders.remove(&highest_id);
-        self.clan_set_auction_bidded_at(clan_id, 0, Some(Writes::Job));
-        self.remove_bids(&mut auction, Writes::Job);
+        self.clan_set_auction_bidded_at(clan_id, 0);
+        self.remove_bids(&mut auction);
         self.clan_hall_table_set_owner(ClanHallId(auction.item_id), clan_id);
     }
 
     /// Java `deleteAuctionFromDB()`: out of the list, the row deleted.
-    fn delete_auction_from_db(&mut self, key: u64, item_id: i32, writes: Writes) {
+    fn delete_auction_from_db(&mut self, key: u64, item_id: i32) {
         self.remove_auction(key);
-        self.auction_write(writes, AuctionWrite::AuctionDelete { item_id });
+        self.auction_write(AuctionWrite::AuctionDelete { item_id });
     }
 
     /// Java `ClanHallAuctionManager.getAuction(auctionId).deleteAuctionFromDB()` (the `//clanhallset`
@@ -694,18 +674,15 @@ impl World {
         else {
             return;
         };
-        self.delete_auction_from_db(key, item_id, Writes::Job);
+        self.delete_auction_from_db(key, item_id);
     }
 
     /// Java `removeBids()`: the bids are deleted; a clan without a hall gets 90% back, a clan that
     /// owns one hears that it won.
-    fn remove_bids(&mut self, auction: &mut ClanHallAuction, writes: Writes) {
-        self.auction_write(
-            writes,
-            AuctionWrite::BidsDelete {
-                auction_id: auction.id,
-            },
-        );
+    fn remove_bids(&mut self, auction: &mut ClanHallAuction) {
+        self.auction_write(AuctionWrite::BidsDelete {
+            auction_id: auction.id,
+        });
         let bidders: Vec<Bidder> = auction.bidders.values().cloned().collect();
         for bidder in bidders {
             // `getClanByName(...)` is null for a clan that is gone: Java throws and stops here.
@@ -718,18 +695,18 @@ impl World {
                 return;
             };
             if hideout == 0 {
-                self.return_item(&bidder.clan_name, bidder.bid, true, writes); // 10 % tax
+                self.return_item(&bidder.clan_name, bidder.bid, true); // 10 % tax
             } else if let Some(player) = self.player_by_name(&bidder.name) {
                 self.send_message(player, "Congratulation you have won ClanHall!");
             }
-            self.clan_set_auction_bidded_at(clan_id, 0, Some(writes));
+            self.clan_set_auction_bidded_at(clan_id, 0);
         }
         auction.bidders.clear();
     }
 
     /// Java `returnItem(clanName, quantity, penalty)`: adena back into the clan warehouse (with
     /// the 10% tax if `penalty`), never above `MaxAdena`.
-    fn return_item(&mut self, clan_name: &str, quantity: i64, penalty: bool, writes: Writes) {
+    fn return_item(&mut self, clan_name: &str, quantity: i64, penalty: bool) {
         let mut amount = quantity;
         if penalty {
             amount = (amount as f64 * 0.9) as i64; // take 10% tax fee if needed
@@ -741,12 +718,12 @@ impl World {
         // avoid overflow on return
         let limit = self.settings.ground.max_adena - self.clan_warehouse_adena(clan_id);
         amount = amount.min(limit);
-        self.clan_warehouse_add_adena(clan_id, amount, writes);
+        self.clan_warehouse_add_adena(clan_id, amount);
     }
 
     /// Java `ClanWarehouse.addItem(REFUND, ADENA_ID, amount, null, null)`: the adena stack grows
-    /// or a new one is made. The row goes out as `writes` says.
-    fn clan_warehouse_add_adena(&mut self, clan_id: i32, amount: i64, writes: Writes) {
+    /// or a new one is made.
+    fn clan_warehouse_add_adena(&mut self, clan_id: i32, amount: i64) {
         let max_adena = self.settings.ground.max_adena;
         let existing = self
             .clan_mut(clan_id)
@@ -792,17 +769,10 @@ impl World {
                 item,
             }
         };
-        let emit = match writes {
-            Writes::Player => true,
-            Writes::Job => self.siege_database_writes(),
-            Writes::Never => false,
-        };
-        if emit {
-            self.outbox.persist(PersistCommand::ItemRows {
-                tracked: None,
-                ops: vec![op],
-            });
-        }
+        self.outbox.persist(PersistCommand::ItemRows {
+            tracked: None,
+            ops: vec![op],
+        });
     }
 
     // ------------------------------------------------------------------ bidding
@@ -857,7 +827,7 @@ impl World {
             && self.auction_take_item(player, clan_id, required_adena)
         {
             self.auction_update_in_db(player, auction_id, bid);
-            self.clan_set_auction_bidded_at(clan_id, auction_id, Some(Writes::Player));
+            self.clan_set_auction_bidded_at(clan_id, auction_id);
             return;
         }
         if bid < starting || bid <= highest_max {
@@ -888,31 +858,25 @@ impl World {
         let known_bidder = auction.bidders.contains_key(&clan_id);
         let outbid = auction.highest_bidder_name.clone();
         if known_bidder {
-            self.auction_write(
-                Writes::Player,
-                AuctionWrite::BidUpdate {
-                    auction_id,
-                    bidder_id: clan_id,
-                    bidder_name: leader_name.clone(),
-                    max_bid: bid,
-                    time_bid: now,
-                },
-            );
+            self.auction_write(AuctionWrite::BidUpdate {
+                auction_id,
+                bidder_id: clan_id,
+                bidder_name: leader_name.clone(),
+                max_bid: bid,
+                time_bid: now,
+            });
         } else {
             // `IdManager.getNextId()`.
             match self.allocate_item_id() {
-                Some(id) => self.auction_write(
-                    Writes::Player,
-                    AuctionWrite::BidInsert {
-                        id: id.0,
-                        auction_id,
-                        bidder_id: clan_id,
-                        bidder_name: player_name,
-                        max_bid: bid,
-                        clan_name: clan_name.clone(),
-                        time_bid: now,
-                    },
-                ),
+                Some(id) => self.auction_write(AuctionWrite::BidInsert {
+                    id: id.0,
+                    auction_id,
+                    bidder_id: clan_id,
+                    bidder_name: player_name,
+                    max_bid: bid,
+                    clan_name: clan_name.clone(),
+                    time_bid: now,
+                }),
                 None => error!("ClanHallAuction: no id for the bid row of clan {clan_id}."),
             }
             if let Some(previous) = self.player_by_name(&outbid) {
@@ -968,7 +932,7 @@ impl World {
         if self.clan_hall_auction(auction_id).is_none() {
             return;
         }
-        if self.auction_cancel_bid_of(auction_id, clan_id, Writes::Player) {
+        if self.auction_cancel_bid_of(auction_id, clan_id) {
             self.send(
                 player,
                 &SystemMessage::new(SystemMessageId::YouHaveCanceledYourBid),
@@ -978,14 +942,11 @@ impl World {
 
     /// Java `cancelBid(bidder)`: the bid row goes, the clan gets 90% of the bid back, the bids are
     /// read again (here: the bidder leaves the map and the highest bid is found again).
-    fn auction_cancel_bid_of(&mut self, auction_id: i32, bidder: i32, writes: Writes) -> bool {
-        self.auction_write(
-            writes,
-            AuctionWrite::BidDelete {
-                auction_id,
-                bidder_id: bidder,
-            },
-        );
+    fn auction_cancel_bid_of(&mut self, auction_id: i32, bidder: i32) -> bool {
+        self.auction_write(AuctionWrite::BidDelete {
+            auction_id,
+            bidder_id: bidder,
+        });
         // `_bidders.get(bidder).getClanName()` throws for a clan that did not bid.
         let Some(entry) = self
             .clan_hall_auction(auction_id)
@@ -994,9 +955,9 @@ impl World {
         else {
             return false;
         };
-        self.return_item(&entry.clan_name, entry.bid, true, writes);
+        self.return_item(&entry.clan_name, entry.bid, true);
         if let Some(clan_id) = self.clan_by_name(&entry.clan_name).map(|c| c.id) {
-            self.clan_set_auction_bidded_at(clan_id, 0, Some(writes));
+            self.clan_set_auction_bidded_at(clan_id, 0);
         }
         if let Some(auction) = self.clanhall.auctions.iter_mut().find(|a| a.id == auction_id) {
             // `_bidders.clear(); loadBid();` with the row gone.
@@ -1008,21 +969,16 @@ impl World {
     }
 
     /// Java `ClanTable.destroyClan`: `auction.cancelBid(clan.getId())` for the clan's bid. The
-    /// clan warehouse is destroyed right after, so nothing is given back; the bid row goes as the
-    /// clan maintenance writes say (D-49).
-    pub(crate) fn auction_cancel_bid_of_destroyed_clan(&mut self, clan_id: i32, write_db: bool) {
+    /// clan warehouse is destroyed right after, so nothing is given back; the bid row goes with it.
+    pub(crate) fn auction_cancel_bid_of_destroyed_clan(&mut self, clan_id: i32) {
         let auction_id = self.clan(clan_id).map_or(0, |c| c.auction_bid_at);
         if self.clan_hall_auction(auction_id).is_none() {
             return;
         }
-        let writes = if write_db { Writes::Player } else { Writes::Never };
-        self.auction_write(
-            writes,
-            AuctionWrite::BidDelete {
-                auction_id,
-                bidder_id: clan_id,
-            },
-        );
+        self.auction_write(AuctionWrite::BidDelete {
+            auction_id,
+            bidder_id: clan_id,
+        });
         if let Some(auction) = self.clanhall.auctions.iter_mut().find(|a| a.id == auction_id) {
             let mut rows = auction.to_record().bidders;
             rows.retain(|b| b.bidder_id != clan_id);
@@ -1038,8 +994,8 @@ impl World {
         let Some(mut auction) = self.auction_by_key(key).cloned() else {
             return;
         };
-        self.delete_auction_from_db(key, auction.item_id, Writes::Player);
-        self.remove_bids(&mut auction, Writes::Player);
+        self.delete_auction_from_db(key, auction.item_id);
+        self.remove_bids(&mut auction);
         self.send_message(player, "Your auction has been canceled");
     }
 
@@ -1055,6 +1011,6 @@ impl World {
         self.clanhall.auctions.push(auction);
         // NOTE(java-quirk): `confirmAuction` does not start the end task; the auction ends
         // after the next restart, which reads it and runs `startAutoTask`.
-        self.auction_write(Writes::Player, AuctionWrite::AuctionInsert(Box::new(record)));
+        self.auction_write(AuctionWrite::AuctionInsert(Box::new(record)));
     }
 }

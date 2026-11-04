@@ -410,14 +410,12 @@ impl World {
         self.clan_add_skill_effects(clan_id, player);
     }
 
-    /// Java `Clan.removeClanMember(objectId, clanJoinExpiryTime)`. `write_db` false leaves the
-    /// rows alone (a scheduled dissolution side by side, D-49).
+    /// Java `Clan.removeClanMember(objectId, clanJoinExpiryTime)`.
     pub(crate) fn remove_clan_member(
         &mut self,
         clan_id: i32,
         object_id: ObjectId,
         clan_join_expiry_time: i64,
-        write_db: bool,
     ) {
         let Some(ex_member) = self.clan(clan_id).and_then(|c| c.member(object_id).cloned()) else {
             warn!(
@@ -442,32 +440,25 @@ impl World {
             {
                 sub.leader_id = 0;
             }
-            if write_db {
-                self.update_sub_pledge_in_db(clan_id, leads_sub_pledge);
-            }
+            self.update_sub_pledge_in_db(clan_id, leads_sub_pledge);
         }
 
         if ex_info.apprentice != 0 {
-            self.clear_apprentice_or_sponsor(clan_id, ObjectId(ex_info.apprentice), true, write_db);
+            self.clear_apprentice_or_sponsor(clan_id, ObjectId(ex_info.apprentice), true);
         }
         if ex_info.sponsor != 0 {
-            self.clear_apprentice_or_sponsor(clan_id, ObjectId(ex_info.sponsor), false, write_db);
+            self.clear_apprentice_or_sponsor(clan_id, ObjectId(ex_info.sponsor), false);
         }
-        if write_db {
-            self.clan_write(ClanWrite::CharApprenticeSponsor {
-                char_id: object_id.0,
-                apprentice: 0,
-                sponsor: 0,
-            });
-        }
-        // `REMOVE_CASTLE_CIRCLETS` (`CastleManager.removeCirclet`, M7-RES-01). An offline member's
-        // rows follow the rest of the leave (`write_db`).
+        self.clan_write(ClanWrite::CharApprenticeSponsor {
+            char_id: object_id.0,
+            apprentice: 0,
+            sponsor: 0,
+        });
+        // `REMOVE_CASTLE_CIRCLETS` (`CastleManager.removeCirclet`, M7-RES-01).
         if self.residences.settings.remove_castle_circlets {
             let castle_id = self.clan(clan_id).map_or(0, |c| c.castle_id);
             let online = ex_member.has_player && self.players.contains_key(&object_id);
-            if online || write_db {
-                self.remove_member_circlet_of_ex_member(object_id, castle_id, online);
-            }
+            self.remove_member_circlet_of_ex_member(object_id, castle_id, online);
         }
 
         let online = ex_member.has_player && self.players.contains_key(&object_id);
@@ -502,7 +493,7 @@ impl World {
             self.broadcast_user_info(object_id);
             // Disable clan tab.
             self.send(object_id, &PledgeShowMemberListDeleteAll);
-        } else if write_db {
+        } else {
             let leader_id = self.clan(clan_id).map_or(0, |c| c.leader_id());
             let create_expiry = if leader_id == object_id.0 {
                 unix_ms_now().saturating_add(days_ms(self.clans.settings.alt_clan_create_days))
@@ -519,13 +510,7 @@ impl World {
 
     /// The apprentice (or sponsor) of a member that leaves loses its link: the player's value
     /// when online, the member's values otherwise, and the row (`saveApprenticeAndSponsor(0, 0)`).
-    fn clear_apprentice_or_sponsor(
-        &mut self,
-        clan_id: i32,
-        other: ObjectId,
-        is_apprentice: bool,
-        write_db: bool,
-    ) {
+    fn clear_apprentice_or_sponsor(&mut self, clan_id: i32, other: ObjectId, is_apprentice: bool) {
         let Some(member) = self.clan(clan_id).and_then(|c| c.member(other).cloned()) else {
             return;
         };
@@ -541,13 +526,11 @@ impl World {
             m.apprentice = 0;
             m.sponsor = 0;
         }
-        if write_db {
-            self.clan_write(ClanWrite::CharApprenticeSponsor {
-                char_id: other.0,
-                apprentice: 0,
-                sponsor: 0,
-            });
-        }
+        self.clan_write(ClanWrite::CharApprenticeSponsor {
+            char_id: other.0,
+            apprentice: 0,
+            sponsor: 0,
+        });
     }
 
     /// Java `Clan.updateSubPledgeInDB(pledgeType)`.

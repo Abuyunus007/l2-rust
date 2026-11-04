@@ -1,4 +1,4 @@
-The files in this folder (except Admin.ini and SideBySide.ini, which belong to l2-rust) come from
+The files in this folder (except Admin.ini, which belongs to l2-rust) come from
 L2JMobius CT 2.6 High Five (https://l2jmobius.org/), Copyright (c) 2013 L2jMobius, used under
 the MIT License:
 

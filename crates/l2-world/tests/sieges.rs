@@ -305,23 +305,11 @@ struct Scene {
 
 impl Scene {
     /// Gludio owned by `owner` (0 for none), its next siege at `siege_date`, the switch as given.
-    fn new(siege_database_writes: bool, owner: i32, siege_date: i64) -> Self {
-        Self::with(
-            siege_database_writes,
-            owner,
-            siege_date,
-            SiegeLoad::default(),
-            |_| {},
-        )
+    fn new(owner: i32, siege_date: i64) -> Self {
+        Self::with(owner, siege_date, SiegeLoad::default(), |_| {})
     }
 
-    fn with(
-        siege_database_writes: bool,
-        owner: i32,
-        siege_date: i64,
-        load: SiegeLoad,
-        settings: impl FnOnce(&mut SiegeSettings),
-    ) -> Self {
+    fn with(owner: i32, siege_date: i64, load: SiegeLoad, settings: impl FnOnce(&mut SiegeSettings)) -> Self {
         let root = tempfile::tempdir().unwrap();
         let write = |path: &str, text: &str| {
             let file = root.path().join(path);
@@ -377,7 +365,6 @@ impl Scene {
         .unwrap();
         world.spawn_doors(&doors, &ids).unwrap();
         world.set_residence_settings(ResidenceSettings {
-            siege_database_writes,
             ..ResidenceSettings::default()
         });
         world.set_siege_schedule(Arc::new(SiegeSchedule::from_xml(SCHEDULE).unwrap()));
@@ -664,29 +651,44 @@ fn wolves_row() -> SiegeClanRecord {
 
 // ---------------------------------------------------------------------------------- schedule
 
+/// `ScheduleStartSiegeTask`: the task walks down to the siege date and starts the siege.
+#[test]
+fn the_start_task_starts_the_siege() {
+    let load = SiegeLoad {
+        siege_clans: vec![wolves_row()],
+        ..SiegeLoad::default()
+    };
+    let mut on = Scene::with(LIONS, NOW + 5_000, load, |_| {});
+    on.enter_all();
+    assert_eq!(on.siege().attacker_clans().len(), 1);
+    on.run_ms(6_100);
+    let out = on.take();
+    assert!(on.siege().in_progress);
+    assert!(message_ids(&out, P5).contains(&SystemMessageId::TheS1SiegeHasStarted));
+}
+
 /// `Siege.startAutoTask` -> `correctSiegeDateTime`: a siege date in the past moves to the Sunday
 /// of the schedule (16:00, minute and second 0, the milliseconds kept) two weeks on, the
 /// registration is open, "Gludio has announced the next castle siege time." goes out, and
-/// `saveSiegeDate` writes the dates only with `SiegeDatabaseWrites` (D-51).
+/// `saveSiegeDate` writes the dates.
 #[test]
-fn a_past_siege_date_moves_to_the_next_sunday_and_is_saved_only_with_the_switch() {
-    for writes in [true, false] {
-        let s = Scene::new(writes, LIONS, 0);
-        let gludio = s.world.castle(CastleId(1)).unwrap();
-        assert_eq!(gludio.siege_date, NEXT_SIEGE);
-        let saved = residence_writes(&s.startup).contains(&ResidenceWrite::CastleSiegeDate {
-            castle_id: 1,
-            siege_date: NEXT_SIEGE,
-            reg_time_end: 0,
-            reg_time_over: true,
-        });
-        assert_eq!(saved, writes, "D-51");
-        assert!(!s.siege().registration_over);
-        // Dion has no schedule: its date stays.
-        assert_eq!(s.world.castle(CastleId(2)).unwrap().siege_date, NEXT_SIEGE);
-    }
-    let mut s = Scene::new(true, LIONS, 0);
-    // A new date by the GM is saved again (`saveSiegeDate`): with the switch it is written.
+fn a_past_siege_date_moves_to_the_next_sunday_and_is_saved() {
+    let s = Scene::new(LIONS, 0);
+    let gludio = s.world.castle(CastleId(1)).unwrap();
+    assert_eq!(gludio.siege_date, NEXT_SIEGE);
+    let saved = residence_writes(&s.startup).contains(&ResidenceWrite::CastleSiegeDate {
+        castle_id: 1,
+        siege_date: NEXT_SIEGE,
+        reg_time_end: 0,
+        reg_time_over: true,
+    });
+    assert!(saved);
+    assert!(!s.siege().registration_over);
+    // Dion has no schedule: its date stays.
+    assert_eq!(s.world.castle(CastleId(2)).unwrap().siege_date, NEXT_SIEGE);
+
+    let mut s = Scene::new(LIONS, 0);
+    // A new date by the GM is saved again (`saveSiegeDate`).
     s.enter_all();
     s.admin(P9, "admin_setsiegetime Gludio hour 20");
     let out = s.take();
@@ -715,63 +717,6 @@ fn a_past_siege_date_moves_to_the_next_sunday_and_is_saved_only_with_the_switch(
         html,
         "<html><body>Gludio Sun Nov 01 20:00:00 GMT+00:00 2026 298 9/25 297 9/24</body></html>"
     );
-
-    let mut off = Scene::new(false, LIONS, 0);
-    off.enter_all();
-    off.admin(P9, "admin_setsiegetime Gludio hour 20");
-    let out = off.take();
-    assert!(
-        !residence_writes(&out)
-            .iter()
-            .any(|w| matches!(w, ResidenceWrite::CastleSiegeDate { .. })),
-        "D-51: no siege date row without the switch"
-    );
-}
-
-/// `ScheduleStartSiegeTask`: the task walks down to the siege date and starts the siege; with
-/// `SiegeDatabaseWrites` off the Java GS runs it, and this world reads the castle and the
-/// registrations again once it is over (D-51).
-#[test]
-fn the_start_task_starts_the_siege_only_with_the_switch() {
-    let load = SiegeLoad {
-        siege_clans: vec![wolves_row()],
-        ..SiegeLoad::default()
-    };
-    let mut on = Scene::with(true, LIONS, NOW + 5_000, load.clone(), |_| {});
-    on.enter_all();
-    assert_eq!(on.siege().attacker_clans().len(), 1);
-    on.run_ms(6_100);
-    let out = on.take();
-    assert!(on.siege().in_progress);
-    assert!(message_ids(&out, P5).contains(&SystemMessageId::TheS1SiegeHasStarted));
-
-    let mut off = Scene::with(false, LIONS, NOW + 5_000, load, |s| s.siege_length = 1);
-    off.enter_all();
-    off.run_ms(6_100);
-    let out = off.take();
-    assert!(!off.siege().in_progress, "D-51: Sieghardt runs the real siege");
-    assert!(!message_ids(&out, P5).contains(&SystemMessageId::TheS1SiegeHasStarted));
-    assert!(reread_requests(&out).is_empty());
-    // The siege length (1 minute) and ten more: the castle and its registrations again.
-    off.run_ms(11 * 60_000);
-    let out = off.take();
-    let requests = reread_requests(&out);
-    assert_eq!(requests.len(), 1);
-    assert_eq!(
-        requests[0],
-        (1, ResidenceReadThen::SiegeRestartSchedule { castle_id: 1 })
-    );
-    // Sieghardt moved the date two weeks on and cleared the registrations.
-    let then = requests[0].1.clone();
-    off.world.handle(WorldCommand::ResidenceReread {
-        result: Ok(ResidenceRereadRows::SiegeClans {
-            castle: Some(castle(1, "Gludio", LIONS, NEXT_SIEGE)),
-            rows: vec![],
-        }),
-        then,
-    });
-    assert_eq!(off.world.castle(CastleId(1)).unwrap().siege_date, NEXT_SIEGE);
-    assert!(off.siege().attacker_clans().is_empty());
 }
 
 // ---------------------------------------------------------------------------------- registration
@@ -781,7 +726,7 @@ fn the_start_task_starts_the_siege_only_with_the_switch() {
 /// read refuses the request.
 #[test]
 fn joining_reads_the_registrations_again_and_saves_the_attacker() {
-    let mut s = Scene::new(true, LIONS, NEXT_SIEGE);
+    let mut s = Scene::new(LIONS, NEXT_SIEGE);
     s.enter_all();
     s.input(
         P3,
@@ -863,9 +808,9 @@ fn joining_reads_the_registrations_again_and_saves_the_attacker() {
 /// `checkIfCanRegister` and `registerDefender`: the first rule that fails sends its message.
 #[test]
 fn the_registration_rules_send_javas_messages() {
-    let mut s = Scene::new(false, LIONS, NEXT_SIEGE);
+    let mut s = Scene::new(LIONS, NEXT_SIEGE);
     s.enter_all();
-    let join = |s: &mut Scene, player: i32, attacker: i32| {
+    let join = |s: &mut Scene, player: i32, attacker: i32, rows: Vec<SiegeClanRecord>| {
         s.input(
             player,
             ClientInput::Siege(SiegeInput::JoinSiege {
@@ -875,24 +820,24 @@ fn the_registration_rules_send_javas_messages() {
             }),
         );
         let out = s.take();
-        s.answer_reread(&out, vec![]);
+        s.answer_reread(&out, rows);
         s.take()
     };
     // Bears are level 4.
-    let out = join(&mut s, P5, 1);
+    let out = join(&mut s, P5, 1, vec![]);
     assert_eq!(
         message_ids(&out, P5),
         [SystemMessageId::OnlyClansOfLevel5OrHigherMayRegisterForACastleSiege]
     );
     // The owner registers as a defender automatically.
-    let out = join(&mut s, P1, 1);
+    let out = join(&mut s, P1, 1, vec![]);
     assert_eq!(
         message_ids(&out, P1),
         [SystemMessageId::CastleOwningClansAreAutomaticallyRegisteredOnTheDefendingSide]
     );
     // A second request.
-    join(&mut s, P3, 1);
-    let out = join(&mut s, P3, 1);
+    join(&mut s, P3, 1, vec![]);
+    let out = join(&mut s, P3, 1, vec![wolves_row()]);
     assert_eq!(
         message_ids(&out, P3),
         [SystemMessageId::YouHaveAlreadyRequestedACastleSiege]
@@ -914,9 +859,9 @@ fn the_registration_rules_send_javas_messages() {
     assert!(reread_requests(&out).is_empty());
 
     // A castle without an owner has no defenders.
-    let mut free = Scene::new(false, 0, NEXT_SIEGE);
+    let mut free = Scene::new(0, NEXT_SIEGE);
     free.enter_all();
-    let out = join(&mut free, P3, 0);
+    let out = join(&mut free, P3, 0, vec![]);
     let text = packets_to(&out, P3, "SYSTEM_MESSAGE");
     let message = decode::<SystemMessage>(&text[0]);
     assert_eq!(
@@ -932,7 +877,7 @@ fn the_registration_rules_send_javas_messages() {
 /// approved defender (3), Java's mapping of `SiegeClanType`.
 #[test]
 fn the_lord_approves_a_waiting_defender() {
-    let mut s = Scene::new(true, LIONS, NEXT_SIEGE);
+    let mut s = Scene::new(LIONS, NEXT_SIEGE);
     s.enter_all();
     s.input(
         P3,
@@ -1014,50 +959,14 @@ fn the_lord_approves_a_waiting_defender() {
     assert!(s.siege().defender_waiting_clans().is_empty());
 }
 
-/// D-51: registrations this world made without the switch stay over a re-read until the siege
-/// (a GM test siege), while the rows of the Java GS replace the rest.
-#[test]
-fn unsaved_registrations_survive_a_reread() {
-    let mut s = Scene::new(false, LIONS, NEXT_SIEGE);
-    s.enter_all();
-    s.world.handle(WorldCommand::Input {
-        session: SessionId(u64::try_from(P9).unwrap()),
-        input: ClientInput::Action {
-            object_id: P3,
-            action_id: 0,
-        },
-    });
-    s.admin(P9, "admin_add_attacker Gludio");
-    let out = s.take();
-    assert_eq!(s.siege().attacker_clans().len(), 1);
-    assert!(
-        residence_writes(&out).is_empty(),
-        "D-51: the registration row is not written"
-    );
-    s.input(P5, ClientInput::Siege(SiegeInput::AttackerList { castle_id: 1 }));
-    let out = s.take();
-    // The Java GS has Bears as attackers of Gludio.
-    s.answer_reread(
-        &out,
-        vec![SiegeClanRecord {
-            castle_id: 1,
-            clan_id: BEARS,
-            kind: 1,
-        }],
-    );
-    let mut ids: Vec<i32> = s.siege().attacker_clans().iter().map(|c| c.clan_id).collect();
-    ids.sort_unstable();
-    assert_eq!(ids, [WOLVES, BEARS]);
-}
-
 // ---------------------------------------------------------------------------------- the siege
 
 /// A GM test siege without `SiegeDatabaseWrites` (D-51): `//add_attacker`, `//startsiege`, the
 /// participants' siege state and the siege zone, the towers, then `//endsiege` with the
 /// defender's victory. No global row is written.
 #[test]
-fn a_gm_test_siege_runs_end_to_end_without_global_writes() {
-    let mut s = Scene::new(false, LIONS, NEXT_SIEGE);
+fn a_gm_test_siege_runs_end_to_end() {
+    let mut s = Scene::new(LIONS, NEXT_SIEGE);
     s.enter_all();
     s.input(
         P9,
@@ -1122,11 +1031,6 @@ fn a_gm_test_siege_runs_end_to_end_without_global_writes() {
     let tower = npcs_of(&s.world, CONTROL_TOWER)[0];
     assert!(s.world.is_auto_attackable_by(tower, ObjectId(P3)));
     assert!(!s.world.is_auto_attackable_by(tower, ObjectId(P1)));
-    assert!(
-        residence_writes(&out).is_empty(),
-        "D-51: {:?}",
-        residence_writes(&out)
-    );
 
     // The end: the defender holds the castle.
     s.admin(P9, "admin_endsiege Gludio");
@@ -1164,20 +1068,19 @@ fn a_gm_test_siege_runs_end_to_end_without_global_writes() {
     assert!(!gludio.time_registration_over);
     assert_eq!(gludio.time_registration_over_date, NOW + 86_400_000);
     assert!(
-        !residence_writes(&out)
+        residence_writes(&out)
             .iter()
-            .any(|w| !matches!(w, ResidenceWrite::ClanBloodAllianceCount { .. })),
-        "D-51: {:?}",
+            .any(|w| matches!(w, ResidenceWrite::CastleSiegeDate { .. })),
+        "{:?}",
         residence_writes(&out)
     );
-    assert!(residence_writes(&out).is_empty());
 }
 
 /// `startSiege` without attackers: called off ("canceled because there were no clans that
 /// participated" for an owned castle, which gets the blood alliance reward).
 #[test]
 fn a_siege_without_attackers_is_called_off() {
-    let mut s = Scene::new(true, LIONS, NEXT_SIEGE);
+    let mut s = Scene::new(LIONS, NEXT_SIEGE);
     s.enter_all();
     s.admin(P9, "admin_startsiege Gludio");
     let out = s.take();
@@ -1192,7 +1095,7 @@ fn a_siege_without_attackers_is_called_off() {
             count: 1
         })
     );
-    let mut free = Scene::new(true, 0, NEXT_SIEGE);
+    let mut free = Scene::new(0, NEXT_SIEGE);
     free.enter_all();
     free.admin(P9, "admin_startsiege Gludio");
     let out = free.take();
@@ -1203,9 +1106,7 @@ fn a_siege_without_attackers_is_called_off() {
 /// conclusion.", ..., "This castle siege will end in 10 second(s)!"), then the end.
 #[test]
 fn the_end_task_counts_down_to_both_sides() {
-    let mut s = Scene::with(true, LIONS, NEXT_SIEGE, SiegeLoad::default(), |s| {
-        s.siege_length = 11
-    });
+    let mut s = Scene::with(LIONS, NEXT_SIEGE, SiegeLoad::default(), |s| s.siege_length = 11);
     s.enter_all();
     s.input(
         P9,
@@ -1245,7 +1146,7 @@ fn the_end_task_counts_down_to_both_sides() {
 /// new owner takes the reputation of the old one.
 #[test]
 fn engraving_the_artefact_changes_the_owner_in_the_middle() {
-    let mut s = Scene::new(true, LIONS, NEXT_SIEGE);
+    let mut s = Scene::new(LIONS, NEXT_SIEGE);
     s.enter_all();
     let artefact = s.world.spawn_npc_at(ARTEFACT, X + 300, Y, Z, 0).unwrap();
     s.input(
@@ -1315,7 +1216,7 @@ fn engraving_the_artefact_changes_the_owner_in_the_middle() {
 /// "to siege HQ" button of `Die` and the restart at the headquarters.
 #[test]
 fn headquarters_stand_warn_their_clan_and_take_the_dead_back() {
-    let mut s = Scene::new(false, LIONS, NEXT_SIEGE);
+    let mut s = Scene::new(LIONS, NEXT_SIEGE);
     s.enter_all();
     // Outside a siege the condition refuses ("cannot be used due to unsuitable terms").
     assert!(
@@ -1410,7 +1311,7 @@ fn headquarters_stand_warn_their_clan_and_take_the_dead_back() {
 /// comes of it.
 #[test]
 fn kills_in_the_siege_count_for_the_clans() {
-    let mut s = Scene::new(false, LIONS, NEXT_SIEGE);
+    let mut s = Scene::new(LIONS, NEXT_SIEGE);
     s.enter_all();
     s.input(
         P9,
@@ -1440,7 +1341,7 @@ fn kills_in_the_siege_count_for_the_clans() {
 /// spawn for the owner's members, its chaotic spawn for a member with karma.
 #[test]
 fn the_castle_restart_point_is_the_castle_zones() {
-    let mut s = Scene::new(false, LIONS, NEXT_SIEGE);
+    let mut s = Scene::new(LIONS, NEXT_SIEGE);
     s.enter_all();
     assert_eq!(
         s.world
@@ -1474,7 +1375,7 @@ fn the_castle_restart_point_is_the_castle_zones() {
 /// start of the siege takes the tickets away.
 #[test]
 fn mercenary_tickets_hire_and_can_be_taken_back_by_the_lord() {
-    let mut s = Scene::new(false, LIONS, NEXT_SIEGE);
+    let mut s = Scene::new(LIONS, NEXT_SIEGE);
     let mut lord = pdata(P1, LIONS, X);
     lord.items.push(ItemData {
         object_id: ObjectId(0x6000_2000),
@@ -1593,7 +1494,7 @@ fn hired_mercenaries_lie_as_tickets_and_stand_in_the_siege() {
         siege_clans: vec![wolves_row()],
         ..SiegeLoad::default()
     };
-    let mut s = Scene::with(false, LIONS, NEXT_SIEGE, load, |_| {});
+    let mut s = Scene::with(LIONS, NEXT_SIEGE, load, |_| {});
     s.enter_all();
     assert_eq!(s.world.dropped_merc_tickets().len(), 1);
     s.admin(P9, "admin_startsiege Gludio");
@@ -1629,7 +1530,7 @@ fn the_guards_of_a_free_castle_stop_respawning_with_their_tower() {
         siege_clans: vec![wolves_row()],
         ..SiegeLoad::default()
     };
-    let mut s = Scene::with(false, 0, NEXT_SIEGE, load, |_| {});
+    let mut s = Scene::with(0, NEXT_SIEGE, load, |_| {});
     s.enter_all();
     s.admin(P9, "admin_startsiege Gludio");
     s.take();
@@ -1658,7 +1559,7 @@ fn door_upgrades_multiply_the_gate_and_the_siege_raises_it_again() {
         siege_clans: vec![wolves_row()],
         ..SiegeLoad::default()
     };
-    let mut s = Scene::with(false, LIONS, NEXT_SIEGE, load, |_| {});
+    let mut s = Scene::with(LIONS, NEXT_SIEGE, load, |_| {});
     s.enter_all();
     let gate = s.world.door_by_door_id(DOOR).unwrap().object_id;
     assert_eq!(s.world.door(gate).unwrap().max_hp(), 3000);
@@ -1680,7 +1581,7 @@ fn door_upgrades_multiply_the_gate_and_the_siege_raises_it_again() {
 /// `EnterWorld`: 246 and 247, with 844 and 845 for a castle owner.
 #[test]
 fn clan_leaders_get_the_siege_skills() {
-    let mut s = Scene::new(false, LIONS, NEXT_SIEGE);
+    let mut s = Scene::new(LIONS, NEXT_SIEGE);
     s.enter_all();
     let skills = |s: &Scene, id: i32| {
         let mut skills: Vec<i32> = s
@@ -1705,7 +1606,7 @@ fn clan_leaders_get_the_siege_skills() {
 /// `//siege` without a castle: the castle list page; with one: `castle.htm`.
 #[test]
 fn the_admin_pages_list_the_castles() {
-    let mut s = Scene::new(false, LIONS, NEXT_SIEGE);
+    let mut s = Scene::new(LIONS, NEXT_SIEGE);
     s.enter_all();
     s.admin(P9, "admin_siege");
     let out = s.take();
@@ -1729,7 +1630,7 @@ fn the_admin_pages_list_the_castles() {
 /// the hours to him.
 #[test]
 fn the_lord_picks_the_siege_hour() {
-    let mut s = Scene::new(false, LIONS, NEXT_SIEGE);
+    let mut s = Scene::new(LIONS, NEXT_SIEGE);
     s.enter_all();
     s.world.handle(WorldCommand::ResidenceReread {
         result: Ok(ResidenceRereadRows::Castle(CastleRecord {
@@ -1771,7 +1672,7 @@ fn the_lord_picks_the_siege_hour() {
 /// they are; the spectators of a siege are the players in the zone who are not in it.
 #[test]
 fn the_zone_sorts_owners_attackers_and_spectators() {
-    let mut s = Scene::new(false, LIONS, NEXT_SIEGE);
+    let mut s = Scene::new(LIONS, NEXT_SIEGE);
     s.enter_all();
     s.input(
         P9,
@@ -1812,7 +1713,7 @@ fn an_upgraded_flame_tower_switches_its_trap_zones() {
         siege_clans: vec![wolves_row()],
         ..SiegeLoad::default()
     };
-    let mut s = Scene::with(false, LIONS, NEXT_SIEGE, load, |_| {});
+    let mut s = Scene::with(LIONS, NEXT_SIEGE, load, |_| {});
     s.enter_all();
     assert_eq!(s.world.castle_trap_upgrade_level(CastleId(1), 0), 1);
     assert_eq!(s.world.trap_zone_enabled(70001), None);
@@ -1840,7 +1741,7 @@ fn the_castle_traps_slow_and_hurt_the_attackers_during_the_siege() {
         siege_clans: vec![wolves_row()],
         ..SiegeLoad::default()
     };
-    let mut s = Scene::with(false, LIONS, NEXT_SIEGE, load, |_| {});
+    let mut s = Scene::with(LIONS, NEXT_SIEGE, load, |_| {});
     // Level 1: the class of the scene has hit points for that level only (100).
     for (id, clan) in [(P1, LIONS), (P3, WOLVES), (P9, 0)] {
         let mut data = pdata(id, clan, X + 20);
@@ -1933,7 +1834,7 @@ fn the_castle_traps_slow_and_hurt_the_attackers_during_the_siege() {
 /// `RequestAllCastleInfo`: `ExShowCastleInfo` with each castle's owner, tax and siege date.
 #[test]
 fn the_castle_window_lists_owners_taxes_and_siege_dates() {
-    let mut s = Scene::new(false, LIONS, NEXT_SIEGE);
+    let mut s = Scene::new(LIONS, NEXT_SIEGE);
     s.enter_all();
     s.input(P5, ClientInput::Siege(SiegeInput::AllCastleInfo));
     let out = s.take();
@@ -1966,7 +1867,7 @@ fn the_castle_window_lists_owners_taxes_and_siege_dates() {
 /// Battlefield Resurrection (2393) passes.
 #[test]
 fn resurrection_follows_the_siege_rules() {
-    let mut s = Scene::new(false, LIONS, NEXT_SIEGE);
+    let mut s = Scene::new(LIONS, NEXT_SIEGE);
     s.enter_all();
     assert!(
         !s.world
@@ -2030,7 +1931,7 @@ fn resurrection_follows_the_siege_rules() {
 /// artifact."; too far away the casting stops.
 #[test]
 fn seal_of_ruler_needs_the_leader_at_the_artefact() {
-    let mut s = Scene::new(false, LIONS, NEXT_SIEGE);
+    let mut s = Scene::new(LIONS, NEXT_SIEGE);
     s.enter_all();
     let artefact = s.world.spawn_npc_at(ARTEFACT, X + 300, Y, Z, 0).unwrap();
     s.input(

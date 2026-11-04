@@ -15,7 +15,7 @@ use l2_util::ObjectId;
 use tracing::warn;
 
 use super::{SiegeGuardRecord, SiegeNpc, SiegeTimer};
-use crate::residence::{CastleId, ResidenceRef, ResidenceWrite, Writes};
+use crate::residence::{CastleId, ResidenceRef, ResidenceWrite};
 use crate::target::distance_3d;
 use crate::world::World;
 use crate::zones::ZoneId;
@@ -167,14 +167,11 @@ impl World {
     /// player's purchase: written).
     pub fn castle_set_trap_upgrade(&mut self, id: CastleId, tower_index: i32, level: i32, save: bool) {
         if save {
-            self.write_residence(
-                Writes::Player,
-                ResidenceWrite::CastleTrapUpgrade {
-                    castle_id: id.0,
-                    tower_index,
-                    level,
-                },
-            );
+            self.residence_write(ResidenceWrite::CastleTrapUpgrade {
+                castle_id: id.0,
+                tower_index,
+                level,
+            });
         }
         self.set_trap_upgrade_level_in_memory(id, tower_index, level);
     }
@@ -753,7 +750,7 @@ impl World {
             is_hired: hired,
         };
         self.sieges.guard_rows.push(row);
-        self.write_residence(Writes::Player, ResidenceWrite::SiegeGuardInsert(row));
+        self.residence_write(ResidenceWrite::SiegeGuardInsert(row));
     }
 
     /// Java `SiegeGuardManager.addSiegeGuard(player, npcId)` (`//add_guard`).
@@ -783,10 +780,7 @@ impl World {
         self.sieges
             .guard_rows
             .retain(|r| !(r.npc_id == npc_id && r.x == x && r.y == y && r.z == z && r.is_hired));
-        self.write_residence(
-            Writes::Player,
-            ResidenceWrite::SiegeGuardDeleteHired { npc_id, x, y, z },
-        );
+        self.residence_write(ResidenceWrite::SiegeGuardDeleteHired { npc_id, x, y, z });
     }
 
     /// Java `SiegeGuardManager.removeMercs()`: every hired mercenary of the castle (a siege job).

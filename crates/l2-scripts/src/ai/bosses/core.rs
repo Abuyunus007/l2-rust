@@ -5,11 +5,6 @@
 // The Java constructor is `on_load`; the static fields are `CoreState` (`ctx.state`). Statuses: 0
 // alive, 1 dead.
 //
-// Side by side (D-54, `super` module): with `CycleDatabaseWrites` off the constructor restores
-// the boss only from an alive row, and `core_unlock` reads the row again and brings Core back
-// only when the row says alive. `Core_Attacked` is a script variable of `global_variables`
-// (written only with the switch on, D-54).
-//
 // Not modelled: `unload` (D-16: no reload).
 
 use std::collections::HashMap;
@@ -20,7 +15,7 @@ use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, TeleportTarget};
 use tracing::{info, warn};
 
-use super::{EVENT_ROW_READ, date_time_string, row_lets_boss_run};
+use super::date_time_string;
 
 // NPC identifiers.
 const CORE_NPC_ID: i32 = 29006;
@@ -155,18 +150,10 @@ impl Script for Core {
             let remaining = info.respawn_time - ctx.now_ms();
             if remaining > 0 {
                 ctx.start_quest_timer(EVENT_CORE_UNLOCK, remaining, None, None, false);
-            } else if !ctx.world().boss_writes_enabled() {
-                // D-54: the respawn of a dead row waits for the other server's alive row.
-                ctx.notify_event(EVENT_CORE_UNLOCK, None, None);
             } else {
                 spawn_core_at_default(ctx);
             }
         } else {
-            // D-54: with the switch off a row that is not alive is the other server's.
-            if !row_lets_boss_run(ctx, CORE_NPC_ID) {
-                info!("Core: the shared state row says {status}; the AI waits for an alive row (D-54).");
-                return;
-            }
             let attacked = ctx.global_variables().get_bool("Core_Attacked", false);
             if attacked {
                 ctx.state::<CoreState>().first_attacked = true;
@@ -223,31 +210,7 @@ impl Script for Core {
                 }
             }
         } else if event == EVENT_CORE_UNLOCK {
-            // D-54: on the shared database the row decides; read it again first.
-            if !ctx.world().boss_writes_enabled() {
-                ctx.world_mut()
-                    .reread_grand_boss_for_script(CORE_NPC_ID, self.name(), EVENT_ROW_READ);
-                return None;
-            }
             spawn_core_at_default(ctx);
-        } else if event == EVENT_ROW_READ {
-            // D-54: the answer of the read `core_unlock` asked for.
-            match ctx.world().grand_boss_status(CORE_NPC_ID) {
-                Some(STATUS_ALIVE) => spawn_core_at_default(ctx),
-                Some(STATUS_DEAD) => {
-                    let respawn = ctx
-                        .world()
-                        .grand_boss_info(CORE_NPC_ID)
-                        .map_or(0, |i| i.respawn_time);
-                    let remaining = respawn - ctx.now_ms();
-                    if remaining > 0 {
-                        ctx.start_quest_timer(EVENT_CORE_UNLOCK, remaining, None, None, false);
-                    } else {
-                        info!("Core: the shared state row says dead; Core stays away (D-54).");
-                    }
-                }
-                status => info!("Core: the shared state row says {status:?}; Core stays away (D-54)."),
-            }
         } else if event == EVENT_SPAWN_MINION_LEGACY {
             // Legacy simple minion respawn using NPC position from timer context.
             if let Some(npc) = npc
@@ -477,7 +440,7 @@ fn tele_player(ctx: &mut ScriptCtx<'_>, player: ObjectId, (x, y, z): (i32, i32, 
 #[cfg(test)]
 mod tests {
     use l2_util::ObjectId as Oid;
-    use l2_world::{BossReadKind, BossReadThen, BossWrite, GrandBossData, ScriptRegistry};
+    use l2_world::{BossWrite, GrandBossData, ScriptRegistry};
 
     use super::*;
     use crate::ai::bosses::test_support::*;
@@ -500,7 +463,7 @@ mod tests {
 
     const CORE_AT: (i32, i32, i32) = (17726, 108915, -6480);
 
-    fn setup_row(status: i32, respawn_time: i64, writes: bool) -> ScriptTest {
+    fn setup_row(status: i32, respawn_time: i64) -> ScriptTest {
         let mut registry = ScriptRegistry::new();
         registry.add(Core);
         boss_test(
@@ -512,7 +475,6 @@ mod tests {
                 "<html><body>Teleportation Cubic</body></html>",
             )],
             vec![row(CORE_NPC_ID, status, respawn_time, CORE_AT)],
-            writes,
         )
     }
 
@@ -542,7 +504,7 @@ mod tests {
 
     #[test]
     fn an_alive_row_brings_core_and_nineteen_minions_back() {
-        let t = setup_row(STATUS_ALIVE, 0, true);
+        let t = setup_row(STATUS_ALIVE, 0);
         let core = t.world.grand_boss_npc(CORE_NPC_ID).unwrap();
         let (x, y, _) = t.world.position_of(core).unwrap();
         assert_eq!((x, y), (CORE_AT.0, CORE_AT.1));
@@ -559,11 +521,11 @@ mod tests {
 
     #[test]
     fn a_dead_row_waits_or_spawns_core_at_its_default_place() {
-        let mut t = setup_row(STATUS_DEAD, now_ms() + 3_600_000, true);
+        let mut t = setup_row(STATUS_DEAD, now_ms() + 3_600_000);
         assert!(npcs_of(&t, CORE_NPC_ID).is_empty());
         assert!(has_timer(&mut t, EVENT_CORE_UNLOCK));
 
-        let t = setup_row(STATUS_DEAD, now_ms() - 1000, true);
+        let t = setup_row(STATUS_DEAD, now_ms() - 1000);
         let core = t.world.grand_boss_npc(CORE_NPC_ID).unwrap();
         let (x, y, z) = t.world.position_of(core).unwrap();
         assert_eq!((x, y, z), CORE_DEFAULT_SPAWN);
@@ -572,47 +534,8 @@ mod tests {
     }
 
     #[test]
-    fn with_the_switch_off_the_row_decides_the_unlock() {
-        let mut t = setup_row(STATUS_DEAD, now_ms() - 1000, false);
-        assert!(npcs_of(&t, CORE_NPC_ID).is_empty());
-        let then = BossReadThen::ScriptEvent {
-            script: "Core",
-            event: EVENT_ROW_READ,
-        };
-        assert_eq!(
-            rereads(&t.take_boss()),
-            [(BossReadKind::GrandBoss(CORE_NPC_ID), then)]
-        );
-        answer(
-            &mut t,
-            then,
-            CORE_NPC_ID,
-            row(CORE_NPC_ID, STATUS_ALIVE, 0, CORE_AT),
-        );
-        assert_eq!(status(&t), Some(STATUS_ALIVE));
-        assert_eq!(npcs_of(&t, CORE_NPC_ID).len(), 1);
-        assert_eq!(minion_count(&t), 19);
-        assert!(grand_writes(&t.take_boss()).is_empty());
-
-        // A row that stays dead keeps Core away.
-        let mut t = setup_row(STATUS_DEAD, now_ms() - 1000, false);
-        t.take_boss();
-        answer(
-            &mut t,
-            then,
-            CORE_NPC_ID,
-            row(CORE_NPC_ID, STATUS_DEAD, now_ms() - 5, CORE_AT),
-        );
-        assert!(npcs_of(&t, CORE_NPC_ID).is_empty());
-
-        // A dead row on the shared database does not make the AI run.
-        let t = setup_row(STATUS_DEAD + 1, 0, false);
-        assert!(npcs_of(&t, CORE_NPC_ID).is_empty());
-    }
-
-    #[test]
     fn the_first_attack_wakes_the_voice_lines() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true);
+        let mut t = setup_row(STATUS_ALIVE, 0);
         t.enter_with(player_at(1, (CORE_AT.0 + 50, CORE_AT.1, CORE_AT.2), vec![]));
         let core = t.world.grand_boss_npc(CORE_NPC_ID).unwrap();
         t.take();
@@ -640,7 +563,7 @@ mod tests {
 
     #[test]
     fn core_death_leaves_cubes_a_row_and_the_minions_go() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true);
+        let mut t = setup_row(STATUS_ALIVE, 0);
         t.enter_with(player_at(1, (CORE_AT.0 + 50, CORE_AT.1, CORE_AT.2), vec![]));
         let core = t.world.grand_boss_npc(CORE_NPC_ID).unwrap();
         t.take();
@@ -675,7 +598,7 @@ mod tests {
 
     #[test]
     fn a_dead_minion_comes_back_after_a_minute_but_not_after_core() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true);
+        let mut t = setup_row(STATUS_ALIVE, 0);
         t.enter_with(player_at(1, (CORE_AT.0 + 50, CORE_AT.1, CORE_AT.2), vec![]));
         let minion = npcs_of(&t, MINION_SUSCEPTOR_ID)[0];
         let at = t.world.position_of(minion).unwrap();
@@ -709,7 +632,7 @@ mod tests {
 
     #[test]
     fn the_cube_shows_its_page_and_the_teleports_move_the_player() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true);
+        let mut t = setup_row(STATUS_ALIVE, 0);
         t.enter(1, 80, vec![]);
         let cube = t.spawn(TELEPORT_CUBE_NPC_ID, 20);
         t.talk(1, cube);

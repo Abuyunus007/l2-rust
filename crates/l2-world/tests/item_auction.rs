@@ -135,17 +135,6 @@ fn writes(out: &[Out]) -> Vec<ItemAuctionWrite> {
         .collect()
 }
 
-fn requests(out: &[Out]) -> Vec<(i32, ItemAuctionThen)> {
-    out.iter()
-        .filter_map(|o| match o {
-            Out::Persist(PersistCommand::ItemAuctionRequest { instance_id, then }) => {
-                Some((*instance_id, *then))
-            }
-            _ => None,
-        })
-        .collect()
-}
-
 fn item_rows(out: &[Out]) -> Vec<ItemRowOp> {
     out.iter()
         .filter_map(|o| match o {
@@ -323,12 +312,11 @@ fn record(
     }
 }
 
-fn settings(cycle: bool) -> ItemAuctionSettings {
+fn settings() -> ItemAuctionSettings {
     ItemAuctionSettings {
         enabled: true,
         expired_after_days: 14,
         time_extends_on_bid_ms: 0,
-        cycle_database_writes: cycle,
     }
 }
 
@@ -520,7 +508,7 @@ fn started_falchion(now: i64, bids: &[(i32, i64)]) -> Vec<ItemAuctionRecord> {
 /// warehouse and the canceled bid row goes. Every row is Java's, in Java's order.
 #[test]
 fn an_auction_from_start_to_end_with_two_bidders() {
-    let mut s = Scene::new(settings(true), |now| {
+    let mut s = Scene::new(settings(), |now| {
         vec![record(5, 1, now + 8_000, now + 68_000, 0, &[])]
     });
 
@@ -765,7 +753,7 @@ fn the_configured_extension_follows_the_two_fixed_ones() {
     let mut s = Scene::new(
         ItemAuctionSettings {
             time_extends_on_bid_ms: 90_000,
-            ..settings(true)
+            ..settings()
         },
         |now| started_falchion(now, &[]),
     );
@@ -797,7 +785,7 @@ fn the_configured_extension_follows_the_two_fixed_ones() {
 #[test]
 fn the_winner_gets_the_item_offline_or_on_the_stack() {
     // An offline winner (character 777 bid 500 on the falchion).
-    let mut s = Scene::new(settings(true), |now| started_falchion(now, &[(777, 500)]));
+    let mut s = Scene::new(settings(), |now| started_falchion(now, &[(777, 500)]));
     s.clear();
     s.tick(20 * 61);
     let rows = s.outbox.take();
@@ -831,7 +819,7 @@ fn the_winner_gets_the_item_offline_or_on_the_stack() {
         ..Default::default()
     };
     let mut s = Scene::with_warehouse(
-        settings(true),
+        settings(),
         |now| {
             vec![
                 record(5, 2, now - 10_000, now + 60_000, 1, &[(A.0, 500)]),
@@ -857,7 +845,7 @@ fn the_winner_gets_the_item_offline_or_on_the_stack() {
 /// The augmentation of `<extra>` is on the winner's item and in the packet.
 #[test]
 fn the_extra_augmentation_is_on_the_item() {
-    let mut s = Scene::new(settings(true), |now| {
+    let mut s = Scene::new(settings(), |now| {
         vec![
             record(5, 2, now - 10_000, now + 60_000, 1, &[(A.0, 500)]),
             record(6, 1, now + 86_400_000, now + 86_460_000, 0, &[]),
@@ -888,7 +876,7 @@ fn the_extra_augmentation_is_on_the_item() {
 /// Java quirk), nothing is written. A bid above `MaxAdena` is dropped by the packet.
 #[test]
 fn a_bid_without_the_adena_is_refused_three_times() {
-    let mut s = Scene::new(settings(true), |now| started_falchion(now, &[]));
+    let mut s = Scene::new(settings(), |now| started_falchion(now, &[]));
     let (out, rows) = s.bid(A, 5_000);
     assert_eq!(
         message_ids(&out),
@@ -941,7 +929,7 @@ fn a_bid_without_the_adena_is_refused_three_times() {
 /// without a running auction answers "not an auction period" with the next date.
 #[test]
 fn the_show_bypass_and_the_periods() {
-    let mut s = Scene::new(settings(true), |now| started_falchion(now, &[(A.0, 300)]));
+    let mut s = Scene::new(settings(), |now| started_falchion(now, &[(A.0, 300)]));
     let (out, _) = s.bypass(B, "ItemAuction show");
     let info = &decoded::<ExItemAuctionInfo>(&out, "EX_ITEM_AUCTION_INFO")[0];
     assert!(!info.refresh);
@@ -966,7 +954,7 @@ fn the_show_bypass_and_the_periods() {
     assert!(names(&s.b.take()).iter().all(|n| n != "EX_ITEM_AUCTION_INFO"));
 
     // Only a created auction (tomorrow): no current auction.
-    let mut s = Scene::new(settings(true), |now| {
+    let mut s = Scene::new(settings(), |now| {
         vec![record(5, 1, now + 86_400_000, now + 86_460_000, 0, &[])]
     });
     let (out, _) = s.bypass(A, "ItemAuction show");
@@ -994,7 +982,7 @@ fn the_show_bypass_and_the_periods() {
 /// cannot.
 #[test]
 fn a_bid_of_a_finished_auction_can_be_taken_back_by_the_loser_only() {
-    let mut s = Scene::new(settings(true), |now| {
+    let mut s = Scene::new(settings(), |now| {
         vec![
             record(
                 4,
@@ -1028,7 +1016,7 @@ fn a_bid_of_a_finished_auction_can_be_taken_back_by_the_loser_only() {
 // ---- the load ----------------------------------------------------------------------------------
 
 /// `loadAuction`: invalid rows (start after end, an unknown auction item, a bad state, a finished
-/// auction older than `AltItemAuctionExpiredAfter`) are dropped and, with the switch on, deleted.
+/// auction older than `AltItemAuctionExpiredAfter`) are dropped and deleted.
 #[test]
 fn invalid_and_expired_rows_are_dropped() {
     let day = 86_400_000;
@@ -1045,7 +1033,7 @@ fn invalid_and_expired_rows_are_dropped() {
     let mut world = World::new(WorldRng::from_seed(1), Box::new(Recorder(outbox.clone())));
     world.set_static_data(Box::new(Data(stat_data())));
     world.set_id_factory(Arc::new(IdFactory::new(Vec::<i32>::new()).unwrap()));
-    world.set_item_auction_settings(settings(true));
+    world.set_item_auction_settings(settings());
     world.load_item_auctions(ItemAuctionLoad {
         next_auction_id: 15,
         instances: vec![instance_def()],
@@ -1067,167 +1055,9 @@ fn invalid_and_expired_rows_are_dropped() {
             .iter()
             .any(|w| matches!(w, ItemAuctionWrite::Store { auction_id: 15, .. }))
     );
-
-    // With the switch off nothing of this is written.
-    let outbox = Log::default();
-    let mut world = World::new(WorldRng::from_seed(1), Box::new(Recorder(outbox.clone())));
-    world.set_static_data(Box::new(Data(stat_data())));
-    world.set_id_factory(Arc::new(IdFactory::new(Vec::<i32>::new()).unwrap()));
-    world.set_item_auction_settings(settings(false));
-    world.load_item_auctions(ItemAuctionLoad {
-        next_auction_id: 15,
-        instances: vec![instance_def()],
-        auctions: rows(now_ms()),
-    });
-    assert!(writes(&outbox.take()).is_empty());
 }
 
 // ---- side by side (D-53) -----------------------------------------------------------------------
-
-/// With the switch off: the rows are read again before the info is shown, and what the Java game
-/// server wrote (a bid of another player) is what the info shows. A failed read refuses the
-/// request.
-#[test]
-fn off_the_info_is_shown_from_the_rows_read_again() {
-    let mut s = Scene::new(settings(false), |now| started_falchion(now, &[(A.0, 150)]));
-    // Nothing global was written at the start.
-    assert!(writes(&s.outbox.take()).is_empty());
-
-    let (out, rows) = s.input(
-        B,
-        ClientInput::ItemAuction(ItemAuctionInput::Info {
-            instance_id: AUCTIONEER,
-        }),
-    );
-    assert!(out.is_empty(), "nothing is shown before the rows are back");
-    let asked = requests(&rows);
-    assert_eq!(asked.len(), 1);
-    let (instance_id, then) = asked[0];
-    assert_eq!(
-        (instance_id, then),
-        (AUCTIONEER, ItemAuctionThen::Info { player: B })
-    );
-
-    // A failed read: nothing happens.
-    s.world.handle(WorldCommand::ItemAuctionReread {
-        instance_id,
-        result: Err(()),
-        then,
-    });
-    assert!(s.b.take().is_empty());
-
-    // The Java game server has another bid of 400 in the rows now.
-    let now = now_ms();
-    s.world.handle(WorldCommand::ItemAuctionReread {
-        instance_id,
-        result: Ok(vec![
-            record(5, 1, now - 10_000, now + 60_000, 1, &[(A.0, 150), (999, 400)]),
-            record(6, 1, now + 86_400_000, now + 86_460_000, 0, &[]),
-        ]),
-        then,
-    });
-    let out = s.b.take();
-    let info = &decoded::<ExItemAuctionInfo>(&out, "EX_ITEM_AUCTION_INFO")[0];
-    assert_eq!(info.bid, 400);
-    assert!(info.refresh);
-}
-
-/// With the switch off a bid and the return of a bid are refused (Java's memory would never see
-/// them and the adena would be lost): no adena moves, no row is written, no re-read is asked.
-/// Nor does this server invent an auction of its own.
-#[test]
-fn off_a_bid_and_a_return_are_refused() {
-    let mut s = Scene::new(settings(false), |now| {
-        // Only a running auction: Java has not made the next one yet.
-        vec![record(5, 1, now - 10_000, now + 60_000, 1, &[(B.0, 150)])]
-    });
-    assert!(writes(&s.outbox.take()).is_empty());
-    let (out, rows) = s.bid(A, 200);
-    assert_eq!(
-        messages(&out)
-            .iter()
-            .map(|m| m.params.clone())
-            .collect::<Vec<_>>(),
-        [vec![SystemMessageParam::Text("This feature is disabled.".into())]]
-    );
-    assert!(rows.is_empty());
-    assert_eq!(s.adena(A), 1000);
-    let (out, rows) = s.bypass(B, "ItemAuction cancel");
-    assert_eq!(
-        messages(&out)[0].params,
-        [SystemMessageParam::Text("This feature is disabled.".into())]
-    );
-    assert!(rows.is_empty());
-    assert_eq!(s.adena(B), 1000);
-    // The info still works, from the rows read again; there is no next auction.
-    let (_, rows) = s.input(
-        A,
-        ClientInput::ItemAuction(ItemAuctionInput::Info {
-            instance_id: AUCTIONEER,
-        }),
-    );
-    let (instance_id, then) = requests(&rows)[0];
-    let now = now_ms();
-    s.world.handle(WorldCommand::ItemAuctionReread {
-        instance_id,
-        result: Ok(vec![record(
-            5,
-            1,
-            now - 10_000,
-            now + 60_000,
-            1,
-            &[(B.0, 150), (999, 400)],
-        )]),
-        then,
-    });
-    let info = &decoded::<ExItemAuctionInfo>(&s.a.take(), "EX_ITEM_AUCTION_INFO")[0];
-    assert_eq!(info.bid, 400);
-    assert!(info.next.is_none());
-}
-
-/// With the switch off the end of an auction stays with the Java game server: this server writes no
-/// state, hands out no item, clears no bid row; the bidders still hear that the auction ended. The
-/// next auction is chosen again and a state the rows say is further on wins.
-#[test]
-fn off_the_end_is_left_to_the_java_game_server() {
-    let mut s = Scene::new(settings(false), |now| {
-        vec![
-            record(5, 1, now - 10_000, now + 60_000, 1, &[(A.0, 150), (B.0, 100)]),
-            record(6, 1, now + 80_000, now + 140_000, 0, &[]),
-        ]
-    });
-    s.clear();
-    s.tick(20 * 61);
-    let out_a = s.a.take();
-    let rows = s.outbox.take();
-    assert!(writes(&rows).is_empty(), "{rows:?}");
-    assert!(item_rows(&rows).is_empty());
-    assert_eq!(message_ids(&out_a), [SystemMessageId::S1SAuctionHasEnded]);
-    assert!(s.warehouse(A).is_empty());
-
-    // Showing the finished auction asks for the rows; the Java game server has started the next
-    // auction (id 6), which wins over this server's guess.
-    let (_, rows) = s.input(
-        A,
-        ClientInput::ItemAuction(ItemAuctionInput::Info {
-            instance_id: AUCTIONEER,
-        }),
-    );
-    let (instance_id, then) = requests(&rows)[0];
-    let now = now_ms();
-    s.world.handle(WorldCommand::ItemAuctionReread {
-        instance_id,
-        result: Ok(vec![
-            record(5, 1, now - 70_000, now - 10_000, 2, &[(A.0, 150), (B.0, 100)]),
-            record(6, 1, now + 80_000, now + 140_000, 1, &[]),
-        ]),
-        then,
-    });
-    let out = s.a.take();
-    let info = &decoded::<ExItemAuctionInfo>(&out, "EX_ITEM_AUCTION_INFO")[0];
-    assert_eq!(info.bid, 100, "auction 6 is running now, with its starting bid");
-    assert!(info.time_remaining > 0);
-}
 
 /// The settings off: the bypass says it is not an auction period, and nothing is loaded.
 #[test]
@@ -1235,7 +1065,7 @@ fn disabled_auctions_load_nothing() {
     let mut s = Scene::new(
         ItemAuctionSettings {
             enabled: false,
-            ..settings(true)
+            ..settings()
         },
         |now| started_falchion(now, &[]),
     );

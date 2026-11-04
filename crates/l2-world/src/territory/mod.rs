@@ -30,18 +30,10 @@
 // (`decayMe`), here the id stays and the NPC is gone from the world: "spawned" is whether the
 // world still has it.
 //
-// # Side by side with the Java game server (D-39, D-49, D-50, D-51)
-// Sieghardt runs the real Territory War while both servers share the database. So:
-// - every row the war writes (the registrations, the owned wards of a territory, the next war
-//   date) goes out through [`World::siege_write`] (`SiegeDatabaseWrites`, default off); the world
-//   changes its own state either way;
-// - the schedule runs here too (the registration period, the countdown messages, the battlefield
-//   channel), but the start of the war by the schedule happens only with the switch on. Off, the
-//   territories, the registrations and the next date are read again once Sieghardt's war and its
-//   channel are over ([`TerritoryTimer::SideBySideReread`]), and the schedule starts again from
-//   the date read. A GM start (`//territory_war_start`) always runs the war in this world;
-// - a registration (`RequestJoinDominionWar`) reads the registrations again first (D-50); a
-//   registration this world holds without a row (written with the switch off) survives the read.
+// # Rows
+// Every row the war writes (the registrations, the owned wards of a territory, the next war
+// date) goes out through [`World::territory_write`]. A registration (`RequestJoinDominionWar`)
+// reads the registrations again first.
 //
 // # Left to other cards (D-05: quests and scripts come later)
 // - The Territory War quests (`TerritoryWarSuperClass` and its children: "For the Sake of the
@@ -230,12 +222,10 @@ pub struct TerritoryWard {
     pub npc: Option<ObjectId>,
 }
 
-/// One registration (a clan id or a character id) and whether it has no row (written while
-/// `SiegeDatabaseWrites` was off, D-51).
+/// One registration (a clan id or a character id).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(crate) struct Registration {
     pub(crate) id: i32,
-    pub(crate) unsaved: bool,
 }
 
 /// The Territory War timers (one `TimerKind::Territory`).
@@ -249,9 +239,6 @@ pub enum TerritoryTimer {
     CloseChannel,
     /// Java `RewardOnlineParticipants` (`scheduleAtFixedRate`, every minute).
     RewardOnline,
-    /// Side by side (D-51): Sieghardt's war and channel are over; read the rows again and start
-    /// the schedule from the date read.
-    SideBySideReread,
     /// `MercenaryCaptain`'s `startQuestTimer("say", DELAY, npc, null, true)` (every hour).
     CaptainSay(ObjectId),
 }
@@ -294,8 +281,6 @@ pub enum TerritoryThen {
         is_clan: i32,
         is_joining: i32,
     },
-    /// Side by side: Sieghardt's war is over; start the schedule from the date read.
-    RestartSchedule,
 }
 
 /// The Territory War state of the world (Java's `TerritoryWarManager` fields).
@@ -485,15 +470,13 @@ impl World {
             TerritoryTimer::EndTw => self.on_tw_end_task(),
             TerritoryTimer::CloseChannel => self.on_tw_close_channel(),
             TerritoryTimer::RewardOnline => self.on_tw_reward_online(),
-            TerritoryTimer::SideBySideReread => self.on_tw_side_by_side_reread(),
             TerritoryTimer::CaptainSay(npc) => self.on_captain_say_timer(npc),
         }
     }
 
-    /// Hands a write of the war to the persistence task, only with `SiegeDatabaseWrites` (D-51).
-    /// Returns whether it went out.
-    pub(crate) fn territory_write(&mut self, write: TerritoryWrite) -> bool {
-        self.siege_write(crate::residence::ResidenceWrite::Territory(write))
+    /// Hands a write of the war to the persistence task.
+    pub(crate) fn territory_write(&mut self, write: TerritoryWrite) {
+        self.residence_write(crate::residence::ResidenceWrite::Territory(write));
     }
 
     /// `getTerritory(castleId).setOwnerClan(clan)` (`Castle.setOwner`; side by side also the

@@ -144,7 +144,7 @@ fn defaults_come_from_the_structs_for_dist_keys() {
             .filter(|e| default_for(&defaults, &e.key, e.comment_default.as_deref()).is_some())
             .count();
         eprintln!("{rel}: {known}/{} keys have a default", entries.len());
-        if !matches!(rel.as_str(), "Admin.ini" | "SideBySide.ini") {
+        if !matches!(rel.as_str(), "Admin.ini") {
             total += entries.len();
             total_known += known;
         }

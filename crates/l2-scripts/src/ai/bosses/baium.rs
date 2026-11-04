@@ -8,10 +8,6 @@
 // `i_quest0..2`) are a map by NPC object id in it. The constructor is `on_load`. Statuses: 0 alive
 // (the stone statue), 1 waiting (unused by this script), 2 in fight, 3 dead.
 //
-// Side by side (D-54, `super` module): with `CycleDatabaseWrites` off the constructor restores the
-// boss only from an alive row (a dead row still waits for its respawn time), and `CLEAR_STATUS`
-// reads the row again and brings the statue back only when the row says alive.
-//
 // Not modelled: `isSummonSpawn` of the archangels (the spawn animation), `unload` (D-16).
 
 use std::collections::HashMap;
@@ -24,7 +20,7 @@ use l2_world::subclass::CategoryType;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey, TeleportTarget};
 use tracing::info;
 
-use super::{EVENT_ROW_READ, date_time_string, distance_3d, row_lets_boss_run};
+use super::{date_time_string, distance_3d};
 
 // NPC definitions.
 const BAIUM_NPC_ID: i32 = 29020; // GranbossBaium Npc
@@ -151,11 +147,6 @@ impl Script for Baium {
         let stored_heading = boss_info.heading;
         let stored_respawn_time = boss_info.respawn_time;
         let current_status = get_status(ctx);
-        // D-54: a waiting or fighting row belongs to the other server's fight.
-        if current_status != STATUS_DEAD && !row_lets_boss_run(ctx, BAIUM_NPC_ID) {
-            info!("Baium: the shared state row says {current_status}; the AI waits for an alive row (D-54).");
-            return;
-        }
         match current_status {
             STATUS_WAITING => {
                 // NOTE(java-quirk): the status goes back to alive, but no statue is spawned until
@@ -497,38 +488,8 @@ impl Script for Baium {
                 }
             }
             EVENT_CLEAR_STATUS => {
-                // D-54: on the shared database the row decides; read it again first.
-                if !ctx.world().boss_writes_enabled() {
-                    ctx.world_mut()
-                        .reread_grand_boss_for_script(BAIUM_NPC_ID, self.name(), EVENT_ROW_READ);
-                    return None;
-                }
                 set_status(ctx, STATUS_ALIVE);
                 spawn_stone(ctx);
-            }
-            EVENT_ROW_READ => {
-                // D-54: the answer of the read `CLEAR_STATUS` asked for.
-                match get_status(ctx) {
-                    STATUS_ALIVE => {
-                        set_status(ctx, STATUS_ALIVE);
-                        spawn_stone(ctx);
-                    }
-                    STATUS_DEAD => {
-                        let respawn = ctx
-                            .world()
-                            .grand_boss_info(BAIUM_NPC_ID)
-                            .map_or(0, |i| i.respawn_time);
-                        let remaining_delay = respawn - ctx.now_ms();
-                        if remaining_delay > 0 {
-                            ctx.start_quest_timer(EVENT_CLEAR_STATUS, remaining_delay, None, None, false);
-                        } else {
-                            info!("Baium: the shared state row says dead; the statue stays away (D-54).");
-                        }
-                    }
-                    status => {
-                        info!("Baium: the shared state row says {status}; the statue stays away (D-54).");
-                    }
-                }
             }
             EVENT_CLEAR_ZONE => {
                 let (zone_id, zone_type) = BAIUM_RIM_ZONE;
@@ -996,7 +957,7 @@ fn inside_radius_3d(ctx: &ScriptCtx<'_>, a: ObjectId, b: ObjectId, radius: f64) 
 #[cfg(test)]
 mod tests {
     use l2_util::ObjectId as Oid;
-    use l2_world::{BossReadKind, BossReadThen, BossWrite, ScriptRegistry};
+    use l2_world::{BossWrite, ScriptRegistry};
 
     use super::*;
     use crate::ai::bosses::test_support::*;
@@ -1031,7 +992,7 @@ mod tests {
         xml
     }
 
-    fn setup_row(status: i32, respawn_time: i64, writes: bool) -> ScriptTest {
+    fn setup_row(status: i32, respawn_time: i64) -> ScriptTest {
         let mut registry = ScriptRegistry::new();
         registry.add(Baium);
         let vortex = r#"<html><body>31862<a action="bypass -h Script Baium ENTER">Go where the Angelic Vortex leads.</a></body></html>"#;
@@ -1059,7 +1020,6 @@ mod tests {
             ITEMS,
             &pages,
             vec![row(BAIUM_NPC_ID, status, respawn_time, (115000, 16500, 10100))],
-            writes,
         )
     }
 
@@ -1105,7 +1065,7 @@ mod tests {
 
     #[test]
     fn the_vortex_takes_the_blooded_fabric_and_sends_the_player_up() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true);
+        let mut t = setup_row(STATUS_ALIVE, 0);
         // The constructor: the statue sits where Baium will stand.
         let stone = npcs_of(&t, BAIUM_STONE_NPC_ID);
         assert_eq!(stone.len(), 1);
@@ -1139,7 +1099,7 @@ mod tests {
 
     #[test]
     fn the_wake_up_runs_the_movie_and_brings_the_archangels() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true);
+        let mut t = setup_row(STATUS_ALIVE, 0);
         t.enter_with(player_at(2, ON_ROOF, vec![]));
         t.take();
         t.take_boss();
@@ -1189,7 +1149,7 @@ mod tests {
 
     #[test]
     fn the_death_on_the_roof_writes_the_state_and_the_gm_respawn_brings_the_statue() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true);
+        let mut t = setup_row(STATUS_ALIVE, 0);
         let baium = awake(&mut t, 2);
         t.take_boss();
         let before = now_ms();
@@ -1218,7 +1178,7 @@ mod tests {
 
     #[test]
     fn a_kill_from_outside_the_rim_changes_nothing() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true);
+        let mut t = setup_row(STATUS_ALIVE, 0);
         let baium = awake(&mut t, 2);
         t.enter(4, 80, vec![]);
         t.take_boss();
@@ -1231,7 +1191,7 @@ mod tests {
 
     #[test]
     fn half_an_hour_without_a_hit_clears_the_roof() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true);
+        let mut t = setup_row(STATUS_ALIVE, 0);
         let baium = awake(&mut t, 2);
         t.world.run_as_script("Baium", |ctx| {
             ctx.state::<BaiumState>().last_attack_time = 0;
@@ -1253,70 +1213,26 @@ mod tests {
     }
 
     #[test]
-    fn with_the_switch_off_nothing_is_written_and_the_row_decides_the_respawn() {
-        let mut t = setup_row(STATUS_ALIVE, 0, false);
-        let baium = awake(&mut t, 2);
-        assert!(t.world.do_die(baium, Some(Oid(2))));
-        run_ms(&mut t, 2_600);
-        assert_eq!(status(&t), Some(STATUS_DEAD));
-        assert!(grand_writes(&t.take_boss()).is_empty());
-
-        notify(&mut t, EVENT_RESPAWN_BAIUM, None, Some(2));
-        let then = BossReadThen::ScriptEvent {
-            script: "Baium",
-            event: EVENT_ROW_READ,
-        };
-        assert_eq!(
-            rereads(&t.take_boss()),
-            [(BossReadKind::GrandBoss(BAIUM_NPC_ID), then)]
-        );
-        assert!(npcs_of(&t, BAIUM_STONE_NPC_ID).is_empty());
-        // The other server's Baium is in a fight: the statue stays away.
-        answer(
-            &mut t,
-            then,
-            BAIUM_NPC_ID,
-            row(BAIUM_NPC_ID, STATUS_IN_FIGHT, 0, (1, 2, 3)),
-        );
-        assert!(npcs_of(&t, BAIUM_STONE_NPC_ID).is_empty());
-        answer(
-            &mut t,
-            then,
-            BAIUM_NPC_ID,
-            row(BAIUM_NPC_ID, STATUS_ALIVE, 0, (1, 2, 3)),
-        );
-        assert_eq!(npcs_of(&t, BAIUM_STONE_NPC_ID).len(), 1);
-        assert!(grand_writes(&t.take_boss()).is_empty());
-    }
-
-    #[test]
     fn the_constructor_restores_the_row() {
-        // In fight, this server writes: Baium and the archangels are back.
-        let mut t = setup_row(STATUS_IN_FIGHT, 0, true);
+        // In fight: Baium and the archangels are back.
+        let mut t = setup_row(STATUS_IN_FIGHT, 0);
         let baium = t.world.grand_boss_npc(BAIUM_NPC_ID).unwrap();
         let (x, y, _) = t.world.position_of(baium).unwrap();
         assert_eq!((x, y), (115000, 16500));
         assert_eq!(npcs_of(&t, ARCHANGEL_NPC_ID).len(), 5);
         assert!(has_timer(&mut t, EVENT_CHECK_ATTACK, Some(baium), None));
-        // D-54: on the shared database that is the other server's fight.
-        let t = setup_row(STATUS_IN_FIGHT, 0, false);
-        assert!(npcs_of(&t, BAIUM_NPC_ID).is_empty());
-        assert!(npcs_of(&t, ARCHANGEL_NPC_ID).is_empty());
         // Waiting goes back to alive, without a statue (Java).
-        let t = setup_row(STATUS_WAITING, 0, true);
+        let t = setup_row(STATUS_WAITING, 0);
         assert_eq!(status(&t), Some(STATUS_ALIVE));
         assert!(npcs_of(&t, BAIUM_STONE_NPC_ID).is_empty());
-        // Dead, the time is over: the statue, or a read of the row first.
-        let t = setup_row(STATUS_DEAD, now_ms() - 1000, true);
+        // Dead, the time is over: the statue.
+        let t = setup_row(STATUS_DEAD, now_ms() - 1000);
         assert_eq!(npcs_of(&t, BAIUM_STONE_NPC_ID).len(), 1);
-        let t = setup_row(STATUS_DEAD, now_ms() - 1000, false);
-        assert!(npcs_of(&t, BAIUM_STONE_NPC_ID).is_empty());
-        assert_eq!(rereads(&t.take_boss()).len(), 1);
     }
 
     #[test]
     fn the_hate_slots_keep_three_attackers() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true);
+        let mut t = setup_row(STATUS_ALIVE, 0);
         let baium = awake(&mut t, 2);
         t.world.run_as_script("Baium", |ctx| {
             let npc = ctx.script_npc(baium).unwrap();
@@ -1338,7 +1254,7 @@ mod tests {
 
     #[test]
     fn the_gm_events_answer_when_they_cannot_run() {
-        let mut t = setup_row(STATUS_ALIVE, 0, true);
+        let mut t = setup_row(STATUS_ALIVE, 0);
         t.enter(5, 80, vec![]);
         t.take();
         for event in [EVENT_RESPAWN_BAIUM, EVENT_ABORT_FIGHT, EVENT_DESPAWN_MINIONS] {

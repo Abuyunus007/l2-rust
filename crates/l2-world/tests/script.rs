@@ -873,37 +873,29 @@ fn tutorial_packets_reach_the_tutorial_quest() {
 
 #[test]
 fn global_variables_are_written_at_shutdown_only_with_the_switch() {
-    for switch in [false, true] {
-        let settings = ScriptSettings {
-            cycle_database_writes: switch,
-            ..ScriptSettings::default()
-        };
-        let mut s = setup_with(settings, two_quests);
-        s.world.set_global_variables(vec![
-            ("old".to_owned(), Some("1".to_owned())),
-            ("null".to_owned(), None),
-        ]);
-        assert_eq!(s.world.global_variables().len(), 1);
-        s.as_script("QA", |ctx| {
-            assert_eq!(ctx.global_variables().get_int("old", 0), 1);
-            ctx.set_global_variable("boss", "123");
-            ctx.remove_global_variable("old");
-        });
-        s.world.handle(WorldCommand::Shutdown {
-            done: Box::new(|| {}),
-        });
-        let globals = s.writes.globals.lock().unwrap().clone();
-        if switch {
-            assert_eq!(
-                globals,
-                [
-                    GlobalVariablesWrite::Replace(vec![("boss".to_owned(), "123".to_owned())]),
-                    GlobalVariablesWrite::Delete(vec!["old".to_owned()]),
-                ]
-            );
-        } else {
-            // D-54: Sieghardt owns the rows; Kain keeps them in memory.
-            assert!(globals.is_empty());
-        }
-    }
+    let settings = ScriptSettings {
+        ..ScriptSettings::default()
+    };
+    let mut s = setup_with(settings, two_quests);
+    s.world.set_global_variables(vec![
+        ("old".to_owned(), Some("1".to_owned())),
+        ("null".to_owned(), None),
+    ]);
+    assert_eq!(s.world.global_variables().len(), 1);
+    s.as_script("QA", |ctx| {
+        assert_eq!(ctx.global_variables().get_int("old", 0), 1);
+        ctx.set_global_variable("boss", "123");
+        ctx.remove_global_variable("old");
+    });
+    s.world.handle(WorldCommand::Shutdown {
+        done: Box::new(|| {}),
+    });
+    let globals = s.writes.globals.lock().unwrap().clone();
+    assert_eq!(
+        globals,
+        [
+            GlobalVariablesWrite::Replace(vec![("boss".to_owned(), "123".to_owned())]),
+            GlobalVariablesWrite::Delete(vec!["old".to_owned()]),
+        ]
+    );
 }

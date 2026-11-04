@@ -400,7 +400,6 @@ fn html(out: &[Vec<u8>]) -> Vec<NpcHtmlMessage> {
 
 fn running_lottery() -> LotterySettings {
     LotterySettings {
-        cycle_database_writes: true,
         ..LotterySettings::default()
     }
 }
@@ -505,30 +504,6 @@ fn a_lottery_starts_and_sells_a_ticket() {
             prize: 52_000
         }]
     );
-}
-
-/// Without `CycleDatabaseWrites` (D-53) this server sells no ticket.
-#[test]
-fn no_ticket_is_sold_while_the_java_server_owns_the_lottery() {
-    let mut s = Scene::new(vec![item(0x100, 57, 10_000)]);
-    s.world.set_lottery_settings(LotterySettings::default());
-    s.world.set_lottery_clock(Some(TUESDAY_NOON));
-    s.world.load_lottery(Some(LotteryRow {
-        idnr: 7,
-        prize: 90_000,
-        newprize: 90_000,
-        enddate: TUESDAY_NOON + 3 * 86_400_000,
-        finished: false,
-    }));
-    assert!(!s.world.lottery_is_started());
-    assert_eq!((s.world.lottery_id(), s.world.lottery_prize()), (7, 90_000));
-    let npc = s.npc(30990, 50);
-    s.bypass("Loto 1", Some(npc));
-    assert_eq!(
-        messages(&s.me.take()).iter().map(|m| m.id).collect::<Vec<_>>(),
-        vec![SystemMessageId::LotteryTicketsAreNotCurrentlyBeingSold]
-    );
-    assert!(s.persisted.take().is_empty());
 }
 
 /// `finishLottery`: the draw is announced with its winners, the row is finished, and the winner

@@ -414,14 +414,10 @@ impl World {
 
     /// Java `DailyResetManager.resetRecommends`.
     fn reset_recommends(&mut self) {
-        // The two `UPDATE`s run in the database first. They touch every row, so with the Java game
-        // server on the same database (`DailyResetDatabaseWrites` off, D-39) they are left to it:
-        // run twice they would take 40 recommendations away. The rows of the players in the world
-        // change either way, which the mirror in their profile follows (their own rows are
-        // written by the normal store).
-        if self.settings.daily_reset_database_writes {
-            self.outbox.persist(PersistCommand::ResetRecommends);
-        }
+        // The two `UPDATE`s run in the database first. The rows of the players in the world
+        // change as well, which the mirror in their profile follows (their own rows are written
+        // by the normal store).
+        self.outbox.persist(PersistCommand::ResetRecommends);
         let ids = self.sorted_player_ids();
         for id in &ids {
             if let Some(player) = self.players.get_mut(id) {

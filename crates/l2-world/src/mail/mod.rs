@@ -46,9 +46,6 @@
 //   the attachment rows of the message first (`PersistCommand::MailAttachmentsRequest` /
 //   `WorldCommand::MailAttachmentsLoaded`, D-15) and move only the rows that are still
 //   `loc = 'MAIL'` with that `loc_data`.
-// - The expiry task writes its rows only with `MailExpiryDatabaseWrites` (D-49,
-//   [`MailSettings::expiry_database_writes`]); otherwise the Java GS, which has the same mails,
-//   does it.
 //
 // # Left out on purpose (each has a comment where it belongs)
 // - `BlockList.isInBlockList` (the ignore list is the friend list card's, `// M6-FRIEND:`).
@@ -99,11 +96,6 @@ pub struct MailSettings {
     pub allow_mail: bool,
     /// `GeneralConfig.ALLOW_ATTACHMENTS` (`AllowAttachments`).
     pub allow_attachments: bool,
-    /// `MailExpiryDatabaseWrites` of `config/SideBySide.ini` (D-49, default False): the expiry task
-    /// deletes the rows of an expired mail and moves its attachments back to the sender. While the
-    /// Java GS shares the database it does the same on its own schedule, so by default this server
-    /// only expires the mails in memory.
-    pub expiry_database_writes: bool,
 }
 
 impl Default for MailSettings {
@@ -111,7 +103,6 @@ impl Default for MailSettings {
         Self {
             allow_mail: true,
             allow_attachments: true,
-            expiry_database_writes: false,
         }
     }
 }

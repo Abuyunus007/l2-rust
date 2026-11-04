@@ -82,6 +82,7 @@ use l2_db::{
 use l2_db::{FishingChampionshipRepository, FishingChampionshipRow};
 use l2_db::{ManorRepository, ProcureRow, ProductionRow};
 use l2_world::InstanceTimeWrite;
+use l2_world::ItemAuctionWrite;
 use l2_world::clan::{
     ClanDataRecord, ClanMemberRecord, ClanRow, ClanUpdateRow, CrestRecord, CrestWrite, WarWrite,
 };
@@ -117,7 +118,6 @@ use l2_world::{
     FlagWarRecord, HallGuardRecord, HallScript, HallSiegeHallLoad, HallSiegeLoad, HallSiegeRows,
     HallSiegeWrite,
 };
-use l2_world::{ItemAuctionRecord, ItemAuctionWrite};
 use l2_world::{MinigameLoad, MinigameWrite};
 use l2_world::{
     NobleRow, NobleStats, OlympiadData, OlympiadLoad, OlympiadRereadRequest, OlympiadRereadRows,
@@ -689,23 +689,6 @@ pub trait PlayerStore: Send + 'static {
         async { Ok(()) }
     }
 
-    /// The named `global_variables` rows read again (D-50, D-54, S-API-04). A store without a
-    /// database has no rows.
-    fn load_global_variable_rows(
-        &mut self,
-        _names: &[String],
-    ) -> impl Future<Output = Result<Vec<(String, Option<String>)>, PersistError>> + Send {
-        async { Ok(Vec::new()) }
-    }
-
-    /// Every `seven_signs` row and the status row read again (D-50, M8-SS-01). A store without a
-    /// database has none.
-    fn load_seven_signs(
-        &mut self,
-    ) -> impl Future<Output = Result<l2_world::sevensigns::SevenSignsLoad, PersistError>> + Send {
-        async { Ok(l2_world::sevensigns::SevenSignsLoad::default()) }
-    }
-
     /// A write of `mods_wedding` (Java's `Couple` statements, M8-MISC-01).
     fn store_wedding(
         &mut self,
@@ -721,17 +704,6 @@ pub trait PlayerStore: Send + 'static {
         _write: &ItemAuctionWrite,
     ) -> impl Future<Output = Result<(), PersistError>> + Send {
         async { Ok(()) }
-    }
-
-    /// The `item_auction` rows and bids of one instance (Java `ItemAuctionInstance.loadAuction`),
-    /// read again before an auction is shown or bid on while the Java game server writes the
-    /// states (L-05, D-53). Read in order with the other commands, so the rows include every bid
-    /// written before the request.
-    fn load_item_auction_records(
-        &mut self,
-        _instance_id: i32,
-    ) -> impl Future<Output = Result<Vec<ItemAuctionRecord>, PersistError>> + Send {
-        async { Ok(Vec::new()) }
     }
 
     /// Java `RequestPetitionFeedback`: one `petition_feedback` row (M7-ADMIN-10).
@@ -1337,21 +1309,6 @@ async fn run<S: PlayerStore>(
                     error!("SevenSigns: Unable to save data to database ({write:?}): {e}");
                 }
             }
-            OutboxMessage::Persist(PersistCommand::SevenSignsReadRequest { then }) => {
-                // Not a write: the answer goes back to the world (D-15, D-50). A failed read is
-                // reported as a failure; the world then changes nothing.
-                let result = match store.load_seven_signs().await {
-                    Ok(load) => Ok(load),
-                    Err(e) => {
-                        warn!("SevenSigns: Unable to load Seven Signs data from database: {e}");
-                        Err(())
-                    }
-                };
-                let answer = l2_world::WorldCommand::SevenSignsLoaded { result, then };
-                if !acks.send_to_world(answer) {
-                    warn!("The Seven Signs rows could not be handed to the world.");
-                }
-            }
             OutboxMessage::Persist(PersistCommand::Wedding(write)) => {
                 // Java logs a failed statement and goes on (no retry).
                 if let Err(e) = store.store_wedding(&write).await {
@@ -1527,26 +1484,6 @@ async fn run<S: PlayerStore>(
                     error!("Item auction data could NOT be stored ({write:?}): {e}");
                 }
             }
-            OutboxMessage::Persist(PersistCommand::ItemAuctionRequest { instance_id, then }) => {
-                // Not a write either: the answer goes back to the world (D-15).
-                let result = match store.load_item_auction_records(instance_id).await {
-                    Ok(rows) => Ok(rows),
-                    Err(e) => {
-                        warn!("Could not read the auctions of item auction instance {instance_id}: {e}");
-                        Err(())
-                    }
-                };
-                let answer = l2_world::WorldCommand::ItemAuctionReread {
-                    instance_id,
-                    result,
-                    then,
-                };
-                if !acks.send_to_world(answer) {
-                    warn!(
-                        "The auctions of item auction instance {instance_id} could not be handed to the world."
-                    );
-                }
-            }
             OutboxMessage::Persist(PersistCommand::Friend(write)) => {
                 // Java logs a failed friend statement and goes on (no retry).
                 if let Err(e) = store.store_friend_write(&write).await {
@@ -1677,21 +1614,6 @@ async fn run<S: PlayerStore>(
                 // Java logs a failed delete and sends the mail anyway.
                 if let Err(e) = store.delete_custom_mail(&date, receiver).await {
                     warn!("CustomMailManager: Error deleting entry from database: {e}");
-                }
-            }
-            OutboxMessage::Persist(PersistCommand::GlobalVariablesRereadRequest { token, names }) => {
-                // Not a write: the answer goes back to the world (D-15). A failed read is reported
-                // as a failure; the script's action is then refused (D-50).
-                let result = match store.load_global_variable_rows(&names).await {
-                    Ok(rows) => Ok(rows),
-                    Err(e) => {
-                        warn!("Could not read the global variables {names:?} again: {e}");
-                        Err(())
-                    }
-                };
-                let answer = l2_world::WorldCommand::GlobalVariablesReread { token, result };
-                if !acks.send_to_world(answer) {
-                    warn!("The global variables {names:?} could not be handed to the world.");
                 }
             }
             OutboxMessage::Persist(PersistCommand::TransmogLoadRequest {
@@ -6036,13 +5958,6 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
-    async fn load_global_variable_rows(
-        &mut self,
-        names: &[String],
-    ) -> Result<Vec<(String, Option<String>)>, PersistError> {
-        Ok(self.global_variables.load_variables(names).await?)
-    }
-
     async fn load_transmog(
         &mut self,
         owner: &str,
@@ -6127,10 +6042,6 @@ impl PlayerStore for DbStore {
         Ok(())
     }
 
-    async fn load_seven_signs(&mut self) -> Result<l2_world::sevensigns::SevenSignsLoad, PersistError> {
-        read_seven_signs(&self.seven_signs).await
-    }
-
     async fn store_wedding(&mut self, write: &l2_world::wedding::WeddingWrite) -> Result<(), PersistError> {
         use l2_world::wedding::WeddingWrite;
         match write {
@@ -6191,13 +6102,6 @@ impl PlayerStore for DbStore {
             }
         }
         Ok(())
-    }
-
-    async fn load_item_auction_records(
-        &mut self,
-        instance_id: i32,
-    ) -> Result<Vec<ItemAuctionRecord>, PersistError> {
-        Ok(crate::item_auctions::read_instance_records(&self.item_auctions, instance_id).await?)
     }
 
     async fn store_petition_feedback(
@@ -7047,14 +6951,10 @@ mod tests {
         Henna(HennaWrite),
         /// An item auction row write (L-05).
         ItemAuction(ItemAuctionWrite),
-        /// The re-read of an item auction instance (L-05).
-        ItemAuctionRecords(i32),
         /// A boss row write (M8-BOSS-01).
         Boss(BossWrite),
         /// A read of boss rows (M8-BOSS-01).
         BossRead(BossReadKind),
-        /// A `global_variables` re-read (S-API-04).
-        GlobalRead(Vec<String>),
         /// A `character_instance_time` write (M8-INST-01).
         InstanceTime(InstanceTimeWrite),
         /// An Underground Coliseum write (M8-GAMES-01).
@@ -7325,14 +7225,6 @@ mod tests {
             Ok(vec![(7, "Bday".to_owned(), 3)])
         }
 
-        async fn load_global_variable_rows(
-            &mut self,
-            names: &[String],
-        ) -> Result<Vec<(String, Option<String>)>, PersistError> {
-            self.calls.lock().unwrap().push(Call::GlobalRead(names.to_vec()));
-            Ok(vec![("Respawn".to_owned(), Some("999".to_owned()))])
-        }
-
         async fn store_instance_time(&mut self, write: &InstanceTimeWrite) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::InstanceTime(*write));
             Ok(())
@@ -7386,33 +7278,6 @@ mod tests {
         async fn store_item_auction_write(&mut self, write: &ItemAuctionWrite) -> Result<(), PersistError> {
             self.calls.lock().unwrap().push(Call::ItemAuction(write.clone()));
             Ok(())
-        }
-
-        /// Instance 7 has one auction with one bid; below 0 cannot be read.
-        async fn load_item_auction_records(
-            &mut self,
-            instance_id: i32,
-        ) -> Result<Vec<ItemAuctionRecord>, PersistError> {
-            self.calls
-                .lock()
-                .unwrap()
-                .push(Call::ItemAuctionRecords(instance_id));
-            if instance_id < 0 {
-                return Err(PersistError::NoSuchCharacter(instance_id));
-            }
-            Ok(if instance_id == 7 {
-                vec![ItemAuctionRecord {
-                    auction_id: 3,
-                    instance_id: 7,
-                    auction_item_id: 1,
-                    starting_time: 10,
-                    ending_time: 20,
-                    state_id: 1,
-                    bids: vec![(1001, 500)],
-                }]
-            } else {
-                Vec::new()
-            })
         }
 
         async fn store_petition_feedback(
@@ -7788,45 +7653,6 @@ mod tests {
                     })
                 );
                 assert_eq!(then, l2_world::BossReadThen::Nothing);
-            }
-            other => panic!("{other:?}"),
-        }
-    }
-
-    /// The global variable re-read of the scripts (S-API-04, D-50) comes after the writes sent
-    /// before it and goes back to the world as `WorldCommand::GlobalVariablesReread`.
-    #[tokio::test]
-    async fn the_global_variable_reread_is_answered_to_the_world_in_order() {
-        let (world_tx, world_rx) = std::sync::mpsc::channel();
-        let acks = LeftAcks::default();
-        acks.set_world(crate::state::WorldHandle::new(world_tx));
-        let store = Recording::default();
-        let calls = Arc::clone(&store.calls);
-        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
-        let task = spawn(store, rx, notice_tx, NO_WAIT, acks);
-        let send = |command: PersistCommand| tx.send(OutboxMessage::Persist(command)).unwrap();
-        send(PersistCommand::Boss(BossWrite::RaidPointsDeleteAll));
-        send(PersistCommand::GlobalVariablesRereadRequest {
-            token: 4,
-            names: vec!["Respawn".to_owned()],
-        });
-        drop(tx);
-        tokio::time::timeout(Duration::from_secs(10), task)
-            .await
-            .unwrap()
-            .unwrap();
-        assert_eq!(
-            *calls.lock().unwrap(),
-            vec![
-                Call::Boss(BossWrite::RaidPointsDeleteAll),
-                Call::GlobalRead(vec!["Respawn".to_owned()]),
-            ]
-        );
-        match world_rx.try_recv().unwrap() {
-            l2_world::WorldCommand::GlobalVariablesReread { token, result } => {
-                assert_eq!(token, 4);
-                assert_eq!(result, Ok(vec![("Respawn".to_owned(), Some("999".to_owned()))]));
             }
             other => panic!("{other:?}"),
         }
@@ -9219,73 +9045,24 @@ mod tests {
         }
     }
 
-    /// L-05: the item auction rows are writes in order, and the re-read of an instance is an
-    /// answer to the world, in order with the writes before it (a failed read is `Err`).
+    /// L-05: the item auction rows are writes in order.
     #[tokio::test]
-    async fn item_auction_rows_and_the_reread_are_in_order() {
-        let (world_tx, world_rx) = std::sync::mpsc::channel();
-        let acks = LeftAcks::default();
-        acks.set_world(crate::state::WorldHandle::new(world_tx));
+    async fn item_auction_rows_are_written_in_order() {
         let bid = ItemAuctionWrite::Bid {
             auction_id: 3,
             player_obj_id: 1001,
             bid: 500,
         };
-        let then = l2_world::ItemAuctionThen::Info {
-            player: ObjectId(1001),
-        };
-        let calls = Arc::new(Mutex::new(Vec::new()));
-        let store = Recording {
-            calls: Arc::clone(&calls),
-            ..Recording::default()
-        };
-        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        let (notice_tx, _notice_rx) = tokio::sync::mpsc::unbounded_channel();
-        let task = spawn(store, rx, notice_tx, NO_WAIT, acks);
-        for message in [
-            OutboxMessage::Persist(PersistCommand::ItemAuction(bid.clone())),
-            OutboxMessage::Persist(PersistCommand::ItemAuctionRequest { instance_id: 7, then }),
-            OutboxMessage::Persist(PersistCommand::ItemAuctionRequest {
-                instance_id: -1,
-                then,
-            }),
-        ] {
-            tx.send(message).unwrap();
-        }
-        drop(tx);
-        tokio::time::timeout(Duration::from_secs(10), task)
-            .await
-            .unwrap()
-            .unwrap();
-        assert_eq!(
-            calls.lock().unwrap().clone(),
+        let delete = ItemAuctionWrite::DeleteAuction { auction_id: 3 };
+        let (calls, _) = run_all(
+            Recording::default(),
             vec![
-                Call::ItemAuction(bid),
-                Call::ItemAuctionRecords(7),
-                Call::ItemAuctionRecords(-1),
-            ]
-        );
-        match world_rx.try_recv().unwrap() {
-            l2_world::WorldCommand::ItemAuctionReread {
-                instance_id,
-                result,
-                then: answered,
-            } => {
-                assert_eq!((instance_id, answered), (7, then));
-                let rows = result.unwrap();
-                assert_eq!(rows.len(), 1);
-                assert_eq!(rows[0].bids, vec![(1001, 500)]);
-            }
-            other => panic!("{other:?}"),
-        }
-        assert!(matches!(
-            world_rx.try_recv().unwrap(),
-            l2_world::WorldCommand::ItemAuctionReread {
-                instance_id: -1,
-                result: Err(()),
-                ..
-            }
-        ));
+                OutboxMessage::Persist(PersistCommand::ItemAuction(bid.clone())),
+                OutboxMessage::Persist(PersistCommand::ItemAuction(delete.clone())),
+            ],
+        )
+        .await;
+        assert_eq!(calls, vec![Call::ItemAuction(bid), Call::ItemAuction(delete)]);
     }
 
     /// M7-ADMIN-10: a petition feedback is a write of its own.

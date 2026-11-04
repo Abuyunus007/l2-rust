@@ -89,25 +89,6 @@ impl GlobalVariables {
         }
     }
 
-    /// The rows of a re-read (D-50): the copy of every name in `names` becomes what the table
-    /// has; a name without a row is removed. The change marks of the names are cleared, so
-    /// nothing is written back.
-    pub(crate) fn apply_reread(&mut self, names: &[String], rows: Vec<(String, Option<String>)>) {
-        for name in names {
-            self.vars.remove(name);
-            self.changed.remove(name);
-            self.removed.remove(name);
-        }
-        for (var, value) in rows {
-            // A NULL value is skipped like at the load.
-            if let Some(value) = value
-                && names.contains(&var)
-            {
-                self.vars.insert(var, value);
-            }
-        }
-    }
-
     /// The writes of the changes since the load or the last store, and the change marks cleared.
     pub(crate) fn take_writes(&mut self) -> Vec<GlobalVariablesWrite> {
         let mut writes = Vec::new();
@@ -154,16 +135,8 @@ impl World {
         &self.scripts.globals
     }
 
-    /// Java `GlobalVariablesManager.storeMe()` (D-54: only with `CycleDatabaseWrites`).
+    /// Java `GlobalVariablesManager.storeMe()`.
     pub(crate) fn store_global_variables(&mut self) {
-        if !self.scripts.settings.cycle_database_writes {
-            if !self.scripts.globals.changed.is_empty() || !self.scripts.globals.removed.is_empty() {
-                info!(
-                    "GlobalVariablesManager: CycleDatabaseWrites is off, the script variables stay in memory (D-54)."
-                );
-            }
-            return;
-        }
         let writes = self.scripts.globals.take_writes();
         let count = self.scripts.globals.len();
         for write in writes {

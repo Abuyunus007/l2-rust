@@ -6,9 +6,7 @@
 //! siege) and the GM ends the siege. Java: `Siege`, `Castle`, `MercTicket`, `HeadquarterCreate`,
 //! `TakeCastle`, `AdminSiege`, `RequestJoinSiege`.
 //!
-//! With `SiegeDatabaseWrites = False` (D-51) the world plays all of it but the global rows do not
-//! change (the registration, the owner, the next siege date, the cleared lists); what a player did
-//! himself (the hire of the mercenary) is written. With `True` the rows are Java's.
+//! The rows are Java's: the registration, the owner, the next siege date, the cleared lists.
 
 use l2_protocol_game::server::siege::{ExShowCastleInfo, SiegeAttackerList, SiegeInfo, SiegeTime};
 use l2_protocol_game::server::{
@@ -21,9 +19,8 @@ const LIONS: i32 = m7_seed::LIONS;
 const WOLVES: i32 = m7_seed::WOLVES;
 const GLUDIO: i32 = m7_data::GLUDIO;
 
-pub fn opts(siege_writes: bool) -> Opts {
+pub fn opts() -> Opts {
     Opts {
-        siege_writes,
         positions: [m7_data::LORD_POS, m7_data::RAIDER_START, m7_data::GM_POS],
         // The hall's auction is not part of this scenario: far away.
         auction_ms: 86_400_000,
@@ -64,9 +61,7 @@ fn last_pledge_info(batch: &[Vec<u8>]) -> PledgeShowInfoUpdate {
 
 /// What the scenario hands to the checks after it.
 pub struct Played {
-    /// The rows before anything happened (the seed), after the hire, and at the end.
-    pub rows_start: Rows,
-    pub rows_hired: Rows,
+    /// The rows at the end.
     pub rows_end: Rows,
     /// The clock when the siege ended.
     pub ended_at: i64,
@@ -76,7 +71,7 @@ pub struct Played {
     pub lord: Left,
 }
 
-pub async fn play<H: Harness>(h: &mut H, writes: bool) -> Played {
+pub async fn play<H: Harness>(h: &mut H) -> Played {
     // ---- everybody enters: the lord's clan and castle come from the database (D-50, D-51) ----------
     let lord_enter = h.enter(Who::Lord).await;
     let gate = all::<StaticObjectInfo>(&lord_enter, "STATIC_OBJECT")
@@ -184,12 +179,9 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool) -> Played {
         all(&h.collect_quiet(Who::Raider).await, "CASTLE_SIEGE_ATTACKER_LIST").remove(0);
     assert_eq!(attackers.clans.len(), 1);
     assert_eq!(attackers.clans[0].as_ref().unwrap().name, m7_seed::WOLVES_NAME);
-    // The row of `Siege.saveSiegeClan` only with the switch (D-51).
+    // The row of `Siege.saveSiegeClan`.
     let rows_registered = h.rows().await;
-    assert_eq!(
-        rows_registered.siege_clans,
-        if writes { vec![(GLUDIO, WOLVES, 1)] } else { vec![] }
-    );
+    assert_eq!(rows_registered.siege_clans, vec![(GLUDIO, WOLVES, 1)]);
 
     // ---- the GM starts the siege: `//startsiege Gludio` --------------------------------------------------
     h.act(Who::Gm, act::admin("startsiege Gludio")).await;
@@ -311,19 +303,15 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool) -> Played {
         m7_seed::WOLVES_NAME,
         "the castle changed hands in this world"
     );
-    // `Castle.setOwner` writes the owner, `removeMercs` the old owner's mercenaries: siege jobs.
+    // `Castle.setOwner` writes the owner, `removeMercs` the old owner's mercenaries.
     let rows_engraved = h.rows().await;
-    if writes {
-        assert_eq!(rows_engraved.clan(WOLVES).has_castle, GLUDIO);
-        assert_eq!(rows_engraved.clan(LIONS).has_castle, 0);
-        assert!(
-            rows_engraved.guards.is_empty(),
-            "the mercenaries went with the owner"
-        );
-        assert_eq!(rows_engraved.siege_clans, rows_registered.siege_clans);
-    } else {
-        assert_eq!(rows_engraved, rows_registered, "D-51: no global row changed");
-    }
+    assert_eq!(rows_engraved.clan(WOLVES).has_castle, GLUDIO);
+    assert_eq!(rows_engraved.clan(LIONS).has_castle, 0);
+    assert!(
+        rows_engraved.guards.is_empty(),
+        "the mercenaries went with the owner"
+    );
+    assert_eq!(rows_engraved.siege_clans, rows_registered.siege_clans);
 
     // ---- the GM ends the siege: the winners, the points, the next siege -----------------------------------
     h.act(Who::Gm, act::admin("endsiege Gludio")).await;
@@ -388,8 +376,6 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool) -> Played {
     let lord = h.leave(Who::Lord).await;
     h.leave(Who::Gm).await;
     Played {
-        rows_start,
-        rows_hired,
         rows_end,
         ended_at,
         owner_after_relog,
@@ -398,11 +384,11 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool) -> Played {
     }
 }
 
-/// The rows after the siege: with the switch Java's statements (`Siege.endSiege`, `saveCastleSiege`,
-/// `Castle.setOwner`), without it nothing global.
-pub fn assert_played(played: &Played, writes: bool) {
-    let (start, end) = (&played.rows_start, &played.rows_end);
-    if writes {
+/// The rows after the siege: Java's statements (`Siege.endSiege`, `saveCastleSiege`,
+/// `Castle.setOwner`).
+pub fn assert_played(played: &Played) {
+    let end = &played.rows_end;
+    {
         // `Castle.updateOwnerInDB`: the Wolves have the castle, the Lions do not.
         assert_eq!(end.clan(WOLVES).has_castle, GLUDIO);
         assert_eq!(end.clan(LIONS).has_castle, 0);
@@ -434,17 +420,6 @@ pub fn assert_played(played: &Played, writes: bool) {
             m7_seed::WOLVES_NAME,
             "the database agrees"
         );
-    } else {
-        // D-51: the only row that changed is the hire of the player, which was written when it
-        // happened.
-        assert_eq!(end.castles, start.castles);
-        assert_eq!(end.clans, start.clans);
-        assert_eq!(end.siege_clans, start.siege_clans);
-        assert_eq!(end, &played.rows_hired);
-        assert_ne!(end.guards, start.guards);
-        // The raider logs in again and the world reads his clan's residences: the database says the
-        // Wolves have no castle (Sieghardt decides, D-51), so the castle is not theirs any more.
-        assert_ne!(played.owner_after_relog, m7_seed::WOLVES_NAME);
     }
     // The characters: nobody paid anything (the headquarters costs MP here), the ticket is used.
     assert_eq!(played.lord.count_of(m7_data::MERC_TICKET), 0);
@@ -454,77 +429,17 @@ pub fn assert_played(played: &Played, writes: bool) {
 }
 
 #[tokio::test]
-async fn a_gm_started_castle_siege_runs_in_a_bare_world_without_global_writes() {
-    let mut world = BareWorld::start(&opts(false));
-    let played = play(&mut world, false).await;
-    assert_played(&played, false);
-}
-
-#[tokio::test]
-async fn a_gm_started_castle_siege_runs_in_a_bare_world_and_writes_javas_rows() {
-    let mut world = BareWorld::start(&opts(true));
-    let played = play(&mut world, true).await;
-    assert_played(&played, true);
-}
-
-/// D-50, D-51: Sieghardt registered the Wolves for the siege while this server runs. The raider's
-/// request reads the registrations first and finds his clan on the list: Java's "You have already
-/// requested a castle siege." and no second row.
-pub async fn play_sieghardt_registered_first<H: Harness>(h: &mut H) {
-    h.enter(Who::Lord).await;
-    h.enter(Who::Raider).await;
-    h.collect_quiet(Who::Raider).await;
-    let before = h.rows().await;
-    assert!(before.siege_clans.is_empty());
-
-    h.sieghardt(Sieghardt::RegisterAttacker {
-        castle_id: GLUDIO,
-        clan_id: WOLVES,
-    })
-    .await;
-    h.act(Who::Raider, act::join_siege(GLUDIO, 1, 1)).await;
-    let refused = h.collect_quiet(Who::Raider).await;
-    assert!(has_message(
-        &refused,
-        SystemMessageId::YouHaveAlreadyRequestedACastleSiege
-    ));
-    assert_eq!(
-        h.rows().await.siege_clans,
-        [(GLUDIO, WOLVES, 1)],
-        "the one row of Sieghardt"
-    );
-
-    // The list shows what the database has.
-    h.act(Who::Raider, act::siege_attacker_list(GLUDIO)).await;
-    let attackers: SiegeAttackerList =
-        all(&h.collect_quiet(Who::Raider).await, "CASTLE_SIEGE_ATTACKER_LIST").remove(0);
-    assert_eq!(attackers.clans.len(), 1);
-    assert_eq!(attackers.clans[0].as_ref().unwrap().name, m7_seed::WOLVES_NAME);
-    h.leave(Who::Raider).await;
-    h.leave(Who::Lord).await;
-}
-
-#[tokio::test]
-async fn a_registration_of_sieghardt_is_found_by_the_reread_in_a_bare_world() {
-    let mut world = BareWorld::start(&opts(false));
-    play_sieghardt_registered_first(&mut world).await;
-}
-
-#[tokio::test]
-async fn a_registration_of_sieghardt_is_found_by_the_reread_on_the_real_servers() {
-    let options = opts(false);
-    let Some(mut net) = Net::start("e2em7c2", &options).await else {
-        return;
-    };
-    play_sieghardt_registered_first(&mut net).await;
-    net.finish().await;
+async fn a_gm_started_castle_siege_runs_in_a_bare_world() {
+    let mut world = BareWorld::start(&opts());
+    let played = play(&mut world).await;
+    assert_played(&played);
 }
 
 /// D-50: a registration is acted on only after the registrations were read again; a read that
 /// fails changes nothing and refuses it (the world never falls back to its memory).
 #[tokio::test]
 async fn a_failed_reread_refuses_the_registration_in_a_bare_world() {
-    let mut world = BareWorld::start(&opts(true));
+    let mut world = BareWorld::start(&opts());
     world.enter(Who::Lord).await;
     world.enter(Who::Raider).await;
     world.collect_quiet(Who::Raider).await;
@@ -554,23 +469,12 @@ async fn a_failed_reread_refuses_the_registration_in_a_bare_world() {
 }
 
 #[tokio::test]
-async fn a_gm_started_castle_siege_runs_on_the_real_servers_without_global_writes() {
-    let options = opts(false);
-    let Some(mut net) = Net::start("e2em7c0", &options).await else {
-        return;
-    };
-    let played = play(&mut net, false).await;
-    assert_played(&played, false);
-    net.finish().await;
-}
-
-#[tokio::test]
-async fn a_gm_started_castle_siege_runs_on_the_real_servers_and_writes_javas_rows() {
-    let options = opts(true);
+async fn a_gm_started_castle_siege_runs_on_the_real_servers() {
+    let options = opts();
     let Some(mut net) = Net::start("e2em7c1", &options).await else {
         return;
     };
-    let played = play(&mut net, true).await;
-    assert_played(&played, true);
+    let played = play(&mut net).await;
+    assert_played(&played);
     net.finish().await;
 }

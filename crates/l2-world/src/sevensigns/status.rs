@@ -8,7 +8,7 @@
 use l2_protocol_game::server::{SevenSignsView, SsqStatus};
 use l2_util::ObjectId;
 
-use super::{CABAL_DAWN, CABAL_DUSK, SevenSignsThen};
+use super::{CABAL_DAWN, CABAL_DUSK};
 use crate::world::World;
 
 impl World {
@@ -20,20 +20,12 @@ impl World {
         if (self.ss_is_seal_validation_period() || self.ss_is_comp_results_period()) && page == 4 {
             return;
         }
-        if self.seven_signs.settings.cycle_database_writes {
-            self.ss_send_status(player, page);
-        } else {
-            self.ss_request_read(SevenSignsThen::Status { player, page });
-        }
+        self.ss_send_status(player, page);
     }
 
     /// `player.sendPacket(new SSQStatus(objectId, page))` on the state as it is now.
     pub(crate) fn ss_send_status(&mut self, player: ObjectId, page: i8) {
         if !self.players.contains_key(&player) {
-            return;
-        }
-        // The state may have changed with the read (D-50): the check of `runImpl` again.
-        if (self.ss_is_seal_validation_period() || self.ss_is_comp_results_period()) && page == 4 {
             return;
         }
         let view = self.ss_view(player.0);

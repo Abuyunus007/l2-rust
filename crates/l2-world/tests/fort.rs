@@ -690,18 +690,13 @@ fn sieges(clans: Vec<i32>) -> FortSiegeLoad {
 impl Scene {
     /// A world with the clans (Lions level 5, Wolves level 5 and Bears level 3), the fortress
     /// Shanty owned by `owner`, and the rows of `sieges` loaded.
-    fn new(siege_database_writes: bool, owner: i32, siege_clans: Vec<i32>, siege_date: i64) -> Self {
+    fn new(owner: i32, siege_clans: Vec<i32>, siege_date: i64) -> Self {
         let mut fort = shanty(owner);
         fort.siege_date = siege_date;
-        Self::with(siege_database_writes, fort, siege_clans, settings())
+        Self::with(fort, siege_clans, settings())
     }
 
-    fn with(
-        siege_database_writes: bool,
-        fort: FortRecord,
-        siege_clans: Vec<i32>,
-        settings: FortSettings,
-    ) -> Self {
+    fn with(fort: FortRecord, siege_clans: Vec<i32>, settings: FortSettings) -> Self {
         let root = tempfile::tempdir().unwrap();
         let write = |path: &str, text: &str| {
             let file = root.path().join(path);
@@ -756,7 +751,6 @@ impl Scene {
         .unwrap();
         world.spawn_doors(&doors, &ids).unwrap();
         world.set_residence_settings(ResidenceSettings {
-            siege_database_writes,
             ..ResidenceSettings::default()
         });
         world.set_fort_settings(settings);
@@ -1063,7 +1057,7 @@ fn answer_reread(s: &mut Scene, then: ResidenceReadThen, owner: i32, clans: Vec<
 /// after the fortress is taken, `_state == 0`), the siege guards are loaded and not spawned.
 #[test]
 fn loading_spawns_the_peace_time_npcs_like_java() {
-    let s = Scene::new(true, 0, vec![], 0);
+    let s = Scene::new(0, vec![], 0);
     assert_eq!(s.npcs_of(NPC_PEACE).len(), 1);
     assert_eq!(s.npcs_of(NPC_CAPTAIN_GUARD).len(), 1);
     assert_eq!(s.npcs_of(NPC_CAPTAIN_ARCHER).len(), 1);
@@ -1075,7 +1069,7 @@ fn loading_spawns_the_peace_time_npcs_like_java() {
     // The commanders of the siege come from FortSiege.ini.
     assert!(!s.world.fort_siege_in_progress(SHANTY));
     // The envoys of a fortress that has an owner and no contract.
-    let s = Scene::new(true, LIONS, vec![], 0);
+    let s = Scene::new(LIONS, vec![], 0);
     assert_eq!(s.npcs_of(NPC_ENVOY).len(), 1);
     // A contract was decided: no envoys.
     assert_eq!(s.world.fort_castle_id_by_ambassador(SHANTY, NPC_ENVOY), 1);
@@ -1086,8 +1080,8 @@ fn loading_spawns_the_peace_time_npcs_like_java() {
 /// `FortSiege.checkAutoTask`: a siege time in the past clears the registrations and the date
 /// (`saveFortSiege`, `clearSiegeClan`); the rows go out with the switch only (D-51).
 #[test]
-fn a_siege_time_in_the_past_clears_the_registrations_and_writes_with_the_switch() {
-    let on = Scene::new(true, LIONS, vec![WOLVES], 0);
+fn a_siege_time_in_the_past_clears_the_registrations_and_writes() {
+    let on = Scene::new(LIONS, vec![WOLVES], 0);
     assert!(on.world.fort_attacker_clans(SHANTY).is_empty());
     assert_eq!(
         fort_writes(&on.loaded),
@@ -1103,15 +1097,6 @@ fn a_siege_time_in_the_past_clears_the_registrations_and_writes_with_the_switch(
             },
         ]
     );
-    let off = Scene::new(false, LIONS, vec![WOLVES], 0);
-    assert!(
-        off.world.fort_attacker_clans(SHANTY).is_empty(),
-        "cleared in this world"
-    );
-    assert!(
-        fort_writes(&off.loaded).is_empty(),
-        "but nothing is written without the switch"
-    );
 }
 
 /// `checkAutoTask` with a date ahead and a registered clan: the registration stays, the countdown
@@ -1120,12 +1105,12 @@ fn a_siege_time_in_the_past_clears_the_registrations_and_writes_with_the_switch(
 #[test]
 fn a_registered_clan_keeps_its_registration_for_a_date_ahead() {
     let date = now_ms() + 20 * 60_000;
-    let s = Scene::new(true, LIONS, vec![WOLVES], date);
+    let s = Scene::new(LIONS, vec![WOLVES], date);
     assert_eq!(s.world.fort_attacker_clans(SHANTY), [WOLVES]);
     assert!(fort_writes(&s.loaded).is_empty());
     // Delay over 10 minutes: "spawn suspicious merchant".
     assert_eq!(s.npcs_of(NPC_MERCHANT).len(), 1);
-    let s = Scene::new(true, LIONS, vec![], date);
+    let s = Scene::new(LIONS, vec![], date);
     assert!(s.npcs_of(NPC_MERCHANT).is_empty());
 }
 
@@ -1153,7 +1138,7 @@ fn adena_of(s: &Scene, player: i32) -> i64 {
 /// siege date (an hour from now) and the warning to the owner go out; the countdown is armed.
 #[test]
 fn registering_follows_javas_codes_and_charges_the_first_clan() {
-    let mut s = Scene::new(true, LIONS, vec![], 0);
+    let mut s = Scene::new(LIONS, vec![], 0);
     s.take();
     s.enter(P1, LIONS, 0);
     s.enter(P3, WOLVES, 0);
@@ -1218,7 +1203,7 @@ fn registering_follows_javas_codes_and_charges_the_first_clan() {
 fn the_attacker_limit_is_quiet() {
     let mut settings = settings();
     settings.siege.attacker_max_clans = 1;
-    let mut s = Scene::with(true, shanty(LIONS), vec![], settings);
+    let mut s = Scene::with(shanty(LIONS), vec![], settings);
     s.enter(P3, WOLVES, 0);
     s.enter(P5, BEARS, 0);
     assert_eq!(s.world.fort_add_attacker(SHANTY, ObjectId(P3), true), 4);
@@ -1226,26 +1211,11 @@ fn the_attacker_limit_is_quiet() {
     assert_eq!(s.world.fort_attacker_clans(SHANTY), [WOLVES]);
 }
 
-/// D-51: without the switch a registration lives in this world only, and nothing is written.
-#[test]
-fn a_registration_without_the_switch_writes_nothing() {
-    let mut s = Scene::new(false, LIONS, vec![], 0);
-    s.enter(P3, WOLVES, 0);
-    s.take();
-    assert_eq!(s.world.fort_add_attacker(SHANTY, ObjectId(P3), true), 4);
-    assert_eq!(s.world.fort_attacker_clans(SHANTY), [WOLVES]);
-    assert!(fort_writes(&s.take()).is_empty());
-    // `removeAttacker` of a clan that is registered.
-    s.world.fort_remove_attacker(SHANTY, WOLVES);
-    assert!(s.world.fort_attacker_clans(SHANTY).is_empty());
-    assert!(fort_writes(&s.take()).is_empty());
-}
-
 /// `removeAttacker(clan)`: the row goes; with no clan left the date is cleared (`saveFortSiege`);
 /// the clan of the fortress itself is not removed (`clan.getFortId() == getResidenceId()`).
 #[test]
 fn removing_the_last_attacker_clears_the_date() {
-    let mut s = Scene::new(true, LIONS, vec![], 0);
+    let mut s = Scene::new(LIONS, vec![], 0);
     s.enter(P3, WOLVES, 0);
     s.world.fort_add_attacker(SHANTY, ObjectId(P3), true);
     s.take();
@@ -1271,12 +1241,12 @@ fn removing_the_last_attacker_clears_the_date() {
 /// `ClanTable.destroyClan` removes the clan from the fortress sieges (`fortId == 0`).
 #[test]
 fn a_dissolved_clan_leaves_the_fortress_sieges() {
-    let mut s = Scene::new(true, LIONS, vec![], 0);
+    let mut s = Scene::new(LIONS, vec![], 0);
     s.enter(P3, WOLVES, 0);
     s.world.fort_add_attacker(SHANTY, ObjectId(P3), true);
     assert!(s.world.fort_clan_is_registered(WOLVES));
     s.take();
-    s.world.destroy_clan(WOLVES, true);
+    s.world.destroy_clan(WOLVES);
     assert!(!s.world.fort_clan_is_registered(WOLVES));
     assert!(s.world.fort_attacker_clans(SHANTY).is_empty());
     let writes = fort_writes(&s.take());
@@ -1310,7 +1280,7 @@ fn run_ticks(s: &mut Scene, ticks: u32) {
 /// 0 the siege starts. The chain runs with `SiegeDatabaseWrites` only (D-51).
 #[test]
 fn the_countdown_announces_and_starts_the_siege() {
-    let mut s = Scene::new(true, LIONS, vec![], 0);
+    let mut s = Scene::new(LIONS, vec![], 0);
     s.enter(P1, LIONS, 0);
     s.enter(P3, WOLVES, 0);
     s.enter(P5, BEARS, 0);
@@ -1365,25 +1335,10 @@ fn the_countdown_announces_and_starts_the_siege() {
     assert!(s.world.fort_siege_in_progress(SHANTY));
 }
 
-/// D-51: the countdown does nothing without the switch.
-#[test]
-fn the_countdown_does_not_run_without_the_switch() {
-    let mut s = Scene::new(false, LIONS, vec![], 0);
-    s.enter(P3, WOLVES, 0);
-    s.world.fort_add_attacker(SHANTY, ObjectId(P3), true);
-    s.take();
-    run_ticks(&mut s, 75 * TICKS_PER_MINUTE);
-    assert!(!s.world.fort_siege_in_progress(SHANTY));
-    assert!(messages_to(&s.take(), P3).is_empty());
-    // A GM starts a test siege, which runs here whatever the switch says.
-    s.world.fort_start_siege(SHANTY);
-    assert!(s.world.fort_siege_in_progress(SHANTY));
-}
-
 /// A scene with the Wolves registered and the siege started by hand.
 fn siege_scene() -> Scene {
     let date = now_ms() + 30 * 60_000;
-    let mut s = Scene::new(true, LIONS, vec![WOLVES], date);
+    let mut s = Scene::new(LIONS, vec![WOLVES], date);
     s.enter(P1, LIONS, 0);
     s.enter(P4, WOLVES, 0);
     s.enter(P5, BEARS, 0);
@@ -1459,7 +1414,7 @@ fn starting_a_siege_sets_up_the_fortress() {
 /// A siege without attackers does not start.
 #[test]
 fn a_siege_without_attackers_does_not_start() {
-    let mut s = Scene::new(true, LIONS, vec![], now_ms() + 30 * 60_000);
+    let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
     s.world.fort_start_siege(SHANTY);
     assert!(!s.world.fort_siege_in_progress(SHANTY));
     assert!(!s.world.fort_zone_is_active(SHANTY));
@@ -1526,7 +1481,7 @@ fn the_merchant_returns_after_the_siege() {
     let date = now_ms() + 30 * 60_000;
     let mut fort = shanty(LIONS);
     fort.siege_date = date;
-    let mut s = Scene::with(true, fort, vec![WOLVES], settings);
+    let mut s = Scene::with(fort, vec![WOLVES], settings);
     s.world.fort_start_siege(SHANTY);
     s.world.fort_end_siege(SHANTY);
     assert!(s.npcs_of(NPC_MERCHANT).is_empty());
@@ -1972,24 +1927,11 @@ fn taking_the_fortress_changes_the_owner() {
     }));
 }
 
-/// D-51: the same owner change writes no fortress row without the switch.
-#[test]
-fn taking_the_fortress_without_the_switch_writes_nothing() {
-    let mut s = Scene::new(false, LIONS, vec![WOLVES], now_ms() + 30 * 60_000);
-    s.enter(P3, WOLVES, 0);
-    s.world.fort_start_siege(SHANTY);
-    s.take();
-    s.world.fort_end_of_siege(SHANTY, WOLVES);
-    let out = s.take();
-    assert_eq!(s.world.fort(SHANTY).unwrap().owner_id, WOLVES);
-    assert!(residence_writes(&out).is_empty(), "{:?}", residence_writes(&out));
-}
-
 /// A clan that owns a castle cannot keep the fortress: the old owner loses it, the siege goes on,
 /// "The rebel army recaptured the fortress".
 #[test]
 fn a_clan_with_a_castle_does_not_take_the_fortress() {
-    let mut s = Scene::new(true, LIONS, vec![BEARS], now_ms() + 30 * 60_000);
+    let mut s = Scene::new(LIONS, vec![BEARS], now_ms() + 30 * 60_000);
     s.enter(P5, BEARS, 0);
     s.world.fort_start_siege(SHANTY);
     s.take();
@@ -2027,29 +1969,24 @@ fn fast_updater() -> FortSettings {
 /// `FortressBloodOathCount` blood oaths (the clan's row is written with the switch).
 #[test]
 fn the_periodic_update_counts_blood_oaths() {
-    for switch in [true, false] {
-        let mut s = Scene::with(switch, shanty(LIONS), vec![], fast_updater());
-        s.take();
-        // The runs are aligned to the time the owner took the fortress (an hour ago): the first
-        // one is due within a minute.
-        s.run_ms(61_000);
-        assert_eq!(blood_oaths(&s, LIONS), 1);
-        let writes = fort_writes(&s.take());
-        if switch {
-            assert_eq!(
-                writes,
-                [FortSiegeWrite::BloodOathCount {
-                    clan_id: LIONS,
-                    count: 1
-                }]
-            );
-        } else {
-            assert!(writes.is_empty());
-        }
-        s.run_ms(60_000);
-        assert_eq!(blood_oaths(&s, LIONS), 2);
-        assert_eq!(blood_oaths(&s, WOLVES), 0);
-    }
+    let mut s = Scene::with(shanty(LIONS), vec![], fast_updater());
+    s.take();
+    // The runs are aligned to the time the owner took the fortress (an hour ago): the first
+    // one is due within a minute.
+    s.run_ms(61_000);
+    assert_eq!(blood_oaths(&s, LIONS), 1);
+    let writes = fort_writes(&s.take());
+    assert_eq!(
+        writes,
+        [FortSiegeWrite::BloodOathCount {
+            clan_id: LIONS,
+            count: 1
+        }]
+    );
+
+    s.run_ms(60_000);
+    assert_eq!(blood_oaths(&s, LIONS), 2);
+    assert_eq!(blood_oaths(&s, WOLVES), 0);
 }
 
 fn contracted_shanty() -> FortRecord {
@@ -2066,7 +2003,7 @@ fn contracted_shanty() -> FortRecord {
 /// becomes independent. Both move adena, so they run with the switch only.
 #[test]
 fn the_periodic_update_charges_the_contract_with_the_switch() {
-    let mut s = Scene::with(true, contracted_shanty(), vec![], fast_updater());
+    let mut s = Scene::with(contracted_shanty(), vec![], fast_updater());
     s.take();
     s.run_ms(61_000);
     let out = s.take();
@@ -2099,19 +2036,6 @@ fn the_periodic_update_charges_the_contract_with_the_switch() {
     );
 }
 
-#[test]
-fn the_periodic_update_moves_no_adena_without_the_switch() {
-    let mut s = Scene::with(false, contracted_shanty(), vec![], fast_updater());
-    s.take();
-    s.run_ms(61_000);
-    s.run_ms(60_000 * 3);
-    assert_eq!(warehouse_adena(&s, LIONS), 100_000);
-    assert_eq!(s.world.castle(CastleId(1)).unwrap().treasury, 0);
-    assert_eq!(s.world.fort(SHANTY).unwrap().supply_level, 0);
-    assert_eq!(s.world.fort(SHANTY).unwrap().state, 2);
-    assert!(residence_writes(&s.take()).is_empty());
-}
-
 /// `FortUpdater` `MAX_OWN_TIME`: an owner that held the fortress longer than
 /// `FortressMaximumOwnTime` hours loses it a minute after the start (`Fort.load`), and the state
 /// is reset.
@@ -2120,7 +2044,7 @@ fn the_owner_loses_the_fortress_after_the_maximum_time() {
     let mut fort = shanty(LIONS);
     fort.last_owned_time = now_ms() - 170 * 3_600_000;
     fort.state = 1;
-    let mut s = Scene::with(true, fort, vec![], settings());
+    let mut s = Scene::with(fort, vec![], settings());
     assert_eq!(s.world.fort(SHANTY).unwrap().owner_id, LIONS);
     s.take();
     s.run_ms(59_000);
@@ -2153,7 +2077,7 @@ fn place(s: &mut Scene, npc_id: i32, dx: i32) -> ObjectId {
 /// siege; the report, with the owner's time and the castle of the contract.
 #[test]
 fn the_foreman_shows_a_page_by_the_clan_and_the_report() {
-    let mut s = Scene::with(true, contracted_shanty(), vec![], settings());
+    let mut s = Scene::with(contracted_shanty(), vec![], settings());
     let foreman = place(&mut s, NPC_FOREMAN, 80);
     s.enter(P1, LIONS, 0);
     s.enter(P3, WOLVES, 0);
@@ -2183,7 +2107,7 @@ fn the_foreman_shows_a_page_by_the_clan_and_the_report() {
         "{page}"
     );
     // Without a contract the other report.
-    let mut s = Scene::new(true, LIONS, vec![], now_ms() + 30 * 60_000);
+    let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
     let foreman = place(&mut s, NPC_FOREMAN, 80);
     s.enter(P1, LIONS, 0);
     s.talk(P1, foreman);
@@ -2206,7 +2130,7 @@ fn the_foreman_shows_a_page_by_the_clan_and_the_report() {
 /// the zone's spawn point, the clan stays.
 #[test]
 fn the_foreman_expels_outsiders_for_those_with_the_privilege() {
-    let mut s = Scene::new(true, LIONS, vec![], now_ms() + 30 * 60_000);
+    let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
     let foreman = place(&mut s, NPC_FOREMAN, 80);
     s.enter(P1, LIONS, 0);
     s.enter(P2, LIONS, 0);
@@ -2233,7 +2157,7 @@ fn the_foreman_expels_outsiders_for_those_with_the_privilege() {
 /// parameter is `<npcId>-d.htm`.
 #[test]
 fn the_foreman_opens_and_closes_doors() {
-    let mut s = Scene::new(true, LIONS, vec![], now_ms() + 30 * 60_000);
+    let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
     let foreman = place(&mut s, NPC_FOREMAN, 80);
     s.enter(P1, LIONS, 0);
     s.enter(P3, WOLVES, 0);
@@ -2265,7 +2189,7 @@ fn the_foreman_opens_and_closes_doors() {
 /// The clan vault: the rows of the clan warehouse are read again first (D-50).
 #[test]
 fn the_vault_reads_the_clan_warehouse_again() {
-    let mut s = Scene::new(true, LIONS, vec![], now_ms() + 30 * 60_000);
+    let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
     let foreman = place(&mut s, NPC_FOREMAN, 80);
     s.enter(P1, LIONS, 0);
     s.talk(P1, foreman);
@@ -2298,7 +2222,7 @@ fn walk(s: &mut Scene, player: i32, npc: ObjectId, commands: &[&str]) -> String 
 /// paid by the leader at once.
 #[test]
 fn the_foreman_sells_and_cancels_functions() {
-    let mut s = Scene::new(true, LIONS, vec![], now_ms() + 30 * 60_000);
+    let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
     let foreman = place(&mut s, NPC_FOREMAN, 80);
     s.enter(P1, LIONS, 0);
     s.enter(P2, LIONS, 0);
@@ -2364,7 +2288,7 @@ fn the_foreman_sells_and_cancels_functions() {
 /// the Java branch).
 #[test]
 fn a_purchase_without_adena_sends_the_low_adena_page_twice() {
-    let mut s = Scene::new(true, LIONS, vec![], now_ms() + 30 * 60_000);
+    let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
     let foreman = place(&mut s, NPC_FOREMAN, 80);
     let mut poor = pdata(P1, LIONS, X, 0);
     poor.items[0].count = 100;
@@ -2392,7 +2316,7 @@ fn a_purchase_without_adena_sends_the_low_adena_page_twice() {
 /// foreman's mana.
 #[test]
 fn the_foreman_has_no_teleport_or_support_without_the_function() {
-    let mut s = Scene::new(true, LIONS, vec![], now_ms() + 30 * 60_000);
+    let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
     let foreman = place(&mut s, NPC_FOREMAN, 80);
     s.enter(P1, LIONS, 0);
     s.talk(P1, foreman);
@@ -2421,7 +2345,7 @@ fn the_foreman_has_no_teleport_or_support_without_the_function() {
 /// "busy" page; the commands open and close the doors after the first number.
 #[test]
 fn the_doorman_opens_the_doors_for_the_owner_when_there_is_no_siege() {
-    let mut s = Scene::new(true, LIONS, vec![], now_ms() + 30 * 60_000);
+    let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
     let doorman = place(&mut s, NPC_DOORMAN, 60);
     s.enter(P1, LIONS, 0);
     s.enter(P3, WOLVES, 0);
@@ -2470,7 +2394,7 @@ fn logistics(s: &mut Scene, player: i32, officer: ObjectId, command: &str, blood
 /// (D-50). `isMyLord` is Java's `||` of the castle and the fortress ids.
 #[test]
 fn logistics_hands_out_blood_oaths() {
-    let mut s = Scene::new(true, LIONS, vec![], now_ms() + 30 * 60_000);
+    let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
     let officer = place(&mut s, NPC_LOGISTICS, 90);
     s.enter(P1, LIONS, 0);
     s.enter(P3, WOLVES, 0);
@@ -2517,25 +2441,23 @@ fn logistics_hands_out_blood_oaths() {
 
 #[test]
 fn the_blood_oath_count_is_written_for_the_player_whatever_the_switch() {
-    for switch in [true, false] {
-        let mut s = Scene::new(switch, LIONS, vec![], now_ms() + 30 * 60_000);
-        let officer = place(&mut s, NPC_LOGISTICS, 90);
-        s.enter(P1, LIONS, 0);
-        s.talk(P1, officer);
-        logistics(&mut s, P1, officer, "rewards", 5);
-        s.take();
-        s.bypass(P1, officer, "blood");
-        let requests = reread_requests(&s.take());
-        answer_reread(&mut s, requests[0].clone(), LIONS, vec![], Some(5));
-        let out = s.take();
-        assert_eq!(
-            fort_writes(&out),
-            [FortSiegeWrite::BloodOathCount {
-                clan_id: LIONS,
-                count: 0
-            }]
-        );
-    }
+    let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
+    let officer = place(&mut s, NPC_LOGISTICS, 90);
+    s.enter(P1, LIONS, 0);
+    s.talk(P1, officer);
+    logistics(&mut s, P1, officer, "rewards", 5);
+    s.take();
+    s.bypass(P1, officer, "blood");
+    let requests = reread_requests(&s.take());
+    answer_reread(&mut s, requests[0].clone(), LIONS, vec![], Some(5));
+    let out = s.take();
+    assert_eq!(
+        fort_writes(&out),
+        [FortSiegeWrite::BloodOathCount {
+            clan_id: LIONS,
+            count: 0
+        }]
+    );
 }
 
 #[test]
@@ -2546,7 +2468,7 @@ fn logistics_gives_the_supply_box_and_resets_the_level() {
         castle_id: 1,
         ..shanty(LIONS)
     };
-    let mut s = Scene::with(false, fort, vec![], settings());
+    let mut s = Scene::with(fort, vec![], settings());
     let officer = place(&mut s, NPC_LOGISTICS, 90);
     s.enter(P1, LIONS, 0);
     s.talk(P1, officer);
@@ -2591,7 +2513,7 @@ fn logistics_gives_no_supplies_during_a_siege() {
         siege_date: now_ms() + 30 * 60_000,
         ..shanty(LIONS)
     };
-    let mut s = Scene::with(false, fort, vec![WOLVES], settings());
+    let mut s = Scene::with(fort, vec![WOLVES], settings());
     let officer = place(&mut s, NPC_LOGISTICS, 90);
     s.enter(P1, LIONS, 0);
     s.world.fort_start_siege(SHANTY);
@@ -2604,7 +2526,7 @@ fn logistics_gives_no_supplies_during_a_siege() {
 
 #[test]
 fn logistics_supply_level_without_a_contract_is_the_other_page() {
-    let mut s = Scene::new(true, LIONS, vec![], now_ms() + 30 * 60_000);
+    let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
     let officer = place(&mut s, NPC_LOGISTICS, 90);
     s.enter(P1, LIONS, 0);
     s.talk(P1, officer);
@@ -2614,7 +2536,7 @@ fn logistics_supply_level_without_a_contract_is_the_other_page() {
 /// A failed read refuses the command: nothing is shown (D-50: never fall back to memory).
 #[test]
 fn a_failed_reread_refuses_the_logistics_command() {
-    let mut s = Scene::new(true, LIONS, vec![], now_ms() + 30 * 60_000);
+    let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
     let officer = place(&mut s, NPC_LOGISTICS, 90);
     s.enter(P1, LIONS, 0);
     s.talk(P1, officer);
@@ -2634,7 +2556,7 @@ fn a_failed_reread_refuses_the_logistics_command() {
 fn manager_scene(fort: FortRecord, settings: FortSettings) -> (Scene, ObjectId) {
     let mut fort = fort;
     fort.siege_date = now_ms() + 30 * 60_000;
-    let mut s = Scene::with(true, fort, vec![], settings);
+    let mut s = Scene::with(fort, vec![], settings);
     let merchant = place(&mut s, NPC_MERCHANT, 40);
     (s, merchant)
 }
@@ -2817,31 +2739,10 @@ fn the_siege_manager_cancels_and_tells_the_war_info() {
     assert!(s.world.fort_attacker_clans(SHANTY).is_empty());
 }
 
-/// A registration this world holds without a row (the switch is off) survives the read of the
-/// rows; with the switch on the rows are the truth.
-#[test]
-fn a_local_registration_survives_a_reread_only_without_the_switch() {
-    for switch in [false, true] {
-        let mut fort = shanty(LIONS);
-        fort.siege_date = now_ms() + 30 * 60_000;
-        let mut s = Scene::with(switch, fort, vec![], settings());
-        s.enter(P3, WOLVES, 0);
-        assert_eq!(s.world.fort_add_attacker(SHANTY, ObjectId(P3), false), 4);
-        // The rows know the Bears only.
-        answer_reread(&mut s, ResidenceReadThen::Nothing, LIONS, vec![BEARS], None);
-        let clans = s.world.fort_attacker_clans(SHANTY);
-        if switch {
-            assert_eq!(clans, [BEARS]);
-        } else {
-            assert_eq!(clans, [BEARS, WOLVES]);
-        }
-    }
-}
-
 /// `FortressArcherCaptain`: a page for the owner's clan, another for everybody else.
 #[test]
 fn the_archer_captain_has_two_pages() {
-    let mut s = Scene::new(true, LIONS, vec![], now_ms() + 30 * 60_000);
+    let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
     let captain = s.one_npc(NPC_CAPTAIN_ARCHER);
     s.enter(P1, LIONS, 0);
     s.enter(P3, WOLVES, 0);
@@ -2860,7 +2761,7 @@ fn the_archer_captain_has_two_pages() {
 /// how long the owner has held it.
 #[test]
 fn the_fortress_list_names_owner_siege_and_time() {
-    let mut s = Scene::new(true, LIONS, vec![WOLVES], now_ms() + 30 * 60_000);
+    let mut s = Scene::new(LIONS, vec![WOLVES], now_ms() + 30 * 60_000);
     s.enter(P1, LIONS, 0);
     s.take();
     s.world.handle(WorldCommand::Input {
@@ -2887,7 +2788,7 @@ fn the_fortress_list_names_owner_siege_and_time() {
 /// `ExShowFortressSiegeInfo` and `ExShowFortressMapInfo`: the barracks, taken (1) or not (0).
 #[test]
 fn the_barracks_windows_follow_the_commanders() {
-    let mut s = Scene::new(true, LIONS, vec![WOLVES], now_ms() + 30 * 60_000);
+    let mut s = Scene::new(LIONS, vec![WOLVES], now_ms() + 30 * 60_000);
     s.enter(P1, LIONS, 0);
     let request = |s: &mut Scene, input| {
         s.take();
@@ -2950,7 +2851,7 @@ fn gm_command(s: &mut Scene, command: &str) -> Vec<Out> {
 /// `AdminFortSiege`: the fortress list, the fortress page, and the commands on a fortress.
 #[test]
 fn the_gm_runs_a_test_siege_with_fortsiege() {
-    let mut s = Scene::new(false, LIONS, vec![], now_ms() + 30 * 60_000);
+    let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
     s.enter(GM, 0, 100);
     s.enter(P3, WOLVES, 0);
     s.enter(P1, LIONS, 0);
@@ -3054,7 +2955,7 @@ fn logging_out_inside_the_zone_stores_the_position_in_town() {
 /// D-50: the rows of a fortress read again replace its owner; the owner's updater follows.
 #[test]
 fn a_reread_that_moves_the_owner_moves_the_updater_too() {
-    let mut s = Scene::new(false, LIONS, vec![], now_ms() + 30 * 60_000);
+    let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
     s.enter(P3, WOLVES, 0);
     assert!(s.world.fort_time_till_next_update(SHANTY) > 0);
     // Sieghardt decided: the Wolves own Shanty.
@@ -3124,7 +3025,7 @@ fn the_siege_relation_bits_follow_the_fortress_siege() {
 /// function) takes the player to the place.
 #[test]
 fn the_foreman_teleports_with_the_function() {
-    let mut s = Scene::new(true, LIONS, vec![], now_ms() + 30 * 60_000);
+    let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
     let foreman = place(&mut s, NPC_FOREMAN, 80);
     s.enter(P1, LIONS, 0);
     s.talk(P1, foreman);
@@ -3155,7 +3056,7 @@ fn the_foreman_teleports_with_the_function() {
 /// `Doorman` `tele <n>`: the list named after the type, for the owner clan.
 #[test]
 fn the_doorman_teleports_the_owner() {
-    let mut s = Scene::new(true, LIONS, vec![], now_ms() + 30 * 60_000);
+    let mut s = Scene::new(LIONS, vec![], now_ms() + 30 * 60_000);
     let doorman = place(&mut s, NPC_DOORMAN, 60);
     s.enter(P1, LIONS, 0);
     s.talk(P1, doorman);

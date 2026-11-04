@@ -261,10 +261,9 @@ pub struct PlayerProfile {
     pub online_status: i32,
     /// `characters.isin7sdungeon` (Java `_isIn7sDungeon`, M8-SS-01).
     pub in_7s_dungeon: bool,
-    /// The character's `seven_signs` row and the status row as the session read them at
-    /// `CharacterSelect` (M8-SS-01, D-50): `None` when the read failed. The world applies them
-    /// when the player enters (`sevensigns/cycle.rs`) and takes it, so snapshots never carry it.
-    pub seven_signs_refresh: Option<Box<crate::sevensigns::SevenSignsRefresh>>,
+    /// The sky of the Seven Signs status row as the session read it at `CharacterSelect`, for
+    /// `SSQInfo` (M8-SS-01); 0 when the read failed or the table has no row.
+    pub ssq_sky: i32,
     /// The `seven_signs` row `Player.store` writes (`saveSevenSignsData(objectId)`); `None` for a
     /// character that never joined. Filled by the snapshot of a store.
     pub seven_signs_to_store: Option<crate::sevensigns::SignsPlayer>,
@@ -327,7 +326,7 @@ impl Default for PlayerProfile {
             recipe_shop_to_store: None,
             online_status: 1,
             in_7s_dungeon: false,
-            seven_signs_refresh: None,
+            ssq_sky: 0,
             seven_signs_to_store: None,
             instance_times: Vec::new(),
             quests: crate::script::QuestLoad::default(),

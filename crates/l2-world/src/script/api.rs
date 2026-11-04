@@ -354,21 +354,6 @@ pub trait Script: Send + Sync + 'static {
 
     // ------------------------------------------------------------------ S-API-04 events
 
-    /// A [`ScriptCtx::reread_global_variables`] could not read the rows (D-50): the action that
-    /// waited for them is refused. The default only logs it.
-    fn on_global_variables_reread_failed(
-        &self,
-        ctx: &mut ScriptCtx<'_>,
-        event: &str,
-        npc: Option<ScriptNpc>,
-        player: Option<ObjectId>,
-    ) {
-        tracing::warn!(
-            "[{}]: the global variables could not be read for '{event}'; the action is refused.",
-            ctx.script_name()
-        );
-    }
-
     /// The entry of every event of [`super::ScriptEvent`] for a listener of this script:
     /// `tag` is the owner given to [`ScriptCtx::add_listener`] (`None` for a global or NPC
     /// template listener). The default calls the typed hook below. The answer matters for the

@@ -108,14 +108,13 @@ fn stadium_scene_with(settings: WorldSettings) -> Scene {
 
 /// The settings of the tests: the clock at [`BASE`] in UTC, two players start a match, a short
 /// wait before the teleport, Adena as the reward (the scene knows that item).
-fn settings(cycle_database_writes: bool) -> OlympiadSettings {
+fn settings() -> OlympiadSettings {
     OlympiadSettings {
         classed: 2,
         non_classed: 2,
         wait_time: 3,
         classed_reward: vec![[57, 50]],
         non_classed_reward: vec![[57, 40]],
-        cycle_database_writes,
         clock_override_unix_ms: Some(BASE),
         zone_offset_override_ms: Some(0),
         ..OlympiadSettings::default()
@@ -123,12 +122,12 @@ fn settings(cycle_database_writes: bool) -> OlympiadSettings {
 }
 
 /// A world in the competition period of cycle 1 (a period end far away).
-fn olympiad_scene(cycle_database_writes: bool) -> Scene {
-    olympiad_scene_with(cycle_database_writes, stadium_scene())
+fn olympiad_scene() -> Scene {
+    olympiad_scene_with(stadium_scene())
 }
 
-fn olympiad_scene_with(cycle_database_writes: bool, mut s: Scene) -> Scene {
-    s.world.set_olympiad_settings(settings(cycle_database_writes));
+fn olympiad_scene_with(mut s: Scene) -> Scene {
+    s.world.set_olympiad_settings(settings());
     s.world.load_olympiad(OlympiadLoad {
         data: Some(OlympiadData {
             current_cycle: 1,
@@ -216,7 +215,7 @@ fn run_until(s: &mut Scene, wanted: GameState, max_secs: u32, players: &[i32]) {
 
 #[test]
 fn the_olympiad_loads_its_stadiums_and_starts_the_competition() {
-    let mut s = olympiad_scene(false);
+    let mut s = olympiad_scene();
     // `init()`: today's competition runs (18:00 + 6 h), the start task fires at once.
     assert_eq!(s.world.olympiad().comp_start(), BASE - 30 * MINUTE);
     assert_eq!(
@@ -285,7 +284,7 @@ fn the_olympiad_loads_its_stadiums_and_starts_the_competition() {
 
 #[test]
 fn a_classed_match_runs_from_the_registration_to_the_points() {
-    let mut s = olympiad_scene(false);
+    let mut s = olympiad_scene();
     noble(&mut s, P1, "Alpha", DUELIST);
     noble(&mut s, P2, "Beta", DUELIST);
     let home1 = s.world.position_of(id(P1)).unwrap();
@@ -426,7 +425,7 @@ fn a_classed_match_runs_from_the_registration_to_the_points() {
 #[test]
 fn a_non_classed_match_that_times_out_is_a_tie() {
     let mut s = stadium_scene();
-    let mut set = settings(true);
+    let mut set = settings();
     set.battle_ms = 5_000;
     s.world.set_olympiad_settings(set);
     s.world.load_olympiad(OlympiadLoad {
@@ -485,7 +484,7 @@ fn a_non_classed_match_that_times_out_is_a_tie() {
 
 #[test]
 fn a_spectator_watches_a_match_and_leaves() {
-    let mut s = olympiad_scene(false);
+    let mut s = olympiad_scene();
     noble(&mut s, P1, "Alpha", DUELIST);
     noble(&mut s, P2, "Beta", DUELIST);
     s.enter_at(P3, "Gamma", 20, (X - 3_000, Y - 400, Z));
@@ -609,9 +608,9 @@ fn noble_rows(rows: &[(i32, i32, i32, i32, i32)]) -> Vec<NobleRow> {
 }
 
 /// A world one minute before the end of cycle 3, with a short validation period.
-fn period_end_scene(cycle_database_writes: bool) -> Scene {
+fn period_end_scene() -> Scene {
     let mut s = stadium_scene();
-    let mut set = settings(cycle_database_writes);
+    let mut set = settings();
     set.validation_period_ms = 2 * MINUTE;
     s.world.set_olympiad_settings(set);
     s.world.load_olympiad(OlympiadLoad {
@@ -637,7 +636,7 @@ fn period_end_scene(cycle_database_writes: bool) -> Scene {
 
 #[test]
 fn the_period_end_with_cycle_database_writes_on() {
-    let mut s = period_end_scene(true);
+    let mut s = period_end_scene();
     let mut data = player_data(P1, "N1", 40, (X - 3_000, Y, Z));
     data.profile.noble = true;
     data.base_class = DUELIST;
@@ -735,43 +734,8 @@ fn the_period_end_with_cycle_database_writes_on() {
 }
 
 #[test]
-fn the_period_end_with_cycle_database_writes_off_stays_in_memory() {
-    let mut s = period_end_scene(false);
-    let mut data = player_data(P1, "N1", 40, (X - 3_000, Y, Z));
-    data.profile.noble = true;
-    data.base_class = DUELIST;
-    s.enter_data(data);
-    secs(&mut s, 61);
-    // The same period change in memory ...
-    let data = s.world.olympiad().data();
-    assert_eq!((data.period, data.current_cycle), (1, 3));
-    assert_eq!(s.world.olympiad().heroes_to_be().len(), 1);
-    // ... but no global row: the Java game server runs the cycle (D-53), and it hands the passes
-    // out.
-    assert!(olympiad_writes(&s).is_empty());
-    assert!(
-        !s.world
-            .player(id(P1))
-            .unwrap()
-            .data
-            .profile
-            .variables
-            .contains_key("UNCLAIMED_OLYMPIAD_POINTS")
-    );
-    assert_eq!(s.world.olympiad().noble(P1).unwrap().points, 120);
-    secs(&mut s, 121);
-    let data = s.world.olympiad().data();
-    assert_eq!((data.period, data.current_cycle), (0, 4));
-    assert!(s.world.olympiad().nobles().is_empty());
-    assert!(olympiad_writes(&s).is_empty());
-    // The shutdown saves nothing either.
-    s.world.save_olympiad_status();
-    assert!(olympiad_writes(&s).is_empty());
-}
-
-#[test]
 fn the_shutdown_saves_the_status_with_the_switch_on() {
-    let mut s = olympiad_scene(true);
+    let mut s = olympiad_scene();
     noble(&mut s, P1, "Alpha", DUELIST);
     s.ticks(2);
     s.world.olympiad_register_noble(id(P1), CompetitionType::Classed);
@@ -790,8 +754,8 @@ fn the_shutdown_saves_the_status_with_the_switch_on() {
 }
 
 #[test]
-fn the_class_ranking_and_the_passes_are_read_again() {
-    let mut s = olympiad_scene(false);
+fn the_class_ranking_is_read_again() {
+    let mut s = olympiad_scene();
     let mut data = player_data(P1, "Alpha", 80, (X - 3_000, Y, Z));
     data.profile.noble = true;
     data.class_id = DUELIST;
@@ -862,47 +826,6 @@ fn the_class_ranking_and_the_passes_are_read_again() {
     assert_eq!(pages[0].html, "<html><body>1 Top 2 Second  </body></html>");
     // Back to the manager's page for the next link.
     talk(&mut s, P1, manager);
-
-    // The passes (switch off): read again, handed out once, the row deleted at once (D-50).
-    s.persisted.0.lock().unwrap().clear();
-    s.input(
-        P1,
-        ClientInput::Bypass {
-            command: format!("npc_{}_OlympiadNoble 10", manager.0),
-        },
-    );
-    let then = s
-        .persisted
-        .0
-        .lock()
-        .unwrap()
-        .iter()
-        .find_map(|c| match c {
-            PersistCommand::OlympiadRereadRequest {
-                request: OlympiadRereadRequest::UnclaimedPasses { char_id },
-                then,
-            } if *char_id == P1 => Some(*then),
-            _ => None,
-        })
-        .unwrap();
-    s.world.handle(WorldCommand::OlympiadReread {
-        result: Ok(OlympiadRereadRows::Passes(Some("3".into()))),
-        then,
-    });
-    // 3 passes * `OlympiadGPPerPoint` (1000) of `OlympiadCompRewItem`: the scene does not know
-    // the token, so only the deletion of the row is seen.
-    let removed = s.persisted.0.lock().unwrap().iter().any(|c| {
-        matches!(c, PersistCommand::PlayerVariables { owner, removed, .. }
-            if *owner == id(P1) && removed == &vec!["UNCLAIMED_OLYMPIAD_POINTS".to_owned()])
-    });
-    assert!(removed);
-    // A failed read hands nothing out.
-    s.persisted.0.lock().unwrap().clear();
-    s.world.handle(WorldCommand::OlympiadReread {
-        result: Err(()),
-        then,
-    });
-    assert!(s.persisted.0.lock().unwrap().is_empty());
 }
 
 /// `DualboxCheckMaxOlympiadParticipantsPerIp` (M9-C06): registering counts the player's address
@@ -912,7 +835,7 @@ fn the_class_ranking_and_the_passes_are_read_again() {
 fn the_olympiad_dualbox_limit_counts_client_ips() {
     let mut settings = Config::default().settings;
     settings.custom_misc.dualbox.max_olympiad_participants_per_ip = 1;
-    let mut s = olympiad_scene_with(false, stadium_scene_with(settings));
+    let mut s = olympiad_scene_with(stadium_scene_with(settings));
     let pages = tempfile::tempdir().unwrap();
     let page = pages.path().join("data/html/mods/OlympiadIPRestriction.htm");
     std::fs::create_dir_all(page.parent().unwrap()).unwrap();
@@ -961,7 +884,7 @@ fn the_olympiad_dualbox_limit_counts_client_ips() {
 /// The default (0) is off: any number of nobles may register from one address.
 #[test]
 fn the_olympiad_dualbox_limit_is_off_by_default() {
-    let mut s = olympiad_scene(false);
+    let mut s = olympiad_scene();
     noble_from(&mut s, P1, "Alpha", "192.0.2.1");
     noble_from(&mut s, P2, "Beta", "192.0.2.1");
     s.ticks(2);

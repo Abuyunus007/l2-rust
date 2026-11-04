@@ -299,12 +299,11 @@ struct Scene {
 }
 
 impl Scene {
-    /// `cycle`: `CycleDatabaseWrites` (D-53).
-    fn new(defs: &CursedWeaponDefs, cycle: bool, load: CursedLoad) -> Self {
-        Self::with_players(defs, cycle, load, true)
+    fn new(defs: &CursedWeaponDefs, load: CursedLoad) -> Self {
+        Self::with_players(defs, load, true)
     }
 
-    fn with_players(defs: &CursedWeaponDefs, cycle: bool, load: CursedLoad, enter: bool) -> Self {
+    fn with_players(defs: &CursedWeaponDefs, load: CursedLoad, enter: bool) -> Self {
         let log = Log::default();
         let persisted = Persisted::default();
         let mut world = World::new(WorldRng::from_seed(5), Box::new(RecOutbox(persisted.clone())));
@@ -345,7 +344,6 @@ impl Scene {
         );
         world.set_cursed_settings(CursedSettings {
             allow_cursed_weapons: true,
-            cycle_database_writes: cycle,
             clock_override_unix_ms: Some(CLOCK),
         });
         world.load_cursed_weapons(defs, load);
@@ -463,33 +461,12 @@ fn zone_and_item(sent: &Sent, to: i32, wanted: SystemMessageId) -> Vec<Vec<Syste
 
 // ---- the drop ----------------------------------------------------------------------------------
 
-/// With `CycleDatabaseWrites = False` the weapon is Sieghardt's (D-53): a monster never drops it,
-/// and the drop chance is not even rolled (the RNG is left alone).
-#[test]
-fn no_drop_with_the_switch_off() {
-    let mut off = Scene::new(&defs(100_000, 50), false, CursedLoad::default());
-    off.kill_monster(ME);
-    assert!(off.ground_weapon(ZARICHE).is_none());
-    assert!(off.ground_weapon(AKAMANAH).is_none());
-    assert!(off.world.cursed_weapons().iter().all(|w| !w.is_active()));
-    assert!(off.persisted.cursed().is_empty());
-
-    // The same seed without any cursed weapon: the next draw is the same, so none was taken.
-    let mut none = Scene::new(&CursedWeaponDefs::default(), false, CursedLoad::default());
-    none.kill_monster(ME);
-    assert_eq!(
-        off.world.rng().below(1_000_000),
-        none.world.rng().below(1_000_000)
-    );
-}
-
 /// `AllowCursedWeapons = False`: nothing loads.
 #[test]
 fn nothing_loads_without_allow_cursed_weapons() {
-    let mut s = Scene::new(&defs(100_000, 50), true, CursedLoad::default());
+    let mut s = Scene::new(&defs(100_000, 50), CursedLoad::default());
     s.world.set_cursed_settings(CursedSettings {
         allow_cursed_weapons: false,
-        cycle_database_writes: true,
         clock_override_unix_ms: Some(CLOCK),
     });
     s.world
@@ -504,7 +481,7 @@ fn nothing_loads_without_allow_cursed_weapons() {
 /// drops per kill, and a weapon that is out is not dropped again.
 #[test]
 fn a_monster_drops_a_cursed_weapon_with_the_red_sky() {
-    let mut s = Scene::new(&defs(100_000, 50), true, CursedLoad::default());
+    let mut s = Scene::new(&defs(100_000, 50), CursedLoad::default());
     s.kill_monster(ME);
     let sent = s.log.take();
 
@@ -552,7 +529,7 @@ fn a_monster_drops_a_cursed_weapon_with_the_red_sky() {
 /// The drop chance is `Rnd.get(100000) < dropRate`: a rate of 0 never drops.
 #[test]
 fn a_zero_drop_rate_never_drops() {
-    let mut s = Scene::new(&defs(0, 50), true, CursedLoad::default());
+    let mut s = Scene::new(&defs(0, 50), CursedLoad::default());
     for _ in 0..20 {
         s.kill_monster(ME);
     }
@@ -566,7 +543,7 @@ fn a_zero_drop_rate_never_drops() {
 /// row is written and everybody hears about the owner.
 #[test]
 fn picking_the_weapon_up_activates_it() {
-    let mut s = Scene::new(&defs(100_000, 50), true, CursedLoad::default());
+    let mut s = Scene::new(&defs(100_000, 50), CursedLoad::default());
     {
         let me = s.world.player_mut(ObjectId(ME)).unwrap();
         me.data.karma = 5;
@@ -645,7 +622,7 @@ fn picking_the_weapon_up_activates_it() {
 /// owner of one weapon gets the bonus level of Java's "temp fix" instead.
 #[test]
 fn a_second_weapon_is_erased_and_levels_the_first() {
-    let mut s = Scene::new(&defs(100_000, 50), true, CursedLoad::default());
+    let mut s = Scene::new(&defs(100_000, 50), CursedLoad::default());
     s.kill_monster(ME);
     let first = s.ground_weapon(AKAMANAH).unwrap();
     s.pick_up(ME, first);
@@ -677,7 +654,7 @@ fn a_second_weapon_is_erased_and_levels_the_first() {
 /// and each kill takes `durationLost` minutes off the life and saves the row.
 #[test]
 fn kills_count_raise_the_skill_and_shorten_the_life() {
-    let mut s = Scene::new(&defs(100_000, 50), true, CursedLoad::default());
+    let mut s = Scene::new(&defs(100_000, 50), CursedLoad::default());
     s.kill_monster(ME);
     let weapon = s.ground_weapon(AKAMANAH).unwrap();
     s.pick_up(ME, weapon);
@@ -717,7 +694,7 @@ fn kills_count_raise_the_skill_and_shorten_the_life() {
 /// from the victim (`pk == null || !pk.isCursedWeaponEquipped()`).
 #[test]
 fn a_victim_of_a_cursed_owner_loses_no_experience() {
-    let mut s = Scene::new(&defs(100_000, 50), true, CursedLoad::default());
+    let mut s = Scene::new(&defs(100_000, 50), CursedLoad::default());
     s.kill_monster(ME);
     let weapon = s.ground_weapon(AKAMANAH).unwrap();
     s.pick_up(ME, weapon);
@@ -736,7 +713,7 @@ fn a_victim_of_a_cursed_owner_loses_no_experience() {
 /// lies, the owner gets the old karma and PK count back and loses the form and the skills.
 #[test]
 fn the_owner_dies_and_the_weapon_drops() {
-    let mut s = Scene::new(&defs(100_000, -1), true, CursedLoad::default());
+    let mut s = Scene::new(&defs(100_000, -1), CursedLoad::default());
     {
         let me = s.world.player_mut(ObjectId(ME)).unwrap();
         me.data.karma = 300;
@@ -780,7 +757,7 @@ fn the_owner_dies_and_the_weapon_drops() {
 /// `Rnd.get(100) <= disapearChance`: with 100 the weapon always disappears with its owner.
 #[test]
 fn the_weapon_can_disappear_with_its_owner() {
-    let mut s = Scene::new(&defs(100_000, 100), true, CursedLoad::default());
+    let mut s = Scene::new(&defs(100_000, 100), CursedLoad::default());
     s.kill_monster(ME);
     let weapon = s.ground_weapon(AKAMANAH).unwrap();
     s.pick_up(ME, weapon);
@@ -813,7 +790,7 @@ fn the_weapon_can_disappear_with_its_owner() {
 /// the item goes from the owner, who gets the karma back, and everybody is told.
 #[test]
 fn the_weapon_ends_when_its_time_is_up() {
-    let mut s = Scene::new(&short_defs(), true, CursedLoad::default());
+    let mut s = Scene::new(&short_defs(), CursedLoad::default());
     s.kill_monster(ME);
     let weapon = s.ground_weapon(ZARICHE).unwrap();
     s.pick_up(ME, weapon);
@@ -845,7 +822,7 @@ fn the_weapon_ends_when_its_time_is_up() {
 /// A weapon on the ground ends too: the item leaves the world.
 #[test]
 fn a_weapon_on_the_ground_ends() {
-    let mut s = Scene::new(&short_defs(), true, CursedLoad::default());
+    let mut s = Scene::new(&short_defs(), CursedLoad::default());
     s.kill_monster(ME);
     let weapon = s.ground_weapon(ZARICHE).unwrap();
     s.seconds(75);
@@ -857,7 +834,7 @@ fn a_weapon_on_the_ground_ends() {
 /// the database (the character's own rows, whatever the switch says).
 #[test]
 fn an_offline_owner_is_cleaned_up_in_the_database() {
-    let mut s = Scene::new(&short_defs(), true, CursedLoad::default());
+    let mut s = Scene::new(&short_defs(), CursedLoad::default());
     {
         let me = s.world.player_mut(ObjectId(ME)).unwrap();
         me.data.karma = 4;
@@ -910,7 +887,6 @@ fn the_owner_is_known_again_at_the_login() {
     let end = CLOCK + 90 * 60_000;
     let mut s = Scene::with_players(
         &defs(100_000, 50),
-        true,
         CursedLoad {
             rows: vec![row(ME, 25, end)],
         },
@@ -968,7 +944,6 @@ fn the_owner_is_known_again_at_the_login() {
 fn an_expired_row_ends_at_the_load() {
     let s = Scene::with_players(
         &defs(100_000, 50),
-        true,
         CursedLoad {
             rows: vec![row(ME, 3, CLOCK - 1000)],
         },
@@ -988,34 +963,10 @@ fn an_expired_row_ends_at_the_load() {
     assert!(writes.contains(&CursedWrite::Remove { item_id: ZARICHE }));
 }
 
-/// The rows are Sieghardt's without the switch (D-53): they are not read, and the weapon
-/// item a character carries is left alone at the login (Java would destroy it).
-#[test]
-fn the_rows_are_ignored_without_the_switch() {
-    let mut s = Scene::with_players(
-        &defs(100_000, 50),
-        false,
-        CursedLoad {
-            rows: vec![row(ME, 25, CLOCK + 90 * 60_000)],
-        },
-        false,
-    );
-    assert!(!s.world.cursed_weapon(ZARICHE).unwrap().is_active());
-    s.enter(player_data(
-        ME,
-        "Owner",
-        40,
-        vec![item(0x2000_0101, ZARICHE, "PAPERDOLL", 7)],
-    ));
-    assert_eq!(s.player(ME).cursed_weapon_equipped_id, 0);
-    assert!(s.player(ME).data.items.iter().any(|i| i.item_id == ZARICHE));
-    assert!(s.persisted.cursed().is_empty());
-}
-
 /// "Remove demonic weapon if character is not cursed weapon equipped" (with the switch on).
 #[test]
 fn a_demonic_weapon_without_a_row_is_destroyed_at_the_login() {
-    let mut s = Scene::with_players(&defs(100_000, 50), true, CursedLoad::default(), false);
+    let mut s = Scene::with_players(&defs(100_000, 50), CursedLoad::default(), false);
     s.enter(player_data(
         ME,
         "Owner",
@@ -1031,7 +982,7 @@ fn a_demonic_weapon_without_a_row_is_destroyed_at_the_login() {
 /// weapons that are out, and nothing when none is.
 #[test]
 fn the_list_and_the_location_requests() {
-    let mut s = Scene::new(&defs(100_000, 50), true, CursedLoad::default());
+    let mut s = Scene::new(&defs(100_000, 50), CursedLoad::default());
     s.input(ME, ClientInput::Cursed(CursedInput::List));
     let sent = s.log.take();
     let list: ExCursedWeaponList = decode(of(&sent, ME, ServerOpcode::ExCursedWeaponList)[0]);
@@ -1070,7 +1021,7 @@ fn the_list_and_the_location_requests() {
 /// weapon, no destroy of the item, and the items of the weapon are not saved to the ground table.
 #[test]
 fn the_owner_is_restricted() {
-    let mut s = Scene::new(&defs(100_000, 50), true, CursedLoad::default());
+    let mut s = Scene::new(&defs(100_000, 50), CursedLoad::default());
     s.kill_monster(ME);
     let ground = s.ground_weapon(AKAMANAH).unwrap();
     // The ground table skips cursed items ("prevent double save").
@@ -1117,7 +1068,7 @@ fn the_owner_is_restricted() {
 /// A character of level 20 or less cannot be attacked by an owner, and cannot attack one.
 #[test]
 fn a_cursed_owner_and_a_low_level_player_keep_apart() {
-    let mut s = Scene::with_players(&defs(100_000, 50), true, CursedLoad::default(), false);
+    let mut s = Scene::with_players(&defs(100_000, 50), CursedLoad::default(), false);
     s.enter(player_data(ME, "Owner", 1, vec![]));
     s.enter(player_data(OTHER, "Newbie", 20, vec![]));
     s.kill_monster(ME);
@@ -1141,7 +1092,7 @@ fn a_cursed_owner_and_a_low_level_player_keep_apart() {
 /// `//cw_remove` ends the weapon; an unknown weapon is refused.
 #[test]
 fn the_admin_commands() {
-    let mut s = Scene::with_players(&defs(100_000, 50), true, CursedLoad::default(), false);
+    let mut s = Scene::with_players(&defs(100_000, 50), CursedLoad::default(), false);
     s.enter(player_data(GM, "Boss", 85, vec![]));
     s.enter(player_data(ME, "Owner", 1, vec![]));
     s.log.take();

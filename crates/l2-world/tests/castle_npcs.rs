@@ -644,12 +644,12 @@ fn pdata(id: i32, clan_id: i32, items: Vec<(i32, i64)>) -> PlayerData {
 }
 
 impl Scene {
-    fn new(siege_database_writes: bool) -> Self {
-        Self::build(siege_database_writes, 0)
+    fn new() -> Self {
+        Self::build(0)
     }
 
     /// The Lions have `blood_alliance` proofs of alliance to receive.
-    fn build(siege_database_writes: bool, blood_alliance: i32) -> Self {
+    fn build(blood_alliance: i32) -> Self {
         let root = tempfile::tempdir().unwrap();
         let write = |path: &str, text: &str| {
             let file = root.path().join(path);
@@ -734,7 +734,6 @@ impl Scene {
             .spawn_static_objects(&l2_data::StaticObjectTemplates::from_xml(&pole).unwrap(), &ids)
             .unwrap();
         world.set_residence_settings(ResidenceSettings {
-            siege_database_writes,
             ..ResidenceSettings::default()
         });
         world.set_fort_settings(FortSettings::default());
@@ -1269,7 +1268,7 @@ fn the_links_of_the_real_pages_are_events_of_the_scripts() {
 /// is a start NPC, so it becomes the quest NPC.
 #[test]
 fn the_chamberlain_greets_the_owners_and_strangers() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.talk(P2, CHAMBERLAIN);
     let out = s.take();
@@ -1292,7 +1291,7 @@ fn the_chamberlain_greets_the_owners_and_strangers() {
 /// the command.
 #[test]
 fn the_chamberlain_reads_the_castle_again_before_it_acts() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.talk(P1, CHAMBERLAIN);
     s.take();
@@ -1324,7 +1323,7 @@ fn the_chamberlain_reads_the_castle_again_before_it_acts() {
 /// is written (a player's action: always), a rate over the limit is refused with the limit.
 #[test]
 fn the_tax_rate_is_shown_set_and_limited() {
-    let mut s = Scene::new(false);
+    let mut s = Scene::new();
     s.enter_all();
     s.talk(P1, CHAMBERLAIN);
     let out = s.chamberlain_fresh(P1, "manage_tax");
@@ -1361,51 +1360,49 @@ fn the_tax_rate_is_shown_set_and_limited() {
 /// rows are written whatever the switch says (the lord's own action), and Java's quirks stay.
 #[test]
 fn the_treasury_takes_deposits_and_gives_withdrawals() {
-    for switch in [false, true] {
-        let mut s = Scene::new(switch);
-        s.enter_all();
-        s.talk(P1, CHAMBERLAIN);
-        let out = s.chamberlain_fresh(P1, "manage_vault");
-        assert_eq!(last_page(&out, P1), "VAULT 1,234,567 0 0");
-        let out = s.chamberlain_fresh(P1, "deposit 1000");
-        assert_eq!(s.adena(P1), 9_999_000);
-        assert_eq!(s.castle().treasury, 1_235_567);
-        // The script answers with "chamberlain-01.html".
-        assert_eq!(last_page(&out, P1), format!("HOME {} P1", s.npc(CHAMBERLAIN).0));
-        assert!(residence_writes(&out).contains(&ResidenceWrite::CastleTreasury {
-            castle_id: 1,
-            treasury: 1_235_567
-        }));
-        let out = s.chamberlain_fresh(P1, "withdraw 500000");
-        assert_eq!(s.adena(P1), 10_499_000);
-        assert_eq!(s.castle().treasury, 735_567);
-        assert!(residence_writes(&out).contains(&ResidenceWrite::CastleTreasury {
-            castle_id: 1,
-            treasury: 735_567
-        }));
-        // More than the treasury holds.
-        let out = s.chamberlain_fresh(P1, "withdraw 99999999");
-        assert_eq!(last_page(&out, P1), "BALANCE 735,567 99,999,999");
-        assert_eq!(s.castle().treasury, 735_567);
-        // Not enough adena for the deposit.
-        let out = s.chamberlain_fresh(P1, "deposit 20000000");
-        assert!(message_ids(&out, P1).contains(&SystemMessageId::YouDoNotHaveEnoughAdena));
-        assert_eq!(s.castle().treasury, 735_567);
-        // NOTE(java-quirk): a negative withdrawal puts adena into the treasury for nothing.
-        s.chamberlain_fresh(P1, "withdraw -1000");
-        assert_eq!(s.castle().treasury, 736_567);
-        assert_eq!(s.adena(P1), 10_499_000);
-        // The member without the vault right is sent away.
-        s.talk(P2, CHAMBERLAIN);
-        let out = s.chamberlain_fresh(P2, "withdraw 1");
-        assert_eq!(last_page(&out, P2), "chamberlain-21");
-    }
+    let mut s = Scene::new();
+    s.enter_all();
+    s.talk(P1, CHAMBERLAIN);
+    let out = s.chamberlain_fresh(P1, "manage_vault");
+    assert_eq!(last_page(&out, P1), "VAULT 1,234,567 0 0");
+    let out = s.chamberlain_fresh(P1, "deposit 1000");
+    assert_eq!(s.adena(P1), 9_999_000);
+    assert_eq!(s.castle().treasury, 1_235_567);
+    // The script answers with "chamberlain-01.html".
+    assert_eq!(last_page(&out, P1), format!("HOME {} P1", s.npc(CHAMBERLAIN).0));
+    assert!(residence_writes(&out).contains(&ResidenceWrite::CastleTreasury {
+        castle_id: 1,
+        treasury: 1_235_567
+    }));
+    let out = s.chamberlain_fresh(P1, "withdraw 500000");
+    assert_eq!(s.adena(P1), 10_499_000);
+    assert_eq!(s.castle().treasury, 735_567);
+    assert!(residence_writes(&out).contains(&ResidenceWrite::CastleTreasury {
+        castle_id: 1,
+        treasury: 735_567
+    }));
+    // More than the treasury holds.
+    let out = s.chamberlain_fresh(P1, "withdraw 99999999");
+    assert_eq!(last_page(&out, P1), "BALANCE 735,567 99,999,999");
+    assert_eq!(s.castle().treasury, 735_567);
+    // Not enough adena for the deposit.
+    let out = s.chamberlain_fresh(P1, "deposit 20000000");
+    assert!(message_ids(&out, P1).contains(&SystemMessageId::YouDoNotHaveEnoughAdena));
+    assert_eq!(s.castle().treasury, 735_567);
+    // NOTE(java-quirk): a negative withdrawal puts adena into the treasury for nothing.
+    s.chamberlain_fresh(P1, "withdraw -1000");
+    assert_eq!(s.castle().treasury, 736_567);
+    assert_eq!(s.adena(P1), 10_499_000);
+    // The member without the vault right is sent away.
+    s.talk(P2, CHAMBERLAIN);
+    let out = s.chamberlain_fresh(P2, "withdraw 1");
+    assert_eq!(last_page(&out, P2), "chamberlain-21");
 }
 
 /// A siege in progress closes the pages that change the castle ("chamberlain-08").
 #[test]
 fn nothing_is_managed_during_a_siege() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.talk(P1, CHAMBERLAIN);
     s.start_siege();
@@ -1429,7 +1426,7 @@ fn nothing_is_managed_during_a_siege() {
 /// adena.
 #[test]
 fn the_doors_are_upgraded_for_adena() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.talk(P1, CHAMBERLAIN);
     let out = s.chamberlain_fresh(P1, "manage_doors");
@@ -1469,7 +1466,7 @@ fn the_doors_are_upgraded_for_adena() {
 /// `manage_trap`, `upgrade_trap` and `upgrade_trap_confirm`: the flame tower's level and the row.
 #[test]
 fn the_traps_are_upgraded_for_adena() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.talk(P1, CHAMBERLAIN);
     assert_eq!(last_page(&s.chamberlain_fresh(P1, "manage_trap"), P1), "35100-tu");
@@ -1512,7 +1509,7 @@ fn the_traps_are_upgraded_for_adena() {
 /// `<fstring>`s, and the teleport page of the level.
 #[test]
 fn the_functions_are_bought_listed_and_reset() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.talk(P1, CHAMBERLAIN);
     // Nothing yet: `<fstring>4</fstring>` ("none") and no link to deactivate.
@@ -1579,7 +1576,7 @@ fn the_functions_are_bought_listed_and_reset() {
 /// The sub pages of the owner: functions, the teleport level page, the disabled pages.
 #[test]
 fn the_function_pages_follow_the_functions() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.talk(P1, CHAMBERLAIN);
     assert_eq!(
@@ -1638,7 +1635,7 @@ fn the_function_pages_follow_the_functions() {
 /// "not enough mana" page when the skill costs more than it has.
 #[test]
 fn the_support_function_casts_with_the_mana_of_the_chamberlain() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.talk(P1, CHAMBERLAIN);
     s.chamberlain_fresh(P1, "set_func 5 5");
@@ -1658,7 +1655,7 @@ fn the_support_function_casts_with_the_mana_of_the_chamberlain() {
 /// without the right get "chamberlain-21".
 #[test]
 fn the_doors_open_and_close_for_the_owner_clan() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.talk(P1, CHAMBERLAIN);
     s.close_door(DOOR);
@@ -1684,7 +1681,7 @@ fn the_doors_open_and_close_for_the_owner_clan() {
 /// the clan, the castle and the (neutral) Seven Signs strings, one crown, the siege information.
 #[test]
 fn the_lord_gets_the_report_the_crown_and_the_lists() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.talk(P1, CHAMBERLAIN);
     let out = s.chamberlain_fresh(P1, "receive_report");
@@ -1732,7 +1729,7 @@ fn the_lord_gets_the_report_the_crown_and_the_lists() {
 /// neutral Seven Signs of this server everybody gets the page that says so.
 #[test]
 fn the_dawn_tickets_need_seven_signs() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.talk(P1, CHAMBERLAIN);
     assert_eq!(
@@ -1753,7 +1750,7 @@ fn the_dawn_tickets_need_seven_signs() {
 /// A command that does not parse is a Java exception: logged, nothing shown, nothing taken.
 #[test]
 fn a_bad_number_shows_nothing() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.talk(P1, CHAMBERLAIN);
     for event in ["set_tax abc", "deposit x", "upgrade_doors 1", "HP"] {
@@ -1768,7 +1765,7 @@ fn a_bad_number_shows_nothing() {
 /// `CastleSiegeManager.onFirstTalk`.
 #[test]
 fn the_siege_manager_answers_by_lord_and_siege() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.talk(P1, SIEGE_MANAGER);
     assert_eq!(last_page(&s.take(), P1), "CastleSiegeManager-01");
@@ -1794,7 +1791,7 @@ fn the_siege_manager_answers_by_lord_and_siege() {
 /// others "no"; the siege page; the limit page names the castle; `main` is the first talk again.
 #[test]
 fn the_mercenary_manager_answers_the_lord() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.talk(P1, MERC_MANAGER);
     assert_eq!(last_page(&s.take(), P1), "mercmanager");
@@ -1825,7 +1822,7 @@ fn the_mercenary_manager_answers_the_lord() {
 /// `CastleWarehouse`: the blood alliance proofs of the lord's clan.
 #[test]
 fn the_vault_keeper_hands_out_the_blood_alliance_items() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.talk(P1, WAREHOUSE);
     assert_eq!(last_page(&s.take(), P1), "warehouse-01");
@@ -1844,7 +1841,7 @@ fn the_vault_keeper_hands_out_the_blood_alliance_items() {
     s.warehouse(P1, "Receive", Some(0));
     assert_eq!(last_page(&s.take(), P1), "warehouse-05");
     // Sieges gave the clan three alliance proofs.
-    let mut s = Scene::build(true, 3);
+    let mut s = Scene::build(3);
     s.enter_all();
     s.talk(P1, WAREHOUSE);
     s.take();
@@ -1882,7 +1879,7 @@ fn the_vault_keeper_hands_out_the_blood_alliance_items() {
 /// same proofs are never given twice), and a failed read gives nothing.
 #[test]
 fn the_vault_keeper_reads_the_blood_alliance_count_again() {
-    let mut s = Scene::build(true, 3);
+    let mut s = Scene::build(3);
     s.enter_all();
     s.talk(P1, WAREHOUSE);
     s.take();
@@ -1899,7 +1896,7 @@ fn the_vault_keeper_reads_the_blood_alliance_count_again() {
         })
     );
     // Sieghardt's lord took them in the meantime: this world says 5, the row says 0.
-    let mut stale = Scene::build(true, 5);
+    let mut stale = Scene::build(5);
     stale.enter_all();
     stale.talk(P1, WAREHOUSE);
     stale.take();
@@ -1923,7 +1920,7 @@ fn the_vault_keeper_reads_the_blood_alliance_count_again() {
 /// by the event named after the NPC.
 #[test]
 fn the_blacksmith_serves_the_owner() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.talk(P1, BLACKSMITH);
     assert_eq!(last_page(&s.take(), P1), "35098-01");
@@ -1944,7 +1941,7 @@ fn the_blacksmith_serves_the_owner() {
 /// `CastleTeleporter`: the countdown shout, the script value, the long wait after the towers.
 #[test]
 fn the_mass_gatekeeper_counts_down_and_shouts() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.talk(P1, TELEPORTER);
     assert_eq!(last_page(&s.take(), P1), "teleporter-01");
@@ -1985,7 +1982,7 @@ fn the_mass_gatekeeper_counts_down_and_shouts() {
 /// inventory must not be exactly full, the squad skills need the leader or the fame right.
 #[test]
 fn the_court_magician_trades_talismans_for_epaulettes() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.talk(P5, MAGICIAN);
     assert_eq!(last_page(&s.take(), P5), "courtmagician-01");
@@ -2020,7 +2017,7 @@ fn the_court_magician_trades_talismans_for_epaulettes() {
 /// the registration window, the pages with the badge prices.
 #[test]
 fn the_mercenary_captain_sells_striders_for_badges() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     // Level 40 but a first class: "36481-08".
     s.talk(P1, CAPTAIN);
@@ -2060,7 +2057,7 @@ fn the_mercenary_captain_sells_striders_for_badges() {
 /// the siege zone is active, the teleport through the gate.
 #[test]
 fn the_castle_doorman_serves_the_owner_clan() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     let npc = s.npc(DOORMAN);
     s.talk(P1, DOORMAN);
@@ -2107,7 +2104,7 @@ fn the_castle_doorman_serves_the_owner_clan() {
 /// independent (a job: only with the switch).
 #[test]
 fn the_envoy_takes_the_choice_of_the_fortress_owner() {
-    let mut s = Scene::new(false);
+    let mut s = Scene::new();
     s.enter_all();
     let envoy = s.npc(ENVOY);
     // Only the owner of the fortress sees the choice; the castle is Gludio.
@@ -2184,23 +2181,21 @@ fn the_envoy_takes_the_choice_of_the_fortress_owner() {
 /// The hour without a choice: the fortress becomes independent, written only with the switch.
 #[test]
 fn the_envoys_leave_after_an_hour_and_the_fortress_stays_independent() {
-    for switch in [false, true] {
-        let mut s = Scene::new(switch);
-        s.enter_all();
-        let envoy = s.npc(ENVOY);
-        s.run_ms(3_599_000);
-        assert!(s.world.npc(envoy).is_some());
-        assert_eq!(s.world.fort(SHANTY).unwrap().state, 0);
-        s.take();
-        s.run_ms(2000);
-        assert!(s.world.npc(envoy).is_none());
-        let fort = s.world.fort(SHANTY).unwrap();
-        assert_eq!((fort.state, fort.castle_id), (1, 1));
-        let written = residence_writes(&s.take()).contains(&ResidenceWrite::FortState {
-            fort_id: 101,
-            state: 1,
-            castle_id: 1,
-        });
-        assert_eq!(written, switch, "D-51");
-    }
+    let mut s = Scene::new();
+    s.enter_all();
+    let envoy = s.npc(ENVOY);
+    s.run_ms(3_599_000);
+    assert!(s.world.npc(envoy).is_some());
+    assert_eq!(s.world.fort(SHANTY).unwrap().state, 0);
+    s.take();
+    s.run_ms(2000);
+    assert!(s.world.npc(envoy).is_none());
+    let fort = s.world.fort(SHANTY).unwrap();
+    assert_eq!((fort.state, fort.castle_id), (1, 1));
+    let written = residence_writes(&s.take()).contains(&ResidenceWrite::FortState {
+        fort_id: 101,
+        state: 1,
+        castle_id: 1,
+    });
+    assert!(written);
 }

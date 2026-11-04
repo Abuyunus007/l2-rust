@@ -292,12 +292,7 @@ impl World {
             .map(|p| p.data.name.clone())
             .unwrap_or_default();
         let join_days = self.clans.settings.alt_clan_join_days;
-        self.remove_clan_member(
-            clan_id,
-            player,
-            unix_ms_now().saturating_add(days_ms(join_days)),
-            true,
-        );
+        self.remove_clan_member(clan_id, player, unix_ms_now().saturating_add(days_ms(join_days)));
         self.broadcast_to_clan(
             clan_id,
             &SystemMessage::new(SystemMessageId::S1HasWithdrawnFromTheClan)
@@ -360,7 +355,7 @@ impl World {
         // This also updates the database.
         let join_days = self.clans.settings.alt_clan_join_days;
         let penalty = unix_ms_now().saturating_add(days_ms(join_days));
-        self.remove_clan_member(clan_id, member.object_id, penalty, true);
+        self.remove_clan_member(clan_id, member.object_id, penalty);
         if let Some(clan) = self.clan_mut(clan_id) {
             clan.char_penalty_expiry_time = penalty;
         }

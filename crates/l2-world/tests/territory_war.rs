@@ -304,7 +304,6 @@ fn manager_pages() -> Vec<(&'static str, &'static str)> {
 }
 
 struct Options {
-    siege_database_writes: bool,
     gludio_owner: i32,
     dion_owner: i32,
     next_tw_start_date: i64,
@@ -314,7 +313,6 @@ struct Options {
 impl Default for Options {
     fn default() -> Self {
         Self {
-            siege_database_writes: true,
             gludio_owner: LIONS,
             dion_owner: WOLVES,
             next_tw_start_date: 0,
@@ -387,11 +385,8 @@ fn territory_load(next_tw_start_date: i64) -> TerritoryLoad {
 }
 
 impl Scene {
-    fn new(siege_database_writes: bool) -> Self {
-        Self::with(Options {
-            siege_database_writes,
-            ..Options::default()
-        })
+    fn new() -> Self {
+        Self::with(Options { ..Options::default() })
     }
 
     fn with(options: Options) -> Self {
@@ -477,7 +472,6 @@ impl Scene {
             Arc::new(MapRegions::load(root.path())),
         );
         world.set_residence_settings(ResidenceSettings {
-            siege_database_writes: options.siege_database_writes,
             ..ResidenceSettings::default()
         });
         world.set_clan_settings(ClanSettings {
@@ -889,7 +883,7 @@ fn territory_rereads(out: &[Out]) -> Vec<TerritoryThen> {
 /// and keeps it in the global variable (D-51: only with `SiegeDatabaseWrites`).
 #[test]
 fn startup_loads_the_territories_and_sets_the_next_war() {
-    let s = Scene::new(true);
+    let s = Scene::new();
     // Type 0 NPCs of the owned territories; the castle NPCs (type 2) only in the war.
     assert_eq!(s.npcs_of(CAPTAIN).len(), 1);
     assert_eq!(s.npcs_of(MANAGER).len(), 1);
@@ -916,11 +910,6 @@ fn startup_loads_the_territories_and_sets_the_next_war() {
     );
     assert!(s.world.owned_territories().len() == 2);
     assert!(!s.world.is_tw_in_progress() && !s.world.is_tw_channel_open());
-
-    // D-51: side by side the date is the same, but the variable stays Sieghardt's.
-    let s = Scene::new(false);
-    assert_eq!(s.world.tw_start_time_ms(), SATURDAY_20);
-    assert!(territory_writes(&s.startup).is_empty());
 }
 
 /// `setNextTWDate`: a variable that is still ahead is the date; without an owned castle the war is
@@ -958,7 +947,7 @@ fn the_next_war_date_follows_the_variable_and_the_castles() {
 /// castle NPCs and the wards stand, the siege zones are active, the participants attack.
 #[test]
 fn the_countdown_opens_the_channel_and_starts_the_war() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     let start = s.now() + 21 * 60_000;
     s.world.tw_set_start_time(start);
@@ -1072,99 +1061,6 @@ fn the_war_ends_and_the_channel_closes() {
     assert_eq!(s.world.siege_side_of(ObjectId(P1)), 0);
 }
 
-/// D-51: side by side the schedule runs (the messages, the channel) but the war is Sieghardt's;
-/// once its channel closed the rows are read again and the schedule starts from the date read.
-#[test]
-fn side_by_side_the_war_is_read_again_afterwards() {
-    let mut s = Scene::with(Options {
-        siege_database_writes: false,
-        settings: TerritorySettings {
-            war_length_ms: 60_000,
-            ..TerritorySettings::default()
-        },
-        ..Options::default()
-    });
-    s.enter_all();
-    let start = s.now() + 61_000;
-    s.world.tw_set_start_time(start);
-    s.run_ms(1000);
-    assert!(message_ids(&s.take(), P8).contains(&SystemMessageId::TheTerritoryWarBeginsIn1Minute));
-    assert!(s.world.is_tw_channel_open());
-    s.run_ms(61_000);
-    let out = s.take();
-    assert!(!s.world.is_tw_in_progress());
-    assert!(!message_ids(&out, P8).contains(&SystemMessageId::TerritoryWarHasBegun));
-    assert!(s.npcs_of(GLUDIO_WARD).is_empty());
-    assert!(territory_rereads(&out).is_empty());
-    // The war (a minute) and its channel (ten more) are over: the channel closes, the rows are
-    // read again.
-    s.run_ms(11 * 60_000);
-    let out = s.take();
-    assert!(!s.world.is_tw_channel_open());
-    assert_eq!(s.world.siege_side_of(ObjectId(P1)), 0);
-    assert_eq!(territory_rereads(&out), [TerritoryThen::RestartSchedule]);
-    // Sieghardt's war: the Wolves took Gludio's ward, the registrations are gone, a new date.
-    let next = SATURDAY_20 + 14 * 86_400_000;
-    let rows = TerritoryRows {
-        territories: vec![
-            TerritoryRecord {
-                territory_id: 81,
-                castle_id: 1,
-                fort_id: 101,
-                owned_ward_ids: String::new(),
-            },
-            TerritoryRecord {
-                territory_id: 82,
-                castle_id: 2,
-                fort_id: 103,
-                owned_ward_ids: "82;81;".into(),
-            },
-        ],
-        registrations: vec![],
-        next_tw_start_date: next,
-    };
-    // The Lions lose their ward skill, the Wolves get Gludio's.
-    assert!(s.skills(P1).contains(&848));
-    assert!(s.skills(P3).contains(&849) && !s.skills(P3).contains(&848));
-    s.answer_reread(&out, rows);
-    assert!(s.world.territory(1).unwrap().owned_ward_ids().is_empty());
-    assert_eq!(s.world.territory(2).unwrap().owned_ward_ids(), [82, 81]);
-    assert_eq!(s.world.territory_registered_clans(1), None);
-    assert_eq!(s.world.territory_registered_mercenaries(2), None);
-    assert_eq!(s.world.tw_start_time_ms(), next);
-    assert!(!s.skills(P1).contains(&848));
-    assert!(s.skills(P3).contains(&848) && s.skills(P3).contains(&849));
-    // Nothing of it was written.
-    assert!(territory_writes(&s.take()).is_empty());
-}
-
-/// D-51: a GM runs a test war whatever the switch says; nothing of it is written without it.
-#[test]
-fn a_gm_runs_the_war_without_the_switch() {
-    let mut s = Scene::new(false);
-    s.enter_all();
-    s.start_war();
-    assert!(message_ids(&s.take(), P8).contains(&SystemMessageId::TerritoryWarHasBegun));
-    assert_eq!(s.npcs_of(GLUDIO_WARD).len(), 1);
-    // `//territory_war_end`: the start moves `WarLength` back, the end task ends the war.
-    s.admin("admin_territory_war_end");
-    s.run_ms(1100);
-    let out = s.take();
-    assert!(!s.world.is_tw_in_progress());
-    assert!(message_ids(&out, P8).contains(&SystemMessageId::TerritoryWarHasEnded));
-    assert!(territory_writes(&out).is_empty());
-    // A war needs two owned territories.
-    let mut s = Scene::with(Options {
-        siege_database_writes: false,
-        dion_owner: 0,
-        ..Options::default()
-    });
-    s.enter_all();
-    s.admin("admin_territory_war_start");
-    s.run_ms(1100);
-    assert!(!s.world.is_tw_in_progress());
-}
-
 // ---------------------------------------------------------------------------------- registration
 
 /// `RequestJoinDominionWar` after the re-read (D-50): the registration period, the owner clan,
@@ -1172,7 +1068,7 @@ fn a_gm_runs_the_war_without_the_switch() {
 /// answers with; the rows go out with the switch.
 #[test]
 fn registrations_follow_java_after_a_reread() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     // More than two hours before the war the registration is open.
     s.run_ms(1100);
@@ -1288,44 +1184,11 @@ fn registrations_follow_java_after_a_reread() {
     assert!(territory_writes(&out).is_empty());
 }
 
-/// D-50/D-51: the re-read brings Sieghardt's rows; a registration this world made without a row
-/// (the switch off) stays.
-#[test]
-fn unsaved_registrations_survive_a_reread() {
-    let mut s = Scene::new(false);
-    s.enter_all();
-    s.run_ms(1100);
-    let rows = s.rows_now();
-    // The GM registers as a mercenary of Gludio and the Bears take their registration back:
-    // neither statement goes out.
-    let out = s.join(GM, 81, 0, 1, rows.clone());
-    assert!(territory_writes(&out).is_empty());
-    let out = s.join(P5, 81, 1, 0, rows.clone());
-    assert!(territory_writes(&out).is_empty());
-    assert_eq!(s.world.territory_registered_clans(1), Some(vec![]));
-    // Sieghardt's rows still have the Bears at Gludio, and a new mercenary of Dion.
-    let mut sieghardt = rows;
-    sieghardt.registrations.push(TerritoryRegistrationRecord {
-        castle_id: 2,
-        registered_id: P8,
-    });
-    let out = s.join(P6, 82, 1, 1, sieghardt);
-    assert_eq!(
-        message_ids(&out, P6),
-        [SystemMessageId::YouAreNotAuthorizedToDoThat]
-    );
-    // The rows are the database's: the Bears are back; the GM's registration has no row and
-    // stays.
-    assert_eq!(s.world.territory_registered_clans(1), Some(vec![BEARS]));
-    assert_eq!(s.world.territory_registered_mercenaries(1), Some(vec![GM]));
-    assert_eq!(s.world.territory_registered_mercenaries(2), Some(vec![P7, P8]));
-}
-
 /// `RequestDominionInfo`: the territory list (the owned territories) and the ward positions (only
 /// during the war).
 #[test]
 fn dominion_info_lists_the_territories_and_the_wards() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.input(P8, ClientInput::Territory(TerritoryInput::DominionInfo));
     let out = s.take();
@@ -1350,7 +1213,7 @@ fn dominion_info_lists_the_territories_and_the_wards() {
 /// `isAllyField`: the player's territory's castle, or its fortress.
 #[test]
 fn the_ally_field_is_the_castle_and_the_fortress() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.start_war();
     let p1 = ObjectId(P1);
@@ -1368,7 +1231,7 @@ fn the_ally_field_is_the_castle_and_the_fortress() {
 /// territory's (the rows, the message with exp to the participants, the ward skills).
 #[test]
 fn a_ward_is_taken_and_transported_to_the_outpost() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.start_war();
     let ward = s.npc(GLUDIO_WARD);
@@ -1468,7 +1331,7 @@ fn a_ward_is_taken_and_transported_to_the_outpost() {
 /// carry it.
 #[test]
 fn a_ward_carrier_dies_or_flees_into_a_peace_zone() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.start_war();
     let ward = s.npc(DION_WARD);
@@ -1512,7 +1375,7 @@ fn a_ward_carrier_dies_or_flees_into_a_peace_zone() {
 /// castle owner only, the flag that replaces the clan's first, and the flag's death.
 #[test]
 fn outposts_and_flags_of_the_war() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     // Outside the war the siege field is not active.
     assert!(!s.world.cond_can_create_outpost(ObjectId(P1)));
@@ -1583,7 +1446,7 @@ fn outposts_and_flags_of_the_war() {
 /// war, the other territory's manager, the badges and adena, nothing twice.
 #[test]
 fn the_rewards_of_the_last_war() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.start_war();
     let p1 = ObjectId(P1);
@@ -1648,7 +1511,7 @@ fn the_rewards_of_the_last_war() {
 /// The Territory Managers' other pages: the training, the badge products, the noblesse checks.
 #[test]
 fn the_territory_managers_answer_like_java() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     let manager = s.npc(MANAGER);
     // A first class player.
@@ -1697,7 +1560,7 @@ fn the_territory_managers_answer_like_java() {
 /// `levelUpClan` to 11: only a clan that owns a territory.
 #[test]
 fn clan_level_11_needs_a_territory() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     assert!(s.world.level_up_clan(ObjectId(P1)));
     assert_eq!(s.world.clan(LIONS).unwrap().level, 11);
@@ -1714,7 +1577,7 @@ fn clan_level_11_needs_a_territory() {
 /// during the war.
 #[test]
 fn the_gm_commands_of_the_war() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.admin("admin_territory_war");
     assert_eq!(last_page(&s.take(), GM), "TW MENU");
@@ -1775,7 +1638,7 @@ fn the_gm_commands_of_the_war() {
 /// territory's, or none at all.
 #[test]
 fn the_disguise_scroll_needs_the_own_territory() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     for (player, item) in [
         (P7, DION_DISGUISE),
@@ -1829,7 +1692,7 @@ fn the_disguise_scroll_needs_the_own_territory() {
 /// `ChatBattlefield`: while the channel is open, the speaker's side hears it.
 #[test]
 fn the_battlefield_channel_is_the_side_s() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     let say = |s: &mut Scene| {
         s.take();
@@ -1858,7 +1721,7 @@ fn the_battlefield_channel_is_the_side_s() {
 /// message never shows), but they are on one siege side.
 #[test]
 fn players_of_one_territory_are_on_one_side() {
-    let mut s = Scene::new(true);
+    let mut s = Scene::new();
     s.enter_all();
     s.start_war();
     // Both Lions stand in Gludio's active siege zone on side 81, both attackers.

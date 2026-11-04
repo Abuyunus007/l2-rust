@@ -4,8 +4,7 @@
 // Not a `LongTimeEvent` (it has no `config.xml`): it extends `Script` and is always on.
 //
 // `onDailyReset` (the birthday mail): the query goes out through the outbox and the mails are made
-// when the answer comes back (`World::request_birthday_gifts`, `script/birthday.rs`). Only with
-// `DailyResetDatabaseWrites` (D-49).
+// when the answer comes back (`World::request_birthday_gifts`, `script/birthday.rs`).
 
 use l2_util::ObjectId;
 use l2_world::{Script, ScriptCtx, ScriptNpc, ScriptSetup};
@@ -134,19 +133,15 @@ mod tests {
 
     // ---- the daily reset mail (S-LEFT-01) ----
 
+    use l2_world::WorldCommand;
     use l2_world::outbox::{ItemRowOp, PersistCommand};
     use l2_world::script::ScriptSettings;
-    use l2_world::{WorldCommand, WorldSettings};
 
-    fn birthday_world(daily_reset_writes: bool) -> ScriptTest {
+    fn birthday_world() -> ScriptTest {
         let mut registry = ScriptRegistry::new();
         registry.add(CharacterBirthday);
         let items = r#"<item id="22187" type="EtcItem" name="Birthday Pack"/>"#;
         ScriptTest::new_with(registry, NPCS, items, &[], |world, _| {
-            world.set_settings(WorldSettings {
-                daily_reset_database_writes: daily_reset_writes,
-                ..WorldSettings::default()
-            });
             world.set_script_settings(ScriptSettings {
                 alt_birthday_gift: 22187,
                 alt_birthday_mail_subject: "Happy Birthday!".to_owned(),
@@ -157,12 +152,8 @@ mod tests {
     }
 
     #[test]
-    fn the_daily_reset_asks_for_the_birthdays_only_with_the_switch_on() {
-        let mut t = birthday_world(false);
-        t.world.daily_reset();
-        assert!(t.take_boss().is_empty());
-
-        let mut t = birthday_world(true);
+    fn the_daily_reset_asks_for_the_birthdays() {
+        let mut t = birthday_world();
         t.world.daily_reset();
         let asked = t.take_boss();
         assert!(matches!(
@@ -173,7 +164,7 @@ mod tests {
 
     #[test]
     fn each_birthday_child_gets_a_mail_from_alegria_with_the_gift() {
-        let mut t = birthday_world(true);
+        let mut t = birthday_world();
         t.world.handle(WorldCommand::BirthdayGiftsLoaded {
             result: Ok(vec![(5, "Birthday".to_owned(), 3), (6, "Other".to_owned(), 1)]),
         });
@@ -210,7 +201,7 @@ mod tests {
 
     #[test]
     fn a_failed_birthday_query_sends_nothing() {
-        let mut t = birthday_world(true);
+        let mut t = birthday_world();
         t.world
             .handle(WorldCommand::BirthdayGiftsLoaded { result: Err(()) });
         assert!(t.take_boss().is_empty());

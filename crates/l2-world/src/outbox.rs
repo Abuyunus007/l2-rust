@@ -223,16 +223,8 @@ pub enum PersistCommand {
     /// `custom/offline_play.rs`). Only sent with `OfflineTradeDatabaseWrites` (D-52).
     OfflinePlay(crate::custom::offline_play::OfflinePlayWrite),
     /// A row write of the item auctions with Java's statement (`item_auction`,
-    /// `item_auction_bid`), see `item_auction/` (L-05). The global ones are sent only with
-    /// `CycleDatabaseWrites` (D-53).
+    /// `item_auction_bid`), see `item_auction/` (L-05). The
     ItemAuction(crate::item_auction::ItemAuctionWrite),
-    /// Asks the persistence task to read the `item_auction` rows and bids of one instance again
-    /// (D-50, D-53) before an auction is shown, bid on or a canceled bid is returned. The answer
-    /// comes back as `WorldCommand::ItemAuctionReread` carrying `then`.
-    ItemAuctionRequest {
-        instance_id: i32,
-        then: crate::item_auction::ItemAuctionThen,
-    },
     /// A `lottery` write with Java's statement (`LotteryManager`, S-HAND-03, see `lottery/`). Sent
     /// only while this server runs the lottery (`CycleDatabaseWrites`, D-53).
     Lottery(crate::lottery::LotteryWrite),
@@ -259,10 +251,6 @@ pub enum PersistCommand {
         kind: crate::boss::BossReadKind,
         then: crate::boss::BossReadThen,
     },
-    /// Asks the persistence task to read `global_variables` rows again (D-50, D-54, S-API-04):
-    /// the rows named, by `SELECT * FROM global_variables WHERE var = ?`. The answer comes back
-    /// as `WorldCommand::GlobalVariablesReread` with the same `token`.
-    GlobalVariablesRereadRequest { token: u64, names: Vec<String> },
     /// Transmog (`Transmog.ini`, M9-C07): reads the collection of `owner` (`character_transmogs`)
     /// and the `transmogId` of the given items (`item_variables`). The answer comes back as
     /// `WorldCommand::TransmogLoaded`.
@@ -294,11 +282,8 @@ pub enum PersistCommand {
     /// A write of `mods_wedding` with Java's statement (`Couple`, M8-MISC-01, see `wedding.rs`).
     Wedding(crate::wedding::WeddingWrite),
     /// A `seven_signs` / `seven_signs_status` write with Java's statement (M8-SS-01, see
-    /// `sevensigns/`). The world sends the global ones only with `CycleDatabaseWrites` (D-53).
+    /// `sevensigns/`).
     SevenSigns(crate::sevensigns::SevenSignsWrite),
-    /// Asks the persistence task to read every `seven_signs` row and the status row again (D-50,
-    /// M8-SS-01). The answer comes back as `WorldCommand::SevenSignsLoaded` carrying `then`.
-    SevenSignsReadRequest { then: crate::sevensigns::SevenSignsThen },
     /// A `character_quests` statement of Java's `Quest` (S-API-01, `script/`).
     Quest(crate::script::QuestWrite),
     /// The `global_variables` writes of the scripts, only with `CycleDatabaseWrites` (D-54,

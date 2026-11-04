@@ -38,12 +38,11 @@ pub enum StdTopic {
     Events,
     Geodata,
     ChatFlood,
-    SideBySide,
     Admin,
 }
 
 impl StdTopic {
-    pub const ALL: [StdTopic; 17] = [
+    pub const ALL: [StdTopic; 16] = [
         StdTopic::ServerNetwork,
         StdTopic::Database,
         StdTopic::Rates,
@@ -59,7 +58,6 @@ impl StdTopic {
         StdTopic::Events,
         StdTopic::Geodata,
         StdTopic::ChatFlood,
-        StdTopic::SideBySide,
         StdTopic::Admin,
     ];
 
@@ -80,7 +78,6 @@ impl StdTopic {
             StdTopic::Events => "Events",
             StdTopic::Geodata => "Geodata",
             StdTopic::ChatFlood => "Chat & flood",
-            StdTopic::SideBySide => "Side by side (Rust-only)",
             StdTopic::Admin => "Admin (Rust-only)",
         }
     }
@@ -192,7 +189,6 @@ pub static RULES: &[Rule] = &[
     game("Interface.ini", "", "", T::ServerNetwork),
     game("Development.ini", "", "", T::ServerNetwork),
     game("IdManager.ini", "", "", T::Database),
-    game("SideBySide.ini", "", "", T::SideBySide),
     game("GeoEngine.ini", "", "", T::Geodata),
     game("GeoOverride.ini", "", "", T::Geodata),
     game("Rates.ini", "", "", T::Rates),
@@ -358,7 +354,7 @@ mod tests {
                 Topic::Custom("Wedding".into()),
             ]
         );
-        assert_eq!(StdTopic::ALL.len(), 17);
+        assert_eq!(StdTopic::ALL.len(), 16);
         assert!(StdTopic::ALL.windows(2).all(|w| w[0] < w[1]));
     }
 

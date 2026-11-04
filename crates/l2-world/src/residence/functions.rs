@@ -27,7 +27,7 @@
 use l2_data::item::ADENA_ID;
 use tracing::{error, warn};
 
-use super::{ResidenceRef, ResidenceTimer, ResidenceWrite, Writes};
+use super::{ResidenceRef, ResidenceTimer, ResidenceWrite};
 use crate::outbox::{ItemRowOp, PersistCommand};
 use crate::timer::{TimerId, TimerKind, TimerWheel};
 use crate::world::{World, unix_ms_now};
@@ -275,10 +275,8 @@ impl World {
         }
     }
 
-    /// Java `removeFunction(functionType)`: out of the map and its row deleted as `writes` says
-    /// (an owner change or an unpaid fee is a [`Writes::Job`], a player's own removal a
-    /// [`Writes::Player`]).
-    pub fn residence_remove_function(&mut self, residence: ResidenceRef, function_type: i32, writes: Writes) {
+    /// Java `removeFunction(functionType)`: out of the map and its row deleted.
+    pub fn residence_remove_function(&mut self, residence: ResidenceRef, function_type: i32) {
         let old = self
             .function_keys_mut(residence)
             .and_then(|keys| keys.remove(&function_type));
@@ -289,34 +287,18 @@ impl World {
             residence,
             function_type,
         };
-        self.function_write(residence, writes, write);
-    }
-
-    /// Hands a function row write to the persistence task as `writes` says, unless the owner
-    /// exists only in this world: the database thinks the residence is free (or someone else's),
-    /// so a row of its functions would be a function of a residence nobody owns there (D-51).
-    fn function_write(&mut self, residence: ResidenceRef, writes: Writes, write: ResidenceWrite) -> bool {
-        if self.residence_owner_world_only(residence) {
-            tracing::debug!("SideBySide: not written (the owner exists only in this world): {write:?}");
-            return false;
-        }
-        self.write_residence(writes, write)
+        self.residence_write(write);
     }
 
     /// Java `for (Integer fc : _function.keySet()) removeFunction(fc); _function.clear();` of an
     /// owner change.
     pub(crate) fn residence_remove_all_functions(&mut self, residence: ResidenceRef) {
-        self.residence_remove_all_functions_with(residence, Writes::Job);
-    }
-
-    /// [`Self::residence_remove_all_functions`] with the rows written as `writes` says.
-    pub(crate) fn residence_remove_all_functions_with(&mut self, residence: ResidenceRef, writes: Writes) {
         let types: Vec<i32> = self
             .function_keys(residence)
             .map(|keys| keys.keys().copied().collect())
             .unwrap_or_default();
         for function_type in types {
-            self.residence_remove_function(residence, function_type, writes);
+            self.residence_remove_function(residence, function_type);
         }
     }
 
@@ -334,8 +316,7 @@ impl World {
             rate: f.rate,
             end_time: f.end_time,
         };
-        let residence = task.residence;
-        self.function_write(residence, Writes::Player, write);
+        self.residence_write(write);
     }
 
     /// Java `FunctionTask.run()`.
@@ -351,15 +332,6 @@ impl World {
             return;
         }
         let now = unix_ms_now();
-        if function.cwh && !self.residences.settings.siege_database_writes {
-            // D-51: the Java game server charges the real clan warehouse and writes the row; this
-            // world only moves the paid time on.
-            if let Some(task) = self.residences.function_objects.get_mut(&key) {
-                task.function.end_time = now.saturating_add(function.rate);
-            }
-            self.schedule_function_fee(key, function.rate, true);
-            return;
-        }
         let Some(payer) = self.function_payer(residence) else {
             // `ClanTable.getClan(getOwnerId()).getWarehouse()` throws: logged, the task is over.
             error!(
@@ -385,7 +357,7 @@ impl World {
             }
             self.schedule_function_fee(key, function.rate, true);
         } else {
-            self.residence_remove_function(residence, function.function_type, Writes::Job);
+            self.residence_remove_function(residence, function.function_type);
             self.forget_function_object(key);
         }
     }
@@ -469,7 +441,7 @@ impl World {
             let key = self.new_function(residence, function(0), false);
             self.put_function(residence, key);
         } else if lvl == 0 && lease == 0 {
-            self.residence_remove_function(residence, function_type, Writes::Player);
+            self.residence_remove_function(residence, function_type);
         } else {
             let Some(key) = self
                 .function_keys(residence)

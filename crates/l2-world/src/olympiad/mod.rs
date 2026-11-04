@@ -173,8 +173,6 @@ pub struct OlympiadSettings {
     pub period: String,
     pub period_multiplier: i32,
     pub competition_days: Vec<i32>,
-    /// `CycleDatabaseWrites` of `config/SideBySide.ini` (D-53, `game_server::cycle_database_writes`).
-    pub cycle_database_writes: bool,
     /// Tests: the unix time (ms) at world tick 0. `None` reads the system clock.
     pub clock_override_unix_ms: Option<i64>,
     /// Tests: the zone offset (ms) the calendar uses. `None` asks the machine (D-48).
@@ -224,7 +222,6 @@ impl Default for OlympiadSettings {
             period: "MONTH".to_owned(),
             period_multiplier: 1,
             competition_days: vec![1, 2, 3, 4, 5, 6, 7],
-            cycle_database_writes: false,
             clock_override_unix_ms: None,
             zone_offset_override_ms: None,
         }

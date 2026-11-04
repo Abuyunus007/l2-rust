@@ -11,7 +11,7 @@ use super::manager::{Words, parse_int};
 use super::{FortThen, FortTimer, LogisticsCommand};
 use crate::clan::model::ClanAccess;
 use crate::npc::NpcClass;
-use crate::residence::{FortId, ResidenceRef, ResidenceWrite, Writes};
+use crate::residence::{FortId, ResidenceRef, ResidenceWrite};
 use crate::timer::TimerKind;
 use crate::world::World;
 use l2_protocol_game::NpcStringId;
@@ -267,13 +267,12 @@ impl World {
                         if let Some(c) = self.clan_mut(clan) {
                             c.blood_oath_count = 0;
                         }
-                        self.write_residence(
-                            Writes::Player,
-                            ResidenceWrite::FortSiege(super::FortSiegeWrite::BloodOathCount {
+                        self.residence_write(ResidenceWrite::FortSiege(
+                            super::FortSiegeWrite::BloodOathCount {
                                 clan_id: clan,
                                 count: 0,
-                            }),
-                        );
+                            },
+                        ));
                         self.fort_page(npc, player, &page("logistics-blood"), &[]);
                     } else {
                         self.fort_page(npc, player, &page("logistics-noblood"), &[]);
@@ -333,7 +332,7 @@ impl World {
             self.spawn_npc_at(box_id, x - 23, y + 41, z, 0);
             self.fort_set_supply_level(fort, 0);
             // `saveFortVariables()`: the row of the supply level, the player's own action.
-            self.fort_save_variables(fort, Writes::Player);
+            self.fort_save_variables(fort);
             self.fort_page(npc, player, &page("logistics-supply"), &[]);
         } else {
             self.fort_page(npc, player, &page("logistics-nosupply"), &[]);

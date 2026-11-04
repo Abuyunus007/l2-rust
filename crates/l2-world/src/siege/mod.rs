@@ -434,9 +434,6 @@ pub enum SiegeTimer {
     Start(CastleId),
     /// Java `ScheduleEndSiegeTask`.
     End(CastleId),
-    /// Side by side (D-51): read the castle and its registrations again once the Java GS has run
-    /// its siege, then start the schedule again.
-    SideBySideReread(CastleId),
     /// Java `SiegeFlag.ScheduleTalkTask`: the headquarters may warn its clan again.
     FlagTalk(ObjectId),
     /// Java `FameTask` of one player (`scheduleAtFixedRate`).
@@ -455,9 +452,8 @@ pub struct SiegeWorld {
     pub(crate) sieges: BTreeMap<CastleId, Siege>,
     /// Java `CastleManager._castleSiegeDate`.
     pub(crate) castle_siege_dates: BTreeMap<i32, i64>,
-    /// The `siege_clans` table as Java has it in the database, in insertion order. `unsaved`:
-    /// written by this world while `SiegeDatabaseWrites` was off.
-    pub(crate) siege_clan_rows: Vec<(SiegeClanRecord, bool)>,
+    /// The `siege_clans` table as Java has it in the database, in insertion order.
+    pub(crate) siege_clan_rows: Vec<SiegeClanRecord>,
     /// The `castle_siege_guards` table, in row order.
     pub(crate) guard_rows: Vec<SiegeGuardRecord>,
     /// The player siege state (`_siegeState`, `_siegeSide`, `_isInSiege`, the fame task).
@@ -499,7 +495,7 @@ impl World {
 
     /// [`Self::load_sieges`] at a given clock.
     pub fn load_sieges_at(&mut self, load: SiegeLoad, now_ms: i64) {
-        self.sieges.siege_clan_rows = load.siege_clans.into_iter().map(|r| (r, false)).collect();
+        self.sieges.siege_clan_rows = load.siege_clans;
         self.sieges.guard_rows = load.siege_guards;
         let castles: Vec<(CastleId, i32)> = self.castles().iter().map(|c| (c.id, c.owner_id)).collect();
         // SiegeManager.load: the trap upgrades of an owned castle.
@@ -600,7 +596,6 @@ impl World {
         match timer {
             SiegeTimer::Start(castle) => self.on_siege_start_task(castle),
             SiegeTimer::End(castle) => self.on_siege_end_task(castle),
-            SiegeTimer::SideBySideReread(castle) => self.on_side_by_side_reread_timer(castle),
             SiegeTimer::FlagTalk(flag) => self.on_flag_talk_timer(flag),
             SiegeTimer::Fame(player) => self.on_fame_timer(player),
             SiegeTimer::MercDespawn(npc) => {
@@ -652,10 +647,9 @@ impl World {
         }
     }
 
-    /// Hands a siege write to the persistence task with `SiegeDatabaseWrites` (D-51); returns
-    /// whether it went out.
-    pub(crate) fn siege_job_write(&mut self, write: ResidenceWrite) -> bool {
-        self.siege_write(write)
+    /// Hands a siege write to the persistence task.
+    pub(crate) fn siege_job_write(&mut self, write: ResidenceWrite) {
+        self.residence_write(write);
     }
 
     /// Logs the line of `startAutoTask` ("Siege of Gludio: ...").

@@ -32,7 +32,6 @@ use l2_world::*;
 #[derive(Debug, Clone)]
 enum Out {
     Packet(i32, Vec<u8>),
-    Persist(PersistCommand),
 }
 
 #[derive(Clone, Default)]
@@ -53,11 +52,11 @@ impl PacketSink for Sink {
     fn left_world(&self, _reason: LeaveReason) {}
 }
 
-struct Recorder(Log);
+struct Recorder;
 
 impl Outbox for Recorder {
     fn persist(&mut self, command: PersistCommand) {
-        self.0.0.lock().unwrap().push(Out::Persist(command));
+        let _ = command;
     }
     fn ls_event(&mut self, _event: LsEvent) {}
 }
@@ -286,7 +285,7 @@ impl Scene {
         );
         write("data/zones/castle.xml", &zones_xml());
         let log = Log::default();
-        let mut world = World::new(WorldRng::from_seed(7), Box::new(Recorder(log.clone())));
+        let mut world = World::new(WorldRng::from_seed(7), Box::new(Recorder));
         world.set_static_data(Box::new(Data {
             stats: stat_data(),
             rights: rights(),
@@ -539,12 +538,6 @@ fn door_updates(out: &[Out], to: i32, door: ObjectId) -> Vec<DoorStatusUpdate> {
         .collect()
 }
 
-fn residence_writes(out: &[Out]) -> usize {
-    out.iter()
-        .filter(|o| matches!(o, Out::Persist(PersistCommand::Residence(_))))
-        .count()
-}
-
 // ---------------------------------------------------------------------------------- doors
 
 /// The attackers of a GM test siege break the gate: `Door` is a creature, so the auto attack
@@ -552,7 +545,7 @@ fn residence_writes(out: &[Out]) -> usize {
 /// to everybody who sees it, sent targetable because it is a castle door); the last hit kills it
 /// (`Creature.doDie`): "The castle gate has been destroyed." to everybody who sees it, no `Die`
 /// (`DoorAI.notifyActionDeath` does nothing), and the dead gate stops blocking. The siege's end
-/// (`spawnDoor`) brings it back with full HP (`doRevive`: `Revive`). D-51: nothing is written.
+/// (`spawnDoor`) brings it back with full HP (`doRevive`: `Revive`).
 #[test]
 fn attackers_break_the_gate_and_the_siege_end_repairs_it() {
     let mut s = Scene::new(Vec::new());
@@ -627,7 +620,6 @@ fn attackers_break_the_gate_and_the_siege_end_repairs_it() {
     assert_eq!((last.current_hp, last.damage, last.is_enemy), (1000, 0, true));
     assert!(!s.world.door(gate).unwrap().is_enemy());
     assert_eq!(s.world.door_snapshot().door_count(), blocking_before);
-    assert_eq!(residence_writes(&out), 0, "D-51");
 }
 
 /// `Door.reduceCurrentHp`: a wall outside an instance takes damage only from a servitor of race

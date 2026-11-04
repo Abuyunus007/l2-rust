@@ -23,7 +23,7 @@ const TREE: &str = r#"<list><skillTree type="heroSkillTree">
 </skillTree></list>"#;
 const DUELIST: i32 = 88;
 
-fn scene(cycle: bool) -> Scene {
+fn scene() -> Scene {
     let mut s = Scene::with(Config {
         skills_xml: SKILLS.into(),
         ..Config::default()
@@ -45,7 +45,6 @@ fn scene(cycle: bool) -> Scene {
         Arc::new(SkillTrees::from_xml(TREE).unwrap()),
     );
     s.world.set_olympiad_settings(OlympiadSettings {
-        cycle_database_writes: cycle,
         clock_override_unix_ms: Some(1_793_212_200_000),
         zone_offset_override_ms: Some(0),
         ..OlympiadSettings::default()
@@ -86,7 +85,7 @@ fn skill_ids(s: &Scene, who: i32) -> Vec<i32> {
 
 #[test]
 fn a_claimed_hero_logs_in_as_a_hero_with_the_skills() {
-    let mut s = scene(false);
+    let mut s = scene();
     s.world.load_heroes(HeroLoad {
         rows: vec![
             row(P1, "Alpha", 1, true),
@@ -119,7 +118,7 @@ fn a_claimed_hero_logs_in_as_a_hero_with_the_skills() {
 
 #[test]
 fn set_hero_gives_and_takes_the_skills() {
-    let mut s = scene(false);
+    let mut s = scene();
     s.enter(P1, "Alpha");
     s.world.set_hero(id(P1), true);
     assert_eq!(skill_ids(&s, P1), [1374, 1375]);
@@ -130,7 +129,7 @@ fn set_hero_gives_and_takes_the_skills() {
 
 #[test]
 fn the_hero_voice_is_for_heroes_and_gms() {
-    let mut s = scene(false);
+    let mut s = scene();
     s.world.load_heroes(HeroLoad {
         rows: vec![row(P1, "Alpha", 1, true)],
         details: vec![],
@@ -163,7 +162,7 @@ fn the_hero_voice_is_for_heroes_and_gms() {
 
 #[test]
 fn the_diary_rows_are_written_and_the_words_are_kept() {
-    let mut s = scene(false);
+    let mut s = scene();
     s.world.load_heroes(HeroLoad {
         rows: vec![row(P1, "Alpha", 1, true)],
         details: vec![HeroDetails {
@@ -221,7 +220,7 @@ fn to_be(char_id: i32, name: &str) -> HeroToBe {
 
 #[test]
 fn the_choice_with_the_switch_on_writes_the_heroes() {
-    let mut s = scene(true);
+    let mut s = scene();
     s.world.load_heroes(HeroLoad {
         rows: vec![row(P1, "Alpha", 1, true)],
         details: vec![],
@@ -274,43 +273,4 @@ fn the_choice_with_the_switch_on_writes_the_heroes() {
             ..
         } if *p == P1
     )));
-}
-
-#[test]
-fn the_choice_with_the_switch_off_stays_in_memory_and_a_read_keeps_the_claim() {
-    let mut s = scene(false);
-    s.enter(P1, "Alpha");
-    s.world.olympiad_compute_new_heroes(&[to_be(P1, "Alpha")]);
-    assert!(s.world.is_unclaimed_hero(P1));
-    assert!(hero_writes(&s).is_empty());
-    s.world.claim_hero(id(P1));
-    // Only the player's own diary row goes out; no `heroes` row.
-    assert!(
-        hero_writes(&s)
-            .iter()
-            .all(|w| matches!(w, HeroWrite::Diary { .. }))
-    );
-    let then = OlympiadRereadThen {
-        player: id(P1),
-        npc: id(0),
-        action: OlympiadRereadAction::Hero(HeroAction::List),
-    };
-    // A read of the table the Java game server keeps (unclaimed, same count) does not undo it.
-    s.world.handle(WorldCommand::OlympiadReread {
-        result: Ok(OlympiadRereadRows::Heroes(Box::new(HeroLoad {
-            rows: vec![HeroRow {
-                count: 1,
-                ..row(P1, "Alpha", 1, false)
-            }],
-            details: vec![],
-        }))),
-        then,
-    });
-    assert!(s.world.is_hero_char(P1));
-    // A failed read changes nothing.
-    s.world.handle(WorldCommand::OlympiadReread {
-        result: Err(()),
-        then,
-    });
-    assert!(s.world.is_hero_char(P1));
 }

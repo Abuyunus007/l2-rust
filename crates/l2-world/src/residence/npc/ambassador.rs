@@ -17,7 +17,7 @@ use l2_util::ObjectId;
 use tracing::warn;
 
 use super::{CastleScript, NpcThen, ResidenceNpcTimer, ScriptFailed};
-use crate::residence::{FortId, ResidenceReadThen, ResidenceRef, Writes};
+use crate::residence::{FortId, ResidenceReadThen, ResidenceRef};
 use crate::timer::{TimerKind, TimerWheel};
 use crate::world::World;
 
@@ -125,7 +125,7 @@ impl World {
         match event {
             "signed" => {
                 if state == 0 {
-                    self.fort_set_state(fort, 2, castle_id, Writes::Player);
+                    self.fort_set_state(fort, 2, castle_id);
                     self.envoy_restart_despawn(npc);
                     page = Some("ambassador-05.html");
                 } else if state == 1 {
@@ -134,7 +134,7 @@ impl World {
             }
             "rejected" => {
                 if state == 0 {
-                    self.fort_set_state(fort, 1, castle_id, Writes::Player);
+                    self.fort_set_state(fort, 1, castle_id);
                     self.envoy_restart_despawn(npc);
                     page = Some("ambassador-02.html");
                 } else if state == 2 {
@@ -144,7 +144,7 @@ impl World {
             "DESPAWN" => {
                 if state == 0 {
                     // The hour is over: the fortress stays independent.
-                    self.fort_set_state(fort, 1, castle_id, Writes::Job);
+                    self.fort_set_state(fort, 1, castle_id);
                 }
                 self.envoy_cancel_despawn(npc);
                 // `npc.broadcastEvent("DESPAWN", 1000, null)`: the envoys around receive it and

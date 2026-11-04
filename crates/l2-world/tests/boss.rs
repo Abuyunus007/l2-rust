@@ -65,7 +65,6 @@ fn scene(settings: BossSettings) -> Scene {
 
 fn writes_on() -> BossSettings {
     BossSettings {
-        cycle_database_writes: true,
         ..BossSettings::default()
     }
 }
@@ -338,43 +337,6 @@ fn a_kill_without_a_player_still_sets_the_respawn() {
     assert!(s.world.raid_boss_respawn_time(RAID).unwrap() > 0);
 }
 
-/// The switch off case (D-53): the world keeps the respawn time and the schedule in memory but
-/// no row of `raidboss_spawnlist` or `grandboss_data` is written. The raid points of a player are
-/// written as Java writes them.
-#[test]
-fn with_the_switch_off_the_boss_rows_stay_in_memory() {
-    let mut s = scene(BossSettings::default());
-    s.world.spawn_raid_bosses(vec![raid_row(RAID, 0)]);
-    s.world.load_bosses(BossLoad {
-        grand_bosses: vec![grand_row(GRAND, 0, 0)],
-        ..BossLoad::default()
-    });
-    s.enter(P1, "Alpha");
-    clear_persisted(&s);
-    let boss = s.world.raid_boss_npc(RAID).unwrap();
-    kill(&mut s, boss, P1);
-
-    // The respawn time is in memory and the boss is scheduled.
-    assert!(s.world.raid_boss_respawn_time(RAID).unwrap() > now_ms());
-    assert_eq!(s.world.raid_boss_status(RAID), RaidBossStatus::Dead);
-    // Only the raid points row of the player went out.
-    let writes = boss_writes(&s);
-    assert_eq!(writes.len(), 1, "{writes:?}");
-    assert!(matches!(writes[0], BossWrite::RaidPoints { .. }));
-
-    // A grand boss status changes in memory only; the 5 minute store writes nothing.
-    s.world.set_grand_boss_status(GRAND, 3);
-    assert_eq!(s.world.grand_boss_status(GRAND), Some(3));
-    s.ticks(6_100);
-    assert_eq!(boss_writes(&s).len(), 1);
-
-    // A raid boss added by a GM is not written either, and neither is its deletion.
-    s.world.raid_delete_spawn(RAID, true);
-    assert!(!s.world.raid_boss_defined(RAID));
-    assert_eq!(boss_writes(&s).len(), 1);
-    assert_eq!(s.world.raid_boss_status(RAID), RaidBossStatus::Undefined);
-}
-
 /// `deleteSpawn(spawn, true)` with the switch on deletes the row; the schedule goes with it.
 #[test]
 fn deleting_a_raid_spawn_removes_its_schedule_and_row() {
@@ -542,20 +504,6 @@ fn the_monday_reset_pays_the_clans_and_clears_the_points() {
     assert_eq!(s.world.raid_ranking_of(P1), 0);
     // 100 + 1250 (rank 1) + 900 (rank 2).
     assert_eq!(s.world.clan(268_500_000).unwrap().reputation_score, 2250);
-}
-
-/// Without the switch the reset is a global job the Java server does: nothing is written, no
-/// reputation is given, but the points in memory go.
-#[test]
-fn the_reset_with_the_switch_off_only_clears_the_memory() {
-    let mut s = scene(BossSettings::default());
-    s.world.load_clans(vec![clan_of(&[P1])], Vec::new());
-    s.world.add_raid_points(id(P1), RAID, 20);
-    clear_persisted(&s);
-    s.world.reset_raid_points_on_day(MONDAY);
-    assert!(boss_writes(&s).is_empty());
-    assert_eq!(s.world.raid_points_of(P1), 0);
-    assert_eq!(s.world.clan(268_500_000).unwrap().reputation_score, 100);
 }
 
 /// The reset task is one timer on the wheel that puts itself back every 24 hours (Java's fixed

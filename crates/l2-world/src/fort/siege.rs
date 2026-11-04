@@ -17,7 +17,7 @@ use l2_util::ObjectId;
 use tracing::{info, warn};
 
 use super::FortTimer;
-use crate::residence::{FortId, ResidenceWrite, Writes};
+use crate::residence::{FortId, ResidenceWrite};
 use crate::teleport::TeleportWhereType;
 use crate::timer::{TimerId, TimerKind, TimerWheel};
 use crate::world::{World, unix_ms_now};
@@ -39,17 +39,13 @@ pub struct FortSiegeClan {
     pub clan_id: i32,
     /// `_flag`: the object ids of the flag NPCs (filled by the headquarters code, M7-SIEGE-01).
     pub flags: Vec<ObjectId>,
-    /// Whether the registration is a row of `fortsiege_clans` (a registration made without
-    /// `SiegeDatabaseWrites` exists in this world only).
-    pub(crate) written: bool,
 }
 
 impl FortSiegeClan {
-    fn new(clan_id: i32, written: bool) -> Self {
+    fn new(clan_id: i32) -> Self {
         Self {
             clan_id,
             flags: Vec::new(),
-            written,
         }
     }
 }
@@ -194,8 +190,8 @@ impl World {
 
     // ------------------------------------------------------------------ rows
 
-    fn fort_siege_write(&mut self, write: FortSiegeWrite) -> bool {
-        self.siege_write(ResidenceWrite::FortSiege(write))
+    fn fort_siege_write(&mut self, write: FortSiegeWrite) {
+        self.residence_write(ResidenceWrite::FortSiege(write));
     }
 
     /// Java `saveSiegeDate()`.
@@ -373,11 +369,6 @@ impl World {
 
     /// Java `ScheduleStartSiegeTask.run()` for a countdown of `time` seconds.
     fn on_fort_start_siege_task(&mut self, fort: FortId, time: i32) {
-        // D-51: the Java game server runs the real sieges; the countdown of this world does
-        // nothing while it only holds a copy of the registrations.
-        if !self.siege_database_writes() {
-            return;
-        }
         if self.fort_siege_in_progress(fort) {
             return;
         }
@@ -629,10 +620,10 @@ impl World {
     // ------------------------------------------------------------------ registration
 
     /// Java `loadSiegeClan()` for rows read from the database: the registrations of this world
-    /// become those rows (a registration this world holds without a row stays).
+    /// become those rows.
     pub(crate) fn fort_apply_siege_clan_rows(&mut self, fort: FortId, rows: &[i32]) {
         let state = self.fort.state_mut(fort);
-        let mut attackers: Vec<FortSiegeClan> = rows
+        let attackers: Vec<FortSiegeClan> = rows
             .iter()
             .map(|clan| {
                 state
@@ -641,16 +632,9 @@ impl World {
                     .iter()
                     .find(|c| c.clan_id == *clan)
                     .cloned()
-                    .map_or_else(
-                        || FortSiegeClan::new(*clan, true),
-                        |mut c| {
-                            c.written = true;
-                            c
-                        },
-                    )
+                    .unwrap_or_else(|| FortSiegeClan::new(*clan))
             })
             .collect();
-        attackers.extend(state.siege.attackers.iter().filter(|c| !c.written).cloned());
         state.siege.attackers = attackers;
     }
 
@@ -661,7 +645,7 @@ impl World {
         if self.fort_attacker_clans(fort).len() >= max {
             return;
         }
-        let written = self.fort_siege_write(FortSiegeWrite::AddAttacker {
+        self.fort_siege_write(FortSiegeWrite::AddAttacker {
             fort_id: fort.0,
             clan_id,
         });
@@ -669,7 +653,7 @@ impl World {
             .state_mut(fort)
             .siege
             .attackers
-            .push(FortSiegeClan::new(clan_id, written));
+            .push(FortSiegeClan::new(clan_id));
     }
 
     /// Java `addAttacker(player, checkConditions)`. 0: no clan, 1: not enough adena, 2: not the
@@ -785,7 +769,7 @@ impl World {
 
     /// `ClanTable.destroyClan`: `siege.removeAttacker(clan)` of every fortress siege (a clan with a
     /// fortress is not registered anywhere). The rows go as `writes` says.
-    pub(crate) fn fort_sieges_remove_attacker(&mut self, clan_id: i32, writes: Writes) {
+    pub(crate) fn fort_sieges_remove_attacker(&mut self, clan_id: i32) {
         let forts: Vec<FortId> = self.fort.forts.keys().copied().collect();
         for fort in forts {
             if !self.fort_check_is_attacker(fort, clan_id) {
@@ -799,7 +783,7 @@ impl World {
                 fort_id: fort.0,
                 clan_id,
             });
-            self.write_residence(writes, write);
+            self.residence_write(write);
             let state = self.fort.state_mut(fort);
             state.siege.attackers.retain(|c| c.clan_id != clan_id);
             if state.siege.attackers.is_empty() {

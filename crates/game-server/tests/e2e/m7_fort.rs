@@ -4,9 +4,6 @@
 //! the flag pole, and the fortress changes hands. Java: `FortressSiegeManager` (script),
 //! `FortSiege`, `Fort`, `CombatFlag`, `FortCommander`, `TakeFort`, `AdminFortSiege`.
 //!
-//! With `SiegeDatabaseWrites = False` (D-51) the world plays all of it but writes no fortress row
-//! (the registration, the dates, the owner); with `True` the rows are Java's.
-//!
 //! The siege ends two ways: the real one, Flag Display on the flag pole (`TakeFort`), and the GM's
 //! `//setfort 101` on the raider, which calls the same `Fort.endOfSiege(clan)`.
 
@@ -21,9 +18,8 @@ const SHANTY: i32 = m7_seed::SHANTY;
 /// The fee of the registration, from the player's adena (`FortSiege.addAttacker`).
 const REGISTRATION_FEE: i64 = 250_000;
 
-pub fn opts(siege_writes: bool, flag_condition: bool) -> Opts {
+pub fn opts(flag_condition: bool) -> Opts {
     Opts {
-        siege_writes,
         positions: [m7_data::GM_POS, m7_data::FORT_REGISTER_POS, m7_data::FORT_GM_POS],
         auction_ms: 86_400_000,
         flag_condition,
@@ -75,13 +71,12 @@ pub enum Finish {
 }
 
 pub struct Played {
-    pub rows_start: Rows,
     pub rows_end: Rows,
     pub ended_at: i64,
     pub raider: Left,
 }
 
-pub async fn play<H: Harness>(h: &mut H, writes: bool, finish: Finish) -> Played {
+pub async fn play<H: Harness>(h: &mut H, finish: Finish) -> Played {
     // ---- the raider and the GM enter; the raider's clan comes from the tables (D-50) ----------------------
     let entered = h.enter(Who::Raider).await;
     let npcs = all::<NpcInfo>(&entered, "NPC_INFO");
@@ -140,16 +135,13 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool, finish: Finish) -> Played
     );
     let reply: NpcHtmlMessage = all(&registered, "NPC_HTML_MESSAGE").remove(0);
     assert!(reply.html.contains("Your clan is registered."), "{}", reply.html);
-    // The rows of `FortSiege.saveSiegeClan` and `saveSiegeDate`: the switch (D-51).
+    // The rows of `FortSiege.saveSiegeClan` and `saveSiegeDate`.
     let rows_registered = h.rows().await;
-    if writes {
-        assert_eq!(rows_registered.fort_clans, [(SHANTY, WOLVES)]);
-        // The date is an hour ahead (`setSiegeDateTime`).
-        let date = rows_registered.fort(SHANTY).siege_date;
-        assert!(date > now_ms() && date <= now_ms() + 3_700_000, "{date}");
-    } else {
-        assert_eq!(rows_registered, rows_start, "D-51: nothing global is written");
-    }
+    assert_eq!(rows_registered.fort_clans, [(SHANTY, WOLVES)]);
+    // The date is an hour ahead (`setSiegeDateTime`).
+    let date = rows_registered.fort(SHANTY).siege_date;
+    assert!(date > now_ms() && date <= now_ms() + 3_700_000, "{date}");
+
     // The second registration is refused ("registered already"): the merchant's page again (the
     // client may only send back the links of the page it shows), the same command.
     h.act(Who::Raider, act::click(merchant, h.start_position(Who::Raider)))
@@ -206,14 +198,10 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool, finish: Finish) -> Played
     assert!(fort_info_of(&h.collect_quiet(Who::Raider).await).siege_in_progress);
     // `startSiege` saves the siege date (`saveFortSiege`) and nothing else.
     let rows_started = h.rows().await;
-    if writes {
-        assert_eq!(rows_started.fort_clans, rows_registered.fort_clans);
-        assert_eq!(rows_started.castles, rows_registered.castles);
-        assert_eq!(rows_started.clans, rows_registered.clans);
-        assert_eq!(rows_started.fort(SHANTY).owner, 0);
-    } else {
-        assert_eq!(rows_started, rows_registered, "D-51: nothing global is written");
-    }
+    assert_eq!(rows_started.fort_clans, rows_registered.fort_clans);
+    assert_eq!(rows_started.castles, rows_registered.castles);
+    assert_eq!(rows_started.clans, rows_registered.clans);
+    assert_eq!(rows_started.fort(SHANTY).owner, 0);
 
     // ---- the GM kills the commanders: the barracks, then all of them --------------------------------------------------
     let mut barracks = Vec::new();
@@ -350,17 +338,15 @@ pub async fn play<H: Harness>(h: &mut H, writes: bool, finish: Finish) -> Played
     let raider = h.leave(Who::Raider).await;
     h.leave(Who::Gm).await;
     Played {
-        rows_start,
         rows_end,
         ended_at,
         raider,
     }
 }
 
-/// The rows after the siege: with the switch Java's statements (`Fort.setOwner`, `endSiege`,
-/// `clearSiegeClan`), without it nothing global.
-pub fn assert_played(played: &Played, writes: bool) {
-    // The registration fee comes out of the leader's adena in both modes; the flag does not stay.
+/// The rows after the siege: Java's statements (`Fort.setOwner`, `endSiege`, `clearSiegeClan`).
+pub fn assert_played(played: &Played) {
+    // The registration fee comes out of the leader's adena; the flag does not stay.
     assert_eq!(
         played.raider.count_of(ADENA_ID),
         m6_data::START_ADENA - REGISTRATION_FEE
@@ -370,65 +356,40 @@ pub fn assert_played(played: &Played, writes: bool) {
         0,
         "the flag is gone with the siege"
     );
-    if writes {
-        let fort = played.rows_end.fort(SHANTY);
-        // `Fort.updateOwnerInDB`: the owner, the time, state and castle 0.
-        assert_eq!(fort.owner, WOLVES);
-        assert!(
-            (fort.last_owned_time - played.ended_at).abs() < 60_000,
-            "the time the clan took it: {fort:?}"
-        );
-        assert_eq!((fort.state, fort.castle_id), (0, 0));
-        // `clearSiegeClan`: the registrations are gone.
-        assert!(played.rows_end.fort_clans.is_empty());
-    } else {
-        // D-51: no row of the fortress changed.
-        assert_eq!(played.rows_end.forts, played.rows_start.forts);
-        assert_eq!(played.rows_end.fort_clans, played.rows_start.fort_clans);
-        assert_eq!(played.rows_end, played.rows_start);
-    }
+    let fort = played.rows_end.fort(SHANTY);
+    // `Fort.updateOwnerInDB`: the owner, the time, state and castle 0.
+    assert_eq!(fort.owner, WOLVES);
+    assert!(
+        (fort.last_owned_time - played.ended_at).abs() < 60_000,
+        "the time the clan took it: {fort:?}"
+    );
+    assert_eq!((fort.state, fort.castle_id), (0, 0));
+    // `clearSiegeClan`: the registrations are gone.
+    assert!(played.rows_end.fort_clans.is_empty());
 }
 
 #[tokio::test]
-async fn a_gm_started_fortress_siege_runs_in_a_bare_world_without_global_writes() {
-    let mut world = BareWorld::start(&opts(false, false));
-    let played = play(&mut world, false, Finish::Gm).await;
-    assert_played(&played, false);
+async fn a_gm_started_fortress_siege_runs_in_a_bare_world() {
+    let mut world = BareWorld::start(&opts(false));
+    let played = play(&mut world, Finish::Gm).await;
+    assert_played(&played);
 }
 
 #[tokio::test]
-async fn a_gm_started_fortress_siege_runs_in_a_bare_world_and_writes_javas_rows() {
-    let mut world = BareWorld::start(&opts(true, false));
-    let played = play(&mut world, true, Finish::Gm).await;
-    assert_played(&played, true);
-}
-
-#[tokio::test]
-async fn a_gm_started_fortress_siege_runs_on_the_real_servers_without_global_writes() {
-    let options = opts(false, false);
-    let Some(mut net) = Net::start("e2em7f0", &options).await else {
-        return;
-    };
-    let played = play(&mut net, false, Finish::Gm).await;
-    assert_played(&played, false);
-    net.finish().await;
-}
-
-#[tokio::test]
-async fn a_gm_started_fortress_siege_runs_on_the_real_servers_and_writes_javas_rows() {
-    let options = opts(true, false);
+async fn a_gm_started_fortress_siege_runs_on_the_real_servers() {
+    let options = opts(false);
     let Some(mut net) = Net::start("e2em7f1", &options).await else {
         return;
     };
-    let played = play(&mut net, true, Finish::Gm).await;
-    assert_played(&played, true);
+    let played = play(&mut net, Finish::Gm).await;
+    assert_played(&played);
     net.finish().await;
 }
 
 /// The real way: the flag is displayed with the skill and `TakeFort` gives the clan the fortress.
 #[tokio::test]
 async fn flag_display_takes_the_fortress() {
-    let mut world = BareWorld::start(&opts(true, true));
-    let played = play(&mut world, true, Finish::Skill).await;
-    assert_played(&played, true);
+    let mut world = BareWorld::start(&opts(true));
+    let played = play(&mut world, Finish::Skill).await;
+    assert_played(&played);
 }

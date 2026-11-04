@@ -301,7 +301,6 @@ struct Scene {
 
 /// What a scene is made of.
 struct Config {
-    cycle: bool,
     clock: i64,
     uc_party_size: i32,
 }
@@ -309,7 +308,6 @@ struct Config {
 impl Default for Config {
     fn default() -> Self {
         Self {
-            cycle: false,
             clock: CLOCK,
             uc_party_size: 2,
         }
@@ -379,7 +377,6 @@ impl Scene {
             enable_block_checker_event: true,
             min_block_checker_team_members: 2,
             uc_party_size: config.uc_party_size,
-            cycle_database_writes: config.cycle,
             clock_override_unix_ms: Some(config.clock),
             ..MinigameSettings::default()
         });
@@ -1037,33 +1034,22 @@ fn coliseum_a_match_from_the_registration_to_the_reward() {
 }
 
 #[test]
-fn coliseum_period_rows_are_written_only_with_the_cycle_switch() {
+fn coliseum_period_rows_are_written() {
     // No period in the database: Java makes the next one from the cron pattern and stores it.
-    for cycle in [false, true] {
-        let mut s = Scene::new(Config {
-            cycle,
-            ..Config::default()
-        });
-        s.world.start_minigames(MinigameLoad::default());
-        let writes = s.persisted.writes();
-        if cycle {
-            let names: Vec<&str> = writes
-                .iter()
-                .filter_map(|w| match w {
-                    MinigameWrite::GlobalVariable { name, .. } => Some(name.as_str()),
-                    _ => None,
-                })
-                .collect();
-            assert_eq!(names, vec!["UC_START_TIME", "UC_STOP_TIME"]);
-            let (start, end) = s.world.coliseum_period();
-            assert!(start > CLOCK);
-            assert_eq!(end - start, 2 * 3_600_000, "BattlePeriod is 2 hours");
-        } else {
-            assert!(writes.is_empty(), "side by side: nothing is written ({writes:?})");
-            // The period is still kept in memory.
-            assert!(s.world.coliseum_period().0 > CLOCK);
-        }
-    }
+    let mut s = Scene::new(Config::default());
+    s.world.start_minigames(MinigameLoad::default());
+    let writes = s.persisted.writes();
+    let names: Vec<&str> = writes
+        .iter()
+        .filter_map(|w| match w {
+            MinigameWrite::GlobalVariable { name, .. } => Some(name.as_str()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(names, vec!["UC_START_TIME", "UC_STOP_TIME"]);
+    let (start, end) = s.world.coliseum_period();
+    assert!(start > CLOCK);
+    assert_eq!(end - start, 2 * 3_600_000, "BattlePeriod is 2 hours");
 }
 
 #[test]

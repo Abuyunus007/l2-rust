@@ -73,18 +73,13 @@ fn premium_rate_map(ini: &IniFile, key: &str) -> HashMap<i32, f32> {
 }
 
 /// `PremiumSystemConfig` (the premium keys) and the server rates the `.premium` page shows.
-pub fn premium_settings(
-    config: &GameConfig,
-    config_dir: &Path,
-    cycle_database_writes: bool,
-) -> PremiumSettings {
+pub fn premium_settings(config: &GameConfig, config_dir: &Path) -> PremiumSettings {
     let p = &config.premium_system;
     let ini = custom_ini(config_dir, l2_config::game::PremiumSystemConfig::FILE);
     PremiumSettings {
         enabled: p.premium_system_enabled,
         account_wide: p.account_wide_premium,
         pc_cafe_retail_like: p.pc_cafe_retail_like,
-        cycle_database_writes,
         shown_rates: ShownRates {
             rate_xp: config.rates.rate_xp,
             rate_sp: config.rates.rate_sp,
@@ -233,13 +228,9 @@ pub fn offline_command_settings(config: &GameConfig, config_dir: &Path) -> Offli
 }
 
 /// Every setting of this module.
-pub fn custom_play_settings(
-    config: &GameConfig,
-    config_dir: &Path,
-    cycle_database_writes: bool,
-) -> CustomPlaySettings {
+pub fn custom_play_settings(config: &GameConfig, config_dir: &Path) -> CustomPlaySettings {
     CustomPlaySettings {
-        premium: premium_settings(config, config_dir, cycle_database_writes),
+        premium: premium_settings(config, config_dir),
         auto_potions: auto_potion_settings(config, config_dir),
         auto_play: auto_play_rules(config, config_dir),
         offline_play: offline_play_settings(config, config_dir),
@@ -255,7 +246,7 @@ mod tests {
     fn the_defaults_switch_every_feature_off() {
         let config = GameConfig::default();
         let dir = Path::new("no-such-config-dir");
-        let settings = custom_play_settings(&config, dir, false);
+        let settings = custom_play_settings(&config, dir);
         assert!(!settings.premium.enabled);
         assert!(!settings.auto_potions.enabled);
         assert!(!settings.auto_play.enable_auto_play);
@@ -288,7 +279,7 @@ mod tests {
             return;
         }
         let config = GameConfig::load(&dir).unwrap();
-        let settings = custom_play_settings(&config, &dir, false);
+        let settings = custom_play_settings(&config, &dir);
         // The shipped file lists two CP potions; Java walks them in hash order.
         assert_eq!(settings.auto_potions.cp_item_ids, vec![5592, 5591]);
         assert_eq!(settings.auto_potions.hp_item_ids, vec![1540, 1539, 1061, 1060]);

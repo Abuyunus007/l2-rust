@@ -118,14 +118,6 @@ pub(crate) enum PendingEvent {
         event: super::events::ScriptEvent,
         container: Option<ObjectId>,
     },
-    /// A global variable re-read came back (`reread.rs`).
-    RereadDone {
-        script: ScriptId,
-        event: String,
-        npc: Option<ScriptNpc>,
-        player: Option<ObjectId>,
-        ok: bool,
-    },
 }
 
 impl World {
@@ -339,13 +331,6 @@ impl World {
                 }
             }
             PendingEvent::Fire { event, container } => self.dispatch_fired_event(event, container),
-            PendingEvent::RereadDone {
-                script,
-                event,
-                npc,
-                player,
-                ok,
-            } => self.dispatch_reread_done(script, &event, npc, player, ok),
             PendingEvent::DayNight(is_night) => {
                 for script in self.scripts.listeners.global(EventKind::DayNightChange).to_vec() {
                     self.with_script(script, |s, ctx| s.on_day_night_change(ctx, is_night));

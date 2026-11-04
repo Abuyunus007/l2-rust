@@ -3,15 +3,6 @@
 //! One module per script, sorted by name; one `add` line per script in [`register`], in the
 //! same order (Java's load order is the folder listing).
 //!
-//! # Side by side (D-53, D-54)
-//! The grand boss state rows (`grandboss_data`) belong to the Java game server while both run on
-//! one database. The managers (`l2_world::boss`) write them only with `CycleDatabaseWrites`; the
-//! scripts add the D-54 rule on top: with the switch off a grand boss AI only runs while the row
-//! says the boss is alive (status 0). [`row_lets_boss_run`] is that test, and a respawn timer reads
-//! the row again before it brings the boss back ([`World::reread_grand_boss_for_script`]).
-//!
-//! [`World::reread_grand_boss_for_script`]: l2_world::World::reread_grand_boss_for_script
-
 pub mod anais;
 pub mod antharas;
 pub mod baium;
@@ -26,7 +17,7 @@ pub mod sailren;
 pub mod seer_ugoros;
 pub mod valakas;
 
-use l2_world::{ScriptCtx, ScriptRegistry};
+use l2_world::ScriptRegistry;
 
 /// Registers every script of the folder.
 pub(crate) fn register(r: &mut ScriptRegistry) {
@@ -43,17 +34,6 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(sailren::Sailren);
     r.add(seer_ugoros::SeerUgoros);
     r.add(valakas::Valakas);
-}
-
-/// The event a boss script gets once its row was read again (D-54). Not a Java event: Java has
-/// no shared database and decides on its own memory.
-pub(crate) const EVENT_ROW_READ: &str = "D54_ROW_READ";
-
-/// D-54: with `CycleDatabaseWrites` on, every state of the row counts (Java). With it off the
-/// boss AI runs only while the row says the boss is alive (status 0); a boss without a row never
-/// runs.
-pub(crate) fn row_lets_boss_run(ctx: &ScriptCtx<'_>, boss_id: i32) -> bool {
-    ctx.world().boss_writes_enabled() || ctx.world().grand_boss_may_spawn(boss_id)
 }
 
 /// Java `TimeUtil.getDateTimeString(millis)`: `dd/MM/yyyy HH:mm:ss` in the machine's zone (D-48).
@@ -160,23 +140,18 @@ pub(crate) mod test_support {
         }
     }
 
-    /// A world with the zones, the boss rows (`CycleDatabaseWrites` = `writes`) and the scripts.
+    /// A world with the zones, the boss rows and the scripts.
     pub fn boss_test(
         registry: ScriptRegistry,
         npcs: &str,
         items: &str,
         pages: &[(&str, &str)],
         rows: Vec<GrandBossData>,
-        writes: bool,
     ) -> ScriptTest {
         let mut pages: Vec<(&str, &str)> = pages.to_vec();
         pages.push(("data/zones/bosses.xml", ZONES));
         ScriptTest::new_with(registry, npcs, items, &pages, |world, root| {
             world.set_zone_data(Arc::new(Zones::load(root)), Arc::new(MapRegions::load(root)));
-            world.set_boss_settings(BossSettings {
-                cycle_database_writes: writes,
-                ..BossSettings::default()
-            });
             world.load_bosses(BossLoad {
                 grand_bosses: rows,
                 ..BossLoad::default()

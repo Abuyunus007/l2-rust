@@ -6,7 +6,7 @@ without the Java script sources and the geodata files. The servers need no other
 
 | Folder | What |
 |---|---|
-| `game/config/` | game server `.ini`/`.xml` files with the Java defaults, plus the Rust-only `Admin.ini` and `SideBySide.ini` |
+| `game/config/` | game server `.ini`/`.xml` files with the Java defaults, plus the Rust-only `Admin.ini` |
 | `game/data/` | the datapack (XML, HTML, script pages). `game/data/geodata/` is empty: put the `.l2j` geodata files there |
 | `login/` | login server `config/`, `data/` and `banned_ip.cfg` |
 | `db_installer/sql/` | the database schema (same tables as Java) |

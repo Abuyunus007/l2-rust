@@ -203,10 +203,7 @@ fn trade_on() -> OfflineSettings {
 }
 
 fn with_rows() -> OfflineSettings {
-    OfflineSettings {
-        database_writes: true,
-        ..trade_on()
-    }
+    OfflineSettings { ..trade_on() }
 }
 
 struct Scene {
@@ -378,23 +375,17 @@ fn a_logout_with_a_store_leaves_the_trader_in_the_world() {
     let close = packets_named(&out, A, "SERVER_CLOSE");
     assert_eq!(close.len(), 1, "{out:?}");
     assert!(out.contains(&Out::Left(1, LeaveReason::Logout)));
-    // Side by side (switch off) the account stays on this server: no `PlayerLogout`, so the
-    // owner cannot log the character in elsewhere while the trader sells its items (D-52).
-    assert!(!out.iter().any(|o| matches!(o, Out::Ls(_))), "{out:?}");
+    // The account is free at once, like Java.
+    assert!(out.contains(&Out::Ls(LsEvent::PlayerLogout {
+        account: "acc1".into()
+    })));
     assert!(lefts(&out).is_empty(), "{out:?}");
     // `storeMe()` with `online = 2`.
     let stores = stored(&out);
     assert_eq!(stores.len(), 1);
     assert_eq!(stores[0].profile.online_status, 2);
-    // No row without `OfflineTradeDatabaseWrites`.
-    assert!(offline_writes(&out).is_empty());
-    // With the switch on the account is free at once, like Java.
-    let mut on = Scene::market(with_rows());
-    on.open_sell_store();
-    on.logout(A);
-    assert!(on.log.take().contains(&Out::Ls(LsEvent::PlayerLogout {
-        account: "acc1".into()
-    })));
+    // The shop is written.
+    assert!(!offline_writes(&out).is_empty());
     // A normal player is stored as online.
     assert!(s.world.player(B).is_some() && !s.world.is_offline_trader(B));
 }
@@ -476,8 +467,8 @@ fn the_trader_leaves_when_the_store_is_empty() {
     assert_eq!(s.world.offline_trader_count(), 0);
     assert_eq!(
         lefts(&out),
-        // The account was held until now (switch off): the final store frees it.
-        vec![("acc1".to_owned(), true)],
+        // The account was freed when the trader went offline.
+        vec![("acc1".to_owned(), false)],
         "{out:?}"
     );
     // Bob paid for everything: 500 + 4 * 30.
@@ -533,40 +524,10 @@ fn a_trader_takes_no_damage_with_the_key() {
     assert_eq!(hit(no_damage, false), Some(40.0), "an online player is hit");
 }
 
-/// The login server does not kick a trader instead of the account's connection, and a character
-/// select releases it (`Disconnection.of(player).storeAndDelete()`).
+/// A character select releases the trader (`Disconnection.of(player).storeAndDelete()`); the
+/// account is in use by the new session, so the login server is not told.
 #[test]
-fn a_kick_leaves_the_trader_and_a_character_select_releases_it() {
-    let mut s = Scene::market(trade_on());
-    s.open_sell_store();
-    s.logout(A);
-    s.log.take();
-    s.world.handle(WorldCommand::Kick {
-        account: "acc1".into(),
-    });
-    assert!(s.world.is_offline_trader(A));
-
-    // The login server kicked the account and no connection exists: the trader is released and
-    // the final store frees the account.
-    let released = Arc::new(Mutex::new(None));
-    let slot = Arc::clone(&released);
-    s.world.handle(WorldCommand::ReleaseOfflineAccount {
-        account: "acc1".into(),
-        done: Box::new(move |r| *slot.lock().unwrap() = Some(r)),
-    });
-    assert_eq!(*released.lock().unwrap(), Some(true));
-    assert!(s.world.player(A).is_none());
-    assert_eq!(lefts(&s.log.take()), vec![("acc1".to_owned(), true)]);
-    // Nobody left: `false`, so the caller answers the login server itself.
-    let slot = Arc::clone(&released);
-    s.world.handle(WorldCommand::ReleaseOfflineAccount {
-        account: "acc1".into(),
-        done: Box::new(move |r| *slot.lock().unwrap() = Some(r)),
-    });
-    assert_eq!(*released.lock().unwrap(), Some(false));
-
-    // A new trader for the character select (the account is in use by the new session, so the
-    // login server is not told).
+fn a_character_select_releases_the_trader() {
     let mut s = Scene::market(trade_on());
     s.open_sell_store();
     s.logout(A);
@@ -612,19 +573,6 @@ fn a_trader_cannot_be_invited_to_a_party() {
 }
 
 // ---- the rows (D-52) ---------------------------------------------------------------------------
-
-/// With the switch off (the default) a whole cycle writes no row: going offline, a sale, the end.
-#[test]
-fn without_the_switch_no_row_is_written() {
-    let mut s = Scene::market(trade_on());
-    s.open_sell_store();
-    s.logout(A);
-    s.buy(&[(SWORD_OBJ, 1, 500)]);
-    s.buy(&[(PILE_OBJ, 4, 30)]);
-    let out = s.log.take();
-    assert!(s.world.player(A).is_none());
-    assert!(offline_writes(&out).is_empty(), "{out:?}");
-}
 
 /// `STORE_OFFLINE_TRADE_IN_REALTIME` with the switch on: `onTransaction(player, false, true)` at
 /// the logout (the sell list by object id, the title and the type of the row), then after each
@@ -703,7 +651,7 @@ fn the_realtime_rows_follow_java() {
 }
 
 /// `EnterWorld`: "(trade || craft) && realtime" -> `onTransaction(player, true, false)`: a player
-/// who comes in has no shop row any more. Only with the switch on.
+/// who comes in has no shop row any more.
 #[test]
 fn entering_the_world_clears_the_shop_rows() {
     let mut s = Scene::new(with_rows());
@@ -718,10 +666,6 @@ fn entering_the_world_clears_the_shop_rows() {
             status: None,
         }]
     );
-
-    let mut s = Scene::new(trade_on());
-    s.enter(player(A, "Alice", 1000, alice_items()));
-    assert!(offline_writes(&s.log.take()).is_empty());
 }
 
 /// `Shutdown` without realtime but with `RestoreOffliners`: `storeOffliners()` before the players
@@ -761,19 +705,6 @@ fn the_shutdown_stores_the_shops_when_the_rows_are_not_realtime() {
         .position(|o| matches!(o, Out::Persist(PersistCommand::StorePlayer(_))))
         .unwrap();
     assert!(first < store);
-
-    // Without the switch, or with realtime rows, the shutdown writes no shops.
-    let mut s = Scene::market(OfflineSettings {
-        store_offline_trade_in_realtime: false,
-        restore_offliners: true,
-        ..trade_on()
-    });
-    s.open_sell_store();
-    s.logout(A);
-    s.world.handle(WorldCommand::Shutdown {
-        done: Box::new(|| {}),
-    });
-    assert!(offline_writes(&s.log.take()).is_empty());
 }
 
 // ---- restoring ---------------------------------------------------------------------------------
@@ -826,7 +757,7 @@ fn a_restored_trader_sells_again() {
 }
 
 /// A restore with `StoreOfflineTradeInRealtime = False` empties the tables (the shops live in
-/// memory and `storeOffliners` writes them at shutdown); only with the switch.
+/// memory and `storeOffliners` writes them at shutdown).
 #[test]
 fn a_restore_without_realtime_empties_the_tables() {
     let mut s = Scene::new(OfflineSettings {
@@ -838,12 +769,6 @@ fn a_restore_without_realtime_empties_the_tables() {
         offline_writes(&s.log.take()),
         vec![OfflineTradeWrite::StoreAll(Vec::new())]
     );
-    let mut s = Scene::new(OfflineSettings {
-        store_offline_trade_in_realtime: false,
-        ..trade_on()
-    });
-    s.world.restore_offline_traders(Vec::new());
-    assert!(offline_writes(&s.log.take()).is_empty());
 }
 
 /// A buy store and a workshop come back with their lists and titles; a row of a type the table
@@ -899,10 +824,9 @@ fn buy_stores_and_workshops_are_restored_with_their_lists() {
     assert_eq!(s.world.private_store_type(B), PrivateStoreType::PackageSell);
 }
 
-/// Switch on (Java's behaviour): the account was freed at logout, so the trader's end sends no
-/// second `PlayerLogout`.
+/// The account was freed at logout, so the trader's end sends no second `PlayerLogout`.
 #[test]
-fn with_the_switch_on_the_end_of_the_trader_does_not_free_the_account_again() {
+fn the_end_of_the_trader_does_not_free_the_account_again() {
     let mut s = Scene::market(with_rows());
     s.open_sell_store();
     s.logout(A);

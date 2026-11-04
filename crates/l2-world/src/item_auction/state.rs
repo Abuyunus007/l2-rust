@@ -79,7 +79,7 @@ impl World {
         }
         for auction_id in dropped {
             // `ItemAuctionManager.deleteAuction`.
-            self.item_auction_write(true, ItemAuctionWrite::DeleteAuction { auction_id });
+            self.item_auction_write(ItemAuctionWrite::DeleteAuction { auction_id });
         }
         let ids: Vec<i32> = self.item_auctions.instances.keys().copied().collect();
         for id in ids {
@@ -95,12 +95,8 @@ impl World {
         }
     }
 
-    /// Sends a row write; a global one only with `CycleDatabaseWrites` (D-53).
-    pub(crate) fn item_auction_write(&mut self, global: bool, write: ItemAuctionWrite) {
-        if global && !self.item_auctions.settings.cycle_database_writes {
-            debug!("Item auction: {write:?} stays in memory (CycleDatabaseWrites is off).");
-            return;
-        }
+    /// Sends a row write.
+    pub(crate) fn item_auction_write(&mut self, write: ItemAuctionWrite) {
         self.outbox.persist(PersistCommand::ItemAuction(write));
     }
 
@@ -166,11 +162,6 @@ impl World {
     /// Java `createAuction(after)`: a random item of the instance at the next start time. Its row
     /// goes out with `storeMe` (global). The auction is added to the instance.
     fn create_item_auction(&mut self, instance_id: i32, after: i64) -> Option<i32> {
-        // D-53: with `CycleDatabaseWrites` off the Java game server makes the auctions; this
-        // server never invents one (its ids could collide with Java's).
-        if !self.item_auctions.settings.cycle_database_writes {
-            return None;
-        }
         let count = {
             let instance = self.item_auctions.instances.get(&instance_id)?;
             i32::try_from(instance.items.len()).unwrap_or(i32::MAX)
@@ -212,17 +203,14 @@ impl World {
 
     /// Java `ItemAuction.storeMe()`.
     fn store_item_auction(&mut self, auction: &ItemAuction) {
-        self.item_auction_write(
-            true,
-            ItemAuctionWrite::Store {
-                auction_id: auction.id,
-                instance_id: auction.instance_id,
-                auction_item_id: auction.item.auction_item_id,
-                starting_time: auction.starting_time,
-                ending_time: auction.ending_time,
-                state_id: auction.state.state_id(),
-            },
-        );
+        self.item_auction_write(ItemAuctionWrite::Store {
+            auction_id: auction.id,
+            instance_id: auction.instance_id,
+            auction_item_id: auction.item.auction_item_id,
+            starting_time: auction.starting_time,
+            ending_time: auction.ending_time,
+            state_id: auction.state.state_id(),
+        });
     }
 
     /// Java `checkAndSetCurrentAndNextAuction()`. `announce` logs the schedule line at info level
@@ -512,9 +500,7 @@ impl World {
 
     /// Java `onAuctionFinished(auction)`.
     ///
-    /// The "auction has ended" message goes to the online bidders in both modes. The winner's item
-    /// and the clearing of the canceled bids are the Java GS's job while `CycleDatabaseWrites` is
-    /// off (D-53): it reads the same bid rows.
+    /// The "auction has ended" message goes to the online bidders, then the winner's item is handed out.
     fn on_item_auction_finished(&mut self, instance_id: i32, auction_id: i32) {
         self.item_auction_broadcast(
             instance_id,
@@ -522,12 +508,6 @@ impl World {
             &SystemMessage::new(SystemMessageId::S1SAuctionHasEnded)
                 .with(SystemMessageParam::IntNumber(auction_id)),
         );
-        if !self.item_auctions.settings.cycle_database_writes {
-            info!(
-                "ItemAuctionInstance: Auction {auction_id} has finished for instance {instance_id}; the winner's item is left to the Java game server (CycleDatabaseWrites is off)."
-            );
-            return;
-        }
         let Some((highest, def)) = self
             .item_auctions
             .instances
@@ -600,13 +580,10 @@ impl World {
             })
             .unwrap_or_default();
         for player_obj_id in canceled {
-            self.item_auction_write(
-                false,
-                ItemAuctionWrite::DeleteBid {
-                    auction_id,
-                    player_obj_id,
-                },
-            );
+            self.item_auction_write(ItemAuctionWrite::DeleteBid {
+                auction_id,
+                player_obj_id,
+            });
         }
     }
 

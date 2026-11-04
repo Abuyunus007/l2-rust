@@ -9,10 +9,9 @@
 //!    skills and hennas following (CP-Sb);
 //! 3. a Kamaloka entered, a kill inside, the re-enter time (CP-Sc);
 //! 4. a raid boss with its AI starting a fight, and a grand boss whose row says dead staying
-//!    unspawned on Kain (D-54);
-//! 5. side by side (CP-Sd): a `character_quests` row in progress written by "Sieghardt" is
-//!    continued after login; `global_variables` untouched with `CycleDatabaseWrites` off and
-//!    written with it on (D-53, D-54).
+//!    unspawned until its respawn time;
+//! 5. a `character_quests` row in progress is continued after login and the `global_variables`
+//!    row of the quest is written when the server stops (CP-Sd).
 //!
 //! The world is driven directly (no sockets, no database, ticks instead of time) like the bare
 //! half of `e2e_m8.rs`: every client action is the `ClientInput` the session would give the
@@ -82,9 +81,9 @@ fn game_dir() -> Option<PathBuf> {
 }
 
 /// The config folder of the test server: Java's defaults, the access levels and admin words of the
-/// shipped files, flood protection off and the switch of `SideBySide.ini` (D-53). `extra` are
+/// shipped files and flood protection off. `extra` are
 /// `(file, lines)` appended to a file of the folder.
-fn write_game_config(config_dir: &Path, game_dir: &Path, cycle_writes: bool, extra: &[(&str, &str)]) {
+fn write_game_config(config_dir: &Path, game_dir: &Path, extra: &[(&str, &str)]) {
     std::fs::create_dir_all(config_dir).unwrap();
     for file in ["AccessLevels.xml", "AdminCommands.xml", "ClassMaster.xml"] {
         std::fs::copy(game_dir.join("config").join(file), config_dir.join(file)).unwrap();
@@ -111,13 +110,6 @@ fn write_game_config(config_dir: &Path, game_dir: &Path, cycle_writes: bool, ext
     .collect();
     let mut files: Vec<(&str, String)> = vec![
         ("FloodProtector.ini", flood),
-        (
-            "SideBySide.ini",
-            format!(
-                "CycleDatabaseWrites = {}\n",
-                if cycle_writes { "True" } else { "False" }
-            ),
-        ),
         (
             "Player.ini",
             "DisconnectAfterDeath = False\nEnableVitality = False\nAltSubClassWithoutQuests = True\n"
@@ -307,9 +299,7 @@ impl Persisted {
 /// How a scenario starts.
 #[derive(Clone)]
 struct Opts {
-    /// `CycleDatabaseWrites` (D-53).
-    cycle_writes: bool,
-    /// The rows Sieghardt (the Java game server) keeps (D-39).
+    /// The rows in the database before the start.
     seed: Seed,
     /// More lines for the config files: `(file, lines)`.
     config: Vec<(&'static str, &'static str)>,
@@ -376,9 +366,8 @@ impl Hero {
 }
 
 impl Opts {
-    fn new(cycle_writes: bool, players: Vec<Hero>) -> Self {
+    fn new(players: Vec<Hero>) -> Self {
         Self {
-            cycle_writes,
             seed: Seed::default(),
             config: Vec::new(),
             players,
@@ -407,7 +396,7 @@ impl Bare {
         let game_dir = game_dir()?;
         let root = tempfile::tempdir().unwrap();
         let config_dir = root.path().join("config");
-        write_game_config(&config_dir, &game_dir, opts.cycle_writes, &opts.config);
+        write_game_config(&config_dir, &game_dir, &opts.config);
 
         let config = GameConfig::load(&config_dir).unwrap();
         // The datapack options of the config (`options_from_config` of the server, which is
@@ -777,7 +766,7 @@ fn slay(w: &mut Bare, index: usize, mob: i32) -> Vec<Vec<u8>> {
 /// Scenario 1: A new character: the tutorial starts (CP-Sa).
 #[test]
 fn a_new_character_gets_the_tutorial() {
-    let opts = Opts::new(false, vec![Hero::new("Newbie")]);
+    let opts = Opts::new(vec![Hero::new("Newbie")]);
     let Some(mut w) = Bare::start(&opts) else {
         return;
     };
@@ -829,7 +818,7 @@ fn a_new_character_gets_the_tutorial() {
 /// Scenario 1: A first village quest: talk, kill, reward, and aborting it (CP-Sa).
 #[test]
 fn a_first_village_quest_from_talk_to_reward_and_abort() {
-    let opts = Opts::new(false, vec![Hero::new("Fighter").gm().level(8)]);
+    let opts = Opts::new(vec![Hero::new("Fighter").gm().level(8)]);
     let Some(mut w) = Bare::start(&opts) else {
         return;
     };
@@ -896,15 +885,12 @@ const SHADOW_COUPON_D: i32 = 8869;
 /// Scenario 2: The first class change at a village master (CP-Sb).
 #[test]
 fn the_first_class_change_at_a_village_master() {
-    let opts = Opts::new(
-        false,
-        vec![
-            Hero::new("Fighter")
-                .gm()
-                .level(20)
-                .with_items(&[(MEDALLION_OF_WARRIOR, 1)]),
-        ],
-    );
+    let opts = Opts::new(vec![
+        Hero::new("Fighter")
+            .gm()
+            .level(20)
+            .with_items(&[(MEDALLION_OF_WARRIOR, 1)]),
+    ]);
     let Some(mut w) = Bare::start(&opts) else {
         return;
     };
@@ -956,17 +942,14 @@ fn sub_class_menu(w: &mut Bare, master: i32) -> Vec<Vec<u8>> {
 /// dye follow the class.
 #[test]
 fn a_subclass_is_added_switched_and_cancelled() {
-    let opts = Opts::new(
-        false,
-        vec![
-            Hero::new("Fighter")
-                .gm()
-                .level(76)
-                .class(GLADIATOR)
-                .with_items(&[(DYE_ITEM, 10)])
-                .with_skills(&[(POWER_STRIKE, 1)]),
-        ],
-    );
+    let opts = Opts::new(vec![
+        Hero::new("Fighter")
+            .gm()
+            .level(76)
+            .class(GLADIATOR)
+            .with_items(&[(DYE_ITEM, 10)])
+            .with_skills(&[(POWER_STRIKE, 1)]),
+    ]);
     let Some(mut w) = Bare::start(&opts) else {
         return;
     };
@@ -1123,10 +1106,10 @@ const KAMALOKA_BOSS: i32 = 18554;
 /// time (CP-Sc).
 #[test]
 fn a_kamaloka_is_entered_its_boss_killed_and_the_reenter_time_holds() {
-    let opts = Opts::new(
-        false,
-        vec![Hero::new("Leader").gm().level(25), Hero::new("Friend").level(25)],
-    );
+    let opts = Opts::new(vec![
+        Hero::new("Leader").gm().level(25),
+        Hero::new("Friend").level(25),
+    ]);
     let Some(mut w) = Bare::start(&opts) else {
         return;
     };
@@ -1260,7 +1243,7 @@ const TYPHOON_PLACES: [(i32, i32, i32); 10] = [
 /// casts its Gust on a timer once it is there and again when a player comes into its aggro range.
 #[test]
 fn a_raid_boss_ai_starts_the_fight() {
-    let opts = Opts::new(false, vec![Hero::new("Slayer").gm().level(80).class(GLADIATOR)]);
+    let opts = Opts::new(vec![Hero::new("Slayer").gm().level(80).class(GLADIATOR)]);
     let Some(mut w) = Bare::start(&opts) else {
         return;
     };
@@ -1311,8 +1294,8 @@ const ALIVE: i32 = 0;
 const DEAD: i32 = 1;
 
 /// A world whose `grandboss_data` has Queen Ant with this `status` and `respawn_time`.
-fn queen_world(status: i32, respawn_time: i64, cycle_writes: bool) -> Option<Bare> {
-    let mut opts = Opts::new(cycle_writes, vec![Hero::new("Watcher").gm().level(40)]);
+fn queen_world(status: i32, respawn_time: i64) -> Option<Bare> {
+    let mut opts = Opts::new(vec![Hero::new("Watcher").gm().level(40)]);
     opts.seed.grand_bosses = vec![scripts_db::grand_boss_row(
         QUEEN_ANT,
         status,
@@ -1335,20 +1318,12 @@ fn boss_writes(w: &Bare) -> Vec<l2_world::BossWrite> {
         .collect()
 }
 
-/// Scenario 4: D-54: a grand boss whose row (Sieghardt's) says dead stays unspawned on Kain, whatever the
-/// respawn time says, and Kain writes nothing to the row.
+/// Scenario 4: a grand boss whose row says dead stays unspawned until its respawn time, and the
+/// constructor writes nothing to the row.
 #[test]
 fn a_grand_boss_whose_row_says_dead_stays_unspawned() {
     // Dead, respawn time in the future: the unlock timer waits.
-    let Some(w) = queen_world(DEAD, now_ms() + 3_600_000, false) else {
-        return;
-    };
-    assert!(npcs_of(&w, QUEEN_ANT).is_empty(), "Queen Ant is not spawned");
-    assert_eq!(w.world.grand_boss_status(QUEEN_ANT), Some(DEAD));
-    assert!(boss_writes(&w).is_empty(), "{:?}", boss_writes(&w));
-
-    // Dead, respawn time passed: Kain reads the row again and the row still says dead.
-    let Some(w) = queen_world(DEAD, now_ms() - 60_000, false) else {
+    let Some(w) = queen_world(DEAD, now_ms() + 3_600_000) else {
         return;
     };
     assert!(npcs_of(&w, QUEEN_ANT).is_empty(), "Queen Ant is not spawned");
@@ -1356,11 +1331,11 @@ fn a_grand_boss_whose_row_says_dead_stays_unspawned() {
     assert!(boss_writes(&w).is_empty(), "{:?}", boss_writes(&w));
 }
 
-/// Scenario 4: The same boss with an alive row runs on Kain, and with the switch on (the Rust server alone
-/// on the database) a dead row whose respawn time has passed brings her back.
+/// Scenario 4: The same boss with an alive row runs on Kain, and a dead row whose respawn time has
+/// passed brings her back.
 #[test]
 fn a_grand_boss_whose_row_says_alive_is_spawned() {
-    let Some(w) = queen_world(ALIVE, 0, false) else {
+    let Some(w) = queen_world(ALIVE, 0) else {
         return;
     };
     let queen = npcs_of(&w, QUEEN_ANT);
@@ -1368,14 +1343,10 @@ fn a_grand_boss_whose_row_says_alive_is_spawned() {
     let (x, y, _) = w.world.position_of(queen[0]).unwrap();
     assert!((x - QUEEN_NEST.0).abs() < 1_000 && (y - QUEEN_NEST.1).abs() < 1_000);
 
-    let Some(w) = queen_world(DEAD, now_ms() - 60_000, true) else {
+    let Some(w) = queen_world(DEAD, now_ms() - 60_000) else {
         return;
     };
-    assert_eq!(
-        npcs_of(&w, QUEEN_ANT).len(),
-        1,
-        "Kain owns the row with the switch on"
-    );
+    assert_eq!(npcs_of(&w, QUEEN_ANT).len(), 1, "the respawn time passed");
 }
 
 const DROPH: i32 = 32711;
@@ -1394,20 +1365,18 @@ fn global_writes(w: &Bare) -> Vec<l2_world::script::GlobalVariablesWrite> {
         .collect()
 }
 
-/// Scenario 5: side by side (CP-Sd): Sieghardt wrote the rows of quest 307 in progress for "Leader" (and a
-/// `global_variables` row of its own). Kain continues the quest after the login, the boss dies in
-/// the party, and the `global_variables` row of the quest is written only with the switch on.
-fn side_by_side(cycle_writes: bool) {
-    let mut opts = Opts::new(
-        cycle_writes,
-        vec![
-            Hero::new("Leader")
-                .gm()
-                .level(80)
-                .with_items(&[(14_851, 1), (14_852, 1), (14_853, 1)]),
-            Hero::new("Friend").level(80),
-        ],
-    );
+/// Scenario 5 (CP-Sd): the rows of quest 307 are in progress for "Leader" (and a `global_variables`
+/// row of its own). Kain continues the quest after the login, the boss dies in the party, and the
+/// `global_variables` row of the quest is written when the server stops.
+#[test]
+fn a_quest_in_progress_is_continued_and_the_globals_are_written() {
+    let mut opts = Opts::new(vec![
+        Hero::new("Leader")
+            .gm()
+            .level(80)
+            .with_items(&[(14_851, 1), (14_852, 1), (14_853, 1)]),
+        Hero::new("Friend").level(80),
+    ]);
     opts.seed.quests = vec![
         scripts_db::QuestRow {
             hero: "Leader",
@@ -1422,7 +1391,7 @@ fn side_by_side(cycle_writes: bool) {
             value: "1",
         },
     ];
-    opts.seed.globals = vec![("SieghardtOwned", "42")];
+    opts.seed.globals = vec![("Existing", "42")];
     let Some(mut w) = Bare::start(&opts) else {
         return;
     };
@@ -1430,7 +1399,7 @@ fn side_by_side(cycle_writes: bool) {
     let entered = w.enter_player(0);
     w.enter_player(1);
 
-    // The login: the journal lists quest 307 at its condition 1, as Sieghardt left it.
+    // The login: the journal lists quest 307 at its condition 1, as it was saved.
     let list = all::<l2_protocol_game::server::QuestList>(&entered, "QUEST_LIST");
     assert!(
         list.iter()
@@ -1452,7 +1421,7 @@ fn side_by_side(cycle_writes: bool) {
     let hekaton = npcs_of(&w, HEKATON_PRIME);
     assert_eq!(hekaton.len(), 1, "Hekaton Prime is summoned");
 
-    // The party kills it: the condition goes to 2 in the row Sieghardt wrote.
+    // The party kills it: the condition goes to 2 in the row.
     w.input_of(
         0,
         ClientInput::JoinParty {
@@ -1467,32 +1436,23 @@ fn side_by_side(cycle_writes: bool) {
     assert_eq!(w.rows.quest_var(leader.0, CONTROL_DEVICE, "cond"), Some("2"));
 
     // Droph pays: the support items, and the quest rows go (`exitQuest(true)`), per-player rows
-    // written whatever the switch says.
+    // written.
     let talked = w.talk(0, droph);
     w.follow(0, &talked, "Script");
     assert_eq!(w.items_of(0, SUPPORT_ITEMS), 1);
     assert_eq!(w.rows.quest_var(leader.0, CONTROL_DEVICE, "<state>"), None);
 
-    // The global row is written when the server stops (`GlobalVariablesManager.storeMe`), and only
-    // with the switch on; Kain knows the respawn time either way.
+    // The global row is written when the server stops (`GlobalVariablesManager.storeMe`).
     let respawn = w.world.global_variables().get_long(RESPAWN_VARIABLE, 0);
     assert!(respawn > now_ms(), "{respawn}");
     w.world.handle(WorldCommand::Shutdown {
         done: Box::new(|| {}),
     });
     w.answer_reads();
-    assert_eq!(
-        w.rows.globals.get("SieghardtOwned").map(String::as_str),
-        Some("42")
-    );
-    if cycle_writes {
-        let row: i64 = w.rows.globals.get(RESPAWN_VARIABLE).unwrap().parse().unwrap();
-        assert!(row > now_ms());
-        assert_eq!(global_writes(&w).len(), 1, "{:?}", global_writes(&w));
-    } else {
-        assert!(!w.rows.globals.contains_key(RESPAWN_VARIABLE));
-        assert!(global_writes(&w).is_empty(), "{:?}", global_writes(&w));
-    }
+    assert_eq!(w.rows.globals.get("Existing").map(String::as_str), Some("42"));
+    let row: i64 = w.rows.globals.get(RESPAWN_VARIABLE).unwrap().parse().unwrap();
+    assert!(row > now_ms());
+    assert_eq!(global_writes(&w).len(), 1, "{:?}", global_writes(&w));
 
     // With a throwaway MariaDB: the same statements on the real tables leave the rows the model
     // says (only under `L2_TEST_DATABASE_URL`).
@@ -1503,14 +1463,4 @@ fn side_by_side(cycle_writes: bool) {
         &w.commands(),
         &w.rows,
     );
-}
-
-#[test]
-fn side_by_side_with_the_switch_off() {
-    side_by_side(false);
-}
-
-#[test]
-fn side_by_side_with_the_switch_on() {
-    side_by_side(true);
 }

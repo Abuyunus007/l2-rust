@@ -33,7 +33,7 @@ use l2_protocol_game::server::{
 };
 use l2_protocol_game::{NpcStringId, SystemMessageId};
 use l2_util::ObjectId;
-use tracing::{debug, info, warn};
+use tracing::{info, warn};
 
 use super::festival_data::{
     FESTIVAL_DAWN_CHEST_SPAWNS, FESTIVAL_DAWN_PLAYER_SPAWNS, FESTIVAL_DAWN_PRIMARY_SPAWNS,
@@ -43,8 +43,8 @@ use super::festival_data::{
 };
 use super::{
     CABAL_DAWN, CABAL_DUSK, CABAL_NULL, SEAL_STONE_BLUE_ID, SEAL_STONE_BLUE_VALUE, SEAL_STONE_GREEN_ID,
-    SEAL_STONE_GREEN_VALUE, SEAL_STONE_RED_ID, SEAL_STONE_RED_VALUE, SEVEN_SIGNS_HTML_PATH, SevenSignsThen,
-    SevenSignsTimer, SevenSignsWrite, cabal_short_name,
+    SEAL_STONE_GREEN_VALUE, SEAL_STONE_RED_ID, SEAL_STONE_RED_VALUE, SEVEN_SIGNS_HTML_PATH, SevenSignsTimer,
+    SevenSignsWrite, cabal_short_name,
 };
 use crate::movement::Intention;
 use crate::outbox::PersistCommand;
@@ -394,14 +394,6 @@ impl World {
                 .or_default()
                 .insert(offset, row);
         }
-    }
-
-    /// The answer of a D-50 read: the rows replace the data in memory (only with
-    /// `CycleDatabaseWrites = False`, the caller checks).
-    pub(crate) fn festival_apply_read(&mut self, rows: Vec<FestivalData>) {
-        self.seven_signs.festival.data.clear();
-        self.festival_insert_rows(rows);
-        self.seven_signs.festival.signs_cycle = self.ss_current_cycle();
     }
 
     /// Java `startFestivalManager()`: `new FestivalManager()` (the cycle counter, the next start
@@ -892,15 +884,11 @@ impl World {
     // ------------------------------------------------------------------ the rows
 
     /// Java `saveFestivalData(updateSettings)`: `REPLACE INTO` every row, then (with
-    /// `updateSettings`) the status row. Global: only with `CycleDatabaseWrites` (D-53).
+    /// `updateSettings`) the status row.
     pub(crate) fn festival_save(&mut self, update_settings: bool) {
-        if !self.seven_signs.settings.cycle_database_writes {
-            debug!("SideBySide: seven_signs_festival not saved (CycleDatabaseWrites = False)");
-        } else {
-            let rows = self.festival_rows();
-            self.outbox
-                .persist(PersistCommand::SevenSigns(SevenSignsWrite::ReplaceFestival(rows)));
-        }
+        let rows = self.festival_rows();
+        self.outbox
+            .persist(PersistCommand::SevenSigns(SevenSignsWrite::ReplaceFestival(rows)));
         // Updates Seven Signs DB data also, so call only if really necessary.
         if update_settings {
             self.ss_save_status();
@@ -2137,16 +2125,7 @@ impl World {
             }
             3 => return self.festival_score_registration(npc, player, guide),
             4..=6 => {
-                // The score tables: with the rows of the Java game server (D-50, D-53).
-                if self.seven_signs.settings.cycle_database_writes {
-                    self.festival_show_page(npc, player, value);
-                } else {
-                    self.ss_request_read(SevenSignsThen::FestivalPage {
-                        player,
-                        npc,
-                        page: value,
-                    });
-                }
+                self.festival_show_page(npc, player, value);
             }
             8 => {
                 // Increase the festival challenge.

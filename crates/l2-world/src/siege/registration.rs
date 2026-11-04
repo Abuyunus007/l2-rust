@@ -382,27 +382,14 @@ impl World {
 
     /// The rows of [`Self::request_siege_reread`] as the database has them now. A castle whose
     /// siege is in progress keeps its owner and lists (the siege changes them in memory); the
-    /// others load their lists from the rows again. Rows this world added without writing them
-    /// (`SiegeDatabaseWrites` off) stay.
+    /// others load their lists from the rows again.
     pub(crate) fn apply_siege_reread(&mut self, castle: Option<&CastleRecord>, rows: &[SiegeClanRecord]) {
         if let Some(record) = castle
             && !self.is_castle_siege_in_progress(CastleId(record.id))
         {
             self.apply_castle_record(record);
         }
-        let unsaved: Vec<(SiegeClanRecord, bool)> = self
-            .sieges
-            .siege_clan_rows
-            .iter()
-            .filter(|(row, unsaved)| {
-                *unsaved
-                    && !rows
-                        .iter()
-                        .any(|r| r.castle_id == row.castle_id && r.clan_id == row.clan_id)
-            })
-            .copied()
-            .collect();
-        self.sieges.siege_clan_rows = rows.iter().map(|r| (*r, false)).chain(unsaved).collect();
+        self.sieges.siege_clan_rows = rows.to_vec();
         let ids: Vec<CastleId> = self.sieges.sieges.keys().copied().collect();
         for id in ids {
             if !self.is_castle_siege_in_progress(id) {
@@ -413,45 +400,39 @@ impl World {
 
     // ------------------------------------------------------------------ the rows
 
-    /// Runs a `siege_clans` statement: the copy here changes and the row goes out with
-    /// `SiegeDatabaseWrites` (D-51).
+    /// Runs a `siege_clans` statement: the copy here changes and the row goes out.
     fn siege_clans_write(&mut self, write: ResidenceWrite) {
-        let saved = self.siege_database_writes();
         let rows = &mut self.sieges.siege_clan_rows;
         match &write {
             ResidenceWrite::SiegeClanInsert {
                 clan_id,
                 castle_id,
                 kind,
-            } => rows.push((
-                SiegeClanRecord {
-                    castle_id: *castle_id,
-                    clan_id: *clan_id,
-                    kind: *kind,
-                },
-                !saved,
-            )),
+            } => rows.push(SiegeClanRecord {
+                castle_id: *castle_id,
+                clan_id: *clan_id,
+                kind: *kind,
+            }),
             ResidenceWrite::SiegeClanUpdate {
                 castle_id,
                 clan_id,
                 kind,
             } => {
-                for (row, unsaved) in rows.iter_mut() {
+                for row in rows.iter_mut() {
                     if row.castle_id == *castle_id && row.clan_id == *clan_id {
                         row.kind = *kind;
-                        *unsaved |= !saved;
                     }
                 }
             }
             ResidenceWrite::SiegeClanDelete { castle_id, clan_id } => {
-                rows.retain(|(r, _)| !(r.castle_id == *castle_id && r.clan_id == *clan_id));
+                rows.retain(|r| !(r.castle_id == *castle_id && r.clan_id == *clan_id));
             }
             ResidenceWrite::SiegeClansDeleteCastle { castle_id } => {
-                rows.retain(|(r, _)| r.castle_id != *castle_id)
+                rows.retain(|r| r.castle_id != *castle_id)
             }
-            ResidenceWrite::SiegeClansDeleteClan { clan_id } => rows.retain(|(r, _)| r.clan_id != *clan_id),
+            ResidenceWrite::SiegeClansDeleteClan { clan_id } => rows.retain(|r| r.clan_id != *clan_id),
             ResidenceWrite::SiegeClansDeleteWaiting { castle_id } => {
-                rows.retain(|(r, _)| !(r.castle_id == *castle_id && r.kind == DEFENDER_NOT_APPROVED));
+                rows.retain(|r| !(r.castle_id == *castle_id && r.kind == DEFENDER_NOT_APPROVED));
             }
             _ => {}
         }
@@ -470,7 +451,7 @@ impl World {
         self.sieges
             .siege_clan_rows
             .iter()
-            .any(|(r, _)| r.clan_id == clan.id && r.castle_id == castle_id)
+            .any(|r| r.clan_id == clan.id && r.castle_id == castle_id)
     }
 
     /// Java `Siege.loadSiegeClan()`: the lists from the rows, the owner first as `OWNER`.
@@ -480,8 +461,8 @@ impl World {
             .sieges
             .siege_clan_rows
             .iter()
-            .filter(|(r, _)| r.castle_id == id.0)
-            .map(|(r, _)| *r)
+            .filter(|r| r.castle_id == id.0)
+            .copied()
             .collect();
         let Some(siege) = self.castle_siege_mut(id) else {
             return;
@@ -540,7 +521,7 @@ impl World {
                 .sieges
                 .siege_clan_rows
                 .iter()
-                .any(|(r, _)| r.clan_id == clan_id && r.castle_id == id.0);
+                .any(|r| r.clan_id == clan_id && r.castle_id == id.0);
             if exists {
                 warn!(
                     "Exception: saveSiegeClan(Pledge clan, int typeId, boolean isUpdateRegistration): duplicate siege_clans row ({clan_id}, {})",
