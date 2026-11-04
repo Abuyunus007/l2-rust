@@ -217,7 +217,6 @@ mod tests {
         set_level(&mut t, "Quarry", 5);
         t.talk(1, slave);
         t.take();
-        let before = t.world.global_variables().get_int("HBTrust", 0);
         t.event(1, "Quarry", "FollowMe");
         t.wait_ms(900_100);
         assert!(t.world.is_dead(slave) || !t.in_world(slave));
