@@ -976,7 +976,7 @@ fn no_quests_means_no_sieges() {
 }
 
 /// `SiegableHall` constructor: a next siege less than an hour away is moved by `schedule_config`
-/// (14 days at 18:30) and written (`updateDb`), 
+/// (14 days at 18:30) and written (`updateDb`),
 #[test]
 fn a_siege_due_within_an_hour_is_moved_and_written() {
     let scene = Scene::new(vec![hall_row(21, 0, NOW + 1_800_000)], hall_load(vec![]));

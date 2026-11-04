@@ -17,7 +17,7 @@ fn lines(log: &Log) -> Vec<String> {
     log.lock().unwrap_or_else(|e| e.into_inner()).clone()
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 struct Capture;
 
 impl Outbox for Capture {
@@ -194,7 +194,7 @@ impl Script for Recorder {
 
 fn recorder_world(terminate: bool) -> (World, Log) {
     let log = Log::default();
-    let mut w = world(&Capture::default());
+    let mut w = world(&Capture);
     let mut registry = ScriptRegistry::new();
     registry.add(Recorder {
         log: Arc::clone(&log),
@@ -378,7 +378,7 @@ fn a_terminate_answer_reaches_the_caller() {
 /// An object with no listener of the kind and no global one costs nothing and answers nothing.
 #[test]
 fn no_listener_no_answer() {
-    let mut w = world(&Capture::default());
+    let mut w = world(&Capture);
     assert_eq!(w.script_fire(ScriptEvent::DailyReset, None), None);
     assert!(!w.script_has_listener(EventKind::PlayerSit, Some(A)));
 }
@@ -387,7 +387,7 @@ fn no_listener_no_answer() {
 #[test]
 fn the_manor_bypass_is_heard_by_npc_id_only() {
     let log = Log::default();
-    let mut w = world(&Capture::default());
+    let mut w = world(&Capture);
     let mut registry = ScriptRegistry::new();
     registry.add(Recorder {
         log: Arc::clone(&log),
@@ -427,7 +427,7 @@ impl Script for Watcher {
 #[test]
 fn object_listeners_hear_only_their_object_and_can_be_removed_by_tag() {
     let log = Log::default();
-    let mut w = world(&Capture::default());
+    let mut w = world(&Capture);
     let mut registry = ScriptRegistry::new();
     registry.add(Watcher {
         log: Arc::clone(&log),
@@ -492,7 +492,7 @@ impl Script for Answers {
 #[test]
 fn answers_follow_java_override_and_abort() {
     let log = Log::default();
-    let mut w = world(&Capture::default());
+    let mut w = world(&Capture);
     let mut registry = ScriptRegistry::new();
     let answer = |terminate, override_, abort| TerminateReturn {
         terminate,
@@ -544,7 +544,7 @@ impl Script for Gated {
 #[test]
 fn a_disabled_script_is_not_installed() {
     for enabled in [false, true] {
-        let mut w = world(&Capture::default());
+        let mut w = world(&Capture);
         let mut registry = ScriptRegistry::new();
         registry.add(Gated(enabled));
         w.install_scripts(registry);
@@ -556,7 +556,7 @@ fn a_disabled_script_is_not_installed() {
 /// `Npc.getVariables()`, the script value, `setLethalable` and the over-hit values.
 #[test]
 fn npc_extras_are_kept_per_npc_and_go_with_it() {
-    let mut w = world(&Capture::default());
+    let mut w = world(&Capture);
     assert!(!w.npc_has_variables(A));
     w.npc_variables_mut(A).set_int("count", 3);
     assert!(w.npc_has_variables(A));

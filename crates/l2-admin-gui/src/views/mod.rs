@@ -24,8 +24,6 @@ pub mod players;
 pub mod servers;
 pub mod setup;
 pub mod setup_core;
-pub mod switch;
-pub mod switch_core;
 pub mod xml_config;
 
 use crate::app::AppCtx;

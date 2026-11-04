@@ -1511,14 +1511,10 @@ fn a_dissolved_clan_loses_its_bid() {
     s.take();
     s.world.destroy_clan(LIONS);
     let out = s.take();
-    // The row goes only with the clan maintenance switch (D-49); the bid always.
-    assert_eq!(
-        auction_writes(&out).contains(&AuctionWrite::BidDelete {
-            auction_id: 39,
-            bidder_id: LIONS
-        }),
-        true
-    );
+    assert!(auction_writes(&out).contains(&AuctionWrite::BidDelete {
+        auction_id: 39,
+        bidder_id: LIONS
+    }));
     assert!(s.world.clan_hall_auction(39).unwrap().bidders.is_empty());
 }
 

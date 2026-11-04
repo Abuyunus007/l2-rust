@@ -965,7 +965,7 @@ fn the_lord_approves_a_waiting_defender() {
 /// participants' siege state and the siege zone, the towers, then `//endsiege` with the
 /// defender's victory. No global row is written.
 #[test]
-fn a_gm_test_siege_runs_end_to_end_without_global_writes() {
+fn a_gm_test_siege_runs_end_to_end() {
     let mut s = Scene::new(LIONS, NEXT_SIEGE);
     s.enter_all();
     s.input(
@@ -1031,11 +1031,6 @@ fn a_gm_test_siege_runs_end_to_end_without_global_writes() {
     let tower = npcs_of(&s.world, CONTROL_TOWER)[0];
     assert!(s.world.is_auto_attackable_by(tower, ObjectId(P3)));
     assert!(!s.world.is_auto_attackable_by(tower, ObjectId(P1)));
-    assert!(
-        residence_writes(&out).is_empty(),
-        "D-51: {:?}",
-        residence_writes(&out)
-    );
 
     // The end: the defender holds the castle.
     s.admin(P9, "admin_endsiege Gludio");
@@ -1073,13 +1068,12 @@ fn a_gm_test_siege_runs_end_to_end_without_global_writes() {
     assert!(!gludio.time_registration_over);
     assert_eq!(gludio.time_registration_over_date, NOW + 86_400_000);
     assert!(
-        !residence_writes(&out)
+        residence_writes(&out)
             .iter()
-            .any(|w| !matches!(w, ResidenceWrite::ClanBloodAllianceCount { .. })),
-        "D-51: {:?}",
+            .any(|w| matches!(w, ResidenceWrite::CastleSiegeDate { .. })),
+        "{:?}",
         residence_writes(&out)
     );
-    assert!(residence_writes(&out).is_empty());
 }
 
 /// `startSiege` without attackers: called off ("canceled because there were no clans that

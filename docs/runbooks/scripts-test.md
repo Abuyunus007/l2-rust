@@ -1,3 +1,5 @@
+> Note (D-58): the Rust servers are the only servers on their database. Parts of this runbook that run a Java game server next to the Rust one, or that name `SideBySide.ini` and its `*DatabaseWrites` switches, are history: ignore them.
+
 # Runbook: quests, AIs, bosses, instances and events on the Rust GS (script milestone)
 
 Setup as in `docs/runbooks/m4-combat-test.md` (Rust GS "Kain" next to the Java GS "Sieghardt" on

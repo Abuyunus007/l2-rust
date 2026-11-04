@@ -66,8 +66,7 @@ The owner switches between Java GS and Rust GS on the same `l2jmobiush5`. Theref
 - Rust writes rows exactly like Java (same columns, same defaults, same encodings). Every DB card copies the Java SQL statements verbatim, like M1-DB-01.
 - Rust never deletes rows of tables it doesn't understand yet.
 - Object ids come from an IdFactory port that scans the same tables Java scans (no id collisions with Java-created items/characters).
-- **Side by side (D-39):** Java GS and Rust GS run at the same time with different server ids/ports. The LS guarantees an account is online on only one of them, so a character row is only ever written by one server at a time.
-- **Object ids:** the Rust IdFactory scans the same tables as Java at startup and allocates new ids only from a separate high range (decided in M2-IDF-01), so the two allocators can never hand out the same id while both run.
+- **Object ids:** the Rust IdFactory scans the same tables as Java at startup and allocates new ids only from a separate high range (decided in M2-IDF-01).
 
 ## Testing
 - Unit: drive `World` with commands, assert outbound packets (byte-exact against captures where they exist).

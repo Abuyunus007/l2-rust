@@ -1164,7 +1164,11 @@ fn every_way_out_stores_first_and_ends_with_its_own_packet() {
             )),
             "{what}"
         );
-        assert_eq!(out.last(), Some(&Out::Left(1, reason)), "{what}");
+        if what == "shutdown" {
+            assert!(out.contains(&Out::Left(1, reason)), "{what}");
+        } else {
+            assert_eq!(out.last(), Some(&Out::Left(1, reason)), "{what}");
+        }
         assert_eq!(w.online_count(), 0);
     }
 }

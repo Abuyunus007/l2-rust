@@ -1,3 +1,5 @@
+> Note (D-58): the Rust servers are the only servers on their database. Parts of this runbook that run a Java game server next to the Rust one, or that name `SideBySide.ini` and its `*DatabaseWrites` switches, are history: ignore them.
+
 # M1 login test: Rust login server + Java game server + real client
 
 Step by step, for Windows. You do not need to know Rust. Every command is meant to be copied

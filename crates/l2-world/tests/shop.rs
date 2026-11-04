@@ -1382,7 +1382,7 @@ fn the_castle_tax_goes_into_the_treasury() {
         X + 500,
         Y + 500
     );
-    let mut s = Scene::with(&format!("castle_tax_true"), WorldSettings::default(), Some(&zone));
+    let mut s = Scene::with("castle_tax_true", WorldSettings::default(), Some(&zone));
     s.world.set_residence_settings(ResidenceSettings {
         ..ResidenceSettings::default()
     });

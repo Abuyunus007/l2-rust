@@ -910,7 +910,6 @@ fn startup_loads_the_territories_and_sets_the_next_war() {
     );
     assert!(s.world.owned_territories().len() == 2);
     assert!(!s.world.is_tw_in_progress() && !s.world.is_tw_channel_open());
-
 }
 
 /// `setNextTWDate`: a variable that is still ahead is the date; without an owned castle the war is

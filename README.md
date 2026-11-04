@@ -8,12 +8,12 @@ schema, the same `.ini` configuration files and the same datapack, and runs on W
 Linux. **The Java source is the spec:** behaviour, packets, messages, HTML pages and database
 rows are ported as they are, Java quirks included (marked `NOTE(java-quirk)` in the code).
 
-The Rust game server can run **next to** an existing Java game server on the same database, so
-the two can be compared with the same characters and a player can move between them.
+The Rust servers are the only servers on their database (a Java game server must never run on it
+again); the database schema and the `.ini` keys stay those of Java.
 
 > Status: every planned milestone, M9 included, is ported and passes its automated tests
 > (8878 tests). The Java custom features are all there, off by default as in Java. In-game testing
-> of the later milestones is ongoing; the switch from Java is a guided step in the admin GUI.
+> of the later milestones is ongoing.
 > See the [progress log](#progress-log).
 
 ---
@@ -23,7 +23,6 @@ the two can be compared with the same characters and a player can move between t
 - [Features](#features)
 - [Requirements](#requirements)
 - [Installation](#installation)
-- [Running next to a Java game server](#running-next-to-a-java-game-server)
 - [Admin tools](#admin-tools)
 - [Project layout](#project-layout)
 - [Development](#development)
@@ -91,9 +90,7 @@ to 5 below without editing a file by hand:
    database" runs the installer in the window and asks the same questions (reset, keep or
    cancel; continue or abort on an SQL error). Nothing connects before you press one of them.
 3. **Servers**: `LoginserverPort`, `LoginPort`, `GameserverPort`, `RequestServerID`,
-   `DatapackRoot` and the geodata folder (a warning when it has no `.l2j` files). Tick the Java
-   box when a Java game server shares the database: the wizard adds it to `supervisor.ini` and
-   shows the `SideBySide.ini` switches with their help text.
+   `DatapackRoot` and the geodata folder (a warning when it has no `.l2j` files).
 4. **Admin endpoints and supervisor**: "Apply settings" changes only the values of the keys
    (comments, order and line endings stay), sets `Enabled = True` in both `Admin.ini` files and
    writes `supervisor.ini`. There is no token to set up: on this PC the GUI needs none and the
@@ -146,7 +143,7 @@ run/
 │   ├── data/          <- servername.xml
 │   └── banned_ip.cfg
 └── game/
-    └── config/        <- Database.ini, Server.ini, Admin.ini, SideBySide.ini, ... (Custom/ too)
+    └── config/        <- Database.ini, Server.ini, Admin.ini, ... (Custom/ too)
 ```
 
 Put the geodata files (`*.l2j`) into `dist/game/data/geodata/` (git-ignored), or point
@@ -162,19 +159,15 @@ Put the geodata files (`*.l2j`) into `dist/game/data/geodata/` (git-ignored), or
 - `Database.ini`: the same database as the login server.
 - `Server.ini`:
   - `DatapackRoot = <repo>/dist/game` (absolute path, forward slashes). The Rust server reads
-    `data/` from there. When it runs next to a Java game server, you can also point it at the
-    Java server's `game` folder, so both use the very same datapack.
-  - `GameserverPort` (7777 by default; use another port when the Java game server also runs).
+    `data/` from there.
+  - `GameserverPort` (7777 by default).
   - `RequestServerID`.
 - `Admin.ini` (Rust only): `Enabled = True`, `Bind = 127.0.0.1:7902`, `Token = <random string>`.
 - `GeoOverride.ini` (Rust only, optional): `GeoDataOverridePath` to use geodata from another
   folder.
-- `SideBySide.ini` (Rust only): only needed when a Java game server shares the database (see
-  [below](#running-next-to-a-java-game-server)). The example is
-  `crates/game-server/config-examples/SideBySide.ini`.
 
 The `.ini` files use exactly the Java key names and defaults. The Rust-only settings live in
-their own files (`Admin.ini`, `GeoOverride.ini`, `SideBySide.ini`). The Java files are never
+their own files (`Admin.ini`, `GeoOverride.ini`). The Java files are never
 extended.
 
 ### 4. Supervisor
@@ -233,37 +226,9 @@ Stop a server with **Ctrl+C** or from the GUI, so it saves cleanly.
 > **Never commit `run/`** or anything with passwords, tokens, account names or IP addresses.
 > `run/`, `*.local.ini` and `.env` are git-ignored.
 
-## Running next to a Java game server
+## Object ids
 
-Both game servers register with the Rust login server and use the same database:
-
-| Process | Port | Server id |
-|---|---|---|
-| Rust login server | 2106 (clients), 9014 (game servers) | — |
-| Java game server | 7777 | its `hexid.txt` |
-| Rust game server | e.g. 7778 | e.g. 3 (`RequestServerID`) |
-
-The Java login server and the Rust login server must never run at the same time: they use the
-same ports and tables.
-
-Some jobs change rows of every character, or global state, and must only run once per
-database. By default the Rust game server leaves these to the Java one and keeps the results in
-memory. `config/SideBySide.ini` switches them on when the Rust server is the only one on the
-database. All of them are False by default:
-
-| Key | Covers |
-|---|---|
-| `DailyResetDatabaseWrites` | the 06:30 daily reset (recommendations, birthday mail) |
-| `ClanMaintenanceDatabaseWrites` | clan dissolution, leader change, alliance checks |
-| `MailExpiryDatabaseWrites` | expiry of mails |
-| `FishingChampionshipDatabaseWrites` | the fishing championship ranking |
-| `CycleDatabaseWrites` | Olympiad, heroes, Seven Signs, boss states, item auctions, cursed weapons, script `global_variables`, event item cleanup |
-| `OfflineTradeDatabaseWrites` | offline private shops |
-| `SiegeDatabaseWrites` | castle, fortress, clan hall and Territory War siege results |
-
-Per-player rows (characters, items, quests, skills, ...) are written as usual, so a character
-can play on either server (not on both at once). New objects of the Rust server get ids from
-`0x60000000` up, so they never collide with the Java ids.
+New objects of the Rust servers get ids from `0x60000000` up.
 
 ## Admin tools
 
@@ -344,7 +309,7 @@ cargo test --workspace
 |---|---|---|---|
 | M0 Planning | Analysis of the Java code, plan, decisions, module map | 2026-10-18 | ✅ |
 | M1 Foundations | Crypto, networking, config, DB layer, Rust login server, supervisor, admin GUI, proxy, packet inspector | 2026-10-18 | ✅ tested in game: real client logs in, the Java GS registers and plays through the Rust LS |
-| M2 Game server skeleton | Game server, character create/delete/restore, enter the world, side by side with the Java GS | 2026-10-19 | ✅ tested in game: characters move between the Java and the Rust GS with nothing lost |
+| M2 Game server skeleton | Game server, character create/delete/restore, enter the world | 2026-10-19 | ✅ tested in game |
 | M3 World and movement | Geodata, movement, pathfinding, NPCs, spawns, doors, zones, teleports | 2026-10-19 | ✅ automated tests |
 | M4 Combat, NPC AI, progression | Stats and formulas, attacks, NPC AI, death, experience, drops | 2026-10-20 | ✅ automated tests, stats checked in game |
 | M5 Skills and effects | Skills, effects, buffs, conditions, cubics, transformations | 2026-10-20 | ✅ automated tests |
@@ -354,7 +319,7 @@ cargo test --workspace
 | M8 Big systems | Olympiad, heroes, Seven Signs, festival, rift, instances, boats, raid and grand bosses, cursed weapons, mini games, weddings | 2026-10-27 | ✅ automated tests |
 | Scripts | Script engine; all 509 quests; area, NPC and boss AIs; instances (Kamaloka, Pailaka, Crystal Caverns, Gracia, ...); class change and subclasses; Territory War quests; 10 seasonal events; decoys and traps; drop search board; quest admin commands | 2026-10-31 | ✅ automated tests, including end-to-end; in-game tests pending |
 | G Admin GUI | The GUI starts the supervisor itself (no token on this PC), setup wizard with database installer, game admin (players, punishments, announcements, console, shutdown), accounts, settings editor with topics, sliders and switches, forms for the XML configs, backups, why a server stopped | 2026-11-03 | ✅ automated tests |
-| M9 Customs, hardening, switch from Java | All 44 `Custom/*.ini` features and the custom scripts and events (champions, premium, auto play, offline play, scheme buffer, community board, faction, fake players, PvP rewards, rebirth, captcha, banking, transmog, CTF, TvT, deathmatch, ...), all off by default; scheduled database backups; load test tool; the "Switch to Rust" assistant and runbook; multilingual texts; dynamic exp rates | 2026-11-03 | ✅ automated tests; in-game tests and the switch pending |
+| M9 Customs, hardening, switch from Java | All 44 `Custom/*.ini` features and the custom scripts and events (champions, premium, auto play, offline play, scheme buffer, community board, faction, fake players, PvP rewards, rebirth, captcha, banking, transmog, CTF, TvT, deathmatch, ...), all off by default; scheduled database backups; load test tool; multilingual texts; dynamic exp rates | 2026-11-03 | ✅ automated tests; in-game tests pending |
 
 How each milestone is tested in game: [`docs/runbooks/`](docs/runbooks/). Task cards and
 their status: [`docs/tasks/BOARD.md`](docs/tasks/BOARD.md).

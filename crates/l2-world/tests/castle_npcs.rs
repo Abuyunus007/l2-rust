@@ -2197,5 +2197,5 @@ fn the_envoys_leave_after_an_hour_and_the_fortress_stays_independent() {
         state: 1,
         castle_id: 1,
     });
-    assert_eq!(written, true, "D-51");
+    assert!(written);
 }

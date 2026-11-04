@@ -1,3 +1,5 @@
+> Note (D-58): the Rust servers are the only servers on their database. Parts of this runbook that run a Java game server next to the Rust one, or that name `SideBySide.ini` and its `*DatabaseWrites` switches, are history: ignore them.
+
 # M9 load test: 2000 bots against a test setup
 
 `l2-loadtest` logs in N bot clients through the real login server and game server, lets them

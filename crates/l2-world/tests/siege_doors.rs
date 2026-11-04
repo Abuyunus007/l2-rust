@@ -32,7 +32,6 @@ use l2_world::*;
 #[derive(Debug, Clone)]
 enum Out {
     Packet(i32, Vec<u8>),
-    Persist(PersistCommand),
 }
 
 #[derive(Clone, Default)]
@@ -53,11 +52,11 @@ impl PacketSink for Sink {
     fn left_world(&self, _reason: LeaveReason) {}
 }
 
-struct Recorder(Log);
+struct Recorder;
 
 impl Outbox for Recorder {
     fn persist(&mut self, command: PersistCommand) {
-        self.0.0.lock().unwrap().push(Out::Persist(command));
+        let _ = command;
     }
     fn ls_event(&mut self, _event: LsEvent) {}
 }
@@ -286,7 +285,7 @@ impl Scene {
         );
         write("data/zones/castle.xml", &zones_xml());
         let log = Log::default();
-        let mut world = World::new(WorldRng::from_seed(7), Box::new(Recorder(log.clone())));
+        let mut world = World::new(WorldRng::from_seed(7), Box::new(Recorder));
         world.set_static_data(Box::new(Data {
             stats: stat_data(),
             rights: rights(),
@@ -537,12 +536,6 @@ fn door_updates(out: &[Out], to: i32, door: ObjectId) -> Vec<DoorStatusUpdate> {
         .map(|b| decode::<DoorStatusUpdate>(b))
         .filter(|u| u.object_id == door.0)
         .collect()
-}
-
-fn residence_writes(out: &[Out]) -> usize {
-    out.iter()
-        .filter(|o| matches!(o, Out::Persist(PersistCommand::Residence(_))))
-        .count()
 }
 
 // ---------------------------------------------------------------------------------- doors

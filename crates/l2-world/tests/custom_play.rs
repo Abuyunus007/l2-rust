@@ -585,7 +585,7 @@ fn premium_on_an_expired_row_is_removed_only_with_cycle_writes() {
             account: ACCOUNT.to_owned(),
         })
     });
-    assert_eq!(deleted, true);
+    assert!(deleted);
 }
 
 /// `addPremiumTime`: at least from now, the row is replaced, and the first online player of the
@@ -1130,12 +1130,6 @@ fn offline_play_rows_follow_the_database_switch() {
         offline_play_commands(&on.out),
         vec![OfflinePlayWrite::Remove { char_id: ME }]
     );
-
-    // The default side by side switch (off): the character plays, no row is written.
-    let mut off = offline_player_scene(None, offline_play_on());
-    assert!(off.world.is_offline_play(ME));
-    off.world.stop_auto_play(ME);
-    assert!(offline_play_commands(&off.out).is_empty());
 
     // `RestoreAutoPlayOffliners = False`.
     let keyless = offline_player_scene(

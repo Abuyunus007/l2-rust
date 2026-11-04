@@ -1,3 +1,5 @@
+> Note (D-58): the Rust servers are the only servers on their database. Parts of this runbook that run a Java game server next to the Rust one, or that name `SideBySide.ini` and its `*DatabaseWrites` switches, are history: ignore them.
+
 # Runbook: the Rust game server next to the Java game server (M2)
 
 How to run the Rust GS beside an existing L2JMobius H5 Java GS on the **same database** (D-39),

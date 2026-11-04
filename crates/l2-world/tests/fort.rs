@@ -1080,7 +1080,7 @@ fn loading_spawns_the_peace_time_npcs_like_java() {
 /// `FortSiege.checkAutoTask`: a siege time in the past clears the registrations and the date
 /// (`saveFortSiege`, `clearSiegeClan`); the rows go out with the switch only (D-51).
 #[test]
-fn a_siege_time_in_the_past_clears_the_registrations_and_writes_with_the_switch() {
+fn a_siege_time_in_the_past_clears_the_registrations_and_writes() {
     let on = Scene::new(LIONS, vec![WOLVES], 0);
     assert!(on.world.fort_attacker_clans(SHANTY).is_empty());
     assert_eq!(
@@ -1096,15 +1096,6 @@ fn a_siege_time_in_the_past_clears_the_registrations_and_writes_with_the_switch(
                 owner_clan_id: Some(LIONS)
             },
         ]
-    );
-    let off = Scene::new(LIONS, vec![WOLVES], 0);
-    assert!(
-        off.world.fort_attacker_clans(SHANTY).is_empty(),
-        "cleared in this world"
-    );
-    assert!(
-        fort_writes(&off.loaded).is_empty(),
-        "but nothing is written without the switch"
     );
 }
 

@@ -945,14 +945,11 @@ impl BareWorld {
             let new = commands[self.answered..].to_vec();
             self.answered = commands.len();
             for command in new {
-                match command {
-                    PersistCommand::CrestIdsRequest { ticket } => {
-                        self.world.handle(WorldCommand::CrestIdsLoaded {
-                            ticket,
-                            result: Ok(Vec::new()),
-                        });
-                    }
-                    _ => {}
+                if let PersistCommand::CrestIdsRequest { ticket } = command {
+                    self.world.handle(WorldCommand::CrestIdsLoaded {
+                        ticket,
+                        result: Ok(Vec::new()),
+                    });
                 }
             }
         }
