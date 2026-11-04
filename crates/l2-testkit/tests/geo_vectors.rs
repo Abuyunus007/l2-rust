@@ -1,4 +1,4 @@
-//! Shape checks for the committed `java-vectors/out/geo_*.json` files (M1-JV-03).
+//! Shape checks for the committed `crates/l2-testkit/vectors/geo_*.json` files (M1-JV-03).
 //!
 //! These tests only prove that the file parses, that the block counts add up, and that the sampled
 //! values obey the invariants of the Java geodata API. The geo crates (M1-GEO-*) check the actual values.

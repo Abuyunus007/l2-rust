@@ -1,4 +1,4 @@
-//! Shape checks for the committed `java-vectors/out/login_packets.json` file (M1-JV-02).
+//! Shape checks for the committed `crates/l2-testkit/vectors/login_packets.json` file (M1-JV-02).
 //!
 //! These tests prove that the file parses into the expected structure, that every packet has at
 //! least two variants whose payload starts with the opcode, and a few length/prefix spot checks.

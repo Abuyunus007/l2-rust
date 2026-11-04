@@ -87,7 +87,7 @@ fn class_list_names_and_parents() {
 }
 
 /// `ClassId::race` must agree with Java's `PlayerClass` enum for all 103 ids
-/// (`player_classes.json`, written by `codegen java-facts`).
+/// (`player_classes.json`).
 #[test]
 fn race_table_matches_java_player_class_enum() {
     let facts = l2_testkit::java_facts::player_classes();

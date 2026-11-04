@@ -1,7 +1,7 @@
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic)] // test helpers may panic
 
 //! The formulas of `l2_world::formulas` against the vectors the real L2JMobius `Formulas` class
-//! wrote (`java-vectors/out/formulas_*.json`, M4-JV-01).
+//! wrote (`crates/l2-testkit/vectors/formulas_*.json`, M4-JV-01).
 //!
 //! How a case is replayed:
 //! - The creatures come from `formulas_creatures.json` (stats and probes of the stat engine); the
@@ -31,7 +31,7 @@ use serde_json::Value;
 
 fn vector(name: &str) -> Option<Value> {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("../../java-vectors/out")
+        .join("../../crates/l2-testkit/vectors")
         .join(format!("{name}.json"));
     match std::fs::read_to_string(&path) {
         Ok(text) => Some(

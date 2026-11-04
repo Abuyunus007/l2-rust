@@ -1,4 +1,4 @@
-//! Shape checks for the committed `java-vectors/out/crypto_*.json` files (M1-JV-01).
+//! Shape checks for the committed `crates/l2-testkit/vectors/crypto_*.json` files (M1-JV-01).
 //!
 //! These tests only prove that each file parses into the expected structure and that every byte
 //! field is lowercase hex. The crypto crates (M1-CRYPTO-*) check the actual values.

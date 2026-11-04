@@ -1,4 +1,4 @@
-//! Shape and consistency checks for the committed `java-vectors/out/stats_*.json` and `formulas_*.json`
+//! Shape and consistency checks for the committed `crates/l2-testkit/vectors/stats_*.json` and `formulas_*.json`
 //! files (M4-JV-01).
 //!
 //! These tests prove that the files parse, that the case lists have the promised coverage, and that the
@@ -18,7 +18,7 @@ use serde_json::Value;
 /// Loads a vector file or returns `None` (and says so) when it is missing.
 fn load_or_skip<T: serde::de::DeserializeOwned>(name: &str) -> Option<T> {
     if !vector_path(name).exists() {
-        eprintln!("skipping: java-vectors/out/{name}.json is missing (run java-vectors/build.ps1)");
+        eprintln!("skipping: crates/l2-testkit/vectors/{name}.json is missing");
         return None;
     }
     Some(load(name))
