@@ -44,41 +44,41 @@ Critical path: WS-01 → CFG-01 → CFG-02 → DB-01 → LS-01 → LS-04 → LS-
 
 | Card | Title | Model | Review | Depends on | Status |
 |---|---|---|---|---|---|
-| [M1-WS-01](M1/M1-WS-01.md) | Cargo workspace skeleton | opus | full | none | merged (`a96b3c0`, CI green; reviewed by the orchestrator as author) |
-| [M1-JV-01](M1/M1-JV-01.md) | Java vector harness + crypto vectors | sonnet | full | WS-01 | merged |
-| [M1-JV-02](M1/M1-JV-02.md) | Login packet vectors | sonnet | spot | JV-01 | merged |
-| [M1-JV-03](M1/M1-JV-03.md) | Geodata vectors | haiku | spot | JV-01 | merged |
-| [M1-GEN-01](M1/M1-GEN-01.md) | codegen skeleton + game opcode tables | sonnet | full | WS-01 | merged |
-| [M1-CRYPTO-01](M1/M1-CRYPTO-01.md) | Blowfish-LE and NewCrypt | sonnet | full | WS-01, JV-01 | merged |
-| [M1-CRYPTO-02](M1/M1-CRYPTO-02.md) | RSA (no padding) and scrambled modulus | sonnet | full | CRYPTO-01 | merged |
-| [M1-CRYPTO-03](M1/M1-CRYPTO-03.md) | Login client encryption | sonnet | full | CRYPTO-01 | merged |
-| [M1-CRYPTO-04](M1/M1-CRYPTO-04.md) | Game XOR cipher and BF key generator | haiku | spot | CRYPTO-01, JV-01 | merged |
-| [M1-CRYPTO-05](M1/M1-CRYPTO-05.md) | LS↔GS link cipher | haiku | spot | CRYPTO-01 | merged |
-| [M1-NET-01](M1/M1-NET-01.md) | Packet reader/writer and packet traits | opus | full | WS-01 | merged (`2d289a5`) |
-| [M1-NET-02](M1/M1-NET-02.md) | Framing codec and connection task | opus | full | NET-01 | merged |
-| [M1-CFG-01](M1/M1-CFG-01.md) | `.ini` reader with ConfigReader semantics | sonnet | full | WS-01 | merged |
-| [M1-CFG-02](M1/M1-CFG-02.md) | Login server config structs | sonnet | full | CFG-01 | merged |
-| [M1-DB-01](M1/M1-DB-01.md) | Database pool and login repository | sonnet | full | CFG-02 | merged |
-| [M1-LPROTO-01](M1/M1-LPROTO-01.md) | Client↔login server packets | sonnet | full | NET-01, JV-02 | merged |
-| [M1-LPROTO-02](M1/M1-LPROTO-02.md) | Login↔game server link packets | haiku | spot | LPROTO-01 | merged |
-| [M1-LS-01](M1/M1-LS-01.md) | Login server bootstrap | sonnet | full | CFG-02, DB-01, CRYPTO-02 | merged |
-| [M1-LS-02](M1/M1-LS-02.md) | Client connection, GameGuard, authentication | opus | full | LS-01, NET-02, CRYPTO-03, LPROTO-01 | merged |
-| [M1-LS-03](M1/M1-LS-03.md) | Server list, server login, session purge | sonnet | full | LS-02 | merged |
-| [M1-LS-04](M1/M1-LS-04.md) | GS link: listener and registration | sonnet | full | LS-01, CRYPTO-05, LPROTO-02, NET-02 | merged |
-| [M1-LS-05](M1/M1-LS-05.md) | GS link: authed packet handlers | sonnet | full | LS-04, LS-03 | merged |
-| [M1-LS-06](M1/M1-LS-06.md) | End-to-end test kit + Java compatibility runbook | sonnet | full | LS-05, PROXY-01 | merged |
-| [M1-ADM-01](M1/M1-ADM-01.md) | Admin API protocol | opus | full | WS-01 | merged (`ea43164`) |
-| [M1-ADM-02](M1/M1-ADM-02.md) | Supervisor | sonnet | full | ADM-01 | merged |
-| [M1-ADM-03](M1/M1-ADM-03.md) | Login server admin endpoint | haiku | spot | ADM-01, LS-05 | merged |
-| [M1-PROXY-01](M1/M1-PROXY-01.md) | Login MITM proxy and capture format | sonnet | full | LPROTO-02, CRYPTO-02, CRYPTO-03, NET-02 | merged |
-| [M1-PROXY-02](M1/M1-PROXY-02.md) | Game traffic pass-through with opcode names | sonnet | full | PROXY-01, GEN-01, CRYPTO-04 | merged |
-| [M1-GUI-01](M1/M1-GUI-01.md) | Admin GUI shell | sonnet | full | ADM-01 | merged |
-| [M1-GUI-02](M1/M1-GUI-02.md) | Servers view | haiku | spot | GUI-01, ADM-02 | merged |
-| [M1-GUI-03](M1/M1-GUI-03.md) | Logs view | haiku | spot | GUI-01, ADM-02 | merged |
-| [M1-GUI-04](M1/M1-GUI-04.md) | Packet inspector | sonnet | full | GUI-01, PROXY-02 | merged |
-| [M1-GEO-01](M1/M1-GEO-01.md) | Geodata parser and region model | sonnet | full | WS-01, JV-03 | merged |
+| [M1-WS-01](archive/M1/M1-WS-01.md) | Cargo workspace skeleton | opus | full | none | merged (`a96b3c0`, CI green; reviewed by the orchestrator as author) |
+| [M1-JV-01](archive/M1/M1-JV-01.md) | Java vector harness + crypto vectors | sonnet | full | WS-01 | merged |
+| [M1-JV-02](archive/M1/M1-JV-02.md) | Login packet vectors | sonnet | spot | JV-01 | merged |
+| [M1-JV-03](archive/M1/M1-JV-03.md) | Geodata vectors | haiku | spot | JV-01 | merged |
+| [M1-GEN-01](archive/M1/M1-GEN-01.md) | codegen skeleton + game opcode tables | sonnet | full | WS-01 | merged |
+| [M1-CRYPTO-01](archive/M1/M1-CRYPTO-01.md) | Blowfish-LE and NewCrypt | sonnet | full | WS-01, JV-01 | merged |
+| [M1-CRYPTO-02](archive/M1/M1-CRYPTO-02.md) | RSA (no padding) and scrambled modulus | sonnet | full | CRYPTO-01 | merged |
+| [M1-CRYPTO-03](archive/M1/M1-CRYPTO-03.md) | Login client encryption | sonnet | full | CRYPTO-01 | merged |
+| [M1-CRYPTO-04](archive/M1/M1-CRYPTO-04.md) | Game XOR cipher and BF key generator | haiku | spot | CRYPTO-01, JV-01 | merged |
+| [M1-CRYPTO-05](archive/M1/M1-CRYPTO-05.md) | LS↔GS link cipher | haiku | spot | CRYPTO-01 | merged |
+| [M1-NET-01](archive/M1/M1-NET-01.md) | Packet reader/writer and packet traits | opus | full | WS-01 | merged (`2d289a5`) |
+| [M1-NET-02](archive/M1/M1-NET-02.md) | Framing codec and connection task | opus | full | NET-01 | merged |
+| [M1-CFG-01](archive/M1/M1-CFG-01.md) | `.ini` reader with ConfigReader semantics | sonnet | full | WS-01 | merged |
+| [M1-CFG-02](archive/M1/M1-CFG-02.md) | Login server config structs | sonnet | full | CFG-01 | merged |
+| [M1-DB-01](archive/M1/M1-DB-01.md) | Database pool and login repository | sonnet | full | CFG-02 | merged |
+| [M1-LPROTO-01](archive/M1/M1-LPROTO-01.md) | Client↔login server packets | sonnet | full | NET-01, JV-02 | merged |
+| [M1-LPROTO-02](archive/M1/M1-LPROTO-02.md) | Login↔game server link packets | haiku | spot | LPROTO-01 | merged |
+| [M1-LS-01](archive/M1/M1-LS-01.md) | Login server bootstrap | sonnet | full | CFG-02, DB-01, CRYPTO-02 | merged |
+| [M1-LS-02](archive/M1/M1-LS-02.md) | Client connection, GameGuard, authentication | opus | full | LS-01, NET-02, CRYPTO-03, LPROTO-01 | merged |
+| [M1-LS-03](archive/M1/M1-LS-03.md) | Server list, server login, session purge | sonnet | full | LS-02 | merged |
+| [M1-LS-04](archive/M1/M1-LS-04.md) | GS link: listener and registration | sonnet | full | LS-01, CRYPTO-05, LPROTO-02, NET-02 | merged |
+| [M1-LS-05](archive/M1/M1-LS-05.md) | GS link: authed packet handlers | sonnet | full | LS-04, LS-03 | merged |
+| [M1-LS-06](archive/M1/M1-LS-06.md) | End-to-end test kit + Java compatibility runbook | sonnet | full | LS-05, PROXY-01 | merged |
+| [M1-ADM-01](archive/M1/M1-ADM-01.md) | Admin API protocol | opus | full | WS-01 | merged (`ea43164`) |
+| [M1-ADM-02](archive/M1/M1-ADM-02.md) | Supervisor | sonnet | full | ADM-01 | merged |
+| [M1-ADM-03](archive/M1/M1-ADM-03.md) | Login server admin endpoint | haiku | spot | ADM-01, LS-05 | merged |
+| [M1-PROXY-01](archive/M1/M1-PROXY-01.md) | Login MITM proxy and capture format | sonnet | full | LPROTO-02, CRYPTO-02, CRYPTO-03, NET-02 | merged |
+| [M1-PROXY-02](archive/M1/M1-PROXY-02.md) | Game traffic pass-through with opcode names | sonnet | full | PROXY-01, GEN-01, CRYPTO-04 | merged |
+| [M1-GUI-01](archive/M1/M1-GUI-01.md) | Admin GUI shell | sonnet | full | ADM-01 | merged |
+| [M1-GUI-02](archive/M1/M1-GUI-02.md) | Servers view | haiku | spot | GUI-01, ADM-02 | merged |
+| [M1-GUI-03](archive/M1/M1-GUI-03.md) | Logs view | haiku | spot | GUI-01, ADM-02 | merged |
+| [M1-GUI-04](archive/M1/M1-GUI-04.md) | Packet inspector | sonnet | full | GUI-01, PROXY-02 | merged |
+| [M1-GEO-01](archive/M1/M1-GEO-01.md) | Geodata parser and region model | sonnet | full | WS-01, JV-03 | merged |
 | M1-ADM-04 | Graceful stop via admin `shutdown` request (D-38), done together with ADM-03 | opus | full | ADM-02, ADM-03 | merged |
-| [M1-GEO-02](M1/M1-GEO-02.md) | Geodata tool (stats, diff, render) | haiku | spot | GEO-01 | merged |
+| [M1-GEO-02](archive/M1/M1-GEO-02.md) | Geodata tool (stats, diff, render) | haiku | spot | GEO-01 | merged |
 
 ## M2: Game server skeleton (log in, create a character, enter the world) ✅ (closed 2026-10-19)
 
@@ -107,33 +107,33 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 ### Cards
 | Card | Title | Model | Review | Depends on | Status |
 |---|---|---|---|---|---|
-| [M2-WORLD-01](M2/M2-WORLD-01.md) | World loop skeleton | opus (orchestrator) | full | none | merged |
-| [M2-GEN-01](M2/M2-GEN-01.md) | SystemMessageId and NpcStringId generator | sonnet | spot | none | merged |
-| [M2-GEN-02](M2/M2-GEN-02.md) | Game config generator | sonnet | full | none | merged |
-| [M2-CFG-01](M2/M2-CFG-01.md) | Hand-ported game config fields needed by M2 | haiku | spot | GEN-02 | merged |
-| [M2-DATA-01](M2/M2-DATA-01.md) | l2-data crate + player templates (reference loader) | sonnet | full | none | merged |
-| [M2-DATA-02](M2/M2-DATA-02.md) | Experience table, initial equipment, initial shortcuts | haiku | spot | DATA-01 | merged |
-| [M2-DATA-03](M2/M2-DATA-03.md) | Skill trees (ids and levels only) | haiku | spot | DATA-01 | merged |
-| [M2-DATA-04](M2/M2-DATA-04.md) | Item templates (basic fields) | sonnet | full | DATA-01 | merged |
-| [M2-GPROTO-01](M2/M2-GPROTO-01.md) | Game packet pattern + handshake and character screen packets | sonnet | full | none | merged |
-| [M2-GPROTO-02](M2/M2-GPROTO-02.md) | UserInfo and ItemList | sonnet | full | GPROTO-01 | merged |
-| [M2-GPROTO-03](M2/M2-GPROTO-03.md) | Enter-world small packets and SystemMessage | haiku | spot | GPROTO-01, GEN-01 | merged |
-| [M2-GPROTO-04](M2/M2-GPROTO-04.md) | Chat, logout and restart packets | haiku | spot | GPROTO-01 | merged |
-| [M2-DB-01](M2/M2-DB-01.md) | Game repository: characters | sonnet | full | none | merged |
-| [M2-DB-02](M2/M2-DB-02.md) | Game repository: items, skills, shortcuts, subclasses | haiku | spot | DB-01 | merged |
-| [M2-IDF-01](M2/M2-IDF-01.md) | IdFactory (object ids) with a separate Rust range | sonnet | full | DB-01 | merged |
-| [M2-GS-01](M2/M2-GS-01.md) | Game server bootstrap | sonnet | full | GEN-02, DB-01, IDF-01, DATA-01, WORLD-01 | merged |
-| [M2-GS-02](M2/M2-GS-02.md) | Login server link (GS side) | sonnet | full | GS-01 | merged |
-| [M2-GS-03](M2/M2-GS-03.md) | Client session layer | opus (orchestrator) | full | GS-02, GPROTO-01, DB-02 | merged |
-| [M2-CHAR-01](M2/M2-CHAR-01.md) | Character screen logic | sonnet | full | GS-03, DATA-02, DATA-03, DATA-04, DB-02, CFG-01 | merged |
-| [M2-ENTER-01](M2/M2-ENTER-01.md) | Enter world, chat, logout, restart | sonnet | full | CHAR-01, GPROTO-02, GPROTO-03, GPROTO-04, WORLD-01 | merged |
-| [M2-PERSIST-01](M2/M2-PERSIST-01.md) | Persistence task and autosave | sonnet | full | WORLD-01, DB-02 | merged |
-| [M2-ADM-01](M2/M2-ADM-01.md) | Game server admin status + supervisor entry | haiku | spot | GS-01 | merged |
-| [M2-GUI-01](M2/M2-GUI-01.md) | Online players view | haiku | spot | ADM-01 | merged |
-| [M2-PROXY-01](M2/M2-PROXY-01.md) | Field decoding of game packets in proxy and inspector | haiku | spot | GPROTO-01, GPROTO-02, GPROTO-03, GPROTO-04 | merged |
-| [M2-CAP-01](M2/M2-CAP-01.md) | Reference captures from the owner's Java GS | opus (orchestrator) + owner | full | none | merged |
-| [M2-E2E-01](M2/M2-E2E-01.md) | Fake game client and end-to-end tests | sonnet | full | ENTER-01, PERSIST-01 | merged |
-| [M2-RUN-01](M2/M2-RUN-01.md) | Side-by-side run setup, runbook, cross-compat check | opus (orchestrator) + owner | full | E2E-01, ADM-01 | merged |
+| [M2-WORLD-01](archive/M2/M2-WORLD-01.md) | World loop skeleton | opus (orchestrator) | full | none | merged |
+| [M2-GEN-01](archive/M2/M2-GEN-01.md) | SystemMessageId and NpcStringId generator | sonnet | spot | none | merged |
+| [M2-GEN-02](archive/M2/M2-GEN-02.md) | Game config generator | sonnet | full | none | merged |
+| [M2-CFG-01](archive/M2/M2-CFG-01.md) | Hand-ported game config fields needed by M2 | haiku | spot | GEN-02 | merged |
+| [M2-DATA-01](archive/M2/M2-DATA-01.md) | l2-data crate + player templates (reference loader) | sonnet | full | none | merged |
+| [M2-DATA-02](archive/M2/M2-DATA-02.md) | Experience table, initial equipment, initial shortcuts | haiku | spot | DATA-01 | merged |
+| [M2-DATA-03](archive/M2/M2-DATA-03.md) | Skill trees (ids and levels only) | haiku | spot | DATA-01 | merged |
+| [M2-DATA-04](archive/M2/M2-DATA-04.md) | Item templates (basic fields) | sonnet | full | DATA-01 | merged |
+| [M2-GPROTO-01](archive/M2/M2-GPROTO-01.md) | Game packet pattern + handshake and character screen packets | sonnet | full | none | merged |
+| [M2-GPROTO-02](archive/M2/M2-GPROTO-02.md) | UserInfo and ItemList | sonnet | full | GPROTO-01 | merged |
+| [M2-GPROTO-03](archive/M2/M2-GPROTO-03.md) | Enter-world small packets and SystemMessage | haiku | spot | GPROTO-01, GEN-01 | merged |
+| [M2-GPROTO-04](archive/M2/M2-GPROTO-04.md) | Chat, logout and restart packets | haiku | spot | GPROTO-01 | merged |
+| [M2-DB-01](archive/M2/M2-DB-01.md) | Game repository: characters | sonnet | full | none | merged |
+| [M2-DB-02](archive/M2/M2-DB-02.md) | Game repository: items, skills, shortcuts, subclasses | haiku | spot | DB-01 | merged |
+| [M2-IDF-01](archive/M2/M2-IDF-01.md) | IdFactory (object ids) with a separate Rust range | sonnet | full | DB-01 | merged |
+| [M2-GS-01](archive/M2/M2-GS-01.md) | Game server bootstrap | sonnet | full | GEN-02, DB-01, IDF-01, DATA-01, WORLD-01 | merged |
+| [M2-GS-02](archive/M2/M2-GS-02.md) | Login server link (GS side) | sonnet | full | GS-01 | merged |
+| [M2-GS-03](archive/M2/M2-GS-03.md) | Client session layer | opus (orchestrator) | full | GS-02, GPROTO-01, DB-02 | merged |
+| [M2-CHAR-01](archive/M2/M2-CHAR-01.md) | Character screen logic | sonnet | full | GS-03, DATA-02, DATA-03, DATA-04, DB-02, CFG-01 | merged |
+| [M2-ENTER-01](archive/M2/M2-ENTER-01.md) | Enter world, chat, logout, restart | sonnet | full | CHAR-01, GPROTO-02, GPROTO-03, GPROTO-04, WORLD-01 | merged |
+| [M2-PERSIST-01](archive/M2/M2-PERSIST-01.md) | Persistence task and autosave | sonnet | full | WORLD-01, DB-02 | merged |
+| [M2-ADM-01](archive/M2/M2-ADM-01.md) | Game server admin status + supervisor entry | haiku | spot | GS-01 | merged |
+| [M2-GUI-01](archive/M2/M2-GUI-01.md) | Online players view | haiku | spot | ADM-01 | merged |
+| [M2-PROXY-01](archive/M2/M2-PROXY-01.md) | Field decoding of game packets in proxy and inspector | haiku | spot | GPROTO-01, GPROTO-02, GPROTO-03, GPROTO-04 | merged |
+| [M2-CAP-01](archive/M2/M2-CAP-01.md) | Reference captures from the owner's Java GS | opus (orchestrator) + owner | full | none | merged |
+| [M2-E2E-01](archive/M2/M2-E2E-01.md) | Fake game client and end-to-end tests | sonnet | full | ENTER-01, PERSIST-01 | merged |
+| [M2-RUN-01](archive/M2/M2-RUN-01.md) | Side-by-side run setup, runbook, cross-compat check | opus (orchestrator) + owner | full | E2E-01, ADM-01 | merged |
 
 ## M3: World and movement (approved 2026-10-18)
 
@@ -155,35 +155,35 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 ### Cards
 | Card | Title | Model | Review | Depends on | Status |
 |---|---|---|---|---|---|
-| [M3-GEO-01](M3/M3-GEO-01.md) | Geoengine: height, line of sight, movement checks, per-region override | sonnet | full | M1 l2-geo | merged |
-| [M3-GEO-02](M3/M3-GEO-02.md) | Pathfinding on worker threads | sonnet | full | GEO-01 | merged |
-| [M3-GPROTO-05](M3/M3-GPROTO-05.md) | Visibility and movement packets | sonnet | full | none | merged |
-| [M3-GPROTO-06](M3/M3-GPROTO-06.md) | Target, action and NPC dialog packets | haiku | spot | none | merged |
-| [M3-DATA-05](M3/M3-DATA-05.md) | NPC templates | sonnet | full | none | merged |
-| [M3-DATA-06](M3/M3-DATA-06.md) | Spawn data | haiku | spot | none | merged |
-| [M3-DATA-07](M3/M3-DATA-07.md) | Zones and map regions | sonnet | full | none | merged |
-| [M3-DATA-08](M3/M3-DATA-08.md) | Html cache and teleporter lists | haiku | spot | none | merged |
-| [M3-DATA-09](M3/M3-DATA-09.md) | Doors and fences data | haiku | spot | none | merged (inside DOOR-01) |
-| [M3-GUI-02](M3/M3-GUI-02.md) | GUI data browser (NPCs, items) | haiku | spot | DATA-05 | merged |
-| [M3-GUI-03](M3/M3-GUI-03.md) | GUI geodata viewer | haiku | spot | GEO-01 | merged |
-| [M3-WREG-01](M3/M3-WREG-01.md) | World regions, visibility, object tables | opus (orchestrator) | full | M2-ENTER-01, GPROTO-05 | merged |
-| [M3-MOVE-01](M3/M3-MOVE-01.md) | Movement with geodata and pathfinding | sonnet | full | WREG-01, GEO-02, GPROTO-05 | merged |
-| [M3-NPC-01](M3/M3-NPC-01.md) | NPC spawns in the world (no AI) | sonnet | full | WREG-01, DATA-05, DATA-06, GPROTO-05 | merged |
-| [M3-TELE-01](M3/M3-TELE-01.md) | Teleports, zones in the world, map regions | sonnet | full | WREG-01, DATA-07, GPROTO-05 | merged |
-| [M3-DOOR-01](M3/M3-DOOR-01.md) | Doors and fences in the world | sonnet | full | WREG-01, DATA-09, GEO-01, GPROTO-06 | merged |
-| [M3-TALK-01](M3/M3-TALK-01.md) | Targeting, NPC dialogs, bypasses, gatekeepers | sonnet | full | NPC-01, DATA-08, TELE-01, GPROTO-06 | merged |
-| [M3-PLAYERS-01](M3/M3-PLAYERS-01.md) | Other players visible (two clients) | opus (orchestrator) | full | MOVE-01 | merged |
-| [M3-ADMIN-01](M3/M3-ADMIN-01.md) | Core admin commands | haiku | spot | TALK-01 | merged |
-| [M3-E2E-01](M3/M3-E2E-01.md) | Two fake clients end to end | sonnet | spot | PLAYERS-01, TALK-01, M2-E2E-01 | merged |
-| [M3-GEO-03](M3/M3-GEO-03.md) | Geoengine and path pool in the game server | sonnet | full | GEO-01, GEO-02 | merged |
-| [M3-CFG-02](M3/M3-CFG-02.md) | Datapack options from the game config | haiku | spot | DATA-05, DATA-06, DATA-08 | merged |
-| [M3-PROXY-02](M3/M3-PROXY-02.md) | Proxy field decoders for the M2/M3 server packets | haiku | spot | GPROTO-05, GPROTO-06, M2-ENTER-01 | merged |
-| [M3-FIX-01](M3/M3-FIX-01.md) | Name templates (regex) and the html encoding check flag | haiku | spot | M2-CHAR-01, M3-CFG-02 | merged |
-| [M3-RUN-01](M3/M3-RUN-01.md) | M3 runbook and geodata decision | opus (orchestrator) | full | E2E-01 | runbook done; geodata decision at CP-M3a |
+| [M3-GEO-01](archive/M3/M3-GEO-01.md) | Geoengine: height, line of sight, movement checks, per-region override | sonnet | full | M1 l2-geo | merged |
+| [M3-GEO-02](archive/M3/M3-GEO-02.md) | Pathfinding on worker threads | sonnet | full | GEO-01 | merged |
+| [M3-GPROTO-05](archive/M3/M3-GPROTO-05.md) | Visibility and movement packets | sonnet | full | none | merged |
+| [M3-GPROTO-06](archive/M3/M3-GPROTO-06.md) | Target, action and NPC dialog packets | haiku | spot | none | merged |
+| [M3-DATA-05](archive/M3/M3-DATA-05.md) | NPC templates | sonnet | full | none | merged |
+| [M3-DATA-06](archive/M3/M3-DATA-06.md) | Spawn data | haiku | spot | none | merged |
+| [M3-DATA-07](archive/M3/M3-DATA-07.md) | Zones and map regions | sonnet | full | none | merged |
+| [M3-DATA-08](archive/M3/M3-DATA-08.md) | Html cache and teleporter lists | haiku | spot | none | merged |
+| [M3-DATA-09](archive/M3/M3-DATA-09.md) | Doors and fences data | haiku | spot | none | merged (inside DOOR-01) |
+| [M3-GUI-02](archive/M3/M3-GUI-02.md) | GUI data browser (NPCs, items) | haiku | spot | DATA-05 | merged |
+| [M3-GUI-03](archive/M3/M3-GUI-03.md) | GUI geodata viewer | haiku | spot | GEO-01 | merged |
+| [M3-WREG-01](archive/M3/M3-WREG-01.md) | World regions, visibility, object tables | opus (orchestrator) | full | M2-ENTER-01, GPROTO-05 | merged |
+| [M3-MOVE-01](archive/M3/M3-MOVE-01.md) | Movement with geodata and pathfinding | sonnet | full | WREG-01, GEO-02, GPROTO-05 | merged |
+| [M3-NPC-01](archive/M3/M3-NPC-01.md) | NPC spawns in the world (no AI) | sonnet | full | WREG-01, DATA-05, DATA-06, GPROTO-05 | merged |
+| [M3-TELE-01](archive/M3/M3-TELE-01.md) | Teleports, zones in the world, map regions | sonnet | full | WREG-01, DATA-07, GPROTO-05 | merged |
+| [M3-DOOR-01](archive/M3/M3-DOOR-01.md) | Doors and fences in the world | sonnet | full | WREG-01, DATA-09, GEO-01, GPROTO-06 | merged |
+| [M3-TALK-01](archive/M3/M3-TALK-01.md) | Targeting, NPC dialogs, bypasses, gatekeepers | sonnet | full | NPC-01, DATA-08, TELE-01, GPROTO-06 | merged |
+| [M3-PLAYERS-01](archive/M3/M3-PLAYERS-01.md) | Other players visible (two clients) | opus (orchestrator) | full | MOVE-01 | merged |
+| [M3-ADMIN-01](archive/M3/M3-ADMIN-01.md) | Core admin commands | haiku | spot | TALK-01 | merged |
+| [M3-E2E-01](archive/M3/M3-E2E-01.md) | Two fake clients end to end | sonnet | spot | PLAYERS-01, TALK-01, M2-E2E-01 | merged |
+| [M3-GEO-03](archive/M3/M3-GEO-03.md) | Geoengine and path pool in the game server | sonnet | full | GEO-01, GEO-02 | merged |
+| [M3-CFG-02](archive/M3/M3-CFG-02.md) | Datapack options from the game config | haiku | spot | DATA-05, DATA-06, DATA-08 | merged |
+| [M3-PROXY-02](archive/M3/M3-PROXY-02.md) | Proxy field decoders for the M2/M3 server packets | haiku | spot | GPROTO-05, GPROTO-06, M2-ENTER-01 | merged |
+| [M3-FIX-01](archive/M3/M3-FIX-01.md) | Name templates (regex) and the html encoding check flag | haiku | spot | M2-CHAR-01, M3-CFG-02 | merged |
+| [M3-RUN-01](archive/M3/M3-RUN-01.md) | M3 runbook and geodata decision | opus (orchestrator) | full | E2E-01 | runbook done; geodata decision at CP-M3a |
 
 ## M4: Combat, NPC AI, progression (approved 2026-10-19)
 
-17 cards (draft: [M4/DRAFT.md](M4/DRAFT.md)). Design: [docs/design/m4-combat.md](../design/m4-combat.md). Owner decisions: same `Rates.ini` on both servers; ground items follow `SaveDroppedItem` of `General.ini` like Java (default off); stats first. Workers 4-5 at a time.
+17 cards (draft: [M4/DRAFT.md](archive/M4/DRAFT.md)). Design: [docs/design/m4-combat.md](../design/m4-combat.md). Owner decisions: same `Rates.ini` on both servers; ground items follow `SaveDroppedItem` of `General.ini` like Java (default off); stats first. Workers 4-5 at a time.
 
 ### Waves
 | Wave | Cards | Parallel workers |
@@ -202,32 +202,32 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 ### Cards
 | Card | Title | Model | Review | Depends on | Status |
 |---|---|---|---|---|---|
-| [M4-DATA-10](M4/M4-DATA-10.md) | Stat enum, function templates, conditions, item stat data | sonnet | full | M2-DATA-04 | merged |
-| [M4-DATA-12](M4/M4-DATA-12.md) | Armor sets, enchant HP bonus, hit condition bonus, hennas | haiku | spot | none | merged |
-| [M4-JV-01](M4/M4-JV-01.md) | Java vectors for the stat engine and Formulas | sonnet | full | none | merged |
-| [M4-GPROTO-07](M4/M4-GPROTO-07.md) | Combat, death and item packets | haiku | spot | none | merged |
-| [M4-DATA-11](M4/M4-DATA-11.md) | Skill data (templates per level, effect funcs, conditions) | sonnet | full | DATA-10 | merged |
-| [M4-STAT-01](M4/M4-STAT-01.md) | Stat engine for players and NPCs | opus | full | DATA-10, DATA-11, DATA-12, JV-01 | merged |
-| [M4-FORM-01](M4/M4-FORM-01.md) | Combat and regen formulas as pure functions (split out of COMBAT-01) | sonnet | full | JV-01 | merged |
-| [M4-HENNA-01](M4/M4-HENNA-01.md) | Load the character's dyes and show them | haiku | spot | STAT-01, DATA-12 | merged |
-| [M4-INV-01](M4/M4-INV-01.md) | Inventory and equipping | sonnet | full | STAT-01, GPROTO-07 | merged |
-| [M4-REGEN-01](M4/M4-REGEN-01.md) | HP/MP/CP regeneration | haiku | spot | STAT-01 | merged |
-| [M4-COMBAT-01](M4/M4-COMBAT-01.md) | Auto-attack (players and NPCs) | opus | full | STAT-01, GPROTO-07 | merged |
-| [M4-AI-01](M4/M4-AI-01.md) | NPC AI: attackable core | sonnet | full | COMBAT-01 | merged |
-| [M4-AI-02](M4/M4-AI-02.md) | NPC AI: idle behaviour | haiku | spot | AI-01 | merged |
-| [M4-DEATH-01](M4/M4-DEATH-01.md) | Death, respawn, corpses | sonnet | full | COMBAT-01 | merged |
-| [M4-EXP-01](M4/M4-EXP-01.md) | Exp/SP rewards and levelling | sonnet | full | DEATH-01 | merged |
-| [M4-VIT-01](M4/M4-VIT-01.md) | Vitality and Nevit (Java gives 1.5x-3x kill exp with the shipped config) | sonnet | full | EXP-01 | merged |
-| [M4-DROP-01](M4/M4-DROP-01.md) | Drops, items on the ground, pickup | sonnet | full | DEATH-01, INV-01 | merged |
-| [M4-JV-02](M4/M4-JV-02.md) | Java vectors for drop chances | sonnet | full | JV-01, DROP-01 | merged |
-| [M4-ADMIN-02](M4/M4-ADMIN-02.md) | Admin commands for combat testing | haiku | spot | DEATH-01 | merged |
-| [M4-ADMIN-03](M4/M4-ADMIN-03.md) | Item, level and exp admin commands (rest of ADMIN-02) | haiku | spot | ADMIN-02, EXP-01, DROP-01 | merged |
-| [M4-E2E-01](M4/M4-E2E-01.md) | End to end: hunt, loot, level, die, respawn | sonnet | spot | EXP-01, DROP-01 | merged |
-| [M4-RUN-01](M4/M4-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | runbook done; CP-M4a..d with the owner |
+| [M4-DATA-10](archive/M4/M4-DATA-10.md) | Stat enum, function templates, conditions, item stat data | sonnet | full | M2-DATA-04 | merged |
+| [M4-DATA-12](archive/M4/M4-DATA-12.md) | Armor sets, enchant HP bonus, hit condition bonus, hennas | haiku | spot | none | merged |
+| [M4-JV-01](archive/M4/M4-JV-01.md) | Java vectors for the stat engine and Formulas | sonnet | full | none | merged |
+| [M4-GPROTO-07](archive/M4/M4-GPROTO-07.md) | Combat, death and item packets | haiku | spot | none | merged |
+| [M4-DATA-11](archive/M4/M4-DATA-11.md) | Skill data (templates per level, effect funcs, conditions) | sonnet | full | DATA-10 | merged |
+| [M4-STAT-01](archive/M4/M4-STAT-01.md) | Stat engine for players and NPCs | opus | full | DATA-10, DATA-11, DATA-12, JV-01 | merged |
+| [M4-FORM-01](archive/M4/M4-FORM-01.md) | Combat and regen formulas as pure functions (split out of COMBAT-01) | sonnet | full | JV-01 | merged |
+| [M4-HENNA-01](archive/M4/M4-HENNA-01.md) | Load the character's dyes and show them | haiku | spot | STAT-01, DATA-12 | merged |
+| [M4-INV-01](archive/M4/M4-INV-01.md) | Inventory and equipping | sonnet | full | STAT-01, GPROTO-07 | merged |
+| [M4-REGEN-01](archive/M4/M4-REGEN-01.md) | HP/MP/CP regeneration | haiku | spot | STAT-01 | merged |
+| [M4-COMBAT-01](archive/M4/M4-COMBAT-01.md) | Auto-attack (players and NPCs) | opus | full | STAT-01, GPROTO-07 | merged |
+| [M4-AI-01](archive/M4/M4-AI-01.md) | NPC AI: attackable core | sonnet | full | COMBAT-01 | merged |
+| [M4-AI-02](archive/M4/M4-AI-02.md) | NPC AI: idle behaviour | haiku | spot | AI-01 | merged |
+| [M4-DEATH-01](archive/M4/M4-DEATH-01.md) | Death, respawn, corpses | sonnet | full | COMBAT-01 | merged |
+| [M4-EXP-01](archive/M4/M4-EXP-01.md) | Exp/SP rewards and levelling | sonnet | full | DEATH-01 | merged |
+| [M4-VIT-01](archive/M4/M4-VIT-01.md) | Vitality and Nevit (Java gives 1.5x-3x kill exp with the shipped config) | sonnet | full | EXP-01 | merged |
+| [M4-DROP-01](archive/M4/M4-DROP-01.md) | Drops, items on the ground, pickup | sonnet | full | DEATH-01, INV-01 | merged |
+| [M4-JV-02](archive/M4/M4-JV-02.md) | Java vectors for drop chances | sonnet | full | JV-01, DROP-01 | merged |
+| [M4-ADMIN-02](archive/M4/M4-ADMIN-02.md) | Admin commands for combat testing | haiku | spot | DEATH-01 | merged |
+| [M4-ADMIN-03](archive/M4/M4-ADMIN-03.md) | Item, level and exp admin commands (rest of ADMIN-02) | haiku | spot | ADMIN-02, EXP-01, DROP-01 | merged |
+| [M4-E2E-01](archive/M4/M4-E2E-01.md) | End to end: hunt, loot, level, die, respawn | sonnet | spot | EXP-01, DROP-01 | merged |
+| [M4-RUN-01](archive/M4/M4-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | runbook done; CP-M4a..d with the owner |
 
 ## M5: Skills and effects (approved 2026-10-20)
 
-18 cards (draft: [M5/DRAFT.md](M5/DRAFT.md)). Design: [docs/design/m5-skills.md](../design/m5-skills.md). Owner decisions: summons/pets/cubics/transformations and parties go to M6 ("party" = just me in M5); effect engine and casting first, consumables right after. Starts while M4 finishes; workers 4-5 at a time.
+18 cards (draft: [M5/DRAFT.md](archive/M5/DRAFT.md)). Design: [docs/design/m5-skills.md](../design/m5-skills.md). Owner decisions: summons/pets/cubics/transformations and parties go to M6 ("party" = just me in M5); effect engine and casting first, consumables right after. Starts while M4 finishes; workers 4-5 at a time.
 
 ### Checkpoints
 | Checkpoint | You test |
@@ -240,37 +240,37 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 ### Cards
 | Card | Title | Model | Review | Depends on | Status |
 |---|---|---|---|---|---|
-| [M5-GPROTO-08](M5/M5-GPROTO-08.md) | Skill, buff and item-use packets | haiku | spot | none | merged |
-| [M5-JV-03](M5/M5-JV-03.md) | Java vectors for skill formulas | sonnet | full | none | merged |
-| [M5-FORM-02](M5/M5-FORM-02.md) | Skill formulas as pure functions | sonnet | full | JV-03 | merged |
-| [M5-EFFECT-01](M5/M5-EFFECT-01.md) | Effect engine: effect list, buff info, stacking, durations, ticks | opus | full | GPROTO-08 (icons only) | merged |
-| [M5-CAST-01](M5/M5-CAST-01.md) | Casting | opus | full | EFFECT-01, FORM-02 | merged |
-| [M5-TARGET-01](M5/M5-TARGET-01.md) | The 34 target handlers | sonnet | full | none (CAST-01 calls it) | merged |
-| [M5-EFX-01](M5/M5-EFX-01.md) | Effect handlers: damage and healing | sonnet | full | EFFECT-01, FORM-02 | part 1 merged (heal/over-time); rest in EFX-04 |
-| [M5-EFX-02](M5/M5-EFX-02.md) | Effect handlers: buffs, debuffs, control | sonnet | full | EFFECT-01 | merged |
-| [M5-EFX-03](M5/M5-EFX-03.md) | Effect handlers: dispel, hate, movement, misc | haiku | spot | EFFECT-01 | 26/44 merged; rest in EFX-04/05 |
-| [M5-EFX-04](M5/M5-EFX-04.md) | Effect handlers: damage, Heal, hate chances (rest of EFX-01/03) | sonnet | full | FORM-02 | merged |
-| [M5-EFX-05](M5/M5-EFX-05.md) | Effect handlers needing casting or new world parts (rest of EFX-03) | sonnet | full | CAST-01 | merged |
-| [M5-ITEM-01](M5/M5-ITEM-01.md) | Item handlers: potions, herbs, scrolls, elixirs, extractables | sonnet | full | CAST-01, EFX-01 | merged |
-| [M5-SHOT-01](M5/M5-SHOT-01.md) | Soulshots and spiritshots | sonnet | full | CAST-01 | merged |
-| [M5-SPOIL-01](M5/M5-SPOIL-01.md) | Spoil and sweep | sonnet | full | EFX-03, FORM-02 | merged |
-| [M5-AI-03](M5/M5-AI-03.md) | NPC skill use | sonnet | full | CAST-01, EFX-01, EFX-02 | merged |
-| [M5-LEARN-01](M5/M5-LEARN-01.md) | Learning skills at trainers | sonnet | full | GPROTO-08 | merged |
-| [M5-SAVE-01](M5/M5-SAVE-01.md) | Buffs and reuse times across relog | haiku | spot | EFFECT-01, CAST-01 | merged |
-| [M5-ADMIN-04](M5/M5-ADMIN-04.md) | Admin commands for skills | haiku | spot | CAST-01 | merged |
-| [M5-SHORTCUT-01](M5/M5-SHORTCUT-01.md) | Shortcut bar: register and delete (skills on the bar) | sonnet | full | CAST-01 | merged |
-| [M5-FIX-03](M5/M5-FIX-03.md) | Follow-ups: item reuse save, ClassBalance skill tables, old corpses, maps | sonnet | spot | ITEM-01, EFX-04, SAVE-01 | merged |
-| [M5-E2E-01](M5/M5-E2E-01.md) | End to end: cast, buff, relog, potion, soulshot | sonnet | spot | ITEM-01, SHOT-01, SAVE-01 | merged |
-| [M5-RUN-01](M5/M5-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | runbook done; CP-M5a..d with the owner |
-| [M5-FU-01](M5/M5-FU-01.md) | Admin pages, confirm dialogs, GM item list | sonnet | spot | M5 | merged |
-| [M5-FU-02](M5/M5-FU-02.md) | Guards and defenders, raid minion respawn, NPC fear | sonnet | full | M5 | merged |
-| [M5-FU-03](M5/M5-FU-03.md) | Daily resets and recommendations | sonnet | full | M5 | merged |
-| [M5-FU-04](M5/M5-FU-04.md) | Punishments and illegal actions | sonnet | full | M5 | merged |
-| [M5-FU-05](M5/M5-FU-05.md) | Item elements, augments and item rows | sonnet | full | M5 | merged |
+| [M5-GPROTO-08](archive/M5/M5-GPROTO-08.md) | Skill, buff and item-use packets | haiku | spot | none | merged |
+| [M5-JV-03](archive/M5/M5-JV-03.md) | Java vectors for skill formulas | sonnet | full | none | merged |
+| [M5-FORM-02](archive/M5/M5-FORM-02.md) | Skill formulas as pure functions | sonnet | full | JV-03 | merged |
+| [M5-EFFECT-01](archive/M5/M5-EFFECT-01.md) | Effect engine: effect list, buff info, stacking, durations, ticks | opus | full | GPROTO-08 (icons only) | merged |
+| [M5-CAST-01](archive/M5/M5-CAST-01.md) | Casting | opus | full | EFFECT-01, FORM-02 | merged |
+| [M5-TARGET-01](archive/M5/M5-TARGET-01.md) | The 34 target handlers | sonnet | full | none (CAST-01 calls it) | merged |
+| [M5-EFX-01](archive/M5/M5-EFX-01.md) | Effect handlers: damage and healing | sonnet | full | EFFECT-01, FORM-02 | part 1 merged (heal/over-time); rest in EFX-04 |
+| [M5-EFX-02](archive/M5/M5-EFX-02.md) | Effect handlers: buffs, debuffs, control | sonnet | full | EFFECT-01 | merged |
+| [M5-EFX-03](archive/M5/M5-EFX-03.md) | Effect handlers: dispel, hate, movement, misc | haiku | spot | EFFECT-01 | 26/44 merged; rest in EFX-04/05 |
+| [M5-EFX-04](archive/M5/M5-EFX-04.md) | Effect handlers: damage, Heal, hate chances (rest of EFX-01/03) | sonnet | full | FORM-02 | merged |
+| [M5-EFX-05](archive/M5/M5-EFX-05.md) | Effect handlers needing casting or new world parts (rest of EFX-03) | sonnet | full | CAST-01 | merged |
+| [M5-ITEM-01](archive/M5/M5-ITEM-01.md) | Item handlers: potions, herbs, scrolls, elixirs, extractables | sonnet | full | CAST-01, EFX-01 | merged |
+| [M5-SHOT-01](archive/M5/M5-SHOT-01.md) | Soulshots and spiritshots | sonnet | full | CAST-01 | merged |
+| [M5-SPOIL-01](archive/M5/M5-SPOIL-01.md) | Spoil and sweep | sonnet | full | EFX-03, FORM-02 | merged |
+| [M5-AI-03](archive/M5/M5-AI-03.md) | NPC skill use | sonnet | full | CAST-01, EFX-01, EFX-02 | merged |
+| [M5-LEARN-01](archive/M5/M5-LEARN-01.md) | Learning skills at trainers | sonnet | full | GPROTO-08 | merged |
+| [M5-SAVE-01](archive/M5/M5-SAVE-01.md) | Buffs and reuse times across relog | haiku | spot | EFFECT-01, CAST-01 | merged |
+| [M5-ADMIN-04](archive/M5/M5-ADMIN-04.md) | Admin commands for skills | haiku | spot | CAST-01 | merged |
+| [M5-SHORTCUT-01](archive/M5/M5-SHORTCUT-01.md) | Shortcut bar: register and delete (skills on the bar) | sonnet | full | CAST-01 | merged |
+| [M5-FIX-03](archive/M5/M5-FIX-03.md) | Follow-ups: item reuse save, ClassBalance skill tables, old corpses, maps | sonnet | spot | ITEM-01, EFX-04, SAVE-01 | merged |
+| [M5-E2E-01](archive/M5/M5-E2E-01.md) | End to end: cast, buff, relog, potion, soulshot | sonnet | spot | ITEM-01, SHOT-01, SAVE-01 | merged |
+| [M5-RUN-01](archive/M5/M5-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | runbook done; CP-M5a..d with the owner |
+| [M5-FU-01](archive/M5/M5-FU-01.md) | Admin pages, confirm dialogs, GM item list | sonnet | spot | M5 | merged |
+| [M5-FU-02](archive/M5/M5-FU-02.md) | Guards and defenders, raid minion respawn, NPC fear | sonnet | full | M5 | merged |
+| [M5-FU-03](archive/M5/M5-FU-03.md) | Daily resets and recommendations | sonnet | full | M5 | merged |
+| [M5-FU-04](archive/M5/M5-FU-04.md) | Punishments and illegal actions | sonnet | full | M5 | merged |
+| [M5-FU-05](archive/M5/M5-FU-05.md) | Item elements, augments and item rows | sonnet | full | M5 | merged |
 
 ## M6: Parties, PvP, trade, clans, companions (approved 2026-10-20)
 
-16 cards, plus 8 economy cards added 2026-10-21 from PLAN.md's M6 scope (draft: [M6/DRAFT.md](M6/DRAFT.md)). Design: [docs/design/m6-social.md](../design/m6-social.md). Owner decisions: sieges/castles/clan halls in M7, Olympiad/Seven Signs in M8, quests after that; order inside M6: party/PvP/trade, then clans, then summons/pets/cubics/transformations.
+16 cards, plus 8 economy cards added 2026-10-21 from PLAN.md's M6 scope (draft: [M6/DRAFT.md](archive/M6/DRAFT.md)). Design: [docs/design/m6-social.md](../design/m6-social.md). Owner decisions: sieges/castles/clan halls in M7, Olympiad/Seven Signs in M8, quests after that; order inside M6: party/PvP/trade, then clans, then summons/pets/cubics/transformations.
 
 ### Checkpoints
 | Checkpoint | You test |
@@ -284,46 +284,46 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 ### Cards
 | Card | Title | Model | Review | Depends on | Status |
 |---|---|---|---|---|---|
-| [M6-GPROTO-09](M6/M6-GPROTO-09.md) | Party, PvP, trade, clan and summon packets | haiku | spot | none | merged |
-| [M6-PVP-01](M6/M6-PVP-01.md) | PvP flag, karma, PK, relations | sonnet | full | GPROTO-09 | merged |
-| [M6-PARTY-01](M6/M6-PARTY-01.md) | Parties | sonnet | full | GPROTO-09 | merged |
-| [M6-TRADE-01](M6/M6-TRADE-01.md) | Private trade | sonnet | full | GPROTO-09 | merged |
-| [M6-STORE-01](M6/M6-STORE-01.md) | Private stores (sell, buy, package sell) | sonnet | full | TRADE-01 | merged |
-| [M6-CLAN-01](M6/M6-CLAN-01.md) | Clan core | opus | full | GPROTO-09 | merged |
-| [M6-CLAN-02](M6/M6-CLAN-02.md) | Crests, alliances, clan wars | sonnet | full | CLAN-01 | merged |
-| [M6-CLAN-03](M6/M6-CLAN-03.md) | Clan skills and academy | sonnet | full | CLAN-01 | merged |
-| [M6-SUMMON-01](M6/M6-SUMMON-01.md) | Summons: servitors | opus | full | GPROTO-09 | merged |
-| [M6-PET-01](M6/M6-PET-01.md) | Pets | sonnet | full | SUMMON-01 | merged |
-| [M6-CUBIC-01](M6/M6-CUBIC-01.md) | Cubics | sonnet | full | SUMMON-01 | merged |
-| [M6-TRANS-01](M6/M6-TRANS-01.md) | Transformations | sonnet | full | none (M5) | merged |
-| [M6-DUEL-01](M6/M6-DUEL-01.md) | Duels | sonnet | spot | PARTY-01, PVP-01 | merged |
-| [M6-ADMIN-05](M6/M6-ADMIN-05.md) | Admin commands for social and summons | haiku | spot | CLAN-01, SUMMON-01 | merged |
-| [M6-E2E-01](M6/M6-E2E-01.md) | End to end: party hunt, trade, clan, summon | sonnet | spot | PARTY-01, TRADE-01, CLAN-01, SUMMON-01, SHOP-01, WH-01 | merged |
-| [M6-RUN-01](M6/M6-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | ready (refined when deps merge) |
-| [M6-SHOP-01](M6/M6-SHOP-01.md) | NPC shops (buy, sell, refund) | sonnet | full | none | merged |
-| [M6-MULTISELL-01](M6/M6-MULTISELL-01.md) | Multisell | sonnet | full | none | merged |
-| [M6-WH-01](M6/M6-WH-01.md) | Warehouses and freight | sonnet | full | TRADE-01, CLAN-01 | merged |
-| [M6-ENCHANT-01](M6/M6-ENCHANT-01.md) | Enchanting and attributes | sonnet | full | none | merged |
-| [M6-CRAFT-01](M6/M6-CRAFT-01.md) | Crafting and manufacture shops | sonnet | full | STORE-01 | merged |
-| [M6-FRIEND-01](M6/M6-FRIEND-01.md) | Friends and block list | haiku | spot | none | merged |
-| [M6-MAIL-01](M6/M6-MAIL-01.md) | Mail | sonnet | full | TRADE-01 | merged |
-| [M6-AUGMENT-01](M6/M6-AUGMENT-01.md) | Augmentation | sonnet | full | none | merged |
-| [M6-ACTION-01](M6/M6-ACTION-01.md) | Player actions (sit, stand, walk, run, socials) | sonnet | spot | SUMMON-01, STORE-01 | merged |
-| [M6-SYNC-01](M6/M6-SYNC-01.md) | Fresh shared rows for mail and the clan warehouse (D-39) | sonnet | full | MAIL-01, WH-01 | merged |
-| [M6-ENCHANT-02](M6/M6-ENCHANT-02.md) | Skill enchanting, enchant options, //enchant | sonnet | full | ENCHANT-01 | merged |
-| [M6-FU-06](M6/M6-FU-06.md) | Flood protectors | sonnet | full | none | merged |
-| [M6-FU-07](M6/M6-FU-07.md) | Mounts: strider, wyvern, wolf | sonnet | full | none | merged |
-| [M6-FU-08](M6/M6-FU-08.md) | Fishing | sonnet | full | none | merged |
-| [M6-FU-09](M6/M6-FU-09.md) | M6 leftovers: offline block list, pet collar rule, offline pet decay, bot report | sonnet | full | none | merged |
-| [M6-FU-10](M6/M6-FU-10.md) | Fisherman skill learning | sonnet | spot | FU-08 | merged |
-| [M6-FU-11](M6/M6-FU-11.md) | Stale M6 markers: duel, summon and store checks, GM pet views, SkillCoolTime, talisman mana, PC cafe points | sonnet | full | none | merged |
-| [M6-FU-12](M6/M6-FU-12.md) | Skill channelizer, weapon and option trigger skills | sonnet | full | none | merged |
-| [M6-FU-13](M6/M6-FU-13.md) | Command channels | sonnet | full | none | merged |
-| [M6-FU-14](M6/M6-FU-14.md) | Pet evolve and offline trade | sonnet | full | none | merged |
+| [M6-GPROTO-09](archive/M6/M6-GPROTO-09.md) | Party, PvP, trade, clan and summon packets | haiku | spot | none | merged |
+| [M6-PVP-01](archive/M6/M6-PVP-01.md) | PvP flag, karma, PK, relations | sonnet | full | GPROTO-09 | merged |
+| [M6-PARTY-01](archive/M6/M6-PARTY-01.md) | Parties | sonnet | full | GPROTO-09 | merged |
+| [M6-TRADE-01](archive/M6/M6-TRADE-01.md) | Private trade | sonnet | full | GPROTO-09 | merged |
+| [M6-STORE-01](archive/M6/M6-STORE-01.md) | Private stores (sell, buy, package sell) | sonnet | full | TRADE-01 | merged |
+| [M6-CLAN-01](archive/M6/M6-CLAN-01.md) | Clan core | opus | full | GPROTO-09 | merged |
+| [M6-CLAN-02](archive/M6/M6-CLAN-02.md) | Crests, alliances, clan wars | sonnet | full | CLAN-01 | merged |
+| [M6-CLAN-03](archive/M6/M6-CLAN-03.md) | Clan skills and academy | sonnet | full | CLAN-01 | merged |
+| [M6-SUMMON-01](archive/M6/M6-SUMMON-01.md) | Summons: servitors | opus | full | GPROTO-09 | merged |
+| [M6-PET-01](archive/M6/M6-PET-01.md) | Pets | sonnet | full | SUMMON-01 | merged |
+| [M6-CUBIC-01](archive/M6/M6-CUBIC-01.md) | Cubics | sonnet | full | SUMMON-01 | merged |
+| [M6-TRANS-01](archive/M6/M6-TRANS-01.md) | Transformations | sonnet | full | none (M5) | merged |
+| [M6-DUEL-01](archive/M6/M6-DUEL-01.md) | Duels | sonnet | spot | PARTY-01, PVP-01 | merged |
+| [M6-ADMIN-05](archive/M6/M6-ADMIN-05.md) | Admin commands for social and summons | haiku | spot | CLAN-01, SUMMON-01 | merged |
+| [M6-E2E-01](archive/M6/M6-E2E-01.md) | End to end: party hunt, trade, clan, summon | sonnet | spot | PARTY-01, TRADE-01, CLAN-01, SUMMON-01, SHOP-01, WH-01 | merged |
+| [M6-RUN-01](archive/M6/M6-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | ready (refined when deps merge) |
+| [M6-SHOP-01](archive/M6/M6-SHOP-01.md) | NPC shops (buy, sell, refund) | sonnet | full | none | merged |
+| [M6-MULTISELL-01](archive/M6/M6-MULTISELL-01.md) | Multisell | sonnet | full | none | merged |
+| [M6-WH-01](archive/M6/M6-WH-01.md) | Warehouses and freight | sonnet | full | TRADE-01, CLAN-01 | merged |
+| [M6-ENCHANT-01](archive/M6/M6-ENCHANT-01.md) | Enchanting and attributes | sonnet | full | none | merged |
+| [M6-CRAFT-01](archive/M6/M6-CRAFT-01.md) | Crafting and manufacture shops | sonnet | full | STORE-01 | merged |
+| [M6-FRIEND-01](archive/M6/M6-FRIEND-01.md) | Friends and block list | haiku | spot | none | merged |
+| [M6-MAIL-01](archive/M6/M6-MAIL-01.md) | Mail | sonnet | full | TRADE-01 | merged |
+| [M6-AUGMENT-01](archive/M6/M6-AUGMENT-01.md) | Augmentation | sonnet | full | none | merged |
+| [M6-ACTION-01](archive/M6/M6-ACTION-01.md) | Player actions (sit, stand, walk, run, socials) | sonnet | spot | SUMMON-01, STORE-01 | merged |
+| [M6-SYNC-01](archive/M6/M6-SYNC-01.md) | Fresh shared rows for mail and the clan warehouse (D-39) | sonnet | full | MAIL-01, WH-01 | merged |
+| [M6-ENCHANT-02](archive/M6/M6-ENCHANT-02.md) | Skill enchanting, enchant options, //enchant | sonnet | full | ENCHANT-01 | merged |
+| [M6-FU-06](archive/M6/M6-FU-06.md) | Flood protectors | sonnet | full | none | merged |
+| [M6-FU-07](archive/M6/M6-FU-07.md) | Mounts: strider, wyvern, wolf | sonnet | full | none | merged |
+| [M6-FU-08](archive/M6/M6-FU-08.md) | Fishing | sonnet | full | none | merged |
+| [M6-FU-09](archive/M6/M6-FU-09.md) | M6 leftovers: offline block list, pet collar rule, offline pet decay, bot report | sonnet | full | none | merged |
+| [M6-FU-10](archive/M6/M6-FU-10.md) | Fisherman skill learning | sonnet | spot | FU-08 | merged |
+| [M6-FU-11](archive/M6/M6-FU-11.md) | Stale M6 markers: duel, summon and store checks, GM pet views, SkillCoolTime, talisman mana, PC cafe points | sonnet | full | none | merged |
+| [M6-FU-12](archive/M6/M6-FU-12.md) | Skill channelizer, weapon and option trigger skills | sonnet | full | none | merged |
+| [M6-FU-13](archive/M6/M6-FU-13.md) | Command channels | sonnet | full | none | merged |
+| [M6-FU-14](archive/M6/M6-FU-14.md) | Pet evolve and offline trade | sonnet | full | none | merged |
 
 ## M7: Castles, sieges, fortresses, clan halls (approved 2026-10-23)
 
-12 cards (draft: [M7/DRAFT.md](M7/DRAFT.md)). Design: [docs/design/m7-residences.md](../design/m7-residences.md). Owner decisions: Sieghardt runs the real sieges while both share the DB, Kain only GM-started test sieges with `SiegeDatabaseWrites` off (D-51); Territory War last in M7; order: residences, castle sieges and NPCs, fortresses and clan halls, manor, Territory War.
+12 cards (draft: [M7/DRAFT.md](archive/M7/DRAFT.md)). Design: [docs/design/m7-residences.md](../design/m7-residences.md). Owner decisions: Sieghardt runs the real sieges while both share the DB, Kain only GM-started test sieges with `SiegeDatabaseWrites` off (D-51); Territory War last in M7; order: residences, castle sieges and NPCs, fortresses and clan halls, manor, Territory War.
 
 ### Checkpoints
 | Checkpoint | You test |
@@ -336,27 +336,27 @@ Critical path: DB-01 → IDF-01 → GS-01 → GS-02 → GS-03 → CHAR-01 → EN
 ### Cards
 | Card | Title | Model | Review | Depends on | Status |
 |---|---|---|---|---|---|
-| [M7-GPROTO-10](M7/M7-GPROTO-10.md) | Siege, castle, fortress, manor, territory packets | haiku | spot | none | merged |
-| [M7-RES-01](M7/M7-RES-01.md) | Residences core: castles, fortresses, clan halls | opus | full | none | merged |
-| [M7-SIEGE-01](M7/M7-SIEGE-01.md) | Castle sieges | opus | full | RES-01, GPROTO-10 | merged |
-| [M7-SIEGE-02](M7/M7-SIEGE-02.md) | Door and wall damage, siege guard AIs | opus | full | SIEGE-01, FORT-01 | merged |
-| [M7-NPC-01](M7/M7-NPC-01.md) | Castle NPCs | sonnet | full | RES-01, SIEGE-01 | merged |
-| [M7-FORT-01](M7/M7-FORT-01.md) | Fortresses and fortress sieges | sonnet | full | RES-01, GPROTO-10 | merged |
-| [M7-CH-01](M7/M7-CH-01.md) | Clan halls and auctions | sonnet | full | RES-01 | merged |
-| [M7-CHSIEGE-01](M7/M7-CHSIEGE-01.md) | Conquerable clan hall sieges | sonnet | full | CH-01, SIEGE-01 | merged |
-| [M7-MANOR-01](M7/M7-MANOR-01.md) | The manor | sonnet | full | RES-01, GPROTO-10 | merged |
-| [M7-TW-01](M7/M7-TW-01.md) | Territory War | opus | full | SIEGE-01 | merged |
-| [M7-ADMIN-06](M7/M7-ADMIN-06.md) | Admin commands for residences | haiku | spot | SIEGE-01, FORT-01, CH-01 | merged |
-| [M7-FU-01](M7/M7-FU-01.md) | Hall siege guard AI, doorman hall branch | sonnet | spot | SIEGE-02, CHSIEGE-01, NPC-01 | merged |
-| [M7-FU-02](M7/M7-FU-02.md) | Fixes from the M7 end-to-end tests (Flag Display, function rows) | sonnet | full | E2E-01 | merged |
-| [M7-FU-03](M7/M7-FU-03.md) | Crest ids side by side, auction list re-read, residence door dialogs, siege trap zones | sonnet | full | none | merged |
-| [M7-ADMIN-08](M7/M7-ADMIN-08.md) | Admin: effects, menu, teleport, skills, char tools | haiku | spot | none | merged |
-| [M7-ADMIN-09](M7/M7-ADMIN-09.md) | Admin: edit char, spawn, admin page, items, doors, shops | haiku | spot | none | merged |
-| [M7-ADMIN-10](M7/M7-ADMIN-10.md) | Admin: punishments, kick, server control, announcements, petitions | sonnet | full | none | merged |
-| [M7-ADMIN-11](M7/M7-ADMIN-11.md) | Admin: geodata, regions, zones, zone build, path nodes | sonnet | spot | none | merged |
-| [M7-ADMIN-12](M7/M7-ADMIN-12.md) | Admin: the rest of edit char, spawn and the admin page | sonnet | full | ADMIN-09 | merged |
-| [M7-E2E-01](M7/M7-E2E-01.md) | End to end: castle siege, fortress siege, clan hall auction | sonnet | spot | SIEGE-01, SIEGE-02, FORT-01, CH-01 | merged |
-| [M7-RUN-01](M7/M7-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | merged |
+| [M7-GPROTO-10](archive/M7/M7-GPROTO-10.md) | Siege, castle, fortress, manor, territory packets | haiku | spot | none | merged |
+| [M7-RES-01](archive/M7/M7-RES-01.md) | Residences core: castles, fortresses, clan halls | opus | full | none | merged |
+| [M7-SIEGE-01](archive/M7/M7-SIEGE-01.md) | Castle sieges | opus | full | RES-01, GPROTO-10 | merged |
+| [M7-SIEGE-02](archive/M7/M7-SIEGE-02.md) | Door and wall damage, siege guard AIs | opus | full | SIEGE-01, FORT-01 | merged |
+| [M7-NPC-01](archive/M7/M7-NPC-01.md) | Castle NPCs | sonnet | full | RES-01, SIEGE-01 | merged |
+| [M7-FORT-01](archive/M7/M7-FORT-01.md) | Fortresses and fortress sieges | sonnet | full | RES-01, GPROTO-10 | merged |
+| [M7-CH-01](archive/M7/M7-CH-01.md) | Clan halls and auctions | sonnet | full | RES-01 | merged |
+| [M7-CHSIEGE-01](archive/M7/M7-CHSIEGE-01.md) | Conquerable clan hall sieges | sonnet | full | CH-01, SIEGE-01 | merged |
+| [M7-MANOR-01](archive/M7/M7-MANOR-01.md) | The manor | sonnet | full | RES-01, GPROTO-10 | merged |
+| [M7-TW-01](archive/M7/M7-TW-01.md) | Territory War | opus | full | SIEGE-01 | merged |
+| [M7-ADMIN-06](archive/M7/M7-ADMIN-06.md) | Admin commands for residences | haiku | spot | SIEGE-01, FORT-01, CH-01 | merged |
+| [M7-FU-01](archive/M7/M7-FU-01.md) | Hall siege guard AI, doorman hall branch | sonnet | spot | SIEGE-02, CHSIEGE-01, NPC-01 | merged |
+| [M7-FU-02](archive/M7/M7-FU-02.md) | Fixes from the M7 end-to-end tests (Flag Display, function rows) | sonnet | full | E2E-01 | merged |
+| [M7-FU-03](archive/M7/M7-FU-03.md) | Crest ids side by side, auction list re-read, residence door dialogs, siege trap zones | sonnet | full | none | merged |
+| [M7-ADMIN-08](archive/M7/M7-ADMIN-08.md) | Admin: effects, menu, teleport, skills, char tools | haiku | spot | none | merged |
+| [M7-ADMIN-09](archive/M7/M7-ADMIN-09.md) | Admin: edit char, spawn, admin page, items, doors, shops | haiku | spot | none | merged |
+| [M7-ADMIN-10](archive/M7/M7-ADMIN-10.md) | Admin: punishments, kick, server control, announcements, petitions | sonnet | full | none | merged |
+| [M7-ADMIN-11](archive/M7/M7-ADMIN-11.md) | Admin: geodata, regions, zones, zone build, path nodes | sonnet | spot | none | merged |
+| [M7-ADMIN-12](archive/M7/M7-ADMIN-12.md) | Admin: the rest of edit char, spawn and the admin page | sonnet | full | ADMIN-09 | merged |
+| [M7-E2E-01](archive/M7/M7-E2E-01.md) | End to end: castle siege, fortress siege, clan hall auction | sonnet | spot | SIEGE-01, SIEGE-02, FORT-01, CH-01 | merged |
+| [M7-RUN-01](archive/M7/M7-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | merged |
 
 ## Leftovers of M0..M7 (2026-10-27)
 
@@ -364,16 +364,16 @@ Gaps found after M7: client packets without a handler, old markers, admin words,
 
 | Card | Title | Model | Review | Depends on | Status |
 |---|---|---|---|---|---|
-| [L-01](L/L-01.md) | Hennas (dyes) and the symbol maker | sonnet | full | none | merged |
-| [L-02](L/L-02.md) | Client leftovers: macros, crystallize, wear, item links, key mapping, inventory order | sonnet | full | none | merged |
-| [L-03](L/L-03.md) | Party matching rooms, loot modification, nicknames, GM list | sonnet | full | none | merged |
-| [L-04](L/L-04.md) | Teleport bookmarks, secondary password, contact list, game guard | sonnet | full | none | merged |
-| [L-05](L/L-05.md) | Item auctions | sonnet | full | none | merged |
-| [L-06](L/L-06.md) | World leftovers: falling, water, teleport rules, cast abort, toggles | sonnet | full | none | merged |
-| [L-07](L/L-07.md) | Runtime geodata edits | opus | full | none | merged |
-| [L-08](L/L-08.md) | Admin rest: fight calculator, spawn reload, misc room, pools | sonnet | spot | none | merged |
-| [L-09](L/L-09.md) | Core config keys still unported | sonnet | spot | none | merged |
-| [L-10](L/L-10.md) | Logs, new-character access level, LS host names | haiku | spot | none | merged |
+| [L-01](archive/L/L-01.md) | Hennas (dyes) and the symbol maker | sonnet | full | none | merged |
+| [L-02](archive/L/L-02.md) | Client leftovers: macros, crystallize, wear, item links, key mapping, inventory order | sonnet | full | none | merged |
+| [L-03](archive/L/L-03.md) | Party matching rooms, loot modification, nicknames, GM list | sonnet | full | none | merged |
+| [L-04](archive/L/L-04.md) | Teleport bookmarks, secondary password, contact list, game guard | sonnet | full | none | merged |
+| [L-05](archive/L/L-05.md) | Item auctions | sonnet | full | none | merged |
+| [L-06](archive/L/L-06.md) | World leftovers: falling, water, teleport rules, cast abort, toggles | sonnet | full | none | merged |
+| [L-07](archive/L/L-07.md) | Runtime geodata edits | opus | full | none | merged |
+| [L-08](archive/L/L-08.md) | Admin rest: fight calculator, spawn reload, misc room, pools | sonnet | spot | none | merged |
+| [L-09](archive/L/L-09.md) | Core config keys still unported | sonnet | spot | none | merged |
+| [L-10](archive/L/L-10.md) | Logs, new-character access level, LS host names | haiku | spot | none | merged |
 
 ## M8: Olympiad, heroes, Seven Signs, instances and the big systems (approved 2026-10-27)
 
@@ -381,95 +381,95 @@ Owner: "start M8"; the draft's recommendations hold (D-53: Sieghardt keeps the g
 
 | Card | Title | Model | Review | Depends on | Status |
 |---|---|---|---|---|---|
-| [M8-GPROTO-11](M8/M8-GPROTO-11.md) | Olympiad, hero, Seven Signs, instance, vehicle, mini game packets | haiku | spot | none | merged |
-| [M8-INST-01](M8/M8-INST-01.md) | Instances | opus | full | GPROTO-11 | merged |
-| [M8-OLY-01](M8/M8-OLY-01.md) | Olympiad | opus | full | GPROTO-11, INST-01 | merged |
-| [M8-HERO-01](M8/M8-HERO-01.md) | Heroes | sonnet | full | OLY-01 | merged |
-| [M8-SS-01](M8/M8-SS-01.md) | Seven Signs | opus | full | GPROTO-11 | merged |
-| [M8-FEST-01](M8/M8-FEST-01.md) | Festival of Darkness and Dimensional Rift | sonnet | full | SS-01, INST-01 | merged |
-| [M8-BOSS-01](M8/M8-BOSS-01.md) | Grand and raid boss states, raid points | sonnet | full | none | merged |
-| [M8-VEHICLE-01](M8/M8-VEHICLE-01.md) | Boats and airships | sonnet | full | GPROTO-11 | merged |
-| [M8-CURSED-01](M8/M8-CURSED-01.md) | Cursed weapons | sonnet | full | none | merged |
-| [M8-GAMES-01](M8/M8-GAMES-01.md) | Mini games | sonnet | full | INST-01, GPROTO-11 | merged |
-| [M8-MISC-01](M8/M8-MISC-01.md) | Weddings, fishing championship, event drops, walking routes | sonnet | full | none | merged |
-| [M8-ADMIN-07](M8/M8-ADMIN-07.md) | Admin commands for M8 | haiku | spot | OLY-01, SS-01, INST-01, BOSS-01, CURSED-01 | merged |
-| [M8-E2E-01](M8/M8-E2E-01.md) | End to end: olympiad match, Seven Signs, instance | sonnet | full | OLY-01, SS-01, INST-01 | merged |
-| [M8-RUN-01](M8/M8-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | merged |
+| [M8-GPROTO-11](archive/M8/M8-GPROTO-11.md) | Olympiad, hero, Seven Signs, instance, vehicle, mini game packets | haiku | spot | none | merged |
+| [M8-INST-01](archive/M8/M8-INST-01.md) | Instances | opus | full | GPROTO-11 | merged |
+| [M8-OLY-01](archive/M8/M8-OLY-01.md) | Olympiad | opus | full | GPROTO-11, INST-01 | merged |
+| [M8-HERO-01](archive/M8/M8-HERO-01.md) | Heroes | sonnet | full | OLY-01 | merged |
+| [M8-SS-01](archive/M8/M8-SS-01.md) | Seven Signs | opus | full | GPROTO-11 | merged |
+| [M8-FEST-01](archive/M8/M8-FEST-01.md) | Festival of Darkness and Dimensional Rift | sonnet | full | SS-01, INST-01 | merged |
+| [M8-BOSS-01](archive/M8/M8-BOSS-01.md) | Grand and raid boss states, raid points | sonnet | full | none | merged |
+| [M8-VEHICLE-01](archive/M8/M8-VEHICLE-01.md) | Boats and airships | sonnet | full | GPROTO-11 | merged |
+| [M8-CURSED-01](archive/M8/M8-CURSED-01.md) | Cursed weapons | sonnet | full | none | merged |
+| [M8-GAMES-01](archive/M8/M8-GAMES-01.md) | Mini games | sonnet | full | INST-01, GPROTO-11 | merged |
+| [M8-MISC-01](archive/M8/M8-MISC-01.md) | Weddings, fishing championship, event drops, walking routes | sonnet | full | none | merged |
+| [M8-ADMIN-07](archive/M8/M8-ADMIN-07.md) | Admin commands for M8 | haiku | spot | OLY-01, SS-01, INST-01, BOSS-01, CURSED-01 | merged |
+| [M8-E2E-01](archive/M8/M8-E2E-01.md) | End to end: olympiad match, Seven Signs, instance | sonnet | full | OLY-01, SS-01, INST-01 | merged |
+| [M8-RUN-01](archive/M8/M8-RUN-01.md) | Runbook and milestone checks | opus | full | E2E-01 | merged |
 
 ## Scripts: quests, AIs, instances, class change and subclasses (approved 2026-10-27)
 
-Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances and events (customs stay for M9); D-54 for `global_variables`; engine, pilot and subclasses first, then batches in parallel.
+Owner: "Ja, starten" on `docs/tasks/archive/S/DRAFT.md`: all 505 quests, AIs, instances and events (customs stay for M9); D-54 for `global_variables`; engine, pilot and subclasses first, then batches in parallel.
 
 | Card | Title | Model | Review | Depends on | Status |
 |---|---|---|---|---|---|
-| [S-API-01](S/S-API-01.md) | Script engine | opus | full | none | merged |
-| [S-SUB-01](S/S-SUB-01.md) | Subclasses and the class switch | opus | full | none | merged |
-| [S-HAND-01](S/S-HAND-01.md) | Shift-click GM windows and the community board | sonnet | full | none | merged |
-| [S-HAND-02](S/S-HAND-02.md) | The handlers S-HAND-01 left | sonnet | full | HAND-01 | merged |
-| [S-API-02](S/S-API-02.md) | Move the built-ins onto the engine | sonnet | full | API-01 | merged |
-| [S-API-03](S/S-API-03.md) | Engine follow-ups | sonnet | full | API-01 | merged |
-| [S-API-04](S/S-API-04.md) | Engine: global variable re-read, per-object listeners, the remaining events | sonnet | full | API-03 | merged |
-| [S-HAND-03](S/S-HAND-03.md) | Lottery, NPC view and drop search, decoys and traps, spawn protection | sonnet | full | HAND-02 | merged |
-| [S-PILOT-01](S/S-PILOT-01.md) | Ten reference quests and the porting guide | opus | full | API-01 | merged |
-| [S-VM-01](S/S-VM-01.md) | Class change, ClassMaster, certifications, noble quest | opus | full | API-01, SUB-01 | merged |
-| [S-AI-01](S/S-AI-01.md) | Gracia AIs | sonnet | spot | API-01 | merged |
-| [S-AI-02](S/S-AI-02.md) | Hellbound AIs | sonnet | spot | API-01 | merged |
-| [S-AI-03](S/S-AI-03.md) | Area AIs part 1 | sonnet | spot | API-01 | merged |
-| [S-AI-04](S/S-AI-04.md) | Area AIs part 2 | sonnet | spot | API-01 | merged |
-| [S-AI-05](S/S-AI-05.md) | Other AIs part 1 (A..M) | sonnet | spot | API-01 | merged |
-| [S-AI-06](S/S-AI-06.md) | Other AIs part 2 (N..Z) | sonnet | spot | API-01 | merged |
-| [S-AI-07](S/S-AI-07.md) | Gracia instances and the seed managers | opus | full | AI-01 | merged |
-| [S-HAND-04](S/S-HAND-04.md) | Decoys, traps and the drop search board | sonnet | full | HAND-03 | merged |
-| [S-DATA-01](S/S-DATA-01.md) | Category data, ClassMaster.xml, transformation tree, small script helpers | sonnet | full | VM-01 | merged |
-| [S-API-05](S/S-API-05.md) | Engine gaps the script batches found (soul crystals, traps, tamed beasts, ...) | opus | full | Q batches | merged |
-| [S-AI-08](S/S-AI-08.md) | The AI scripts the AI batches left | sonnet | full | AI batches | merged |
-| [S-BOSS-01](S/S-BOSS-01.md) | Antharas, Valakas, Baium | opus | full | API-01 | merged |
-| [S-BOSS-02](S/S-BOSS-02.md) | Beleth, Frintezza, Core, Orfen, Queen Ant | sonnet | full | API-01 | merged |
-| [S-BOSS-03](S/S-BOSS-03.md) | Sailren, Seer Ugoros, Dr. Chaos, Anais, Queen Shyeed | sonnet | full | API-01 | merged |
-| [S-INST-01](S/S-INST-01.md) | Kamaloka and Pailaka instances | sonnet | full | API-01 | merged |
-| [S-INST-02](S/S-INST-02.md) | Crystal Caverns, Dark Cloud Mansion, Chambers of Delusion | sonnet | full | API-01 | merged |
-| [S-INST-03](S/S-INST-03.md) | Ice Queen, Nornil, Jinia and the small instances | sonnet | full | API-01 | merged |
-| [S-INST-04](S/S-INST-04.md) | Seven Signs instances | sonnet | full | API-01 | merged |
-| [S-TW-01](S/S-TW-01.md) | Territory War quests | sonnet | full | API-01 | merged |
-| [S-EVENT-01](S/S-EVENT-01.md) | Seasonal events | sonnet | full | API-01 | merged |
-| [S-Q-01](S/S-Q-01.md) | Quests Q00002..Q00033 (32 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-02](S/S-Q-02.md) | Quests Q00034..Q00064 (24 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-03](S/S-Q-03.md) | Quests Q00065..Q00108 (43 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-04](S/S-Q-04.md) | Quests Q00109..Q00128 (19 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-05](S/S-Q-05.md) | Quests Q00129..Q00168 (35 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-06](S/S-Q-06.md) | Quests Q00169..Q00211 (27 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-07](S/S-Q-07.md) | Quests Q00212..Q00221 (10 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-08](S/S-Q-08.md) | Quests Q00222..Q00232 (11 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-09](S/S-Q-09.md) | Quests Q00233..Q00260 (21 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-10](S/S-Q-10.md) | Quests Q00261..Q00309 (40 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-11](S/S-Q-11.md) | Quests Q00310..Q00335 (18 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-12](S/S-Q-12.md) | Quests Q00336..Q00352 (13 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-13](S/S-Q-13.md) | Quests Q00354..Q00385 (29 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-14](S/S-Q-14.md) | Quests Q00386..Q00416 (17 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-15](S/S-Q-15.md) | Quests Q00417..Q00458 (18 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-16](S/S-Q-16.md) | Quests Q00461..Q00615 (29 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-17](S/S-Q-17.md) | Quests Q00616..Q00650 (34 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-18](S/S-Q-18.md) | Quests Q00651..Q00713 (30 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-19](S/S-Q-19.md) | Quests Q00714..Q10285 (32 quests) | haiku | spot | PILOT-01 | merged |
-| [S-Q-20](S/S-Q-20.md) | Quests Q10286..Q10505 (16 quests) | haiku | spot | PILOT-01 | merged |
-| [S-QR-01](S/S-QR-01.md) | Remaining quests Q00022..Q00064 (7) | sonnet | spot | Q batches | merged |
-| [S-QR-02](S/S-QR-02.md) | Remaining quests Q00065..Q00120 (7) | sonnet | spot | Q batches | merged |
-| [S-QR-03](S/S-QR-03.md) | Remaining quests Q00123..Q00139 (13) | sonnet | spot | Q batches | merged |
-| [S-QR-04](S/S-QR-04.md) | Remaining quests Q00140..Q00194 (14) | sonnet | spot | Q batches | merged |
-| [S-QR-05](S/S-QR-05.md) | Remaining quests Q00195..Q00218 (8) | sonnet | spot | Q batches | merged |
-| [S-QR-06](S/S-QR-06.md) | Remaining quests Q00219..Q00230 (6) | sonnet | spot | Q batches | merged |
-| [S-QR-07](S/S-QR-07.md) | Remaining quests Q00232..Q00241 (5) | sonnet | spot | Q batches | merged |
-| [S-QR-08](S/S-QR-08.md) | Remaining quests Q00242..Q00335 (5) | sonnet | spot | Q batches | merged |
-| [S-QR-09](S/S-QR-09.md) | Remaining quests Q00336..Q00365 (6) | sonnet | spot | Q batches | merged |
-| [S-QR-10](S/S-QR-10.md) | Remaining quests Q00367..Q00417 (8) | sonnet | spot | Q batches | merged |
-| [S-QR-11](S/S-QR-11.md) | Remaining quests Q00419..Q00511 (7) | sonnet | spot | Q batches | merged |
-| [S-QR-12](S/S-QR-12.md) | Remaining quests Q00551..Q00692 (10) | sonnet | spot | Q batches | merged |
-| [S-QR-13](S/S-QR-13.md) | Remaining quests Q00693..Q10270 (13) | sonnet | spot | Q batches | merged |
-| [S-QR-14](S/S-QR-14.md) | Remaining quests Q10272..Q10285 (4) | sonnet | spot | Q batches | merged |
-| [S-QR-15](S/S-QR-15.md) | Leftover quests of S-QR-02 (5) | sonnet | spot | Q batches | merged |
-| [S-LEFT-01](S/S-LEFT-01.md) | Script milestone stragglers | sonnet | full | API-05 | merged |
-| [S-ADMIN-08](S/S-ADMIN-08.md) | Admin words of the script systems | sonnet | spot | API-05 | merged |
-| [S-E2E-01](S/S-E2E-01.md) | End to end | sonnet | full | Q, VM-01, BOSS-01, INST-01 | merged |
+| [S-API-01](archive/S/S-API-01.md) | Script engine | opus | full | none | merged |
+| [S-SUB-01](archive/S/S-SUB-01.md) | Subclasses and the class switch | opus | full | none | merged |
+| [S-HAND-01](archive/S/S-HAND-01.md) | Shift-click GM windows and the community board | sonnet | full | none | merged |
+| [S-HAND-02](archive/S/S-HAND-02.md) | The handlers S-HAND-01 left | sonnet | full | HAND-01 | merged |
+| [S-API-02](archive/S/S-API-02.md) | Move the built-ins onto the engine | sonnet | full | API-01 | merged |
+| [S-API-03](archive/S/S-API-03.md) | Engine follow-ups | sonnet | full | API-01 | merged |
+| [S-API-04](archive/S/S-API-04.md) | Engine: global variable re-read, per-object listeners, the remaining events | sonnet | full | API-03 | merged |
+| [S-HAND-03](archive/S/S-HAND-03.md) | Lottery, NPC view and drop search, decoys and traps, spawn protection | sonnet | full | HAND-02 | merged |
+| [S-PILOT-01](archive/S/S-PILOT-01.md) | Ten reference quests and the porting guide | opus | full | API-01 | merged |
+| [S-VM-01](archive/S/S-VM-01.md) | Class change, ClassMaster, certifications, noble quest | opus | full | API-01, SUB-01 | merged |
+| [S-AI-01](archive/S/S-AI-01.md) | Gracia AIs | sonnet | spot | API-01 | merged |
+| [S-AI-02](archive/S/S-AI-02.md) | Hellbound AIs | sonnet | spot | API-01 | merged |
+| [S-AI-03](archive/S/S-AI-03.md) | Area AIs part 1 | sonnet | spot | API-01 | merged |
+| [S-AI-04](archive/S/S-AI-04.md) | Area AIs part 2 | sonnet | spot | API-01 | merged |
+| [S-AI-05](archive/S/S-AI-05.md) | Other AIs part 1 (A..M) | sonnet | spot | API-01 | merged |
+| [S-AI-06](archive/S/S-AI-06.md) | Other AIs part 2 (N..Z) | sonnet | spot | API-01 | merged |
+| [S-AI-07](archive/S/S-AI-07.md) | Gracia instances and the seed managers | opus | full | AI-01 | merged |
+| [S-HAND-04](archive/S/S-HAND-04.md) | Decoys, traps and the drop search board | sonnet | full | HAND-03 | merged |
+| [S-DATA-01](archive/S/S-DATA-01.md) | Category data, ClassMaster.xml, transformation tree, small script helpers | sonnet | full | VM-01 | merged |
+| [S-API-05](archive/S/S-API-05.md) | Engine gaps the script batches found (soul crystals, traps, tamed beasts, ...) | opus | full | Q batches | merged |
+| [S-AI-08](archive/S/S-AI-08.md) | The AI scripts the AI batches left | sonnet | full | AI batches | merged |
+| [S-BOSS-01](archive/S/S-BOSS-01.md) | Antharas, Valakas, Baium | opus | full | API-01 | merged |
+| [S-BOSS-02](archive/S/S-BOSS-02.md) | Beleth, Frintezza, Core, Orfen, Queen Ant | sonnet | full | API-01 | merged |
+| [S-BOSS-03](archive/S/S-BOSS-03.md) | Sailren, Seer Ugoros, Dr. Chaos, Anais, Queen Shyeed | sonnet | full | API-01 | merged |
+| [S-INST-01](archive/S/S-INST-01.md) | Kamaloka and Pailaka instances | sonnet | full | API-01 | merged |
+| [S-INST-02](archive/S/S-INST-02.md) | Crystal Caverns, Dark Cloud Mansion, Chambers of Delusion | sonnet | full | API-01 | merged |
+| [S-INST-03](archive/S/S-INST-03.md) | Ice Queen, Nornil, Jinia and the small instances | sonnet | full | API-01 | merged |
+| [S-INST-04](archive/S/S-INST-04.md) | Seven Signs instances | sonnet | full | API-01 | merged |
+| [S-TW-01](archive/S/S-TW-01.md) | Territory War quests | sonnet | full | API-01 | merged |
+| [S-EVENT-01](archive/S/S-EVENT-01.md) | Seasonal events | sonnet | full | API-01 | merged |
+| [S-Q-01](archive/S/S-Q-01.md) | Quests Q00002..Q00033 (32 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-02](archive/S/S-Q-02.md) | Quests Q00034..Q00064 (24 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-03](archive/S/S-Q-03.md) | Quests Q00065..Q00108 (43 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-04](archive/S/S-Q-04.md) | Quests Q00109..Q00128 (19 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-05](archive/S/S-Q-05.md) | Quests Q00129..Q00168 (35 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-06](archive/S/S-Q-06.md) | Quests Q00169..Q00211 (27 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-07](archive/S/S-Q-07.md) | Quests Q00212..Q00221 (10 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-08](archive/S/S-Q-08.md) | Quests Q00222..Q00232 (11 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-09](archive/S/S-Q-09.md) | Quests Q00233..Q00260 (21 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-10](archive/S/S-Q-10.md) | Quests Q00261..Q00309 (40 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-11](archive/S/S-Q-11.md) | Quests Q00310..Q00335 (18 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-12](archive/S/S-Q-12.md) | Quests Q00336..Q00352 (13 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-13](archive/S/S-Q-13.md) | Quests Q00354..Q00385 (29 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-14](archive/S/S-Q-14.md) | Quests Q00386..Q00416 (17 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-15](archive/S/S-Q-15.md) | Quests Q00417..Q00458 (18 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-16](archive/S/S-Q-16.md) | Quests Q00461..Q00615 (29 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-17](archive/S/S-Q-17.md) | Quests Q00616..Q00650 (34 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-18](archive/S/S-Q-18.md) | Quests Q00651..Q00713 (30 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-19](archive/S/S-Q-19.md) | Quests Q00714..Q10285 (32 quests) | haiku | spot | PILOT-01 | merged |
+| [S-Q-20](archive/S/S-Q-20.md) | Quests Q10286..Q10505 (16 quests) | haiku | spot | PILOT-01 | merged |
+| [S-QR-01](archive/S/S-QR-01.md) | Remaining quests Q00022..Q00064 (7) | sonnet | spot | Q batches | merged |
+| [S-QR-02](archive/S/S-QR-02.md) | Remaining quests Q00065..Q00120 (7) | sonnet | spot | Q batches | merged |
+| [S-QR-03](archive/S/S-QR-03.md) | Remaining quests Q00123..Q00139 (13) | sonnet | spot | Q batches | merged |
+| [S-QR-04](archive/S/S-QR-04.md) | Remaining quests Q00140..Q00194 (14) | sonnet | spot | Q batches | merged |
+| [S-QR-05](archive/S/S-QR-05.md) | Remaining quests Q00195..Q00218 (8) | sonnet | spot | Q batches | merged |
+| [S-QR-06](archive/S/S-QR-06.md) | Remaining quests Q00219..Q00230 (6) | sonnet | spot | Q batches | merged |
+| [S-QR-07](archive/S/S-QR-07.md) | Remaining quests Q00232..Q00241 (5) | sonnet | spot | Q batches | merged |
+| [S-QR-08](archive/S/S-QR-08.md) | Remaining quests Q00242..Q00335 (5) | sonnet | spot | Q batches | merged |
+| [S-QR-09](archive/S/S-QR-09.md) | Remaining quests Q00336..Q00365 (6) | sonnet | spot | Q batches | merged |
+| [S-QR-10](archive/S/S-QR-10.md) | Remaining quests Q00367..Q00417 (8) | sonnet | spot | Q batches | merged |
+| [S-QR-11](archive/S/S-QR-11.md) | Remaining quests Q00419..Q00511 (7) | sonnet | spot | Q batches | merged |
+| [S-QR-12](archive/S/S-QR-12.md) | Remaining quests Q00551..Q00692 (10) | sonnet | spot | Q batches | merged |
+| [S-QR-13](archive/S/S-QR-13.md) | Remaining quests Q00693..Q10270 (13) | sonnet | spot | Q batches | merged |
+| [S-QR-14](archive/S/S-QR-14.md) | Remaining quests Q10272..Q10285 (4) | sonnet | spot | Q batches | merged |
+| [S-QR-15](archive/S/S-QR-15.md) | Leftover quests of S-QR-02 (5) | sonnet | spot | Q batches | merged |
+| [S-LEFT-01](archive/S/S-LEFT-01.md) | Script milestone stragglers | sonnet | full | API-05 | merged |
+| [S-ADMIN-08](archive/S/S-ADMIN-08.md) | Admin words of the script systems | sonnet | spot | API-05 | merged |
+| [S-E2E-01](archive/S/S-E2E-01.md) | End to end | sonnet | full | Q, VM-01, BOSS-01, INST-01 | merged |
 | S-RUN-01 | Runbook and milestone checks (docs/runbooks/scripts-test.md) | opus | review | E2E-01 | merged |
 
 ## Tools: no L2JMobius needed (2026-10-31)
@@ -484,34 +484,34 @@ Owner: "Ja, starten" on `docs/tasks/S/DRAFT.md`: all 505 quests, AIs, instances 
 
 | Card | Title | Model | Review | Depends | Status |
 |---|---|---|---|---|---|
-| [G-01](G/G-01.md) | The GUI starts the supervisor and connects by itself | sonnet | full | — | merged |
-| [G-02](G/G-02.md) | Setup wizard and built-in database installer | sonnet | full | G-01 | merged |
-| [G-03](G/G-03.md) | Game admin: players, punishments, announcements, console, shutdown | sonnet | full | — | merged |
-| [G-04](G/G-04.md) | Accounts: search, create, password, access level, ban | sonnet | full | — | merged |
-| [G-06](G/G-06.md) | GUI shows why a server stopped | sonnet | spot | — | merged |
-| [G-07](G/G-07.md) | Config editor 2: topics, sliders, switches | sonnet | full | G-05 | merged |
-| [G-08](G/G-08.md) | XML configs as forms | sonnet | full | G-05 | merged |
-| [G-09](G/G-09.md) | Dynamic exp rates, XML entities, one config view | sonnet | spot | G-07, G-08 | merged |
-| [G-05](G/G-05.md) | Config editor | sonnet | spot | — | merged |
+| [G-01](archive/G/G-01.md) | The GUI starts the supervisor and connects by itself | sonnet | full | — | merged |
+| [G-02](archive/G/G-02.md) | Setup wizard and built-in database installer | sonnet | full | G-01 | merged |
+| [G-03](archive/G/G-03.md) | Game admin: players, punishments, announcements, console, shutdown | sonnet | full | — | merged |
+| [G-04](archive/G/G-04.md) | Accounts: search, create, password, access level, ban | sonnet | full | — | merged |
+| [G-06](archive/G/G-06.md) | GUI shows why a server stopped | sonnet | spot | — | merged |
+| [G-07](archive/G/G-07.md) | Config editor 2: topics, sliders, switches | sonnet | full | G-05 | merged |
+| [G-08](archive/G/G-08.md) | XML configs as forms | sonnet | full | G-05 | merged |
+| [G-09](archive/G/G-09.md) | Dynamic exp rates, XML entities, one config view | sonnet | spot | G-07, G-08 | merged |
+| [G-05](archive/G/G-05.md) | Config editor | sonnet | spot | — | merged |
 
 ## M9: customs, hardening, switch from Java (approved 2026-11-02)
 
 | Card | Title | Model | Review | Depends | Status |
 |---|---|---|---|---|---|
-| [M9-C01](M9/M9-C01.md) | Customs: monsters, spawns, shops | sonnet | spot | — | merged |
-| [M9-C02](M9/M9-C02.md) | Customs: premium, offline play, auto play | sonnet | spot | — | merged |
-| [M9-C03](M9/M9-C03.md) | Customs: buffers and the community board | sonnet | spot | — | merged |
-| [M9-C04](M9/M9-C04.md) | Customs: faction system and fake players | sonnet | spot | — | merged |
-| [M9-C05](M9/M9-C05.md) | Customs: PvP features | sonnet | spot | — | merged |
-| [M9-C06](M9/M9-C06.md) | Customs: player start, chat, accounts, misc | sonnet | spot | — | merged |
-| [M9-C07](M9/M9-C07.md) | Custom scripts and custom events | sonnet | spot | — | merged |
-| [M9-H01](M9/M9-H01.md) | Automatic database backups | sonnet | full | — | merged |
-| [M9-H02](M9/M9-H02.md) | Load test tool (2000 players) | sonnet | spot | — | merged |
-| [M9-L01](M9/M9-L01.md) | M9 leftovers | sonnet | spot | C01..C06 | merged |
-| [M9-L02](M9/M9-L02.md) | Multilingual support, part 2 | sonnet | full | M9-L01 | merged |
-| [M9-L03](M9/M9-L03.md) | Codegen list types for the config | sonnet | spot | M9-L01 | merged |
-| [M9-L04](M9/M9-L04.md) | Missing custom tests and a flaky test | sonnet | spot | M9-L01 | merged |
-| [M9-S01](M9/M9-S01.md) | Switch from Java to Rust | sonnet | full | M9-H01, G-02 | merged |
+| [M9-C01](archive/M9/M9-C01.md) | Customs: monsters, spawns, shops | sonnet | spot | — | merged |
+| [M9-C02](archive/M9/M9-C02.md) | Customs: premium, offline play, auto play | sonnet | spot | — | merged |
+| [M9-C03](archive/M9/M9-C03.md) | Customs: buffers and the community board | sonnet | spot | — | merged |
+| [M9-C04](archive/M9/M9-C04.md) | Customs: faction system and fake players | sonnet | spot | — | merged |
+| [M9-C05](archive/M9/M9-C05.md) | Customs: PvP features | sonnet | spot | — | merged |
+| [M9-C06](archive/M9/M9-C06.md) | Customs: player start, chat, accounts, misc | sonnet | spot | — | merged |
+| [M9-C07](archive/M9/M9-C07.md) | Custom scripts and custom events | sonnet | spot | — | merged |
+| [M9-H01](archive/M9/M9-H01.md) | Automatic database backups | sonnet | full | — | merged |
+| [M9-H02](archive/M9/M9-H02.md) | Load test tool (2000 players) | sonnet | spot | — | merged |
+| [M9-L01](archive/M9/M9-L01.md) | M9 leftovers | sonnet | spot | C01..C06 | merged |
+| [M9-L02](archive/M9/M9-L02.md) | Multilingual support, part 2 | sonnet | full | M9-L01 | merged |
+| [M9-L03](archive/M9/M9-L03.md) | Codegen list types for the config | sonnet | spot | M9-L01 | merged |
+| [M9-L04](archive/M9/M9-L04.md) | Missing custom tests and a flaky test | sonnet | spot | M9-L01 | merged |
+| [M9-S01](archive/M9/M9-S01.md) | Switch from Java to Rust | sonnet | full | M9-H01, G-02 | merged |
 
 ## Rust only (D-58, 2026-11-05)
 

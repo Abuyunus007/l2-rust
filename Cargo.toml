@@ -1,5 +1,27 @@
 [workspace]
-members = ["crates/*"]
+members = [
+    "crates/game-server",
+    "crates/l2-admin-api",
+    "crates/l2-admin-gui",
+    "crates/l2-config",
+    "crates/l2-crypto",
+    "crates/l2-data",
+    "crates/l2-db",
+    "crates/l2-db-installer",
+    "crates/l2-geo",
+    "crates/l2-geotool",
+    "crates/l2-loadtest",
+    "crates/l2-net",
+    "crates/l2-protocol-game",
+    "crates/l2-protocol-login",
+    "crates/l2-proxy",
+    "crates/l2-scripts",
+    "crates/l2-supervisor",
+    "crates/l2-testkit",
+    "crates/l2-util",
+    "crates/l2-world",
+    "crates/login-server",
+]
 resolver = "3"
 
 [workspace.package]

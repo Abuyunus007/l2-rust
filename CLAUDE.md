@@ -1,6 +1,6 @@
-# l2-rust: port of L2JMobius High Five 2.6 to Rust
+# l2-rust: Lineage 2 High Five server in Rust
 
-A Lineage 2 H5 private server (login + game server + admin tools) ported from Java to Rust.
+A Lineage 2 H5 private server (login + game server + admin tools) in Rust.
 **Existing behaviour is the spec (D-58):** the Rust code, `dist/` and the tests in `crates/l2-testkit/vectors/` define what the server does.
 
 ## Read first (every agent, every session)
@@ -29,16 +29,15 @@ A task is done only when all three of fmt, clippy and test pass locally. CI runs
 - `l2-world` must not depend on tokio, sqlx or sockets. No DB calls or awaiting inside a tick.
 - Scheduling = the world's timer wheel. Never spawn threads or tokio tasks from game logic.
 - Randomness only via the world's RNG (seedable). Never `rand::thread_rng()` in game logic.
-- Don't recreate the Java class hierarchy. Shared data structs + kind enums + small traits.
-- Same DB schema, same `.ini` keys and defaults as Java. Don't rename or "improve" them.
+- No class hierarchies. Shared data structs + kind enums + small traits.
+- The DB schema and the `.ini` keys and defaults are a fixed format. Don't rename or "improve" them.
 - `src/generated/` folders are normal code now (D-58): edit them by hand. `dist/` is our own data too.
 
 ## Code conventions
 - Rust 2024 edition, stable toolchain. Little-endian everywhere in the protocol.
 - Errors: `thiserror` in libraries, `anyhow` only in binaries. No `unwrap()`/`expect()` on data from the network, files or the DB. Tests may unwrap.
 - Logging: `tracing` (`info!`, `warn!`, ...). Never `println!` outside CLI tools.
-- Names: Rust style (`snake_case`), but keep Java names recognizable (`RequestAuthLogin` → `RequestAuthLogin` struct, `SystemMessageId::YOU_HAVE_BEEN_DISCONNECTED...` stays as is).
-- Add a short `// Java: path/To/Class.java` comment at the top of a module or type ported from Java, so reviewers can compare.
+- Names: Rust style (`snake_case`); packet and message names keep their protocol names (`RequestAuthLogin` struct, `SystemMessageId::YOU_HAVE_BEEN_DISCONNECTED...`).
 - Comments explain *why* (L2 quirks, retail behaviour), not what the code does.
 - Cross-platform: no OS-specific APIs, `std::path` for paths, files with LF line endings.
 - New dependencies: only ones the card allows or `docs/DECISIONS.md` names. Ask the orchestrator otherwise.
@@ -48,16 +47,16 @@ A task is done only when all three of fmt, clippy and test pass locally. CI runs
 - Every packet struct gets a round-trip test (decode(encode(x)) == x) plus a vector/capture test when one exists.
 - Don't weaken, skip or delete a failing test to make a card pass. Report it instead.
 - Integration test files (`tests/*.rs`) start with `#![allow(clippy::unwrap_used, clippy::expect_used)]`. Clippy's test exemption only covers `#[test]` functions, not helpers.
-- Tests that need the reference folders (`C:\l2-rust\l2jmobius`, geodata) or a database skip with a printed message when they're missing. CI has neither, except the MariaDB service on Linux.
+- Tests that need geodata or a database skip with a printed message when they're missing. CI has neither, except the MariaDB service on Linux.
 
 ## Working on a task card (worker agents)
 1. You work in your own git worktree/branch. Touch only the files your card lists (plus new files in the paths it names).
-2. Port behaviour faithfully from the Java files named in the card. If the Java code looks buggy, port it as is and add a `// NOTE(java-quirk):` comment. Don't fix it silently.
+2. Keep existing behaviour unless the card says to change it. If something looks buggy, report it; don't fix it silently.
 3. Run fmt, clippy and test with `CARGO_INCREMENTAL=0` set (the owner's disk is shared by several worktrees; the incremental cache costs gigabytes). Commit on your branch with a message `<card-id>: <summary>`.
 4. Final report (your last message): what you did, files changed, test results (copy the summary lines), anything you couldn't do, and every guess you made.
-5. **When stuck** (unclear Java behaviour, the card contradicts DECISIONS, a needed change is outside your files, tests you can't make pass): stop and report. Don't improvise architecture.
+5. **When stuck** (unclear behaviour, the card contradicts DECISIONS, a needed change is outside your files, tests you can't make pass): stop and report. Don't improvise architecture.
 
 ## Git
 - `main` is protected by the review: only the orchestrator merges.
 - **The repo is public.** Never commit personal data, real account names, IPs, passwords or emails.
-- Never commit anything from the reference folders, geodata, captures with real account data, or secrets (`*.local.ini`, `.env`).
+- Never commit geodata, captures with real account data, or secrets (`*.local.ini`, `.env`).
