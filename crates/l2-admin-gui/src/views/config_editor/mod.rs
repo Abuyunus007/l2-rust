@@ -6,13 +6,11 @@
 //! endings stay. [`FileState`] holds the rules and has no egui in it, so it is tested directly.
 //! The view only draws it.
 //!
-//! - `mod.rs`: the file state and the window (search, save, the "Changed settings" list, the
-//!   by-file layout of G-05).
-//! - `topic_view.rs`: the by-topic layout (G-07), built on `l2_config::topics`.
+//! - `mod.rs`: the file state and the window: a drop-down picks one file, and all its settings
+//!   are listed below it (filter, save, the "Changed settings" list).
 //! - `controls.rs`: which control a key gets (switch, slider, drop-down, ...) and how it is drawn.
 
 mod controls;
-mod topic_view;
 
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -22,7 +20,6 @@ use l2_config::ini_edit::{IniDoc, IniEntry, apply_changes, is_secret, mask_value
 use l2_config::ranges::is_list_key;
 
 use self::controls::draw_entry;
-use self::topic_view::{Bucket, TopicIndex};
 use crate::app::AppCtx;
 use crate::views::View;
 use crate::views::setup_core::Layout;
@@ -387,26 +384,13 @@ pub fn restart_notes(saved: &[(Side, String)]) -> Vec<String> {
     notes
 }
 
-/// How the settings are organised on screen.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub enum Mode {
-    /// Left: topics (a topic groups settings of several files). The default.
-    Topics,
-    /// Left: the files, as in G-05.
-    Files,
-}
-
 pub struct ConfigEditorView {
     run_dir: String,
     /// The folder of the last load: a new one in the field loads when the field is left.
     loaded_dir: String,
     files: Vec<FileState>,
-    index: TopicIndex,
-    mode: Mode,
-    /// The file shown in [`Mode::Files`].
+    /// The file chosen in the drop-down.
     selected: usize,
-    /// The topic shown in [`Mode::Topics`]; `None` = the first one.
-    topic: Option<Bucket>,
     search: String,
     loaded: bool,
     errors: Vec<String>,
@@ -428,10 +412,7 @@ impl ConfigEditorView {
             run_dir: run_dir.to_owned(),
             loaded_dir: String::new(),
             files: Vec::new(),
-            index: TopicIndex::default(),
-            mode: Mode::Topics,
             selected: 0,
-            topic: None,
             search: String::new(),
             loaded: false,
             errors: Vec::new(),
@@ -460,11 +441,8 @@ impl ConfigEditorView {
         self.loaded_dir = self.run_dir.clone();
         self.selected = keep
             .and_then(|(s, r)| self.files.iter().position(|f| f.side == s && f.rel == r))
+            .or_else(|| self.files.iter().position(|f| f.side == Side::Game))
             .unwrap_or(0);
-        self.index = TopicIndex::build(&self.files);
-        if self.topic.as_ref().is_some_and(|t| !self.index.has(t)) {
-            self.topic = None;
-        }
         self.loaded = true;
     }
 
@@ -606,18 +584,17 @@ impl View for ConfigEditorView {
                 self.reload();
                 self.notes.clear();
             }
-            ui.separator();
-            ui.label("Show:");
-            ui.selectable_value(&mut self.mode, Mode::Topics, "By topic");
-            ui.selectable_value(&mut self.mode, Mode::Files, "By file");
         });
         let dirty = self.dirty_files();
         ui.horizontal_wrapped(|ui| {
-            ui.label("Search:");
+            ui.label("File:");
+            self.file_choice(ui);
+            ui.separator();
+            ui.label("Filter:");
             let search = ui.add(
                 egui::TextEdit::singleline(&mut self.search)
-                    .hint_text("key, comment, file or topic (Ctrl+F)")
-                    .desired_width(300.0),
+                    .hint_text("key or comment (Ctrl+F)")
+                    .desired_width(240.0),
             );
             if ctrl_f {
                 search.request_focus();
@@ -657,70 +634,56 @@ impl View for ConfigEditorView {
         }
 
         let query = self.search.trim().to_lowercase();
-        match self.mode {
-            Mode::Topics => self.topics_body(ui, &query),
-            Mode::Files => self.files_body(ui, &query),
-        }
+        egui::ScrollArea::vertical()
+            .id_salt("cfg_keys")
+            .auto_shrink([false, false])
+            .show(ui, |ui| {
+                if let Some(file) = self.files.get_mut(self.selected) {
+                    draw_file(ui, file, &query);
+                }
+            });
     }
 }
 
 impl ConfigEditorView {
-    /// The G-05 layout: files on the left, the keys of the selected file (or of all files that
-    /// match the search) on the right.
-    fn files_body(&mut self, ui: &mut egui::Ui, query: &str) {
-        let height = ui.available_height();
-        ui.horizontal_top(|ui| {
-            ui.allocate_ui(egui::vec2(230.0, height), |ui| {
-                egui::ScrollArea::vertical()
-                    .id_salt("cfg_files")
-                    .auto_shrink([false, false])
-                    .show(ui, |ui| self.file_list(ui, query));
-            });
-            ui.separator();
-            egui::ScrollArea::vertical()
-                .id_salt("cfg_keys")
-                .auto_shrink([false, false])
-                .show(ui, |ui| {
-                    if query.is_empty() {
-                        if let Some(file) = self.files.get_mut(self.selected) {
-                            draw_file(ui, file, query, false);
-                        }
-                    } else {
-                        for file in &mut self.files {
-                            draw_file(ui, file, query, true);
-                        }
+    /// The drop-down of all `.ini` files, by server; `*` marks a file with unsaved edits.
+    fn file_choice(&mut self, ui: &mut egui::Ui) {
+        let title = self.files.get(self.selected).map_or_else(String::new, file_title);
+        egui::ComboBox::from_id_salt("cfg_file")
+            .selected_text(title)
+            .width(320.0)
+            .height(600.0)
+            .show_ui(ui, |ui| {
+                let mut last_side = None;
+                for (i, file) in self.files.iter().enumerate() {
+                    if last_side != Some(file.side) {
+                        ui.strong(server_name(file.side));
+                        last_side = Some(file.side);
                     }
-                });
-        });
-    }
-
-    fn file_list(&mut self, ui: &mut egui::Ui, query: &str) {
-        let mut last_side = None;
-        for (i, file) in self.files.iter().enumerate() {
-            if last_side != Some(file.side) {
-                ui.strong(server_name(file.side));
-                last_side = Some(file.side);
-            }
-            let hits = file.entries.iter().filter(|e| file.matches(e, query)).count();
-            if !query.is_empty() && hits == 0 {
-                continue;
-            }
-            let mut label = file.rel.clone();
-            if !file.changes().is_empty() {
-                label.push_str(" *");
-            }
-            if !query.is_empty() {
-                label.push_str(&format!("  [{hits}]"));
-            }
-            if ui.selectable_label(self.selected == i, label).clicked() {
-                self.selected = i;
-            }
-        }
+                    let mut label = file.rel.clone();
+                    if !file.changes().is_empty() {
+                        label.push_str(" *");
+                    }
+                    if ui.selectable_label(self.selected == i, label).clicked() {
+                        self.selected = i;
+                    }
+                }
+            });
     }
 }
 
-/// Draws the keys of one file (those matching `query`); `with_title` adds the file name on top.
-fn draw_file(ui: &mut egui::Ui, file: &mut FileState, query: &str, with_title: bool) {
+/// `Game server / Rates.ini`, with the number of settings.
+fn file_title(file: &FileState) -> String {
+    format!(
+        "{} / {} ({} settings)",
+        server_name(file.side),
+        file.rel,
+        file.entries.len()
+    )
+}
+
+/// Draws all the keys of one file (those matching `query`).
+fn draw_file(ui: &mut egui::Ui, file: &mut FileState, query: &str) {
     let entries: Vec<IniEntry> = file
         .entries
         .iter()
@@ -728,10 +691,12 @@ fn draw_file(ui: &mut egui::Ui, file: &mut FileState, query: &str, with_title: b
         .cloned()
         .collect();
     if entries.is_empty() {
+        ui.label(if query.is_empty() {
+            "This file has no settings."
+        } else {
+            "Nothing matches."
+        });
         return;
-    }
-    if with_title {
-        ui.heading(format!("{} / {}", server_name(file.side), file.rel));
     }
     let mut group: Option<&str> = None;
     for entry in &entries {
@@ -1120,32 +1085,36 @@ mod tests {
     }
 
     #[test]
-    fn every_topic_draws_headless_on_a_narrow_and_a_wide_window() {
+    fn every_file_draws_all_its_settings_on_a_narrow_and_a_wide_window() {
         let Some(dir) = run_folder_copy() else { return };
         let mut view = ConfigEditorView::with_run_dir(&dir.path().to_string_lossy());
         view.reload();
-        let buckets: Vec<Bucket> = view.index.buckets().iter().map(|(b, _)| b.clone()).collect();
-        // 17 fixed topics + the Custom files; nothing falls into "Other" with dist/ alone.
-        assert!(buckets.len() >= 17 + 40, "{}", buckets.len());
-        assert!(!buckets.contains(&Bucket::Other));
-        for bucket in buckets {
-            view.topic = Some(bucket.clone());
+        assert!(view.files.len() > 70);
+        for i in 0..view.files.len() {
+            view.selected = i;
             draw(&mut view, 2, egui::vec2(900.0, 700.0));
             draw(&mut view, 2, egui::vec2(1500.0, 800.0));
-            assert_eq!(view.current_topic(), Some(bucket));
+            assert_eq!(view.selected, i);
         }
     }
 
     #[test]
-    fn the_by_file_view_the_search_and_the_review_window_draw() {
+    fn a_game_file_comes_first_and_the_choice_survives_a_reload() {
         let Some(dir) = run_folder_copy() else { return };
         let mut view = ConfigEditorView::with_run_dir(&dir.path().to_string_lossy());
         view.reload();
-        view.mode = Mode::Files;
-        draw(&mut view, 2, egui::vec2(1100.0, 800.0));
-        view.search = "pathfinding".into();
-        draw(&mut view, 2, egui::vec2(1100.0, 800.0));
-        view.mode = Mode::Topics;
+        assert_eq!(view.files[view.selected].side, Side::Game);
+        view.selected = view.files.iter().position(|f| f.rel == "Rates.ini").unwrap();
+        view.reload();
+        assert_eq!(view.files[view.selected].rel, "Rates.ini");
+        assert!(file_title(&view.files[view.selected]).starts_with("Game server / Rates.ini ("));
+    }
+
+    #[test]
+    fn the_filter_and_the_review_window_draw() {
+        let Some(dir) = run_folder_copy() else { return };
+        let mut view = ConfigEditorView::with_run_dir(&dir.path().to_string_lossy());
+        view.reload();
         view.search = "rate".into();
         draw(&mut view, 2, egui::vec2(1100.0, 800.0));
         view.search = "no such setting anywhere".into();
@@ -1166,7 +1135,7 @@ mod tests {
 
     #[test]
     fn the_controls_of_every_dist_key_draw_with_every_kind_of_edit() {
-        // One frame over a topic with switches, sliders, drop-downs and colours, with an edit in
+        // One frame over each file with switches, sliders, drop-downs and colours, with an edit in
         // each so the "changed" and "differs" markers are drawn too.
         let Some(dir) = run_folder_copy() else { return };
         let mut view = ConfigEditorView::with_run_dir(&dir.path().to_string_lossy());
@@ -1185,9 +1154,8 @@ mod tests {
                 file.buffers.insert(key, edited);
             }
         }
-        let buckets: Vec<Bucket> = view.index.buckets().iter().map(|(b, _)| b.clone()).collect();
-        for bucket in buckets.into_iter().take(20) {
-            view.topic = Some(bucket);
+        for i in 0..view.files.len() {
+            view.selected = i;
             draw(&mut view, 1, egui::vec2(1400.0, 900.0));
         }
     }
