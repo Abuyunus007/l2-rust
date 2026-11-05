@@ -18,20 +18,17 @@ use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use l2_config::defaults::{Side, default_for, java_defaults};
-use l2_config::ini_edit::{
-    GEO_OVERRIDE_TEMPLATE, IniDoc, IniEntry, apply_changes, is_secret, mask_value, write_atomic,
-};
+use l2_config::ini_edit::{IniDoc, IniEntry, apply_changes, is_secret, mask_value, write_atomic};
 use l2_config::ranges::is_list_key;
 
 use self::controls::draw_entry;
 use self::topic_view::{Bucket, TopicIndex};
 use crate::app::AppCtx;
 use crate::views::View;
+use crate::views::setup_core::Layout;
 
-/// Folder of the servers' own copy of `dist/` (D-55), relative to the working directory.
+/// The folder to fall back on when the GUI cannot tell where it was started from.
 pub const DEFAULT_RUN_DIR: &str = "run";
-/// The Rust-only file that is not in `dist/`; offered as a template when it does not exist.
-const GEO_OVERRIDE_FILE: &str = "GeoOverride.ini";
 
 /// How the value of a key is edited.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -155,8 +152,6 @@ pub struct FileState {
     /// Path below the config folder, `/` separated (`Custom/Banking.ini`).
     pub rel: String,
     pub path: PathBuf,
-    /// The file does not exist yet; saving creates it from the template.
-    pub is_new: bool,
     text: String,
     /// One per key, the last occurrence of a repeated key (the one the server uses).
     pub entries: Vec<IniEntry>,
@@ -166,22 +161,14 @@ pub struct FileState {
 }
 
 impl FileState {
-    /// Reads the file. A missing `GeoOverride.ini` becomes the template; any other missing file
-    /// is an error.
+    /// Reads the file.
     pub fn load(side: Side, rel: &str, path: &Path) -> Result<Self, String> {
-        match std::fs::read(path) {
-            Ok(bytes) => {
-                let text = String::from_utf8(bytes).map_err(|_| format!("{rel}: not valid UTF-8"))?;
-                Ok(Self::from_text(side, rel, path, text, false))
-            }
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound && rel == GEO_OVERRIDE_FILE => Ok(
-                Self::from_text(side, rel, path, GEO_OVERRIDE_TEMPLATE.to_owned(), true),
-            ),
-            Err(e) => Err(format!("{rel}: {e}")),
-        }
+        let bytes = std::fs::read(path).map_err(|e| format!("{rel}: {e}"))?;
+        let text = String::from_utf8(bytes).map_err(|_| format!("{rel}: not valid UTF-8"))?;
+        Ok(Self::from_text(side, rel, path, text))
     }
 
-    pub fn from_text(side: Side, rel: &str, path: &Path, text: String, is_new: bool) -> Self {
+    pub fn from_text(side: Side, rel: &str, path: &Path, text: String) -> Self {
         let mut entries: Vec<IniEntry> = Vec::new();
         for entry in IniDoc::parse(&text).entries() {
             // Java keeps the last of a repeated key; show only that one.
@@ -193,7 +180,6 @@ impl FileState {
             side,
             rel: rel.to_owned(),
             path: path.to_path_buf(),
-            is_new,
             text,
             entries,
             defaults: java_defaults(side, rel),
@@ -298,18 +284,13 @@ impl FileState {
             .collect()
     }
 
-    /// Writes the changed values in place. Returns how many keys changed. A new file is written
-    /// from the template with the changes applied.
+    /// Writes the changed values in place. Returns how many keys changed.
     pub fn save(&self) -> Result<usize, String> {
         let changes = self.changes();
-        if changes.is_empty() && !self.is_new {
+        if changes.is_empty() {
             return Ok(0);
         }
-        let (text, count) = apply_changes(&self.text, &changes).map_err(|e| format!("{}: {e}", self.rel))?;
-        if self.is_new {
-            write_atomic(&self.path, &text).map_err(|e| format!("{}: {e}", self.rel))?;
-            return Ok(count);
-        }
+        let (_, count) = apply_changes(&self.text, &changes).map_err(|e| format!("{}: {e}", self.rel))?;
         if count > 0 {
             // Re-read right before writing: the file may have been edited by hand meanwhile, and
             // only our lines must change.
@@ -332,17 +313,37 @@ impl FileState {
     }
 }
 
-/// The `.ini` files of a run folder: `login/config/*.ini` and `game/config/**.ini` (one level
-/// of subfolders, `Custom/`), sorted. `GeoOverride.ini` is always in the game list.
+/// Where the servers of this GUI keep their `config/` folders: the package root, or `run/` in a
+/// repository. The working directory says nothing here: a package starts the GUI inside `bin/`.
+fn default_config_root() -> String {
+    let exe = std::env::current_exe().unwrap_or_default();
+    let cwd = std::env::current_dir().unwrap_or_default();
+    Layout::detect(&exe, &cwd).map_or_else(|| DEFAULT_RUN_DIR.to_owned(), |l| config_root_of(&l))
+}
+
+fn config_root_of(layout: &Layout) -> String {
+    let root = layout.game_dir.parent().unwrap_or(&layout.root);
+    root.to_string_lossy().into_owned()
+}
+
+/// The folder with `login/config` or `game/config` for what was typed: that folder itself, or a
+/// folder inside it (`bin`, `game`, `game/config`), so a pasted config path works too.
+pub fn find_config_root(typed: &Path) -> Option<PathBuf> {
+    typed
+        .ancestors()
+        .take(3)
+        .find(|dir| dir.join("game/config").is_dir() || dir.join("login/config").is_dir())
+        .map(Path::to_path_buf)
+}
+
+/// The `.ini` files below a server folder: `login/config/*.ini` and `game/config/**.ini` (one
+/// level of subfolders, `Custom/`), sorted.
 pub fn scan_run_folder(run: &Path) -> Vec<(Side, String, PathBuf)> {
     let mut out = Vec::new();
     for (side, dir) in [(Side::Login, "login/config"), (Side::Game, "game/config")] {
         let base = run.join(dir);
         let mut rels = Vec::new();
         collect_ini(&base, "", 0, &mut rels);
-        if side == Side::Game && !rels.iter().any(|r| r == GEO_OVERRIDE_FILE) {
-            rels.push(GEO_OVERRIDE_FILE.to_owned());
-        }
         rels.sort_by_key(|r| r.to_lowercase());
         out.extend(rels.into_iter().map(|rel| {
             let path = base.join(&rel);
@@ -397,6 +398,8 @@ pub enum Mode {
 
 pub struct ConfigEditorView {
     run_dir: String,
+    /// The folder of the last load: a new one in the field loads when the field is left.
+    loaded_dir: String,
     files: Vec<FileState>,
     index: TopicIndex,
     mode: Mode,
@@ -415,7 +418,7 @@ pub struct ConfigEditorView {
 
 impl Default for ConfigEditorView {
     fn default() -> Self {
-        Self::with_run_dir(DEFAULT_RUN_DIR)
+        Self::with_run_dir(&default_config_root())
     }
 }
 
@@ -423,6 +426,7 @@ impl ConfigEditorView {
     pub fn with_run_dir(run_dir: &str) -> Self {
         Self {
             run_dir: run_dir.to_owned(),
+            loaded_dir: String::new(),
             files: Vec::new(),
             index: TopicIndex::default(),
             mode: Mode::Topics,
@@ -440,12 +444,20 @@ impl ConfigEditorView {
         let keep = self.files.get(self.selected).map(|f| (f.side, f.rel.clone()));
         self.files.clear();
         self.errors.clear();
-        for (side, rel, path) in scan_run_folder(Path::new(self.run_dir.trim())) {
-            match FileState::load(side, &rel, &path) {
-                Ok(file) => self.files.push(file),
-                Err(e) => self.errors.push(e),
+        let typed = self.run_dir.trim().trim_matches('"').to_owned();
+        if let Some(root) = find_config_root(Path::new(&typed)) {
+            self.run_dir = root.to_string_lossy().into_owned();
+            for (side, rel, path) in scan_run_folder(&root) {
+                match FileState::load(side, &rel, &path) {
+                    Ok(file) => self.files.push(file),
+                    Err(e) => self.errors.push(e),
+                }
             }
+        } else {
+            self.errors
+                .push(format!("No login/config or game/config folder found in {typed}"));
         }
+        self.loaded_dir = self.run_dir.clone();
         self.selected = keep
             .and_then(|(s, r)| self.files.iter().position(|f| f.side == s && f.rel == r))
             .unwrap_or(0);
@@ -578,8 +590,14 @@ impl View for ConfigEditorView {
             .input_mut(|i| i.consume_key(egui::Modifiers::COMMAND, egui::Key::F));
         ui.heading("Config editor");
         ui.horizontal_wrapped(|ui| {
-            ui.label("Run folder:");
-            ui.add(egui::TextEdit::singleline(&mut self.run_dir).desired_width(260.0));
+            ui.label("Server folder:");
+            let folder = ui
+                .add(egui::TextEdit::singleline(&mut self.run_dir).desired_width(360.0))
+                .on_hover_text("The folder with login/config and game/config");
+            if folder.lost_focus() && self.run_dir != self.loaded_dir && self.dirty_files() == 0 {
+                self.reload();
+                self.notes.clear();
+            }
             if ui
                 .button("Reload")
                 .on_hover_text("Discards unsaved edits")
@@ -634,7 +652,7 @@ impl View for ConfigEditorView {
         self.review_window(&ctx);
         ui.separator();
         if self.files.is_empty() {
-            ui.label("No config files found. Set the run folder (it holds login/config and game/config).");
+            ui.label("No .ini files found. Enter the folder with login/config and game/config above.");
             return;
         }
 
@@ -691,9 +709,6 @@ impl ConfigEditorView {
             if !file.changes().is_empty() {
                 label.push_str(" *");
             }
-            if file.is_new {
-                label.push_str(" (new)");
-            }
             if !query.is_empty() {
                 label.push_str(&format!("  [{hits}]"));
             }
@@ -738,7 +753,7 @@ mod tests {
     const TEXT: &str = "# ---\n# Main\n# ---\n\n# Port to listen on.\n# Default: 2106\nLoginserverPort = 2106\n\n# Flag.\n# Default: True\nShowLicence = False\n# Rate\nRateXp = 2\r\nLogin = root\nPassword = hunter2\nToken =\n";
 
     fn state(rel: &str) -> FileState {
-        FileState::from_text(Side::Login, rel, Path::new("x.ini"), TEXT.to_owned(), false)
+        FileState::from_text(Side::Login, rel, Path::new("x.ini"), TEXT.to_owned())
     }
 
     #[test]
@@ -801,13 +816,7 @@ mod tests {
 
     #[test]
     fn secrets_are_masked_and_only_written_when_changed() {
-        let mut f = FileState::from_text(
-            Side::Login,
-            "Database.ini",
-            Path::new("x.ini"),
-            TEXT.to_owned(),
-            false,
-        );
+        let mut f = FileState::from_text(Side::Login, "Database.ini", Path::new("x.ini"), TEXT.to_owned());
         assert!(f.is_secret("Password") && f.is_secret("Token") && f.is_secret("Login"));
         assert!(!f.is_secret("RateXp"));
         assert!(f.changes().is_empty());
@@ -844,24 +853,13 @@ mod tests {
     }
 
     #[test]
-    fn missing_geo_override_is_a_template_and_other_missing_files_are_errors() {
+    fn a_missing_file_is_an_error() {
         let dir = tempfile::tempdir().unwrap();
-        let path = dir.path().join("GeoOverride.ini");
-        let mut f = FileState::load(Side::Game, "GeoOverride.ini", &path).unwrap();
-        assert!(f.is_new);
-        assert_eq!(f.entries.len(), 3);
-        f.buffers.insert("PathWorkerThreads".into(), "4".into());
-        assert_eq!(f.save().unwrap(), 1);
-        assert!(
-            std::fs::read_to_string(&path)
-                .unwrap()
-                .contains("PathWorkerThreads = 4")
-        );
         assert!(FileState::load(Side::Game, "Nope.ini", &dir.path().join("Nope.ini")).is_err());
     }
 
     #[test]
-    fn scans_both_servers_and_adds_the_geo_override() {
+    fn scans_both_servers_and_adds_nothing_that_is_not_there() {
         let dir = tempfile::tempdir().unwrap();
         let login = dir.path().join("login/config");
         let custom = dir.path().join("game/config/Custom");
@@ -881,9 +879,53 @@ mod tests {
                 (Side::Login, "Server.ini".to_owned()),
                 (Side::Game, "Custom/Banking.ini".to_owned()),
                 (Side::Game, "General.ini".to_owned()),
-                (Side::Game, "GeoOverride.ini".to_owned()),
             ]
         );
+    }
+
+    /// The folders of a package: `bin/`, `login/config/`, `game/config/` with one `.ini` each.
+    fn package() -> tempfile::TempDir {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::create_dir_all(dir.path().join("bin")).unwrap();
+        for side in ["login", "game"] {
+            let config = dir.path().join(side).join("config");
+            std::fs::create_dir_all(&config).unwrap();
+            std::fs::write(config.join("Server.ini"), "Port = 1\n").unwrap();
+        }
+        dir
+    }
+
+    #[test]
+    fn a_package_opens_at_its_own_root_not_at_the_working_directory() {
+        let dir = package();
+        let layout = Layout::package(dir.path(), &dir.path().join("bin"));
+        let mut view = ConfigEditorView::with_run_dir(&config_root_of(&layout));
+        view.reload();
+        assert!(view.errors.is_empty(), "{:?}", view.errors);
+        assert_eq!(view.files.len(), 2);
+    }
+
+    #[test]
+    fn a_folder_inside_the_server_folder_finds_it() {
+        let dir = package();
+        for typed in ["", "bin", "game", "game/config", "login/config"] {
+            let typed = dir.path().join(typed);
+            assert_eq!(find_config_root(&typed).as_deref(), Some(dir.path()), "{typed:?}");
+        }
+        let mut view =
+            ConfigEditorView::with_run_dir(&format!("\"{}\"", dir.path().join("game/config").display()));
+        view.reload();
+        assert_eq!(view.files.len(), 2);
+        assert_eq!(Path::new(&view.run_dir), dir.path());
+    }
+
+    #[test]
+    fn a_wrong_folder_says_so() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut view = ConfigEditorView::with_run_dir(&dir.path().display().to_string());
+        view.reload();
+        assert!(view.files.is_empty());
+        assert!(view.errors[0].contains("No login/config or game/config"));
     }
 
     #[test]
@@ -931,7 +973,6 @@ mod tests {
             "Server.ini",
             Path::new("x.ini"),
             "ServerRestartDays = 4\nLogItemsIdsList = 4356\nCharMaxNumber = 7\n".to_owned(),
-            false,
         );
         assert_eq!(f.kind_of(&f.entries[0]), ValueKind::Text);
         assert_eq!(f.kind_of(&f.entries[1]), ValueKind::Text);
@@ -945,13 +986,7 @@ mod tests {
 
     #[test]
     fn the_change_list_shows_old_and_new_and_masks_secrets() {
-        let mut f = FileState::from_text(
-            Side::Login,
-            "Database.ini",
-            Path::new("x.ini"),
-            TEXT.to_owned(),
-            false,
-        );
+        let mut f = FileState::from_text(Side::Login, "Database.ini", Path::new("x.ini"), TEXT.to_owned());
         assert!(f.change_list().is_empty());
         f.buffers.insert("RateXp".into(), "5".into());
         f.buffers.insert("Password".into(), "swordfish".into());

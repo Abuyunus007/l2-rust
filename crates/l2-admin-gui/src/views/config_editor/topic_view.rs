@@ -264,7 +264,7 @@ mod tests {
     use super::*;
 
     fn file(side: Side, rel: &str, text: &str) -> FileState {
-        FileState::from_text(side, rel, Path::new("x.ini"), text.to_owned(), false)
+        FileState::from_text(side, rel, Path::new("x.ini"), text.to_owned())
     }
 
     fn files() -> Vec<FileState> {
