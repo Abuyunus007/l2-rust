@@ -102,10 +102,6 @@ pub struct Settings {
     pub packets: PacketSettings,
     /// The datapack folder (the one that contains `data/`) the data browser loads. Empty = not set.
     pub datapack_path: String,
-    /// Geodata set A folder (the one with the `X_Y.l2j` files) the geodata viewer reads. Empty = not set.
-    pub geodata_a_path: String,
-    /// Geodata set B folder, same layout as set A. Empty = not set.
-    pub geodata_b_path: String,
 }
 
 impl Default for Settings {
@@ -118,8 +114,6 @@ impl Default for Settings {
             auto_connect: true,
             packets: PacketSettings::default(),
             datapack_path: String::new(),
-            geodata_a_path: String::new(),
-            geodata_b_path: String::new(),
         }
     }
 }
@@ -135,8 +129,6 @@ impl fmt::Debug for Settings {
             .field("auto_connect", &self.auto_connect)
             .field("packets", &self.packets)
             .field("datapack_path", &self.datapack_path)
-            .field("geodata_a_path", &self.geodata_a_path)
-            .field("geodata_b_path", &self.geodata_b_path)
             .finish()
     }
 }
@@ -250,8 +242,6 @@ mod tests {
                 ..PacketSettings::default()
             },
             datapack_path: "some/datapack/game".into(),
-            geodata_a_path: "geo/set-a".into(),
-            geodata_b_path: "geo/set-b".into(),
         };
         let mut storage = MemStorage::default();
         settings.save(&mut storage);
@@ -278,7 +268,6 @@ mod tests {
             settings.datapack_path.is_empty(),
             "no datapack until the user sets one"
         );
-        assert!(settings.geodata_a_path.is_empty() && settings.geodata_b_path.is_empty());
     }
 
     #[test]

@@ -7,7 +7,6 @@ use l2_config::topics::{Topic, topic_of};
 
 use super::controls::draw_entry;
 use super::{ConfigEditorView, FileState};
-use crate::views::xml_config::GROUP_TITLE;
 
 /// From this width of the settings area on, the settings flow in two columns.
 const TWO_COLUMNS_FROM: f32 = 980.0;
@@ -17,9 +16,6 @@ const TWO_COLUMNS_FROM: f32 = 980.0;
 pub enum Bucket {
     Topic(Topic),
     Other,
-    /// The "XML configs" group: the form of the XML file chosen in [`XmlConfigView`]. It is not in
-    /// the [`TopicIndex`] (it holds no `.ini` setting).
-    Xml,
 }
 
 impl Bucket {
@@ -27,7 +23,6 @@ impl Bucket {
         match self {
             Bucket::Topic(t) => t.label(),
             Bucket::Other => "Other".to_owned(),
-            Bucket::Xml => GROUP_TITLE.to_owned(),
         }
     }
 
@@ -141,21 +136,12 @@ impl ConfigEditorView {
             .collect()
     }
 
-    /// Is there anything to show for `bucket`? (The XML group exists when an XML file was read.)
-    pub(super) fn has_topic(&self, bucket: &Bucket) -> bool {
-        match bucket {
-            Bucket::Xml => self.xml.has_files(),
-            _ => self.index.has(bucket),
-        }
-    }
-
     /// The topic whose settings are shown: the chosen one, else the first.
     pub(super) fn current_topic(&self) -> Option<Bucket> {
         self.topic
             .clone()
-            .filter(|t| self.has_topic(t))
+            .filter(|t| self.index.has(t))
             .or_else(|| self.index.buckets().first().map(|(b, _)| b.clone()))
-            .or_else(|| self.xml.has_files().then_some(Bucket::Xml))
     }
 
     pub(super) fn topics_body(&mut self, ui: &mut egui::Ui, query: &str) {
@@ -170,14 +156,6 @@ impl ConfigEditorView {
                     .show(ui, |ui| self.topic_list(ui, &rows, query));
             });
             ui.separator();
-            // The XML forms scroll inside (their lists are long), so they get the area itself.
-            // (A search that finds nothing among the XML configs shows the settings it finds.)
-            if current == Some(Bucket::Xml) && self.xml.hits(query) > 0 {
-                ui.allocate_ui(egui::vec2(ui.available_width(), height), |ui| {
-                    self.xml.form_ui(ui)
-                });
-                return;
-            }
             egui::ScrollArea::vertical()
                 .id_salt("cfg_settings")
                 .auto_shrink([false, false])
@@ -199,11 +177,7 @@ impl ConfigEditorView {
                         draw_items(ui, &mut self.files, &items);
                     }
                     if !any {
-                        if self.xml.hits(query) > 0 {
-                            ui.label("No setting matches, but an XML config does: pick it on the left.");
-                        } else {
-                            ui.label("Nothing matches.");
-                        }
+                        ui.label("Nothing matches.");
                     }
                 });
         });
@@ -238,11 +212,6 @@ impl ConfigEditorView {
             if ui.selectable_label(selected, label).clicked() {
                 self.topic = Some(row.bucket.clone());
             }
-        }
-        // The XML forms: the last group, found by search through its title and file name too.
-        ui.add_space(8.0);
-        if self.xml.topic_list(ui, current == Some(Bucket::Xml), query) {
-            self.topic = Some(Bucket::Xml);
         }
     }
 }

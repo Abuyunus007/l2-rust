@@ -8,8 +8,7 @@
 //!
 //! - `mod.rs`: the file state and the window (search, save, the "Changed settings" list, the
 //!   by-file layout of G-05).
-//! - `topic_view.rs`: the by-topic layout (G-07), built on `l2_config::topics`, with the XML
-//!   forms of `xml_config` (G-08) as the last group of the topic list (G-09).
+//! - `topic_view.rs`: the by-topic layout (G-07), built on `l2_config::topics`.
 //! - `controls.rs`: which control a key gets (switch, slider, drop-down, ...) and how it is drawn.
 
 mod controls;
@@ -28,7 +27,6 @@ use self::controls::draw_entry;
 use self::topic_view::{Bucket, TopicIndex};
 use crate::app::AppCtx;
 use crate::views::View;
-use crate::views::xml_config::XmlConfigView;
 
 /// Folder of the servers' own copy of `dist/` (D-55), relative to the working directory.
 pub const DEFAULT_RUN_DIR: &str = "run";
@@ -413,10 +411,6 @@ pub struct ConfigEditorView {
     notes: Vec<String>,
     /// The "Changed settings" window is open (opened by the save button).
     review: bool,
-    /// The XML configs (`AccessLevels.xml`, ...): the last group of the topic list.
-    xml: XmlConfigView,
-    /// [`Mode::Files`]: the XML group is chosen, not a file.
-    files_xml: bool,
 }
 
 impl Default for ConfigEditorView {
@@ -439,19 +433,10 @@ impl ConfigEditorView {
             errors: Vec::new(),
             notes: Vec::new(),
             review: false,
-            xml: XmlConfigView::with_run_dir(run_dir),
-            files_xml: false,
         }
     }
 
-    /// Reads the `.ini` files and the XML configs again; unsaved edits are dropped.
     fn reload(&mut self) {
-        self.xml.set_run_dir(&self.run_dir);
-        self.xml.reload();
-        self.reload_ini();
-    }
-
-    fn reload_ini(&mut self) {
         let keep = self.files.get(self.selected).map(|f| (f.side, f.rel.clone()));
         self.files.clear();
         self.errors.clear();
@@ -465,7 +450,7 @@ impl ConfigEditorView {
             .and_then(|(s, r)| self.files.iter().position(|f| f.side == s && f.rel == r))
             .unwrap_or(0);
         self.index = TopicIndex::build(&self.files);
-        if self.topic.as_ref().is_some_and(|t| !self.has_topic(t)) {
+        if self.topic.as_ref().is_some_and(|t| !self.index.has(t)) {
             self.topic = None;
         }
         self.loaded = true;
@@ -498,8 +483,7 @@ impl ConfigEditorView {
             }
         }
         notes.extend(restart_notes(&saved));
-        // Only the `.ini` files: unsaved XML edits stay.
-        self.reload_ini();
+        self.reload();
         self.notes = notes;
     }
 
@@ -646,11 +630,10 @@ impl View for ConfigEditorView {
         for error in &self.errors {
             ui.colored_label(ui.visuals().error_fg_color, error.as_str());
         }
-        self.xml.actions_ui(ui);
         let ctx = ui.ctx().clone();
         self.review_window(&ctx);
         ui.separator();
-        if self.files.is_empty() && !self.xml.has_files() {
+        if self.files.is_empty() {
             ui.label("No config files found. Set the run folder (it holds login/config and game/config).");
             return;
         }
@@ -676,12 +659,6 @@ impl ConfigEditorView {
                     .show(ui, |ui| self.file_list(ui, query));
             });
             ui.separator();
-            if self.files_xml && self.xml.hits(query) > 0 {
-                ui.allocate_ui(egui::vec2(ui.available_width(), height), |ui| {
-                    self.xml.form_ui(ui)
-                });
-                return;
-            }
             egui::ScrollArea::vertical()
                 .id_salt("cfg_keys")
                 .auto_shrink([false, false])
@@ -720,18 +697,9 @@ impl ConfigEditorView {
             if !query.is_empty() {
                 label.push_str(&format!("  [{hits}]"));
             }
-            if ui
-                .selectable_label(!self.files_xml && self.selected == i, label)
-                .clicked()
-            {
+            if ui.selectable_label(self.selected == i, label).clicked() {
                 self.selected = i;
-                self.files_xml = false;
             }
-        }
-        // The XML configs have no `.ini` file of their own: they close the list.
-        ui.add_space(8.0);
-        if self.xml.topic_list(ui, self.files_xml, query) {
-            self.files_xml = true;
         }
     }
 }
@@ -1159,135 +1127,6 @@ mod tests {
         draw(&mut view, 2, egui::vec2(1100.0, 800.0));
         assert!(view.review);
         assert_eq!(view.all_changes().len(), 1);
-    }
-
-    // ---- the XML configs group (G-09) ----
-
-    use crate::views::xml_config::TopicId;
-
-    #[test]
-    fn the_xml_configs_are_the_last_group_of_the_topic_list() {
-        let Some(dir) = run_folder_copy() else { return };
-        let mut view = ConfigEditorView::with_run_dir(&dir.path().to_string_lossy());
-        view.reload();
-        assert!(view.xml.has_files(), "{:?}", view.xml.errors());
-        assert!(view.has_topic(&Bucket::Xml));
-        // The group is not an `.ini` topic: no index entry, and every setting is still in one bucket.
-        assert!(!view.index.has(&Bucket::Xml));
-        // Every XML topic draws, narrow and wide, as the chosen topic.
-        let topics: Vec<TopicId> = view.xml.files().iter().map(|f| f.topic).collect();
-        assert!(topics.len() >= 9);
-        for topic in topics {
-            assert!(view.xml.select(topic));
-            view.topic = Some(Bucket::Xml);
-            draw(&mut view, 2, egui::vec2(900.0, 700.0));
-            draw(&mut view, 2, egui::vec2(1500.0, 800.0));
-            assert_eq!(view.current_topic(), Some(Bucket::Xml));
-            assert_eq!(view.xml.selected_topic(), Some(topic));
-        }
-    }
-
-    #[test]
-    fn the_search_finds_xml_topics_by_title_and_by_file_name() {
-        let Some(dir) = run_folder_copy() else { return };
-        let mut view = ConfigEditorView::with_run_dir(&dir.path().to_string_lossy());
-        view.reload();
-        let total = view.xml.hits("");
-        assert!(total >= 9);
-        // The file name.
-        assert_eq!(view.xml.hits("dynamicexprates.xml"), 1);
-        assert_eq!(view.xml.hits("classmaster"), 1);
-        // The title.
-        assert_eq!(view.xml.hits("dynamic exp"), 1);
-        assert_eq!(view.xml.hits("siege schedule"), 1);
-        // The name of the group finds all of them.
-        assert_eq!(view.xml.hits("xml configs"), total);
-        assert_eq!(view.xml.hits("no such topic"), 0);
-        // Drawn in a search, with and without a hit among the settings.
-        for query in ["dynamicexprates.xml", "ban", "no such topic anywhere"] {
-            view.search = query.into();
-            view.topic = Some(Bucket::Xml);
-            draw(&mut view, 2, egui::vec2(1100.0, 800.0));
-            view.mode = Mode::Files;
-            draw(&mut view, 2, egui::vec2(1100.0, 800.0));
-            view.mode = Mode::Topics;
-        }
-    }
-
-    #[test]
-    fn the_by_file_layout_has_the_xml_group_too() {
-        let Some(dir) = run_folder_copy() else { return };
-        let mut view = ConfigEditorView::with_run_dir(&dir.path().to_string_lossy());
-        view.reload();
-        view.mode = Mode::Files;
-        view.files_xml = true;
-        draw(&mut view, 2, egui::vec2(1100.0, 800.0));
-        view.files_xml = false;
-        draw(&mut view, 2, egui::vec2(1100.0, 800.0));
-    }
-
-    #[test]
-    fn xml_edits_are_saved_by_their_own_button_and_leave_the_ini_edits_alone() {
-        let Some(dir) = run_folder_copy() else { return };
-        let mut view = ConfigEditorView::with_run_dir(&dir.path().to_string_lossy());
-        view.reload();
-        let path = dir.path().join("game/config/ClassMaster.xml");
-        let before = std::fs::read_to_string(&path).unwrap();
-        // An edit of an `.ini` file stays unsaved while the XML files are saved.
-        let file = view
-            .files
-            .iter_mut()
-            .find(|f| f.side == Side::Game && f.rel == "Rates.ini")
-            .unwrap();
-        file.buffers.insert("RateXp".into(), "7.5".into());
-        assert!(view.xml.select(TopicId::ClassMaster));
-        let file = view
-            .xml
-            .files_mut()
-            .iter_mut()
-            .find(|f| f.topic == TopicId::ClassMaster)
-            .unwrap();
-        let crate::views::xml_config::Form::ClassMaster(form) = &mut file.form else {
-            unreachable!()
-        };
-        // The switches of the card: noblesse on the first option.
-        form.options[0].rewards.set_flag("setNoble", true);
-        assert_eq!(view.xml.dirty_files(), 1);
-        view.topic = Some(Bucket::Xml);
-        draw(&mut view, 2, egui::vec2(1100.0, 800.0));
-        view.xml.save_all();
-        let after = std::fs::read_to_string(&path).unwrap();
-        assert_eq!(after.matches("<setNoble />").count(), 1, "{after}");
-        assert_eq!(
-            after.replace("<setNoble />", "").lines().count(),
-            before.lines().count() + 3
-        );
-        assert_eq!(view.dirty_files(), 1, "the .ini edit is still there");
-        assert_eq!(view.xml.dirty_files(), 0);
-        assert!(view.xml.notes().iter().any(|n| n.contains("ClassMaster.xml")));
-        // Reload drops what is left.
-        view.reload();
-        assert_eq!(view.dirty_files(), 0);
-        assert!(view.xml.notes().is_empty());
-    }
-
-    #[test]
-    fn the_run_folder_without_xml_files_still_shows_the_settings() {
-        let Some(dir) = run_folder_copy() else { return };
-        for entry in std::fs::read_dir(dir.path().join("game/config"))
-            .unwrap()
-            .flatten()
-        {
-            if entry.path().extension().is_some_and(|e| e == "xml") {
-                std::fs::remove_file(entry.path()).unwrap();
-            }
-        }
-        let mut view = ConfigEditorView::with_run_dir(&dir.path().to_string_lossy());
-        view.reload();
-        assert!(!view.xml.has_files());
-        view.topic = Some(Bucket::Xml);
-        assert_ne!(view.current_topic(), Some(Bucket::Xml));
-        draw(&mut view, 2, egui::vec2(1100.0, 800.0));
     }
 
     #[test]

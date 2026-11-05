@@ -17,14 +17,12 @@ pub mod config_editor;
 pub mod connection;
 pub mod data_browser;
 pub mod game_admin;
-pub mod geodata;
 pub mod logs;
 pub mod packets;
 pub mod players;
 pub mod servers;
 pub mod setup;
 pub mod setup_core;
-pub mod xml_config;
 
 use crate::app::AppCtx;
 use crate::bridge::BridgeEvent;
@@ -51,12 +49,11 @@ pub enum ViewId {
     Logs,
     Packets,
     Data,
-    Geodata,
     Config,
 }
 
 impl ViewId {
-    pub const ALL: [ViewId; 12] = [
+    pub const ALL: [ViewId; 11] = [
         ViewId::Connection,
         ViewId::Setup,
         ViewId::Servers,
@@ -67,7 +64,6 @@ impl ViewId {
         ViewId::Logs,
         ViewId::Packets,
         ViewId::Data,
-        ViewId::Geodata,
         ViewId::Config,
     ];
 
@@ -83,7 +79,6 @@ impl ViewId {
             ViewId::Logs => "Logs",
             ViewId::Packets => "Packets",
             ViewId::Data => "Data",
-            ViewId::Geodata => "Geodata",
             ViewId::Config => "Config",
         }
     }
@@ -102,7 +97,6 @@ impl ViewId {
                 | ViewId::Logs
                 | ViewId::Packets
                 | ViewId::Data
-                | ViewId::Geodata
                 | ViewId::Config
         )
     }
@@ -121,7 +115,6 @@ impl ViewId {
             | ViewId::Logs
             | ViewId::Packets
             | ViewId::Data
-            | ViewId::Geodata
             | ViewId::Config => "",
         }
     }
@@ -140,7 +133,6 @@ pub struct Views {
     pub logs: logs::LogsView,
     pub packets: packets::PacketsView,
     pub data: data_browser::DataBrowserView,
-    pub geodata: geodata::GeodataView,
     pub config: config_editor::ConfigEditorView,
 }
 
@@ -158,7 +150,6 @@ impl Views {
             ViewId::Logs => Some(&mut self.logs),
             ViewId::Packets => Some(&mut self.packets),
             ViewId::Data => Some(&mut self.data),
-            ViewId::Geodata => Some(&mut self.geodata),
             ViewId::Config => Some(&mut self.config),
         }
     }

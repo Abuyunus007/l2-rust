@@ -11,7 +11,6 @@ repository.workspace = true
 l2-admin-api = { path = "../l2-admin-api" }
 l2-config.workspace = true # the config editor lists keys, defaults and writes values in place (G-05)
 l2-data.workspace = true # the data browser reads the datapack (NPC and item templates)
-l2-geo.workspace = true # the geodata viewer reads regions and uses the coordinate conversion (M3-GUI-03)
 l2-supervisor = { path = "../l2-supervisor" } # launcher: run folder, supervisor.ini, detached start (G-01)
 l2-db-installer = { path = "../l2-db-installer" } # the setup wizard installs the database with the installer's library (G-02)
 l2-proxy ={ path = "../l2-proxy" } # the packet inspector runs the proxy in-process (D-35)
@@ -27,7 +26,6 @@ tracing-subscriber.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
-game-server = { path = "../game-server" } # the XML form tests check that the game server's loaders still read what the forms write (G-08)
 
 [lints]
 workspace = true
