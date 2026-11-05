@@ -219,7 +219,7 @@ impl Script for Q00311ExpulsionOfEvilSpirits {
                 ctx.state::<ExpulsionState>().minion1 = minion;
                 if let Some(minion) = minion {
                     ctx.set_running(minion);
-                    if let Some(target) = ctx.world().target_of(varangka.object_id) {
+                    if let Some(target) = ctx.target_of(varangka.object_id) {
                         ctx.world_mut()
                             .add_damage_hate(minion.object_id, target, 1, 99_999);
                         ctx.set_intention_attack(minion, target);
@@ -240,7 +240,7 @@ impl Script for Q00311ExpulsionOfEvilSpirits {
                 if let Some(minion) = minion {
                     ctx.set_running(minion);
                     if let Some(varangka) = varangka
-                        && let Some(target) = ctx.world().target_of(varangka.object_id)
+                        && let Some(target) = ctx.target_of(varangka.object_id)
                     {
                         ctx.world_mut()
                             .add_damage_hate(minion.object_id, target, 1, 99_999);

@@ -1,16 +1,21 @@
 //! Tests of the `ScriptCtx` helpers of S-DATA-01 (`l2_world::script::player_help`), run through a
 //! probe script that calls them from an event the way a quest would.
 
+use l2_protocol_game::server::charscreen::paperdoll;
 use l2_util::ObjectId as Oid;
-use l2_world::{PlayerClanState, Script, ScriptCtx, ScriptNpc, ScriptRegistry, ScriptSetup};
+use l2_world::{
+    Intention, ItemData, PlayerClanState, Script, ScriptCtx, ScriptNpc, ScriptRegistry, ScriptSettings,
+    ScriptSetup, SkillKey,
+};
 
 use crate::testing::{Pages, ScriptTest, item, names_to, player_data};
 
 const NPC_ID: i32 = 31_000;
 const NPCS: &str = r#"<npc id="31000" type="Folk" level="70" name="Probe"/>
     <npc id="31001" type="Monster" level="10" name="Mob"/>"#;
-const ITEMS: &str =
-    r#"<item id="10280" type="EtcItem" name="Certificate"><set name="is_stackable" val="true"/></item>"#;
+const ITEMS: &str = r#"<item id="10280" type="EtcItem" name="Certificate"><set name="is_stackable" val="true"/></item>
+    <item id="10281" type="EtcItem" name="Mark"><set name="is_stackable" val="true"/><set name="is_questitem" val="true"/></item>
+    <item id="10282" type="Weapon" name="Wand"><set name="bodypart" val="rhand"/><set name="weapon_type" val="SWORD"/></item>"#;
 
 struct Probe;
 
@@ -203,4 +208,131 @@ fn the_killing_blow_weapon_is_the_killers_right_hand_item() {
     // No weapon: 0 (the fists item is not in this world's templates).
     t.kill(2, b);
     assert_eq!(t.world.killing_blow_weapon(b), 0);
+}
+
+/// A monster and a player next to it, for the helpers that act on an NPC.
+fn with_mob() -> (ScriptTest, ScriptNpc) {
+    let (mut t, npc) = setup();
+    enter(&mut t, npc, 1, player_data(1, 80, vec![]));
+    let object_id = t.spawn(31_001, 40);
+    (
+        t,
+        ScriptNpc {
+            object_id,
+            id: 31_001,
+        },
+    )
+}
+
+fn skill() -> SkillKey {
+    SkillKey::new(4001, 1)
+}
+
+#[test]
+fn cast_skill_at_sets_the_target_first() {
+    let (mut t, mob) = with_mob();
+    t.world
+        .run_as_script("Probe", |ctx| ctx.cast_skill_at(mob, Some(Oid(1)), skill()));
+    assert_eq!(t.world.creature_target(mob.object_id), Some(Oid(1)));
+}
+
+#[test]
+fn target_of_answers_for_an_npc_and_for_a_player() {
+    let (mut t, mob) = with_mob();
+    t.world.set_target(Oid(1), Some(mob.object_id));
+    let mut seen = (None, None);
+    t.world.run_as_script("Probe", |ctx| {
+        ctx.world_mut().set_npc_target(mob.object_id, Some(Oid(1)));
+        seen = (ctx.target_of(mob.object_id), ctx.target_of(Oid(1)));
+    });
+    assert_eq!(seen, (Some(Oid(1)), Some(mob.object_id)));
+}
+
+#[test]
+fn add_skill_cast_desire_sets_the_target() {
+    let (mut t, mob) = with_mob();
+    t.world.run_as_script("Probe", |ctx| {
+        ctx.add_skill_cast_desire(mob, Oid(1), skill(), 100)
+    });
+    assert_eq!(t.world.creature_target(mob.object_id), Some(Oid(1)));
+}
+
+#[test]
+fn add_attack_desire_makes_the_npc_run() {
+    let (mut t, mob) = with_mob();
+    assert!(!t.world.is_running(mob.object_id));
+    t.world
+        .run_as_script("Probe", |ctx| ctx.add_attack_desire(mob, Oid(1), 100));
+    assert!(t.world.is_running(mob.object_id));
+}
+
+#[test]
+fn set_running_makes_the_npc_run() {
+    let (mut t, mob) = with_mob();
+    assert!(!t.world.is_running(mob.object_id));
+    t.world.run_as_script("Probe", |ctx| ctx.set_running(mob));
+    assert!(t.world.is_running(mob.object_id));
+}
+
+#[test]
+fn npc_move_to_gives_the_move_intention() {
+    let (mut t, mob) = with_mob();
+    t.world.run_as_script("Probe", |ctx| {
+        ctx.npc_move_to(mob, crate::testing::X + 300, crate::testing::Y, crate::testing::Z);
+    });
+    assert_eq!(t.world.intention_of(mob.object_id), Intention::MoveTo);
+}
+
+#[test]
+fn teleport_player_offsets_only_when_allowed() {
+    let (mut t, npc) = setup();
+    enter(&mut t, npc, 1, player_data(1, 80, vec![]));
+    let (x, y, z) = (crate::testing::X + 1_000, crate::testing::Y, crate::testing::Z);
+    t.world
+        .run_as_script("Probe", |ctx| ctx.teleport_player(Oid(1), x, y, z, 0, false));
+    let (px, py, _) = t.world.position_of(Oid(1)).unwrap();
+    assert_eq!((px, py), (x, y));
+
+    enter(&mut t, npc, 2, player_data(2, 80, vec![]));
+    t.world
+        .run_as_script("Probe", |ctx| ctx.teleport_player(Oid(2), x, y, z, 0, true));
+    let (ox, oy, _) = t.world.position_of(Oid(2)).unwrap();
+    assert_ne!((ox, oy), (x, y));
+    // `MaxOffsetOnTeleport` defaults to 50.
+    assert!((ox - x).abs() <= 50 && (oy - y).abs() <= 50);
+}
+
+#[test]
+fn give_items_multiplies_quest_items_only() {
+    let (mut t, npc) = setup();
+    enter(&mut t, npc, 1, player_data(1, 80, vec![]));
+    t.world.set_script_settings(ScriptSettings {
+        quest_item_drop_amount_multiplier: 2.0,
+        ..ScriptSettings::default()
+    });
+    t.world.run_as_script("Probe", |ctx| {
+        ctx.give_items(Oid(1), 10_281, 3);
+        ctx.give_items(Oid(1), 10_280, 3);
+    });
+    assert_eq!(t.count(1, 10_281), 6);
+    assert_eq!(t.count(1, 10_280), 3);
+}
+
+#[test]
+fn take_items_unequips_a_worn_item_and_tells_the_others() {
+    let (mut t, npc) = setup();
+    let wand = ItemData {
+        loc: "PAPERDOLL".to_owned(),
+        loc_data: paperdoll::RHAND as i32,
+        ..item(500, 10_282, 1)
+    };
+    enter(&mut t, npc, 1, player_data(1, 80, vec![wand]));
+    assert_eq!(t.world.paperdoll_object(Oid(1), paperdoll::RHAND), Some(Oid(500)));
+    t.world.run_as_script("Probe", |ctx| {
+        ctx.take_items(Oid(1), 10_282, 1);
+    });
+    assert_eq!(t.count(1, 10_282), 0);
+    assert_eq!(t.world.paperdoll_object(Oid(1), paperdoll::RHAND), None);
+    let names = names_to(&t.take(), 1);
+    assert!(names.iter().any(|name| name == "USER_INFO"), "{names:?}");
 }

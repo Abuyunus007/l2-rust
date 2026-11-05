@@ -415,7 +415,7 @@ impl Script for Baium {
                             .world()
                             .is_inside_zone_by_position(zone_id, zone_type, most_hated)
                     {
-                        if ctx.world().target_of(archangel) != Some(most_hated) {
+                        if ctx.target_of(archangel) != Some(most_hated) {
                             ctx.world_mut().aggro_clear(archangel);
                         }
                         ctx.add_attack_desire(npc, most_hated, 999);
@@ -431,12 +431,12 @@ impl Script for Baium {
                                     && !world.is_dead(*c)
                             });
                         if let Some(candidate) = candidate {
-                            if ctx.world().target_of(archangel) != Some(candidate) {
+                            if ctx.target_of(archangel) != Some(candidate) {
                                 ctx.world_mut().aggro_clear(archangel);
                             }
                             ctx.add_attack_desire(npc, candidate, 999);
                         } else if inside_radius_3d(ctx, archangel, baium, 40.0) {
-                            if ctx.world().target_of(archangel) != Some(baium) {
+                            if ctx.target_of(archangel) != Some(baium) {
                                 ctx.world_mut().aggro_clear(archangel);
                             }
                             ctx.add_attack_desire(npc, baium, 999);

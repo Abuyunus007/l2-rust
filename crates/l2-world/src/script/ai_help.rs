@@ -375,9 +375,10 @@ impl ScriptCtx<'_> {
             .is_some_and(|fort| self.world().fort_siege_in_progress(fort))
     }
 
-    /// Java `player.getTarget()`.
+    /// Java `creature.getTarget()`, for a player or an NPC. `World::target_of` only knows players,
+    /// so an NPC would always answer `None` there.
     pub fn target_of(&self, creature: ObjectId) -> Option<ObjectId> {
-        self.world().target_of(creature)
+        self.world().creature_target(creature)
     }
 
     /// Java `npc.doDie(killer)`.

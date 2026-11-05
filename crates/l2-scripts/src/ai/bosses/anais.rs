@@ -70,7 +70,7 @@ impl Script for Anais {
                     (state.current, state.pot)
                 };
                 if current.is_some() || pot < 4 {
-                    let target = ctx.world().target_of(npc.object_id);
+                    let target = ctx.target_of(npc.object_id);
                     let next_target = target.filter(|t| ctx.world().player(*t).is_some());
                     ctx.state::<AnaisState>().next_target = next_target;
                     let b = ctx.state::<AnaisState>().divine_burners.get(pot).copied()?;
