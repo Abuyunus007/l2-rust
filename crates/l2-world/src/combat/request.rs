@@ -10,6 +10,7 @@ use l2_util::ObjectId;
 
 use crate::effects::control::ATTACK_ACTION_BLOCK_ID;
 use crate::flood::FloodKind;
+use crate::npc::NpcClass;
 use crate::objects::ObjectKind;
 use crate::world::World;
 use crate::zones::ZoneId;
@@ -142,6 +143,11 @@ impl World {
             Some(ObjectKind::Player | ObjectKind::Summon) => true,
             // `Attackable.canBeAttacked()`, else `Npc.canBeAttacked()` (`AltAttackableNpcs`); the
             // siege NPCs override it (M7-SIEGE-01).
+            // A companion is the monsters' enemy only: a player cannot attack it by force or aim a
+            // skill at it, so nobody can kill the help another player hired (`custom/companions`).
+            Some(ObjectKind::Npc) if self.npcs.get(&id).is_some_and(|n| n.class == NpcClass::Companion) => {
+                false
+            }
             Some(ObjectKind::Npc) => self
                 .siege_npc_can_be_attacked(id)
                 .unwrap_or_else(|| self.is_attackable_npc(id) || self.settings.combat.alt_attackable_npcs),

@@ -6,6 +6,8 @@
 //! touches no shared test file (`docs/design/scripts.md`).
 #![allow(clippy::unwrap_used, clippy::expect_used, clippy::panic, dead_code)]
 
+use std::collections::BTreeSet;
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use l2_data::{
@@ -721,4 +723,51 @@ pub fn player_data(id: i32, level: i32, items: Vec<ItemData>) -> PlayerData {
         shortcuts: vec![],
         profile: PlayerProfile::default(),
     }
+}
+
+/// The shipped datapack (`dist/game`), when the checkout has it.
+pub fn datapack() -> Option<&'static Path> {
+    let root = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game"));
+    root.join("data/stats/skills").is_dir().then_some(root)
+}
+
+/// The `<skill>` elements of the datapack for the given ids, to put into a test world.
+pub fn skill_xml(root: &Path, ids: &BTreeSet<i32>) -> String {
+    let mut out = String::new();
+    let mut files: Vec<_> = std::fs::read_dir(root.join("data/stats/skills"))
+        .unwrap()
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|e| e == "xml"))
+        .collect();
+    files.sort();
+    for file in files {
+        let text = std::fs::read_to_string(file).unwrap();
+        let mut rest = text.as_str();
+        while let Some(start) = rest.find("<skill id=\"") {
+            let end = rest[start..]
+                .find("</skill>")
+                .map_or(rest.len(), |e| start + e + 8);
+            let block = &rest[start..end];
+            let id: i32 = block["<skill id=\"".len()..]
+                .split('"')
+                .next()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(0);
+            if ids.contains(&id) {
+                out.push_str(block);
+            }
+            rest = &rest[end..];
+        }
+    }
+    out
+}
+
+/// The `<npc>` elements of one NPC file of the datapack (`file` below `data/`), without the `<list>`
+/// around them, to put into a test world.
+pub fn npc_xml(root: &Path, file: &str) -> String {
+    let text = std::fs::read_to_string(root.join("data").join(file)).unwrap();
+    let start = text.find("<npc ").unwrap();
+    let end = text.rfind("</list>").unwrap();
+    text[start..end].to_owned()
 }

@@ -3,6 +3,7 @@
 pub mod banking_auto_convert;
 pub mod class_buffer;
 pub mod class_buffer_data;
+pub mod companions;
 pub mod delevel_manager;
 pub mod echo_crystals;
 pub mod events;
@@ -26,6 +27,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(transmog::Transmog);
     r.add(banking_auto_convert::BankingAutoConvert);
     r.add(class_buffer::ClassBuffer);
+    r.add(companions::Companions);
     events::register(r);
     faction_system::register(r);
     fake_players::register(r);

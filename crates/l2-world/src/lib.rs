@@ -217,7 +217,7 @@ pub use movement::{
 };
 pub use multisell::{MultisellSettings, PreparedList};
 pub use npc::{NpcClass, NpcSettings, SpawnReport};
-pub use objects::{Npc, ObjectEntry, ObjectKind};
+pub use objects::{Npc, NpcScale, ObjectEntry, ObjectKind};
 pub use olympiad::{
     ACTION_CASTLE_TAKEN, ACTION_HERO_GAINED, ACTION_RAID_KILLED, HeroAction, HeroData, HeroDetails,
     HeroDiaryRow, HeroFightRow, HeroLoad, HeroRow, HeroState, HeroWrite, hero_fights_cutoff_ms,

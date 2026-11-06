@@ -113,4 +113,23 @@ pub struct Npc {
     pub spawn_point: (i32, i32, i32),
     /// Java `Attackable._spawnTime`, in world milliseconds ([`crate::World::world_ms`]).
     pub spawn_time_ms: i64,
+    /// Our own: the level and the multipliers of a companion, which is made for the level of its
+    /// owner from one template (see [`NpcScale`]). `None` for every other NPC.
+    pub scale: Option<NpcScale>,
+}
+
+/// A companion's level and the factors on the template's base values. The template holds the
+/// values of a character of the level it names; the owner's level decides the rest.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct NpcScale {
+    /// The level the NPC has instead of the template's.
+    pub level: i32,
+    /// Factor on max HP.
+    pub hp: f32,
+    /// Factor on max MP.
+    pub mp: f32,
+    /// Factor on P. Atk. and M. Atk.
+    pub attack: f32,
+    /// Factor on P. Def. and M. Def.
+    pub defence: f32,
 }

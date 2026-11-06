@@ -51,6 +51,18 @@ impl World {
         Calculators::shared(&self.std_npc_calculators.0)
     }
 
+    /// Makes `id` a companion of the level and strength `scale` (ours, `custom/companions`): its
+    /// level is the scale's, its base HP, MP, attack and defence are the template's times the
+    /// factors, and it starts at full health. Does nothing for an object that is not an NPC.
+    pub fn set_npc_scale(&mut self, id: ObjectId, scale: crate::NpcScale) {
+        let Some(npc) = self.npcs.get_mut(&id) else {
+            return;
+        };
+        npc.scale = Some(scale);
+        npc.core.level = scale.level;
+        self.init_npc_stats(id);
+    }
+
     /// Java `Npc.onSpawn` -> `setCurrentHpMp(getMaxHp(), getMaxMp())`: full hit points.
     pub(crate) fn init_npc_stats(&mut self, id: ObjectId) {
         let Some((hp, mp)) = self

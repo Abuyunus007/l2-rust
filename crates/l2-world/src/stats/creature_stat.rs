@@ -151,6 +151,18 @@ impl Base {
         }
     }
 
+    /// The values of a companion: the template's times the factors of its [`crate::NpcScale`].
+    pub fn scaled(mut self, scale: crate::NpcScale) -> Base {
+        self.hp_max *= scale.hp;
+        self.mp_max *= scale.mp;
+        let times = |value: i32, factor: f32| super::java_round(f64::from(value) * f64::from(factor)) as i32;
+        self.p_atk = times(self.p_atk, scale.attack);
+        self.m_atk = times(self.m_atk, scale.attack);
+        self.p_def = times(self.p_def, scale.defence);
+        self.m_def = times(self.m_def, scale.defence);
+        self
+    }
+
     /// An NPC template.
     pub fn of_npc(t: &NpcTemplate) -> Base {
         Base {
@@ -370,7 +382,13 @@ impl<'w> StatView<'w> {
     pub(crate) fn base(&self) -> Base {
         match self.who {
             Who::Player(_) => self.player_template().map_or(Base::JAVA_DEFAULT, Base::of_player),
-            Who::Npc(_) => self.npc_template().map_or(Base::JAVA_DEFAULT, Base::of_npc),
+            Who::Npc(n) => {
+                let base = self.npc_template().map_or(Base::JAVA_DEFAULT, Base::of_npc);
+                match n.scale {
+                    Some(scale) => base.scaled(scale),
+                    None => base,
+                }
+            }
             Who::Door(d) => Base::of_door(&d.template),
         }
     }
@@ -381,6 +399,8 @@ impl<'w> StatView<'w> {
             Who::Player(p) => p.core.level,
             // `PetStat` keeps its own level.
             Who::Npc(n) if self.is_pet() => n.core.level,
+            // A companion has the level it was made for (`NpcScale`).
+            Who::Npc(n) if n.scale.is_some() => n.core.level,
             Who::Npc(_) => self.npc_level(),
             // `Door.getLevel()`: the template's.
             Who::Door(d) => d.template.level,

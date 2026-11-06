@@ -156,7 +156,8 @@ impl World {
                     return self.is_fake_player(attacker);
                 }
                 // "Anything considers monsters friendly except Players, Attackables (Guards,
-                // Friendly NPC), Traps and EffectPoints."
+                // Friendly NPC), Traps and EffectPoints." A hired companion is an attackable
+                // NPC, so it is the monsters' enemy here (ours, `custom/companions`).
                 self.is_attackable_npc(attacker)
             }
             // `Guard.isAutoAttackable`: "attacker.isMonster() && !attacker.isFakePlayer()", then
@@ -171,6 +172,9 @@ impl World {
             | NpcClass::FortCommander
             | NpcClass::Npc
             | NpcClass::Summon => false,
+            // A companion is the enemy of the monsters (they hit it back and may start on it) and of
+            // nobody else: not of players, guards or other companions.
+            NpcClass::Companion => attacker_class.is_monster() && !self.is_fake_player(attacker),
             // `Decoy.isAutoAttackable`: the owner's answer; `Trap.isAutoAttackable`: `!canBeSeen`.
             NpcClass::Decoy => self.decoy_auto_attackable(target, attacker),
             NpcClass::Trap => self.trap_auto_attackable(target, Some(attacker)),

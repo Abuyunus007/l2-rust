@@ -104,6 +104,7 @@ impl World {
             movement: crate::movement::NpcMovement::default(),
             spawn_point: (0, 0, 0),
             spawn_time_ms: 0,
+            scale: None,
         };
         self.npcs.insert(id, npc);
         self.forget_effects(id);

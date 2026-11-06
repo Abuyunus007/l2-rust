@@ -26,7 +26,8 @@ const MAX_DISTANCE: f64 = 400.0;
 /// What `.buffme` costs for each level of the player, in Adena.
 const FEE_PER_LEVEL: i64 = 1_000;
 
-const BUTTON: &str = "width=200 height=21 back=\"L2UI_CT1.Button_DF_Down\" fore=\"L2UI_CT1.Button_DF\"";
+pub(crate) const BUTTON: &str =
+    "width=200 height=21 back=\"L2UI_CT1.Button_DF_Down\" fore=\"L2UI_CT1.Button_DF\"";
 
 /// Who asks: the NPC's page (free) or `.buffme` (paid).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -59,7 +60,7 @@ fn fee_for_level(level: i32) -> i64 {
 }
 
 /// `80000` as `80,000`.
-fn grouped(value: i64) -> String {
+pub(crate) fn grouped(value: i64) -> String {
     let digits = value.to_string();
     let mut out = String::new();
     for (i, c) in digits.chars().enumerate() {
@@ -166,6 +167,12 @@ fn group_page(mode: Mode, group: &Group, level: i32) -> String {
 fn buffer_near(ctx: &ScriptCtx<'_>, player: ObjectId) -> Option<ScriptNpc> {
     let npc = ctx.script_npc(ctx.target_of(player)?)?;
     (npc.id == NPC_ID && ctx.distance_3d(player, npc.object_id)? <= MAX_DISTANCE).then_some(npc)
+}
+
+/// What `.buffme` does once the fee is paid, for any creature: the buffs, songs and dances of
+/// `group` on `target`, cast by `effector`. The hired companions buff themselves with it.
+pub(crate) fn buff_target(ctx: &mut ScriptCtx<'_>, effector: ObjectId, target: ObjectId, group: &Group) {
+    give(ctx, effector, target, group.all());
 }
 
 fn give(
@@ -285,50 +292,13 @@ mod tests {
 
     use super::*;
     use crate::custom::class_buffer_data::{GROUPS, PET_BUFFS, PET_SONGS};
-    use crate::testing::{ScriptTest, pages_to};
+    use crate::testing::{ScriptTest, datapack, pages_to, skill_xml};
 
     const ITEMS: &str =
         r#"<item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true"/></item>"#;
     const NPCS: &str = r#"<npc id="50011" type="Folk" level="70" name="Class Buffer"/>
         <npc id="50012" type="Folk" level="70" name="Somebody Else"/>
         <npc id="14000" type="Servitor" level="70" name="Servitor"/>"#;
-
-    fn datapack() -> Option<&'static Path> {
-        let root = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../../dist/game"));
-        root.join("data/stats/skills").is_dir().then_some(root)
-    }
-
-    /// The `<skill>` elements of the datapack for the given ids, to put into a test world.
-    fn skill_xml(root: &Path, ids: &BTreeSet<i32>) -> String {
-        let mut out = String::new();
-        let mut files: Vec<_> = std::fs::read_dir(root.join("data/stats/skills"))
-            .unwrap()
-            .flatten()
-            .map(|e| e.path())
-            .filter(|p| p.extension().is_some_and(|e| e == "xml"))
-            .collect();
-        files.sort();
-        for file in files {
-            let text = std::fs::read_to_string(file).unwrap();
-            let mut rest = text.as_str();
-            while let Some(start) = rest.find("<skill id=\"") {
-                let end = rest[start..]
-                    .find("</skill>")
-                    .map_or(rest.len(), |e| start + e + 8);
-                let block = &rest[start..end];
-                let id: i32 = block["<skill id=\"".len()..]
-                    .split('"')
-                    .next()
-                    .and_then(|v| v.parse().ok())
-                    .unwrap_or(0);
-                if ids.contains(&id) {
-                    out.push_str(block);
-                }
-                rest = &rest[end..];
-            }
-        }
-        out
-    }
 
     fn all_ids() -> BTreeSet<i32> {
         GROUPS

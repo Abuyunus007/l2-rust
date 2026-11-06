@@ -69,6 +69,10 @@ pub enum NpcClass {
     Decoy,
     /// `Trap` (an `Npc`): a skill's or a script's trap. Never made from a spawn, see `decoy_trap/`.
     Trap,
+    /// A hired companion (`type="Companion"`, our own, see `custom/companions`): an `Attackable`
+    /// that fights for a player. Not `isMonster()`; monsters and companions are enemies, nobody
+    /// else is. See `ai/guards.rs` (`npc_auto_attackable_by_npc`).
+    Companion,
 }
 
 impl NpcClass {
@@ -86,6 +90,7 @@ impl NpcClass {
             "Block" => Self::Block,
             "FriendlyMob" => Self::FriendlyMob,
             "Guard" => Self::Guard,
+            "Companion" => Self::Companion,
             "QuestGuard" => Self::QuestGuard,
             "Defender" => Self::Defender,
             "FortCommander" => Self::FortCommander,
@@ -176,7 +181,8 @@ impl NpcClass {
             | Self::FortCommander
             | Self::Summon
             | Self::Decoy
-            | Self::Trap => false,
+            | Self::Trap
+            | Self::Companion => false,
         }
     }
 }
@@ -983,6 +989,7 @@ impl World {
             movement: crate::movement::NpcMovement::default(),
             spawn_point: spawn_point.unwrap_or_default(),
             spawn_time_ms: 0,
+            scale: None,
         };
         self.npcs.insert(id, npc);
         // Java `Attackable.onSpawn`: "Clear mob spoil, seed" and `_sweepItems.set(null)`. A respawn
