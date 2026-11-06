@@ -1685,7 +1685,8 @@ mod tests {
         assert!(options.check_html_encoding);
         assert!(!options.no_spawns);
         assert_eq!(options.max_aggro_range, 450);
-        // Player.ini: EnableModifySkillDuration = True with the dance and song list.
+        // Player.ini: EnableModifySkillDuration = True; songs, dances and the 5 minute spirits are
+        // listed with 1200 seconds, so every buff lasts 20 minutes at least.
         let skills = &options.skills;
         assert_eq!(
             (
@@ -1694,9 +1695,35 @@ mod tests {
             ),
             (10, 90)
         );
-        if skills.enable_modify_skill_duration {
-            assert_eq!(skills.skill_duration_list.get(&264), Some(&3660));
-        }
+        assert!(skills.enable_modify_skill_duration);
+        assert_eq!(skills.skill_duration_list.get(&264), Some(&1200));
+        assert!(
+            skills
+                .skill_duration_list
+                .values()
+                .all(|&seconds| seconds == 1200)
+        );
+        assert_eq!(
+            skills.skill_duration_list.get(&1068),
+            None,
+            "Might lasts 20 minutes already"
+        );
+        // What the list does to the real skills.
+        let templates = l2_data::SkillTemplates::load(&l2_testkit::game_dir(), skills);
+        let seconds = |id, level| templates.get(id, level).map(|s| s.abnormal_time);
+        assert_eq!(seconds(264, 1), Some(1200), "Song of Earth: 2 minutes before");
+        assert_eq!(seconds(1356, 1), Some(1200), "Prophecy of Fire: 5 minutes before");
+        assert_eq!(seconds(1068, 3), Some(1200), "Might");
+        assert_eq!(
+            seconds(1323, 1),
+            Some(3600),
+            "Noblesse Blessing is longer and stays"
+        );
+        assert_eq!(
+            seconds(110, 1),
+            Some(30),
+            "Ultimate Defense is not a support buff and stays"
+        );
     }
 
     /// Each key reaches its option: EnableFakePlayers, NoSpawns, MaxAggroRange and
