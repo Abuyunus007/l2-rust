@@ -64,7 +64,7 @@ pub use globals::{GlobalVariables, GlobalVariablesWrite};
 pub use npc_extra::NpcVariables;
 pub use packets::QuestInput;
 pub use qs::Qs;
-pub use quest_helpers::{class_race, player_class, race};
+pub use quest_helpers::{class_enum_name, class_is_mage, class_race, player_class, race};
 pub use setup::{EventKind, ScriptId, ScriptSetup, StartCondition};
 pub use sound::QuestSound;
 pub use state::{COMPLETED, CREATED, PlayerQuests, QuestLoad, QuestState, QuestType, QuestWrite, STARTED};

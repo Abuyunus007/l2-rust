@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list enabled="true" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xsd/spawns.xsd">
+	<spawn name="ClassBuffer">
+		<npc id="50011" x="-116817" y="46560" z="360" heading="44352" respawnDelay="60" /> <!-- next to Ragara (32163) -->
+		<npc id="50011" x="-74016" y="52002" z="-3680" heading="0" respawnDelay="60" /> <!-- next to Largo (32189) -->
+		<npc id="50011" x="-80816" y="149750" z="-3040" heading="20480" respawnDelay="60" /> <!-- next to Richlin (30320) -->
+		<npc id="50011" x="-84059" y="244555" z="-3728" heading="40960" respawnDelay="60" /> <!-- next to Roxxy (30006) -->
+		<npc id="50011" x="-45264" y="-112442" z="-240" heading="0" respawnDelay="60" /> <!-- next to Tamil (30576) -->
+		<npc id="50011" x="-12666" y="122816" z="-3112" heading="49152" respawnDelay="60" /> <!-- next to Bella (30256) -->
+		<npc id="50011" x="9729" y="15574" z="-4576" heading="5892" respawnDelay="60" /> <!-- next to Jasmine (30134) -->
+		<npc id="50011" x="15562" y="142887" z="-2696" heading="16000" respawnDelay="60" /> <!-- next to Trisha (30059) -->
+		<npc id="50011" x="43893" y="-47659" z="-792" heading="50000" respawnDelay="60" /> <!-- next to Ilyana (31320) -->
+		<npc id="50011" x="38208" y="-48118" z="888" heading="0" respawnDelay="60" /> <!-- next to Arisha (31698) -->
+		<npc id="50011" x="46984" y="51473" z="-2976" heading="43000" respawnDelay="60" /> <!-- next to Mirabel (30146) -->
+		<npc id="50011" x="48038" y="186788" z="-3488" heading="42000" respawnDelay="60" /> <!-- next to Angelina (30878) -->
+		<npc id="50011" x="87117" y="-143453" z="-1288" heading="15584" respawnDelay="60" /> <!-- next to Bilia (31964) -->
+		<npc id="50011" x="82981" y="53103" z="-1496" heading="31000" respawnDelay="60" /> <!-- next to Valentina (30177) -->
+		<npc id="50011" x="83326" y="147904" z="-3400" heading="16384" respawnDelay="60" /> <!-- next to Clarissa (30080) -->
+		<npc id="50011" x="115072" y="-178106" z="-880" heading="0" respawnDelay="60" /> <!-- next to Wirphy (30540) -->
+		<npc id="50011" x="117137" y="76848" z="-2696" heading="34000" respawnDelay="60" /> <!-- next to Esmeralda (30233) -->
+		<npc id="50011" x="105952" y="109782" z="-3208" heading="45056" respawnDelay="60" /> <!-- next to Minerva (30836) -->
+		<npc id="50011" x="111455" y="219417" z="-3544" heading="-15780" respawnDelay="60" /> <!-- next to Flauen (30899) -->
+		<npc id="50011" x="148035" y="-55235" z="-2736" heading="48000" respawnDelay="60" /> <!-- next to Tatiana (31275) -->
+		<npc id="50011" x="146737" y="25877" z="-2008" heading="0" respawnDelay="60" /> <!-- next to Elisa (30848) -->
+	</spawn>
+</list>

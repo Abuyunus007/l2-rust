@@ -513,8 +513,9 @@ fn real_datapack_counts() {
     let Some(data) = real_data() else {
         return;
     };
-    // The folder holds 187 XML files, all enabled, and 429 blocks with a selection attribute.
-    assert_eq!(data.parsed_files(), 187);
+    // The folder holds 187 XML files of the Java datapack plus `Others/ClassBuffer.xml` (D-60), all
+    // enabled, and 429 blocks with a selection attribute.
+    assert_eq!(data.parsed_files(), 187 + 1);
     assert_eq!(data.groups().len(), 429);
     eprintln!(
         "real spawns: {} table entries, {} planned fixed, {} random groups, {} territories",

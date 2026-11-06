@@ -27,6 +27,11 @@ fn game_dir() -> Option<PathBuf> {
     }
 }
 
+/// The numbers below were taken from the Java datapack. NPC ids from here on are our own (the
+/// class buffer, D-60), so the totals leave them out and `OWN_NPCS` counts them.
+const FIRST_OWN_NPC: i32 = 50_000;
+const OWN_NPCS: usize = 1;
+
 /// The default load (no custom NPCs), shared by the tests: it takes seconds in a debug build.
 fn main_npcs() -> Option<&'static NpcTemplates> {
     static NPCS: OnceLock<NpcTemplates> = OnceLock::new();
@@ -52,23 +57,25 @@ fn custom_npcs(fake_players_enabled: bool) -> &'static NpcTemplates {
 #[test]
 fn loads_every_npc_with_javas_counts() {
     let Some(npcs) = main_npcs() else { return };
-    assert_eq!(npcs.len(), 10461);
+    assert_eq!(npcs.len(), 10461 + OWN_NPCS);
+    assert_eq!(npcs.iter().filter(|n| n.id < FIRST_OWN_NPC).count(), 10461);
     assert!(npcs.get(0).is_none());
     assert!(npcs.get(30006).is_some());
     // Custom NPCs are not loaded without CustomNpcData.
     assert!(npcs.get(50009).is_none());
 
     let with_custom = custom_npcs(false);
-    assert_eq!(with_custom.len(), 10461 + 23);
+    assert_eq!(with_custom.len(), 10461 + OWN_NPCS + 23);
     assert!(with_custom.get(80000).is_none(), "fake players are skipped");
-    assert_eq!(custom_npcs(true).len(), 10461 + 25);
+    assert_eq!(custom_npcs(true).len(), 10461 + OWN_NPCS + 25);
 }
 
 #[test]
 fn aggregates_match_the_xml() {
     let Some(npcs) = main_npcs() else { return };
-    let count = |f: &dyn Fn(&NpcTemplate) -> bool| npcs.iter().filter(|n| f(n)).count();
-    let sum = |f: &dyn Fn(&NpcTemplate) -> i64| npcs.iter().map(f).sum::<i64>();
+    let java = || npcs.iter().filter(|n| n.id < FIRST_OWN_NPC);
+    let count = |f: &dyn Fn(&NpcTemplate) -> bool| java().filter(|n| f(n)).count();
+    let sum = |f: &dyn Fn(&NpcTemplate) -> i64| java().map(f).sum::<i64>();
 
     // By type (names are Java instance classes).
     assert_eq!(count(&|n| n.npc_type == "Monster"), 3797);

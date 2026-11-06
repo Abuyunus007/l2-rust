@@ -145,6 +145,16 @@ pub fn class_race(class_id: i32) -> i32 {
     }
 }
 
+/// Java `PlayerClass.name()` (`PHOENIX_KNIGHT`); `None` for an id that is not a player class.
+pub fn class_enum_name(class_id: i32) -> Option<&'static str> {
+    class_of(class_id).enum_name()
+}
+
+/// Java `PlayerClass.isMage()`; `false` for an id that is not a player class.
+pub fn class_is_mage(class_id: i32) -> bool {
+    class_of(class_id).is_mage()
+}
+
 fn class_of(class_id: i32) -> ClassId {
     ClassId(u16::try_from(class_id).unwrap_or(u16::MAX))
 }
