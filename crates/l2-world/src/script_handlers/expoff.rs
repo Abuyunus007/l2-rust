@@ -98,6 +98,10 @@ impl World {
         if let Some(result) = self.sell_buffs_voiced_handler(player, word) {
             return result;
         }
+        // `.buffme` (D-60): the class buffer's page, for a player anywhere.
+        if word == "buffme" {
+            return self.buffme_voiced_command(player, params);
+        }
         if !matches!(word, "expoff" | "expon") {
             return false;
         }

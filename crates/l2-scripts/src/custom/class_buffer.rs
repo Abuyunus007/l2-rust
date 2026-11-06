@@ -1,9 +1,16 @@
-//! The class buffer: an NPC at every town gatekeeper that gives the buffs, songs and dances that
-//! fit a class. Free, as the shipped scheme buffer is.
+//! The class buffer: the buffs, songs and dances that fit a class, in two ways.
+//!
+//! - **The NPC** next to every town gatekeeper gives them for free.
+//! - **The voiced command `.buffme`** opens the same pages anywhere and charges the player's level
+//!   times 1,000 Adena each time a group is given.
 //!
 //! Own feature (not from the Java datapack). The player picks a group on the page: the one that
 //! fits the class is offered first, and any other can be looked at and taken. A pet or servitor
 //! gets the fighting buffs with it. The groups are in [`class_buffer_data`](super::class_buffer_data).
+//!
+//! The two ways share the pages and the events. The paid way puts `p-` before the event, and its
+//! links are `voice` bypasses (`.buffme show tank`), which, unlike a `Script` link, reach the
+//! script with no NPC next to the player.
 
 use l2_util::ObjectId;
 use l2_world::script::class_enum_name;
@@ -16,8 +23,53 @@ pub const NPC_ID: i32 = 50011;
 /// How far from the buffer a player may stand when he asks: the target must be a class buffer in
 /// talking range, so a link that is kept open cannot be used from the other end of the world.
 const MAX_DISTANCE: f64 = 400.0;
+/// What `.buffme` costs for each level of the player, in Adena.
+const FEE_PER_LEVEL: i64 = 1_000;
 
 const BUTTON: &str = "width=200 height=21 back=\"L2UI_CT1.Button_DF_Down\" fore=\"L2UI_CT1.Button_DF\"";
+
+/// Who asks: the NPC's page (free) or `.buffme` (paid).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Mode {
+    Npc,
+    Command,
+}
+
+impl Mode {
+    /// The bypass of a click on a page.
+    fn action(self, click: &str) -> String {
+        match self {
+            Mode::Npc => format!("bypass -h Script ClassBuffer {click}"),
+            Mode::Command => format!("bypass -h voice .buffme {}", click.replace(':', " ")),
+        }
+    }
+
+    /// What a group costs a player of `level`.
+    fn fee(self, level: i32) -> i64 {
+        match self {
+            Mode::Npc => 0,
+            Mode::Command => fee_for_level(level),
+        }
+    }
+}
+
+/// The price of `.buffme` for a player of `level`: 1,000 Adena for each level.
+fn fee_for_level(level: i32) -> i64 {
+    i64::from(level.max(0)) * FEE_PER_LEVEL
+}
+
+/// `80000` as `80,000`.
+fn grouped(value: i64) -> String {
+    let digits = value.to_string();
+    let mut out = String::new();
+    for (i, c) in digits.chars().enumerate() {
+        if i > 0 && (digits.len() - i) % 3 == 0 {
+            out.push(',');
+        }
+        out.push(c);
+    }
+    out
+}
 
 /// `PHOENIX_KNIGHT` to `Phoenix Knight`.
 fn class_name(class_id: i32) -> String {
@@ -34,8 +86,19 @@ fn class_name(class_id: i32) -> String {
         .join(" ")
 }
 
-fn button(label: &str, event: &str) -> String {
-    format!("<button value=\"{label}\" action=\"bypass -h Script ClassBuffer {event}\" {BUTTON}><br>")
+fn button(mode: Mode, label: &str, click: &str) -> String {
+    format!(
+        "<button value=\"{label}\" action=\"{}\" {BUTTON}><br>",
+        mode.action(click)
+    )
+}
+
+/// The label of a button that gives a group: with the price when there is one.
+fn buff_label(mode: Mode, title: &str, level: i32) -> String {
+    match mode.fee(level) {
+        0 => format!("Buff me: {title}"),
+        fee => format!("Buff me: {title} ({} Adena)", grouped(fee)),
+    }
 }
 
 fn names(buffs: &[Buff]) -> String {
@@ -43,33 +106,43 @@ fn names(buffs: &[Buff]) -> String {
 }
 
 /// The first page: the class, the group that fits it, and the other groups.
-fn main_page(class_id: i32) -> String {
+fn main_page(mode: Mode, class_id: i32, level: i32) -> String {
     let mine = group_of_class(class_id);
     let mut html = String::from("<html><body><center><font color=\"LEVEL\">Class Buffer</font></center><br>");
     html.push_str(&format!(
         "Welcome, %playername%.<br1>Your class is <font color=\"LEVEL\">{}</font>, so the \
-         <font color=\"LEVEL\">{}</font> buffs fit you best.<br><center>",
+         <font color=\"LEVEL\">{}</font> buffs fit you best.<br>",
         class_name(class_id),
         mine.title
     ));
+    if mode == Mode::Command {
+        html.push_str(&format!(
+            "Each time costs <font color=\"LEVEL\">{} Adena</font> ({} for every level).<br>",
+            grouped(mode.fee(level)),
+            grouped(FEE_PER_LEVEL)
+        ));
+    }
+    html.push_str("<center>");
     html.push_str(&button(
-        &format!("Buff me: {}", mine.title),
+        mode,
+        &buff_label(mode, mine.title, level),
         &format!("buff:{}", mine.key),
     ));
     html.push_str(&button(
+        mode,
         &format!("What is in {}?", mine.title),
         &format!("show:{}", mine.key),
     ));
     html.push_str("<br><font color=\"LEVEL\">Other groups</font><br>");
     for group in GROUPS.iter().filter(|g| g.key != mine.key) {
-        html.push_str(&button(group.title, &format!("show:{}", group.key)));
+        html.push_str(&button(mode, group.title, &format!("show:{}", group.key)));
     }
     html.push_str("</center><br1>Your pet or servitor gets the fighting buffs with them.</body></html>");
     html
 }
 
 /// What a group holds, with the button that gives it.
-fn group_page(group: &Group) -> String {
+fn group_page(mode: Mode, group: &Group, level: i32) -> String {
     let mut html = format!(
         "<html><body><center><font color=\"LEVEL\">{}</font></center><br>{}<br><br>\
          <font color=\"LEVEL\">Buffs</font><br1>{}<br><br>\
@@ -80,10 +153,11 @@ fn group_page(group: &Group) -> String {
         names(group.songs)
     );
     html.push_str(&button(
-        &format!("Buff me: {}", group.title),
+        mode,
+        &buff_label(mode, group.title, level),
         &format!("buff:{}", group.key),
     ));
-    html.push_str(&button("Back", "main"));
+    html.push_str(&button(mode, "Back", "main"));
     html.push_str("</center></body></html>");
     html
 }
@@ -96,14 +170,25 @@ fn buffer_near(ctx: &ScriptCtx<'_>, player: ObjectId) -> Option<ScriptNpc> {
 
 fn give(
     ctx: &mut ScriptCtx<'_>,
-    buffer: ScriptNpc,
+    effector: ObjectId,
     target: ObjectId,
     buffs: impl Iterator<Item = &'static Buff>,
 ) {
     for buff in buffs {
         ctx.world_mut()
-            .apply_effects(buffer.object_id, target, SkillKey::new(buff.id, buff.level));
+            .apply_effects(effector, target, SkillKey::new(buff.id, buff.level));
     }
+}
+
+/// `p-show tank` and `show:tank`: the mode, the command and the key of a click. A click of
+/// `.buffme` comes with its words split by a space.
+fn parse(event: &str) -> (Mode, &str, &str) {
+    let (mode, click) = match event.strip_prefix("p-") {
+        Some(click) => (Mode::Command, click),
+        None => (Mode::Npc, event),
+    };
+    let (command, key) = click.split_once([':', ' ']).unwrap_or((click, ""));
+    (mode, command, key.trim())
 }
 
 /// The class buffer.
@@ -125,7 +210,11 @@ impl Script for ClassBuffer {
     }
 
     fn on_first_talk(&self, ctx: &mut ScriptCtx<'_>, _npc: ScriptNpc, player: ObjectId) -> Option<String> {
-        Some(main_page(ctx.player_class_id(player)))
+        Some(main_page(
+            Mode::Npc,
+            ctx.player_class_id(player),
+            ctx.player_level(player),
+        ))
     }
 
     fn on_event(
@@ -137,25 +226,48 @@ impl Script for ClassBuffer {
     ) -> Option<String> {
         let player = player?;
         let class_id = ctx.player_class_id(player);
-        let (command, key) = event.split_once(':').unwrap_or((event, ""));
+        let level = ctx.player_level(player);
+        let (mode, command, key) = parse(event);
         match command {
-            "main" => Some(main_page(class_id)),
-            "show" => group_by_key(key).map(group_page),
+            "main" => Some(main_page(mode, class_id, level)),
+            "show" => group_by_key(key).map(|group| group_page(mode, group, level)),
             "buff" => {
                 let group = group_by_key(key)?;
-                let Some(buffer) = buffer_near(ctx, player) else {
-                    ctx.send_message(player, "Come closer to the Class Buffer and select it first.");
-                    return None;
-                };
                 if ctx.is_dead(player) {
                     return None;
                 }
-                give(ctx, buffer, player, group.all());
+                // Who casts: the NPC, or the player himself when he asked by command.
+                let effector = match mode {
+                    Mode::Npc => {
+                        let Some(buffer) = buffer_near(ctx, player) else {
+                            ctx.send_message(player, "Come closer to the Class Buffer and select it first.");
+                            return None;
+                        };
+                        buffer.object_id
+                    }
+                    Mode::Command => {
+                        if ctx.world().is_in_olympiad_mode(player) {
+                            ctx.send_message(player, "You cannot be buffed during the Olympiad.");
+                            return None;
+                        }
+                        let fee = mode.fee(level);
+                        // Too little Adena: the player gets the game's own "not enough adena".
+                        if !ctx.world_mut().reduce_adena(player, fee, true) {
+                            return None;
+                        }
+                        player
+                    }
+                };
+                give(ctx, effector, player, group.all());
                 if let Some(summon) = ctx.summon_of(player) {
-                    give(ctx, buffer, summon, PET_BUFFS.iter().chain(PET_SONGS));
+                    give(ctx, effector, summon, PET_BUFFS.iter().chain(PET_SONGS));
                 }
-                ctx.send_message(player, &format!("{} buffs given.", group.title));
-                Some(main_page(class_id))
+                let paid = match mode.fee(level) {
+                    0 => String::new(),
+                    fee => format!(" for {} Adena", grouped(fee)),
+                };
+                ctx.send_message(player, &format!("{} buffs given{paid}.", group.title));
+                Some(main_page(mode, class_id, level))
             }
             _ => None,
         }
@@ -175,6 +287,8 @@ mod tests {
     use crate::custom::class_buffer_data::{GROUPS, PET_BUFFS, PET_SONGS};
     use crate::testing::{ScriptTest, pages_to};
 
+    const ITEMS: &str =
+        r#"<item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true"/></item>"#;
     const NPCS: &str = r#"<npc id="50011" type="Folk" level="70" name="Class Buffer"/>
         <npc id="50012" type="Folk" level="70" name="Somebody Else"/>
         <npc id="14000" type="Servitor" level="70" name="Servitor"/>"#;
@@ -379,8 +493,8 @@ mod tests {
     fn scene(root: &Path) -> (ScriptTest, ObjectId) {
         let mut registry = ScriptRegistry::new();
         registry.add(ClassBuffer);
-        let mut t = ScriptTest::new(registry, NPCS, "", &[]);
-        t.set_skills("", &skill_xml(root, &all_ids()));
+        let mut t = ScriptTest::new(registry, NPCS, ITEMS, &[]);
+        t.set_skills(ITEMS, &skill_xml(root, &all_ids()));
         let buffer = t.spawn(NPC_ID, 20);
         (t, buffer)
     }
@@ -526,5 +640,185 @@ mod tests {
         );
         t.event(1, "ClassBuffer", "buff:warrior");
         assert!(buffed(&t, 1, [1068].into_iter()).is_empty());
+    }
+
+    // ---- `.buffme`: the same pages anywhere, for level x 1,000 Adena ----
+
+    fn say(t: &mut ScriptTest, text: &str) -> String {
+        t.input(
+            1,
+            l2_world::ClientInput::Say {
+                chat_type: 0,
+                text: text.to_owned(),
+                target: None,
+            },
+        );
+        pages_to(&t.take(), 1).pop().unwrap_or_default()
+    }
+
+    /// A player of `level` with `adena`, alone in the world: no buffer anywhere near.
+    fn paid_scene(root: &Path, level: i32, adena: i64) -> ScriptTest {
+        let (mut t, _buffer) = scene(root);
+        t.enter_as(
+            1,
+            level,
+            l2_world::script::race::HUMAN,
+            player_class::DUELIST,
+            vec![crate::testing::item(100, 57, adena)],
+        );
+        t.take();
+        t
+    }
+
+    #[test]
+    fn the_fee_is_the_level_times_one_thousand() {
+        assert_eq!(fee_for_level(1), 1_000);
+        assert_eq!(fee_for_level(20), 20_000);
+        assert_eq!(fee_for_level(80), 80_000);
+        assert_eq!(fee_for_level(85), 85_000);
+        assert_eq!(fee_for_level(-3), 0);
+        assert_eq!(Mode::Npc.fee(80), 0);
+        assert_eq!(Mode::Command.fee(80), 80_000);
+    }
+
+    #[test]
+    fn adena_is_written_with_separators() {
+        assert_eq!(grouped(0), "0");
+        assert_eq!(grouped(999), "999");
+        assert_eq!(grouped(1_000), "1,000");
+        assert_eq!(grouped(80_000), "80,000");
+        assert_eq!(grouped(1_234_567), "1,234,567");
+    }
+
+    #[test]
+    fn a_click_is_read_from_the_page_and_from_the_command() {
+        assert_eq!(parse("show:tank"), (Mode::Npc, "show", "tank"));
+        assert_eq!(parse("main"), (Mode::Npc, "main", ""));
+        assert_eq!(parse("p-buff tank"), (Mode::Command, "buff", "tank"));
+        assert_eq!(parse("p-show  mage"), (Mode::Command, "show", "mage"));
+        assert_eq!(parse("p-main"), (Mode::Command, "main", ""));
+    }
+
+    #[test]
+    fn buffme_opens_the_page_with_the_price_and_links_that_need_no_npc() {
+        let Some(root) = datapack() else { return };
+        let mut t = paid_scene(root, 80, 0);
+        let page = say(&mut t, ".buffme");
+        assert!(page.contains("80,000 Adena"), "{page}");
+        assert!(page.contains("Duelist"));
+        assert!(page.contains("bypass -h voice .buffme buff warrior"));
+        assert!(page.contains("bypass -h voice .buffme show tank"));
+        assert!(
+            !page.contains("Script ClassBuffer"),
+            "a Script link needs an NPC next to the player"
+        );
+        assert!(page.len() < 4000);
+        // The same pages from a click on them.
+        let group = say(&mut t, ".buffme show tank");
+        assert!(group.contains("bypass -h voice .buffme buff tank"), "{group}");
+        assert!(group.contains("(80,000 Adena)"));
+    }
+
+    #[test]
+    fn buffme_takes_level_times_one_thousand_and_gives_the_group() {
+        let Some(root) = datapack() else { return };
+        for group in &GROUPS {
+            let mut t = paid_scene(root, 80, 200_000);
+            let pet = t.summon(1, 14000);
+            say(&mut t, ".buffme");
+            // As the page does: the click is a `voice` bypass.
+            t.bypass(1, &format!("voice .buffme show {}", group.key));
+            t.take();
+            t.bypass(1, &format!("voice .buffme buff {}", group.key));
+            assert_eq!(t.count(1, 57), 120_000, "{}", group.key);
+            for buff in group.all() {
+                assert_eq!(
+                    t.world.script_buff_skill_level(ObjectId(1), buff.id),
+                    Some(buff.level),
+                    "{}: {}",
+                    group.key,
+                    buff.name
+                );
+            }
+            for buff in PET_BUFFS.iter().chain(PET_SONGS) {
+                assert_eq!(
+                    t.world.script_buff_skill_level(pet, buff.id),
+                    Some(buff.level),
+                    "pet: {}",
+                    buff.name
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn the_typed_command_works_without_a_page_and_the_fee_follows_the_level() {
+        let Some(root) = datapack() else { return };
+        let mut t = paid_scene(root, 20, 25_000);
+        say(&mut t, ".buffme buff warrior");
+        assert_eq!(t.count(1, 57), 5_000, "20 x 1,000");
+        assert_eq!(t.world.script_buff_skill_level(ObjectId(1), 1068), Some(3));
+        // The rest is not enough for a second time.
+        say(&mut t, ".buffme buff mage");
+        assert_eq!(t.count(1, 57), 5_000);
+        assert_eq!(
+            t.world.script_buff_skill_level(ObjectId(1), 1059),
+            None,
+            "Empower of the mage group"
+        );
+    }
+
+    #[test]
+    fn without_enough_adena_nothing_is_given_or_taken() {
+        let Some(root) = datapack() else { return };
+        let mut t = paid_scene(root, 80, 79_999);
+        say(&mut t, ".buffme buff warrior");
+        assert_eq!(t.count(1, 57), 79_999);
+        assert_eq!(t.world.script_buff_skill_level(ObjectId(1), 1068), None);
+        // With 80,000 it goes through.
+        let mut t = paid_scene(root, 80, 80_000);
+        say(&mut t, ".buffme buff warrior");
+        assert_eq!(t.count(1, 57), 0);
+        assert_eq!(t.world.script_buff_skill_level(ObjectId(1), 1068), Some(3));
+    }
+
+    #[test]
+    fn a_dead_player_pays_nothing_and_gets_nothing() {
+        let Some(root) = datapack() else { return };
+        let mut t = paid_scene(root, 80, 200_000);
+        t.world.do_die(ObjectId(1), None);
+        t.take();
+        say(&mut t, ".buffme buff warrior");
+        assert_eq!(t.count(1, 57), 200_000);
+        assert_eq!(t.world.script_buff_skill_level(ObjectId(1), 1068), None);
+    }
+
+    #[test]
+    fn an_unknown_group_or_click_costs_nothing() {
+        let Some(root) = datapack() else { return };
+        let mut t = paid_scene(root, 80, 200_000);
+        say(&mut t, ".buffme buff nonsense");
+        say(&mut t, ".buffme nonsense");
+        say(&mut t, ".buffme buff");
+        assert_eq!(t.count(1, 57), 200_000);
+        assert_eq!(t.world.script_buff_skill_level(ObjectId(1), 1068), None);
+    }
+
+    #[test]
+    fn the_npc_stays_free() {
+        let Some(root) = datapack() else { return };
+        let (mut t, buffer) = scene(root);
+        t.enter_as(
+            1,
+            80,
+            l2_world::script::race::HUMAN,
+            player_class::DUELIST,
+            vec![crate::testing::item(100, 57, 500)],
+        );
+        t.talk(1, buffer);
+        t.event(1, "ClassBuffer", "show:warrior");
+        t.event(1, "ClassBuffer", "buff:warrior");
+        assert_eq!(t.count(1, 57), 500);
+        assert_eq!(t.world.script_buff_skill_level(ObjectId(1), 1068), Some(3));
     }
 }

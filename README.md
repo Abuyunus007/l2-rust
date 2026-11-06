@@ -44,6 +44,7 @@ the global jobs (daily reset, Olympiad, Seven Signs, sieges, boss states).
   - GM commands (`//admin` and the admin panels).
   - **Class Buffer**: an NPC next to every town gatekeeper that gives the free buffs, songs and
     dances that fit the player's class (warrior, tank, dagger, archer, mage and summoner, healer).
+    The command `.buffme` opens the same pages anywhere for the player's level times 1,000 Adena.
 - **Tools**:
   - **Supervisor**: starts, stops and restarts the servers and collects their logs.
   - **Admin GUI**: server control, live logs, packet inspector.

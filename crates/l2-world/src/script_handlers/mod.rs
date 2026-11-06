@@ -1,6 +1,7 @@
 //! The script handlers S-HAND-02 ports (the ones S-HAND-01 left): newbie buffs, the voiced
 //! `.expon`/`.expoff`, the escape and birthday user commands, and the item handlers.
 
+pub(crate) mod buffme;
 pub(crate) mod charm;
 pub(crate) mod dice;
 pub(crate) mod event_item;
