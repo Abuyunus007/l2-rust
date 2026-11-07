@@ -69,6 +69,8 @@ pub struct Enemy {
     pub hp: f32,
     /// Whom it is fighting.
     pub target: Option<ObjectId>,
+    /// The leader has attacked it (it has him on its hate list).
+    pub hit_by_leader: bool,
 }
 
 /// The picture a companion decides on.
@@ -84,6 +86,9 @@ pub struct View<'a> {
     pub leader: Unit,
     /// What the leader has selected, if anything.
     pub leader_target: Option<ObjectId>,
+    /// `CompanionCombatMode::Aggressive`: what the leader selects is a fight at once. Passive:
+    /// only once he has attacked it.
+    pub aggressive: bool,
     /// Everybody who may be healed or defended: the leader, the companions and `me`.
     pub allies: &'a [Unit],
     /// The monsters near the leader.
@@ -134,12 +139,14 @@ fn ready(last: Option<u64>, now_ms: u64, cooldown_ms: u64) -> bool {
     last.is_none_or(|at| now_ms.saturating_sub(at) >= cooldown_ms)
 }
 
-/// The monsters the party is fighting: those near the leader that go for an ally, or that the
-/// leader has selected. Everything else is left alone, so a companion never pulls a camp.
+/// The monsters the party is fighting: those near the leader that go for an ally (the companions
+/// defend him and themselves in either mode), or that the leader has selected (when aggressive)
+/// or selected and attacked (when passive). Everything else is left alone, so a companion never
+/// pulls a camp.
 pub fn engaged<'a>(view: &'a View<'a>) -> impl Iterator<Item = &'a Enemy> + 'a {
     view.enemies.iter().filter(move |enemy| {
         enemy.pos.distance(view.leader.pos) <= ENGAGE_RANGE
-            && (view.leader_target == Some(enemy.id)
+            && ((view.leader_target == Some(enemy.id) && (view.aggressive || enemy.hit_by_leader))
                 || enemy
                     .target
                     .is_some_and(|target| view.allies.iter().any(|ally| ally.id == target)))
@@ -315,6 +322,7 @@ mod tests {
             pos: at(x),
             hp: 1.0,
             target,
+            hit_by_leader: false,
         }
     }
 
@@ -323,6 +331,7 @@ mod tests {
         allies: Vec<Unit>,
         enemies: Vec<Enemy>,
         leader_target: Option<ObjectId>,
+        aggressive: bool,
         me_hp: f32,
         mp: f32,
         now_ms: u64,
@@ -334,6 +343,7 @@ mod tests {
                 allies: vec![unit(LEADER, 0, 1.0), unit(ME, 100, 1.0), unit(FRIEND, 150, 1.0)],
                 enemies: Vec::new(),
                 leader_target: None,
+                aggressive: true,
                 me_hp: 1.0,
                 mp: 1.0,
                 now_ms: 100_000,
@@ -351,6 +361,7 @@ mod tests {
                 mp: self.mp,
                 leader: unit(LEADER, 0, 1.0),
                 leader_target: self.leader_target,
+                aggressive: self.aggressive,
                 allies: &self.allies,
                 enemies: &self.enemies,
             }
@@ -389,6 +400,46 @@ mod tests {
         scene.leader_target = Some(ObjectId(105));
         let ids: Vec<i32> = engaged(&scene.view()).map(|e| e.id.0).collect();
         assert_eq!(ids, vec![100, 101, 105]);
+    }
+
+    #[test]
+    fn a_passive_party_waits_for_the_leaders_first_blow_and_still_defends() {
+        let mut scene = Scene::new();
+        scene.aggressive = false;
+        scene.enemies = vec![enemy(100, 300, None), enemy(101, 300, Some(FRIEND))];
+        scene.leader_target = Some(ObjectId(100));
+        // Selected only: not a fight yet. The one on a companion is.
+        let ids: Vec<i32> = engaged(&scene.view()).map(|e| e.id.0).collect();
+        assert_eq!(ids, vec![101]);
+        // The leader hit it: now it is.
+        scene.enemies[0].hit_by_leader = true;
+        let ids: Vec<i32> = engaged(&scene.view()).map(|e| e.id.0).collect();
+        assert_eq!(ids, vec![100, 101]);
+        // The leader switches to a monster he has not hit: the companions keep to the old fight.
+        scene.enemies.push(enemy(102, 300, None));
+        scene.leader_target = Some(ObjectId(102));
+        let ids: Vec<i32> = engaged(&scene.view()).map(|e| e.id.0).collect();
+        assert_eq!(ids, vec![101]);
+        assert_eq!(
+            decide(&DamageDealer { ranged: false }, &scene, &Memory::default()),
+            Action::Attack(ObjectId(101))
+        );
+    }
+
+    #[test]
+    fn an_aggressive_party_goes_for_what_the_leader_selects() {
+        let mut scene = Scene::new();
+        scene.enemies = vec![enemy(100, 300, None)];
+        scene.leader_target = Some(ObjectId(100));
+        assert_eq!(
+            decide(&DamageDealer { ranged: false }, &scene, &Memory::default()),
+            Action::Attack(ObjectId(100))
+        );
+        scene.aggressive = false;
+        assert_eq!(
+            decide(&DamageDealer { ranged: false }, &scene, &Memory::default()),
+            Action::Follow
+        );
     }
 
     // ---- follow ----

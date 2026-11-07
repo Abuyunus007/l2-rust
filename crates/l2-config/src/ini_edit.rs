@@ -85,6 +85,12 @@ fn is_dash_line(comment_body: &str) -> bool {
             .all(|c| matches!(c, '-' | '=' | '_' | '*' | '#' | '~'))
 }
 
+/// `[Section]` line (the reader's rule, see `reader.rs`).
+fn is_section_header(trimmed: &str) -> bool {
+    let text = trimmed.trim_end_matches(is_blank);
+    text.len() >= 2 && text.starts_with('[') && text.ends_with(']')
+}
+
 fn comment_body(trimmed: &str) -> &str {
     let body = &trimmed[1..];
     body.strip_prefix(' ').unwrap_or(body)
@@ -154,6 +160,13 @@ impl IniDoc {
             let text = self.lines[i].text.as_str();
             let trimmed = text.trim_start_matches(is_blank);
             if trimmed.is_empty() {
+                run.clear();
+                i += 1;
+                continue;
+            }
+            // A `[Section]` line is not a key (the reader skips it too): it stays in the file as it
+            // is and separates the help of the keys above it from the keys below.
+            if is_section_header(trimmed) {
                 run.clear();
                 i += 1;
                 continue;
@@ -491,6 +504,24 @@ mod tests {
         assert!(
             e.iter()
                 .all(|e| !e.help.is_empty() && e.comment_default.is_some())
+        );
+    }
+
+    #[test]
+    fn section_headers_are_kept_and_not_listed() {
+        let text = "# Title\n[Companions]\n# help\nA = 1\n[Other]\nB = 2\n";
+        let doc = IniDoc::parse(text);
+        let e = doc.entries();
+        let keys: Vec<_> = e.iter().map(|e| e.key.as_str()).collect();
+        assert_eq!(keys, ["A", "B"]);
+        // The header ends the help of the keys above it: "B" gets none from "# help".
+        assert_eq!(e[0].help, ["help"]);
+        assert!(e[1].help.is_empty());
+        let mut doc = IniDoc::parse(text);
+        doc.set_value("B", "5").unwrap();
+        assert_eq!(
+            doc.render(),
+            "# Title\n[Companions]\n# help\nA = 1\n[Other]\nB = 5\n"
         );
     }
 

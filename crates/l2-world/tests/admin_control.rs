@@ -755,6 +755,40 @@ fn fake_player_chat_is_read_by_the_server_and_the_gms_hear_it() {
     assert!(texts_to(&out, GM2).contains(&"P100: Reloaded Fake Player Chat data.".to_owned()));
 }
 
+/// `//reload l2r` asks the server to read `L2R.ini`; the answer replaces the settings and tells the
+/// GM (no warning: it is not a Java reload).
+#[test]
+fn l2r_is_read_by_the_server_and_the_gm_is_told() {
+    let mut s = Scene::new();
+    s.enter(GM);
+    s.outs.take();
+    s.log.take();
+
+    s.cmd(GM, "reload l2r");
+    assert_eq!(
+        controls(&s.outs.take()),
+        [ControlRequest::ReloadL2r {
+            requester: ObjectId(GM)
+        }]
+    );
+    // Nothing changes before the file is read.
+    assert!(texts_to(&s.log.take(), GM).is_empty());
+    assert_eq!(s.world.l2r_settings(), &L2rSettings::default());
+    let settings = L2rSettings {
+        companions: CompanionSettings {
+            hp_multiplier: 2.0,
+            combat_mode: CompanionCombatMode::Aggressive,
+            ..CompanionSettings::default()
+        },
+    };
+    s.world.handle(WorldCommand::L2rReloaded {
+        requester: ObjectId(GM),
+        settings: settings.clone(),
+    });
+    assert_eq!(s.world.l2r_settings(), &settings);
+    assert_eq!(texts_to(&s.log.take(), GM), ["L2R.ini reloaded."]);
+}
+
 #[test]
 fn html_is_read_by_the_server_and_swapped_in() {
     let mut s = Scene::new();

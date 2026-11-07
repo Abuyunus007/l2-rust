@@ -10,6 +10,7 @@ pub mod game;
 pub mod game_manual;
 pub mod game_manual_core;
 pub mod game_manual_custom_misc;
+pub mod l2r;
 #[rustfmt::skip]
 pub mod generated;
 pub mod ini_edit;
@@ -27,6 +28,7 @@ pub use database::{DatabaseConfig, JdbcUrl};
 pub use error::ConfigError;
 pub use game::GameConfig;
 pub use interface::InterfaceConfig;
+pub use l2r::{CompanionCombatMode, L2rConfig};
 pub use list_kinds::ItemHolder;
 pub use login::{LoginConfig, LoginConfigSet};
 pub use network::NetworkConfig;

@@ -6,10 +6,10 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::Instant;
 
-use l2_config::GameConfig;
+use l2_config::{CompanionCombatMode as L2rCombatMode, GameConfig, L2rConfig};
 use l2_data::Datapack;
 use l2_world::npc::{NpcSettings, WaterCheck};
-use l2_world::{AiSettings, IdFactory, World};
+use l2_world::{AiSettings, CompanionCombatMode, CompanionSettings, IdFactory, L2rSettings, World};
 use tracing::info;
 
 /// The NPC-related configuration values.
@@ -118,6 +118,28 @@ pub fn custom_script_settings(
     }
 }
 
+/// The settings of `config/L2R.ini` for the world (L2Rust's own features, not in Java).
+pub fn l2r_settings(config: &GameConfig) -> L2rSettings {
+    l2r_settings_of(&config.l2r)
+}
+
+/// [`l2r_settings`] for a file read again by `//reload l2r` (the game server task reads it).
+pub fn l2r_settings_of(l2r: &L2rConfig) -> L2rSettings {
+    let c = l2r;
+    L2rSettings {
+        companions: CompanionSettings {
+            p_atk_multiplier: c.companion_p_atk_multiplier,
+            m_atk_multiplier: c.companion_m_atk_multiplier,
+            hp_multiplier: c.companion_hp_multiplier,
+            auto_join_party: c.companion_auto_join_party,
+            combat_mode: match c.companion_combat_mode {
+                L2rCombatMode::Aggressive => CompanionCombatMode::Aggressive,
+                L2rCombatMode::Passive => CompanionCombatMode::Passive,
+            },
+        },
+    }
+}
+
 /// The `pattern` attributes of the `<schedule>` elements of an event's `config.xml`, in file
 /// order; the commented-out ones (the shipped default) do not count.
 pub fn event_schedule_patterns(xml: &str) -> Vec<String> {
@@ -194,6 +216,7 @@ pub fn spawn_npcs_with_scripts(
 ) {
     world.set_npc_settings(npc_settings(config, config_dir));
     world.set_custom_script_settings(custom_script_settings(config, config_dir, &datapack.root));
+    world.set_l2r_settings(l2r_settings(config));
     world.set_custom_settings(crate::custom_monsters::custom_settings(config, config_dir));
     world.set_ai_settings(ai_settings(config));
     world.set_water_check(water_check(datapack));
@@ -228,6 +251,44 @@ pub fn spawn_npcs_with_scripts(
         report.minions,
         started.elapsed().as_millis()
     );
+}
+
+#[cfg(test)]
+mod l2r_tests {
+    use super::{l2r_settings, l2r_settings_of};
+    use l2_config::{CompanionCombatMode as L2rCombatMode, GameConfig, L2rConfig};
+    use l2_world::{CompanionCombatMode, CompanionSettings, L2rSettings};
+
+    #[test]
+    fn the_shipped_defaults_map_to_the_world_defaults() {
+        assert_eq!(l2r_settings(&GameConfig::default()), L2rSettings::default());
+    }
+
+    #[test]
+    fn every_companion_value_is_mapped() {
+        let config = GameConfig {
+            l2r: L2rConfig {
+                companion_p_atk_multiplier: 2.0,
+                companion_m_atk_multiplier: 3.5,
+                companion_hp_multiplier: 0.5,
+                companion_auto_join_party: false,
+                companion_combat_mode: L2rCombatMode::Aggressive,
+            },
+            ..GameConfig::default()
+        };
+        assert_eq!(
+            l2r_settings(&config).companions,
+            CompanionSettings {
+                p_atk_multiplier: 2.0,
+                m_atk_multiplier: 3.5,
+                hp_multiplier: 0.5,
+                auto_join_party: false,
+                combat_mode: CompanionCombatMode::Aggressive,
+            }
+        );
+        // The reload path maps the file the same way.
+        assert_eq!(l2r_settings_of(&config.l2r), l2r_settings(&config));
+    }
 }
 
 #[cfg(test)]

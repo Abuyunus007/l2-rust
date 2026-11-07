@@ -249,10 +249,18 @@ pub static RULES: &[Rule] = &[
     game("FloodProtector.ini", "", "", T::ChatFlood),
 ];
 
+/// Our own features' file (D-62), in the config folder itself.
+const L2R_FILE: &str = "L2R.ini";
+
 /// The topic of a key. `rel_file` is the path below the config folder (`Custom/Banking.ini`),
 /// `group` the header title from [`crate::ini_edit::IniEntry::group`]. `None`: no rule knows the
 /// file (a file somebody added); the editor lists those under "Other".
 pub fn topic_of(side: Side, rel_file: &str, group: &str, key: &str) -> Option<Topic> {
+    // `L2R.ini` (D-62) holds the settings of our own features: a topic of its own, like a
+    // custom feature's file.
+    if side == Side::Game && rel_file == L2R_FILE {
+        return Some(Topic::Custom("L2R".to_owned()));
+    }
     if side == Side::Game
         && let Some(stem) = rel_file
             .strip_prefix("Custom/")
@@ -284,6 +292,15 @@ fn norm_group(g: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn l2r_ini_is_a_topic_of_its_own() {
+        assert_eq!(
+            topic_of(Side::Game, "L2R.ini", "", "CompanionCombatMode"),
+            Some(Topic::Custom("L2R".to_owned()))
+        );
+        assert_eq!(topic_of(Side::Login, "L2R.ini", "", "X"), None);
+    }
 
     #[test]
     fn customs_are_topics_of_their_own() {

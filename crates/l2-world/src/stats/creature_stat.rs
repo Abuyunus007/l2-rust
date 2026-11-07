@@ -151,13 +151,14 @@ impl Base {
         }
     }
 
-    /// The values of a companion: the template's times the factors of its [`crate::NpcScale`].
+    /// The values of a companion: the template's times the factors of its [`crate::NpcScale`],
+    /// and the attack of its weapon.
     pub fn scaled(mut self, scale: crate::NpcScale) -> Base {
         self.hp_max *= scale.hp;
         self.mp_max *= scale.mp;
         let times = |value: i32, factor: f32| super::java_round(f64::from(value) * f64::from(factor)) as i32;
-        self.p_atk = times(self.p_atk, scale.attack);
-        self.m_atk = times(self.m_atk, scale.attack);
+        self.p_atk = scale.p_atk;
+        self.m_atk = scale.m_atk;
         self.p_def = times(self.p_def, scale.defence);
         self.m_def = times(self.m_def, scale.defence);
         self

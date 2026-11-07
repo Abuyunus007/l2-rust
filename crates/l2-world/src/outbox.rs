@@ -393,6 +393,9 @@ pub enum ControlRequest {
     /// `FakePlayerChatManager.load()`). The answer comes back as
     /// `WorldCommand::FakePlayerChatReloaded` (M9-L01).
     ReloadFakePlayerChat { requester: l2_util::ObjectId },
+    /// `//reload l2r`: read `config/L2R.ini` again (the game server task, D-15). The answer comes
+    /// back as `WorldCommand::L2rReloaded`.
+    ReloadL2r { requester: l2_util::ObjectId },
     /// `SpawnData.addNewSpawn`: write the spawn of an admin command into the spawn file of its map
     /// tile (`data/spawns/Others/<x>_<y>.xml`, under the server's own folder).
     StoreSpawn { spawn: l2_data::spawn_store::NewSpawn },

@@ -96,6 +96,10 @@ impl IniFile {
         };
 
         while let Some(line) = lines.read_line() {
+            // A section header like `[Companions]` (L2R.ini) is a comment for the server, not a key.
+            if is_section_header(&line) {
+                continue;
+            }
             let (key, value) = split_key_value(&line);
             let malformed = || ConfigError::MalformedUnicodeEscape {
                 file: file.name.clone(),
@@ -407,6 +411,14 @@ impl LineReader<'_> {
             }
         }
     }
+}
+
+/// `[Section]` line: the trimmed text starts with `[` and ends with `]`. The `.ini` files of
+/// `L2R.ini` use these headers; Java would read them as a key, so they are skipped here.
+fn is_section_header(line: &[char]) -> bool {
+    let text: String = line.iter().collect();
+    let trimmed = text.trim_matches(|c: char| c <= ' ');
+    trimmed.len() >= 2 && trimmed.starts_with('[') && trimmed.ends_with(']')
 }
 
 /// Port of the key/value split in `Properties.load0`. Returns the still-escaped key and value.
@@ -895,6 +907,19 @@ mod tests {
         // bad default -> empty array
         assert_eq!(f.get_int_array("B", ";", "x"), Vec::<i32>::new());
         assert_eq!(f.get_int_array("none", ";", ""), Vec::<i32>::new());
+    }
+
+    #[test]
+    fn section_headers_are_not_keys() {
+        let f = ini("[Companions]\nCompanionHpMultiplier = 2.0\n  [Other]  \n[bad\nX=]\n");
+        assert_eq!(
+            f.keys().collect::<Vec<_>>(),
+            ["CompanionHpMultiplier", "X", "[bad"]
+        );
+        assert_eq!(f.get_double("CompanionHpMultiplier", 1.0), 2.0);
+        assert_eq!(f.get_value("X"), Some("]"));
+        assert!(!f.contains_key("[Companions]"));
+        assert!(!f.contains_key("[Other]"));
     }
 
     #[test]

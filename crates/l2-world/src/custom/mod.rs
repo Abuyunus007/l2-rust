@@ -30,6 +30,7 @@ pub mod dualbox;
 pub mod events;
 pub mod faction;
 pub mod fake_players;
+pub mod l2r;
 pub mod misc;
 pub mod multilingual;
 pub mod offline_play;
@@ -49,6 +50,7 @@ pub mod walker_bot;
 pub use boss_announcements::BossAnnouncementSettings;
 pub use champion::ChampionSettings;
 pub use custom_mail::CustomMailEntry;
+pub use l2r::{CompanionCombatMode, CompanionSettings, L2rSettings};
 pub use misc::{
     BankingSettings, CaptchaSettings, CustomMiscSettings, CustomMiscState, CustomMiscTimer, DualboxSettings,
     MultilangSettings, ScreenWelcomeSettings,

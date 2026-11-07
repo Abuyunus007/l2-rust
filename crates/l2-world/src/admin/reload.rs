@@ -1,8 +1,8 @@
 //! `//reload`, `//reload_menu`, `//reload_menu_page`: the reload panel and what the Rust server
 //! can reload while it runs.
 // # What reloads
-// - The panel (`//reload`, `//reload_menu`, `//reload_menu_page <n>`): all of it, with Java's
-//   57 buttons and its pager.
+// - The panel (`//reload`, `//reload_menu`, `//reload_menu_page <n>`): Java's 57 buttons and its
+//   pager, plus the one of `//reload l2r` (L2Rust's own file, 58 buttons in all).
 // - `//reload htm [path]` and `//reload html [path]`: the html cache. The files are read by the
 //   game server task (never inside a tick, D-15): the world asks with
 //   `ControlRequest::ReloadHtml` and gets `WorldCommand::HtmlReloaded` back. NOTE: Java reloads
@@ -12,6 +12,10 @@
 // - `//reload fakeplayerchat` (M9-L01): `data/FakePlayerChatData.xml` is read by the game server
 //   task (`ControlRequest::ReloadFakePlayerChat`) and the lines are replaced when the answer
 //   (`WorldCommand::FakePlayerChatReloaded`) comes back.
+//
+// - `//reload l2r` (L2Rust, not in Java): `config/L2R.ini` is read by the game server task
+//   (`ControlRequest::ReloadL2r`) and the settings are replaced when the answer
+//   (`WorldCommand::L2rReloaded`) comes back. The menu button is the one Java does not have.
 //
 // # What does not
 // Every other type of Java's switch reads data the Rust server holds as immutable, shared
@@ -95,6 +99,7 @@ const RELOAD_COMMANDS: &[(&str, &str)] = &[
     ("Item", "admin_reload item"),
     ("Item Mall", "admin_reload itemmall"),
     ("Karma Loss", "admin_reload karmaloss"),
+    ("L2R Config", "admin_reload l2r"),
     ("L2Store", "admin_reload primeshop"),
     ("LevelUp Crystal", "admin_reload levelupcrystal"),
     ("Localisations", "admin_reload localisations"),
@@ -224,6 +229,12 @@ fn admin_reload(world: &mut World, gm: ObjectId, command: &str) -> Outcome {
                 world
                     .outbox
                     .control(ControlRequest::ReloadFakePlayerChat { requester: gm });
+                return Ok(());
+            }
+            "l2r" => {
+                // `config/L2R.ini` is read by the game server task (D-15); the answer
+                // (`on_l2r_reloaded`) says the rest.
+                world.outbox.control(ControlRequest::ReloadL2r { requester: gm });
                 return Ok(());
             }
             "quest" => {
@@ -399,9 +410,9 @@ mod tests {
 
     #[test]
     fn the_last_page_has_the_rest() {
-        // 57 commands: three full pages and nine on the fourth.
+        // 58 commands: three full pages and ten on the fourth.
         let html = generate_reload_buttons(3).unwrap();
-        assert_eq!(html.matches("action=\"bypass admin_reload ").count(), 9);
+        assert_eq!(html.matches("action=\"bypass admin_reload ").count(), 10);
         assert!(html.contains("Page 4 / 4"));
         assert!(html.contains("admin_reload_menu_page 2"));
         // A page past the end draws no buttons and no error.
@@ -413,7 +424,7 @@ mod tests {
         let error = generate_reload_buttons(-1).unwrap_err();
         assert_eq!(
             error.0,
-            "java.lang.ArrayIndexOutOfBoundsException: Index -16 out of bounds for length 57"
+            "java.lang.ArrayIndexOutOfBoundsException: Index -16 out of bounds for length 58"
         );
     }
 
@@ -422,7 +433,8 @@ mod tests {
         for (_, action) in RELOAD_COMMANDS {
             let kind = action.split(' ').nth(1).unwrap();
             assert!(
-                NOT_RELOADABLE.contains(&kind) || ["htm", "html", "quest", "fakeplayerchat"].contains(&kind),
+                NOT_RELOADABLE.contains(&kind)
+                    || ["htm", "html", "quest", "fakeplayerchat", "l2r"].contains(&kind),
                 "{kind}"
             );
         }

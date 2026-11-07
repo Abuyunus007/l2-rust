@@ -8,6 +8,7 @@ use std::path::Path;
 
 use crate::game_manual::GameManual;
 use crate::game_manual_core::{CoreInis, CoreManual};
+use crate::l2r::L2rConfig;
 use crate::{ConfigError, IniFile};
 
 pub use crate::generated::game::{
@@ -92,6 +93,8 @@ pub struct GameConfig {
     pub walker_bot_protection: WalkerBotProtectionConfig,
     pub warehouse_sorting: WarehouseSortingConfig,
     pub wedding: WeddingConfig,
+    /// `config/L2R.ini`: the settings of the features of L2Rust that Java does not have.
+    pub l2r: L2rConfig,
     /// The fields the generator could not port (`()` placeholders above). Use the
     /// `effective_*` accessors of [`GameConfig`] for the values after Java's post-processing.
     pub manual: GameManual,
@@ -275,6 +278,7 @@ impl GameConfig {
                 config_dir.join(WarehouseSortingConfig::FILE),
             )?),
             wedding: WeddingConfig::from_ini(&IniFile::load(config_dir.join(WeddingConfig::FILE))?),
+            l2r: L2rConfig::from_ini(&IniFile::load(config_dir.join(L2rConfig::FILE))?),
         })
     }
 }

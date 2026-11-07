@@ -8,8 +8,8 @@
 
 use l2_data::FakePlayerHolder;
 use l2_protocol_game::server::{
-    PartyDistributionType, PartyMemberVitals, PartySmallWindowAll, PartySmallWindowDeleteAll,
-    PartySmallWindowUpdate, PartyWindowMember,
+    PartyDistributionType, PartyMemberVitals, PartySmallWindowAdd, PartySmallWindowAll,
+    PartySmallWindowDelete, PartySmallWindowDeleteAll, PartySmallWindowUpdate, PartyWindowMember,
 };
 use l2_util::ObjectId;
 
@@ -149,15 +149,39 @@ impl World {
         })
     }
 
+    /// How many places of a party window `owner` takes with his party: his party's members, or
+    /// himself. A window holds [`crate::party::MAX_MEMBERS`] at most, companions included.
+    pub fn companion_window_used(&self, owner: ObjectId) -> usize {
+        self.party_of(owner)
+            .map_or(1, |party| self.party_members(party).len().max(1))
+    }
+
+    /// The places of a party window left for companions of `owner`.
+    pub fn companion_window_room(&self, owner: ObjectId) -> usize {
+        crate::party::MAX_MEMBERS.saturating_sub(self.companion_window_used(owner))
+    }
+
+    /// The leader and loot rule the window of `owner` is shown with: his party's, or his own
+    /// (the client takes a player without a party to be the leader of the one shown).
+    fn companion_window_head(&self, owner: ObjectId) -> (i32, PartyDistributionType) {
+        self.party_of(owner)
+            .and_then(|party| self.party_small_window_all(owner, party))
+            .map_or((owner.0, PartyDistributionType::FindersKeepers), |w| {
+                (w.leader_object_id, w.distribution_type)
+            })
+    }
+
     /// The party window of `owner`, with `companions` in it: his real party (if any) and the
     /// companions after it. Only he gets it: the others of his party see no companion in theirs.
     ///
     /// A companion is not a member of the party (a party is players only, and every rule of the
-    /// party would have to learn about NPCs): the window is the whole of it. The client takes a
-    /// player without a party to be the leader of the one that is shown.
+    /// party would have to learn about NPCs): the window is the whole of it.
     ///
-    /// The window is emptied first: a client builds it from the first `PartySmallWindowAll` and
-    /// takes no new members from a second one, so the next companion hired would not show.
+    /// This is what a player who joins a party is sent: the window is emptied and built anew.
+    /// It is used when the window first opens, when the owner's party changes and after a
+    /// teleport; a companion that comes or goes later is added or deleted on its own
+    /// ([`World::add_to_companion_window`]), the way the members of a real party are. A second
+    /// whole window to a client that has one open lost every companion after the first.
     pub fn send_companion_window(&self, owner: ObjectId, companions: &[ObjectId]) {
         let mut window = match self
             .party_of(owner)
@@ -179,6 +203,39 @@ impl World {
         }));
         self.send(owner, &PartySmallWindowDeleteAll);
         self.send(owner, &window);
+    }
+
+    /// A companion joins the open party window of `owner` (Java `PartySmallWindowAdd`).
+    pub fn add_to_companion_window(&self, owner: ObjectId, companion: ObjectId) {
+        let Some(member) = self.companion_vitals(companion) else {
+            return;
+        };
+        let (leader_object_id, distribution_type) = self.companion_window_head(owner);
+        self.send(
+            owner,
+            &PartySmallWindowAdd {
+                leader_object_id,
+                distribution_type,
+                member,
+            },
+        );
+    }
+
+    /// A companion leaves the party window of `owner` (Java `PartySmallWindowDelete`). The name
+    /// is the one it was shown with; the NPC may be gone already.
+    pub fn remove_from_companion_window(&self, owner: ObjectId, companion: ObjectId, name: &str) {
+        self.send(
+            owner,
+            &PartySmallWindowDelete {
+                object_id: companion.0,
+                name: name.to_owned(),
+            },
+        );
+    }
+
+    /// The name a companion is shown with.
+    pub fn companion_name(&self, companion: ObjectId) -> Option<String> {
+        Some(self.npcs.get(&companion)?.look.as_ref()?.name.clone())
     }
 
     /// The party window of `owner` without any companion: his party's, or none.

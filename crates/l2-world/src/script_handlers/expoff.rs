@@ -102,6 +102,10 @@ impl World {
         if word == "buffme" {
             return self.buffme_voiced_command(player, params);
         }
+        // `.companion` (D-61): the combat mode of the player's companions.
+        if word == "companion" {
+            return self.companion_voiced_command(player, params);
+        }
         if !matches!(word, "expoff" | "expon") {
             return false;
         }

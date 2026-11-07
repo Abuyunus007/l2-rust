@@ -146,6 +146,138 @@ pub const WEAPONS: &[(&str, usize, i32)] = &[
     ("mage", 6, 15565),    // Rising Star
 ];
 
+/// `(weapon item id, P. Atk., M. Atk.)` of the weapons above: a companion attacks with the
+/// weapon it holds, as a player does (the engine adds the stat bonus and the level modifier).
+pub const WEAPON_ATTACK: &[(i32, i32, i32)] = &[
+    (2499, 92, 54),    // Elven Long Sword
+    (129, 79, 47),     // Sword of Revolution
+    (7886, 63, 63),    // Sword of Magic Fog
+    (127, 64, 39),     // Crimson Sword
+    (5800, 156, 83),   // Nephilim Lord
+    (135, 156, 83),    // Samurai Longsword
+    (7888, 125, 111),  // Ecliptic Sword
+    (75, 139, 76),     // Caliburs
+    (79, 194, 99),     // Sword of Damascus
+    (146, 140, 122),   // Ghoulbane
+    (142, 175, 91),    // Keshanberk
+    (148, 140, 122),   // Sword of Valhalla
+    (8678, 251, 121),  // Sirra's Blade
+    (8686, 202, 161),  // Themis' Tongue
+    (151, 186, 152),   // Sword of Miracles
+    (2500, 232, 114),  // Dark Legion's Edge
+    (9442, 333, 151),  // Dynasty Sword
+    (9444, 267, 202),  // Dynasty Phantom
+    (6364, 281, 132),  // Forgotten Blade
+    (10215, 363, 163), // Icarus Sawsword
+    (10217, 290, 217), // Icarus Spirit
+    (15544, 437, 192), // Eternal Core Sword
+    (15553, 350, 256), // Archangel Sword
+    (15558, 415, 183), // Periel Sword
+    (15567, 332, 244), // Veniplant Sword
+    (70, 112, 54),     // Claymore
+    (7881, 96, 47),    // Titan Sword
+    (124, 78, 39),     // Two-Handed Sword
+    (5285, 49, 26),    // Heavy Sword
+    (5286, 190, 83),   // Berserker Blade
+    (7882, 169, 76),   // Pa'agrian Sword
+    (71, 130, 61),     // Flamberge
+    (7883, 236, 99),   // Guardian Sword
+    (78, 213, 91),     // Great Sword
+    (8679, 305, 121),  // Sword of Ipos
+    (81, 282, 114),    // Dragon Slayer
+    (9443, 405, 151),  // Dynasty Blade
+    (21959, 405, 151), // Blood Brother
+    (6372, 342, 132),  // Heaven's Divider
+    (10218, 442, 163), // Icarus Heavy Arms
+    (15548, 532, 192), // Lava Saw
+    (15562, 505, 183), // Feather Eye Blade
+    (15680, 482, 183), // Triumph Two Hand Sword
+    (13458, 482, 176), // Vesper Slasher
+    (159, 92, 54),     // Bonebreaker
+    (189, 74, 72),     // Staff of Life
+    (88, 79, 47),      // Morning Star
+    (158, 79, 47),     // Tarbar
+    (2503, 156, 83),   // Yaksa Mace
+    (7891, 125, 111),  // Ecliptic Axe
+    (162, 139, 76),    // War Axe
+    (174, 111, 101),   // Nirvana Axe
+    (7834, 194, 99),   // Art of Battle Axe
+    (171, 194, 99),    // Deadman's Glory
+    (175, 194, 99),    // Art of Battle Axe
+    (91, 175, 91),     // Heavy War Axe
+    (8680, 251, 121),  // Barakiel's Axe
+    (8687, 202, 161),  // Cabrio's Hand
+    (164, 232, 114),   // Elysian
+    (7895, 186, 152),  // Flaming Dragon Skull
+    (9448, 333, 151),  // Dynasty Cudgel
+    (9449, 267, 202),  // Dynasty Mace
+    (6365, 281, 132),  // Basalt Battlehammer
+    (6579, 225, 175),  // Arcana Mace
+    (10220, 363, 163), // Icarus Hammer
+    (10222, 290, 217), // Icarus Hall
+    (15546, 437, 192), // Eversor Mace
+    (15551, 350, 256), // Sacredium
+    (15560, 415, 183), // Vigwik Axe
+    (15565, 332, 244), // Rising Star
+    (280, 191, 54),    // Light Crossbow
+    (279, 179, 51),    // Reinforced Long Bow
+    (278, 132, 39),    // Gastraphetes
+    (275, 114, 35),    // Long Bow
+    (286, 323, 83),    // Eminence Bow
+    (283, 316, 84),    // Akat Long Bow
+    (282, 277, 75),    // Elemental Bow
+    (285, 252, 68),    // Noble Elven Bow
+    (287, 400, 99),    // Bow of Peril
+    (284, 397, 100),   // Dark Elven Long Bow
+    (8684, 570, 133),  // Shyeed's Bow
+    (289, 528, 125),   // Soul Bow
+    (288, 440, 107),   // Carnage Bow
+    (9445, 654, 151),  // Dynasty Bow
+    (6368, 581, 132),  // Shining Bow
+    (7575, 581, 132),  // Draconic Bow
+    (290, 519, 121),   // The Bow
+    (10223, 689, 163), // Icarus Spitter
+    (15554, 794, 192), // Recurve Thorne Bow
+    (15568, 768, 183), // Skull Carnium Bow
+    (15686, 724, 183), // Triumph Bow
+    (13467, 724, 176), // Vesper Thrower
+    (225, 80, 54),     // Mithril Dagger
+    (224, 69, 47),     // Maingauche
+    (223, 56, 39),     // Kukuri
+    (238, 45, 52),     // Dagger of Mana
+    (228, 136, 83),    // Crystal Dagger
+    (231, 122, 76),    // Grace Dagger
+    (233, 122, 76),    // Dark Screamer
+    (227, 107, 68),    // Stiletto
+    (234, 170, 99),    // Demon's Dagger
+    (229, 153, 91),    // Kris
+    (243, 122, 122),   // Hell Knife
+    (8682, 220, 121),  // Naga Storm
+    (236, 203, 114),   // Soul Separator
+    (235, 186, 107),   // Bloody Orchid
+    (9446, 291, 151),  // Dynasty Knife
+    (6367, 246, 132),  // Angel Slayer
+    (237, 220, 121),   // Dragon's Tooth
+    (10216, 318, 163), // Icarus Disperser
+    (15545, 382, 192), // Mamba Edge
+    (15559, 363, 183), // Skull Edge
+    (15677, 346, 183), // Triumph Dagger
+    (13460, 346, 176), // Vesper Shaper
+    (187, 90, 79),     // Atuba Hammer
+    (188, 90, 79),     // Ghost Staff
+    (190, 90, 79),     // Atuba Mace
+    (204, 152, 122),   // Deadman's Staff
+    (205, 152, 122),   // Ghoul's Staff
+    (206, 152, 122),   // Demon's Staff
+    (209, 189, 132),   // Divine Staff
+    (211, 189, 132),   // Staff of Nobility
+    (210, 189, 145),   // Staff of Evil Spirits
+    (8688, 245, 177),  // Daimon Crystal
+    (10252, 325, 222), // Dynasty Staff
+    (6366, 274, 193),  // Imperial Staff
+    (15552, 426, 281), // Cyclic Cane
+];
+
 /// `(grade index, armor kind, [head, chest, legs, gloves, feet, shield])`; 0 is nothing.
 pub const ARMOR: &[(usize, &str, [i32; 6])] = &[
     (0, "HEAVY", [47, 58, 59, 0, 0, 628]),              // Mithril Breastplate

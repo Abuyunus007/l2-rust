@@ -98,7 +98,12 @@ fn every_dist_key_has_a_topic() {
         .iter()
         .filter_map(|k| k.rel.strip_prefix("Custom/"))
         .collect();
-    assert_eq!(per_topic.keys().filter(|t| t.is_custom()).count(), customs.len());
+    // `L2R.ini` (D-62), the file of our own features, is one more.
+    assert!(per_topic.contains_key(&Topic::Custom("L2R".to_owned())));
+    assert_eq!(
+        per_topic.keys().filter(|t| t.is_custom()).count(),
+        customs.len() + 1
+    );
     assert!(customs.len() > 40);
     for (t, n) in &per_topic {
         eprintln!("{:>4}  {}", n, t.label());

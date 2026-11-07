@@ -559,6 +559,7 @@ impl World {
             WorldCommand::FakePlayerChatReloaded { requester, chat } => {
                 self.on_fake_player_chat_reloaded(requester, chat);
             }
+            WorldCommand::L2rReloaded { requester, settings } => self.on_l2r_reloaded(requester, settings),
             WorldCommand::LoginServerRegistered { name } => self.on_login_server_registered(name),
             WorldCommand::ClassIndexLoaded {
                 owner,

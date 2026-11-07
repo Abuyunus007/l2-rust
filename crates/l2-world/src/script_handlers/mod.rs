@@ -3,6 +3,7 @@
 
 pub(crate) mod buffme;
 pub(crate) mod charm;
+pub(crate) mod companion_command;
 pub(crate) mod dice;
 pub(crate) mod event_item;
 pub(crate) mod expoff;

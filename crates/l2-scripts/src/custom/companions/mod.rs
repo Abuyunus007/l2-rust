@@ -37,13 +37,16 @@ mod spell;
 use std::collections::BTreeMap;
 
 use l2_util::ObjectId;
-use l2_world::{CompanionSetup, Intention, PartyId, Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey};
+use l2_world::custom::CompanionCombatMode;
+use l2_world::{
+    CompanionSetup, Intention, PartyId, Script, ScriptCtx, ScriptNpc, ScriptSetup, SkillKey, ZoneId,
+};
 
 use self::brain::{Action, Enemy, Memory, Pos, Unit, View, think};
 use self::heal::heal_for;
 use self::pages::{MainPage, main_page};
 use self::role::Role;
-use self::scale::scale_for;
+use self::scale::{Multipliers, scale_for};
 use self::spell::spell_for;
 use super::class_buffer::{buff_target, grouped};
 use super::class_buffer_data::group_by_key;
@@ -78,7 +81,18 @@ struct Member {
     role: Role,
     /// The level it was made for, to see when its owner has grown.
     level: i32,
+    /// The item id of the weapon it holds: its attack.
+    weapon: i32,
     memory: Memory,
+}
+
+/// What the owner's party window shows of a squad.
+struct Window {
+    /// His party when the window was built.
+    party: Option<PartyId>,
+    /// The companions in it, with the names they are shown with (a companion that is gone is
+    /// deleted from the window by its name).
+    shown: Vec<(ObjectId, String)>,
 }
 
 /// The companions of one player.
@@ -86,9 +100,12 @@ struct Squad {
     /// The party the owner was in when he hired the first one. The squad ends when he is not in it.
     party: Option<PartyId>,
     members: Vec<Member>,
-    /// What the owner's party window shows now: his party and who of the squad is in it. When
-    /// that is not what the squad is, the window is sent again.
-    window: Option<(Option<PartyId>, Vec<ObjectId>)>,
+    /// What the owner's party window shows now, if anything.
+    window: Option<Window>,
+    /// The owner was told that his party window has no room for all of them.
+    told_full: bool,
+    /// When the companions start a fight (`CompanionCombatMode` of `L2R.ini`, `.companion`).
+    mode: CompanionCombatMode,
 }
 
 /// Every squad, by owner (ordered, so ticks do not depend on hashing, D-13).
@@ -128,9 +145,12 @@ fn npc_mp(ctx: &ScriptCtx<'_>, id: ObjectId) -> f32 {
     ratio(ctx.world().npc(id).map_or(0.0, |n| n.core.cur_mp), max)
 }
 
-/// The monsters around `owner` that are alive.
+/// The monsters around `owner` that are alive. None in a peace zone: nobody may fight there.
 fn enemies_near(ctx: &ScriptCtx<'_>, owner: ObjectId) -> Vec<Enemy> {
     let world = ctx.world();
+    if world.is_inside_zone(owner, ZoneId::Peace) {
+        return Vec::new();
+    }
     world
         .visible_objects_in_range(owner, SCAN_RANGE)
         .into_iter()
@@ -141,9 +161,21 @@ fn enemies_near(ctx: &ScriptCtx<'_>, owner: ObjectId) -> Vec<Enemy> {
                 pos: pos_of(ctx, id)?,
                 hp: npc_hp(ctx, id),
                 target: world.attack_target_of(id),
+                // A hit, a shot or a skill of the owner puts him on the monster's list.
+                hit_by_leader: world.aggro_list(id).iter().any(|aggro| aggro.attacker == owner),
             })
         })
         .collect()
+}
+
+/// The factors of `L2R.ini` on the companions' values.
+fn multipliers(ctx: &ScriptCtx<'_>) -> Multipliers {
+    let settings = &ctx.world().l2r_settings().companions;
+    Multipliers {
+        p_atk: settings.p_atk_multiplier,
+        m_atk: settings.m_atk_multiplier,
+        hp: settings.hp_multiplier,
+    }
 }
 
 /// Gives a companion what `.buffme` gives its group, as the command does.
@@ -220,6 +252,12 @@ fn hire(ctx: &mut ScriptCtx<'_>, owner: ObjectId, role: Role) -> Result<(), Stri
     if count >= MAX_COMPANIONS {
         return Err(format!("You can have {MAX_COMPANIONS} companions at most."));
     }
+    // A party window holds nine; a companion with no place in it would fight unseen.
+    if ctx.world().l2r_settings().companions.auto_join_party
+        && ctx.world().companion_window_room(owner) <= count
+    {
+        return Err("Your party is full: there is no room for a companion in your party window.".to_owned());
+    }
     let fee = hire_fee(level);
     if ctx.adena_of(owner) < fee {
         return Err(format!("A companion costs {} Adena.", grouped(fee)));
@@ -232,10 +270,12 @@ fn hire(ctx: &mut ScriptCtx<'_>, owner: ObjectId, role: Role) -> Result<(), Stri
     let (heading, instance) = (ctx.heading_of(owner), ctx.world().instance_id_of(owner));
     // The figure, the strength and the owner are born with the NPC: nobody sees it as anything
     // else first, and its kills pay the owner from its first blow.
+    let look = look::roll(role, level, &mut |bound| ctx.get_random(bound));
+    let weapon = look.right_hand;
     let setup = CompanionSetup {
         owner,
-        scale: scale_for(level),
-        look: look::roll(role, level, &mut |bound| ctx.get_random(bound)),
+        scale: scale_for(level, weapon, multipliers(ctx)),
+        look,
     };
     let object_id = ctx
         .world_mut()
@@ -254,15 +294,19 @@ fn hire(ctx: &mut ScriptCtx<'_>, owner: ObjectId, role: Role) -> Result<(), Stri
         npc,
         role,
         level,
+        weapon,
         memory: Memory::default(),
     };
     buff_itself(ctx, &member);
     let party = ctx.world().party_of(owner);
+    let mode = ctx.world().l2r_settings().companions.combat_mode;
     let state = ctx.state::<State>();
     let mut squad = state.squads.remove(&owner).unwrap_or(Squad {
         party,
         members: Vec::new(),
         window: None,
+        told_full: false,
+        mode,
     });
     squad.members.push(member);
     // He sees the new companion in his party window at once.
@@ -309,18 +353,65 @@ fn tick(ctx: &mut ScriptCtx<'_>, owner: ObjectId) {
     ctx.state::<State>().squads.insert(owner, squad);
 }
 
-/// The companions in the party window of their owner: the window is sent whole when the squad or
-/// his party is not what it shows, and every second the HP and MP of each companion.
+/// The companions in the party window of their owner, the way a real party is shown: the window
+/// is sent whole when it opens, when his party changes and after a teleport; a companion that
+/// comes or goes is added or deleted on its own; every second the HP and MP of each.
 fn show_in_party_window(ctx: &mut ScriptCtx<'_>, owner: ObjectId, squad: &mut Squad) {
-    let ids: Vec<ObjectId> = squad.members.iter().map(|m| m.npc.object_id).collect();
-    let shown = (ctx.world().party_of(owner), ids);
-    if squad.window.as_ref() == Some(&shown) {
-        for id in &shown.1 {
-            ctx.world().update_companion_window(owner, *id);
+    let world = ctx.world();
+    let wanted: Vec<ObjectId> = if world.l2r_settings().companions.auto_join_party {
+        let room = world.companion_window_room(owner);
+        let all: Vec<ObjectId> = squad.members.iter().map(|m| m.npc.object_id).collect();
+        let shown: Vec<ObjectId> = all.iter().copied().take(room).collect();
+        if shown.len() < all.len() {
+            if !squad.told_full {
+                ctx.send_message(
+                    owner,
+                    &format!(
+                        "Your party is full: {} of your companions are not shown in the party window.",
+                        all.len() - shown.len()
+                    ),
+                );
+                squad.told_full = true;
+            }
+        } else {
+            squad.told_full = false;
         }
+        shown
     } else {
-        ctx.world().send_companion_window(owner, &shown.1);
-        squad.window = Some(shown);
+        Vec::new()
+    };
+    let world = ctx.world();
+    if wanted.is_empty() {
+        if squad.window.take().is_some() {
+            world.clear_companion_window(owner);
+        }
+        return;
+    }
+    let party = world.party_of(owner);
+    let name = |id: ObjectId| world.companion_name(id).unwrap_or_default();
+    match &mut squad.window {
+        Some(window) if window.party == party => {
+            for (id, name) in window.shown.iter().filter(|(id, _)| !wanted.contains(id)) {
+                world.remove_from_companion_window(owner, *id, name);
+            }
+            window.shown.retain(|(id, _)| wanted.contains(id));
+            for id in &wanted {
+                if !window.shown.iter().any(|(shown, _)| shown == id) {
+                    world.add_to_companion_window(owner, *id);
+                    window.shown.push((*id, name(*id)));
+                }
+            }
+            for (id, _) in &window.shown {
+                world.update_companion_window(owner, *id);
+            }
+        }
+        _ => {
+            world.send_companion_window(owner, &wanted);
+            squad.window = Some(Window {
+                party,
+                shown: wanted.iter().map(|id| (*id, name(*id))).collect(),
+            });
+        }
     }
 }
 
@@ -343,13 +434,15 @@ fn run(ctx: &mut ScriptCtx<'_>, owner: ObjectId, squad: &mut Squad) {
 
     // First the upkeep, and the picture of everybody who can be hurt.
     let mut allies = vec![leader];
+    let mut moved = false;
     for member in &mut squad.members {
         let id = member.npc.object_id;
         if member.level != level {
-            ctx.world_mut().set_npc_scale(id, scale_for(level));
+            let scale = scale_for(level, member.weapon, multipliers(ctx));
+            ctx.world_mut().set_npc_scale(id, scale);
             member.level = level;
         }
-        catch_up(ctx, owner, member);
+        moved |= catch_up(ctx, owner, member);
         if !is_buffed(ctx, member) {
             buff_itself(ctx, member);
         }
@@ -360,6 +453,10 @@ fn run(ctx: &mut ScriptCtx<'_>, owner: ObjectId, squad: &mut Squad) {
                 hp: npc_hp(ctx, id),
             });
         }
+    }
+    // The owner went far (a teleport, most likely): his client builds the window anew.
+    if moved {
+        squad.window = None;
     }
 
     // Then every member decides on the same picture.
@@ -374,6 +471,7 @@ fn run(ctx: &mut ScriptCtx<'_>, owner: ObjectId, squad: &mut Squad) {
             mp: npc_mp(ctx, id),
             leader,
             leader_target,
+            aggressive: squad.mode == CompanionCombatMode::Aggressive,
             allies: &allies,
             enemies: &enemies,
         };
@@ -382,21 +480,56 @@ fn run(ctx: &mut ScriptCtx<'_>, owner: ObjectId, squad: &mut Squad) {
     }
 }
 
-/// A companion that is far away or in another instance is put next to its owner.
-fn catch_up(ctx: &mut ScriptCtx<'_>, owner: ObjectId, member: &Member) {
+/// A companion that is far away or in another instance is put next to its owner. `true` when it
+/// was moved.
+fn catch_up(ctx: &mut ScriptCtx<'_>, owner: ObjectId, member: &Member) -> bool {
     let id = member.npc.object_id;
     let (Some(here), Some(there)) = (pos_of(ctx, id), pos_of(ctx, owner)) else {
-        return;
+        return false;
     };
     let same_instance = ctx.world().instance_id_of(id) == ctx.world().instance_id_of(owner);
     if same_instance && here.distance(there) <= brain::CATCH_UP_DISTANCE {
-        return;
+        return false;
     }
-    if let Some((x, y, z)) = ctx.world().position_of(owner) {
-        let slot = SLOTS[usize::try_from(id.0).unwrap_or(0) % SLOTS.len()];
-        let target = l2_world::TeleportTarget::at(x + slot.0, y + slot.1, z)
-            .with_instance(ctx.world().instance_id_of(owner));
-        ctx.world_mut().tele_to_location(id, target);
+    let Some((x, y, z)) = ctx.world().position_of(owner) else {
+        return false;
+    };
+    let slot = SLOTS[usize::try_from(id.0).unwrap_or(0) % SLOTS.len()];
+    let target = l2_world::TeleportTarget::at(x + slot.0, y + slot.1, z)
+        .with_instance(ctx.world().instance_id_of(owner));
+    ctx.world_mut().tele_to_location(id, target);
+    true
+}
+
+/// `.companion aggressive` / `.companion passive` (event `mode:<word>`): when the companions of
+/// `owner` start a fight. What the player is told.
+fn set_mode(ctx: &mut ScriptCtx<'_>, owner: ObjectId, word: &str) -> String {
+    let wanted = match word.trim().to_ascii_lowercase().as_str() {
+        "aggressive" => Some(CompanionCombatMode::Aggressive),
+        "passive" => Some(CompanionCombatMode::Passive),
+        _ => None,
+    };
+    let default = ctx.world().l2r_settings().companions.combat_mode;
+    let Some(squad) = ctx.state::<State>().squads.get_mut(&owner) else {
+        return "You have no companions. Hire them at a gatekeeper.".to_owned();
+    };
+    if let Some(mode) = wanted {
+        squad.mode = mode;
+    }
+    let now = squad.mode;
+    let text = match now {
+        CompanionCombatMode::Aggressive => "aggressive: they attack what you target",
+        CompanionCombatMode::Passive => "passive: they attack what you target once you attacked it",
+    };
+    match wanted {
+        Some(_) => format!("Your companions are {text}."),
+        None => format!(
+            "Your companions are {text}. Use .companion aggressive or .companion passive (default: {}).",
+            match default {
+                CompanionCombatMode::Aggressive => "aggressive",
+                CompanionCombatMode::Passive => "passive",
+            }
+        ),
     }
 }
 
@@ -499,6 +632,11 @@ impl Script for Companions {
             return None;
         }
         let (command, key) = event.split_once(':').unwrap_or((event, ""));
+        if command == "mode" {
+            let answer = set_mode(ctx, owner, key);
+            ctx.send_message(owner, &answer);
+            return None;
+        }
         let note = match command {
             "hire" => match Role::from_key(key) {
                 Some(role) => match hire(ctx, owner, role) {
@@ -551,7 +689,9 @@ mod tests {
     use super::role::{NPC_ARCHER, NPC_DAGGER, NPC_HEALER, NPC_MAGE, NPC_TANK, NPC_WARRIOR};
     use super::*;
     use crate::custom::class_buffer_data::GROUPS;
-    use l2_protocol_game::server::{PartySmallWindowAll, PartySmallWindowUpdate};
+    use l2_protocol_game::server::{
+        PartySmallWindowAdd, PartySmallWindowAll, PartySmallWindowDelete, PartySmallWindowUpdate,
+    };
 
     use crate::testing::{
         Pages, ScriptTest, Sent, X, Y, Z, datapack, decode, item, name_of, names_to, npc_xml, skill_xml,
@@ -707,6 +847,38 @@ mod tests {
 
     fn mob_hp(t: &ScriptTest, mob: ObjectId) -> f64 {
         t.world.npc(mob).map_or(0.0, |n| n.core.cur_hp)
+    }
+
+    /// The owner types `text` in the chat.
+    fn say(t: &mut ScriptTest, text: &str) {
+        t.input(
+            1,
+            ClientInput::Say {
+                chat_type: 0,
+                text: text.to_owned(),
+                target: None,
+            },
+        );
+    }
+
+    /// The owner attacks `mob` (he is on its hate list): a passive companion joins in now.
+    fn owner_hits(t: &mut ScriptTest, mob: ObjectId) {
+        t.world.add_damage_hate(mob, OWNER, 1, 1);
+    }
+
+    /// The texts of the system messages the owner got (UTF-16 in the packet: both alignments).
+    fn texts_to_owner(sent: &Sent) -> Vec<String> {
+        let utf16 = |bytes: &[u8]| {
+            let units: Vec<u16> = bytes
+                .chunks_exact(2)
+                .map(|c| u16::from_le_bytes([c[0], c[1]]))
+                .collect();
+            String::from_utf16_lossy(&units)
+        };
+        sent.iter()
+            .filter(|(to, body)| *to == 1 && name_of(body) == "SYSTEM_MESSAGE")
+            .map(|(_, body)| format!("{} {}", utf16(body), utf16(&body[1..])))
+            .collect()
     }
 
     /// A monster next to the owner that is fighting him.
@@ -984,30 +1156,127 @@ mod tests {
     }
 
     #[test]
-    fn every_further_companion_lands_in_the_window_too() {
+    fn every_further_companion_is_added_to_the_open_window() {
         let Some(root) = datapack() else { return };
         let mut t = scene(root, 40, 10_000_000);
         let mut hired = Vec::new();
         for (key, npc) in [("tank", NPC_TANK), ("healer", NPC_HEALER), ("mage", NPC_MAGE)] {
             let _ = t.take();
             press(&mut t, &format!("hire:{key}"));
-            hired.push(only(&t, npc).0);
+            let id = only(&t, npc);
+            hired.push(id.0);
             seconds(&mut t, 1);
             let packets = window_packets(&t.take());
             let names: Vec<&str> = packets.iter().map(|(n, _)| n.as_str()).collect();
-            // A client takes no new members from a second whole window: it is emptied first.
-            let all = names.iter().position(|n| *n == "PARTY_SMALL_WINDOW_ALL");
-            let all = all.unwrap_or_else(|| panic!("{key}: {names:?}"));
-            assert!(all > 0, "{key}: {names:?}");
-            assert_eq!(
-                names[all - 1],
-                "PARTY_SMALL_WINDOW_DELETE_ALL",
-                "{key}: {names:?}"
-            );
-            let window = decode::<PartySmallWindowAll>(&packets[all].1);
-            let ids: Vec<i32> = window.members.iter().map(|m| m.vitals.object_id).collect();
-            assert_eq!(ids, hired, "{key}");
+            if hired.len() == 1 {
+                // The window opens: emptied, then whole, as for a player who joins a party.
+                assert_eq!(
+                    names[..2],
+                    ["PARTY_SMALL_WINDOW_DELETE_ALL", "PARTY_SMALL_WINDOW_ALL"]
+                );
+                let window = decode::<PartySmallWindowAll>(&packets[1].1);
+                let ids: Vec<i32> = window.members.iter().map(|m| m.vitals.object_id).collect();
+                assert_eq!(ids, hired);
+            } else {
+                // Later ones join it as a member who joins a party is shown to the others.
+                assert!(!names.contains(&"PARTY_SMALL_WINDOW_ALL"), "{key}: {names:?}");
+                let adds: Vec<PartySmallWindowAdd> = packets
+                    .iter()
+                    .filter(|(n, _)| n == "PARTY_SMALL_WINDOW_ADD")
+                    .map(|(_, body)| decode::<PartySmallWindowAdd>(body))
+                    .collect();
+                assert_eq!(adds.len(), 1, "{key}: {names:?}");
+                assert_eq!(adds[0].member.object_id, id.0);
+                assert_eq!(adds[0].leader_object_id, OWNER.0);
+                assert_eq!(adds[0].member.name, t.world.fake_player_info(id).unwrap().name);
+            }
         }
+    }
+
+    #[test]
+    fn a_full_party_refuses_a_companion_and_says_so() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 40, 10_000_000);
+        // Eight friends and the owner: nine, the most a party window holds.
+        for friend in 2..=9 {
+            t.enter_as(friend, 40, race::HUMAN, player_class::DUELIST, vec![]);
+            t.party(1, friend);
+        }
+        assert_eq!(t.world.party_members_of(OWNER).len(), 9);
+        let adena = t.count(1, 57);
+        let answer = direct(&mut t, "hire:tank");
+        assert!(answer.contains("Your party is full"), "{answer}");
+        assert_eq!(
+            (all_companions(&t), t.count(1, 57)),
+            (0, adena),
+            "nothing hired, nothing paid"
+        );
+    }
+
+    #[test]
+    fn companions_beyond_the_room_of_the_window_are_left_out_with_a_message() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 40, 10_000_000);
+        for friend in 2..=6 {
+            t.enter_as(friend, 40, race::HUMAN, player_class::DUELIST, vec![]);
+            t.party(1, friend);
+        }
+        click(&mut t, "hire:tank");
+        click(&mut t, "hire:healer");
+        click(&mut t, "hire:warrior");
+        assert_eq!(all_companions(&t), 3, "six players and three companions fit");
+        // Two more friends: room for one companion.
+        for friend in 7..=8 {
+            t.enter_as(friend, 40, race::HUMAN, player_class::DUELIST, vec![]);
+            t.party(1, friend);
+        }
+        let _ = t.take();
+        seconds(&mut t, 2);
+        let sent = t.take();
+        assert!(
+            texts_to_owner(&sent)
+                .iter()
+                .any(|s| s.contains("2 of your companions are not shown")),
+            "{:?}",
+            texts_to_owner(&sent)
+        );
+        // The last two hired leave the window; the tank keeps its place.
+        let deleted: Vec<i32> = window_packets(&sent)
+            .iter()
+            .filter(|(n, _)| n == "PARTY_SMALL_WINDOW_DELETE")
+            .map(|(_, body)| decode::<PartySmallWindowDelete>(body).object_id)
+            .collect();
+        assert_eq!(deleted, vec![only(&t, NPC_HEALER).0, only(&t, NPC_WARRIOR).0]);
+        assert_eq!(all_companions(&t), 3, "they still follow and fight");
+    }
+
+    #[test]
+    fn without_auto_join_the_window_stays_shut() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 40, 10_000_000);
+        let mut settings = t.world.l2r_settings().clone();
+        settings.companions.auto_join_party = false;
+        t.world.set_l2r_settings(settings);
+        let _ = t.take();
+        press(&mut t, "hire:tank");
+        press(&mut t, "hire:healer");
+        seconds(&mut t, 2);
+        assert!(window_packets(&t.take()).is_empty());
+        assert_eq!(all_companions(&t), 2, "they still come and fight");
+    }
+
+    #[test]
+    fn after_a_teleport_the_window_is_built_anew() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 40, 10_000_000);
+        click(&mut t, "hire:tank");
+        click(&mut t, "hire:healer");
+        seconds(&mut t, 1);
+        let _ = t.take();
+        t.world.set_position(OWNER, X + 6_000, Y, Z);
+        seconds(&mut t, 2);
+        let window = last_window(&t.take()).expect("sent whole after the companions were brought over");
+        assert_eq!(window.members.len(), 2);
     }
 
     #[test]
@@ -1067,12 +1336,20 @@ mod tests {
         click(&mut t, "hire:tank");
         click(&mut t, "hire:healer");
         let tank = only(&t, NPC_TANK);
+        let tank_name = t.world.fake_player_info(tank).unwrap().name;
+        seconds(&mut t, 1);
         let _ = t.take();
         t.world.do_die(tank, None);
         seconds(&mut t, 2);
-        let window = last_window(&t.take()).expect("the window is sent again without it");
-        let ids: Vec<i32> = window.members.iter().map(|m| m.vitals.object_id).collect();
-        assert_eq!(ids, vec![only(&t, NPC_HEALER).0]);
+        let packets = window_packets(&t.take());
+        let deleted: Vec<PartySmallWindowDelete> = packets
+            .iter()
+            .filter(|(n, _)| n == "PARTY_SMALL_WINDOW_DELETE")
+            .map(|(_, body)| decode::<PartySmallWindowDelete>(body))
+            .collect();
+        assert_eq!(deleted.len(), 1);
+        assert_eq!((deleted[0].object_id, &deleted[0].name), (tank.0, &tank_name));
+        assert!(!packets.iter().any(|(n, _)| n == "PARTY_SMALL_WINDOW_ALL"));
 
         // The last one dismissed: the window closes.
         let _ = t.take();
@@ -1389,6 +1666,7 @@ mod tests {
             let mp = t.world.npc(mage).unwrap().core.cur_mp;
             let mob = t.spawn(MONSTER, 300);
             t.world.set_target(OWNER, Some(mob));
+            owner_hits(&mut t, mob);
             let _ = t.take();
             let mut hit_from = None;
             for _ in 0..80 {
@@ -1417,6 +1695,7 @@ mod tests {
         let (exp, ..) = reward_state(&t);
         let prize = t.spawn(PRIZE, 200);
         t.world.set_target(OWNER, Some(prize));
+        owner_hits(&mut t, prize);
         seconds(&mut t, 8);
         assert!(mob_hp(&t, prize) < 60_000.0, "the mage hit it");
         t.kill(mage.0, prize);
@@ -1434,6 +1713,7 @@ mod tests {
         assert!(gear_data::WEAPONS.contains(&("dagger", super::look::grade_for(60), right_hand)));
         let mob = t.spawn(MONSTER, 200);
         t.world.set_target(OWNER, Some(mob));
+        owner_hits(&mut t, mob);
         seconds(&mut t, 8);
         assert!(mob_hp(&t, mob) < MOB_HP, "{}", mob_hp(&t, mob));
     }
@@ -1446,9 +1726,69 @@ mod tests {
         let mob = t.spawn(MONSTER, 200);
         seconds(&mut t, 3);
         assert_eq!(mob_hp(&t, mob), MOB_HP, "an unengaged monster is left alone");
+        // Passive (the default of L2R.ini): selecting it is not enough.
         t.world.set_target(OWNER, Some(mob));
+        seconds(&mut t, 3);
+        assert_eq!(
+            mob_hp(&t, mob),
+            MOB_HP,
+            "a passive companion waits for its owner's first blow"
+        );
+        owner_hits(&mut t, mob);
         seconds(&mut t, 8);
         assert!(mob_hp(&t, mob) < MOB_HP, "{}", mob_hp(&t, mob));
+    }
+
+    #[test]
+    fn an_aggressive_companion_attacks_what_the_owner_selects_and_the_command_switches_it() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 40, 10_000_000);
+        click(&mut t, "hire:warrior");
+        let _ = t.take();
+        say(&mut t, ".companion aggressive");
+        t.ticks(2);
+        assert!(texts_to_owner(&t.take()).iter().any(|s| s.contains("aggressive")));
+        let mob = t.spawn(MONSTER, 200);
+        t.world.set_target(OWNER, Some(mob));
+        seconds(&mut t, 8);
+        assert!(
+            mob_hp(&t, mob) < MOB_HP,
+            "an aggressive companion goes for the selection"
+        );
+
+        say(&mut t, ".companion passive");
+        let second = t.spawn(MONSTER, -200);
+        t.world.set_target(OWNER, Some(second));
+        seconds(&mut t, 4);
+        assert_eq!(mob_hp(&t, second), MOB_HP, "passive again");
+    }
+
+    #[test]
+    fn nobody_fights_in_a_peace_zone() {
+        use std::sync::Arc;
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 40, 10_000_000);
+        t.world.set_zone_data(
+            Arc::new(l2_data::Zones::load(root)),
+            Arc::new(l2_data::MapRegions::load(root)),
+        );
+        click(&mut t, "hire:warrior");
+        say(&mut t, ".companion aggressive");
+        let warrior = only(&t, NPC_WARRIOR);
+        // The middle of Giran.
+        let (x, y, z) = (83_400, 147_943, -3_404);
+        t.world.set_position(OWNER, x, y, z);
+        t.world.set_position(warrior, x + 50, y, z);
+        t.world.revalidate_zone(OWNER, true);
+        assert!(
+            t.world.is_inside_zone(OWNER, ZoneId::Peace),
+            "Giran is a peace zone"
+        );
+        let mob = t.world.spawn_npc_at(MONSTER, x + 150, y, z, 0).unwrap();
+        t.world.set_target(OWNER, Some(mob));
+        owner_hits(&mut t, mob);
+        seconds(&mut t, 6);
+        assert_eq!(mob_hp(&t, mob), MOB_HP, "the companion fought in town");
     }
 
     #[test]
@@ -1459,6 +1799,7 @@ mod tests {
         let archer = only(&t, NPC_ARCHER);
         let mob = t.spawn(MONSTER, 450);
         t.world.set_target(OWNER, Some(mob));
+        owner_hits(&mut t, mob);
         let (mut shot_from, mut closest, mut targeted) = (None, f64::MAX, false);
         for _ in 0..40 {
             t.ticks(10);
@@ -1514,6 +1855,82 @@ mod tests {
             .iter()
             .filter(|n| *n == "MAGIC_SKILL_USE")
             .count()
+    }
+
+    /// P. Atk., M. Atk. and critical rate of a companion without its buffs.
+    fn plain_attack(t: &mut ScriptTest, id: ObjectId) -> (f64, f64, i32) {
+        t.world.stop_all_effects(id);
+        let s = t.world.stats(id).unwrap();
+        (s.p_atk(None), s.m_atk(None, None), s.critical_hit(None, None))
+    }
+
+    #[test]
+    fn a_companion_hits_like_a_player_of_its_level_with_its_weapon() {
+        let Some(root) = datapack() else { return };
+        for level in [20, 40, 60, 85] {
+            let mut t = scene(root, level, 10_000_000);
+            for role in [Role::Warrior, Role::Archer, Role::Mage] {
+                click(&mut t, &format!("hire:{}", role.key()));
+                let id = only(&t, role.npc_id());
+                let weapon = t.world.fake_player_info(id).unwrap().paperdoll_item_ids
+                    [l2_protocol_game::server::charscreen::paperdoll::RHAND];
+                let (weapon_p, weapon_m) = scale::weapon_attack(weapon);
+                let (p_atk, m_atk, crit) = plain_attack(&mut t, id);
+                // A player: weapon times the level modifier, M. Atk. times its square (the stat
+                // bonuses of the template's base stats are about 1). Never the template's values
+                // times the level modifier again, which made a level 60 warrior hit ten times as
+                // hard as a player.
+                let level_mod = f64::from(level + 89) / 100.0;
+                let p_ratio = p_atk / (f64::from(weapon_p) * level_mod);
+                assert!(
+                    (0.8..1.25).contains(&p_ratio),
+                    "{role:?} {level}: {p_atk} with {weapon_p}"
+                );
+                if role == Role::Mage {
+                    let m_ratio = m_atk / (f64::from(weapon_m) * level_mod * level_mod);
+                    assert!(
+                        (0.8..1.5).contains(&m_ratio),
+                        "{role:?} {level}: {m_atk} with {weapon_m}"
+                    );
+                }
+                // A player's critical rate with that weapon (the template value is times 10).
+                assert!(crit <= 150, "{role:?} {level}: critical rate {crit}");
+            }
+        }
+    }
+
+    #[test]
+    fn the_multipliers_of_l2r_ini_change_attack_and_hp() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 60, 10_000_000);
+        click(&mut t, "hire:warrior");
+        let plain = only(&t, NPC_WARRIOR);
+        let weapon = t.world.npc(plain).unwrap().look.as_ref().unwrap().right_hand;
+        let (p_atk, ..) = plain_attack(&mut t, plain);
+        let hp = t.world.stats(plain).unwrap().max_hp();
+        click(&mut t, "dismissall");
+
+        let mut settings = t.world.l2r_settings().clone();
+        settings.companions.p_atk_multiplier = 0.5;
+        settings.companions.hp_multiplier = 2.0;
+        t.world.set_l2r_settings(settings);
+        // The same weapon for a fair comparison: hire until the dice give it again.
+        for _ in 0..200 {
+            click(&mut t, "hire:warrior");
+            let id = only(&t, NPC_WARRIOR);
+            if t.world.npc(id).unwrap().look.as_ref().unwrap().right_hand == weapon {
+                let (half, ..) = plain_attack(&mut t, id);
+                assert!((half / p_atk - 0.5).abs() < 0.02, "{p_atk} then {half}");
+                let double = t.world.stats(id).unwrap().max_hp();
+                assert!(
+                    (f64::from(double) / f64::from(hp) - 2.0).abs() < 0.01,
+                    "{hp} then {double}"
+                );
+                return;
+            }
+            click(&mut t, "dismissall");
+        }
+        panic!("the dice never gave the weapon {weapon} again");
     }
 
     #[test]
@@ -1662,6 +2079,7 @@ mod tests {
         assert!(!went_for_it);
         // Once the companion hits it, the monster fights back.
         t.world.set_target(OWNER, Some(hunter));
+        owner_hits(&mut t, hunter);
         seconds(&mut t, 12);
         assert!(mob_hp(&t, hunter) < MOB_HP, "the companion did not attack");
     }

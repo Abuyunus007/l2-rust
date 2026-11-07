@@ -540,6 +540,12 @@ pub enum WorldCommand {
         requester: l2_util::ObjectId,
         chat: Vec<crate::custom::fake_players::FakePlayerChatEntry>,
     },
+    /// The answer to `ControlRequest::ReloadL2r` (`//reload l2r`): the settings of `L2R.ini`, read
+    /// again by the game server task.
+    L2rReloaded {
+        requester: l2_util::ObjectId,
+        settings: crate::custom::l2r::L2rSettings,
+    },
     /// The answer to `ControlRequest::LoadHtmlFile` (`//loadhtml`, see `admin/page.rs`): the text
     /// of the file, `None` when there is no such html file.
     HtmlFileLoaded {
@@ -717,6 +723,9 @@ impl fmt::Debug for WorldCommand {
             }
             Self::FakePlayerChatReloaded { requester, chat } => {
                 write!(f, "FakePlayerChatReloaded({requester}, {} lines)", chat.len())
+            }
+            Self::L2rReloaded { requester, settings } => {
+                write!(f, "L2rReloaded({requester}, {settings:?})")
             }
             Self::HtmlFileLoaded {
                 requester,

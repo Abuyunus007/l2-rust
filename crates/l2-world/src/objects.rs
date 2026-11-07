@@ -122,8 +122,12 @@ pub struct Npc {
     pub look: Option<crate::companion::CompanionLook>,
 }
 
-/// A companion's level and the factors on the template's base values. The template holds the
-/// values of a character of the level it names; the owner's level decides the rest.
+/// A companion's level, factors on the template's HP, MP and defence, and its base attack.
+///
+/// The attack is not a factor: it is the P. Atk. and M. Atk. of the weapon the companion holds,
+/// and the engine adds the stat bonus and the level modifier to it as it does for a player
+/// (`PAtkMod`, `MAtkMod`). A template value meant as a character's final attack would get them a
+/// second time.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct NpcScale {
     /// The level the NPC has instead of the template's.
@@ -132,8 +136,10 @@ pub struct NpcScale {
     pub hp: f32,
     /// Factor on max MP.
     pub mp: f32,
-    /// Factor on P. Atk. and M. Atk.
-    pub attack: f32,
+    /// The base P. Atk., instead of the template's.
+    pub p_atk: i32,
+    /// The base M. Atk., instead of the template's.
+    pub m_atk: i32,
     /// Factor on P. Def. and M. Def.
     pub defence: f32,
 }

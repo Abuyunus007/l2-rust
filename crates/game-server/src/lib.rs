@@ -28,7 +28,7 @@ use std::net::SocketAddr;
 use std::path::{Component, Path, PathBuf};
 use std::sync::Arc;
 
-use l2_config::{ConfigError, DatabaseConfig, GameConfig, IniFile, InterfaceConfig};
+use l2_config::{ConfigError, DatabaseConfig, GameConfig, IniFile, InterfaceConfig, L2rConfig};
 use l2_data::{DataError, Datapack, DatapackOptions};
 use l2_db::{DbError, IdRepository, Pool};
 use l2_net::CancellationToken;
@@ -1098,6 +1098,8 @@ impl Server {
             // `//reload fakeplayerchat` (`Custom/FakePlayers.ini`).
             let read_fake_player_chat =
                 config.fake_players.fake_players_enabled && config.fake_players.fake_player_chat;
+            // `//reload l2r` reads `config/L2R.ini` again.
+            let l2r_path = paths.config_dir.join(L2rConfig::FILE);
             // `//respawnall` reads the spawn files again with the same options as the start.
             let (npcs, spawn_options, spawn_root) = {
                 let options = options_from_config(&config, &paths.config_dir);
@@ -1134,6 +1136,22 @@ impl Server {
                         };
                         if !acks.send_to_world(WorldCommand::FakePlayerChatReloaded { requester, chat }) {
                             warn!("The reloaded fake player chat could not be handed to the world.");
+                        }
+                    });
+                }
+                l2_world::ControlRequest::ReloadL2r { requester } => {
+                    let (acks, path) = (acks.clone(), l2r_path.clone());
+                    tokio::task::spawn_blocking(move || {
+                        let ini = match IniFile::load(&path) {
+                            Ok(ini) => ini,
+                            Err(error) => {
+                                warn!("L2R.ini could not be read, the settings stay: {error}");
+                                return;
+                            }
+                        };
+                        let settings = npcs::l2r_settings_of(&L2rConfig::from_ini(&ini));
+                        if !acks.send_to_world(WorldCommand::L2rReloaded { requester, settings }) {
+                            warn!("The reloaded L2R.ini could not be handed to the world.");
                         }
                     });
                 }

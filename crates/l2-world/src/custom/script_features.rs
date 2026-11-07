@@ -104,6 +104,8 @@ pub struct CustomScriptSettings {
 #[derive(Debug, Default)]
 pub struct CustomScriptWorld {
     pub(crate) settings: CustomScriptSettings,
+    /// `config/L2R.ini` (`World::l2r_settings`): the settings of the L2Rust features.
+    pub(crate) l2r: super::l2r::L2rSettings,
     pub(crate) transmog: super::transmog::TransmogWorld,
     /// The flags of the `EventMonster`s a script set.
     pub(crate) event_monsters: BTreeMap<ObjectId, super::events::EventMonsterFlags>,
