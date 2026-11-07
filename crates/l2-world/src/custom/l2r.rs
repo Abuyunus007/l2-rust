@@ -31,6 +31,10 @@ pub struct CompanionSettings {
     pub auto_join_party: bool,
     /// `CompanionCombatMode`.
     pub combat_mode: CompanionCombatMode,
+    /// `CompanionFeePerLevel`: Adena a companion costs for each level of its owner.
+    pub fee_per_level: i64,
+    /// `CompanionMaxCount`: the most companions a player may have at once.
+    pub max_count: usize,
 }
 
 impl Default for CompanionSettings {
@@ -41,6 +45,8 @@ impl Default for CompanionSettings {
             hp_multiplier: 1.0,
             auto_join_party: true,
             combat_mode: CompanionCombatMode::Passive,
+            fee_per_level: 5_000,
+            max_count: 3,
         }
     }
 }

@@ -136,6 +136,8 @@ pub fn l2r_settings_of(l2r: &L2rConfig) -> L2rSettings {
                 L2rCombatMode::Aggressive => CompanionCombatMode::Aggressive,
                 L2rCombatMode::Passive => CompanionCombatMode::Passive,
             },
+            fee_per_level: c.companion_fee_per_level,
+            max_count: usize::try_from(c.companion_max_count).unwrap_or(1),
         },
     }
 }
@@ -273,6 +275,8 @@ mod l2r_tests {
                 companion_hp_multiplier: 0.5,
                 companion_auto_join_party: false,
                 companion_combat_mode: L2rCombatMode::Aggressive,
+                companion_fee_per_level: 1_234,
+                companion_max_count: 6,
             },
             ..GameConfig::default()
         };
@@ -284,6 +288,8 @@ mod l2r_tests {
                 hp_multiplier: 0.5,
                 auto_join_party: false,
                 combat_mode: CompanionCombatMode::Aggressive,
+                fee_per_level: 1_234,
+                max_count: 6,
             }
         );
         // The reload path maps the file the same way.

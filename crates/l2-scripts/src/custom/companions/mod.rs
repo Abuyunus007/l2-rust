@@ -51,10 +51,6 @@ use self::spell::spell_for;
 use super::class_buffer::{buff_target, grouped};
 use super::class_buffer_data::group_by_key;
 
-/// What a companion costs for each level of its owner, in Adena.
-pub(crate) const FEE_PER_LEVEL: i64 = 5_000;
-/// The most companions a player may have at once.
-const MAX_COMPANIONS: usize = 3;
 /// The level a player needs to hire.
 const MIN_OWNER_LEVEL: i32 = 20;
 /// How often a brain thinks.
@@ -68,11 +64,25 @@ const TAUNT_HATE: i64 = 50_000;
 /// The hate a companion starts a fight with.
 const ATTACK_DESIRE: i64 = 999;
 /// Where the hired ones appear around their owner: the ring is filled one by one.
-const SLOTS: [(i32, i32); 3] = [(80, 60), (-80, 60), (0, -90)];
+const SLOTS: [(i32, i32); 8] = [
+    (80, 60),
+    (-80, 60),
+    (0, -90),
+    (100, -40),
+    (-100, -40),
+    (0, 110),
+    (60, -100),
+    (-60, -100),
+];
 
-/// The price of one companion for a player of `level`.
-fn hire_fee(level: i32) -> i64 {
-    i64::from(level.max(0)) * FEE_PER_LEVEL
+/// The price of one companion for a player of `level` (`CompanionFeePerLevel` of `L2R.ini`).
+fn hire_fee(ctx: &ScriptCtx<'_>, level: i32) -> i64 {
+    i64::from(level.max(0)) * ctx.world().l2r_settings().companions.fee_per_level
+}
+
+/// The most companions a player may have at once (`CompanionMaxCount` of `L2R.ini`).
+fn max_companions(ctx: &ScriptCtx<'_>) -> usize {
+    ctx.world().l2r_settings().companions.max_count.max(1)
 }
 
 /// A hired companion.
@@ -83,6 +93,10 @@ struct Member {
     level: i32,
     /// The item id of the weapon it holds: its attack.
     weapon: i32,
+    /// Its owner's client knows it (its `CharInfo` went out with a world tick after the spawn).
+    /// Only then may it join his party window: a client takes no party member it does not know
+    /// yet, so a companion added in the same tick it was made never showed there.
+    known: bool,
     memory: Memory,
 }
 
@@ -249,8 +263,9 @@ fn hire(ctx: &mut ScriptCtx<'_>, owner: ObjectId, role: Role) -> Result<(), Stri
         .squads
         .get(&owner)
         .map_or(0, |s| s.members.len());
-    if count >= MAX_COMPANIONS {
-        return Err(format!("You can have {MAX_COMPANIONS} companions at most."));
+    let max = max_companions(ctx);
+    if count >= max {
+        return Err(format!("You can have {max} companions at most."));
     }
     // A party window holds nine; a companion with no place in it would fight unseen.
     if ctx.world().l2r_settings().companions.auto_join_party
@@ -258,7 +273,7 @@ fn hire(ctx: &mut ScriptCtx<'_>, owner: ObjectId, role: Role) -> Result<(), Stri
     {
         return Err("Your party is full: there is no room for a companion in your party window.".to_owned());
     }
-    let fee = hire_fee(level);
+    let fee = hire_fee(ctx, level);
     if ctx.adena_of(owner) < fee {
         return Err(format!("A companion costs {} Adena.", grouped(fee)));
     }
@@ -295,6 +310,7 @@ fn hire(ctx: &mut ScriptCtx<'_>, owner: ObjectId, role: Role) -> Result<(), Stri
         role,
         level,
         weapon,
+        known: false,
         memory: Memory::default(),
     };
     buff_itself(ctx, &member);
@@ -348,6 +364,11 @@ fn tick(ctx: &mut ScriptCtx<'_>, owner: ObjectId) {
         ctx.cancel_quest_timer(TIMER, None, Some(owner));
         return;
     }
+    // A second has passed since the last of them was made: the world has shown each to the
+    // players around it.
+    for member in &mut squad.members {
+        member.known = true;
+    }
     run(ctx, owner, &mut squad);
     show_in_party_window(ctx, owner, &mut squad);
     ctx.state::<State>().squads.insert(owner, squad);
@@ -360,7 +381,12 @@ fn show_in_party_window(ctx: &mut ScriptCtx<'_>, owner: ObjectId, squad: &mut Sq
     let world = ctx.world();
     let wanted: Vec<ObjectId> = if world.l2r_settings().companions.auto_join_party {
         let room = world.companion_window_room(owner);
-        let all: Vec<ObjectId> = squad.members.iter().map(|m| m.npc.object_id).collect();
+        let all: Vec<ObjectId> = squad
+            .members
+            .iter()
+            .filter(|m| m.known)
+            .map(|m| m.npc.object_id)
+            .collect();
         let shown: Vec<ObjectId> = all.iter().copied().take(room).collect();
         if shown.len() < all.len() {
             if !squad.told_full {
@@ -595,9 +621,10 @@ fn page(ctx: &mut ScriptCtx<'_>, owner: ObjectId, note: Option<&str>) -> String 
         .map(|s| s.members.iter().map(|m| m.role).collect())
         .unwrap_or_default();
     main_page(&MainPage {
-        fee: hire_fee(level),
+        fee: hire_fee(ctx, level),
+        fee_per_level: ctx.world().l2r_settings().companions.fee_per_level,
         squad: &squad,
-        max: MAX_COMPANIONS,
+        max: max_companions(ctx),
         min_level: MIN_OWNER_LEVEL,
         note,
     })
@@ -1156,7 +1183,9 @@ mod tests {
     }
 
     #[test]
-    fn every_further_companion_is_added_to_the_open_window() {
+    fn every_further_companion_is_added_to_the_open_window_after_the_client_knows_it() {
+        use l2_protocol_game::server::CharInfo;
+
         let Some(root) = datapack() else { return };
         let mut t = scene(root, 40, 10_000_000);
         let mut hired = Vec::new();
@@ -1165,31 +1194,50 @@ mod tests {
             press(&mut t, &format!("hire:{key}"));
             let id = only(&t, npc);
             hired.push(id.0);
-            seconds(&mut t, 1);
-            let packets = window_packets(&t.take());
-            let names: Vec<&str> = packets.iter().map(|(n, _)| n.as_str()).collect();
-            if hired.len() == 1 {
+            seconds(&mut t, 2);
+            let sent: Vec<(String, Vec<u8>)> = t
+                .take()
+                .into_iter()
+                .filter(|(to, _)| *to == 1)
+                .map(|(_, body)| (name_of(&body), body))
+                .collect();
+            let names: Vec<&str> = sent.iter().map(|(n, _)| n.as_str()).collect();
+            // The client is told who it is first: a party member it does not know is dropped.
+            let shown = sent
+                .iter()
+                .position(|(n, body)| n == "CHAR_INFO" && decode::<CharInfo>(body).object_id == id.0)
+                .unwrap_or_else(|| panic!("{key}: never shown: {names:?}"));
+            let joined = if hired.len() == 1 {
                 // The window opens: emptied, then whole, as for a player who joins a party.
-                assert_eq!(
-                    names[..2],
-                    ["PARTY_SMALL_WINDOW_DELETE_ALL", "PARTY_SMALL_WINDOW_ALL"]
-                );
-                let window = decode::<PartySmallWindowAll>(&packets[1].1);
+                let all = names
+                    .iter()
+                    .position(|n| *n == "PARTY_SMALL_WINDOW_ALL")
+                    .unwrap_or_else(|| panic!("{key}: {names:?}"));
+                assert_eq!(names[all - 1], "PARTY_SMALL_WINDOW_DELETE_ALL");
+                let window = decode::<PartySmallWindowAll>(&sent[all].1);
                 let ids: Vec<i32> = window.members.iter().map(|m| m.vitals.object_id).collect();
                 assert_eq!(ids, hired);
+                all
             } else {
                 // Later ones join it as a member who joins a party is shown to the others.
                 assert!(!names.contains(&"PARTY_SMALL_WINDOW_ALL"), "{key}: {names:?}");
-                let adds: Vec<PartySmallWindowAdd> = packets
+                let adds: Vec<(usize, PartySmallWindowAdd)> = sent
                     .iter()
-                    .filter(|(n, _)| n == "PARTY_SMALL_WINDOW_ADD")
-                    .map(|(_, body)| decode::<PartySmallWindowAdd>(body))
+                    .enumerate()
+                    .filter(|(_, (n, _))| n == "PARTY_SMALL_WINDOW_ADD")
+                    .map(|(i, (_, body))| (i, decode::<PartySmallWindowAdd>(body)))
                     .collect();
                 assert_eq!(adds.len(), 1, "{key}: {names:?}");
-                assert_eq!(adds[0].member.object_id, id.0);
-                assert_eq!(adds[0].leader_object_id, OWNER.0);
-                assert_eq!(adds[0].member.name, t.world.fake_player_info(id).unwrap().name);
-            }
+                let (at, add) = &adds[0];
+                assert_eq!(add.member.object_id, id.0);
+                assert_eq!(add.leader_object_id, OWNER.0);
+                assert_eq!(add.member.name, t.world.fake_player_info(id).unwrap().name);
+                *at
+            };
+            assert!(
+                shown < joined,
+                "{key}: CharInfo at {shown}, the window at {joined}: {names:?}"
+            );
         }
     }
 
@@ -1225,6 +1273,7 @@ mod tests {
         click(&mut t, "hire:healer");
         click(&mut t, "hire:warrior");
         assert_eq!(all_companions(&t), 3, "six players and three companions fit");
+        seconds(&mut t, 1);
         // Two more friends: room for one companion.
         for friend in 7..=8 {
             t.enter_as(friend, 40, race::HUMAN, player_class::DUELIST, vec![]);
@@ -1368,6 +1417,7 @@ mod tests {
         let Some(root) = datapack() else { return };
         let mut t = scene(root, 40, 10_000_000);
         click(&mut t, "hire:tank");
+        seconds(&mut t, 1);
         let _ = t.take();
         t.world.do_die(OWNER, None);
         seconds(&mut t, 2);
@@ -1500,6 +1550,38 @@ mod tests {
         direct(&mut t, "hire:");
         direct(&mut t, "teleport:home");
         assert_eq!((all_companions(&t), t.count(1, 57)), (0, 10_000_000));
+    }
+
+    #[test]
+    fn the_price_and_the_most_companions_come_from_l2r_ini() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 40, 10_000_000);
+        let mut settings = t.world.l2r_settings().clone();
+        settings.companions.fee_per_level = 1_000;
+        settings.companions.max_count = 5;
+        t.world.set_l2r_settings(settings);
+        let page = direct(&mut t, "main");
+        assert!(
+            page.contains("40,000 Adena") && page.contains("1,000 for every level"),
+            "{page}"
+        );
+        assert!(page.contains("You can have 5 of them"), "{page}");
+        for key in ["tank", "healer", "warrior", "archer", "mage"] {
+            click(&mut t, &format!("hire:{key}"));
+        }
+        assert_eq!(all_companions(&t), 5);
+        assert_eq!(t.count(1, 57), 10_000_000 - 5 * 40_000, "40 x 1,000 each");
+        assert!(direct(&mut t, "hire:dagger").contains("5 companions at most"));
+        assert_eq!(all_companions(&t), 5);
+        // They stand apart, not on top of each other.
+        let places: BTreeSet<(i32, i32)> = [NPC_TANK, NPC_HEALER, NPC_WARRIOR, NPC_ARCHER, NPC_MAGE]
+            .iter()
+            .map(|npc| {
+                let (x, y, _) = t.world.position_of(only(&t, *npc)).unwrap();
+                (x, y)
+            })
+            .collect();
+        assert_eq!(places.len(), 5);
     }
 
     #[test]

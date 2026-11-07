@@ -7,6 +7,8 @@ use crate::custom::class_buffer::{BUTTON, grouped};
 pub struct MainPage<'a> {
     /// What one companion costs the player.
     pub fee: i64,
+    /// What it costs for each of his levels.
+    pub fee_per_level: i64,
     /// The roles the player has hired, in the order they were.
     pub squad: &'a [Role],
     /// The most companions a player may have.
@@ -32,7 +34,7 @@ pub fn main_page(page: &MainPage<'_>) -> String {
          the party you hired it in. It costs <font color=\"LEVEL\">{} Adena</font> ({} for every level \
          of yours). You can have {} of them, from level {}.<br><br>",
         grouped(page.fee),
-        grouped(super::FEE_PER_LEVEL),
+        grouped(page.fee_per_level),
         page.max,
         page.min_level
     ));
@@ -78,6 +80,7 @@ mod tests {
     fn page<'a>(squad: &'a [Role], note: Option<&'a str>) -> MainPage<'a> {
         MainPage {
             fee: 200_000,
+            fee_per_level: 5_000,
             squad,
             max: 3,
             min_level: 20,

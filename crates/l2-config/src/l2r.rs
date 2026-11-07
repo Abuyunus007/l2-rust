@@ -45,6 +45,12 @@ pub struct L2rConfig {
     pub companion_auto_join_party: bool,
     /// `[Companions]` key `CompanionCombatMode`, `AGGRESSIVE` or `PASSIVE`, default `PASSIVE`.
     pub companion_combat_mode: CompanionCombatMode,
+    /// `[Companions]` key `CompanionFeePerLevel`: Adena a companion costs for each level of its
+    /// owner, range 0 to 1,000,000, default 5,000.
+    pub companion_fee_per_level: i64,
+    /// `[Companions]` key `CompanionMaxCount`: the most companions a player may have at once,
+    /// range 1 to 8, default 3.
+    pub companion_max_count: i32,
 }
 
 impl L2rConfig {
@@ -59,6 +65,8 @@ impl L2rConfig {
             companion_hp_multiplier: ranged(ini, "CompanionHpMultiplier", 1.0, 0.1, 10.0),
             companion_auto_join_party: ini.get_bool("CompanionAutoJoinParty", true),
             companion_combat_mode: ini.get_enum("CompanionCombatMode", CompanionCombatMode::Passive),
+            companion_fee_per_level: ranged_long(ini, "CompanionFeePerLevel", 5_000, 0, 1_000_000),
+            companion_max_count: ranged_long(ini, "CompanionMaxCount", 3, 1, 8) as i32,
         }
     }
 }
@@ -84,6 +92,19 @@ fn ranged(ini: &IniFile, key: &str, default: f64, min: f64, max: f64) -> f64 {
     default
 }
 
+/// [`ranged`] for a whole number.
+fn ranged_long(ini: &IniFile, key: &str, default: i64, min: i64, max: i64) -> i64 {
+    let value = ini.get_long(key, default);
+    if (min..=max).contains(&value) {
+        return value;
+    }
+    warn!(
+        "Config '{key}' in file '{}' is {value}, outside the range {min} to {max}, using default: {default}.",
+        L2rConfig::FILE
+    );
+    default
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -96,6 +117,8 @@ CompanionMAtkMultiplier = 0.5
 CompanionHpMultiplier = 3
 CompanionAutoJoinParty = false
 CompanionCombatMode = AGGRESSIVE
+CompanionFeePerLevel = 2000
+CompanionMaxCount = 5
 ";
 
     #[test]
@@ -109,6 +132,8 @@ CompanionCombatMode = AGGRESSIVE
                 companion_hp_multiplier: 1.0,
                 companion_auto_join_party: true,
                 companion_combat_mode: CompanionCombatMode::Passive,
+                companion_fee_per_level: 5_000,
+                companion_max_count: 3,
             }
         );
     }
@@ -121,6 +146,24 @@ CompanionCombatMode = AGGRESSIVE
         assert_eq!(config.companion_hp_multiplier, 3.0);
         assert!(!config.companion_auto_join_party);
         assert_eq!(config.companion_combat_mode, CompanionCombatMode::Aggressive);
+        assert_eq!(config.companion_fee_per_level, 2_000);
+        assert_eq!(config.companion_max_count, 5);
+    }
+
+    #[test]
+    fn fee_and_count_out_of_range_fall_back_to_the_default() {
+        let text = "CompanionFeePerLevel = -1\nCompanionMaxCount = 9\n";
+        let config = L2rConfig::from_ini(&IniFile::parse(L2rConfig::FILE, text).unwrap());
+        assert_eq!(
+            (config.companion_fee_per_level, config.companion_max_count),
+            (5_000, 3)
+        );
+        let text = "CompanionFeePerLevel = 0\nCompanionMaxCount = 8\n";
+        let config = L2rConfig::from_ini(&IniFile::parse(L2rConfig::FILE, text).unwrap());
+        assert_eq!(
+            (config.companion_fee_per_level, config.companion_max_count),
+            (0, 8)
+        );
     }
 
     #[test]
