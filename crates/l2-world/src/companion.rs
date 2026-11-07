@@ -155,6 +155,9 @@ impl World {
     /// A companion is not a member of the party (a party is players only, and every rule of the
     /// party would have to learn about NPCs): the window is the whole of it. The client takes a
     /// player without a party to be the leader of the one that is shown.
+    ///
+    /// The window is emptied first: a client builds it from the first `PartySmallWindowAll` and
+    /// takes no new members from a second one, so the next companion hired would not show.
     pub fn send_companion_window(&self, owner: ObjectId, companions: &[ObjectId]) {
         let mut window = match self
             .party_of(owner)
@@ -174,18 +177,19 @@ impl World {
                 summon: None,
             })
         }));
+        self.send(owner, &PartySmallWindowDeleteAll);
         self.send(owner, &window);
     }
 
     /// The party window of `owner` without any companion: his party's, or none.
     pub fn clear_companion_window(&self, owner: ObjectId) {
-        match self
+        self.send(owner, &PartySmallWindowDeleteAll);
+        if let Some(window) = self
             .party_of(owner)
             .and_then(|party| self.party_small_window_all(owner, party))
         {
-            Some(window) => self.send(owner, &window),
-            None => self.send(owner, &PartySmallWindowDeleteAll),
-        };
+            self.send(owner, &window);
+        }
     }
 
     /// The HP and MP of a companion in the party window of `owner`.

@@ -4,7 +4,7 @@
 //! companions" (`Script Companions main`, linked from the pages of the town gatekeepers). A
 //! companion is an NPC of the class `Companion` (`type="Companion"`, `ai/guards.rs`): the monsters
 //! fight it and it fights the monsters, and nobody else. It is made for its owner's level
-//! ([`scale`]) and plays one of four roles ([`role`]), decided by the rules in [`brain`].
+//! ([`scale`]) and plays one of six roles ([`role`]), decided by the rules in [`brain`].
 //!
 //! # Ownership
 //! The script owns the companions of every player in one [`State`], on the world loop: no
@@ -32,6 +32,7 @@ mod look;
 mod pages;
 mod role;
 mod scale;
+mod spell;
 
 use std::collections::BTreeMap;
 
@@ -43,6 +44,7 @@ use self::heal::heal_for;
 use self::pages::{MainPage, main_page};
 use self::role::Role;
 use self::scale::scale_for;
+use self::spell::spell_for;
 use super::class_buffer::{buff_target, grouped};
 use super::class_buffer_data::group_by_key;
 
@@ -113,16 +115,17 @@ fn player_hp(ctx: &ScriptCtx<'_>, player: ObjectId) -> f32 {
     ratio(ctx.world().player(player).map_or(0.0, |p| p.core.cur_hp), max)
 }
 
+/// The maximum of the stat engine, with the buffs: `core.max_hp` of an NPC is the one it spawned
+/// with, and a companion is buffed right after.
 fn npc_hp(ctx: &ScriptCtx<'_>, id: ObjectId) -> f32 {
-    ctx.world()
-        .npc(id)
-        .map_or(0.0, |n| ratio(n.core.cur_hp, n.core.max_hp))
+    let max = ctx.world().stats(id).map_or(0.0, |s| f64::from(s.max_hp()));
+    ratio(ctx.world().npc(id).map_or(0.0, |n| n.core.cur_hp), max)
 }
 
+/// See [`npc_hp`].
 fn npc_mp(ctx: &ScriptCtx<'_>, id: ObjectId) -> f32 {
-    ctx.world()
-        .npc(id)
-        .map_or(0.0, |n| ratio(n.core.cur_mp, n.core.max_mp))
+    let max = ctx.world().stats(id).map_or(0.0, |s| f64::from(s.max_mp()));
+    ratio(ctx.world().npc(id).map_or(0.0, |n| n.core.cur_mp), max)
 }
 
 /// The monsters around `owner` that are alive.
@@ -144,9 +147,22 @@ fn enemies_near(ctx: &ScriptCtx<'_>, owner: ObjectId) -> Vec<Enemy> {
 }
 
 /// Gives a companion what `.buffme` gives its group, as the command does.
+///
+/// Buffs raise the maximum HP and MP by up to three quarters and not the current values, so the
+/// shares are kept: a healthy companion stays healthy, and its healer has nothing to do.
 fn buff_itself(ctx: &mut ScriptCtx<'_>, member: &Member) {
-    if let Some(group) = group_by_key(member.role.buff_group_key()) {
-        buff_target(ctx, member.npc.object_id, member.npc.object_id, group);
+    let id = member.npc.object_id;
+    let Some(group) = group_by_key(member.role.buff_group_key()) else {
+        return;
+    };
+    let (hp, mp) = (f64::from(npc_hp(ctx, id)), f64::from(npc_mp(ctx, id)));
+    buff_target(ctx, id, id, group);
+    if let Some((max_hp, max_mp)) = ctx
+        .world()
+        .stats(id)
+        .map(|s| (f64::from(s.max_hp()), f64::from(s.max_mp())))
+    {
+        ctx.world_mut().set_current_hp_mp(id, max_hp * hp, max_mp * mp);
     }
 }
 
@@ -404,6 +420,16 @@ fn act(ctx: &mut ScriptCtx<'_>, owner: ObjectId, member: &Member, action: Action
                 ctx.cast_skill_at(npc, Some(ally), SkillKey::new(step.skill_id, step.level));
             }
         }
+        Action::Cast(target) => match spell_for(member.level) {
+            // The intention, not a plain cast: the mage walks into range first.
+            Some(step) if !ctx.world().is_casting_now(npc.object_id) => {
+                let skill = SkillKey::new(step.skill_id, step.level);
+                ctx.world_mut()
+                    .set_intention_cast(npc.object_id, skill, Some(target));
+            }
+            Some(_) => {}
+            None => attack(ctx, npc, target),
+        },
     }
 }
 
@@ -522,7 +548,7 @@ mod tests {
     use l2_world::script::{player_class, race};
     use l2_world::{ClientInput, ScriptRegistry};
 
-    use super::role::{NPC_ARCHER, NPC_HEALER, NPC_TANK, NPC_WARRIOR};
+    use super::role::{NPC_ARCHER, NPC_DAGGER, NPC_HEALER, NPC_MAGE, NPC_TANK, NPC_WARRIOR};
     use super::*;
     use crate::custom::class_buffer_data::GROUPS;
     use l2_protocol_game::server::{PartySmallWindowAll, PartySmallWindowUpdate};
@@ -604,7 +630,7 @@ mod tests {
     /// The skills the scene needs: the buffs of every group and the heals.
     fn needed_skills() -> BTreeSet<i32> {
         let mut ids: BTreeSet<i32> = GROUPS.iter().flat_map(|g| g.all()).map(|b| b.id).collect();
-        ids.extend([1011, 1217]);
+        ids.extend([1011, 1217, 1230, 1274]);
         ids
     }
 
@@ -657,10 +683,17 @@ mod tests {
     }
 
     fn all_companions(t: &ScriptTest) -> usize {
-        [NPC_TANK, NPC_HEALER, NPC_WARRIOR, NPC_ARCHER]
-            .iter()
-            .map(|id| t.npcs_of(*id).len())
-            .sum()
+        [
+            NPC_TANK,
+            NPC_HEALER,
+            NPC_WARRIOR,
+            NPC_ARCHER,
+            NPC_DAGGER,
+            NPC_MAGE,
+        ]
+        .iter()
+        .map(|id| t.npcs_of(*id).len())
+        .sum()
     }
 
     fn seconds(t: &mut ScriptTest, n: u32) {
@@ -948,6 +981,33 @@ mod tests {
             "{:?}",
             member.vitals
         );
+    }
+
+    #[test]
+    fn every_further_companion_lands_in_the_window_too() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 40, 10_000_000);
+        let mut hired = Vec::new();
+        for (key, npc) in [("tank", NPC_TANK), ("healer", NPC_HEALER), ("mage", NPC_MAGE)] {
+            let _ = t.take();
+            press(&mut t, &format!("hire:{key}"));
+            hired.push(only(&t, npc).0);
+            seconds(&mut t, 1);
+            let packets = window_packets(&t.take());
+            let names: Vec<&str> = packets.iter().map(|(n, _)| n.as_str()).collect();
+            // A client takes no new members from a second whole window: it is emptied first.
+            let all = names.iter().position(|n| *n == "PARTY_SMALL_WINDOW_ALL");
+            let all = all.unwrap_or_else(|| panic!("{key}: {names:?}"));
+            assert!(all > 0, "{key}: {names:?}");
+            assert_eq!(
+                names[all - 1],
+                "PARTY_SMALL_WINDOW_DELETE_ALL",
+                "{key}: {names:?}"
+            );
+            let window = decode::<PartySmallWindowAll>(&packets[all].1);
+            let ids: Vec<i32> = window.members.iter().map(|m| m.vitals.object_id).collect();
+            assert_eq!(ids, hired, "{key}");
+        }
     }
 
     #[test]
@@ -1320,6 +1380,65 @@ mod tests {
     }
 
     #[test]
+    fn the_mage_casts_at_what_the_owner_selects_from_a_distance() {
+        let Some(root) = datapack() else { return };
+        for level in [25, 60] {
+            let mut t = scene(root, level, 10_000_000);
+            click(&mut t, "hire:mage");
+            let mage = only(&t, NPC_MAGE);
+            let mp = t.world.npc(mage).unwrap().core.cur_mp;
+            let mob = t.spawn(MONSTER, 300);
+            t.world.set_target(OWNER, Some(mob));
+            let _ = t.take();
+            let mut hit_from = None;
+            for _ in 0..80 {
+                t.ticks(5);
+                if hit_from.is_none() && mob_hp(&t, mob) < MOB_HP {
+                    hit_from = Some(distance(&t, mage, mob));
+                }
+            }
+            let hit_from = hit_from.unwrap_or_else(|| panic!("level {level}: the spell never landed"));
+            assert!(hit_from > 120.0, "level {level}: {hit_from:.0}");
+            assert!(
+                t.world.npc(mage).unwrap().core.cur_mp < mp,
+                "level {level}: no MP spent"
+            );
+            assert!(casts(&mut t) > 0, "level {level}");
+        }
+    }
+
+    #[test]
+    fn what_a_mage_kills_pays_its_owner() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 40, 10_000_000);
+        with_experience(root, &mut t);
+        click(&mut t, "hire:mage");
+        let mage = only(&t, NPC_MAGE);
+        let (exp, ..) = reward_state(&t);
+        let prize = t.spawn(PRIZE, 200);
+        t.world.set_target(OWNER, Some(prize));
+        seconds(&mut t, 8);
+        assert!(mob_hp(&t, prize) < 60_000.0, "the mage hit it");
+        t.kill(mage.0, prize);
+        assert!(reward_state(&t).0 > exp, "the experience went to the owner");
+    }
+
+    #[test]
+    fn the_dagger_hits_what_the_owner_selects_with_a_dagger_in_its_hand() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 60, 10_000_000);
+        click(&mut t, "hire:dagger");
+        let id = only(&t, NPC_DAGGER);
+        let right_hand = t.world.fake_player_info(id).unwrap().paperdoll_item_ids
+            [l2_protocol_game::server::charscreen::paperdoll::RHAND];
+        assert!(gear_data::WEAPONS.contains(&("dagger", super::look::grade_for(60), right_hand)));
+        let mob = t.spawn(MONSTER, 200);
+        t.world.set_target(OWNER, Some(mob));
+        seconds(&mut t, 8);
+        assert!(mob_hp(&t, mob) < MOB_HP, "{}", mob_hp(&t, mob));
+    }
+
+    #[test]
     fn a_damage_dealer_hits_what_the_owner_selects() {
         let Some(root) = datapack() else { return };
         let mut t = scene(root, 40, 10_000_000);
@@ -1389,6 +1508,75 @@ mod tests {
         assert!(t.world.npc(healer).unwrap().core.cur_mp < mp_before, "it cast");
     }
 
+    /// How often the owner saw a spell or a heal start.
+    fn casts(t: &mut ScriptTest) -> usize {
+        names_to(&t.take(), 1)
+            .iter()
+            .filter(|n| *n == "MAGIC_SKILL_USE")
+            .count()
+    }
+
+    #[test]
+    fn a_healer_casts_nothing_while_nobody_is_hurt() {
+        let Some(root) = datapack() else { return };
+        for level in [25, 45, 60, 85] {
+            let mut t = scene(root, level, 10_000_000);
+            click(&mut t, "hire:tank");
+            click(&mut t, "hire:healer");
+            click(&mut t, "hire:warrior");
+            let _ = t.take();
+            seconds(&mut t, 15);
+            assert_eq!(casts(&mut t), 0, "level {level}");
+        }
+    }
+
+    #[test]
+    fn a_hired_companion_comes_with_full_hp_and_mp_after_its_buffs() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 60, 10_000_000);
+        click(&mut t, "hire:tank");
+        let tank = only(&t, NPC_TANK);
+        let stats = t.world.stats(tank).unwrap();
+        let (max_hp, max_mp) = (f64::from(stats.max_hp()), f64::from(stats.max_mp()));
+        let npc = t.world.npc(tank).unwrap();
+        assert_eq!((npc.core.cur_hp, npc.core.cur_mp), (max_hp, max_mp));
+    }
+
+    #[test]
+    fn buffing_again_keeps_the_share_of_hp_of_a_hurt_companion() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 60, 10_000_000);
+        click(&mut t, "hire:tank");
+        let tank = only(&t, NPC_TANK);
+        t.world.stop_all_effects(tank);
+        let max = f64::from(t.world.stats(tank).unwrap().max_hp());
+        t.world.set_current_hp_mp(tank, max * 0.5, 100.0);
+        seconds(&mut t, 2);
+        let share = t.world.npc(tank).unwrap().core.cur_hp / f64::from(t.world.stats(tank).unwrap().max_hp());
+        assert!((0.48..0.55).contains(&share), "{share}");
+    }
+
+    #[test]
+    fn a_companion_below_sixty_percent_is_healed_and_one_above_is_not() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 60, 10_000_000);
+        click(&mut t, "hire:tank");
+        click(&mut t, "hire:healer");
+        let tank = only(&t, NPC_TANK);
+        let max = f64::from(t.world.stats(tank).unwrap().max_hp());
+
+        t.world.set_current_hp_mp(tank, max * 0.7, 100.0);
+        let _ = t.take();
+        seconds(&mut t, 8);
+        assert_eq!(casts(&mut t), 0, "70% is no reason to heal");
+
+        // Measured against the maximum without its buffs, 40% would read as 70%.
+        t.world.set_current_hp_mp(tank, max * 0.4, 100.0);
+        let _ = t.take();
+        seconds(&mut t, 8);
+        assert!(casts(&mut t) > 0, "40% is");
+    }
+
     #[test]
     fn a_companion_grows_with_its_owner() {
         let Some(root) = datapack() else { return };
@@ -1436,14 +1624,22 @@ mod tests {
         seconds(&mut t, 4);
         assert_eq!((full(&t, tank), full(&t, warrior)), (tank_hp, warrior_hp));
         // A monster does, and the tank pays for holding it: below its maximum while the fight lasts.
-        aggressive_mob(&mut t, 150);
-        let mut lowest = 1.0_f64;
-        for _ in 0..20 {
-            t.ticks(10);
+        // Against its defence a hit is a few points, and its regeneration takes them back within
+        // seconds: every tick is looked at.
+        let mob = aggressive_mob(&mut t, 150);
+        let (mut lowest, mut held) = (1.0_f64, false);
+        for _ in 0..400 {
+            t.ticks(1);
             let max = f64::from(t.world.stats(tank).unwrap().max_hp());
             lowest = lowest.min(full(&t, tank) / max);
+            held |= t.world.attack_target_of(mob) == Some(tank);
         }
-        assert!(lowest < 0.999, "the monster never hit the tank: {lowest}");
+        assert!(held, "the tank never held the monster");
+        assert!(
+            lowest < 1.0,
+            "the monster never hit the tank: {lowest}, its HP {}",
+            mob_hp(&t, mob)
+        );
     }
 
     #[test]
@@ -1520,5 +1716,24 @@ mod tests {
             count += 1;
         }
         assert_eq!(count, 18 + 33);
+    }
+
+    #[test]
+    fn the_spells_are_in_the_datapack_at_the_magic_levels_the_ladder_says() {
+        let Some(root) = datapack() else { return };
+        let skills = l2_data::SkillTemplates::load(root, &l2_data::SkillLoadOptions::default());
+        let mut count = 0;
+        for step in spell::all_steps() {
+            let skill = skills
+                .get(step.skill_id, step.level)
+                .unwrap_or_else(|| panic!("{} level {}", step.skill_id, step.level));
+            assert_eq!(
+                skill.magic_level, step.magic_level,
+                "{} level {}",
+                step.skill_id, step.level
+            );
+            count += 1;
+        }
+        assert_eq!(count, 4 + 28);
     }
 }

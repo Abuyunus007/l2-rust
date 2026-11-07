@@ -45,8 +45,8 @@ the global jobs (daily reset, Olympiad, Seven Signs, sieges, boss states).
   - **Class Buffer**: an NPC next to every town gatekeeper that gives the free buffs, songs and
     dances that fit the player's class (warrior, tank, dagger, archer, mage and summoner, healer).
     The command `.buffme` opens the same pages anywhere for the player's level times 1,000 Adena.
-  - **Companions**: a gatekeeper hires a tank, healer, warrior or archer (up to three, level times
-    5,000 Adena each) that has the player's level, looks like a player in level-fitting gear, follows
+  - **Companions**: a gatekeeper hires a tank, healer, warrior, archer, dagger or mage (up to three,
+    level times 5,000 Adena each) that has the player's level, looks like a player in level-fitting gear, follows
     him, fights beside him and buffs itself. Its experience and drops are the player's, and its HP
     and MP show in his party window.
 - **Tools**:

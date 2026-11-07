@@ -96,6 +96,54 @@ pub const WEAPONS: &[(&str, usize, i32)] = &[
     ("archer", 6, 15568),  // Skull Carnium Bow
     ("archer", 6, 15686),  // Triumph Bow
     ("archer", 6, 13467),  // Vesper Thrower
+    ("dagger", 0, 225),    // Mithril Dagger
+    ("dagger", 0, 224),    // Maingauche
+    ("dagger", 0, 223),    // Kukuri
+    ("dagger", 0, 238),    // Dagger of Mana
+    ("dagger", 1, 228),    // Crystal Dagger
+    ("dagger", 1, 231),    // Grace Dagger
+    ("dagger", 1, 233),    // Dark Screamer
+    ("dagger", 1, 227),    // Stiletto
+    ("dagger", 2, 234),    // Demon's Dagger
+    ("dagger", 2, 229),    // Kris
+    ("dagger", 2, 243),    // Hell Knife
+    ("dagger", 3, 8682),   // Naga Storm
+    ("dagger", 3, 236),    // Soul Separator
+    ("dagger", 3, 235),    // Bloody Orchid
+    ("dagger", 4, 9446),   // Dynasty Knife
+    ("dagger", 4, 6367),   // Angel Slayer
+    ("dagger", 4, 237),    // Dragon's Tooth
+    ("dagger", 5, 10216),  // Icarus Disperser
+    ("dagger", 6, 15545),  // Mamba Edge
+    ("dagger", 6, 15559),  // Skull Edge
+    ("dagger", 6, 15677),  // Triumph Dagger
+    ("dagger", 6, 13460),  // Vesper Shaper
+    ("mage", 0, 187),      // Atuba Hammer
+    ("mage", 0, 188),      // Ghost Staff
+    ("mage", 0, 189),      // Staff of Life
+    ("mage", 0, 190),      // Atuba Mace
+    ("mage", 1, 204),      // Deadman's Staff
+    ("mage", 1, 205),      // Ghoul's Staff
+    ("mage", 1, 206),      // Demon's Staff
+    ("mage", 1, 7888),     // Ecliptic Sword
+    ("mage", 2, 209),      // Divine Staff
+    ("mage", 2, 211),      // Staff of Nobility
+    ("mage", 2, 210),      // Staff of Evil Spirits
+    ("mage", 2, 146),      // Ghoulbane
+    ("mage", 3, 8686),     // Themis' Tongue
+    ("mage", 3, 8687),     // Cabrio's Hand
+    ("mage", 3, 8688),     // Daimon Crystal
+    ("mage", 3, 151),      // Sword of Miracles
+    ("mage", 4, 9444),     // Dynasty Phantom
+    ("mage", 4, 9449),     // Dynasty Mace
+    ("mage", 4, 10252),    // Dynasty Staff
+    ("mage", 4, 6366),     // Imperial Staff
+    ("mage", 5, 10217),    // Icarus Spirit
+    ("mage", 5, 10222),    // Icarus Hall
+    ("mage", 6, 15551),    // Sacredium
+    ("mage", 6, 15552),    // Cyclic Cane
+    ("mage", 6, 15553),    // Archangel Sword
+    ("mage", 6, 15565),    // Rising Star
 ];
 
 /// `(grade index, armor kind, [head, chest, legs, gloves, feet, shield])`; 0 is nothing.

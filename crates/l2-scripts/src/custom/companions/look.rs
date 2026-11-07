@@ -20,6 +20,10 @@ fn figures(role: Role) -> &'static [(i32, i32)] {
         Role::Warrior => &[(0, 88), (0, 89), (1, 100), (2, 107), (3, 113), (4, 117)],
         // Sagittarius, Moonlight Sentinel, Ghost Sentinel: the races that have archers.
         Role::Archer => &[(0, 92), (1, 102), (2, 109)],
+        // Adventurer, Wind Rider, Ghost Hunter: the races that have daggers.
+        Role::Dagger => &[(0, 93), (1, 101), (2, 108)],
+        // Archmage, Soultaker, Mystic Muse, Storm Screamer.
+        Role::Mage => &[(0, 94), (0, 95), (1, 103), (2, 110)],
     }
 }
 
@@ -45,8 +49,8 @@ pub fn grade_for(level: i32) -> usize {
 fn armor_kind(role: Role, dice: &mut dyn FnMut(i32) -> i32) -> &'static str {
     match role {
         Role::Tank => "HEAVY",
-        Role::Healer => "MAGIC",
-        Role::Archer => "LIGHT",
+        Role::Healer | Role::Mage => "MAGIC",
+        Role::Archer | Role::Dagger => "LIGHT",
         Role::Warrior => {
             if dice(2) == 0 {
                 "HEAVY"
@@ -210,7 +214,13 @@ mod tests {
         for level in [30, 60, 85] {
             let tank = roll(Role::Tank, level, &mut dice);
             assert!(tank.left_hand != 0, "a tank holds a shield at level {level}");
-            for role in [Role::Healer, Role::Warrior, Role::Archer] {
+            for role in [
+                Role::Healer,
+                Role::Warrior,
+                Role::Archer,
+                Role::Dagger,
+                Role::Mage,
+            ] {
                 assert_eq!(roll(role, level, &mut dice).left_hand, 0, "{role:?}");
             }
         }

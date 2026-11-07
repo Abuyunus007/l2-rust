@@ -31,7 +31,7 @@ fn game_dir() -> Option<PathBuf> {
 /// class buffer and the companions, D-60 and D-61), so the totals leave them out and `OWN_NPCS`
 /// counts them.
 const FIRST_OWN_NPC: i32 = 50_000;
-const OWN_NPCS: usize = 5;
+const OWN_NPCS: usize = 7;
 
 /// The default load (no custom NPCs), shared by the tests: it takes seconds in a debug build.
 fn main_npcs() -> Option<&'static NpcTemplates> {

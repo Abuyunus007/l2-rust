@@ -107,4 +107,44 @@
 			<height normal="23" />
 		</collision>
 	</npc>
+	<!-- Companion (Dagger): its figure is made for each companion (CompanionLook); the values are those of a level 85 character (the neutral base stats, so they count as they stand) and are scaled to the level of the owner (script custom/Companions). -->
+	<npc id="50025" displayId="35660" level="85" type="Companion" name="Dagger" usingServerSideName="true" title="Companion" usingServerSideTitle="true">
+		<race>HUMAN</race>
+		<sex>MALE</sex>
+		<stats str="40" int="21" dex="30" wit="20" con="43" men="10">
+			<vitals hp="19000" hpRegen="10.8" mp="3700" mpRegen="4.0" />
+			<attack physical="5000" magical="1100" random="30" critical="160" accuracy="206" attackSpeed="620" type="DAGGER" range="40" distance="80" width="120" />
+			<defence physical="3000" magical="2200" />
+			<speed>
+				<walk ground="82" />
+				<run ground="132" />
+			</speed>
+		</stats>
+		<status talkable="false" attackable="true" />
+		<ai type="FIGHTER" aggroRange="0" isAggressive="false" />
+		<collision>
+			<radius normal="9" />
+			<height normal="23" />
+		</collision>
+	</npc>
+	<!-- Companion (Mage): its figure is made for each companion (CompanionLook); the values are those of a level 85 character (the neutral base stats, so they count as they stand) and are scaled to the level of the owner (script custom/Companions). -->
+	<npc id="50026" displayId="32783" level="85" type="Companion" name="Mage" usingServerSideName="true" title="Companion" usingServerSideTitle="true">
+		<race>HUMAN</race>
+		<sex>MALE</sex>
+		<stats str="40" int="21" dex="30" wit="20" con="43" men="10">
+			<vitals hp="16000" hpRegen="10.8" mp="9000" mpRegen="4.0" />
+			<attack physical="1500" magical="5200" random="30" critical="20" accuracy="206" attackSpeed="333" type="FIST" range="40" distance="80" width="120" />
+			<defence physical="2600" magical="3500" />
+			<speed>
+				<walk ground="82" />
+				<run ground="132" />
+			</speed>
+		</stats>
+		<status talkable="false" attackable="true" />
+		<ai type="FIGHTER" aggroRange="0" isAggressive="false" />
+		<collision>
+			<radius normal="9" />
+			<height normal="23" />
+		</collision>
+	</npc>
 </list>

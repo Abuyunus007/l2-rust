@@ -1,16 +1,20 @@
 //! The roles a companion can be hired for.
 
-use super::brain::{Behavior, DamageDealer, Healer, Tank};
+use super::brain::{Behavior, DamageDealer, Healer, Mage, Tank};
 
 /// What a companion does in the party.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum Role {
     Tank,
     Healer,
-    /// A melee damage dealer.
+    /// A melee damage dealer with a sword.
     Warrior,
     /// A ranged damage dealer.
     Archer,
+    /// A melee damage dealer with a dagger: fewer hit points, more critical hits.
+    Dagger,
+    /// A damage dealer that casts spells.
+    Mage,
 }
 
 /// The NPC templates (`data/stats/npcs/50000-50099.xml`), one per role.
@@ -18,14 +22,24 @@ pub const NPC_TANK: i32 = 50021;
 pub const NPC_HEALER: i32 = 50022;
 pub const NPC_WARRIOR: i32 = 50023;
 pub const NPC_ARCHER: i32 = 50024;
+pub const NPC_DAGGER: i32 = 50025;
+pub const NPC_MAGE: i32 = 50026;
 
 static TANK: Tank = Tank;
 static HEALER: Healer = Healer;
 static WARRIOR: DamageDealer = DamageDealer { ranged: false };
 static ARCHER: DamageDealer = DamageDealer { ranged: true };
+static MAGE: Mage = Mage;
 
 impl Role {
-    pub const ALL: [Role; 4] = [Role::Tank, Role::Healer, Role::Warrior, Role::Archer];
+    pub const ALL: [Role; 6] = [
+        Role::Tank,
+        Role::Healer,
+        Role::Warrior,
+        Role::Archer,
+        Role::Dagger,
+        Role::Mage,
+    ];
 
     /// Used in the page links.
     pub fn key(self) -> &'static str {
@@ -34,6 +48,8 @@ impl Role {
             Role::Healer => "healer",
             Role::Warrior => "warrior",
             Role::Archer => "archer",
+            Role::Dagger => "dagger",
+            Role::Mage => "mage",
         }
     }
 
@@ -47,15 +63,19 @@ impl Role {
             Role::Healer => "Healer",
             Role::Warrior => "Warrior",
             Role::Archer => "Archer",
+            Role::Dagger => "Dagger",
+            Role::Mage => "Mage",
         }
     }
 
     pub fn about(self) -> &'static str {
         match self {
-            Role::Tank => "Holds the monsters: takes them from you and your friends and keeps them busy.",
-            Role::Healer => "Heals whoever is hurt, you first if it is close, and stays behind the fighters.",
+            Role::Tank => "Takes the monsters from you and keeps them busy.",
+            Role::Healer => "Heals whoever falls below 60% HP.",
             Role::Warrior => "Fights next to you and hits what you hit.",
-            Role::Archer => "Shoots from a distance at what you hit, and steps back to you when pressed.",
+            Role::Archer => "Shoots at what you hit from a distance.",
+            Role::Dagger => "Stabs what you hit, with many critical hits.",
+            Role::Mage => "Casts spells at what you hit from a distance.",
         }
     }
 
@@ -66,17 +86,14 @@ impl Role {
             Role::Healer => NPC_HEALER,
             Role::Warrior => NPC_WARRIOR,
             Role::Archer => NPC_ARCHER,
+            Role::Dagger => NPC_DAGGER,
+            Role::Mage => NPC_MAGE,
         }
     }
 
     /// The group of the class buffer that a companion of this role buffs itself with.
     pub fn buff_group_key(self) -> &'static str {
-        match self {
-            Role::Tank => "tank",
-            Role::Healer => "healer",
-            Role::Warrior => "warrior",
-            Role::Archer => "archer",
-        }
+        self.key()
     }
 
     /// What it does in combat.
@@ -84,8 +101,9 @@ impl Role {
         match self {
             Role::Tank => &TANK,
             Role::Healer => &HEALER,
-            Role::Warrior => &WARRIOR,
+            Role::Warrior | Role::Dagger => &WARRIOR,
             Role::Archer => &ARCHER,
+            Role::Mage => &MAGE,
         }
     }
 }

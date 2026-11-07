@@ -9,7 +9,8 @@
 //!
 //! - the **tank** pulls the enemies that go for somebody else onto itself, then hits;
 //! - the **healer** looks after the weakest ally and keeps close to the leader;
-//! - a **damage dealer** hits what the leader hits, a ranged one backs off when it is pressed.
+//! - a **damage dealer** hits what the leader hits, a ranged one backs off when it is pressed;
+//! - the **mage** casts at what the leader hits, and backs off like a ranged damage dealer.
 
 use l2_util::ObjectId;
 
@@ -24,7 +25,7 @@ pub const TAUNT_COOLDOWN_MS: u64 = 3_000;
 /// How often a healer casts (milliseconds): the heal skills have a reuse time of 3 seconds.
 pub const HEAL_COOLDOWN_MS: u64 = 3_500;
 /// An ally below this share of its hit points is healed.
-pub const HEAL_BELOW: f32 = 0.75;
+pub const HEAL_BELOW: f32 = 0.6;
 /// A healer with less MP than this share does not start a heal.
 pub const MIN_HEALER_MP: f32 = 0.08;
 /// A healer only heals allies this close (the cast range of the heal skills is 600).
@@ -33,6 +34,10 @@ pub const HEAL_RANGE: f64 = 550.0;
 pub const KITE_DISTANCE: f64 = 180.0;
 /// See [`KITE_DISTANCE`].
 pub const KITE_BELOW: f32 = 0.5;
+/// How often a mage starts a spell (milliseconds): its spells have a reuse time of 1 to 1.2 seconds.
+pub const SPELL_COOLDOWN_MS: u64 = 1_500;
+/// A mage with less MP than this share hits with its staff instead.
+pub const MIN_MAGE_MP: f32 = 0.05;
 
 /// A place on the ground (the height does not matter for any rule here).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -98,6 +103,8 @@ pub enum Action {
     Taunt(ObjectId),
     /// Cast a heal on this ally.
     Heal(ObjectId),
+    /// Cast a spell at this monster.
+    Cast(ObjectId),
 }
 
 /// Follow while the party is at peace, combat while it fights.
@@ -114,6 +121,7 @@ pub struct Memory {
     pub mode: Mode,
     pub last_taunt_ms: Option<u64>,
     pub last_heal_ms: Option<u64>,
+    pub last_spell_ms: Option<u64>,
 }
 
 /// A role: what it does in combat.
@@ -161,6 +169,7 @@ pub fn think(behavior: &dyn Behavior, view: &View<'_>, memory: &mut Memory) -> A
     match action {
         Action::Taunt(_) => memory.last_taunt_ms = Some(view.now_ms),
         Action::Heal(_) => memory.last_heal_ms = Some(view.now_ms),
+        Action::Cast(_) => memory.last_spell_ms = Some(view.now_ms),
         Action::Follow | Action::Hold | Action::Attack(_) => {}
     }
     action
@@ -221,19 +230,33 @@ impl Behavior for Healer {
     }
 }
 
+/// Is a fighter from afar hurt, with an enemy on it close by?
+fn pressed(view: &View<'_>) -> bool {
+    view.me.hp < KITE_BELOW
+        && engaged(view)
+            .any(|enemy| enemy.target == Some(view.me.id) && enemy.pos.distance(view.me.pos) < KITE_DISTANCE)
+}
+
+/// Whom a damage dealer goes for: what the leader hits, else what attacks the leader, else what
+/// attacks the weakest ally.
+fn assist_target(view: &View<'_>) -> Option<ObjectId> {
+    if let Some(target) = view.leader_target
+        && engaged(view).any(|enemy| enemy.id == target)
+    {
+        return Some(target);
+    }
+    let on_leader = engaged(view).filter(|enemy| enemy.target == Some(view.leader.id));
+    if let Some(enemy) = nearest(view.me.pos, on_leader) {
+        return Some(enemy.id);
+    }
+    engaged(view)
+        .min_by(|a, b| victim_hp(view, a).total_cmp(&victim_hp(view, b)))
+        .map(|enemy| enemy.id)
+}
+
 /// A damage dealer; `ranged` ones back off when an enemy presses them.
 pub struct DamageDealer {
     pub ranged: bool,
-}
-
-impl DamageDealer {
-    fn pressed(&self, view: &View<'_>) -> bool {
-        self.ranged
-            && view.me.hp < KITE_BELOW
-            && engaged(view).any(|enemy| {
-                enemy.target == Some(view.me.id) && enemy.pos.distance(view.me.pos) < KITE_DISTANCE
-            })
-    }
 }
 
 impl Behavior for DamageDealer {
@@ -242,22 +265,31 @@ impl Behavior for DamageDealer {
             return Action::Follow;
         }
         // Back to the leader, where the tank and the healer are.
-        if self.pressed(view) {
+        if self.ranged && pressed(view) {
             return Action::Follow;
         }
-        // What the leader hits, else what attacks the leader, else what attacks the weakest ally,
-        // else what is nearest.
-        if let Some(target) = view.leader_target
-            && engaged(view).any(|enemy| enemy.id == target)
-        {
-            return Action::Attack(target);
+        assist_target(view).map_or(Action::Follow, Action::Attack)
+    }
+}
+
+/// The mage: spells at what the party fights, its staff when the MP is gone.
+pub struct Mage;
+
+impl Behavior for Mage {
+    fn decide(&self, view: &View<'_>, memory: &Memory) -> Action {
+        if engaged(view).next().is_none() || pressed(view) {
+            return Action::Follow;
         }
-        let on_leader = engaged(view).filter(|enemy| enemy.target == Some(view.leader.id));
-        if let Some(enemy) = nearest(view.me.pos, on_leader) {
-            return Action::Attack(enemy.id);
+        let Some(target) = assist_target(view) else {
+            return Action::Follow;
+        };
+        if view.mp < MIN_MAGE_MP {
+            Action::Attack(target)
+        } else if ready(memory.last_spell_ms, view.now_ms, SPELL_COOLDOWN_MS) {
+            Action::Cast(target)
+        } else {
+            Action::Hold
         }
-        let weakest_victim = engaged(view).min_by(|a, b| victim_hp(view, a).total_cmp(&victim_hp(view, b)));
-        weakest_victim.map_or(Action::Follow, |enemy| Action::Attack(enemy.id))
     }
 }
 
@@ -461,11 +493,25 @@ mod tests {
 
     #[test]
     fn the_healer_heals_the_weakest_ally_below_the_threshold() {
-        let scene = Scene::new().hurt(LEADER, 0.7).hurt(FRIEND, 0.3);
+        let scene = Scene::new().hurt(LEADER, 0.5).hurt(FRIEND, 0.3);
         assert_eq!(decide(&Healer, &scene, &Memory::default()), Action::Heal(FRIEND));
         // Itself counts.
-        let scene = Scene::new().hurt(ME, 0.2).hurt(LEADER, 0.6);
+        let scene = Scene::new().hurt(ME, 0.2).hurt(LEADER, 0.5);
         assert_eq!(decide(&Healer, &scene, &Memory::default()), Action::Heal(ME));
+    }
+
+    #[test]
+    fn the_healer_only_heals_below_sixty_percent() {
+        for hp in [1.0, 0.75, 0.61, 0.6] {
+            let scene = Scene::new().hurt(LEADER, hp);
+            assert_eq!(
+                decide(&Healer, &scene, &Memory::default()),
+                Action::Follow,
+                "{hp}"
+            );
+        }
+        let scene = Scene::new().hurt(LEADER, 0.59);
+        assert_eq!(decide(&Healer, &scene, &Memory::default()), Action::Heal(LEADER));
     }
 
     #[test]
@@ -565,6 +611,45 @@ mod tests {
             decide(&archer, &far, &Memory::default()),
             Action::Attack(ObjectId(101))
         );
+    }
+
+    // ---- the mage ----
+
+    #[test]
+    fn the_mage_casts_at_what_the_leader_hits_and_waits_for_the_reuse_time() {
+        let mut scene = Scene::new();
+        scene.enemies = vec![enemy(100, 300, Some(LEADER)), enemy(101, 500, Some(FRIEND))];
+        scene.leader_target = Some(ObjectId(101));
+        let mut memory = Memory::default();
+        assert_eq!(
+            think(&Mage, &scene.view(), &mut memory),
+            Action::Cast(ObjectId(101))
+        );
+        assert_eq!(memory.last_spell_ms, Some(scene.now_ms));
+        scene.now_ms += 1_000;
+        assert_eq!(think(&Mage, &scene.view(), &mut memory), Action::Hold);
+        scene.now_ms += SPELL_COOLDOWN_MS;
+        assert_eq!(
+            think(&Mage, &scene.view(), &mut memory),
+            Action::Cast(ObjectId(101))
+        );
+    }
+
+    #[test]
+    fn the_mage_is_quiet_at_peace_hits_without_mana_and_backs_off_when_pressed() {
+        assert_eq!(decide(&Mage, &Scene::new(), &Memory::default()), Action::Follow);
+
+        let mut dry = Scene::new();
+        dry.enemies = vec![enemy(100, 300, Some(LEADER))];
+        dry.mp = 0.01;
+        assert_eq!(
+            decide(&Mage, &dry, &Memory::default()),
+            Action::Attack(ObjectId(100))
+        );
+
+        let mut hurt = Scene::new().hurt(ME, 0.3);
+        hurt.enemies = vec![enemy(100, 150, Some(ME))];
+        assert_eq!(decide(&Mage, &hurt, &Memory::default()), Action::Follow);
     }
 
     // ---- the driver ----

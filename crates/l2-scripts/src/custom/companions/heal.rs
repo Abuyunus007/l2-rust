@@ -33,7 +33,12 @@ pub fn heal_for(level: i32) -> Option<Step> {
     } else {
         (1011, HEAL_MAGIC_LEVELS)
     };
-    // The levels grow with the magic level, so the last one that fits is the highest.
+    step_in(skill_id, table, level)
+}
+
+/// The highest level of a skill that a character of `level` has reached. The skill levels grow
+/// with the magic level, so the last one that fits is the highest.
+pub fn step_in(skill_id: i32, table: &[i32], level: i32) -> Option<Step> {
     let index = table.iter().rposition(|&magic_level| magic_level <= level)?;
     Some(Step {
         skill_id,
