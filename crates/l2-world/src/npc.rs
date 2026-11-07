@@ -257,6 +257,8 @@ pub(crate) struct NpcWorld {
     pub(crate) random_walk_off: HashSet<ObjectId>,
     /// NPCs a script called `setCanReturnToSpawnPoint(false)` on (S-AI-05).
     pub(crate) no_return_to_spawn: HashSet<ObjectId>,
+    /// What the next NPC made is born with, while [`World::spawn_companion`] spawns one.
+    pub(crate) pending_companion: Option<crate::companion::CompanionSetup>,
 }
 
 impl NpcWorld {
@@ -953,7 +955,7 @@ impl World {
                 (data.location.x, data.location.y, data.location.z)
             })
         });
-        let npc = Npc {
+        let mut npc = Npc {
             core: CreatureCore {
                 object_id: id,
                 x,
@@ -990,7 +992,16 @@ impl World {
             spawn_point: spawn_point.unwrap_or_default(),
             spawn_time_ms: 0,
             scale: None,
+            owner: None,
+            look: None,
         };
+        // A companion is made for its owner before anybody can see it.
+        if let Some(setup) = self.npc_world.pending_companion.take() {
+            npc.core.level = setup.scale.level;
+            npc.scale = Some(setup.scale);
+            npc.owner = Some(setup.owner);
+            npc.look = Some(setup.look);
+        }
         self.npcs.insert(id, npc);
         // Java `Attackable.onSpawn`: "Clear mob spoil, seed" and `_sweepItems.set(null)`. A respawn
         // reuses the object id, so the spoil table must not remember the last life.
@@ -1100,8 +1111,9 @@ impl World {
         if !self.is_visible_for(subject, viewer) {
             return;
         }
-        // A fake player is told as a player (`FakePlayerInfo`, `Custom/FakePlayers.ini`).
-        if self.is_fake_player(subject) {
+        // A fake player is told as a player (`FakePlayerInfo`, `Custom/FakePlayers.ini`), and so
+        // is a companion with a figure.
+        if self.is_fake_player(subject) || self.has_companion_look(subject) {
             self.send_fake_player_info(subject, viewer);
             return;
         }
@@ -1120,7 +1132,7 @@ impl World {
             return None;
         }
         let template = self.npc_world.templates.as_ref()?.get(npc.npc_id)?;
-        if template.fake_player {
+        if template.fake_player || npc.look.is_some() {
             return None;
         }
         let settings = &self.npc_world.settings;

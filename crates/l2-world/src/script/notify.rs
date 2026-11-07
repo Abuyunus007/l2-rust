@@ -516,7 +516,12 @@ impl World {
     /// Java `Attackable.doDie`: `OnAttackableKill` `onKillDelay` after the death, for a killer
     /// that is a player or a summon.
     pub fn script_on_attackable_kill(&mut self, npc: ObjectId, killer: Option<ObjectId>) {
-        let Some((player, is_summon)) = killer.and_then(|k| self.player_and_summon(k)) else {
+        // The kill of a companion counts for its owner (ours): it only fights for him.
+        let credited = killer.and_then(|k| {
+            self.player_and_summon(k)
+                .or_else(|| self.companion_owner(k).map(|owner| (owner, false)))
+        });
+        let Some((player, is_summon)) = credited else {
             return;
         };
         let Some(n) = self.has_npc_listener(EventKind::AttackableKill, npc) else {

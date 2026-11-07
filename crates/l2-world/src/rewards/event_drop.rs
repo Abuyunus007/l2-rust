@@ -71,7 +71,7 @@ impl World {
         }
         // Event items drop only for players. (`attackable.isFakePlayer()`: fake players are not
         // ported, so none is one.)
-        let Some(player) = attacker.and_then(|a| self.acting_player(a)) else {
+        let Some(player) = attacker.and_then(|a| self.kill_credit_player(a)) else {
             return;
         };
         // Event items drop only within a default 9 level difference.

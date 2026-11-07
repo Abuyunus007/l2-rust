@@ -806,7 +806,7 @@ impl World {
         let mut rewards: Vec<(ObjectId, i64)> = Vec::new();
         for info in &aggro {
             // Get the Creature corresponding to this attacker (`asPlayer()`: a summon's owner).
-            let Some(attacker) = self.acting_player(info.attacker) else {
+            let Some(attacker) = self.kill_credit_player(info.attacker) else {
                 continue;
             };
             // Get damages done by this attacker.

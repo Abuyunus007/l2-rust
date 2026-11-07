@@ -27,7 +27,7 @@
 			<height normal="24" />
 		</collision>
 	</npc>
-	<!-- Companion (Tank): looks like npc 13175; the values are those of a level 85 character (the neutral base stats, so they count as they stand) and are scaled to the level of the owner (script custom/Companions). -->
+	<!-- Companion (Tank): its figure is made for each companion (CompanionLook); the values are those of a level 85 character (the neutral base stats, so they count as they stand) and are scaled to the level of the owner (script custom/Companions). -->
 	<npc id="50021" displayId="13175" level="85" type="Companion" name="Tank" usingServerSideName="true" title="Companion" usingServerSideTitle="true">
 		<race>HUMAN</race>
 		<sex>MALE</sex>
@@ -47,7 +47,7 @@
 			<height normal="23" />
 		</collision>
 	</npc>
-	<!-- Companion (Healer): looks like npc 32783; the values are those of a level 85 character (the neutral base stats, so they count as they stand) and are scaled to the level of the owner (script custom/Companions). -->
+	<!-- Companion (Healer): its figure is made for each companion (CompanionLook); the values are those of a level 85 character (the neutral base stats, so they count as they stand) and are scaled to the level of the owner (script custom/Companions). -->
 	<npc id="50022" displayId="32783" level="85" type="Companion" name="Healer" usingServerSideName="true" title="Companion" usingServerSideTitle="true">
 		<race>HUMAN</race>
 		<sex>MALE</sex>
@@ -67,7 +67,7 @@
 			<height normal="23" />
 		</collision>
 	</npc>
-	<!-- Companion (Warrior): looks like npc 35660; the values are those of a level 85 character (the neutral base stats, so they count as they stand) and are scaled to the level of the owner (script custom/Companions). -->
+	<!-- Companion (Warrior): its figure is made for each companion (CompanionLook); the values are those of a level 85 character (the neutral base stats, so they count as they stand) and are scaled to the level of the owner (script custom/Companions). -->
 	<npc id="50023" displayId="35660" level="85" type="Companion" name="Warrior" usingServerSideName="true" title="Companion" usingServerSideTitle="true">
 		<race>HUMAN</race>
 		<sex>MALE</sex>
@@ -87,7 +87,7 @@
 			<height normal="23" />
 		</collision>
 	</npc>
-	<!-- Companion (Archer): looks like npc 13176; the values are those of a level 85 character (the neutral base stats, so they count as they stand) and are scaled to the level of the owner (script custom/Companions). -->
+	<!-- Companion (Archer): its figure is made for each companion (CompanionLook); the values are those of a level 85 character (the neutral base stats, so they count as they stand) and are scaled to the level of the owner (script custom/Companions). -->
 	<npc id="50024" displayId="13176" level="85" type="Companion" name="Archer" usingServerSideName="true" title="Companion" usingServerSideTitle="true">
 		<race>ELF</race>
 		<sex>MALE</sex>

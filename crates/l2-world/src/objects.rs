@@ -116,6 +116,10 @@ pub struct Npc {
     /// Our own: the level and the multipliers of a companion, which is made for the level of its
     /// owner from one template (see [`NpcScale`]). `None` for every other NPC.
     pub scale: Option<NpcScale>,
+    /// Our own: the player a companion works for (its kills pay him), see `companion.rs`.
+    pub owner: Option<ObjectId>,
+    /// Our own: the figure a companion is shown with, instead of its template's model.
+    pub look: Option<crate::companion::CompanionLook>,
 }
 
 /// A companion's level and the factors on the template's base values. The template holds the

@@ -436,7 +436,18 @@ impl World {
 
         let npc = self.npcs.get(&subject)?;
         let template = self.npc_world.template(npc.npc_id)?;
-        let look = template.fake_player_info.as_ref()?;
+        // A companion (ours) has its own figure; a fake player has its template's.
+        let companion_holder = npc.look.as_ref().map(crate::companion::CompanionLook::holder);
+        let look = companion_holder.as_ref().or(template.fake_player_info.as_ref())?;
+        let (name, title, race, is_female) = match &npc.look {
+            Some(own) => (own.name.clone(), own.title.clone(), own.race, own.female),
+            None => (
+                template.name.clone(),
+                template.title.clone(),
+                template.race.ordinal() as i32,
+                template.sex == l2_data::npc::NpcSex::Female,
+            ),
+        };
         let stats = self.stats(subject)?;
         // `getMovementSpeedMultiplier()` and the speeds divided by it, `(int) Math.round(...)`.
         let move_multiplier = stats.movement_speed_multiplier();
@@ -462,9 +473,9 @@ impl World {
             z: npc.core.z,
             vehicle_id: 0,
             object_id: subject.0,
-            name: template.name.clone(),
-            race: template.race.ordinal() as i32,
-            is_female: template.sex == l2_data::npc::NpcSex::Female,
+            name,
+            race,
+            is_female,
             base_class: look.class_id,
             paperdoll_item_ids,
             paperdoll_augmentation_ids: [0; paperdoll::TOTAL_SLOTS],
@@ -488,7 +499,7 @@ impl World {
             hair_style: look.hair,
             hair_color: look.hair_color,
             face: look.face,
-            title: template.title.clone(),
+            title,
             clan_id: clan.map_or(0, |c| c.id),
             clan_crest_id: clan.map_or(0, |c| c.crest_id),
             ally_id: clan.map_or(0, |c| c.ally_id),

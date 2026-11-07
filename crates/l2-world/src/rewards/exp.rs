@@ -282,7 +282,7 @@ impl World {
         for info in self.aggro_list(dying) {
             // `info.getAttacker().asPlayer()`: a summon counts for its owner; anything else is
             // skipped.
-            let Some(attacker) = self.acting_player(info.attacker) else {
+            let Some(attacker) = self.kill_credit_player(info.attacker) else {
                 continue;
             };
             // Prevent unwanted behavior.
@@ -441,7 +441,7 @@ impl World {
         self.is_overhit(dying)
             && self
                 .overhit_attacker(dying)
-                .and_then(|o| self.acting_player(o))
+                .and_then(|o| self.kill_credit_player(o))
                 .is_some_and(|p| p == attacker)
     }
 

@@ -25,6 +25,7 @@ pub mod clanhall;
 pub mod combat;
 pub mod command;
 pub mod community_board;
+pub mod companion;
 pub mod contacts;
 pub mod craft;
 pub mod crystallize;
@@ -140,6 +141,7 @@ pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand}
 pub use community_board::{
     BoardTimer, CommunityBoardSettings, FavoriteAnswer, FavoriteEntry, FavoriteRead, FavoriteWrite,
 };
+pub use companion::{CompanionLook, CompanionSetup};
 pub use contacts::{ContactWrite, ContactsInput, FriendSummary};
 pub use craft::{
     CraftInput, CraftSettings, CraftWorld, ManufactureItem, PlayerCraft, RecipeBookEntry, RecipeLoad,

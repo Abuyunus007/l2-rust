@@ -644,6 +644,8 @@ impl World {
             spawn_point: (0, 0, 0),
             spawn_time_ms: 0,
             scale: None,
+            owner: None,
+            look: None,
         };
         self.npcs.insert(id, npc);
         self.forget_effects(id);
