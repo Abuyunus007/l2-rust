@@ -12,6 +12,7 @@
 //! [`View::on_event`], which receives every [`BridgeEvent`].
 
 pub mod accounts;
+pub mod ai_chat;
 pub mod backups;
 pub mod config_editor;
 pub mod connection;
@@ -44,6 +45,7 @@ pub enum ViewId {
     Servers,
     Players,
     GameAdmin,
+    Ai,
     Accounts,
     Backups,
     Logs,
@@ -53,12 +55,13 @@ pub enum ViewId {
 }
 
 impl ViewId {
-    pub const ALL: [ViewId; 11] = [
+    pub const ALL: [ViewId; 12] = [
         ViewId::Connection,
         ViewId::Setup,
         ViewId::Servers,
         ViewId::Players,
         ViewId::GameAdmin,
+        ViewId::Ai,
         ViewId::Accounts,
         ViewId::Backups,
         ViewId::Logs,
@@ -74,6 +77,7 @@ impl ViewId {
             ViewId::Servers => "Servers",
             ViewId::Players => "Players",
             ViewId::GameAdmin => "Game admin",
+            ViewId::Ai => "AI assistant",
             ViewId::Accounts => "Accounts",
             ViewId::Backups => "Backups",
             ViewId::Logs => "Logs",
@@ -92,6 +96,7 @@ impl ViewId {
                 | ViewId::Servers
                 | ViewId::Players
                 | ViewId::GameAdmin
+                | ViewId::Ai
                 | ViewId::Accounts
                 | ViewId::Backups
                 | ViewId::Logs
@@ -110,6 +115,7 @@ impl ViewId {
             | ViewId::Servers
             | ViewId::Players
             | ViewId::GameAdmin
+            | ViewId::Ai
             | ViewId::Accounts
             | ViewId::Backups
             | ViewId::Logs
@@ -128,6 +134,7 @@ pub struct Views {
     pub servers: servers::ServersView,
     pub players: players::PlayersView,
     pub game_admin: game_admin::GameAdminView,
+    pub ai: ai_chat::AiChatView,
     pub accounts: accounts::AccountsView,
     pub backups: backups::BackupsView,
     pub logs: logs::LogsView,
@@ -145,6 +152,7 @@ impl Views {
             ViewId::Servers => Some(&mut self.servers),
             ViewId::Players => Some(&mut self.players),
             ViewId::GameAdmin => Some(&mut self.game_admin),
+            ViewId::Ai => Some(&mut self.ai),
             ViewId::Accounts => Some(&mut self.accounts),
             ViewId::Backups => Some(&mut self.backups),
             ViewId::Logs => Some(&mut self.logs),
@@ -160,6 +168,7 @@ impl Views {
         self.servers.on_event(event);
         self.players.on_event(event);
         self.game_admin.on_event(event);
+        self.ai.on_event(event);
         self.accounts.on_event(event);
         self.backups.on_event(event);
         self.logs.on_event(event);

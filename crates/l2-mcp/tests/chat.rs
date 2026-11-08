@@ -129,6 +129,17 @@ async fn the_model_runs_a_command_and_says_what_happened() {
     assert_eq!(answer, "Amy is level 60 now.");
     assert_eq!(*game.seen.lock().unwrap(), vec!["setlevel 60"]);
     assert_eq!(tool_replies(&script), vec!["ran setlevel 60"]);
+    let steps = chat.steps();
+    assert_eq!(steps.len(), 1);
+    assert_eq!(
+        (
+            steps[0].tool.as_str(),
+            steps[0].what.as_str(),
+            steps[0].ok,
+            steps[0].answer.as_str()
+        ),
+        ("run_admin_command", "setlevel 60", true, "ran setlevel 60")
+    );
     assert!(
         admin.asked.lock().unwrap().is_empty(),
         "nothing destructive, nobody asked"

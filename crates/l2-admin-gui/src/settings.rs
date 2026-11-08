@@ -85,6 +85,28 @@ impl Default for PacketSettings {
     }
 }
 
+/// Settings of the AI assistant (`views/ai_chat`, D-63).
+#[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
+#[serde(default)]
+pub struct AiSettings {
+    /// The model's OpenAI-compatible endpoint (Ollama by default; `llama-server`: port 8080).
+    pub llm_url: String,
+    /// The model's name there. Empty = the first one the endpoint offers.
+    pub model: String,
+    /// Offer the tool that runs commands that punish, remove or stop (each one is asked about).
+    pub allow_destructive: bool,
+}
+
+impl Default for AiSettings {
+    fn default() -> Self {
+        Self {
+            llm_url: "http://127.0.0.1:11434".to_string(),
+            model: String::new(),
+            allow_destructive: true,
+        }
+    }
+}
+
 #[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(default)]
 pub struct Settings {
@@ -102,6 +124,8 @@ pub struct Settings {
     pub packets: PacketSettings,
     /// The datapack folder (the one that contains `data/`) the data browser loads. Empty = not set.
     pub datapack_path: String,
+    /// The AI assistant.
+    pub ai: AiSettings,
 }
 
 impl Default for Settings {
@@ -114,6 +138,7 @@ impl Default for Settings {
             auto_connect: true,
             packets: PacketSettings::default(),
             datapack_path: String::new(),
+            ai: AiSettings::default(),
         }
     }
 }
@@ -129,6 +154,7 @@ impl fmt::Debug for Settings {
             .field("auto_connect", &self.auto_connect)
             .field("packets", &self.packets)
             .field("datapack_path", &self.datapack_path)
+            .field("ai", &self.ai)
             .finish()
     }
 }
@@ -242,6 +268,11 @@ mod tests {
                 ..PacketSettings::default()
             },
             datapack_path: "some/datapack/game".into(),
+            ai: AiSettings {
+                llm_url: "http://127.0.0.1:8080".into(),
+                model: "qwen".into(),
+                allow_destructive: false,
+            },
         };
         let mut storage = MemStorage::default();
         settings.save(&mut storage);

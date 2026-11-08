@@ -159,7 +159,28 @@ impl ConnState {
 pub struct Bridge {
     cmd_tx: mpsc::UnboundedSender<Command>,
     events: std_mpsc::Receiver<BridgeEvent>,
-    next_request_id: AtomicU64,
+    next_request_id: Arc<AtomicU64>,
+}
+
+/// Sends requests from another thread (the AI chat's worker). The answers still arrive on the UI
+/// side as [`BridgeEvent::Response`]; take the id first ([`Requester::next_id`]) to know the
+/// answer before it can come.
+#[derive(Clone)]
+pub struct Requester {
+    cmd_tx: mpsc::UnboundedSender<Command>,
+    next_request_id: Arc<AtomicU64>,
+}
+
+impl Requester {
+    /// A fresh request id, shared with the UI's own requests.
+    pub fn next_id(&self) -> u64 {
+        self.next_request_id.fetch_add(1, Ordering::Relaxed)
+    }
+
+    /// Sends `request` under `id` (from [`Requester::next_id`]).
+    pub fn send(&self, id: u64, request: Request) {
+        let _ = self.cmd_tx.send(Command::Request { id, request });
+    }
 }
 
 impl Bridge {
@@ -178,7 +199,7 @@ impl Bridge {
         Ok(Self {
             cmd_tx,
             events,
-            next_request_id: AtomicU64::new(1),
+            next_request_id: Arc::new(AtomicU64::new(1)),
         })
     }
 
@@ -197,6 +218,14 @@ impl Bridge {
         let id = self.next_request_id.fetch_add(1, Ordering::Relaxed);
         let _ = self.cmd_tx.send(Command::Request { id, request });
         id
+    }
+
+    /// A handle that sends requests from another thread.
+    pub fn requester(&self) -> Requester {
+        Requester {
+            cmd_tx: self.cmd_tx.clone(),
+            next_request_id: Arc::clone(&self.next_request_id),
+        }
     }
 
     /// Next queued event, if any. Call in a loop once per frame.

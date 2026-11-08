@@ -1,7 +1,12 @@
 # AI admin chat: `l2-ai` (local model) and `l2-mcp` (MCP bridge)
 
-An AI assistant runs the game server's admin commands (D-63), in one of two ways:
+An AI assistant runs the game server's admin commands (D-63), in one of three ways:
 
+- **Admin GUI, view "AI assistant"** (the simplest): the chat in the GUI, through the GUI's own
+  connection to the supervisor. Pick the model server (Ollama: `http://127.0.0.1:11434`) and the
+  model, write what you want done. A ban, kick, kill or shutdown opens a dialog: "Run it" or
+  "Don't run". The settings are kept with the GUI's; the audit log is `log/mcp-audit.log` in the
+  run folder.
 - **`l2-ai`**: a chat in the terminal with a small model on your own PC (llama.cpp's
   `llama-server` or Ollama); no other app is needed. See "Local model with `l2-ai`" below.
 - **`l2-mcp`**: an MCP server for an MCP client (Claude Desktop, LM Studio, ...).

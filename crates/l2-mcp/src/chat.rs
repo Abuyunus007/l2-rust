@@ -24,6 +24,18 @@ pub trait Confirm: Send + Sync {
     fn approve(&self, command: &str, reason: &str) -> impl Future<Output = bool> + Send;
 }
 
+/// One tool the model ran while answering, for a window that shows the work.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Step {
+    /// The tool's name.
+    pub tool: String,
+    /// What it was asked: the command (with ` @target`), the query or the text.
+    pub what: String,
+    pub ok: bool,
+    /// The first line of the answer.
+    pub answer: String,
+}
+
 /// One conversation with the model.
 pub struct Chat<B, L, C> {
     server: McpServer<B>,
@@ -34,6 +46,8 @@ pub struct Chat<B, L, C> {
     /// The destructive commands the administrator said no to in this question: the model is not
     /// allowed to ask again (a small model tends to try once more).
     declined: Vec<String>,
+    /// The tools run for the last question.
+    steps: Vec<Step>,
 }
 
 impl<B: Backend, L: Llm, C: Confirm> Chat<B, L, C> {
@@ -47,6 +61,7 @@ impl<B: Backend, L: Llm, C: Confirm> Chat<B, L, C> {
             model,
             messages: Vec::new(),
             declined: Vec::new(),
+            steps: Vec::new(),
         };
         chat.reset();
         chat
@@ -82,6 +97,7 @@ impl<B: Backend, L: Llm, C: Confirm> Chat<B, L, C> {
     pub async fn say(&mut self, text: &str) -> Result<String, String> {
         self.messages.push(json!({ "role": "user", "content": text }));
         self.declined.clear();
+        self.steps.clear();
         let tools = self.tools();
         for _ in 0..MAX_STEPS {
             let request = json!({
@@ -116,6 +132,7 @@ impl<B: Backend, L: Llm, C: Confirm> Chat<B, L, C> {
             for call in &calls {
                 let id = call.get("id").cloned().unwrap_or(Value::Null);
                 let answer = self.run_call(call).await;
+                self.steps.push(step_of(call, &answer));
                 let content = if answer.ok {
                     answer.text
                 } else {
@@ -169,6 +186,39 @@ impl<B: Backend, L: Llm, C: Confirm> Chat<B, L, C> {
             Some(answer) => answer,
             None => failed(&format!("there is no tool {name}")),
         }
+    }
+}
+
+impl<B, L, C> Chat<B, L, C> {
+    /// The tools the model ran for the last question, in order.
+    pub fn steps(&self) -> &[Step] {
+        &self.steps
+    }
+}
+
+/// What a tool call was, for [`Step`].
+fn step_of(call: &Value, answer: &ToolAnswer) -> Step {
+    let tool = call
+        .pointer("/function/name")
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_owned();
+    let args = match call.pointer("/function/arguments") {
+        Some(Value::String(text)) => serde_json::from_str::<Value>(text).unwrap_or(Value::Null),
+        Some(args) => args.clone(),
+        None => Value::Null,
+    };
+    let field = |key: &str| args.get(key).and_then(Value::as_str).unwrap_or_default().trim();
+    let what = match (field("command"), field("target")) {
+        ("", _) => [field("query"), field("text")].concat(),
+        (command, "") => command.to_owned(),
+        (command, target) => format!("{command} @{target}"),
+    };
+    Step {
+        tool,
+        what,
+        ok: answer.ok,
+        answer: answer.text.lines().next().unwrap_or_default().to_owned(),
     }
 }
 

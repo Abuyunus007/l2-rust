@@ -14,6 +14,7 @@ l2-data.workspace = true # the data browser reads the datapack (NPC and item tem
 l2-supervisor = { path = "../l2-supervisor" } # launcher: run folder, supervisor.ini, detached start (G-01)
 l2-db-installer = { path = "../l2-db-installer" } # the setup wizard installs the database with the installer's library (G-02)
 l2-proxy ={ path = "../l2-proxy" } # the packet inspector runs the proxy in-process (D-35)
+l2-mcp = { path = "../l2-mcp" } # the AI assistant: chat, tools, command catalog (D-63)
 eframe = { workspace = true, features = ["persistence"] } # persistence = settings in eframe storage
 egui.workspace = true
 tokio.workspace = true

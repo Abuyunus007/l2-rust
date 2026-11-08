@@ -22,11 +22,12 @@ pub trait Llm: Send + Sync {
 }
 
 /// An OpenAI-compatible endpoint at `http://host:port` (a path in the URL is put in front of
-/// `/v1/chat/completions`).
+/// `/v1/...`).
 pub struct HttpLlm {
     host: String,
     port: u16,
-    path: String,
+    /// The path before `/v1`, empty or like `/llm`.
+    base: String,
 }
 
 impl HttpLlm {
@@ -49,26 +50,54 @@ impl HttpLlm {
             return Err(format!("no host in the model URL ({url})"));
         }
         let base = base.trim_end_matches('/');
-        let path = if base.is_empty() {
-            "/v1/chat/completions".to_owned()
+        let base = if base.is_empty() {
+            String::new()
         } else {
-            format!("/{base}/v1/chat/completions")
+            format!("/{base}")
         };
         Ok(Self {
             host: host.to_owned(),
             port,
-            path,
+            base,
         })
     }
 
-    async fn post(&self, body: &[u8]) -> Result<Vec<u8>, String> {
+    /// The models the endpoint offers (`GET /v1/models`), by name.
+    pub async fn models(&self) -> Result<Vec<String>, String> {
+        let answer = self.call("GET", "/v1/models", &[]).await?;
+        Ok(answer
+            .get("data")
+            .and_then(Value::as_array)
+            .map(|models| {
+                models
+                    .iter()
+                    .filter_map(|m| m.get("id").and_then(Value::as_str).map(str::to_owned))
+                    .collect()
+            })
+            .unwrap_or_default())
+    }
+
+    /// One request and its JSON answer.
+    async fn call(&self, method: &str, path: &str, body: &[u8]) -> Result<Value, String> {
+        let raw = tokio::time::timeout(ANSWER_TIMEOUT, self.send(method, path, body))
+            .await
+            .map_err(|_| "the model did not answer in time".to_owned())??;
+        let (status, body) = parse_response(&raw)?;
+        let text = String::from_utf8_lossy(&body);
+        if !(200..300).contains(&status) {
+            return Err(format!("the model answered HTTP {status}: {}", text.trim()));
+        }
+        serde_json::from_str(&text).map_err(|e| format!("the model's answer is not JSON: {e}"))
+    }
+
+    async fn send(&self, method: &str, path: &str, body: &[u8]) -> Result<Vec<u8>, String> {
         let mut stream = TcpStream::connect((self.host.as_str(), self.port))
             .await
             .map_err(|e| format!("cannot reach the model at {}:{}: {e}", self.host, self.port))?;
         let head = format!(
-            "POST {} HTTP/1.1\r\nHost: {}:{}\r\nContent-Type: application/json\r\nAccept: application/json\r\n\
-             Content-Length: {}\r\nConnection: close\r\n\r\n",
-            self.path,
+            "{method} {}{path} HTTP/1.1\r\nHost: {}:{}\r\nContent-Type: application/json\r\n\
+             Accept: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+            self.base,
             self.host,
             self.port,
             body.len()
@@ -90,15 +119,7 @@ impl HttpLlm {
 impl Llm for HttpLlm {
     async fn complete(&self, request: Value) -> Result<Value, String> {
         let body = serde_json::to_vec(&request).map_err(|e| e.to_string())?;
-        let raw = tokio::time::timeout(ANSWER_TIMEOUT, self.post(&body))
-            .await
-            .map_err(|_| "the model did not answer in time".to_owned())??;
-        let (status, body) = parse_response(&raw)?;
-        let text = String::from_utf8_lossy(&body);
-        if !(200..300).contains(&status) {
-            return Err(format!("the model answered HTTP {status}: {}", text.trim()));
-        }
-        serde_json::from_str(&text).map_err(|e| format!("the model's answer is not JSON: {e}"))
+        self.call("POST", "/v1/chat/completions", &body).await
     }
 }
 
@@ -171,13 +192,13 @@ mod tests {
     fn the_url_gives_host_port_and_path() {
         let llm = HttpLlm::new("http://127.0.0.1:8080").unwrap();
         assert_eq!(
-            (llm.host.as_str(), llm.port, llm.path.as_str()),
-            ("127.0.0.1", 8080, "/v1/chat/completions")
+            (llm.host.as_str(), llm.port, llm.base.as_str()),
+            ("127.0.0.1", 8080, "")
         );
         let llm = HttpLlm::new("http://localhost:11434/").unwrap();
-        assert_eq!((llm.port, llm.path.as_str()), (11434, "/v1/chat/completions"));
+        assert_eq!((llm.port, llm.base.as_str()), (11434, ""));
         let llm = HttpLlm::new("http://box/llm/").unwrap();
-        assert_eq!((llm.port, llm.path.as_str()), (80, "/llm/v1/chat/completions"));
+        assert_eq!((llm.port, llm.base.as_str()), (80, "/llm"));
         assert!(HttpLlm::new("https://x:1").is_err());
         assert!(HttpLlm::new("http://:1").is_err());
         assert!(HttpLlm::new("http://x:port").is_err());
