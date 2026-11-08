@@ -107,6 +107,9 @@ pub enum GameAction {
     Announce { text: String, critical: bool },
     /// Any admin command without the slashes (`kick Amy`), run as a virtual GM.
     Command { command: String },
+    /// An admin command with an online character as the virtual GM's target (`set_level 80` on
+    /// Amy): the commands that act on "the selected target".
+    CommandOn { target: String, command: String },
     /// `//server_shutdown` or `//server_restart` with a countdown.
     Shutdown { seconds: u32, restart: bool },
     /// `//server_abort`.

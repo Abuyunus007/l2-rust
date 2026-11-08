@@ -22,11 +22,10 @@ const DESTRUCTIVE_STEMS: &[&str] = &[
     "disband",
     "unspawn",
     "despawn",
-    "abort",
     "logout",
     "disconnect",
     "setkarma",
-    "res",
+    "respawn",
     "unequip",
     "drop",
 ];
@@ -75,14 +74,13 @@ mod tests {
             "delitem 57 1000",
             "server_shutdown 60",
             "server_restart 10",
-            "server_abort",
             "punishment_add Amy CHARACTER BAN 0 spam",
             "unspawnall",
             "clear_inventory",
             "admin_ban_acc Amy",
             "//ban_chat Amy",
             "takeitem",
-            "res",
+            "respawnall",
             "setkarma 100",
         ] {
             assert!(is_destructive(command), "{command}");
@@ -103,6 +101,8 @@ mod tests {
             "admin",
             "gmliston",
             "reload html",
+            "res Amy",
+            "server_abort",
         ] {
             assert!(!is_destructive(command), "{command}");
         }

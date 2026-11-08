@@ -283,6 +283,19 @@ async fn build_request(state: &GameState, action: GameAction) -> Result<GuiReque
             }
             Ok(gui_command(command, true))
         }
+        GameAction::CommandOn { target, command } => {
+            let (target, command) = (one_line(&target), one_line(&command));
+            if command.trim_start_matches('/').trim().is_empty() {
+                return Err("the command is empty".into());
+            }
+            if target.trim().is_empty() || target.trim().contains(char::is_whitespace) {
+                return Err("the target must be one character name".into());
+            }
+            Ok(GuiRequest::CommandOn {
+                target: target.trim().to_owned(),
+                command,
+            })
+        }
         GameAction::Shutdown { seconds, restart } => {
             let word = if restart {
                 "server_restart"
@@ -796,6 +809,17 @@ Token = t
         .await;
         assert_eq!(lines(reply), ["The command 'nonsense' does not exist!"]);
 
+        // A command on a character that is not online.
+        let reply = game_request(
+            &client,
+            GameAction::CommandOn {
+                target: "Nobody".into(),
+                command: "setpk 1".into(),
+            },
+        )
+        .await;
+        assert_eq!(lines(reply), ["Nobody is not online."]);
+
         // Bad input is refused before it reaches the world.
         for action in [
             GameAction::Announce {
@@ -803,6 +827,18 @@ Token = t
                 critical: false,
             },
             GameAction::Command { command: "//".into() },
+            GameAction::CommandOn {
+                target: "Amy".into(),
+                command: " / ".into(),
+            },
+            GameAction::CommandOn {
+                target: "two words".into(),
+                command: "setpk 1".into(),
+            },
+            GameAction::CommandOn {
+                target: " ".into(),
+                command: "setpk 1".into(),
+            },
             GameAction::Player {
                 name: "two words".into(),
                 action: PlayerAction::Kick,

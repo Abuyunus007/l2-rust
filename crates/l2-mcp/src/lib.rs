@@ -17,5 +17,8 @@
 
 pub mod audit;
 pub mod backend;
+pub mod catalog;
+pub mod chat;
 pub mod guard;
+pub mod llm;
 pub mod server;

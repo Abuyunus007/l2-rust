@@ -33,6 +33,9 @@ impl AdminHandler for FakeGame {
             GameAction::Command { command } => Response::GameReply {
                 lines: vec![format!("ran {command}"), "second line".into()],
             },
+            GameAction::CommandOn { target, command } => Response::GameReply {
+                lines: vec![format!("ran {command} on {target}")],
+            },
             GameAction::Announce { .. } => Response::GameReply { lines: vec![] },
             GameAction::ServerInfo => Response::GameInfo {
                 info: GameInfo {
@@ -153,6 +156,7 @@ async fn the_handshake_and_the_tools() {
         names,
         [
             "server_info",
+            "command_help",
             "run_admin_command",
             "announce",
             "run_destructive_admin_command"
@@ -162,7 +166,7 @@ async fn the_handshake_and_the_tools() {
     // Without destructive commands, that tool is not there and cannot be called.
     let safe = setup.bridge(TOKEN, false);
     let reply = ask(&safe, 5, "tools/list", json!({})).await;
-    assert_eq!(reply["result"]["tools"].as_array().unwrap().len(), 3);
+    assert_eq!(reply["result"]["tools"].as_array().unwrap().len(), 4);
     let reply = ask(
         &safe,
         6,
@@ -208,6 +212,54 @@ async fn a_command_runs_on_the_server_and_its_answer_comes_back() {
             },
         ]
     );
+}
+
+#[tokio::test]
+async fn a_command_on_a_character_goes_with_its_name_and_the_help_teaches_the_syntax() {
+    let setup = endpoint().await;
+    let bridge = setup.bridge(TOKEN, true);
+    let (ok, text) = call(
+        &bridge,
+        "run_admin_command",
+        json!({ "command": "set_level 80", "target": "Amy" }),
+    )
+    .await;
+    assert!(ok);
+    assert_eq!(text, "ran set_level 80 on Amy");
+    let (ok, _) = call(
+        &bridge,
+        "run_destructive_admin_command",
+        json!({ "command": "setkarma 0", "target": "Amy", "reason": "asked" }),
+    )
+    .await;
+    assert!(ok);
+    assert_eq!(
+        setup.seen(),
+        vec![
+            GameAction::CommandOn {
+                target: "Amy".into(),
+                command: "set_level 80".into()
+            },
+            GameAction::CommandOn {
+                target: "Amy".into(),
+                command: "setkarma 0".into()
+            },
+        ]
+    );
+    let log = std::fs::read_to_string(setup.audit_path()).unwrap();
+    assert!(log.contains(r#""set_level 80 (target: Amy)" -> ok"#), "{log}");
+
+    let (ok, text) = call(&bridge, "command_help", json!({ "query": "level" })).await;
+    assert!(ok);
+    assert!(
+        text.contains("set_level <level>") && text.contains("Needs target"),
+        "{text}"
+    );
+    let (_, all) = call(&bridge, "command_help", json!({})).await;
+    assert!(all.lines().count() > 40, "{all}");
+    let (ok, text) = call(&bridge, "command_help", json!({ "query": "teleportto" })).await;
+    assert!(ok && text.starts_with("Nothing found"), "{text}");
+    assert_eq!(setup.seen().len(), 2, "the help asks the server nothing");
 }
 
 #[tokio::test]

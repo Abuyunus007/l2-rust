@@ -383,6 +383,33 @@ fn jail_and_bans_use_punishment_add_with_gui_as_the_actor() {
 }
 
 #[test]
+fn a_command_on_a_named_character_has_it_as_the_target() {
+    let mut s = Scene::new();
+    s.enter(P1);
+    s.run(100);
+    let pk = |s: &Scene| s.world.player(ObjectId(P1)).unwrap().data.pk_kills;
+    // Without a target the command finds nobody.
+    let lines = s.console("setpk 7");
+    assert_eq!(pk(&s), 0, "{lines:?}");
+    let reply = s.gui(GuiRequest::CommandOn {
+        target: "p1".into(),
+        command: "setpk 7".into(),
+    });
+    assert_eq!(pk(&s), 7, "{reply:?}");
+    assert_eq!(reply, GuiReply::Lines(vec!["P1's PK count changed to 7".into()]));
+    assert_eq!(
+        s.gui(GuiRequest::CommandOn {
+            target: "Nobody".into(),
+            command: "setpk 7".into()
+        }),
+        GuiReply::Lines(vec!["Nobody is not online.".into()])
+    );
+    // The virtual GM is gone again and keeps no target for the next command.
+    let lines = s.console("setpk 9");
+    assert_eq!(pk(&s), 7, "{lines:?}");
+}
+
+#[test]
 fn teleport_moves_the_named_character() {
     let mut s = Scene::new();
     s.enter(P1);

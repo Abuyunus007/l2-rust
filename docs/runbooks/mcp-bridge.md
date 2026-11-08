@@ -1,12 +1,18 @@
-# AI admin chat: the MCP bridge (`l2-mcp`)
+# AI admin chat: `l2-ai` (local model) and `l2-mcp` (MCP bridge)
 
-`l2-mcp` lets an AI assistant run the game server's admin commands (D-63). You chat with the
-assistant in an MCP client; the client starts `l2-mcp`, and the bridge sends the commands to the
-server's admin endpoint, where a virtual GM with the master access level runs them. The game server
-needs no change: the bridge uses the same endpoint as the Admin GUI.
+An AI assistant runs the game server's admin commands (D-63), in one of two ways:
+
+- **`l2-ai`**: a chat in the terminal with a small model on your own PC (llama.cpp's
+  `llama-server` or Ollama); no other app is needed. See "Local model with `l2-ai`" below.
+- **`l2-mcp`**: an MCP server for an MCP client (Claude Desktop, LM Studio, ...).
+
+Both send the commands to the server's admin endpoint, where a virtual GM with the master access
+level runs them; it is the endpoint of the Admin GUI.
 
 ```
-you  ->  MCP client (Claude Desktop, LM Studio, ...)  ->  l2-mcp  ->  supervisor or game server admin endpoint  ->  world
+you  ->  l2-ai  ->  llama-server (the model)
+           \->  supervisor or game server admin endpoint  ->  world
+you  ->  MCP client  ->  l2-mcp  ->  supervisor or game server admin endpoint  ->  world
 ```
 
 ## Tools the assistant gets
@@ -14,14 +20,21 @@ you  ->  MCP client (Claude Desktop, LM Studio, ...)  ->  l2-mcp  ->  supervisor
 | Tool | What it does |
 |---|---|
 | `server_info` | uptime, players online, memory, tick times, a running shutdown |
-| `run_admin_command` | any admin command without slashes (`setlevel 80`, `find_character Amy`, `create_item 57 1000`); refuses the destructive ones |
-| `run_destructive_admin_command` | any command, also one that punishes, removes or stops (`ban_char`, `kick`, `kill`, `delete`, `server_shutdown`, ...) |
+| `command_help` | looks commands up in the catalog (`l2_mcp::catalog`, 43 commands): syntax, meaning, example, whether they need a target |
+| `run_admin_command` | any admin command without slashes (`set_level 80`, `find_character Amy`); refuses the destructive ones |
+| `run_destructive_admin_command` | any command, also one that punishes, removes or stops (`ban_char`, `kick`, `kill`, `server_shutdown`, ...) |
 | `announce` | a message to every player |
+
+Both command tools take an optional `target`: the name of an online character. A command on "the
+selected target" (`set_level`, `give_item_target`, `add_skill`, `sethero`, ...) runs with that
+character as the GM's target (`GameAction::CommandOn`). The virtual GM has no position and no
+bag of its own: `teleportto`, `move_to`, `goto`, `recall` and `create_item` do nothing useful
+through the endpoint, and the catalog leaves them out.
 
 "Destructive" is decided by the command word (`l2_mcp::guard`): its parts starting with `ban`,
 `jail`, `kick`, `kill`, `del`, `destroy`, `remove`, `clear`, `reset`, `wipe`, `erase`,
-`shutdown`, `restart`, `punish`, `take`, `disband`, `unspawn`, `despawn`, `abort`, `logout`,
-`disconnect`, `setkarma`, `res`, `unequip`, `drop`.
+`shutdown`, `restart`, `punish`, `take`, `disband`, `unspawn`, `despawn`, `logout`,
+`disconnect`, `setkarma`, `respawn`, `unequip`, `drop`.
 
 ## Safety: set the destructive tool to "ask every time"
 
@@ -85,3 +98,34 @@ same `mcpServers` form. Pick a model that supports tool calls.
 
 Then ask, for example: "How many players are online?", "Set Amy to level 60", "Announce that the
 server restarts at 22:00", "Ban the character Spambot for a day" (the client asks you first).
+
+## Local model with `l2-ai`
+
+`l2-ai` is a chat in the terminal. You write what you want ("set Amy to level 60", "how many
+players are online?"); the model picks the command, `l2-ai` runs it and the model says what
+happened. Before a command that punishes, removes or stops something, `l2-ai` itself asks you
+`Run it? (y/j = yes ...)`: the model cannot answer for you. Everything goes to the audit log.
+
+1. **The model server:** llama.cpp for Windows with CUDA (GitHub, `ggml-org/llama.cpp`, Releases,
+   the `win-cuda` zip), and a model as a `Q4_K_M` GGUF, e.g. Qwen3.5-9B (about 5.6 GB). Start it:
+   ```
+   llama-server -m Qwen3.5-9B-Q4_K_M.gguf --jinja -ngl 99 --port 8080
+   ```
+   `--jinja` turns on the model's tool calls; `-ngl 99` puts the model on the GPU.
+   Ollama works too: `--llm-url http://127.0.0.1:11434 --model <name>`.
+2. **The admin endpoint:** as in step 1 above (supervisor `Listen`/`Token`, or `Admin.ini`).
+3. **Start the chat** (PowerShell, in the folder of the server package):
+   ```
+   $env:L2_ADMIN_TOKEN = "<the token>"
+   bin\l2-ai.exe --url ws://127.0.0.1:<port> --server game
+   ```
+   `/reset` forgets the conversation, `/exit` ends it.
+
+| Argument | Environment | Default |
+|---|---|---|
+| `--llm-url http://host:port` | `L2_AI_LLM_URL` | `http://127.0.0.1:8080` |
+| `--model NAME` | `L2_AI_MODEL` | `local` (Ollama needs the real name) |
+| `--url`, `--server`, `--audit-log`, `--no-destructive` | as for `l2-mcp` | |
+
+A small model can pick a wrong command or a wrong number: read its answer, and read the question
+before you say yes. Ask for one thing at a time; name the character the command is for.

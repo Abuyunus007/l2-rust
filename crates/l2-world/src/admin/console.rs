@@ -40,6 +40,9 @@ pub enum GuiRequest {
     /// An admin command without the slashes (`kick Amy`). `with_html` keeps the html pages the
     /// command shows (the console wants them, the buttons do not).
     Command { command: String, with_html: bool },
+    /// An admin command with the named online character as the GM's target, as if the GM had
+    /// clicked it (`set_level 80` on Amy). With its html pages.
+    CommandOn { target: String, command: String },
     /// `//teleport_character x y z` on the named character.
     Teleport { name: String, x: i32, y: i32, z: i32 },
     /// A private message from "[GM]".
@@ -130,6 +133,12 @@ impl World {
             GuiRequest::Command { command, with_html } => {
                 GuiReply::Lines(self.run_console_command(&command, with_html))
             }
+            GuiRequest::CommandOn { target, command } => {
+                let Some(victim) = self.player_by_name(&target) else {
+                    return GuiReply::Lines(vec![format!("{target} is not online.")]);
+                };
+                GuiReply::Lines(self.run_console_command_on(&command, true, Some(victim)))
+            }
             GuiRequest::Teleport { name, x, y, z } => {
                 let Some(victim) = self.player_by_name(&name) else {
                     return GuiReply::Lines(vec![format!("{name} is not online.")]);
@@ -166,6 +175,16 @@ impl World {
 
     /// Runs `command` (without the slashes) as the virtual GM and returns what it was told.
     pub fn run_console_command(&mut self, command: &str, with_html: bool) -> Vec<String> {
+        self.run_console_command_on(command, with_html, None)
+    }
+
+    /// [`World::run_console_command`] with `target` as the virtual GM's target.
+    fn run_console_command_on(
+        &mut self,
+        command: &str,
+        with_html: bool,
+        target: Option<ObjectId>,
+    ) -> Vec<String> {
         let command = command.trim().trim_start_matches('/').trim();
         if command.is_empty() {
             return vec!["Enter a command, for example: server_abort".to_owned()];
@@ -174,6 +193,9 @@ impl World {
         let (granted, packets) = self.with_gui_gm(|world, gm| {
             if !world.is_gm(gm) {
                 return false;
+            }
+            if let Some(player) = world.players.get_mut(&gm) {
+                player.target = target;
             }
             // `useConfirm` is off: the GUI's own "are you sure" replaces the ConfirmDlg.
             world.admin_command(gm, &full, false);
