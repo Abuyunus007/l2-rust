@@ -157,13 +157,14 @@ async fn a_destructive_command_waits_for_the_administrator() {
 
     // He says no: nothing runs, the model is told, the log says so.
     let (game, admin) = (FakeGame::default(), Admin::saying(false));
-    let script = Script::new(vec![
+    // A model that tries again after the no is not asked about it a second time.
+    let again = || {
         calls(
             "run_destructive_admin_command",
             json!({ "command": "ban_char Spambot", "reason": "spam" }),
-        ),
-        says("Okay, I did not ban him."),
-    ]);
+        )
+    };
+    let script = Script::new(vec![again(), again(), says("Okay, I did not ban him.")]);
     let mut no = chat(&game, &script, &admin, Some(audit.clone()));
     assert_eq!(no.say("Bann Spambot").await.unwrap(), "Okay, I did not ban him.");
     assert!(game.seen.lock().unwrap().is_empty());
@@ -171,7 +172,14 @@ async fn a_destructive_command_waits_for_the_administrator() {
         *admin.asked.lock().unwrap(),
         vec![("ban_char Spambot".to_owned(), "spam".to_owned())]
     );
-    assert!(tool_replies(&script)[0].contains("said no"));
+    let replies = tool_replies(&script);
+    assert_eq!(replies.len(), 2);
+    assert!(
+        replies
+            .iter()
+            .all(|r| r.contains("answered NO") && r.contains("did not run")),
+        "{replies:?}"
+    );
     let log = std::fs::read_to_string(&audit).unwrap();
     assert!(
         log.contains(r#""ban_char Spambot" -> error: declined by the administrator"#),

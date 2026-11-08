@@ -31,6 +31,9 @@ pub struct Chat<B, L, C> {
     confirm: C,
     model: String,
     messages: Vec<Value>,
+    /// The destructive commands the administrator said no to in this question: the model is not
+    /// allowed to ask again (a small model tends to try once more).
+    declined: Vec<String>,
 }
 
 impl<B: Backend, L: Llm, C: Confirm> Chat<B, L, C> {
@@ -43,6 +46,7 @@ impl<B: Backend, L: Llm, C: Confirm> Chat<B, L, C> {
             confirm,
             model,
             messages: Vec::new(),
+            declined: Vec::new(),
         };
         chat.reset();
         chat
@@ -77,6 +81,7 @@ impl<B: Backend, L: Llm, C: Confirm> Chat<B, L, C> {
     /// conversation either way.
     pub async fn say(&mut self, text: &str) -> Result<String, String> {
         self.messages.push(json!({ "role": "user", "content": text }));
+        self.declined.clear();
         let tools = self.tools();
         for _ in 0..MAX_STEPS {
             let request = json!({
@@ -126,7 +131,7 @@ impl<B: Backend, L: Llm, C: Confirm> Chat<B, L, C> {
     }
 
     /// Runs one tool call of the model, asking the administrator first where needed.
-    async fn run_call(&self, call: &Value) -> ToolAnswer {
+    async fn run_call(&mut self, call: &Value) -> ToolAnswer {
         let name = call
             .pointer("/function/name")
             .and_then(Value::as_str)
@@ -147,9 +152,17 @@ impl<B: Backend, L: Llm, C: Confirm> Chat<B, L, C> {
             if command.trim().is_empty() {
                 return failed("The command is empty.");
             }
+            let key = command.trim().to_lowercase();
+            let refusal = format!(
+                "The administrator answered NO to '{command}'. It did not run. Do not try it again;                  tell the administrator that it was not run because they declined, and ask what to do instead."
+            );
+            if self.declined.contains(&key) {
+                return failed(&refusal);
+            }
             if !self.confirm.approve(command, reason).await {
                 self.server.note_declined(name, command);
-                return failed("The administrator said no. Do not run it; ask what to do instead.");
+                self.declined.push(key);
+                return failed(&refusal);
             }
         }
         match self.server.call_tool(name, &args).await {

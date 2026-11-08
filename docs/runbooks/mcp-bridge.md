@@ -112,7 +112,9 @@ happened. Before a command that punishes, removes or stops something, `l2-ai` it
    llama-server -m Qwen3.5-9B-Q4_K_M.gguf --jinja -ngl 99 --port 8080
    ```
    `--jinja` turns on the model's tool calls; `-ngl 99` puts the model on the GPU.
-   Ollama works too: `--llm-url http://127.0.0.1:11434 --model <name>`.
+   **Ollama** works as well and needs no `llama-server`: pull the model
+   (`ollama pull hf.co/unsloth/Qwen3.5-9B-GGUF:Q4_K_M`) and start `l2-ai` with
+   `--llm-url http://127.0.0.1:11434 --model hf.co/unsloth/Qwen3.5-9B-GGUF:Q4_K_M`.
 2. **The admin endpoint:** as in step 1 above (supervisor `Listen`/`Token`, or `Admin.ini`).
 3. **Start the chat** (PowerShell, in the folder of the server package):
    ```
@@ -129,3 +131,16 @@ happened. Before a command that punishes, removes or stops something, `l2-ai` it
 
 A small model can pick a wrong command or a wrong number: read its answer, and read the question
 before you say yes. Ask for one thing at a time; name the character the command is for.
+
+**Test a model** before you rely on it: `crates/l2-mcp/tests/live_model.rs` gives it five
+typical requests (a level, players online, Adena for a character, an announcement, a ban the
+administrator declines) against a stand-in server:
+
+```
+$env:L2_AI_LIVE_URL = "http://127.0.0.1:11434"
+$env:L2_AI_LIVE_MODEL = "hf.co/unsloth/Qwen3.5-9B-GGUF:Q4_K_M"
+cargo test -p l2-mcp --test live_model -- --nocapture
+```
+
+Qwen3.5-9B (Q4_K_M, Ollama, RTX 4070 Ti) got all five right in 1 to 5 seconds each (2026-11-08,
+one run; a model does not answer the same way every time).
