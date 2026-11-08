@@ -296,6 +296,7 @@ impl ClientSession {
             ip: self.ip_addr,
             access_level: self.access_level,
             last_server: self.last_server,
+            show_down_servers: self.state.config.l2r.show_down_servers,
         };
         let list = make_server_list(
             &self.state.game_servers,

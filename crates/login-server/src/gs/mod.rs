@@ -699,6 +699,7 @@ mod tests {
             ip: "10.0.0.1".parse().unwrap(),
             access_level: 0,
             last_server: 0,
+            show_down_servers: true,
         };
         let mut list = build_server_list(&[snapshot], &client, &Default::default(), 0);
         list.servers.pop().expect("the server is listed")

@@ -192,6 +192,8 @@ pub struct ClientView {
     pub ip: IpAddr,
     pub access_level: i32,
     pub last_server: i32,
+    /// `ShowDownServers` of `L2R.ini`: false leaves the servers that are down out of the list.
+    pub show_down_servers: bool,
 }
 
 /// Java `InetAddress.getByName(address).getAddress()` cut to 4 bytes, with the loopback address
@@ -271,6 +273,8 @@ pub fn build_server_list(
                 brackets: gs.brackets,
             }
         })
+        // `ShowDownServers = False` (L2R.ini, D-62): only the servers a player can enter.
+        .filter(|entry| client.show_down_servers || entry.up)
         .collect();
 
     // Only servers with at least one character are listed (`setCharactersOnServer` skips 0).
@@ -384,6 +388,7 @@ mod tests {
             ip: "8.8.4.4".parse().unwrap(),
             access_level,
             last_server: 2,
+            show_down_servers: true,
         }
     }
 
@@ -696,5 +701,35 @@ mod tests {
         assert!(!servers[0].authed);
         assert_eq!(state.game_servers.server(9), None);
         assert!(state.game_servers.request_characters("hero").is_empty());
+    }
+
+    #[test]
+    fn show_down_servers_false_lists_only_the_servers_that_are_up() {
+        let servers = [
+            snapshot(1, ServerStatus::Down),
+            snapshot(2, ServerStatus::Good),
+            snapshot(3, ServerStatus::Down),
+        ];
+        let ids = |list: &ServerList| list.servers.iter().map(|s| s.server_id).collect::<Vec<_>>();
+        let all = build(&servers, &client(0), &CharacterState::default());
+        assert_eq!(ids(&all), vec![1, 2, 3]);
+        let hidden = ClientView {
+            show_down_servers: false,
+            ..client(0)
+        };
+        assert_eq!(
+            ids(&build(&servers, &hidden, &CharacterState::default())),
+            vec![2]
+        );
+        // A banned account sees every server as down: with the switch, none.
+        let banned = ClientView {
+            show_down_servers: false,
+            ..client(-1)
+        };
+        assert!(
+            build(&servers, &banned, &CharacterState::default())
+                .servers
+                .is_empty()
+        );
     }
 }

@@ -218,6 +218,31 @@ fn ranged_long(ini: &IniFile, key: &str, default: i64, min: i64, max: i64) -> i6
     default
 }
 
+/// Settings of the login server's `config/L2R.ini` (our own features, D-62).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct LoginL2rConfig {
+    /// `[LoginServer]` key `ShowDownServers`: the server list shows the registered game servers
+    /// that are down (Java's behaviour), default true. False lists only the servers that are up.
+    pub show_down_servers: bool,
+}
+
+impl LoginL2rConfig {
+    /// File name inside the login server's config directory.
+    pub const FILE: &'static str = "L2R.ini";
+
+    pub fn from_ini(ini: &IniFile) -> Self {
+        Self {
+            show_down_servers: ini.get_bool("ShowDownServers", true),
+        }
+    }
+}
+
+impl Default for LoginL2rConfig {
+    fn default() -> Self {
+        Self::from_ini(&IniFile::empty(Self::FILE))
+    }
+}
+
 /// A location `x,y,z`; anything else gives `default` and a warning.
 fn location(ini: &IniFile, key: &str, default: (i32, i32, i32)) -> (i32, i32, i32) {
     let Some(text) = ini.get_value(key) else {
@@ -269,6 +294,13 @@ CompanionMaxCount = 5
                 rift: RiftInvasionConfig::default(),
             }
         );
+    }
+
+    #[test]
+    fn the_login_side_shows_down_servers_unless_told_not_to() {
+        assert!(LoginL2rConfig::default().show_down_servers);
+        let ini = IniFile::parse(LoginL2rConfig::FILE, "[LoginServer]\nShowDownServers = False\n").unwrap();
+        assert!(!LoginL2rConfig::from_ini(&ini).show_down_servers);
     }
 
     #[test]

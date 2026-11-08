@@ -63,6 +63,8 @@ pub struct LoginConfigSet {
     pub threads: ThreadConfig,
     pub network: NetworkConfig,
     pub interface: InterfaceConfig,
+    /// `L2R.ini`: our own login features (D-62).
+    pub l2r: crate::LoginL2rConfig,
 }
 
 impl LoginConfig {
@@ -115,6 +117,9 @@ impl LoginConfig {
                 processors,
             ),
             interface: InterfaceConfig::from_ini(&IniFile::load(config_dir.join(INTERFACE_CONFIG_FILE))?),
+            l2r: crate::LoginL2rConfig::from_ini(&IniFile::load(
+                config_dir.join(crate::LoginL2rConfig::FILE),
+            )?),
         })
     }
 }

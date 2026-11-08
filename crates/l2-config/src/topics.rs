@@ -258,7 +258,7 @@ const L2R_FILE: &str = "L2R.ini";
 pub fn topic_of(side: Side, rel_file: &str, group: &str, key: &str) -> Option<Topic> {
     // `L2R.ini` (D-62) holds the settings of our own features: a topic of its own, like a
     // custom feature's file.
-    if side == Side::Game && rel_file == L2R_FILE {
+    if rel_file == L2R_FILE {
         return Some(Topic::Custom("L2R".to_owned()));
     }
     if side == Side::Game
@@ -299,7 +299,10 @@ mod tests {
             topic_of(Side::Game, "L2R.ini", "", "CompanionCombatMode"),
             Some(Topic::Custom("L2R".to_owned()))
         );
-        assert_eq!(topic_of(Side::Login, "L2R.ini", "", "X"), None);
+        assert_eq!(
+            topic_of(Side::Login, "L2R.ini", "", "ShowDownServers"),
+            Some(Topic::Custom("L2R".to_owned()))
+        );
     }
 
     #[test]
