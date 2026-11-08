@@ -1023,11 +1023,17 @@ fn class_of_key(level: i32, key: &str) -> Option<&'static CompanionClass> {
 /// The main page for `owner`, with `note` on top.
 fn page(ctx: &mut ScriptCtx<'_>, owner: ObjectId, mode: Mode, note: Option<&str>) -> String {
     let level = ctx.player_level(owner);
-    let squad: Vec<&'static str> = ctx
+    let (squad, combat): (Vec<(&'static str, Role)>, Option<CompanionCombatMode>) = ctx
         .state::<State>()
         .squads
         .get(&owner)
-        .map(|s| s.members.iter().map(|m| m.class.name).collect())
+        .filter(|s| !s.members.is_empty())
+        .map(|s| {
+            (
+                s.members.iter().map(|m| (m.class.name, m.class.role)).collect(),
+                Some(s.mode),
+            )
+        })
         .unwrap_or_default();
     let choices = choices(level);
     main_page(&MainPage {
@@ -1036,6 +1042,7 @@ fn page(ctx: &mut ScriptCtx<'_>, owner: ObjectId, mode: Mode, note: Option<&str>
         fee_per_level: ctx.world().l2r_settings().companions.fee_per_level,
         choices: &choices,
         squad: &squad,
+        combat,
         max: max_companions(ctx),
         min_level: MIN_OWNER_LEVEL,
         note,
@@ -1085,6 +1092,8 @@ impl Script for Companions {
             return None;
         }
         let note = match command {
+            // The mode buttons of the page: the page again, with what changed.
+            "setmode" => Some(set_mode(ctx, owner, key)),
             "hire" => match class_of_key(ctx.player_level(owner), key) {
                 Some(class) => match hire(ctx, owner, class) {
                     Ok(()) => Some(format!("Your {} joins you.", class.name)),
@@ -2025,6 +2034,18 @@ mod tests {
     }
 
     #[test]
+    fn the_mode_buttons_switch_the_combat_mode_and_show_the_page_again() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 40, 10_000_000);
+        click(&mut t, "hire:tank");
+        let page = click(&mut t, "setmode:aggressive");
+        assert!(page.contains("Your companions are aggressive"), "{page}");
+        assert!(page.contains(">Aggressive</font>"), "{page}");
+        let page = click(&mut t, "setmode:passive");
+        assert!(page.contains(">Passive</font>"), "{page}");
+    }
+
+    #[test]
     fn the_price_and_the_most_companions_come_from_l2r_ini() {
         let Some(root) = datapack() else { return };
         let mut t = scene(root, 40, 10_000_000);
@@ -2034,10 +2055,10 @@ mod tests {
         t.world.set_l2r_settings(settings);
         let page = direct(&mut t, "main");
         assert!(
-            page.contains("40,000 Adena") && page.contains("1,000 for every level"),
+            page.contains("40,000 Adena") && page.contains("1,000 per level"),
             "{page}"
         );
-        assert!(page.contains("You can have 5,"), "{page}");
+        assert!(page.contains("0 of 5"), "{page}");
         for key in ["tank", "healer", "warrior", "archer", "mage"] {
             click(&mut t, &format!("hire:{key}"));
         }
@@ -2066,7 +2087,7 @@ mod tests {
         let pages = crate::testing::pages_to(&t.take(), 1);
         let page = pages.last().expect("the page was shown");
         assert!(
-            page.contains("bypass -h voice .companion hire 48\">Tyrant</a>"),
+            page.contains("<button value=\"Tyrant\" action=\"bypass -h voice .companion hire 48\""),
             "{page}"
         );
         assert!(!page.contains("Script Companions"));
@@ -2548,7 +2569,7 @@ mod tests {
         t.world.do_die(healer, None);
         seconds(&mut t, 2);
         let page = direct(&mut t, "main");
-        assert!(!page.contains("Dismiss the Healer"), "{page}");
+        assert!(!page.contains("dismiss:2"), "{page}");
         assert!(page.contains("(2 of 3)"));
         direct(&mut t, "hire:archer");
         assert_eq!(t.npcs_of(NPC_ARCHER).len(), 1);

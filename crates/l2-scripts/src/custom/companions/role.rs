@@ -80,6 +80,22 @@ impl Role {
         }
     }
 
+    /// The icon of the role on the hire page: the skill icon of a skill typical for it.
+    pub fn icon(self) -> &'static str {
+        match self {
+            // Aggression, Heal, Power Strike, Stun Shot, Backstab, Wind Strike, Summon Kat the
+            // Cat, Might.
+            Role::Tank => "icon.skill0018",
+            Role::Healer => "icon.skill1011",
+            Role::Warrior => "icon.skill0003",
+            Role::Archer => "icon.skill0101",
+            Role::Dagger => "icon.skill0030",
+            Role::Mage => "icon.skill1177",
+            Role::Summoner => "icon.skill1111",
+            Role::Buffer => "icon.skill1068",
+        }
+    }
+
     pub fn about(self) -> &'static str {
         match self {
             Role::Tank => "Takes the monsters from you and keeps them busy.",
