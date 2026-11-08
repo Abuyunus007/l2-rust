@@ -84,8 +84,27 @@ impl CompanionLook {
 pub struct CompanionSetup {
     /// The player it works for: its kills pay him.
     pub owner: ObjectId,
-    pub scale: NpcScale,
-    pub look: CompanionLook,
+    /// Its strength for the owner's level; `None` keeps the template's.
+    pub scale: Option<NpcScale>,
+    /// Its figure as a player; `None` shows it as an NPC (a summoner's servitor).
+    pub look: Option<CompanionLook>,
+    /// The model it is shown with when it has no figure; `None`: the template's.
+    pub display: Option<i32>,
+}
+
+/// What a script needs to know of a skill to use it.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct CompanionSkill {
+    /// The reuse time in milliseconds.
+    pub reuse_ms: i32,
+    /// The MP it costs (the initial cost included).
+    pub mp: i32,
+    /// How far the target may be; -1 for a skill on the caster.
+    pub cast_range: i32,
+    /// The skill's power (the experience a resurrection gives back, in percent).
+    pub power: f32,
+    /// How long the cast takes, in milliseconds.
+    pub hit_time: i32,
 }
 
 impl World {
@@ -106,6 +125,29 @@ impl World {
         // next NPC.
         self.npc_world.pending_companion = None;
         id
+    }
+
+    /// The reuse time, the MP cost and the range of `skill`; `None` for an unknown skill.
+    pub fn companion_skill(&self, skill: crate::SkillKey) -> Option<CompanionSkill> {
+        let table = self.skill_table()?;
+        let template = table.get(skill.id, skill.level)?;
+        Some(CompanionSkill {
+            reuse_ms: template.reuse_delay,
+            mp: template.mp_consume + template.mp_initial_consume,
+            cast_range: template.cast_range,
+            power: template.power,
+            hit_time: template.hit_time,
+        })
+    }
+
+    /// A companion gets a new figure (a new class, the gear of a new grade); everybody who sees
+    /// it is told.
+    pub fn set_companion_look(&mut self, id: ObjectId, look: CompanionLook) {
+        let Some(npc) = self.npcs.get_mut(&id) else {
+            return;
+        };
+        npc.look = Some(look);
+        self.broadcast_npc_info(id);
     }
 
     /// The player a companion works for, while he is in the world.

@@ -177,6 +177,7 @@ impl World {
             scale: None,
             owner: None,
             look: None,
+            display: None,
         };
         self.npcs.insert(id, npc);
         self.forget_effects(id);

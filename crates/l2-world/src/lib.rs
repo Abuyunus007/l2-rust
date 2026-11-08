@@ -141,7 +141,7 @@ pub use command::{AdminQuery, ClientInput, LeaveReason, SessionId, WorldCommand}
 pub use community_board::{
     BoardTimer, CommunityBoardSettings, FavoriteAnswer, FavoriteEntry, FavoriteRead, FavoriteWrite,
 };
-pub use companion::{CompanionLook, CompanionSetup};
+pub use companion::{CompanionLook, CompanionSetup, CompanionSkill};
 pub use contacts::{ContactWrite, ContactsInput, FriendSummary};
 pub use craft::{
     CraftInput, CraftSettings, CraftWorld, ManufactureItem, PlayerCraft, RecipeBookEntry, RecipeLoad,

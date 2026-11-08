@@ -1,31 +1,11 @@
-//! How a companion looks: a player of a random race and sex, in armor and with a weapon that fit
-//! its owner's level and its role. The clients are told it is a player (`CharInfo`), so it shows
-//! in the party window and the target window like one.
+//! How a companion looks: a player of its class (the race and, for the Kamael, the sex come with
+//! it), in armor and with a weapon that fit the class and its owner's level. The clients are told
+//! it is a player (`CharInfo`), so it shows in the party window and the target window like one.
 
 use l2_world::CompanionLook;
 
+use super::classes::{CompanionClass, Sex};
 use super::gear_data::{ARMOR, WEAPONS};
-use super::role::Role;
-
-/// `(race, class id)` a role can be shown as. Races: 0 human, 1 elf, 2 dark elf, 3 orc, 4 dwarf.
-/// The class is only what the party window and the target window write; the companion's skills
-/// are the role's.
-fn figures(role: Role) -> &'static [(i32, i32)] {
-    match role {
-        // Phoenix Knight, Eva's Templar, Shillien Templar, Titan, Fortune Seeker.
-        Role::Tank => &[(0, 90), (1, 99), (2, 106), (3, 113), (4, 117)],
-        // Cardinal, Eva's Saint, Shillien Saint: the races that have healers.
-        Role::Healer => &[(0, 97), (1, 105), (2, 112)],
-        // Duelist, Dreadnought, Sword Muse, Spectral Dancer, Titan, Fortune Seeker.
-        Role::Warrior => &[(0, 88), (0, 89), (1, 100), (2, 107), (3, 113), (4, 117)],
-        // Sagittarius, Moonlight Sentinel, Ghost Sentinel: the races that have archers.
-        Role::Archer => &[(0, 92), (1, 102), (2, 109)],
-        // Adventurer, Wind Rider, Ghost Hunter: the races that have daggers.
-        Role::Dagger => &[(0, 93), (1, 101), (2, 108)],
-        // Archmage, Soultaker, Mystic Muse, Storm Screamer.
-        Role::Mage => &[(0, 94), (0, 95), (1, 103), (2, 110)],
-    }
-}
 
 /// The names a companion is given.
 const NAMES: [&str; 48] = [
@@ -45,73 +25,159 @@ pub fn grade_for(level: i32) -> usize {
     GRADE_FROM_LEVEL.iter().take_while(|from| level >= **from).count()
 }
 
-/// The armor kind of a role. A warrior takes either heavy or light armor.
-fn armor_kind(role: Role, dice: &mut dyn FnMut(i32) -> i32) -> &'static str {
-    match role {
-        Role::Tank => "HEAVY",
-        Role::Healer | Role::Mage => "MAGIC",
-        Role::Archer | Role::Dagger => "LIGHT",
-        Role::Warrior => {
-            if dice(2) == 0 {
-                "HEAVY"
-            } else {
-                "LIGHT"
-            }
+/// A random figure of `class` for an owner of `level`. `dice(n)` is a number in `[0, n)` (the
+/// world's random numbers, so a seeded world makes the same figures).
+pub fn roll(class: &CompanionClass, level: i32, dice: &mut dyn FnMut(i32) -> i32) -> CompanionLook {
+    let female = match class.sex {
+        Sex::Male => false,
+        Sex::Female => true,
+        Sex::Any => dice(2) == 0,
+    };
+    let mut look = CompanionLook {
+        name: NAMES[dice(NAMES.len() as i32) as usize % NAMES.len()].to_owned(),
+        title: class.role.title().to_owned(),
+        race: class.race,
+        female,
+        class_id: class.id,
+        hair: dice(5),
+        hair_color: dice(4),
+        face: dice(3),
+        head: 0,
+        right_hand: 0,
+        left_hand: 0,
+        gloves: 0,
+        chest: 0,
+        legs: 0,
+        feet: 0,
+    };
+    dress(&mut look, class, level, dice);
+    look
+}
+
+/// A figure saved at logout ([`Saved`]) as it comes back: its class, its face and name, and the
+/// gear of `level`.
+pub fn restore(
+    saved: &Saved,
+    class: &CompanionClass,
+    level: i32,
+    dice: &mut dyn FnMut(i32) -> i32,
+) -> CompanionLook {
+    let mut look = CompanionLook {
+        name: saved.name.clone(),
+        title: String::new(),
+        race: class.race,
+        female: saved.female,
+        class_id: class.id,
+        hair: saved.hair,
+        hair_color: saved.hair_color,
+        face: saved.face,
+        head: 0,
+        right_hand: 0,
+        left_hand: 0,
+        gloves: 0,
+        chest: 0,
+        legs: 0,
+        feet: 0,
+    };
+    dress(&mut look, class, level, dice);
+    look
+}
+
+/// What is kept of a companion over a logout: its class and its face. The gear follows the level.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Saved {
+    pub class_id: i32,
+    pub name: String,
+    pub female: bool,
+    pub hair: i32,
+    pub hair_color: i32,
+    pub face: i32,
+}
+
+impl Saved {
+    pub fn of(look: &CompanionLook) -> Self {
+        Self {
+            class_id: look.class_id,
+            name: look.name.clone(),
+            female: look.female,
+            hair: look.hair,
+            hair_color: look.hair_color,
+            face: look.face,
         }
+    }
+
+    /// `class,name,sex,hair,hair color,face` (the names have no commas).
+    pub fn to_text(&self) -> String {
+        format!(
+            "{},{},{},{},{},{}",
+            self.class_id,
+            self.name,
+            u8::from(self.female),
+            self.hair,
+            self.hair_color,
+            self.face
+        )
+    }
+
+    /// The text of [`Saved::to_text`]; `None` for anything else.
+    pub fn from_text(text: &str) -> Option<Self> {
+        let parts: Vec<&str> = text.split(',').collect();
+        let [class_id, name, female, hair, hair_color, face] = parts.as_slice() else {
+            return None;
+        };
+        let number = |s: &str| s.trim().parse::<i32>().ok();
+        let name = name.trim();
+        if name.is_empty() {
+            return None;
+        }
+        Some(Self {
+            class_id: number(class_id)?,
+            name: name.to_owned(),
+            female: number(female)? != 0,
+            hair: number(hair)?.clamp(0, 6),
+            hair_color: number(hair_color)?.clamp(0, 3),
+            face: number(face)?.clamp(0, 2),
+        })
     }
 }
 
-/// A random figure for a companion of `role` for an owner of `level`. `dice(n)` is a number in
-/// `[0, n)` (the world's random numbers, so a seeded world makes the same figures).
-pub fn roll(role: Role, level: i32, dice: &mut dyn FnMut(i32) -> i32) -> CompanionLook {
-    let figures = figures(role);
-    let (race, class_id) = figures[dice(figures.len() as i32) as usize % figures.len()];
+/// Puts `class` and the gear of `level` on a figure; the face, the name and the sex stay (a
+/// companion that moves up a class tier, or into a new grade).
+pub fn dress(look: &mut CompanionLook, class: &CompanionClass, level: i32, dice: &mut dyn FnMut(i32) -> i32) {
     let grade = grade_for(level);
-
     let weapons: Vec<i32> = WEAPONS
         .iter()
-        .filter(|(key, g, _)| *key == role.key() && *g == grade)
+        .filter(|(key, g, _)| *key == class.weapon.key() && *g == grade)
         .map(|(_, _, id)| *id)
         .collect();
-    let right_hand = pick(&weapons, dice);
-
-    let kind = armor_kind(role, dice);
     let sets: Vec<&[i32; 6]> = ARMOR
         .iter()
-        .filter(|(g, k, _)| *g == grade && *k == kind)
+        .filter(|(g, k, _)| *g == grade && *k == class.armor)
         .map(|(_, _, parts)| parts)
         .collect();
     let [head, chest, legs, gloves, feet, set_shield] = pick(&sets, dice).copied().unwrap_or([0; 6]);
-    // A set without a shield (some of the heavy ones have none) gets one of the grade.
+    // A set without a shield (most are) gets one of the grade.
     let shield = if set_shield != 0 {
         set_shield
     } else {
         let shields: Vec<i32> = ARMOR
             .iter()
-            .filter(|(g, k, parts)| *g == grade && *k == "HEAVY" && parts[5] != 0)
+            .filter(|(g, _, parts)| *g == grade && parts[5] != 0)
             .map(|(_, _, parts)| parts[5])
             .collect();
         pick(&shields, dice).unwrap_or(0)
     };
-
-    CompanionLook {
-        name: NAMES[dice(NAMES.len() as i32) as usize % NAMES.len()].to_owned(),
-        title: role.title().to_owned(),
-        race,
-        female: dice(2) == 0,
-        class_id,
-        hair: dice(5),
-        hair_color: dice(4),
-        face: dice(3),
-        head,
-        right_hand: right_hand.unwrap_or(0),
-        // Only the tank carries a shield; a two-handed weapon or a bow leaves the hand empty.
-        left_hand: if role == Role::Tank { shield } else { 0 },
-        gloves,
-        chest,
-        legs,
-        feet,
-    }
+    look.class_id = class.id;
+    look.race = class.race;
+    look.title = class.role.title().to_owned();
+    look.right_hand = pick(&weapons, dice).unwrap_or(0);
+    // A shield for the knights; a two-handed weapon, a bow or a magic one leaves the hand empty.
+    look.left_hand = if class.weapon.with_shield() { shield } else { 0 };
+    look.head = head;
+    look.chest = chest;
+    look.legs = legs;
+    look.gloves = gloves;
+    look.feet = feet;
 }
 
 /// A random entry of a list.
@@ -127,6 +193,7 @@ mod tests {
     use std::collections::BTreeSet;
 
     use super::*;
+    use crate::custom::companions::classes::{CLASSES, by_id};
     use crate::testing::datapack;
 
     /// A xorshift as dice: deterministic, and it spreads over the values.
@@ -153,93 +220,106 @@ mod tests {
     }
 
     #[test]
-    fn every_role_has_a_weapon_and_armor_for_every_grade() {
-        for role in Role::ALL {
-            for grade in 0..=6 {
-                assert!(
-                    WEAPONS.iter().any(|(k, g, _)| *k == role.key() && *g == grade),
-                    "{role:?} has no weapon of grade {grade}"
-                );
-            }
-        }
-        for grade in 0..=6 {
-            for kind in ["HEAVY", "LIGHT", "MAGIC"] {
-                assert!(
-                    ARMOR.iter().any(|(g, k, _)| *g == grade && *k == kind),
-                    "no {kind} armor of grade {grade}"
-                );
-            }
-        }
-    }
-
-    #[test]
-    fn a_figure_wears_what_fits_its_level_and_role() {
-        for role in Role::ALL {
+    fn a_figure_is_its_class_and_wears_what_fits_its_level() {
+        let mut dice = counter();
+        for class in CLASSES {
             for level in [20, 45, 55, 70, 78, 82, 85] {
-                let mut dice = counter();
-                for _ in 0..30 {
-                    let look = roll(role, level, &mut dice);
-                    let grade = grade_for(level);
-                    assert!(
-                        WEAPONS.contains(&(role.key(), grade, look.right_hand)),
-                        "{role:?} {level}: weapon {} is not of grade {grade}",
-                        look.right_hand
-                    );
-                    assert!(
-                        ARMOR
-                            .iter()
-                            .any(|(g, _, parts)| *g == grade && parts[1] == look.chest),
-                        "{role:?} {level}: chest {} is not of grade {grade}",
-                        look.chest
-                    );
-                    assert!(look.chest != 0, "a companion is never naked");
-                    assert_eq!(look.title, role.title());
-                    assert!(
-                        figures(role).contains(&(look.race, look.class_id)),
-                        "{role:?} cannot be shown as race {} class {}",
-                        look.race,
-                        look.class_id
-                    );
-                    assert!((0..5).contains(&look.hair) && (0..4).contains(&look.hair_color));
-                    assert!((0..3).contains(&look.face));
-                    assert!(NAMES.contains(&look.name.as_str()));
+                let look = roll(class, level, &mut dice);
+                let grade = grade_for(level);
+                assert_eq!(
+                    (look.class_id, look.race),
+                    (class.id, class.race),
+                    "{}",
+                    class.name
+                );
+                assert!(
+                    WEAPONS.contains(&(class.weapon.key(), grade, look.right_hand)),
+                    "{} {level}: weapon {} is not a {} of grade {grade}",
+                    class.name,
+                    look.right_hand,
+                    class.weapon.key()
+                );
+                assert!(
+                    ARMOR
+                        .iter()
+                        .any(|(g, k, parts)| *g == grade && *k == class.armor && parts[1] == look.chest),
+                    "{} {level}: chest {} is not {} of grade {grade}",
+                    class.name,
+                    look.chest,
+                    class.armor
+                );
+                assert_eq!(
+                    look.left_hand != 0,
+                    class.weapon.with_shield(),
+                    "{}: the shield",
+                    class.name
+                );
+                assert_eq!(look.title, class.role.title());
+                match class.sex {
+                    Sex::Male => assert!(!look.female, "{}", class.name),
+                    Sex::Female => assert!(look.female, "{}", class.name),
+                    Sex::Any => {}
                 }
+                assert!((0..5).contains(&look.hair) && (0..4).contains(&look.hair_color));
+                assert!((0..3).contains(&look.face));
+                assert!(NAMES.contains(&look.name.as_str()));
             }
         }
     }
 
     #[test]
-    fn only_the_tank_carries_a_shield_and_the_bow_has_both_hands() {
+    fn a_new_class_gets_new_gear_and_keeps_the_face() {
         let mut dice = counter();
-        for level in [30, 60, 85] {
-            let tank = roll(Role::Tank, level, &mut dice);
-            assert!(tank.left_hand != 0, "a tank holds a shield at level {level}");
-            for role in [
-                Role::Healer,
-                Role::Warrior,
-                Role::Archer,
-                Role::Dagger,
-                Role::Mage,
-            ] {
-                assert_eq!(roll(role, level, &mut dice).left_hand, 0, "{role:?}");
-            }
-        }
-    }
-
-    #[test]
-    fn the_races_and_sexes_vary_and_the_same_dice_make_the_same_figure() {
-        let mut dice = counter();
-        let looks: Vec<CompanionLook> = (0..60).map(|_| roll(Role::Warrior, 70, &mut dice)).collect();
-        let races: BTreeSet<i32> = looks.iter().map(|l| l.race).collect();
-        assert!(races.len() >= 4, "{races:?}");
-        assert!(looks.iter().any(|l| l.female) && looks.iter().any(|l| !l.female));
-        assert!(
-            looks.iter().any(|l| l.right_hand != looks[0].right_hand),
-            "the weapons vary"
+        let monk = by_id(47).unwrap();
+        let mut look = roll(monk, 30, &mut dice);
+        let before = look.clone();
+        dress(&mut look, by_id(48).unwrap(), 45, &mut dice);
+        assert_eq!(look.class_id, 48);
+        assert_eq!(
+            (&look.name, look.female, look.hair, look.hair_color, look.face),
+            (
+                &before.name,
+                before.female,
+                before.hair,
+                before.hair_color,
+                before.face
+            )
         );
+        assert!(
+            WEAPONS.contains(&("fist", 1, look.right_hand)),
+            "a C grade fist: {}",
+            look.right_hand
+        );
+    }
 
+    #[test]
+    fn a_saved_figure_comes_back_with_the_gear_of_the_new_level() {
+        let mut dice = counter();
+        let look = roll(by_id(48).unwrap(), 45, &mut dice);
+        let saved = Saved::of(&look);
+        let text = saved.to_text();
+        assert_eq!(Saved::from_text(&text), Some(saved.clone()));
+        let back = restore(&saved, by_id(48).unwrap(), 55, &mut dice);
+        assert_eq!(
+            (&back.name, back.female, back.hair, back.face, back.class_id),
+            (&look.name, look.female, look.hair, look.face, 48)
+        );
+        assert!(WEAPONS.contains(&("fist", 2, back.right_hand)), "B grade at 55");
+        for bad in ["", "48,Amy", "x,Amy,0,1,1,1", "48,,0,1,1,1", "48,Amy,0,1,1,1,9"] {
+            assert_eq!(Saved::from_text(bad), None, "{bad}");
+        }
+    }
+
+    #[test]
+    fn the_sexes_and_weapons_vary_and_the_same_dice_make_the_same_figure() {
+        let mut dice = counter();
+        let gladiator = by_id(2).unwrap();
+        let looks: Vec<CompanionLook> = (0..40).map(|_| roll(gladiator, 70, &mut dice)).collect();
+        assert!(looks.iter().any(|l| l.female) && looks.iter().any(|l| !l.female));
+        let weapons: BTreeSet<i32> = looks.iter().map(|l| l.right_hand).collect();
+        assert!(weapons.len() > 1, "the weapons vary");
         let (mut a, mut b) = (counter(), counter());
-        assert_eq!(roll(Role::Archer, 50, &mut a), roll(Role::Archer, 50, &mut b));
+        assert_eq!(roll(gladiator, 50, &mut a), roll(gladiator, 50, &mut b));
     }
 
     #[test]

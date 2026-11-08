@@ -763,6 +763,38 @@ pub fn skill_xml(root: &Path, ids: &BTreeSet<i32>) -> String {
     out
 }
 
+/// The `<item>` elements of the datapack for the given ids, to put into a test world.
+pub fn item_xml(root: &Path, ids: &BTreeSet<i32>) -> String {
+    let mut out = String::new();
+    let mut files: Vec<_> = std::fs::read_dir(root.join("data/stats/items"))
+        .unwrap()
+        .flatten()
+        .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|e| e == "xml"))
+        .collect();
+    files.sort();
+    for file in files {
+        let text = std::fs::read_to_string(file).unwrap();
+        let mut rest = text.as_str();
+        while let Some(start) = rest.find("<item id=\"") {
+            let end = rest[start..]
+                .find("</item>")
+                .map_or(rest.len(), |e| start + e + 7);
+            let block = &rest[start..end];
+            let id: i32 = block["<item id=\"".len()..]
+                .split('"')
+                .next()
+                .and_then(|v| v.parse().ok())
+                .unwrap_or(0);
+            if ids.contains(&id) {
+                out.push_str(block);
+            }
+            rest = &rest[end..];
+        }
+    }
+    out
+}
+
 /// The `<npc>` elements of one NPC file of the datapack (`file` below `data/`), without the `<list>`
 /// around them, to put into a test world.
 pub fn npc_xml(root: &Path, file: &str) -> String {

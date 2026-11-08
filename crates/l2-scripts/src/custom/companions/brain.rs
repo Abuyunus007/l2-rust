@@ -222,7 +222,10 @@ impl Behavior for Healer {
             let weakest = view
                 .allies
                 .iter()
-                .filter(|ally| ally.hp < HEAL_BELOW && ally.pos.distance(view.me.pos) <= HEAL_RANGE)
+                // A dead ally (no HP) is raised, not healed.
+                .filter(|ally| {
+                    ally.hp > 0.0 && ally.hp < HEAL_BELOW && ally.pos.distance(view.me.pos) <= HEAL_RANGE
+                })
                 .min_by(|a, b| a.hp.total_cmp(&b.hp));
             if let Some(ally) = weakest {
                 return Action::Heal(ally.id);
@@ -549,6 +552,14 @@ mod tests {
         // Itself counts.
         let scene = Scene::new().hurt(ME, 0.2).hurt(LEADER, 0.5);
         assert_eq!(decide(&Healer, &scene, &Memory::default()), Action::Heal(ME));
+    }
+
+    #[test]
+    fn the_healer_does_not_heal_the_dead() {
+        let scene = Scene::new().hurt(LEADER, 0.0).hurt(FRIEND, 0.5);
+        assert_eq!(decide(&Healer, &scene, &Memory::default()), Action::Heal(FRIEND));
+        let scene = Scene::new().hurt(LEADER, 0.0);
+        assert_eq!(decide(&Healer, &scene, &Memory::default()), Action::Follow);
     }
 
     #[test]

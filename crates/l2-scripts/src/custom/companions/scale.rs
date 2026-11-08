@@ -46,6 +46,16 @@ pub fn weapon_attack(item_id: i32) -> (i32, i32) {
         .map_or(FIST, |&(_, p_atk, m_atk)| (p_atk, m_atk))
 }
 
+/// The weapon a servitor of a summoner of `level` hits as hard as: a two-handed sword of the
+/// grade of that level.
+pub fn pet_weapon(level: i32) -> i32 {
+    let grade = super::look::grade_for(level);
+    super::gear_data::WEAPONS
+        .iter()
+        .find(|(key, g, _)| *key == "warrior" && *g == grade)
+        .map_or(0, |(_, _, id)| *id)
+}
+
 /// The values of a companion of `level` (a level beyond 85 counts as 85, one below 1 as 1) that
 /// holds `weapon`.
 pub fn scale_for(level: i32, weapon: i32, multipliers: Multipliers) -> NpcScale {

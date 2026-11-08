@@ -147,4 +147,64 @@
 			<height normal="23" />
 		</collision>
 	</npc>
+	<!-- Companion (Summoner): its figure is made for each companion (CompanionLook); HP, MP and defence are those of a level 85 character and are scaled to the level of the owner; P. Atk. and M. Atk. are the weapon's it holds (the engine adds the stat bonus and level modifier, as for a player); critical rate and attack speed are a player's with that weapon (script custom/Companions). -->
+	<npc id="50027" displayId="32783" level="85" type="Companion" name="Summoner" usingServerSideName="true" title="Companion" usingServerSideTitle="true">
+		<race>HUMAN</race>
+		<sex>MALE</sex>
+		<stats str="40" int="21" dex="30" wit="20" con="43" men="10">
+			<vitals hp="16000" hpRegen="10.8" mp="9000" mpRegen="4.0" />
+			<attack physical="1500" magical="5200" random="30" critical="4" accuracy="206" attackSpeed="325" type="BLUNT" range="40" distance="80" width="120" />
+			<defence physical="2600" magical="3500" />
+			<speed>
+				<walk ground="82" />
+				<run ground="132" />
+			</speed>
+		</stats>
+		<status talkable="false" attackable="true" />
+		<ai type="FIGHTER" aggroRange="0" isAggressive="false" />
+		<collision>
+			<radius normal="9" />
+			<height normal="23" />
+		</collision>
+	</npc>
+	<!-- Companion (Buffer): its figure is made for each companion (CompanionLook); HP, MP and defence are those of a level 85 character and are scaled to the level of the owner; P. Atk. and M. Atk. are the weapon's it holds (the engine adds the stat bonus and level modifier, as for a player); critical rate and attack speed are a player's with that weapon (script custom/Companions). -->
+	<npc id="50028" displayId="32783" level="85" type="Companion" name="Buffer" usingServerSideName="true" title="Companion" usingServerSideTitle="true">
+		<race>HUMAN</race>
+		<sex>MALE</sex>
+		<stats str="40" int="21" dex="30" wit="20" con="43" men="10">
+			<vitals hp="17000" hpRegen="10.8" mp="9000" mpRegen="4.0" />
+			<attack physical="1500" magical="5200" random="30" critical="4" accuracy="206" attackSpeed="325" type="BLUNT" range="40" distance="80" width="120" />
+			<defence physical="2600" magical="3500" />
+			<speed>
+				<walk ground="82" />
+				<run ground="132" />
+			</speed>
+		</stats>
+		<status talkable="false" attackable="true" />
+		<ai type="FIGHTER" aggroRange="0" isAggressive="false" />
+		<collision>
+			<radius normal="9" />
+			<height normal="23" />
+		</collision>
+	</npc>
+	<!-- Companion (Servitor): a summoner companion's creature, shown with the model of the servitor its summon skill calls; HP, MP and defence are those of a level 85 character and are scaled to the level of the owner; P. Atk. and M. Atk. are the weapon's it holds (the engine adds the stat bonus and level modifier, as for a player); critical rate and attack speed are a player's with that weapon (script custom/Companions). -->
+	<npc id="50029" displayId="35660" level="85" type="Companion" name="Servitor" usingServerSideName="true" title="Companion" usingServerSideTitle="true">
+		<race>HUMAN</race>
+		<sex>MALE</sex>
+		<stats str="40" int="21" dex="30" wit="20" con="43" men="10">
+			<vitals hp="20000" hpRegen="10.8" mp="3700" mpRegen="4.0" />
+			<attack physical="5600" magical="1284" random="30" critical="8" accuracy="206" attackSpeed="379" type="SWORD" range="40" distance="80" width="120" />
+			<defence physical="3800" magical="2400" />
+			<speed>
+				<walk ground="82" />
+				<run ground="132" />
+			</speed>
+		</stats>
+		<status talkable="false" attackable="true" />
+		<ai type="FIGHTER" aggroRange="0" isAggressive="false" />
+		<collision>
+			<radius normal="9" />
+			<height normal="23" />
+		</collision>
+	</npc>
 </list>

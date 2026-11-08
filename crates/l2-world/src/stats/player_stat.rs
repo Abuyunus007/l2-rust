@@ -196,8 +196,13 @@ impl<'w> StatView<'w> {
             // `Door.getActiveWeaponItem()`: null.
             Who::Door(_) => None,
             Who::Npc(_) if self.is_summon() => None,
-            Who::Npc(_) => {
-                let id = self.npc_template()?.rhand_id;
+            Who::Npc(n) => {
+                // A companion holds the weapon of its figure (D-61): the weapon conditions of its
+                // skills and its attack type see the dagger or the bow it is shown with.
+                let id = match n.look.as_ref() {
+                    Some(look) => look.right_hand,
+                    None => self.npc_template()?.rhand_id,
+                };
                 if id < 1 {
                     return None;
                 }

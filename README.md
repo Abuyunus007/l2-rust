@@ -45,8 +45,10 @@ the global jobs (daily reset, Olympiad, Seven Signs, sieges, boss states).
   - **Class Buffer**: an NPC next to every town gatekeeper that gives the free buffs, songs and
     dances that fit the player's class (warrior, tank, dagger, archer, mage and summoner, healer).
     The command `.buffme` opens the same pages anywhere for the player's level times 1,000 Adena.
-  - **Companions**: a gatekeeper hires a tank, healer, warrior, archer, dagger or mage (up to three,
-    level times 5,000 Adena each, both set in `L2R.ini`) that has the player's level, looks like a player in level-fitting gear, follows
+  - **Companions**: a gatekeeper (or `.companion` anywhere) hires a class of the player's tier, e.g.
+    a Monk at 23, a Tyrant at 45 (up to three, level times 5,000 Adena each, both set in `L2R.ini`); it
+    uses its class's skills, buffs or summons, comes back at the next login, moves up its class line
+    with the player and has his level, looks like a player in level-fitting gear, follows
     him, fights beside him and buffs itself. It hits like a player of its level, attacks what he
     targets (aggressive) or what he attacked (passive, `.companion` switches). Its experience and
     drops are the player's, and its HP and MP show in his party window.

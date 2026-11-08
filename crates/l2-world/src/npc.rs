@@ -994,13 +994,17 @@ impl World {
             scale: None,
             owner: None,
             look: None,
+            display: None,
         };
         // A companion is made for its owner before anybody can see it.
         if let Some(setup) = self.npc_world.pending_companion.take() {
-            npc.core.level = setup.scale.level;
-            npc.scale = Some(setup.scale);
+            if let Some(scale) = setup.scale {
+                npc.core.level = scale.level;
+                npc.scale = Some(scale);
+            }
             npc.owner = Some(setup.owner);
-            npc.look = Some(setup.look);
+            npc.look = setup.look;
+            npc.display = setup.display;
         }
         self.npcs.insert(id, npc);
         // Java `Attackable.onSpawn`: "Clear mob spoil, seed" and `_sweepItems.set(null)`. A respawn
@@ -1195,7 +1199,7 @@ impl World {
 
         Some(NpcInfo {
             object_id: subject.0,
-            display_id: template.display_id,
+            display_id: npc.display.unwrap_or(template.display_id),
             attackable: self
                 .siege_npc_auto_attackable(subject, viewer)
                 .or_else(|| self.npc_auto_attackable_override(subject))

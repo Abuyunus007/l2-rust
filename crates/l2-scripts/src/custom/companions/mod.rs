@@ -26,15 +26,18 @@
 //! and again whenever the first buff of the group has run out. The hire fee pays for it.
 
 mod brain;
+mod class_skills;
+mod classes;
 mod gear_data;
 mod heal;
 mod look;
 mod pages;
 mod role;
 mod scale;
+mod skills;
 mod spell;
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 use l2_util::ObjectId;
 use l2_world::custom::CompanionCombatMode;
@@ -43,10 +46,12 @@ use l2_world::{
 };
 
 use self::brain::{Action, Enemy, Memory, Pos, Unit, View, think};
+use self::classes::{CompanionClass, choices};
 use self::heal::heal_for;
-use self::pages::{MainPage, main_page};
+use self::pages::{MainPage, Mode, main_page};
 use self::role::Role;
 use self::scale::{Multipliers, scale_for};
+use self::skills::Kind;
 use self::spell::spell_for;
 use super::class_buffer::{buff_target, grouped};
 use super::class_buffer_data::group_by_key;
@@ -88,6 +93,8 @@ fn max_companions(ctx: &ScriptCtx<'_>) -> usize {
 /// A hired companion.
 struct Member {
     npc: ScriptNpc,
+    /// Its class; the role comes with it.
+    class: &'static CompanionClass,
     role: Role,
     /// The level it was made for, to see when its owner has grown.
     level: i32,
@@ -98,7 +105,32 @@ struct Member {
     /// yet, so a companion added in the same tick it was made never showed there.
     known: bool,
     memory: Memory,
+    /// When each of its class skills may be used again (world time in milliseconds).
+    ready_at: BTreeMap<i32, u64>,
+    /// The buffs that did not take (a stronger one of the same kind is on): not tried again.
+    buff_skip: BTreeSet<i32>,
+    /// A summoner's servitor.
+    pet: Option<Pet>,
+    /// When a summoner may call its servitor again.
+    summon_at: u64,
+    /// The grade of gear it wears (it is dressed anew when the owner reaches the next one).
+    grade: usize,
 }
+
+/// A summoner's servitor: a companion NPC shown with the servitor's model, that fights like a
+/// warrior.
+struct Pet {
+    npc: ScriptNpc,
+    memory: Memory,
+}
+
+/// The template of a servitor (`data/stats/npcs/50000-50099.xml`).
+const NPC_SERVITOR: i32 = 50029;
+/// How long a summoner waits to call its servitor again after it fell.
+const RESUMMON_MS: u64 = 30_000;
+/// The least time between two uses of one class skill: a skill with no reuse time is not cast
+/// every second.
+const MIN_SKILL_GAP_MS: u64 = 2_000;
 
 /// What the owner's party window shows of a squad.
 struct Window {
@@ -120,7 +152,16 @@ struct Squad {
     told_full: bool,
     /// When the companions start a fight (`CompanionCombatMode` of `L2R.ini`, `.companion`).
     mode: CompanionCombatMode,
+    /// What was last saved for the owner's next login (written again only when it changes).
+    saved: String,
+    /// When a healer may offer the dead owner a resurrection again.
+    revive_at: u64,
 }
+
+/// The player variable that keeps the companions over a logout.
+const SAVE_VARIABLE: &str = "Companions";
+/// How long a healer waits before it offers a resurrection again.
+const REVIVE_AGAIN_MS: u64 = 30_000;
 
 /// Every squad, by owner (ordered, so ticks do not depend on hashing, D-13).
 #[derive(Default)]
@@ -229,6 +270,9 @@ fn dismiss(ctx: &mut ScriptCtx<'_>, owner: ObjectId, squad: Squad) {
         ctx.world().clear_companion_window(owner);
     }
     for member in squad.members {
+        if let Some(pet) = member.pet {
+            ctx.delete_npc(pet.npc);
+        }
         ctx.delete_npc(member.npc);
     }
     ctx.cancel_quest_timer(TIMER, None, Some(owner));
@@ -247,7 +291,8 @@ fn dismiss_all(ctx: &mut ScriptCtx<'_>, owner: ObjectId) -> bool {
 
 /// Hires a companion of `role` for `owner`: the checks, the fee, the NPC at its level, its buffs
 /// and the brain. `Err` is what the player is told.
-fn hire(ctx: &mut ScriptCtx<'_>, owner: ObjectId, role: Role) -> Result<(), String> {
+fn hire(ctx: &mut ScriptCtx<'_>, owner: ObjectId, class: &'static CompanionClass) -> Result<(), String> {
+    let role = class.role;
     let level = ctx.player_level(owner);
     if ctx.is_dead(owner) {
         return Err("You cannot hire a companion while you are dead.".to_owned());
@@ -277,43 +322,73 @@ fn hire(ctx: &mut ScriptCtx<'_>, owner: ObjectId, role: Role) -> Result<(), Stri
     if ctx.adena_of(owner) < fee {
         return Err(format!("A companion costs {} Adena.", grouped(fee)));
     }
-    let (x, y, z) = ctx
-        .world()
-        .position_of(owner)
-        .ok_or_else(|| "You are not in the world.".to_owned())?;
-    let (dx, dy) = SLOTS[count % SLOTS.len()];
+    // Only the classes of the owner's own class tier (1st from 20, 2nd from 40, 3rd from 76).
+    if !choices(level).iter().any(|c| c.id == class.id) {
+        return Err(format!("You cannot hire a {} at level {level}.", class.name));
+    }
+    let look = look::roll(class, level, &mut |bound| ctx.get_random(bound));
+    let member = spawn_member(ctx, owner, class, look, count)
+        .ok_or_else(|| "The companion cannot come to this place.".to_owned())?;
+    // The fee is checked above; if the purchase still fails the NPC goes again.
+    if !ctx.world_mut().reduce_adena(owner, fee, true) {
+        ctx.delete_npc(member.npc);
+        return Err(format!("A companion costs {} Adena.", grouped(fee)));
+    }
+    let _ = role;
+    join_squad(ctx, owner, member);
+    Ok(())
+}
+
+/// A companion of `class` with `look` next to `owner` (in the `slot`-th place around him): made
+/// for him and at his strength from its first moment, and buffed. `None`: it cannot be made here.
+fn spawn_member(
+    ctx: &mut ScriptCtx<'_>,
+    owner: ObjectId,
+    class: &'static CompanionClass,
+    look: l2_world::CompanionLook,
+    slot: usize,
+) -> Option<Member> {
+    let level = ctx.player_level(owner);
+    let (x, y, z) = ctx.world().position_of(owner)?;
+    let (dx, dy) = SLOTS[slot % SLOTS.len()];
     let (heading, instance) = (ctx.heading_of(owner), ctx.world().instance_id_of(owner));
     // The figure, the strength and the owner are born with the NPC: nobody sees it as anything
     // else first, and its kills pay the owner from its first blow.
-    let look = look::roll(role, level, &mut |bound| ctx.get_random(bound));
     let weapon = look.right_hand;
     let setup = CompanionSetup {
         owner,
-        scale: scale_for(level, weapon, multipliers(ctx)),
-        look,
+        scale: Some(scale_for(level, weapon, multipliers(ctx))),
+        look: Some(look),
+        display: None,
     };
-    let object_id = ctx
-        .world_mut()
-        .spawn_companion(role.npc_id(), (x + dx, y + dy, z), heading, instance, setup)
-        .ok_or_else(|| "The companion cannot come to this place.".to_owned())?;
-    let npc = ScriptNpc {
-        object_id,
-        id: role.npc_id(),
-    };
-    // The fee is checked above; if the purchase still fails the NPC goes again.
-    if !ctx.world_mut().reduce_adena(owner, fee, true) {
-        ctx.delete_npc(npc);
-        return Err(format!("A companion costs {} Adena.", grouped(fee)));
-    }
+    let role = class.role;
+    let object_id =
+        ctx.world_mut()
+            .spawn_companion(role.npc_id(), (x + dx, y + dy, z), heading, instance, setup)?;
     let member = Member {
-        npc,
+        npc: ScriptNpc {
+            object_id,
+            id: role.npc_id(),
+        },
+        class,
         role,
         level,
         weapon,
         known: false,
         memory: Memory::default(),
+        ready_at: BTreeMap::new(),
+        buff_skip: BTreeSet::new(),
+        pet: None,
+        summon_at: 0,
+        grade: look::grade_for(level),
     };
     buff_itself(ctx, &member);
+    Some(member)
+}
+
+/// Puts a new member into the owner's squad (a new squad when he had none), shows it in his
+/// party window, saves the squad for his next login and starts the brain.
+fn join_squad(ctx: &mut ScriptCtx<'_>, owner: ObjectId, member: Member) {
     let party = ctx.world().party_of(owner);
     let mode = ctx.world().l2r_settings().companions.combat_mode;
     let state = ctx.state::<State>();
@@ -323,13 +398,149 @@ fn hire(ctx: &mut ScriptCtx<'_>, owner: ObjectId, role: Role) -> Result<(), Stri
         window: None,
         told_full: false,
         mode,
+        saved: String::new(),
+        revive_at: 0,
     });
     squad.members.push(member);
     // He sees the new companion in his party window at once.
     show_in_party_window(ctx, owner, &mut squad);
+    save_squad(ctx, owner, &mut squad);
     ctx.state::<State>().squads.insert(owner, squad);
     ctx.start_quest_timer(TIMER, TICK_MS, None, Some(owner), true);
-    Ok(())
+}
+
+/// What is kept of a squad over a logout: the mode, then one figure per companion.
+fn squad_text(ctx: &ScriptCtx<'_>, squad: &Squad) -> String {
+    let mode = match squad.mode {
+        CompanionCombatMode::Aggressive => "aggressive",
+        CompanionCombatMode::Passive => "passive",
+    };
+    let figures = squad.members.iter().filter_map(|member| {
+        let npc = ctx.world().npc(member.npc.object_id)?;
+        Some(look::Saved::of(npc.look.as_ref()?).to_text())
+    });
+    std::iter::once(mode.to_owned())
+        .chain(figures)
+        .collect::<Vec<_>>()
+        .join("|")
+}
+
+/// Writes the squad into the owner's player variable when it changed (an empty squad clears it).
+fn save_squad(ctx: &mut ScriptCtx<'_>, owner: ObjectId, squad: &mut Squad) {
+    let text = if squad.members.is_empty() {
+        String::new()
+    } else {
+        squad_text(ctx, squad)
+    };
+    if text != squad.saved {
+        ctx.set_player_variable(owner, SAVE_VARIABLE, &text);
+        squad.saved = text;
+    }
+}
+
+/// At login: the companions he had come back, free, at his level now.
+fn restore_squad(ctx: &mut ScriptCtx<'_>, owner: ObjectId) {
+    let Some(text) = ctx
+        .player_variable(owner, SAVE_VARIABLE)
+        .filter(|t| !t.is_empty())
+    else {
+        return;
+    };
+    if ctx.state::<State>().squads.contains_key(&owner) || ctx.player_level(owner) < MIN_OWNER_LEVEL {
+        return;
+    }
+    let mut parts = text.split('|');
+    let mode = match parts.next() {
+        Some("aggressive") => CompanionCombatMode::Aggressive,
+        _ => CompanionCombatMode::Passive,
+    };
+    let level = ctx.player_level(owner);
+    let max = max_companions(ctx);
+    for (slot, saved) in parts.filter_map(look::Saved::from_text).take(max).enumerate() {
+        let Some(class) = classes::by_id(saved.class_id) else {
+            continue;
+        };
+        let look = look::restore(&saved, class, level, &mut |bound| ctx.get_random(bound));
+        if let Some(member) = spawn_member(ctx, owner, class, look, slot) {
+            join_squad(ctx, owner, member);
+        }
+    }
+    if let Some(squad) = ctx.state::<State>().squads.get_mut(&owner) {
+        squad.mode = mode;
+    }
+}
+
+/// A healer of the squad offers the dead owner a resurrection (the dialog a player's
+/// resurrection brings), with the animation of its skill; again after a while if he says no.
+fn offer_resurrection(ctx: &mut ScriptCtx<'_>, owner: ObjectId, squad: &mut Squad, now_ms: u64) {
+    if now_ms < squad.revive_at {
+        return;
+    }
+    for member in &squad.members {
+        let npc = member.npc;
+        if ctx.world().is_casting_now(npc.object_id) || ctx.is_dead(npc.object_id) {
+            continue;
+        }
+        let Some(skill) = skills::of_kind(member.class.id, member.level, Kind::Resurrect)
+            .into_iter()
+            .next()
+        else {
+            continue;
+        };
+        let Some(info) = ctx.world().companion_skill(SkillKey::new(skill.id, skill.level)) else {
+            continue;
+        };
+        ctx.broadcast_magic_skill_use(
+            npc.object_id,
+            npc.object_id,
+            owner,
+            skill.id,
+            skill.level,
+            info.hit_time,
+            0,
+        );
+        ctx.world_mut()
+            .revive_request(owner, npc.object_id, false, info.power.round() as i32);
+        squad.revive_at = now_ms + REVIVE_AGAIN_MS;
+        return;
+    }
+}
+
+/// The owner reached a new class tier or a new grade: the companion moves up its class line
+/// (Monk, Tyrant, Grand Khavatari) and gets the gear of the new grade. `true` when its figure
+/// changed.
+fn move_up(ctx: &mut ScriptCtx<'_>, owner: ObjectId, member: &mut Member, level: i32) -> bool {
+    let tier = classes::tier_for(level);
+    let mut class = member.class;
+    if class.tier < tier
+        && let Some(next) = classes::successor(class, tier, &mut |bound| ctx.get_random(bound))
+    {
+        class = next;
+    }
+    let grade = look::grade_for(level);
+    if class.id == member.class.id && grade == member.grade {
+        return false;
+    }
+    let id = member.npc.object_id;
+    let Some(mut figure) = ctx.world().npc(id).and_then(|n| n.look.clone()) else {
+        return false;
+    };
+    if class.id != member.class.id {
+        ctx.send_message(
+            owner,
+            &format!("Your {} is now a {}.", member.class.name, class.name),
+        );
+        member.ready_at.clear();
+        member.buff_skip.clear();
+    }
+    look::dress(&mut figure, class, level, &mut |bound| ctx.get_random(bound));
+    member.class = class;
+    member.grade = grade;
+    member.weapon = figure.right_hand;
+    ctx.world_mut().set_companion_look(id, figure);
+    let scale = scale_for(level, member.weapon, multipliers(ctx));
+    ctx.world_mut().set_npc_scale(id, scale);
+    true
 }
 
 /// One second of an owner's squad.
@@ -338,7 +549,8 @@ fn tick(ctx: &mut ScriptCtx<'_>, owner: ObjectId) {
         ctx.cancel_quest_timer(TIMER, None, Some(owner));
         return;
     };
-    let owner_here = ctx.world().player(owner).is_some() && !ctx.is_dead(owner);
+    // A dead owner keeps them: they guard him and come after him when he goes to town.
+    let owner_here = ctx.world().player(owner).is_some();
     let party_kept = squad
         .party
         .is_none_or(|party| ctx.world().party_of(owner) == Some(party));
@@ -349,14 +561,25 @@ fn tick(ctx: &mut ScriptCtx<'_>, owner: ObjectId) {
                 "Your companions leave: you are not in the party you hired them in.",
             );
         }
+        // Not in his party any more: they are gone for good, also at the next login.
+        if owner_here {
+            ctx.set_player_variable(owner, SAVE_VARIABLE, "");
+        }
         dismiss(ctx, owner, squad);
         return;
     }
-    // The fallen and the vanished are not replaced; their corpses decay on their own.
-    squad.members.retain(|member| {
-        let id = member.npc.object_id;
-        ctx.world().npc(id).is_some_and(|npc| !npc.decayed) && !ctx.is_dead(id)
-    });
+    // The fallen and the vanished are not replaced; their corpses decay on their own. Their
+    // servitors go with them.
+    let (alive, fallen): (Vec<Member>, Vec<Member>) = std::mem::take(&mut squad.members)
+        .into_iter()
+        .partition(|member| {
+            let id = member.npc.object_id;
+            ctx.world().npc(id).is_some_and(|npc| !npc.decayed) && !ctx.is_dead(id)
+        });
+    for pet in fallen.into_iter().filter_map(|m| m.pet) {
+        ctx.delete_npc(pet.npc);
+    }
+    squad.members = alive;
     if squad.members.is_empty() {
         if squad.window.is_some() {
             ctx.world().clear_companion_window(owner);
@@ -370,7 +593,12 @@ fn tick(ctx: &mut ScriptCtx<'_>, owner: ObjectId) {
         member.known = true;
     }
     run(ctx, owner, &mut squad);
+    if ctx.is_dead(owner) {
+        let now_ms = u64::try_from(ctx.world().world_ms()).unwrap_or(0);
+        offer_resurrection(ctx, owner, &mut squad, now_ms);
+    }
     show_in_party_window(ctx, owner, &mut squad);
+    save_squad(ctx, owner, &mut squad);
     ctx.state::<State>().squads.insert(owner, squad);
 }
 
@@ -461,27 +689,42 @@ fn run(ctx: &mut ScriptCtx<'_>, owner: ObjectId, squad: &mut Squad) {
     // First the upkeep, and the picture of everybody who can be hurt.
     let mut allies = vec![leader];
     let mut moved = false;
+    let mut redress = false;
     for member in &mut squad.members {
         let id = member.npc.object_id;
         if member.level != level {
             let scale = scale_for(level, member.weapon, multipliers(ctx));
             ctx.world_mut().set_npc_scale(id, scale);
             member.level = level;
+            member.buff_skip.clear();
+            // A new class shows a new class in the party window: it is built anew.
+            if move_up(ctx, owner, member, level) {
+                redress = true;
+            }
         }
         moved |= catch_up(ctx, owner, member);
         if !is_buffed(ctx, member) {
             buff_itself(ctx, member);
         }
-        if let Some(pos) = pos_of(ctx, id) {
-            allies.push(Unit {
-                id,
-                pos,
-                hp: npc_hp(ctx, id),
-            });
+        if member.role == Role::Summoner {
+            keep_pet(ctx, owner, member, level, now_ms);
+        }
+        for unit in [Some(id), member.pet.as_ref().map(|p| p.npc.object_id)]
+            .into_iter()
+            .flatten()
+        {
+            if let Some(pos) = pos_of(ctx, unit) {
+                allies.push(Unit {
+                    id: unit,
+                    pos,
+                    hp: npc_hp(ctx, unit),
+                });
+            }
         }
     }
-    // The owner went far (a teleport, most likely): his client builds the window anew.
-    if moved {
+    // The owner went far (a teleport, most likely), or a companion changed its class: his
+    // client builds the window anew.
+    if moved || redress {
         squad.window = None;
     }
 
@@ -502,8 +745,151 @@ fn run(ctx: &mut ScriptCtx<'_>, owner: ObjectId, squad: &mut Squad) {
             enemies: &enemies,
         };
         let action = think(member.role.behavior(), &view, &mut member.memory);
-        act(ctx, owner, member, action);
+        act(ctx, owner, member, action, now_ms);
+        if member.role == Role::Buffer && member.memory.mode == brain::Mode::Follow {
+            buff_the_party(ctx, owner, member, now_ms);
+        }
+        // The servitor fights beside its summoner, on the same picture.
+        if let Some(pet) = member.pet.as_mut()
+            && let Some(me) = allies.iter().find(|a| a.id == pet.npc.object_id).copied()
+        {
+            let view = View { me, mp: 1.0, ..view };
+            match think(&PET, &view, &mut pet.memory) {
+                Action::Attack(target) => attack(ctx, pet.npc, target),
+                Action::Follow => follow(ctx, owner, pet.npc),
+                _ => {}
+            }
+        }
     }
+}
+
+/// A servitor fights like a warrior.
+static PET: brain::DamageDealer = brain::DamageDealer { ranged: false };
+
+/// A summoner without its servitor calls it: the strongest summon skill it knows gives the model;
+/// its strength is a warrior's of the owner's level.
+fn keep_pet(ctx: &mut ScriptCtx<'_>, owner: ObjectId, member: &mut Member, level: i32, now_ms: u64) {
+    if let Some(pet) = &member.pet {
+        let gone =
+            ctx.world().npc(pet.npc.object_id).is_none_or(|n| n.decayed) || ctx.is_dead(pet.npc.object_id);
+        if !gone {
+            return;
+        }
+        if let Some(pet) = member.pet.take() {
+            ctx.delete_npc(pet.npc);
+        }
+        member.summon_at = now_ms + RESUMMON_MS;
+    }
+    if now_ms < member.summon_at {
+        return;
+    }
+    let Some(summon) = skills::of_kind(member.class.id, member.level, Kind::Summon)
+        .into_iter()
+        .next()
+    else {
+        return;
+    };
+    let Some(model) = skills::summon_npc(summon.id, summon.level) else {
+        return;
+    };
+    let Some((x, y, z)) = ctx.world().position_of(member.npc.object_id) else {
+        return;
+    };
+    let weapon = scale::pet_weapon(level);
+    let setup = CompanionSetup {
+        owner,
+        scale: Some(scale_for(level, weapon, multipliers(ctx))),
+        look: None,
+        display: Some(model),
+    };
+    let (heading, instance) = (ctx.heading_of(owner), ctx.world().instance_id_of(owner));
+    if let Some(object_id) =
+        ctx.world_mut()
+            .spawn_companion(NPC_SERVITOR, (x + 40, y + 40, z), heading, instance, setup)
+    {
+        member.pet = Some(Pet {
+            npc: ScriptNpc {
+                object_id,
+                id: NPC_SERVITOR,
+            },
+            memory: Memory::default(),
+        });
+    }
+    member.summon_at = now_ms + RESUMMON_MS;
+}
+
+/// A buffer at peace gives the owner, his party around him and the companions the buffs of its
+/// class they lack, one buff a second.
+fn buff_the_party(ctx: &mut ScriptCtx<'_>, owner: ObjectId, member: &mut Member, now_ms: u64) {
+    let npc = member.npc;
+    if ctx.world().is_casting_now(npc.object_id) {
+        return;
+    }
+    let mut targets = vec![owner];
+    let near = |ctx: &ScriptCtx<'_>, id: ObjectId| matches!((pos_of(ctx, id), pos_of(ctx, npc.object_id)), (Some(a), Some(b)) if a.distance(b) <= 900.0);
+    for friend in ctx.world().party_members_of(owner) {
+        if friend != owner && !ctx.is_dead(friend) && near(ctx, friend) {
+            targets.push(friend);
+        }
+    }
+    targets.push(npc.object_id);
+    // The owner first, then his party, then the companions.
+    let buffs = skills::of_kind(member.class.id, member.level, Kind::Buff);
+    for target in targets {
+        for buff in &buffs {
+            if member.buff_skip.contains(&buff.id)
+                || member.ready_at.get(&buff.id).is_some_and(|at| *at > now_ms)
+                || ctx.world().script_buff_skill_level(target, buff.id).is_some()
+            {
+                continue;
+            }
+            let key = SkillKey::new(buff.id, buff.level);
+            // The buff lands at once (as the class buffer gives it) and is shown as a short cast:
+            // a real cast takes seconds per buff, and a buffer of level 45 knows about twenty.
+            ctx.broadcast_magic_skill_use(npc.object_id, npc.object_id, target, buff.id, buff.level, 500, 0);
+            ctx.world_mut().apply_effects(npc.object_id, target, key);
+            if ctx.world().script_buff_skill_level(target, buff.id).is_none() {
+                // A stronger buff of the same kind is on: this one is not tried again.
+                member.buff_skip.insert(buff.id);
+            }
+            return;
+        }
+    }
+}
+
+/// Casts the strongest ready class skill of `kind` at `target`. `false`: none was ready (or the
+/// companion lacks the MP); `true` also while it is casting already.
+fn use_skill(
+    ctx: &mut ScriptCtx<'_>,
+    member: &mut Member,
+    kind: Kind,
+    target: ObjectId,
+    now_ms: u64,
+) -> bool {
+    let npc = member.npc;
+    if ctx.world().is_casting_now(npc.object_id) {
+        return true;
+    }
+    let mp = ctx.world().npc(npc.object_id).map_or(0.0, |n| n.core.cur_mp);
+    for skill in skills::of_kind(member.class.id, member.level, kind) {
+        if member.ready_at.get(&skill.id).is_some_and(|at| *at > now_ms) {
+            continue;
+        }
+        let key = SkillKey::new(skill.id, skill.level);
+        let Some(info) = ctx.world().companion_skill(key) else {
+            continue;
+        };
+        if f64::from(info.mp) > mp {
+            continue;
+        }
+        // The intention, not a plain cast: the companion walks into range first.
+        ctx.world_mut()
+            .set_intention_cast(npc.object_id, key, Some(target));
+        let reuse = u64::try_from(info.reuse_ms).unwrap_or(0).max(MIN_SKILL_GAP_MS);
+        member.ready_at.insert(skill.id, now_ms + reuse);
+        return true;
+    }
+    false
 }
 
 /// A companion that is far away or in another instance is put next to its owner. `true` when it
@@ -559,26 +945,34 @@ fn set_mode(ctx: &mut ScriptCtx<'_>, owner: ObjectId, word: &str) -> String {
     }
 }
 
-/// Carries out what a companion decided.
-fn act(ctx: &mut ScriptCtx<'_>, owner: ObjectId, member: &Member, action: Action) {
+/// Carries out what a companion decided: with a skill of its class where it has one.
+fn act(ctx: &mut ScriptCtx<'_>, owner: ObjectId, member: &mut Member, action: Action, now_ms: u64) {
     let npc = member.npc;
     match action {
         Action::Hold => {}
         Action::Follow => follow(ctx, owner, npc),
-        Action::Attack(target) => attack(ctx, npc, target),
+        Action::Attack(target) => {
+            if !use_skill(ctx, member, Kind::Strike, target, now_ms) {
+                attack(ctx, npc, target);
+            }
+        }
         Action::Taunt(target) => {
             // The monster now hates the companion more than anybody.
             ctx.world_mut()
                 .add_damage_hate(target, npc.object_id, 0, TAUNT_HATE);
-            attack(ctx, npc, target);
+            if !use_skill(ctx, member, Kind::Taunt, target, now_ms) {
+                attack(ctx, npc, target);
+            }
         }
         Action::Heal(ally) => {
-            if let Some(step) = heal_for(member.level)
+            if !use_skill(ctx, member, Kind::Heal, ally, now_ms)
+                && let Some(step) = heal_for(member.level)
                 && !ctx.world().is_casting_now(npc.object_id)
             {
                 ctx.cast_skill_at(npc, Some(ally), SkillKey::new(step.skill_id, step.level));
             }
         }
+        Action::Cast(target) if use_skill(ctx, member, Kind::Nuke, target, now_ms) => {}
         Action::Cast(target) => match spell_for(member.level) {
             // The intention, not a plain cast: the mage walks into range first.
             Some(step) if !ctx.world().is_casting_now(npc.object_id) => {
@@ -611,18 +1005,36 @@ fn attack(ctx: &mut ScriptCtx<'_>, npc: ScriptNpc, target: ObjectId) {
     ctx.add_attack_desire(npc, target, ATTACK_DESIRE);
 }
 
+/// The class a hire link names: a class id, or a role (`hire:tank`: the first class of that role
+/// in the owner's tier).
+fn class_of_key(level: i32, key: &str) -> Option<&'static CompanionClass> {
+    match key.parse::<i32>() {
+        Ok(id) => classes::by_id(id),
+        Err(_) => {
+            let role = Role::from_key(key)?;
+            // Below level 20 the hire itself says why it cannot be.
+            choices(level.max(MIN_OWNER_LEVEL))
+                .into_iter()
+                .find(|c| c.role == role)
+        }
+    }
+}
+
 /// The main page for `owner`, with `note` on top.
-fn page(ctx: &mut ScriptCtx<'_>, owner: ObjectId, note: Option<&str>) -> String {
+fn page(ctx: &mut ScriptCtx<'_>, owner: ObjectId, mode: Mode, note: Option<&str>) -> String {
     let level = ctx.player_level(owner);
-    let squad: Vec<Role> = ctx
+    let squad: Vec<&'static str> = ctx
         .state::<State>()
         .squads
         .get(&owner)
-        .map(|s| s.members.iter().map(|m| m.role).collect())
+        .map(|s| s.members.iter().map(|m| m.class.name).collect())
         .unwrap_or_default();
+    let choices = choices(level);
     main_page(&MainPage {
+        mode,
         fee: hire_fee(ctx, level),
         fee_per_level: ctx.world().l2r_settings().companions.fee_per_level,
+        choices: &choices,
         squad: &squad,
         max: max_companions(ctx),
         min_level: MIN_OWNER_LEVEL,
@@ -644,6 +1056,7 @@ impl Script for Companions {
 
     fn setup(&self, s: &mut ScriptSetup) {
         s.set_on_player_logout();
+        s.set_on_enter_world();
     }
 
     fn on_event(
@@ -658,16 +1071,23 @@ impl Script for Companions {
             tick(ctx, owner);
             return None;
         }
-        let (command, key) = event.split_once(':').unwrap_or((event, ""));
-        if command == "mode" {
-            let answer = set_mode(ctx, owner, key);
+        // `p-...` comes from `.companion` anywhere: its page links back to the command.
+        let (mode, click) = match event.strip_prefix("p-") {
+            Some(click) => (Mode::Command, click),
+            None => (Mode::Npc, event),
+        };
+        let (command, key) = click.split_once([':', ' ']).unwrap_or((click, ""));
+        let key = key.trim();
+        if matches!(command, "aggressive" | "passive" | "mode") {
+            let word = if command == "mode" { key } else { command };
+            let answer = set_mode(ctx, owner, word);
             ctx.send_message(owner, &answer);
             return None;
         }
         let note = match command {
-            "hire" => match Role::from_key(key) {
-                Some(role) => match hire(ctx, owner, role) {
-                    Ok(()) => Some(format!("Your {} joins you.", role.title())),
+            "hire" => match class_of_key(ctx.player_level(owner), key) {
+                Some(class) => match hire(ctx, owner, class) {
+                    Ok(()) => Some(format!("Your {} joins you.", class.name)),
                     Err(why) => Some(why),
                 },
                 None => None,
@@ -680,6 +1100,9 @@ impl Script for Companions {
                     .and_then(|(i, s)| (i < s.members.len()).then(|| s.members.remove(i)));
                 match removed {
                     Some(member) => {
+                        if let Some(pet) = member.pet {
+                            ctx.delete_npc(pet.npc);
+                        }
                         ctx.delete_npc(member.npc);
                         if ctx
                             .state::<State>()
@@ -689,19 +1112,34 @@ impl Script for Companions {
                         {
                             dismiss_all(ctx, owner);
                         }
-                        Some(format!("The {} leaves.", member.role.title()))
+                        Some(format!("The {} leaves.", member.class.name))
                     }
                     None => None,
                 }
             }
-            "dismissall" => dismiss_all(ctx, owner).then(|| "Your companions leave.".to_owned()),
+            "dismissall" => {
+                let had = dismiss_all(ctx, owner);
+                if had {
+                    ctx.set_player_variable(owner, SAVE_VARIABLE, "");
+                }
+                had.then(|| "Your companions leave.".to_owned())
+            }
             _ => None,
         };
-        Some(page(ctx, owner, note.as_deref()))
+        Some(page(ctx, owner, mode, note.as_deref()))
     }
 
     fn on_player_logout(&self, ctx: &mut ScriptCtx<'_>, player: ObjectId) {
-        dismiss_all(ctx, player);
+        // What they are is saved (it is, with every change); they leave with him and come back
+        // at his next login.
+        if let Some(mut squad) = ctx.state::<State>().squads.remove(&player) {
+            save_squad(ctx, player, &mut squad);
+            dismiss(ctx, player, squad);
+        }
+    }
+
+    fn on_enter_world(&self, ctx: &mut ScriptCtx<'_>, player: ObjectId) {
+        restore_squad(ctx, player);
     }
 }
 
@@ -713,7 +1151,7 @@ mod tests {
     use l2_world::script::{player_class, race};
     use l2_world::{ClientInput, ScriptRegistry};
 
-    use super::role::{NPC_ARCHER, NPC_DAGGER, NPC_HEALER, NPC_MAGE, NPC_TANK, NPC_WARRIOR};
+    use super::role::{NPC_ARCHER, NPC_BUFFER, NPC_DAGGER, NPC_HEALER, NPC_MAGE, NPC_TANK, NPC_WARRIOR};
     use super::*;
     use crate::custom::class_buffer_data::GROUPS;
     use l2_protocol_game::server::{
@@ -798,6 +1236,12 @@ mod tests {
     fn needed_skills() -> BTreeSet<i32> {
         let mut ids: BTreeSet<i32> = GROUPS.iter().flat_map(|g| g.all()).map(|b| b.id).collect();
         ids.extend([1011, 1217, 1230, 1274]);
+        // The class skills of every companion class.
+        ids.extend(
+            class_skills::CLASS_SKILLS
+                .iter()
+                .flat_map(|(_, skills)| skills.iter().map(|(id, _, _)| *id)),
+        );
         ids
     }
 
@@ -814,7 +1258,10 @@ mod tests {
         let pages =
             Pages::of(&Companions).file(&format!("data/html/default/{GATEKEEPER}.htm"), GATEKEEPER_PAGE);
         let mut t = ScriptTest::with_pages(registry, &npcs, ADENA_ITEM, pages);
-        t.set_skills(ADENA_ITEM, &skill_xml(root, &needed_skills()));
+        // Adena, and the weapons the companions hold (their attack type is their weapon's).
+        let weapons: BTreeSet<i32> = gear_data::WEAPONS.iter().map(|(_, _, id)| *id).collect();
+        let items = format!("{ADENA_ITEM}{}", crate::testing::item_xml(root, &weapons));
+        t.set_skills(&items, &skill_xml(root, &needed_skills()));
         t.enter_as(
             1,
             level,
@@ -840,7 +1287,20 @@ mod tests {
     }
 
     fn click(t: &mut ScriptTest, event: &str) -> String {
-        t.event(1, "Companions", event)
+        let event = by_class(t, event);
+        t.event(1, "Companions", &event)
+    }
+
+    /// `hire:tank` as the page has it: the first tank class of the owner's tier (`hire:4`).
+    fn by_class(t: &ScriptTest, event: &str) -> String {
+        match event.strip_prefix("hire:") {
+            Some(key) if key.parse::<i32>().is_err() => {
+                let level = t.world.player(OWNER).unwrap().core.level;
+                let class = class_of_key(level, key).unwrap_or_else(|| panic!("no {key} at level {level}"));
+                format!("hire:{}", class.id)
+            }
+            _ => event.to_owned(),
+        }
     }
 
     fn only(t: &ScriptTest, npc_id: i32) -> ObjectId {
@@ -1044,6 +1504,7 @@ mod tests {
                     .world
                     .fake_player_info(id)
                     .expect("a companion has a player's info");
+                let class = classes::by_id(info.class_id).expect("a class of the catalog");
                 let sent_info = sent
                     .iter()
                     .filter(|(to, body)| *to == 1 && name_of(body) == "CHAR_INFO")
@@ -1062,7 +1523,7 @@ mod tests {
                 assert!(worn(paperdoll::RHAND) != 0, "{role:?} {level}: no weapon");
                 let grade = grade_for(level);
                 assert!(
-                    gear_data::WEAPONS.contains(&(role.key(), grade, worn(paperdoll::RHAND))),
+                    gear_data::WEAPONS.contains(&(class.weapon.key(), grade, worn(paperdoll::RHAND))),
                     "{role:?} {level}: weapon {} is not for grade {grade}",
                     worn(paperdoll::RHAND)
                 );
@@ -1075,7 +1536,7 @@ mod tests {
                 );
                 assert_eq!(
                     worn(paperdoll::LHAND) != 0,
-                    role == Role::Tank,
+                    class.weapon.with_shield(),
                     "{role:?}: the shield"
                 );
             }
@@ -1083,23 +1544,31 @@ mod tests {
     }
 
     #[test]
-    fn the_companions_differ_in_race_sex_and_name() {
+    fn a_companion_is_its_class_and_the_names_and_sexes_vary() {
         let Some(root) = datapack() else { return };
-        let mut seen = BTreeSet::new();
+        let mut names = BTreeSet::new();
         let mut sexes = BTreeSet::new();
-        let mut t = scene(root, 60, 10_000_000);
-        for _ in 0..16 {
-            click(&mut t, "hire:warrior");
-            let info = t.world.fake_player_info(only(&t, NPC_WARRIOR)).unwrap();
-            seen.insert((info.race, info.name.clone()));
+        let mut t = scene(root, 60, 100_000_000);
+        for class in choices(60) {
+            let page = click(&mut t, &format!("hire:{}", class.id));
+            assert!(
+                page.contains(&format!("Your {} joins you.", class.name)),
+                "{}: {page}",
+                class.name
+            );
+            let id = only(&t, class.role.npc_id());
+            let info = t.world.fake_player_info(id).unwrap();
+            assert_eq!(
+                (info.class_id, info.race),
+                (class.id, class.race),
+                "{}",
+                class.name
+            );
+            names.insert(info.name.clone());
             sexes.insert(info.is_female);
             click(&mut t, "dismissall");
         }
-        assert!(seen.len() >= 8, "{seen:?}");
-        assert!(
-            seen.iter().map(|(race, _)| race).collect::<BTreeSet<_>>().len() >= 3,
-            "{seen:?}"
-        );
+        assert!(names.len() >= 8, "{names:?}");
         assert_eq!(sexes.len(), 2, "both sexes: {sexes:?}");
     }
 
@@ -1129,6 +1598,7 @@ mod tests {
 
     /// A link of the page, without the page being taken from the packets (`click` takes the log).
     fn press(t: &mut ScriptTest, event: &str) {
+        let event = by_class(t, event);
         t.bypass(1, &format!("Script Companions {event}"));
     }
 
@@ -1413,13 +1883,15 @@ mod tests {
     }
 
     #[test]
-    fn the_window_is_closed_when_the_companions_leave_with_their_owner_dead_or_out_of_the_party() {
+    fn the_window_is_closed_when_the_companions_leave_with_their_owner_out_of_the_party() {
         let Some(root) = datapack() else { return };
         let mut t = scene(root, 40, 10_000_000);
+        t.enter(2, 40, vec![]);
+        t.party(2, 1);
         click(&mut t, "hire:tank");
         seconds(&mut t, 1);
         let _ = t.take();
-        t.world.do_die(OWNER, None);
+        t.input(1, ClientInput::WithdrawParty);
         seconds(&mut t, 2);
         let names: Vec<String> = window_packets(&t.take()).into_iter().map(|(n, _)| n).collect();
         assert_eq!(
@@ -1437,7 +1909,7 @@ mod tests {
         let Some(root) = datapack() else { return };
         let mut t = scene(root, 40, 500_000);
         let page = click(&mut t, "hire:tank");
-        assert!(page.contains("Your Tank joins you."), "{page}");
+        assert!(page.contains("Your Paladin joins you."), "{page}");
         assert_eq!(t.count(1, 57), 300_000, "40 x 5,000");
         let tank = only(&t, NPC_TANK);
         // Its buffs (Bless the Body, Song of Vitality, ...) add to the HP; look at the plain value.
@@ -1565,7 +2037,7 @@ mod tests {
             page.contains("40,000 Adena") && page.contains("1,000 for every level"),
             "{page}"
         );
-        assert!(page.contains("You can have 5 of them"), "{page}");
+        assert!(page.contains("You can have 5,"), "{page}");
         for key in ["tank", "healer", "warrior", "archer", "mage"] {
             click(&mut t, &format!("hire:{key}"));
         }
@@ -1585,6 +2057,366 @@ mod tests {
     }
 
     #[test]
+    fn the_command_opens_the_page_anywhere_and_hires_from_it() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 45, 10_000_000);
+        let _ = t.take();
+        say(&mut t, ".companion");
+        t.ticks(2);
+        let pages = crate::testing::pages_to(&t.take(), 1);
+        let page = pages.last().expect("the page was shown");
+        assert!(
+            page.contains("bypass -h voice .companion hire 48\">Tyrant</a>"),
+            "{page}"
+        );
+        assert!(!page.contains("Script Companions"));
+        say(&mut t, ".companion hire 48");
+        t.ticks(2);
+        assert_eq!(t.npcs_of(NPC_WARRIOR).len(), 1);
+        let info = t.world.fake_player_info(only(&t, NPC_WARRIOR)).unwrap();
+        assert_eq!(info.class_id, 48, "a Tyrant");
+        // A class of another tier is refused.
+        say(&mut t, ".companion hire 114");
+        t.ticks(2);
+        let pages = crate::testing::pages_to(&t.take(), 1);
+        assert!(
+            pages
+                .last()
+                .unwrap()
+                .contains("You cannot hire a Grand Khavatari at level 45.")
+        );
+        assert_eq!(all_companions(&t), 1);
+    }
+
+    /// The skills `caster` started, by id, in what the owner was sent.
+    fn skills_cast(sent: &Sent, caster: ObjectId) -> Vec<i32> {
+        use l2_protocol_game::server::MagicSkillUse;
+        sent.iter()
+            .filter(|(to, body)| *to == 1 && name_of(body) == "MAGIC_SKILL_USE")
+            .map(|(_, body)| decode::<MagicSkillUse>(body))
+            .filter(|m| m.creature_id == caster.0)
+            .map(|m| m.skill_id)
+            .collect()
+    }
+
+    /// The class skills of `class` of `kind` at `level`, by id.
+    fn class_skill_ids(class: i32, level: i32, kind: Kind) -> Vec<i32> {
+        skills::of_kind(class, level, kind).iter().map(|k| k.id).collect()
+    }
+
+    /// A companion of class `class` next to an owner of `level`, and a monster he has hit.
+    fn fight_with(root: &Path, class: i32, level: i32) -> (ScriptTest, ObjectId, ObjectId) {
+        let mut t = scene(root, level, 10_000_000);
+        let page = click(&mut t, &format!("hire:{class}"));
+        assert!(page.contains("joins you"), "{page}");
+        let role = classes::by_id(class).unwrap().role;
+        let id = only(&t, role.npc_id());
+        let mob = t.spawn(MONSTER, 150);
+        t.world.set_target(OWNER, Some(mob));
+        owner_hits(&mut t, mob);
+        t.world.set_intention_attack(mob, OWNER);
+        let _ = t.take();
+        (t, id, mob)
+    }
+
+    #[test]
+    fn a_dagger_strikes_with_the_skills_of_its_class() {
+        let Some(root) = datapack() else { return };
+        let (mut t, rogue, mob) = fight_with(root, 7, 30);
+        seconds(&mut t, 10);
+        let cast = skills_cast(&t.take(), rogue);
+        let strikes = class_skill_ids(7, 30, Kind::Strike);
+        assert!(
+            cast.iter().any(|id| strikes.contains(id)),
+            "cast {cast:?}, its strikes {strikes:?}"
+        );
+        assert!(mob_hp(&t, mob) < MOB_HP);
+    }
+
+    #[test]
+    fn a_monk_strikes_with_its_fists_although_its_template_holds_a_sword() {
+        let Some(root) = datapack() else { return };
+        // The warrior template's weapon is a sword; the Monk's skills want fists. The weapon of
+        // the figure counts.
+        let (mut t, monk, _) = fight_with(root, 47, 30);
+        assert_eq!(
+            t.world.stats(monk).unwrap().attack_type(),
+            l2_data::item::WeaponType::DualFist,
+            "it fights with the fists it is shown with"
+        );
+        seconds(&mut t, 10);
+        let cast = skills_cast(&t.take(), monk);
+        let strikes = class_skill_ids(47, 30, Kind::Strike);
+        assert!(!strikes.is_empty());
+        assert!(
+            cast.iter().any(|id| strikes.contains(id)),
+            "cast {cast:?}, its strikes {strikes:?}"
+        );
+    }
+
+    #[test]
+    fn a_mage_casts_the_spells_of_its_class() {
+        let Some(root) = datapack() else { return };
+        let (mut t, wizard, mob) = fight_with(root, 11, 30);
+        seconds(&mut t, 12);
+        let cast = skills_cast(&t.take(), wizard);
+        let nukes = class_skill_ids(11, 30, Kind::Nuke);
+        assert!(
+            cast.iter().any(|id| nukes.contains(id)),
+            "cast {cast:?}, its nukes {nukes:?}"
+        );
+        assert!(mob_hp(&t, mob) < MOB_HP);
+    }
+
+    #[test]
+    fn a_knight_taunts_with_its_class_skill() {
+        let Some(root) = datapack() else { return };
+        let (mut t, knight, mob) = fight_with(root, 4, 35);
+        seconds(&mut t, 8);
+        let cast = skills_cast(&t.take(), knight);
+        let taunts = class_skill_ids(4, 35, Kind::Taunt);
+        assert!(!taunts.is_empty());
+        assert!(
+            cast.iter().any(|id| taunts.contains(id)),
+            "cast {cast:?}, its taunts {taunts:?}"
+        );
+        assert_eq!(t.world.attack_target_of(mob), Some(knight), "the knight holds it");
+    }
+
+    #[test]
+    fn a_buffer_gives_the_owner_the_buffs_of_its_class() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 45, 10_000_000);
+        click(&mut t, "hire:17");
+        let prophet = only(&t, NPC_BUFFER);
+        let buffs = class_skill_ids(17, 45, Kind::Buff);
+        assert!(buffs.contains(&1068), "a Prophet has Might: {buffs:?}");
+        // One buff a second, the strongest first: about 20 of them at level 45.
+        seconds(&mut t, 25);
+        let on_owner: Vec<i32> = buffs
+            .iter()
+            .copied()
+            .filter(|id| t.world.script_buff_skill_level(OWNER, *id).is_some())
+            .collect();
+        assert!(on_owner.len() >= 15, "the owner got {on_owner:?} of {buffs:?}");
+        // Might, or Greater Might, which takes its place.
+        assert!(
+            [1068, 1388]
+                .iter()
+                .any(|id| t.world.script_buff_skill_level(OWNER, *id).is_some()),
+            "Might"
+        );
+        // A fight stops the buffing (a monster on the prophet: the test owner has 1 HP).
+        let _ = t.take();
+        let mob = t.spawn(MONSTER, 150);
+        t.world.add_damage_hate(mob, prophet, 1, 100);
+        t.world.set_intention_attack(mob, prophet);
+        seconds(&mut t, 1);
+        let _ = t.take();
+        seconds(&mut t, 3);
+        let cast = skills_cast(&t.take(), prophet);
+        assert!(
+            cast.iter().all(|id| !buffs.contains(id)),
+            "buffs in a fight: {cast:?}"
+        );
+        let _ = mob;
+    }
+
+    #[test]
+    fn a_summoner_calls_its_servitor_which_fights_and_goes_with_it() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 45, 10_000_000);
+        click(&mut t, "hire:14");
+        seconds(&mut t, 2);
+        let pets = t.npcs_of(NPC_SERVITOR);
+        assert_eq!(pets.len(), 1, "the Warlock called its servitor");
+        let pet = pets[0];
+        let summon = skills::of_kind(14, 45, Kind::Summon)[0];
+        let model = skills::summon_npc(summon.id, summon.level).unwrap();
+        assert_eq!(
+            t.world.npc(pet).unwrap().display,
+            Some(model),
+            "shown as the servitor"
+        );
+        assert!(
+            t.world.npc_info(pet, OWNER).is_some(),
+            "an NPC to the clients, not a player"
+        );
+        assert_eq!(
+            t.world.companion_owner(pet),
+            Some(OWNER),
+            "its kills pay the owner"
+        );
+        // It is no member of the party window.
+        let window = window_packets(&t.take());
+        assert!(
+            window
+                .iter()
+                .all(|(_, body)| !body.windows(4).any(|w| w == pet.0.to_le_bytes()))
+        );
+        // It fights.
+        let mob = t.spawn(MONSTER, 150);
+        t.world.set_target(OWNER, Some(mob));
+        owner_hits(&mut t, mob);
+        seconds(&mut t, 8);
+        assert!(mob_hp(&t, mob) < MOB_HP);
+        // It goes with its summoner.
+        click(&mut t, "dismissall");
+        assert!(t.npcs_of(NPC_SERVITOR).is_empty());
+    }
+
+    #[test]
+    fn a_fallen_servitor_is_called_again_later() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 45, 10_000_000);
+        click(&mut t, "hire:14");
+        seconds(&mut t, 2);
+        let pet = t.npcs_of(NPC_SERVITOR)[0];
+        t.world.do_die(pet, None);
+        seconds(&mut t, 5);
+        assert!(
+            t.npcs_of(NPC_SERVITOR)
+                .iter()
+                .all(|p| *p == pet || t.world.is_dead(*p)),
+            "not at once"
+        );
+        seconds(&mut t, 30);
+        let alive: Vec<ObjectId> = t
+            .npcs_of(NPC_SERVITOR)
+            .into_iter()
+            .filter(|p| !t.world.is_dead(*p))
+            .collect();
+        assert_eq!(alive.len(), 1, "called again after the wait");
+    }
+
+    #[test]
+    fn a_healer_heals_with_the_heals_of_its_class() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 50, 10_000_000);
+        click(&mut t, "hire:5");
+        click(&mut t, "hire:16");
+        let (knight, bishop) = (only(&t, NPC_TANK), only(&t, NPC_HEALER));
+        let max = f64::from(t.world.stats(knight).unwrap().max_hp());
+        t.world.set_current_hp_mp(knight, max * 0.3, 100.0);
+        let _ = t.take();
+        seconds(&mut t, 8);
+        let cast = skills_cast(&t.take(), bishop);
+        let heals = class_skill_ids(16, 50, Kind::Heal);
+        assert!(
+            cast.iter().any(|id| heals.contains(id)),
+            "cast {cast:?}, its heals {heals:?}"
+        );
+    }
+
+    /// The owner's saved companions (the player variable).
+    fn saved(t: &mut ScriptTest) -> String {
+        let mut value = None;
+        t.world.run_as_script("Companions", |ctx| {
+            value = ctx.player_variable(OWNER, SAVE_VARIABLE);
+        });
+        value.unwrap_or_default()
+    }
+
+    #[test]
+    fn the_companions_come_back_free_at_the_next_login() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 45, 10_000_000);
+        click(&mut t, "hire:48");
+        click(&mut t, "hire:16");
+        say(&mut t, ".companion aggressive");
+        seconds(&mut t, 1);
+        let before: Vec<(i32, String)> = [NPC_WARRIOR, NPC_HEALER]
+            .iter()
+            .map(|npc| {
+                let info = t.world.fake_player_info(only(&t, *npc)).unwrap();
+                (info.class_id, info.name)
+            })
+            .collect();
+        let text = saved(&mut t);
+        assert!(
+            text.starts_with("aggressive|48,") && text.contains("|16,"),
+            "{text}"
+        );
+        t.input(1, ClientInput::Logout);
+        seconds(&mut t, 2);
+        assert_eq!(all_companions(&t), 0, "they leave with him");
+
+        // He comes back (the variable is what the database keeps for him).
+        t.enter_as(
+            1,
+            45,
+            race::HUMAN,
+            player_class::DUELIST,
+            vec![item(100, 57, 1_000)],
+        );
+        t.world.run_as_script("Companions", |ctx| {
+            ctx.set_player_variable(OWNER, SAVE_VARIABLE, &text);
+            Companions.on_enter_world(ctx, OWNER);
+        });
+        seconds(&mut t, 1);
+        let after: Vec<(i32, String)> = [NPC_WARRIOR, NPC_HEALER]
+            .iter()
+            .map(|npc| {
+                let info = t.world.fake_player_info(only(&t, *npc)).unwrap();
+                (info.class_id, info.name)
+            })
+            .collect();
+        assert_eq!(after, before, "the same companions");
+        assert_eq!(t.count(1, 57), 1_000, "free");
+        let mut mode = None;
+        t.world.run_as_script("Companions", |ctx| {
+            mode = ctx.state::<State>().squads.get(&OWNER).map(|s| s.mode);
+        });
+        assert_eq!(mode, Some(CompanionCombatMode::Aggressive), "the mode comes back");
+    }
+
+    #[test]
+    fn dismissing_all_forgets_them_for_the_next_login() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 45, 10_000_000);
+        click(&mut t, "hire:48");
+        assert!(!saved(&mut t).is_empty());
+        click(&mut t, "dismissall");
+        assert_eq!(saved(&mut t), "");
+    }
+
+    #[test]
+    fn a_companion_moves_up_its_class_line_with_its_owner() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 39, 10_000_000);
+        click(&mut t, "hire:47");
+        let monk = only(&t, NPC_WARRIOR);
+        let face = t.world.fake_player_info(monk).unwrap();
+        assert_eq!(face.class_id, 47);
+        let _ = t.take();
+        t.world.player_mut(OWNER).unwrap().core.level = 40;
+        seconds(&mut t, 2);
+        let info = t.world.fake_player_info(monk).unwrap();
+        assert_eq!(info.class_id, 48, "a Tyrant now");
+        assert_eq!(
+            (info.name, info.is_female, info.hair_style),
+            (face.name, face.is_female, face.hair_style),
+            "the same face"
+        );
+        let fist = info.paperdoll_item_ids[l2_protocol_game::server::charscreen::paperdoll::RHAND];
+        assert!(
+            gear_data::WEAPONS.contains(&("fist", 1, fist)),
+            "a C grade fist weapon: {fist}"
+        );
+        let sent = t.take();
+        assert!(
+            texts_to_owner(&sent)
+                .iter()
+                .any(|s| s.contains("Your Monk is now a Tyrant."))
+        );
+        assert!(names_to(&sent, 1).iter().any(|n| n == "CHAR_INFO"), "shown anew");
+        // At 76 the Grand Khavatari.
+        t.world.player_mut(OWNER).unwrap().core.level = 76;
+        seconds(&mut t, 2);
+        assert_eq!(t.world.fake_player_info(monk).unwrap().class_id, 114);
+    }
+
+    #[test]
     fn the_player_can_dismiss_one_or_all() {
         let Some(root) = datapack() else { return };
         let mut t = scene(root, 40, 10_000_000);
@@ -1592,7 +2424,7 @@ mod tests {
         click(&mut t, "hire:healer");
         click(&mut t, "hire:warrior");
         let page = click(&mut t, "dismiss:1");
-        assert!(page.contains("The Healer leaves."), "{page}");
+        assert!(page.contains("The Bishop leaves."), "{page}");
         assert_eq!(t.npcs_of(NPC_HEALER).len(), 0);
         assert_eq!(all_companions(&t), 2);
         // An index that is not there does nothing.
@@ -1622,14 +2454,61 @@ mod tests {
     }
 
     #[test]
-    fn the_companions_go_when_the_owner_dies() {
+    fn the_companions_stay_and_guard_when_the_owner_dies_and_follow_him_to_town() {
         let Some(root) = datapack() else { return };
         let mut t = scene(root, 40, 10_000_000);
         click(&mut t, "hire:tank");
         click(&mut t, "hire:warrior");
+        let warrior = only(&t, NPC_WARRIOR);
         t.world.do_die(OWNER, None);
-        seconds(&mut t, 2);
-        assert_eq!(all_companions(&t), 0);
+        seconds(&mut t, 3);
+        assert_eq!(all_companions(&t), 2, "they stay");
+        // A monster that goes for them is fought.
+        let mob = t.spawn(MONSTER, 150);
+        t.world.add_damage_hate(mob, warrior, 1, 100);
+        t.world.set_intention_attack(mob, warrior);
+        seconds(&mut t, 6);
+        assert!(mob_hp(&t, mob) < MOB_HP, "they defend themselves");
+        // He goes to town: they come after him.
+        t.world.do_revive(OWNER);
+        t.world.set_position(OWNER, X + 8_000, Y, Z);
+        seconds(&mut t, 3);
+        assert!(
+            distance(&t, warrior, OWNER) < 400.0,
+            "{:.0}",
+            distance(&t, warrior, OWNER)
+        );
+    }
+
+    #[test]
+    fn a_healer_offers_the_dead_owner_a_resurrection() {
+        let Some(root) = datapack() else { return };
+        let mut t = scene(root, 45, 10_000_000);
+        click(&mut t, "hire:16");
+        assert!(
+            !skills::of_kind(16, 45, Kind::Resurrect).is_empty(),
+            "a Bishop can raise the dead"
+        );
+        let bishop = only(&t, NPC_HEALER);
+        let _ = t.take();
+        t.world.do_die(OWNER, None);
+        seconds(&mut t, 3);
+        let sent = t.take();
+        let names = names_to(&sent, 1);
+        assert!(
+            names.iter().any(|n| n == "CONFIRM_DLG"),
+            "the owner is asked: {names:?}"
+        );
+        let resurrection = class_skill_ids(16, 45, Kind::Resurrect);
+        assert!(
+            skills_cast(&sent, bishop)
+                .iter()
+                .any(|id| resurrection.contains(id))
+        );
+        // He says yes.
+        t.world.revive_answer(OWNER, 1);
+        t.ticks(2);
+        assert!(!t.world.is_dead(OWNER), "raised");
     }
 
     #[test]

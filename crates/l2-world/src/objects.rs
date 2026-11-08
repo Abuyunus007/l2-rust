@@ -120,6 +120,9 @@ pub struct Npc {
     pub owner: Option<ObjectId>,
     /// Our own: the figure a companion is shown with, instead of its template's model.
     pub look: Option<crate::companion::CompanionLook>,
+    /// Our own: the model a companion without a figure is shown with (a summoner's servitor)
+    /// instead of its template's.
+    pub display: Option<i32>,
 }
 
 /// A companion's level, factors on the template's HP, MP and defence, and its base attack.

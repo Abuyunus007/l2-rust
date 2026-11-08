@@ -15,6 +15,10 @@ pub enum Role {
     Dagger,
     /// A damage dealer that casts spells.
     Mage,
+    /// A caster that fights with a summoned creature.
+    Summoner,
+    /// Buffs its owner and his party.
+    Buffer,
 }
 
 /// The NPC templates (`data/stats/npcs/50000-50099.xml`), one per role.
@@ -24,6 +28,8 @@ pub const NPC_WARRIOR: i32 = 50023;
 pub const NPC_ARCHER: i32 = 50024;
 pub const NPC_DAGGER: i32 = 50025;
 pub const NPC_MAGE: i32 = 50026;
+pub const NPC_SUMMONER: i32 = 50027;
+pub const NPC_BUFFER: i32 = 50028;
 
 static TANK: Tank = Tank;
 static HEALER: Healer = Healer;
@@ -32,13 +38,15 @@ static ARCHER: DamageDealer = DamageDealer { ranged: true };
 static MAGE: Mage = Mage;
 
 impl Role {
-    pub const ALL: [Role; 6] = [
+    pub const ALL: [Role; 8] = [
         Role::Tank,
         Role::Healer,
         Role::Warrior,
         Role::Archer,
         Role::Dagger,
         Role::Mage,
+        Role::Summoner,
+        Role::Buffer,
     ];
 
     /// Used in the page links.
@@ -50,6 +58,8 @@ impl Role {
             Role::Archer => "archer",
             Role::Dagger => "dagger",
             Role::Mage => "mage",
+            Role::Summoner => "summoner",
+            Role::Buffer => "buffer",
         }
     }
 
@@ -65,6 +75,8 @@ impl Role {
             Role::Archer => "Archer",
             Role::Dagger => "Dagger",
             Role::Mage => "Mage",
+            Role::Summoner => "Summoner",
+            Role::Buffer => "Buffer",
         }
     }
 
@@ -76,6 +88,8 @@ impl Role {
             Role::Archer => "Shoots at what you hit from a distance.",
             Role::Dagger => "Stabs what you hit, with many critical hits.",
             Role::Mage => "Casts spells at what you hit from a distance.",
+            Role::Summoner => "Fights from a distance with a summoned creature.",
+            Role::Buffer => "Keeps you and your party buffed.",
         }
     }
 
@@ -88,12 +102,18 @@ impl Role {
             Role::Archer => NPC_ARCHER,
             Role::Dagger => NPC_DAGGER,
             Role::Mage => NPC_MAGE,
+            Role::Summoner => NPC_SUMMONER,
+            Role::Buffer => NPC_BUFFER,
         }
     }
 
     /// The group of the class buffer that a companion of this role buffs itself with.
     pub fn buff_group_key(self) -> &'static str {
-        self.key()
+        match self {
+            Role::Summoner => "mage",
+            Role::Buffer => "healer",
+            other => other.key(),
+        }
     }
 
     /// What it does in combat.
@@ -103,7 +123,10 @@ impl Role {
             Role::Healer => &HEALER,
             Role::Warrior | Role::Dagger => &WARRIOR,
             Role::Archer => &ARCHER,
-            Role::Mage => &MAGE,
+            // The summoner's creature and the buffer's buffs come with their classes' skills;
+            // until then they fight like a mage and keep the party healed.
+            Role::Mage | Role::Summoner => &MAGE,
+            Role::Buffer => &HEALER,
         }
     }
 }
