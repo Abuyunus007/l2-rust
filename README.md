@@ -54,6 +54,9 @@ the global jobs (daily reset, Olympiad, Seven Signs, sieges, boss states).
 - **Tools**:
   - **Supervisor**: starts, stops and restarts the servers and collects their logs.
   - **Admin GUI**: server control, live logs, packet inspector.
+  - **AI admin chat** (`l2-mcp`): an MCP bridge, so an AI assistant (Claude Desktop, a local model)
+    can run admin commands; bans, kills and shutdowns only after you approve them
+    (`docs/runbooks/mcp-bridge.md`).
   - **Proxy**: a decrypting proxy that records client sessions.
   - **Geodata tool**: geodata statistics, diffs and region checks.
 

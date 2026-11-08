@@ -6,7 +6,7 @@ Crates live in `crates/<name>/`. Binaries are marked **(bin)**. Milestone = when
 ## Layers (dependencies point down only, no cycles)
 
 ```
- bins:      login-server   game-server   l2-supervisor   l2-proxy   l2-admin-gui   l2-geotool   l2-db-installer
+ bins:      login-server   game-server   l2-supervisor   l2-proxy   l2-admin-gui   l2-geotool   l2-db-installer   l2-mcp
               │               │              │              │            │             │
  logic:       │          l2-scripts → l2-world             │            │             │
               │               │          │                  │            │             │
@@ -34,6 +34,7 @@ Rules:
 | `l2-testkit` | 1 | loading Java vectors and JSONL captures, test helpers, fake clients | new |
 | `login-server` (bin) | 1 | the login server | `loginserver/**` minus `ui/` |
 | `l2-supervisor` (bin) | 1 | starts/stops/restarts servers (exit code 2 = restart), collects logs, serves the admin API to the GUI | Java `*.sh/*.vbs` start scripts, `LoginServerTask.sh` |
+| `l2-mcp` (bin) | 1 | MCP bridge (D-63): an AI assistant runs admin commands through the admin API; destructive ones only through a tool the client asks for, audit log | new |
 | `l2-proxy` (lib+bin) | 1 | decrypting MITM proxy, JSONL captures (D-34); used by the GUI | new (Java `PacketLogger` is a small reference) |
 | `l2-admin-gui` (bin) | 1 | egui app (D-31..D-33) | new (`loginserver/ui`, `gameserver/ui` as feature references) |
 | `l2-db-installer` (bin+lib) | 1 | database installer: egui window and `--console` mode, statement splitter as in Java, creates/resets the database and runs `dist/db_installer/sql/{login,game}` | `tools/DatabaseInstaller` |

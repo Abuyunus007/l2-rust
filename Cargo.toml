@@ -11,6 +11,7 @@ members = [
     "crates/l2-geo",
     "crates/l2-geotool",
     "crates/l2-loadtest",
+    "crates/l2-mcp",
     "crates/l2-net",
     "crates/l2-protocol-game",
     "crates/l2-protocol-login",
