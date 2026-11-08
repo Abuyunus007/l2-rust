@@ -1417,3 +1417,36 @@ fn a_champion_kill_gives_the_champion_exp_and_sp() {
         (plain_exp * 3, plain_sp * 3)
     );
 }
+
+/// A rift monster's own factors (`RiftMobsExpRate`, `RiftMobsSpRate`, D-64) multiply the server
+/// rates; the next NPC with that object id has its template's rewards again.
+#[test]
+fn a_reward_override_multiplies_the_exp_and_sp() {
+    let mut s = Scene::with(
+        "override",
+        Config {
+            exp: ExpSettings {
+                rate_xp: 1.5,
+                rate_sp: 2.0,
+                ..ExpSettings::default()
+            },
+            ..Config::default()
+        },
+    );
+    s.enter(player_data(ME, "Hero", 10));
+    let start = s.me().data.exp;
+    let npc = s.npc();
+    s.world.set_npc_reward_override(
+        npc,
+        Some(l2_world::NpcRewardOverride {
+            exp_rate: 2.0,
+            sp_rate: 0.5,
+            drops: true,
+        }),
+    );
+    s.hit(ME, 100);
+    s.kill(ME);
+    // exp (long) (1000 * 1.5 * 2) = 3000, sp (int) (100 * 2.0 * 0.5) = 100.
+    assert_eq!(s.me().data.exp - start, 3000);
+    assert_eq!(s.me().data.sp, 100);
+}

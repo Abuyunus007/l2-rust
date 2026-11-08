@@ -28,6 +28,11 @@ impl World {
         if !template.tradeable {
             return false;
         }
+        // The bound rift shard (`RiftShardBound`, D-64): no trade, private store, mail or clan
+        // warehouse (they all ask this).
+        if self.is_l2r_bound_item(item.item_id) {
+            return false;
+        }
         // `isEquipable() && getTransmogId() > 0` (`Transmog.ini`, M9-C07).
         if self.item_is_transmogrified(item.object_id, template) {
             return false;

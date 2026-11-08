@@ -52,6 +52,11 @@ the global jobs (daily reset, Olympiad, Seven Signs, sieges, boss states).
     him, fights beside him and buffs itself. It hits like a player of its level, attacks what he
     targets (aggressive) or what he attacked (passive, `.companion` switches). Its experience and
     drops are the player's, and its HP and MP show in his party window.
+  - **Rift invasions**: at random times a rift opens in a hunting zone (levels 40 to 84) and is
+    announced server-wide; waves of invaders come out, then a rift boss. Fighters, healers and
+    helpers get rift shards (weekly cap, bound to the character) and trade them at the
+    Rissbeschwoerer in Giran for enchant scrolls, life stones, cloaks and potions
+    (`//rift_start` tries it at once).
   - **`L2R.ini`**: the settings of these own features in one file (`//reload l2r` while running).
 - **Tools**:
   - **Supervisor**: starts, stops and restarts the servers and collects their logs.

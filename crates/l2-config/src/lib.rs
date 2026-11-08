@@ -28,7 +28,7 @@ pub use database::{DatabaseConfig, JdbcUrl};
 pub use error::ConfigError;
 pub use game::GameConfig;
 pub use interface::InterfaceConfig;
-pub use l2r::{CompanionCombatMode, L2rConfig};
+pub use l2r::{CompanionCombatMode, L2rConfig, RiftInvasionConfig};
 pub use list_kinds::ItemHolder;
 pub use login::{LoginConfig, LoginConfigSet};
 pub use network::NetworkConfig;

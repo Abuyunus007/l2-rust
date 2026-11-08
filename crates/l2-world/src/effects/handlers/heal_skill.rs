@@ -90,6 +90,8 @@ impl EffectHandler for Heal {
 
         // The formula already prevents overheal and a negative amount.
         Vital::Hp.add(world, effected, amount);
+        // The rift invasions count heals as a contribution (D-64).
+        world.note_heal(effector, effected, amount);
 
         if world.is_player(effected) {
             if skill.id == 4051 {

@@ -2271,3 +2271,34 @@ fn lethal_of_the_datapack_runs() {
     }
     assert!(s.hp(npc) < 300.0);
 }
+
+/// The rift invasions (D-64) count heals: while the ledger is on, `Heal` and `HealPercent` record
+/// the healer, the healed and the HP restored.
+#[test]
+fn heals_are_recorded_while_the_ledger_is_on() {
+    let mut s = scene_with_mcrit_cap(
+        &spell(9401, r#"<effect name="Heal"><power>20</power></effect>"#, ""),
+        1,
+        0,
+    );
+    s.world.set_current_hp(ME, 1.0, false);
+    s.apply(P2, ME, k(9401));
+    assert!(s.world.take_heal_ledger().is_empty(), "off: nothing recorded");
+    s.world.set_heal_ledger(true);
+    s.world.set_current_hp(ME, 1.0, false);
+    s.apply(P2, ME, k(9401));
+    let ledger = s.world.take_heal_ledger();
+    assert_eq!(ledger.len(), 1);
+    assert_eq!((ledger[0].0, ledger[0].1), (P2, ME));
+    assert_eq!(ledger[0].2, s.hp(ME) - 1.0);
+
+    let mut s = Scene::inline(
+        r#"<skill id="9101" levels="1" name="Quarter"><operateType>A1</operateType><targetType>SELF</targetType>
+        <effects><effect name="HealPercent"><power>25</power></effect></effects></skill>"#,
+    );
+    s.world.set_heal_ledger(true);
+    s.world.set_current_hp(ME, 1.0, false);
+    s.apply(ME, ME, SkillKey::new(9101, 1));
+    let ledger = s.world.take_heal_ledger();
+    assert_eq!(ledger, vec![(ME, ME, s.hp(ME) - 1.0)]);
+}

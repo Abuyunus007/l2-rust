@@ -604,7 +604,9 @@ impl World {
                 .item_templates()
                 .as_deref()
                 .and_then(|t| t.get(item.item_id))
-                .is_some_and(|t| t.freightable);
+                .is_some_and(|t| t.freightable)
+                // The bound rift shard stays with the character (D-64).
+                && !self.is_l2r_bound_item(item.item_id);
             if !freightable {
                 return;
             }

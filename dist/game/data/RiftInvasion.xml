@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	Rift invasions (L2Rust, D-64): the zones a rift may open in. Settings: config/L2R.ini, section [RiftInvasion].
+
+	<zone>       name: shown in the announcements; minLevel/maxLevel: the level range of the rift monsters
+	             (wave 1 has minLevel, the last wave maxLevel, the boss maxLevel; plus RiftMobLevelOffset);
+	             bossId: the rift boss; bossHpMultiplier: factor on its max HP (default 1).
+	<spawn>      a point the rift may open at (one is picked at random). The monsters stand around it,
+	             at the height of the ground (geodata) when it is loaded.
+	<wave>       count: monsters of the wave (more with RiftScaleWithPlayers); each one is one of the <mob> ids.
+	             Wave 1 is the first <wave>. A rift with more waves (RiftWaveCount) than the zone repeats the last.
+
+	The monsters are the invaders of the Dimensional Rift (type RiftInvader, not spawned anywhere else),
+	the boss is Anakazel, the boss of the rift rooms.
+-->
+<list>
+	<zone name="Execution Grounds" minLevel="40" maxLevel="46" bossId="25335">
+		<spawn x="50568" y="152408" z="-2656" />
+		<spawn x="51168" y="152808" z="-2656" />
+		<spawn x="49968" y="151908" z="-2656" />
+		<wave count="6">
+			<mob id="21682" /> <!-- Dimension Invader Soldier -->
+			<mob id="21687" /> <!-- Dimension Invader Priest -->
+			<mob id="21684" /> <!-- Dimension Invader Archer -->
+		</wave>
+		<wave count="8">
+			<mob id="21690" /> <!-- Dimension Invader Warrior -->
+			<mob id="21686" /> <!-- Dimension Invader Shaman -->
+			<mob id="21688" /> <!-- Dimension Invader Magus -->
+		</wave>
+		<wave count="10">
+			<mob id="21693" /> <!-- Dimension Invader Berserker -->
+			<mob id="21695" /> <!-- Dimension Invader Elite Soldier -->
+			<mob id="21696" /> <!-- Dimension Invader Elite Soldier -->
+		</wave>
+	</zone>
+	<zone name="Sea of Spores" minLevel="50" maxLevel="56" bossId="25336">
+		<spawn x="64328" y="26803" z="-3768" />
+		<spawn x="64928" y="27303" z="-3768" />
+		<spawn x="63728" y="26303" z="-3768" />
+		<wave count="6">
+			<mob id="21705" /> <!-- Purgatory Invader Soldier -->
+			<mob id="21710" /> <!-- Purgatory Invader Priest -->
+			<mob id="21707" /> <!-- Purgatory Invader Archer -->
+		</wave>
+		<wave count="8">
+			<mob id="21713" /> <!-- Purgatory Invader Warrior -->
+			<mob id="21709" /> <!-- Purgatory Invader Shaman -->
+			<mob id="21711" /> <!-- Purgatory Invader Magus -->
+		</wave>
+		<wave count="10">
+			<mob id="21716" /> <!-- Purgatory Invader Berserker -->
+			<mob id="21708" /> <!-- Purgatory Invader Elite Soldier -->
+			<mob id="21718" /> <!-- Purgatory Invader Elite Soldier -->
+		</wave>
+	</zone>
+	<zone name="Valley of Saints" minLevel="60" maxLevel="66" bossId="25337">
+		<spawn x="65307" y="-71445" z="-3696" />
+		<spawn x="65907" y="-70945" z="-3696" />
+		<spawn x="64707" y="-71945" z="-3696" />
+		<wave count="6">
+			<mob id="21737" /> <!-- Forbidden Path Invader Soldier -->
+			<mob id="21733" /> <!-- Forbidden Path Invader Priest -->
+			<mob id="21730" /> <!-- Forbidden Path Invader Archer -->
+		</wave>
+		<wave count="8">
+			<mob id="21736" /> <!-- Forbidden Path Invader Warrior -->
+			<mob id="21732" /> <!-- Forbidden Path Invader Shaman -->
+			<mob id="21734" /> <!-- Forbidden Path Invader Magus -->
+		</wave>
+		<wave count="10">
+			<mob id="21739" /> <!-- Forbidden Path Invader Berserker -->
+			<mob id="21741" /> <!-- Forbidden Path Invader Elite Soldier -->
+			<mob id="21729" /> <!-- Forbidden Path Invader Elite Soldier -->
+		</wave>
+	</zone>
+	<zone name="Hot Springs" minLevel="70" maxLevel="76" bossId="25338">
+		<spawn x="144880" y="-113468" z="-2560" />
+		<spawn x="145480" y="-112968" z="-2560" />
+		<spawn x="144280" y="-113968" z="-2560" />
+		<wave count="6">
+			<mob id="21751" /> <!-- Dark Omen Invader Soldier -->
+			<mob id="21756" /> <!-- Dark Omen Invader Priest -->
+			<mob id="21753" /> <!-- Dark Omen Invader Archer -->
+		</wave>
+		<wave count="8">
+			<mob id="21759" /> <!-- Dark Omen Invader Warrior -->
+			<mob id="21755" /> <!-- Dark Omen Invader Shaman -->
+			<mob id="21757" /> <!-- Dark Omen Invader Magus -->
+		</wave>
+		<wave count="10">
+			<mob id="21762" /> <!-- Dark Omen Invader Berserker -->
+			<mob id="21754" /> <!-- Dark Omen Invader Elite Soldier -->
+			<mob id="21764" /> <!-- Dark Omen Invader Elite Soldier -->
+		</wave>
+	</zone>
+	<zone name="Den of Evil" minLevel="80" maxLevel="84" bossId="25338" bossHpMultiplier="2">
+		<spawn x="68693" y="-110438" z="-1946" />
+		<spawn x="69293" y="-109938" z="-1946" />
+		<spawn x="68093" y="-110938" z="-1946" />
+		<wave count="6">
+			<mob id="21774" /> <!-- Messenger Invader Soldier -->
+			<mob id="21779" /> <!-- Messenger Invader Priest -->
+			<mob id="21776" /> <!-- Messenger Invader Archer -->
+		</wave>
+		<wave count="8">
+			<mob id="21782" /> <!-- Messenger Invader Warrior -->
+			<mob id="21778" /> <!-- Messenger Invader Shaman -->
+			<mob id="21780" /> <!-- Messenger Invader Magus -->
+		</wave>
+		<wave count="10">
+			<mob id="21777" /> <!-- Messenger Invader Elite Soldier -->
+			<mob id="21783" /> <!-- Messenger Invader Soldier -->
+			<mob id="21781" /> <!-- Messenger Invader Martyrs -->
+		</wave>
+	</zone>
+</list>

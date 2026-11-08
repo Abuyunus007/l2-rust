@@ -780,6 +780,7 @@ fn l2r_is_read_by_the_server_and_the_gm_is_told() {
             combat_mode: CompanionCombatMode::Aggressive,
             ..CompanionSettings::default()
         },
+        ..L2rSettings::default()
     };
     s.world.handle(WorldCommand::L2rReloaded {
         requester: ObjectId(GM),

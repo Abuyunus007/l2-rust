@@ -28,10 +28,10 @@ fn game_dir() -> Option<PathBuf> {
 }
 
 /// The numbers below were taken from the Java datapack. NPC ids from here on are our own (the
-/// class buffer and the companions, D-60 and D-61), so the totals leave them out and `OWN_NPCS`
+/// class buffer, the companions and the rift invasions, D-60, D-61 and D-64), so the totals leave them out and `OWN_NPCS`
 /// counts them.
 const FIRST_OWN_NPC: i32 = 50_000;
-const OWN_NPCS: usize = 10;
+const OWN_NPCS: usize = 12;
 
 /// The default load (no custom NPCs), shared by the tests: it takes seconds in a debug build.
 fn main_npcs() -> Option<&'static NpcTemplates> {

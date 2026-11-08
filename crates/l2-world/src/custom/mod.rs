@@ -40,6 +40,7 @@ pub mod password_change;
 pub mod premium;
 pub mod pvp_rewards;
 pub mod rebirth;
+pub mod rift_invasion;
 pub mod scheme_buffer;
 pub mod screen_welcome;
 pub mod script_features;
@@ -50,7 +51,7 @@ pub mod walker_bot;
 pub use boss_announcements::BossAnnouncementSettings;
 pub use champion::ChampionSettings;
 pub use custom_mail::CustomMailEntry;
-pub use l2r::{CompanionCombatMode, CompanionSettings, L2rSettings};
+pub use l2r::{CompanionCombatMode, CompanionSettings, L2rSettings, RiftInvasionSettings};
 pub use misc::{
     BankingSettings, CaptchaSettings, CustomMiscSettings, CustomMiscState, CustomMiscTimer, DualboxSettings,
     MultilangSettings, ScreenWelcomeSettings,

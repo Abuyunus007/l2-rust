@@ -11,6 +11,7 @@ pub mod faction_system;
 pub mod fake_players;
 pub mod nobless_master;
 pub mod raidboss_info;
+pub mod rift;
 pub mod shadow_weapons;
 pub mod transmog;
 pub mod validators;
@@ -28,6 +29,7 @@ pub(crate) fn register(r: &mut ScriptRegistry) {
     r.add(banking_auto_convert::BankingAutoConvert);
     r.add(class_buffer::ClassBuffer);
     r.add(companions::Companions);
+    r.add(rift::RiftInvasion);
     events::register(r);
     faction_system::register(r);
     fake_players::register(r);

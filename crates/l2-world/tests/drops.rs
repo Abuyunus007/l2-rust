@@ -1927,3 +1927,34 @@ fn a_player_killed_by_a_monster_may_drop_by_the_player_rates() {
     assert_eq!(s.world.ground_item_ids().len(), 1);
     assert_eq!(s.inventory(ME).len(), 1);
 }
+
+/// A rift monster without its drops (`RiftMobsNormalDrops = false`, D-64) drops nothing.
+#[test]
+fn a_monster_without_its_drops_drops_nothing() {
+    let mut s = Scene::new(5);
+    s.enter(ME, "Hero", (X, Y, Z), vec![]);
+    let monster = s.spawn_monster(9001);
+    s.world.set_npc_reward_override(
+        monster,
+        Some(l2_world::NpcRewardOverride {
+            exp_rate: 1.0,
+            sp_rate: 1.0,
+            drops: false,
+        }),
+    );
+    s.log.take();
+    s.hit(monster, ME, 1_000_000.0);
+    assert!(s.world.ground_item_ids().is_empty());
+    // With its drops, the same monster drops its three items.
+    let monster = s.spawn_monster(9001);
+    s.world.set_npc_reward_override(
+        monster,
+        Some(l2_world::NpcRewardOverride {
+            exp_rate: 1.0,
+            sp_rate: 1.0,
+            drops: true,
+        }),
+    );
+    s.hit(monster, ME, 1_000_000.0);
+    assert_eq!(s.world.ground_item_ids().len(), 3);
+}

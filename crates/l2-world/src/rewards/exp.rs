@@ -193,7 +193,9 @@ impl World {
         } else {
             self.settings.exp.rate_xp
         };
-        (exp * f64::from(rate)) as i64
+        // A rift monster's own factor (`RiftMobsExpRate`, D-64).
+        let own = self.npc_reward_override(npc).map_or(1.0, |o| o.exp_rate);
+        (exp * f64::from(rate) * own) as i64
     }
 
     /// Java `Npc.getSpReward(level)`: `(int) (template sp * RATE_SP)`, or the rate of `level`
@@ -206,7 +208,9 @@ impl World {
         } else {
             self.settings.exp.rate_sp
         };
-        (sp * f64::from(rate)) as i32
+        // A rift monster's own factor (`RiftMobsSpRate`, D-64).
+        let own = self.npc_reward_override(npc).map_or(1.0, |o| o.sp_rate);
+        (sp * f64::from(rate) * own) as i32
     }
 
     fn npc_template_exp_sp(&self, npc: ObjectId) -> (f64, f64) {

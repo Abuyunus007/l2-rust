@@ -636,4 +636,9 @@
 	<admin command="removefence" description="Removes the selected fence." accessLevel="100" />
 	<admin command="listfence" description="List of all fances." accessLevel="100" />
 	<admin command="gofence" description="Teleports you to the selected fence's location." accessLevel="100" />
+	<!-- L2Rust: rift invasions (D-64, L2R.ini [RiftInvasion]) -->
+	<admin command="rift_start" description="Opens a rift now: //rift_start [zone name or number]." accessLevel="100" />
+	<admin command="rift_stop" description="Closes the announced or open rift (shards for the beaten waves are given)." accessLevel="100" />
+	<admin command="rift_status" description="Shows the state of the rift: phase, wave, participants, time left." accessLevel="100" />
+	<admin command="rift_cap_reset" description="Resets the weekly rift shard count: //rift_cap_reset [player] (target or self without a name)." accessLevel="100" />
 </list>

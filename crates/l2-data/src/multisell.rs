@@ -878,8 +878,10 @@ mod tests {
         }
         let items = ItemTemplates::load(root, false);
         let data = MultisellData::load(root, &items, &MultisellLoadOptions::default());
-        // Java logs "Loaded 200 multisell lists." for the shipped folder.
-        assert_eq!(data.len(), 200);
+        // Java logs "Loaded 200 multisell lists." for the shipped folder; ours adds the rift
+        // merchant's list (90000001, D-64).
+        assert_eq!(data.len(), 201);
+        assert!(data.get(90_000_001).is_some());
         let clan_trader = data.get(1235).unwrap();
         assert!(clan_trader.is_npc_allowed(32024));
         assert_eq!(clan_trader.entries[0].ingredients[0].item_id, CLAN_REPUTATION);

@@ -996,6 +996,8 @@ impl World {
             look: None,
             display: None,
         };
+        // A new NPC has its template's rewards, whatever an NPC with the same object id had.
+        self.custom_scripts.reward_overrides.remove(&id);
         // A companion is made for its owner before anybody can see it.
         if let Some(setup) = self.npc_world.pending_companion.take() {
             if let Some(scale) = setup.scale {

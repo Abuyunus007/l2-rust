@@ -47,6 +47,7 @@ pub mod player_class;
 pub mod player_template;
 pub mod recipe;
 pub mod residence;
+pub mod rift_invasion;
 pub mod route;
 pub mod scheme_buffer;
 pub mod seed;
@@ -125,6 +126,7 @@ pub use player_template::{
 };
 pub use recipe::{RecipeData, RecipeHolder, RecipeList, RecipeStat};
 pub use residence::{SiegeSchedule, SiegeScheduleDate};
+pub use rift_invasion::{RiftWaveDef, RiftZoneDef, RiftZones};
 pub use route::{RouteSay, Routes, WalkNode, WalkRoute};
 pub use scheme_buffer::{BuffSkillHolder, SchemeBufferSkills};
 pub use seed::{Seed, Seeds};

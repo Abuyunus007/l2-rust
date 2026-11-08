@@ -56,7 +56,9 @@ impl World {
                     return false;
                 }
                 // `else if (feightable)`: only what sits in the inventory and is freightable.
-                !freightable || (i.loc == LOC_INVENTORY && template.freightable)
+                // The bound rift shard stays with the character (D-64).
+                !freightable
+                    || (i.loc == LOC_INVENTORY && template.freightable && !self.is_l2r_bound_item(i.item_id))
             })
             .cloned()
             .collect()

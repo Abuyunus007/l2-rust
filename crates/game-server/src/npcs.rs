@@ -9,7 +9,9 @@ use std::time::Instant;
 use l2_config::{CompanionCombatMode as L2rCombatMode, GameConfig, L2rConfig};
 use l2_data::Datapack;
 use l2_world::npc::{NpcSettings, WaterCheck};
-use l2_world::{AiSettings, CompanionCombatMode, CompanionSettings, IdFactory, L2rSettings, World};
+use l2_world::{
+    AiSettings, CompanionCombatMode, CompanionSettings, IdFactory, L2rSettings, RiftInvasionSettings, World,
+};
 use tracing::info;
 
 /// The NPC-related configuration values.
@@ -115,6 +117,8 @@ pub fn custom_script_settings(
         },
         event_schedules,
         custom_npc_data: config.general.custom_npc_data,
+        // The zones of the rift invasions (`data/RiftInvasion.xml`, D-64).
+        rift_zones: l2_data::RiftZones::load(datapack_root).into_zones(),
     }
 }
 
@@ -139,6 +143,41 @@ pub fn l2r_settings_of(l2r: &L2rConfig) -> L2rSettings {
             fee_per_level: c.companion_fee_per_level,
             max_count: usize::try_from(c.companion_max_count).unwrap_or(1),
         },
+        rift: rift_settings_of(&c.rift),
+    }
+}
+
+/// The `[RiftInvasion]` section for the world (D-64): the minutes and seconds in milliseconds.
+fn rift_settings_of(r: &l2_config::RiftInvasionConfig) -> RiftInvasionSettings {
+    const MINUTE: i64 = 60_000;
+    RiftInvasionSettings {
+        enabled: r.enabled,
+        interval_min_ms: r.interval_min_minutes * MINUTE,
+        interval_max_ms: r.interval_max_minutes * MINUTE,
+        announce_lead_ms: r.announce_lead_minutes * MINUTE,
+        announce_reminder: r.announce_reminder,
+        wave_count: usize::try_from(r.wave_count).unwrap_or(1),
+        wave_interval_ms: r.wave_interval_seconds * 1_000,
+        duration_ms: r.duration_minutes * MINUTE,
+        mob_level_offset: r.mob_level_offset,
+        scale_with_players: r.scale_with_players,
+        scale_per_player_percent: r.scale_per_player_percent,
+        scale_max_percent: r.scale_max_percent,
+        participation_radius: r.participation_radius,
+        min_contribution_percent: r.min_contribution_percent,
+        shard_item_id: r.shard_item_id,
+        shards_per_wave: r.shards_per_wave,
+        shards_boss: r.shards_boss,
+        top_contributor_bonus: r.top_contributor_bonus,
+        shard_bound: r.shard_bound,
+        weekly_cap: r.weekly_cap,
+        weekly_reset_day: r.weekly_reset_day,
+        weekly_reset_hour: r.weekly_reset_hour,
+        mobs_normal_drops: r.mobs_normal_drops,
+        mobs_exp_rate: r.mobs_exp_rate,
+        mobs_sp_rate: r.mobs_sp_rate,
+        merchant_npc_id: r.merchant_npc_id,
+        merchant_loc: r.merchant_loc,
     }
 }
 
@@ -277,6 +316,15 @@ mod l2r_tests {
                 companion_combat_mode: L2rCombatMode::Aggressive,
                 companion_fee_per_level: 1_234,
                 companion_max_count: 6,
+                rift: l2_config::RiftInvasionConfig {
+                    enabled: false,
+                    interval_min_minutes: 2,
+                    interval_max_minutes: 3,
+                    wave_interval_seconds: 15,
+                    shard_item_id: 4405,
+                    merchant_npc_id: 50_030,
+                    ..l2_config::RiftInvasionConfig::default()
+                },
             },
             ..GameConfig::default()
         };
@@ -292,6 +340,11 @@ mod l2r_tests {
                 max_count: 6,
             }
         );
+        let rift = l2r_settings(&config).rift;
+        assert!(!rift.enabled);
+        assert_eq!((rift.interval_min_ms, rift.interval_max_ms), (120_000, 180_000));
+        assert_eq!(rift.wave_interval_ms, 15_000);
+        assert_eq!((rift.shard_item_id, rift.merchant_npc_id), (4405, 50_030));
         // The reload path maps the file the same way.
         assert_eq!(l2r_settings_of(&config.l2r), l2r_settings(&config));
     }

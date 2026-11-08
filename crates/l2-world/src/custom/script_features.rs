@@ -98,6 +98,8 @@ pub struct CustomScriptSettings {
     pub event_schedules: BTreeMap<String, Vec<String>>,
     /// `GeneralConfig.CUSTOM_NPC_DATA` (`CustomNpcData`): Elpies and Rabbits use custom NPCs.
     pub custom_npc_data: bool,
+    /// The zones of `data/RiftInvasion.xml` (the rift invasions, D-64).
+    pub rift_zones: Vec<l2_data::RiftZoneDef>,
 }
 
 /// What the world keeps for the custom scripts.
@@ -109,6 +111,10 @@ pub struct CustomScriptWorld {
     pub(crate) transmog: super::transmog::TransmogWorld,
     /// The flags of the `EventMonster`s a script set.
     pub(crate) event_monsters: BTreeMap<ObjectId, super::events::EventMonsterFlags>,
+    /// The rewards of the NPCs a script gave their own (the rift monsters, D-64).
+    pub(crate) reward_overrides: BTreeMap<ObjectId, super::rift_invasion::NpcRewardOverride>,
+    /// The heals of skills while a script records them (`World::set_heal_ledger`).
+    pub(crate) heal_ledger: Option<Vec<(ObjectId, ObjectId, f64)>>,
 }
 
 impl World {

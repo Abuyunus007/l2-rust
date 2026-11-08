@@ -46,6 +46,8 @@ impl EffectHandler for HealPercent {
         // Prevents overheal and negative amount.
         let amount = Vital::Hp.clamp_to_room(world, effected, amount);
         Vital::Hp.add(world, effected, amount);
+        // The rift invasions count heals as a contribution (D-64).
+        world.note_heal(cx.effector, effected, amount);
         Vital::Hp.send_restored(world, cx.effector, effected, cx.effector != effected, amount);
     }
 }

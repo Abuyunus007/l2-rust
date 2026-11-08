@@ -365,6 +365,8 @@ impl World {
                 && !(gm && settings.gm_trade_restricted_items))
             // `(item.getItemType() == PET_COLLAR) && player.havePetInvItems()`.
             || (template.is_some_and(|t| t.is_pet_item()) && self.have_pet_inv_items(id))
+            // The bound rift shard (`RiftShardBound`, D-64).
+            || item.as_ref().is_some_and(|i| self.is_l2r_bound_item(i.item_id))
             || self.is_inside_zone(id, ZoneId::NoItemDrop);
         let (Some(item), Some(template)) = (item, template) else {
             self.send(id, &discard_refused);

@@ -1052,6 +1052,11 @@ impl World {
         template_override: Option<i32>,
         main_damage_dealer: Option<ObjectId>,
     ) {
+        // A rift monster without its drops (`RiftMobsNormalDrops = false`, D-64): no drop and no
+        // spoil (the sweep list is made here too).
+        if self.npc_reward_override(dying).is_some_and(|o| !o.drops) {
+            return;
+        }
         // `FestivalMonster.doItemDrop`: a blood offering for the killer's party leader (M8-FEST-01).
         if !self.festival_monster_drop(dying, main_damage_dealer) {
             return;

@@ -51,6 +51,118 @@ pub struct L2rConfig {
     /// `[Companions]` key `CompanionMaxCount`: the most companions a player may have at once,
     /// range 1 to 8, default 3.
     pub companion_max_count: i32,
+    /// `[RiftInvasion]` (D-64).
+    pub rift: RiftInvasionConfig,
+}
+
+/// `[RiftInvasion]`: the rift invasions (D-64). An id of 0 means "not set": the feature then logs
+/// a warning and stays off.
+#[derive(Debug, Clone, PartialEq)]
+pub struct RiftInvasionConfig {
+    /// `RiftEnabled`, default true.
+    pub enabled: bool,
+    /// `RiftIntervalMinMinutes`, range 1 to 10080, default 120.
+    pub interval_min_minutes: i64,
+    /// `RiftIntervalMaxMinutes`, range 1 to 10080, default 240; below the minimum it is the
+    /// minimum.
+    pub interval_max_minutes: i64,
+    /// `RiftAnnounceLeadMinutes`, range 0 to 60, default 5.
+    pub announce_lead_minutes: i64,
+    /// `RiftAnnounceReminder`: a reminder one minute before the start, default true.
+    pub announce_reminder: bool,
+    /// `RiftWaveCount`, range 1 to 10, default 3.
+    pub wave_count: i32,
+    /// `RiftWaveIntervalSeconds`, range 10 to 3600, default 90.
+    pub wave_interval_seconds: i64,
+    /// `RiftDurationMinutes`, range 1 to 240, default 20.
+    pub duration_minutes: i64,
+    /// `RiftMobLevelOffset`, range -20 to 20, default 0.
+    pub mob_level_offset: i32,
+    /// `RiftScaleWithPlayers`, default true.
+    pub scale_with_players: bool,
+    /// `RiftScalePerPlayerPercent`, range 0 to 100, default 8.
+    pub scale_per_player_percent: i32,
+    /// `RiftScaleMaxPercent`, range 0 to 1000, default 200.
+    pub scale_max_percent: i32,
+    /// `RiftParticipationRadius`, range 100 to 10000, default 3000.
+    pub participation_radius: i32,
+    /// `RiftMinContributionPercent`, range 0.0 to 100.0, default 1.
+    pub min_contribution_percent: f64,
+    /// `RiftShardItemId`, 0 (not set) or an item id, default 0.
+    pub shard_item_id: i32,
+    /// `RiftShardsPerWave`, range 0 to 10000, default 5.
+    pub shards_per_wave: i64,
+    /// `RiftShardsBoss`, range 0 to 10000, default 15.
+    pub shards_boss: i64,
+    /// `RiftTopContributorBonus`, range 0 to 10000, default 5.
+    pub top_contributor_bonus: i64,
+    /// `RiftShardBound`, default true.
+    pub shard_bound: bool,
+    /// `RiftWeeklyCap`, range 0 (no cap) to 1000000, default 400.
+    pub weekly_cap: i64,
+    /// `RiftWeeklyResetDay`, 1 (Monday) to 7 (Sunday), default 3 (Wednesday).
+    pub weekly_reset_day: i32,
+    /// `RiftWeeklyResetHour`, range 0 to 23, default 6.
+    pub weekly_reset_hour: i32,
+    /// `RiftMobsNormalDrops`, default false.
+    pub mobs_normal_drops: bool,
+    /// `RiftMobsExpRate`: factor on the exp of rift monsters, range 0.0 to 100.0, default 1.0.
+    pub mobs_exp_rate: f64,
+    /// `RiftMobsSpRate`: factor on the SP of rift monsters, range 0.0 to 100.0, default 1.0.
+    pub mobs_sp_rate: f64,
+    /// `RiftMerchantNpcId`, 0 (not set) or an NPC id, default 0.
+    pub merchant_npc_id: i32,
+    /// `RiftMerchantLoc` `x,y,z`, default `83400,148000,-3400` (Giran).
+    pub merchant_loc: (i32, i32, i32),
+}
+
+impl RiftInvasionConfig {
+    fn from_ini(ini: &IniFile) -> Self {
+        let interval_min_minutes = ranged_long(ini, "RiftIntervalMinMinutes", 120, 1, 10_080);
+        let mut interval_max_minutes = ranged_long(ini, "RiftIntervalMaxMinutes", 240, 1, 10_080);
+        if interval_max_minutes < interval_min_minutes {
+            warn!(
+                "Config 'RiftIntervalMaxMinutes' in file '{}' is {interval_max_minutes}, below 'RiftIntervalMinMinutes' {interval_min_minutes}, using {interval_min_minutes}.",
+                L2rConfig::FILE
+            );
+            interval_max_minutes = interval_min_minutes;
+        }
+        Self {
+            enabled: ini.get_bool("RiftEnabled", true),
+            interval_min_minutes,
+            interval_max_minutes,
+            announce_lead_minutes: ranged_long(ini, "RiftAnnounceLeadMinutes", 5, 0, 60),
+            announce_reminder: ini.get_bool("RiftAnnounceReminder", true),
+            wave_count: ranged_long(ini, "RiftWaveCount", 3, 1, 10) as i32,
+            wave_interval_seconds: ranged_long(ini, "RiftWaveIntervalSeconds", 90, 10, 3_600),
+            duration_minutes: ranged_long(ini, "RiftDurationMinutes", 20, 1, 240),
+            mob_level_offset: ranged_long(ini, "RiftMobLevelOffset", 0, -20, 20) as i32,
+            scale_with_players: ini.get_bool("RiftScaleWithPlayers", true),
+            scale_per_player_percent: ranged_long(ini, "RiftScalePerPlayerPercent", 8, 0, 100) as i32,
+            scale_max_percent: ranged_long(ini, "RiftScaleMaxPercent", 200, 0, 1_000) as i32,
+            participation_radius: ranged_long(ini, "RiftParticipationRadius", 3_000, 100, 10_000) as i32,
+            min_contribution_percent: ranged(ini, "RiftMinContributionPercent", 1.0, 0.0, 100.0),
+            shard_item_id: ranged_long(ini, "RiftShardItemId", 0, 0, i64::from(i32::MAX)) as i32,
+            shards_per_wave: ranged_long(ini, "RiftShardsPerWave", 5, 0, 10_000),
+            shards_boss: ranged_long(ini, "RiftShardsBoss", 15, 0, 10_000),
+            top_contributor_bonus: ranged_long(ini, "RiftTopContributorBonus", 5, 0, 10_000),
+            shard_bound: ini.get_bool("RiftShardBound", true),
+            weekly_cap: ranged_long(ini, "RiftWeeklyCap", 400, 0, 1_000_000),
+            weekly_reset_day: ranged_long(ini, "RiftWeeklyResetDay", 3, 1, 7) as i32,
+            weekly_reset_hour: ranged_long(ini, "RiftWeeklyResetHour", 6, 0, 23) as i32,
+            mobs_normal_drops: ini.get_bool("RiftMobsNormalDrops", false),
+            mobs_exp_rate: ranged(ini, "RiftMobsExpRate", 1.0, 0.0, 100.0),
+            mobs_sp_rate: ranged(ini, "RiftMobsSpRate", 1.0, 0.0, 100.0),
+            merchant_npc_id: ranged_long(ini, "RiftMerchantNpcId", 0, 0, i64::from(i32::MAX)) as i32,
+            merchant_loc: location(ini, "RiftMerchantLoc", (83_400, 148_000, -3_400)),
+        }
+    }
+}
+
+impl Default for RiftInvasionConfig {
+    fn default() -> Self {
+        Self::from_ini(&IniFile::empty(L2rConfig::FILE))
+    }
 }
 
 impl L2rConfig {
@@ -67,6 +179,7 @@ impl L2rConfig {
             companion_combat_mode: ini.get_enum("CompanionCombatMode", CompanionCombatMode::Passive),
             companion_fee_per_level: ranged_long(ini, "CompanionFeePerLevel", 5_000, 0, 1_000_000),
             companion_max_count: ranged_long(ini, "CompanionMaxCount", 3, 1, 8) as i32,
+            rift: RiftInvasionConfig::from_ini(ini),
         }
     }
 }
@@ -105,6 +218,25 @@ fn ranged_long(ini: &IniFile, key: &str, default: i64, min: i64, max: i64) -> i6
     default
 }
 
+/// A location `x,y,z`; anything else gives `default` and a warning.
+fn location(ini: &IniFile, key: &str, default: (i32, i32, i32)) -> (i32, i32, i32) {
+    let Some(text) = ini.get_value(key) else {
+        return default;
+    };
+    let parts: Vec<Option<i32>> = text.split(',').map(|p| p.trim().parse().ok()).collect();
+    if let [Some(x), Some(y), Some(z)] = parts[..] {
+        return (x, y, z);
+    }
+    warn!(
+        "Config '{key}' in file '{}' is '{text}', not x,y,z, using default: {},{},{}.",
+        L2rConfig::FILE,
+        default.0,
+        default.1,
+        default.2
+    );
+    default
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -134,8 +266,63 @@ CompanionMaxCount = 5
                 companion_combat_mode: CompanionCombatMode::Passive,
                 companion_fee_per_level: 5_000,
                 companion_max_count: 3,
+                rift: RiftInvasionConfig::default(),
             }
         );
+    }
+
+    #[test]
+    fn rift_defaults_are_the_documented_ones() {
+        let r = RiftInvasionConfig::default();
+        assert!(r.enabled && r.announce_reminder && r.scale_with_players && r.shard_bound);
+        assert!(!r.mobs_normal_drops);
+        assert_eq!((r.interval_min_minutes, r.interval_max_minutes), (120, 240));
+        assert_eq!(
+            (r.announce_lead_minutes, r.wave_count, r.wave_interval_seconds),
+            (5, 3, 90)
+        );
+        assert_eq!((r.duration_minutes, r.mob_level_offset), (20, 0));
+        assert_eq!((r.scale_per_player_percent, r.scale_max_percent), (8, 200));
+        assert_eq!((r.participation_radius, r.min_contribution_percent), (3_000, 1.0));
+        assert_eq!((r.shard_item_id, r.merchant_npc_id), (0, 0));
+        assert_eq!(
+            (r.shards_per_wave, r.shards_boss, r.top_contributor_bonus),
+            (5, 15, 5)
+        );
+        assert_eq!(
+            (r.weekly_cap, r.weekly_reset_day, r.weekly_reset_hour),
+            (400, 3, 6)
+        );
+        assert_eq!((r.mobs_exp_rate, r.mobs_sp_rate), (1.0, 1.0));
+        assert_eq!(r.merchant_loc, (83_400, 148_000, -3_400));
+    }
+
+    #[test]
+    fn rift_values_are_read_and_checked() {
+        let text = "\
+[RiftInvasion]
+RiftEnabled = false
+RiftIntervalMinMinutes = 30
+RiftIntervalMaxMinutes = 10
+RiftWaveCount = 11
+RiftShardItemId = 4405
+RiftMerchantNpcId = 50030
+RiftMerchantLoc = 1, -2 ,3
+RiftMinContributionPercent = 2.5
+RiftWeeklyResetDay = 0
+";
+        let r = L2rConfig::from_ini(&IniFile::parse(L2rConfig::FILE, text).unwrap()).rift;
+        assert!(!r.enabled);
+        // The maximum below the minimum is the minimum.
+        assert_eq!((r.interval_min_minutes, r.interval_max_minutes), (30, 30));
+        // Out of range: the defaults.
+        assert_eq!((r.wave_count, r.weekly_reset_day), (3, 3));
+        assert_eq!((r.shard_item_id, r.merchant_npc_id), (4405, 50_030));
+        assert_eq!(r.merchant_loc, (1, -2, 3));
+        assert_eq!(r.min_contribution_percent, 2.5);
+        let bad = "RiftMerchantLoc = 1,2\n";
+        let r = L2rConfig::from_ini(&IniFile::parse(L2rConfig::FILE, bad).unwrap()).rift;
+        assert_eq!(r.merchant_loc, (83_400, 148_000, -3_400));
     }
 
     #[test]
