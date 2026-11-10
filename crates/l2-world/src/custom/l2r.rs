@@ -51,6 +51,16 @@ impl Default for CompanionSettings {
     }
 }
 
+/// `[RiftInvasion]` `RiftZoneChoice`: how the zone of the next rift is picked (D-64).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum RiftZoneChoice {
+    /// Any zone, all alike.
+    Random,
+    /// A zone that fits the levels of the players online, more likely the more of them fit.
+    #[default]
+    ByPlayers,
+}
+
 /// The `[RiftInvasion]` section of `L2R.ini` (D-64). `Default` is the default of every key.
 #[derive(Debug, Clone, PartialEq)]
 pub struct RiftInvasionSettings {
@@ -108,6 +118,14 @@ pub struct RiftInvasionSettings {
     pub merchant_npc_id: i32,
     /// `RiftMerchantLoc`.
     pub merchant_loc: (i32, i32, i32),
+    /// `RiftZoneChoice`.
+    pub zone_choice: RiftZoneChoice,
+    /// `RiftZoneLevelMargin`.
+    pub zone_level_margin: i32,
+    /// `RiftAdaptiveLevel`.
+    pub adaptive_level: bool,
+    /// `RiftAdaptiveRange`.
+    pub adaptive_range: i32,
 }
 
 impl Default for RiftInvasionSettings {
@@ -140,6 +158,10 @@ impl Default for RiftInvasionSettings {
             mobs_sp_rate: 1.0,
             merchant_npc_id: 0,
             merchant_loc: (83_400, 148_000, -3_400),
+            zone_choice: RiftZoneChoice::ByPlayers,
+            zone_level_margin: 5,
+            adaptive_level: false,
+            adaptive_range: 5,
         }
     }
 }

@@ -178,6 +178,13 @@ fn rift_settings_of(r: &l2_config::RiftInvasionConfig) -> RiftInvasionSettings {
         mobs_sp_rate: r.mobs_sp_rate,
         merchant_npc_id: r.merchant_npc_id,
         merchant_loc: r.merchant_loc,
+        zone_choice: match r.zone_choice {
+            l2_config::RiftZoneChoice::Random => l2_world::RiftZoneChoice::Random,
+            l2_config::RiftZoneChoice::ByPlayers => l2_world::RiftZoneChoice::ByPlayers,
+        },
+        zone_level_margin: r.zone_level_margin,
+        adaptive_level: r.adaptive_level,
+        adaptive_range: r.adaptive_range,
     }
 }
 
@@ -323,6 +330,9 @@ mod l2r_tests {
                     wave_interval_seconds: 15,
                     shard_item_id: 4405,
                     merchant_npc_id: 50_030,
+                    zone_choice: l2_config::RiftZoneChoice::Random,
+                    adaptive_level: true,
+                    adaptive_range: 2,
                     ..l2_config::RiftInvasionConfig::default()
                 },
             },
@@ -345,6 +355,8 @@ mod l2r_tests {
         assert_eq!((rift.interval_min_ms, rift.interval_max_ms), (120_000, 180_000));
         assert_eq!(rift.wave_interval_ms, 15_000);
         assert_eq!((rift.shard_item_id, rift.merchant_npc_id), (4405, 50_030));
+        assert_eq!(rift.zone_choice, l2_world::RiftZoneChoice::Random);
+        assert_eq!((rift.adaptive_level, rift.adaptive_range), (true, 2));
         // The reload path maps the file the same way.
         assert_eq!(l2r_settings_of(&config.l2r), l2r_settings(&config));
     }

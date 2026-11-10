@@ -10,6 +10,7 @@
 //! world's timer wheel); the rewards are [`reward`]. Everything a rift spawns is a script spawn
 //! (never saved): after a restart nothing of a running rift is left in the world.
 
+mod level;
 mod machine;
 mod reward;
 #[cfg(test)]
@@ -21,7 +22,8 @@ use l2_protocol_game::SystemMessageId;
 use l2_util::ObjectId;
 use l2_world::admin::JavaException;
 use l2_world::{
-    DamageInfo, NpcRewardOverride, RiftInvasionSettings, Script, ScriptCtx, ScriptNpc, ScriptSetup, World,
+    DamageInfo, NpcRewardOverride, RiftInvasionSettings, RiftZoneChoice, Script, ScriptCtx, ScriptNpc,
+    ScriptSetup, World,
 };
 use tracing::{debug, info, warn};
 
@@ -265,6 +267,7 @@ fn tick(ctx: &mut ScriptCtx<'_>) {
         ctx.state::<RiftState>().machine.plan(next);
         debug!("RiftInvasion: the next rift opens in {} s.", next / 1000);
     }
+    skip_unfitting_rift(ctx, &s);
     if ctx.state::<RiftState>().machine.is_running() {
         account(ctx, &s);
     }
@@ -280,6 +283,88 @@ fn tick(ctx: &mut ScriptCtx<'_>) {
         .machine
         .tick(TICK_MS, &timing(&s), wave_cleared, boss_dead);
     perform(ctx, &s, actions);
+}
+
+/// `RiftZoneChoice = BY_PLAYERS`: a planned rift that is about to be announced while nobody
+/// online fits any zone does not come; the next one is planned instead.
+fn skip_unfitting_rift(ctx: &mut ScriptCtx<'_>, s: &RiftInvasionSettings) {
+    if s.zone_choice != RiftZoneChoice::ByPlayers {
+        return;
+    }
+    let machine = &ctx.state::<RiftState>().machine;
+    let due = machine.phase() == Phase::Idle
+        && machine
+            .until_open()
+            .is_some_and(|until| until - TICK_MS <= s.announce_lead_ms);
+    if !due || ctx.state::<RiftState>().zone.is_some() {
+        return;
+    }
+    if fitting_zone_weights(ctx, s).iter().all(|w| *w == 0) {
+        ctx.state::<RiftState>().machine = Machine::default();
+        info!("RiftInvasion: no player online fits a rift zone; no rift now, the next one is planned.");
+    }
+}
+
+/// How many players online fit each zone (`RiftZoneLevelMargin`).
+fn fitting_zone_weights(ctx: &mut ScriptCtx<'_>, s: &RiftInvasionSettings) -> Vec<usize> {
+    let ranges: Vec<(i32, i32)> = ctx
+        .world()
+        .rift_invasion_zones()
+        .iter()
+        .map(|z| (z.min_level, z.max_level))
+        .collect();
+    let levels: Vec<i32> = ctx
+        .online_players()
+        .into_iter()
+        .map(|p| ctx.player_level(p))
+        .collect();
+    level::zone_weights(&ranges, &levels, s.zone_level_margin)
+}
+
+/// The zone of the next rift: by the players online (`BY_PLAYERS`, any zone when nobody fits)
+/// or any zone (`RANDOM`).
+fn pick_zone(ctx: &mut ScriptCtx<'_>, s: &RiftInvasionSettings) -> usize {
+    let zones = ctx.world().rift_invasion_zones().len();
+    if s.zone_choice == RiftZoneChoice::ByPlayers {
+        let weights = fitting_zone_weights(ctx, s);
+        let total: usize = weights.iter().sum();
+        if total > 0 {
+            let roll = usize::try_from(ctx.get_random(i32::try_from(total).unwrap_or(i32::MAX))).unwrap_or(0);
+            if let Some(zone) = level::pick_weighted(&weights, roll) {
+                debug!("RiftInvasion: zone weights by players online: {weights:?}.");
+                return zone;
+            }
+        }
+    }
+    usize::try_from(ctx.get_random(i32::try_from(zones).unwrap_or(1))).unwrap_or(0)
+}
+
+/// The level of a wave (`n`, 1 is the first) or of the boss (`None`): the zone's levels, or with
+/// `RiftAdaptiveLevel` the median level of the players near the rift (the boss two more), kept
+/// within `RiftAdaptiveRange` of the zone; then `RiftMobLevelOffset`.
+fn monster_level(
+    ctx: &mut ScriptCtx<'_>,
+    s: &RiftInvasionSettings,
+    zone: &l2_world::RiftZoneDef,
+    wave: Option<usize>,
+) -> i32 {
+    let fixed = match wave {
+        Some(n) => wave_level(zone.min_level, zone.max_level, n, s.wave_count),
+        None => zone.max_level,
+    };
+    let adapted = if s.adaptive_level {
+        let levels: Vec<i32> = players_in_radius(ctx, s)
+            .into_iter()
+            .map(|p| ctx.player_level(p))
+            .collect();
+        level::median(&levels).map(|median| {
+            let target = if wave.is_some() { median } else { median + 2 };
+            level::adapt(target, zone.min_level, zone.max_level, s.adaptive_range)
+        })
+    } else {
+        None
+    };
+    (adapted.unwrap_or(fixed) + s.mob_level_offset).clamp(1, 99)
 }
 
 fn random_interval(ctx: &mut ScriptCtx<'_>, s: &RiftInvasionSettings) -> i64 {
@@ -395,7 +480,7 @@ fn perform(ctx: &mut ScriptCtx<'_>, s: &RiftInvasionSettings, actions: Vec<Actio
 fn announce(ctx: &mut ScriptCtx<'_>, s: &RiftInvasionSettings) {
     let zones = ctx.world().rift_invasion_zones().len();
     if ctx.state::<RiftState>().zone.is_none_or(|z| z >= zones) {
-        let pick = usize::try_from(ctx.get_random(i32::try_from(zones).unwrap_or(1))).unwrap_or(0);
+        let pick = pick_zone(ctx, s);
         ctx.state::<RiftState>().zone = Some(pick);
     }
     let zone = zone_name(ctx);
@@ -489,14 +574,14 @@ fn spawn_wave(ctx: &mut ScriptCtx<'_>, s: &RiftInvasionSettings, n: usize) {
     let players = players_in_radius(ctx, s).len();
     let percent = scale_percent(s, players);
     let count = (i64::from(wave.count) * i64::from(percent) + 99) / 100;
-    let level = wave_level(zone.min_level, zone.max_level, n, s.wave_count) + s.mob_level_offset;
+    let level = monster_level(ctx, s, &zone, Some(n));
     let hp = percent as f32 / 100.0;
     let index = ctx.state::<RiftState>().stages.len();
     ctx.state::<RiftState>().stages.push(StageRun::default());
     for _ in 0..count {
         let pick = ctx.get_random(i32::try_from(wave.mobs.len()).unwrap_or(1));
         let mob = wave.mobs[usize::try_from(pick).unwrap_or(0)];
-        spawn_mob(ctx, s, mob, index, level.clamp(1, 99), hp);
+        spawn_mob(ctx, s, mob, index, level, hp);
     }
     let spawned = ctx.state::<RiftState>().stages[index].alive.len();
     info!(
@@ -528,7 +613,7 @@ fn spawn_boss(ctx: &mut ScriptCtx<'_>, s: &RiftInvasionSettings) {
         },
         alive: BTreeSet::new(),
     });
-    let level = (zone.max_level + s.mob_level_offset).clamp(1, 99);
+    let level = monster_level(ctx, s, &zone, None);
     let boss = spawn_mob(ctx, s, zone.boss_id, index, level, hp);
     let name = boss
         .and_then(|b| {

@@ -32,6 +32,30 @@ impl FromStr for CompanionCombatMode {
     }
 }
 
+/// `[RiftInvasion]` `RiftZoneChoice`: how the zone of the next rift is picked (D-64).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RiftZoneChoice {
+    /// Any zone, all alike.
+    Random,
+    /// A zone that fits the levels of the players online, more likely the more of them fit.
+    ByPlayers,
+}
+
+impl FromStr for RiftZoneChoice {
+    type Err = ();
+
+    /// Case-insensitive: `BY_PLAYERS`, `by_players`, `RANDOM`.
+    fn from_str(s: &str) -> Result<Self, ()> {
+        if s.eq_ignore_ascii_case("RANDOM") {
+            Ok(Self::Random)
+        } else if s.eq_ignore_ascii_case("BY_PLAYERS") {
+            Ok(Self::ByPlayers)
+        } else {
+            Err(())
+        }
+    }
+}
+
 /// Settings of `config/L2R.ini`.
 #[derive(Debug, Clone, PartialEq)]
 pub struct L2rConfig {
@@ -114,6 +138,17 @@ pub struct RiftInvasionConfig {
     pub merchant_npc_id: i32,
     /// `RiftMerchantLoc` `x,y,z`, default `83400,148000,-3400` (Giran).
     pub merchant_loc: (i32, i32, i32),
+    /// `RiftZoneChoice`, `RANDOM` or `BY_PLAYERS`, default `BY_PLAYERS`.
+    pub zone_choice: RiftZoneChoice,
+    /// `RiftZoneLevelMargin`: levels a player may be below or above a zone's range and still
+    /// count for it, range 0 to 20, default 5.
+    pub zone_level_margin: i32,
+    /// `RiftAdaptiveLevel`: the monsters take the median level of the players near the rift,
+    /// default false.
+    pub adaptive_level: bool,
+    /// `RiftAdaptiveRange`: how far an adapted level may leave the zone's range, range 0 to 20,
+    /// default 5.
+    pub adaptive_range: i32,
 }
 
 impl RiftInvasionConfig {
@@ -155,6 +190,10 @@ impl RiftInvasionConfig {
             mobs_sp_rate: ranged(ini, "RiftMobsSpRate", 1.0, 0.0, 100.0),
             merchant_npc_id: ranged_long(ini, "RiftMerchantNpcId", 0, 0, i64::from(i32::MAX)) as i32,
             merchant_loc: location(ini, "RiftMerchantLoc", (83_400, 148_000, -3_400)),
+            zone_choice: ini.get_enum("RiftZoneChoice", RiftZoneChoice::ByPlayers),
+            zone_level_margin: ranged_long(ini, "RiftZoneLevelMargin", 5, 0, 20) as i32,
+            adaptive_level: ini.get_bool("RiftAdaptiveLevel", false),
+            adaptive_range: ranged_long(ini, "RiftAdaptiveRange", 5, 0, 20) as i32,
         }
     }
 }
@@ -327,6 +366,27 @@ CompanionMaxCount = 5
         );
         assert_eq!((r.mobs_exp_rate, r.mobs_sp_rate), (1.0, 1.0));
         assert_eq!(r.merchant_loc, (83_400, 148_000, -3_400));
+        assert_eq!(r.zone_choice, RiftZoneChoice::ByPlayers);
+        assert_eq!(
+            (r.zone_level_margin, r.adaptive_level, r.adaptive_range),
+            (5, false, 5)
+        );
+    }
+
+    #[test]
+    fn rift_zone_choice_and_adaptive_level_are_read() {
+        let text = "RiftZoneChoice = random\nRiftZoneLevelMargin = 21\nRiftAdaptiveLevel = true\nRiftAdaptiveRange = 3\n";
+        let r = L2rConfig::from_ini(&IniFile::parse(L2rConfig::FILE, text).unwrap()).rift;
+        assert_eq!(r.zone_choice, RiftZoneChoice::Random);
+        // 21 is out of range: the default.
+        assert_eq!(
+            (r.zone_level_margin, r.adaptive_level, r.adaptive_range),
+            (5, true, 3)
+        );
+        let r =
+            L2rConfig::from_ini(&IniFile::parse(L2rConfig::FILE, "RiftZoneChoice = SOMEWHERE\n").unwrap())
+                .rift;
+        assert_eq!(r.zone_choice, RiftZoneChoice::ByPlayers);
     }
 
     #[test]

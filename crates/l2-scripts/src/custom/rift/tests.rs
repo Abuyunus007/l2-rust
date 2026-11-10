@@ -71,12 +71,32 @@ fn rift_settings() -> RiftInvasionSettings {
     }
 }
 
+/// A second zone for the level 80s (same place and monsters, other levels).
+fn high_zone() -> RiftZoneDef {
+    RiftZoneDef {
+        name: "High Field".to_owned(),
+        min_level: 80,
+        max_level: 84,
+        ..zone()
+    }
+}
+
 fn scene_with(settings: RiftInvasionSettings, gm_items: Vec<l2_world::ItemData>) -> ScriptTest {
+    scene_full(settings, vec![zone()], 40, gm_items)
+}
+
+/// The rift zones `zones` and a GM of `gm_level`.
+fn scene_full(
+    settings: RiftInvasionSettings,
+    zones: Vec<RiftZoneDef>,
+    gm_level: i32,
+    gm_items: Vec<l2_world::ItemData>,
+) -> ScriptTest {
     let mut registry = ScriptRegistry::new();
     registry.add(RiftInvasion);
     let mut t = ScriptTest::new_with(registry, NPCS, &items(1), &[], |world, _| {
         world.set_custom_script_settings(CustomScriptSettings {
-            rift_zones: vec![zone()],
+            rift_zones: zones,
             ..CustomScriptSettings::default()
         });
         world.set_l2r_settings(L2rSettings {
@@ -84,7 +104,7 @@ fn scene_with(settings: RiftInvasionSettings, gm_items: Vec<l2_world::ItemData>)
             ..L2rSettings::default()
         });
     });
-    t.enter(GM, 40, gm_items);
+    t.enter(GM, gm_level, gm_items);
     t.wait_ms(1_100);
     t.take();
     t
@@ -617,4 +637,114 @@ fn the_shipped_shop_pays_in_shards_and_sells_known_items() {
     // The shipped L2R.ini turns the rifts on with these ids.
     let ini = std::fs::read_to_string(root.join("config/L2R.ini")).unwrap();
     assert!(ini.contains("RiftShardItemId = 4405") && ini.contains("RiftMerchantNpcId = 50030"));
+}
+
+/// Planned rifts every two minutes, announced one minute ahead.
+fn quick_plan() -> RiftInvasionSettings {
+    RiftInvasionSettings {
+        interval_min_ms: 120_000,
+        interval_max_ms: 120_000,
+        announce_lead_ms: 60_000,
+        ..rift_settings()
+    }
+}
+
+#[test]
+fn a_planned_rift_goes_to_the_zone_the_players_fit() {
+    // Two zones, the players online are level 82: the 80s zone every time.
+    for seed_run in 0..3 {
+        let mut t = scene_full(quick_plan(), vec![zone(), high_zone()], 82, vec![]);
+        for id in 2..(2 + seed_run) {
+            t.enter(id, 83, vec![]);
+        }
+        t.wait_ms(61_000);
+        let out = t.take();
+        assert!(
+            texts_to(&out, GM).contains("about to open in High Field"),
+            "{}",
+            texts_to(&out, GM)
+        );
+    }
+    // RANDOM: the 40s zone comes too, sooner or later.
+    let mut seen_low = false;
+    for _ in 0..8 {
+        let mut t = scene_full(
+            RiftInvasionSettings {
+                zone_choice: l2_world::RiftZoneChoice::Random,
+                ..quick_plan()
+            },
+            vec![zone(), high_zone()],
+            82,
+            vec![],
+        );
+        for id in 2..6 {
+            t.enter(id, 82, vec![]);
+        }
+        t.wait_ms(61_000);
+        seen_low |= texts_to(&t.take(), GM).contains("about to open in Test Field");
+        if seen_low {
+            break;
+        }
+    }
+    assert!(seen_low, "RANDOM never picked the 40s zone");
+}
+
+#[test]
+fn no_rift_comes_when_nobody_fits_a_zone_but_a_gm_can_still_start_one() {
+    // Level 20: more than 5 below the 40s zone.
+    let mut t = scene_full(quick_plan(), vec![zone()], 20, vec![]);
+    t.wait_ms(61_000);
+    let out = t.take();
+    assert!(
+        !texts_to(&out, GM).contains("about to open"),
+        "{}",
+        texts_to(&out, GM)
+    );
+    assert_eq!(rift_npcs(&t), 0);
+    // The next one is planned again.
+    t.wait_ms(1_100);
+    assert!(with_state(&mut t, |s| s.machine.until_open()).is_some());
+    t.wait_ms(130_000);
+    assert_eq!(rift_npcs(&t), 0, "still nobody fits");
+    // A GM's start takes a zone anyway.
+    assert!(start_rift(&mut t, ""));
+    assert_eq!(last_stage(&mut t).len(), 3);
+}
+
+#[test]
+fn adaptive_levels_follow_the_players_near_the_rift() {
+    let adaptive = RiftInvasionSettings {
+        adaptive_level: true,
+        ..rift_settings()
+    };
+    // Level 60 players at an 80s rift: 5 below the zone at most, 75; the boss 60 + 2, also 75.
+    let mut t = scene_full(adaptive.clone(), vec![zone(), high_zone()], 60, vec![]);
+    t.enter(OTHER, 62, vec![]);
+    assert!(start_rift(&mut t, "2"));
+    let wave = last_stage(&mut t);
+    assert_eq!(t.world.stats(wave[0]).unwrap().level(), 75);
+    beat_stage(&mut t, GM);
+    beat_stage(&mut t, GM);
+    let boss = last_stage(&mut t);
+    assert_eq!(t.world.stats(boss[0]).unwrap().level(), 75);
+
+    // Level 43 players at the 40s rift: the median, the boss two more.
+    let mut t = scene_full(adaptive, vec![zone()], 43, vec![]);
+    assert!(start_rift(&mut t, "1"));
+    assert_eq!(level_of_last(&mut t), 43);
+    beat_stage(&mut t, GM);
+    assert_eq!(level_of_last(&mut t), 43);
+    beat_stage(&mut t, GM);
+    assert_eq!(level_of_last(&mut t), 45);
+
+    // Without it: the zone's levels, whoever comes.
+    let mut t = scene_full(rift_settings(), vec![zone(), high_zone()], 60, vec![]);
+    assert!(start_rift(&mut t, "2"));
+    assert_eq!(level_of_last(&mut t), 80);
+}
+
+/// The level of the first living monster of the last stage.
+fn level_of_last(t: &mut ScriptTest) -> i32 {
+    let mob = last_stage(t)[0];
+    t.world.stats(mob).unwrap().level()
 }

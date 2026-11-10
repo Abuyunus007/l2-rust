@@ -2,7 +2,7 @@
 //! the world: the monsters' own rewards, their level and HP, the bound rift shard, and the heals
 //! done while a rift is open. The script owns the rift itself.
 
-use l2_data::RiftZoneDef;
+pub use l2_data::RiftZoneDef;
 use l2_util::ObjectId;
 
 use crate::world::World;

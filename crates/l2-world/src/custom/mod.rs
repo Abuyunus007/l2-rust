@@ -51,7 +51,7 @@ pub mod walker_bot;
 pub use boss_announcements::BossAnnouncementSettings;
 pub use champion::ChampionSettings;
 pub use custom_mail::CustomMailEntry;
-pub use l2r::{CompanionCombatMode, CompanionSettings, L2rSettings, RiftInvasionSettings};
+pub use l2r::{CompanionCombatMode, CompanionSettings, L2rSettings, RiftInvasionSettings, RiftZoneChoice};
 pub use misc::{
     BankingSettings, CaptchaSettings, CustomMiscSettings, CustomMiscState, CustomMiscTimer, DualboxSettings,
     MultilangSettings, ScreenWelcomeSettings,
