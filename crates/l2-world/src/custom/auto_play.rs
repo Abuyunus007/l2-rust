@@ -15,7 +15,7 @@
 // augmentation are left out of the `.playskills` list (`auto_play_ui.rs`), like the skills of the
 // worn items.
 
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap};
 use std::sync::Arc;
 
 use l2_data::skill::TargetType;
@@ -109,6 +109,9 @@ pub(crate) struct AutoPlayer {
     pub(crate) auto_playing: bool,
     /// `AutoPlayTaskManager.IDLE_COUNT`.
     idle_count: i32,
+    /// Our own: the passes spent on each spoiled corpse (walking to it or sweeping it); a corpse
+    /// that takes more than [`SWEEP_PASSES`] is left (unreachable, or the inventory is full).
+    sweep_passes: BTreeMap<ObjectId, u32>,
 }
 
 impl Default for AutoPlayer {
@@ -128,6 +131,7 @@ impl Default for AutoPlayer {
             skill_index: 0,
             auto_playing: false,
             idle_count: 0,
+            sweep_passes: BTreeMap::new(),
         }
     }
 }
@@ -145,6 +149,27 @@ impl AutoPlayer {
         id
     }
 }
+
+/// Sweeper and Sweeper Festival.
+const SWEEPER: i32 = 42;
+const SWEEPER_FESTIVAL: i32 = 444;
+/// How far the auto play looks for corpses to sweep.
+const SWEEP_SEARCH_RANGE: i32 = 600;
+/// How close it walks to a corpse before Sweeper (the auto play's own distance for its target).
+const SWEEP_DISTANCE: f64 = 40.0;
+/// Sweeper Festival's `affectRange`: it reaches (and consumes) every corpse this near the caster.
+const FESTIVAL_RANGE: f64 = 200.0;
+/// The festival is cast when this many corpses lie this near the player (a little inside the
+/// range, for the collision of the corpses).
+const FESTIVAL_CAST_REACH: f64 = 190.0;
+/// The spot to walk to: a corpse with the others this near it (inside the cast reach, so a step
+/// that ends a little short still casts).
+const FESTIVAL_GATHER: f64 = 170.0;
+/// "More than two" corpses make the festival worth it.
+const FESTIVAL_MIN_CORPSES: usize = 3;
+/// Passes (700 ms each) spent on one corpse before it is left: about the time a spoiled corpse
+/// lies before it decays.
+const SWEEP_PASSES: u32 = 15;
 
 /// What the world keeps for the auto play.
 #[derive(Debug, Default)]
@@ -466,6 +491,11 @@ impl World {
             return;
         }
 
+        // Our own: a spoiler sweeps what it spoiled before it does anything else.
+        if self.auto_play_sweep(id) {
+            return;
+        }
+
         // Next target mode.
         let target_mode = self.auto_play_target_mode(id);
 
@@ -473,32 +503,7 @@ impl World {
         let target = self.target_of(id).filter(|t| self.is_creature_object(*t));
         if let Some(creature) = target {
             if self.is_alike_dead(creature) || !self.auto_play_target_mode_valid(target_mode, id, creature) {
-                // Logic for Spoil (254) skill.
-                let has_spoil = self
-                    .auto_play
-                    .players
-                    .get(&id)
-                    .is_some_and(|p| p.skills.contains(&254));
-                if self.is_monster(creature)
-                    && self.is_dead(creature)
-                    && has_spoil
-                    && let Some(sweeper) = self.known_skill(id, 42)
-                    && self.check_spoil_owner(creature, id)
-                {
-                    // Move to target.
-                    if self.play_distance_2d(id, creature) > 40.0 {
-                        if !self.is_moving(id)
-                            && let Some((x, y, z)) = self.position_of(creature)
-                        {
-                            self.set_intention_move_to(id, x, y, z);
-                        }
-                        return;
-                    }
-                    // Sweep target.
-                    self.do_cast(id, sweeper);
-                    return;
-                }
-                // Clear target.
+                // A spoiled corpse was swept above (`auto_play_sweep`); this one is done.
                 self.set_target(id, None);
             } else {
                 let their_target = self.creature_target(creature);
@@ -532,6 +537,165 @@ impl World {
                 return;
             }
             self.set_intention_attack(id, creature);
+        }
+    }
+
+    /// Our own (Java sweeps only the target, and only with Spoil in the auto skills): a living
+    /// character that knows Sweeper sweeps every corpse within [`SWEEP_SEARCH_RANGE`] that it (or
+    /// its looter party) spoiled, before it hunts on. Only corpses it can sweep now count: not too
+    /// old, and the loot fits into the inventory (Sweeper's `canSweep`; the skill consumes the
+    /// corpse even when its loot does not fit, so such a corpse is left lying). With three or more
+    /// within Sweeper Festival's reach, the festival castable and no corpse of somebody else's
+    /// spoil in its range (the festival consumes every corpse it reaches), it casts the festival
+    /// there; otherwise Sweeper on the nearest. A failed sweep is tried again the next pass, for at
+    /// most [`SWEEP_PASSES`] passes per corpse. While a monster attacks it, or it cannot move, it
+    /// only sweeps what it reaches without walking. `true`: the pass is over.
+    fn auto_play_sweep(&mut self, id: ObjectId) -> bool {
+        let Some(sweeper) = self.known_skill(id, SWEEPER) else {
+            return false;
+        };
+        if self.is_alike_dead(id) {
+            return false;
+        }
+        let near = self.visible_objects_in_range(id, SWEEP_SEARCH_RANGE);
+        let sweepable: Vec<(ObjectId, (i32, i32, i32))> = near
+            .iter()
+            .copied()
+            .filter(|c| self.is_monster(*c) && self.is_dead(*c) && self.is_sweep_active(*c))
+            .filter(|c| self.check_spoil_owner(*c, id))
+            .filter(|c| !self.is_old_corpse(*c))
+            .filter(|c| self.check_inventory_slots_and_weight(id, &self.spoil_loot_items(*c)))
+            .filter_map(|c| Some((c, self.position_of(c)?)))
+            .collect();
+        // Forget the corpses that are swept or gone; skip those that took too many passes.
+        let corpses: Vec<(ObjectId, (i32, i32, i32))> = match self.auto_play.players.get_mut(&id) {
+            Some(player) => {
+                player
+                    .sweep_passes
+                    .retain(|c, _| sweepable.iter().any(|(s, _)| s == c));
+                sweepable
+                    .into_iter()
+                    .filter(|(c, _)| player.sweep_passes.get(c).copied().unwrap_or(0) < SWEEP_PASSES)
+                    .collect()
+            }
+            None => return false,
+        };
+        let Some(me) = self.position_of(id) else {
+            return false;
+        };
+        if corpses.is_empty() {
+            return false;
+        }
+        // Fighting back comes first; a rooted or overloaded character cannot walk anyway.
+        let may_walk = !self.is_movement_disabled(id) && !self.auto_play_under_attack(id, &near);
+
+        if let Some(festival) = self.known_skill(id, SWEEPER_FESTIVAL)
+            && corpses.len() >= FESTIVAL_MIN_CORPSES
+            && let Some(skill) = self
+                .skill_table()
+                .and_then(|t| t.get(festival.id, festival.level).cloned())
+            && self.auto_play_can_use_magic(id, Some(id), &skill)
+        {
+            let reach = |at: (i32, i32, i32), range: f64| -> Vec<ObjectId> {
+                corpses
+                    .iter()
+                    .filter(|(_, p)| distance_3d(at, *p) <= range)
+                    .map(|(c, _)| *c)
+                    .collect()
+            };
+            let here = reach(me, FESTIVAL_CAST_REACH);
+            if here.len() >= FESTIVAL_MIN_CORPSES && self.festival_is_safe(id, me, &here, &near) {
+                self.count_sweep_pass(id, here.iter().copied());
+                // A corpse as the target: the auto skills stop (they need a living one).
+                self.set_target(id, Some(here[0]));
+                self.do_cast(id, festival);
+                return true;
+            }
+            // The corpse with the most others in its reach, the nearest of equals.
+            let best = corpses
+                .iter()
+                .map(|(c, p)| (reach(*p, FESTIVAL_GATHER), *c, *p))
+                .filter(|(group, _, p)| {
+                    group.len() >= FESTIVAL_MIN_CORPSES && self.festival_is_safe(id, *p, group, &near)
+                })
+                .max_by(|a, b| {
+                    a.0.len()
+                        .cmp(&b.0.len())
+                        .then(distance_3d(me, b.2).total_cmp(&distance_3d(me, a.2)))
+                });
+            // Walk there, unless it is here already (then the corpses lie too far apart for the
+            // festival after all: Sweeper below).
+            if let Some((_, corpse, (x, y, z))) = best
+                && may_walk
+                && distance_2d(me, (x, y, z)) > SWEEP_DISTANCE
+            {
+                self.count_sweep_pass(id, [corpse]);
+                self.set_target(id, Some(corpse));
+                if !self.is_moving(id) {
+                    self.set_intention_move_to(id, x, y, z);
+                }
+                return true;
+            }
+        }
+
+        // Sweeper on the nearest corpse.
+        let Some(&(corpse, (x, y, z))) = corpses
+            .iter()
+            .min_by(|a, b| distance_3d(me, a.1).total_cmp(&distance_3d(me, b.1)))
+        else {
+            return false;
+        };
+        let close = distance_2d(me, (x, y, z)) <= SWEEP_DISTANCE;
+        if !close && !may_walk {
+            return false;
+        }
+        self.count_sweep_pass(id, [corpse]);
+        if self.target_of(id) != Some(corpse) {
+            self.set_target(id, Some(corpse));
+        }
+        if !close {
+            if !self.is_moving(id) {
+                self.set_intention_move_to(id, x, y, z);
+            }
+            return true;
+        }
+        self.do_cast(id, sweeper);
+        true
+    }
+
+    /// A living monster near the player has him as its target.
+    fn auto_play_under_attack(&self, id: ObjectId, near: &[ObjectId]) -> bool {
+        near.iter()
+            .any(|c| self.is_monster(*c) && !self.is_alike_dead(*c) && self.creature_target(*c) == Some(id))
+    }
+
+    /// Sweeper Festival cast at `at` sweeps `group` and consumes every corpse in its range: no
+    /// corpse there may hold a spoil the player cannot take (somebody else's, too old, or not
+    /// fitting), and the loot of the group fits together.
+    fn festival_is_safe(
+        &self,
+        id: ObjectId,
+        at: (i32, i32, i32),
+        group: &[ObjectId],
+        near: &[ObjectId],
+    ) -> bool {
+        let foreign = near.iter().any(|c| {
+            self.is_dead(*c)
+                && self.is_sweep_active(*c)
+                && !group.contains(c)
+                && self
+                    .position_of(*c)
+                    .is_some_and(|p| distance_3d(at, p) <= FESTIVAL_RANGE)
+        });
+        let loot: Vec<_> = group.iter().flat_map(|c| self.spoil_loot_items(*c)).collect();
+        !foreign && self.check_inventory_slots_and_weight(id, &loot)
+    }
+
+    fn count_sweep_pass(&mut self, id: ObjectId, corpses: impl IntoIterator<Item = ObjectId>) {
+        if let Some(player) = self.auto_play.players.get_mut(&id) {
+            for corpse in corpses {
+                *player.sweep_passes.entry(corpse).or_default() += 1;
+            }
         }
     }
 

@@ -70,6 +70,7 @@ const TEMPLATE: &str = r#"<list><classId>0</classId><staticData>
 const ITEMS: &str = r#"<list>
 <item id="57" type="EtcItem" name="Adena"><set name="is_stackable" val="true" /></item>
 <item id="1060" type="EtcItem" name="Healing Potion"><set name="is_stackable" val="true" /></item>
+<item id="1542" type="EtcItem" name="Junk" />
 <item id="1539" type="EtcItem" name="Greater Healing Potion"><set name="is_stackable" val="true" /></item>
 <item id="1540" type="EtcItem" name="Buff Scroll"><set name="handler" val="ItemSkills" /><skills><skill id="9001" level="1" /></skills></item>
 <item id="1541" type="EtcItem" name="Herb of Test"><set name="ex_immediate_effect" val="true" /><skills><skill id="9001" level="1" /></skills></item>
@@ -83,6 +84,18 @@ fn skills_xml() -> String {
             "<skill id=\"{id}\" levels=\"1\" name=\"Test Buff {id}\"><operateType>A2</operateType><targetType>SELF</targetType>             <abnormalLevel>1</abnormalLevel><abnormalTime>600</abnormalTime><abnormalType>{abnormal}</abnormalType>             <castRange>400</castRange><effectRange>900</effectRange><isMagic>1</isMagic>             <effects><effect name=\"Buff\"><mul stat=\"pDef\" val=\"1.01\"/></effect></effects></skill>"
         ));
     }
+    // Sweeper (42) and Sweeper Festival (444), as the datapack has them (no enchant routes).
+    xml.push_str(
+        r#"<skill id="42" levels="1" name="Sweeper"><operateType>A1</operateType><targetType>CORPSE_MOB</targetType>
+        <castRange>20</castRange><effectRange>400</effectRange><hitTime>500</hitTime><isMagic>2</isMagic>
+        <magicLevel>10</magicLevel><mpConsume>3</mpConsume><reuseDelay>500</reuseDelay>
+        <conditions><player canSweep="true" /></conditions>
+        <effects><effect name="Sweeper" /><effect name="ConsumeBody" /></effects></skill>
+        <skill id="444" levels="1" name="Sweeper Festival"><operateType>A1</operateType><targetType>AURA_CORPSE_MOB</targetType>
+        <affectRange>200</affectRange><hitTime>500</hitTime><isMagic>2</isMagic><magicLevel>10</magicLevel>
+        <mpConsume>12</mpConsume><reuseDelay>3000</reuseDelay>
+        <effects><effect name="Sweeper" /><effect name="ConsumeBody" /></effects></skill>"#,
+    );
     xml.push_str("</list>");
     xml
 }
@@ -122,6 +135,17 @@ const NPCS: &str = r#"<?xml version="1.0"?><list>
   <collision><radius normal="10"/><height normal="20"/></collision>
   <ai aggroRange="300" isAggressive="false"/>
   <fakePlayer classId="1" fakePlayerTalkable="false"/>
+</npc>
+<npc id="20005" type="Monster" level="5" name="Spoil Rat" usingServerSideName="true">
+  <race>BEAST</race>
+  <stats str="40" int="21" dex="30" wit="20" con="43" men="20">
+    <vitals hp="300" hpRegen="2" mp="400.0" mpRegen="0.9" />
+    <attack physical="8" magical="5" random="30" critical="4" accuracy="4.75" attackSpeed="253" type="SWORD" range="40" distance="80" width="120" />
+    <defence physical="44.44444" magical="29.5" />
+    <speed><walk ground="20" /><run ground="50" /></speed>
+  </stats>
+  <collision><radius normal="10"/><height normal="20"/></collision>
+  <dropLists><spoil><item id="1060" min="1" max="1" chance="100"/></spoil></dropLists>
 </npc>
 <npc id="20004" type="Monster" level="5" name="Chaos Rat" usingServerSideName="true">
   <race>BEAST</race>
@@ -1492,4 +1516,321 @@ fn character_select_counts_a_released_premium_offline_player() {
         done: Box::new(move |p| *slot.lock().unwrap() = Some(p)),
     });
     assert_eq!(again.lock().unwrap().clone(), Some(None));
+}
+
+// ------------------------------------------------------------------ auto play: sweeping
+
+const SPOIL_RAT: i32 = 20005;
+const SPOIL_ITEM: i32 = 1060;
+
+/// A spoiler on `.play` (Sweeper, and Sweeper Festival with `festival`), without Spoil in its
+/// auto skills.
+fn spoiler(festival: bool) -> Scene {
+    spoiler_with(festival, vec![])
+}
+
+fn spoiler_with(festival: bool, items: Vec<ItemData>) -> Scene {
+    let mut s = Scene::with(
+        Switches {
+            auto_play: Some(auto_play_on()),
+            ..Switches::default()
+        },
+        items,
+        &[],
+    );
+    assert!(s.world.add_skill(ME, 42, 1));
+    if festival {
+        assert!(s.world.add_skill(ME, 444, 1));
+    }
+    s
+}
+
+/// A Spoil Rat at `(dx, dy)` from the player, spoiled by `spoiler` and killed by the player: a
+/// corpse with its spoil.
+fn spoiled_corpse(s: &mut Scene, dx: i32, dy: i32, spoiler: ObjectId) -> ObjectId {
+    let rat = s.world.spawn_npc_at(SPOIL_RAT, X + dx, Y + dy, Z, 0).unwrap();
+    s.world.test_set_spoiler(rat, Some(spoiler));
+    s.world.add_damage_hate(rat, ME, 100, 1);
+    assert!(s.world.do_die(rat, Some(ME)));
+    rat
+}
+
+fn spoil_items(s: &Scene) -> i64 {
+    s.world
+        .player(ME)
+        .unwrap()
+        .data
+        .items
+        .iter()
+        .filter(|i| i.item_id == SPOIL_ITEM)
+        .map(|i| i.count)
+        .sum()
+}
+
+fn skills_cast(out: &[Vec<u8>]) -> Vec<i32> {
+    of::<l2_protocol_game::server::MagicSkillUse>(out, ServerOpcode::MagicSkillUse)
+        .into_iter()
+        .filter(|m| m.creature_id == ME.0)
+        .map(|m| m.skill_id)
+        .collect()
+}
+
+/// A spoiled corpse that is not the target is swept, without Spoil in the auto skills.
+#[test]
+fn auto_play_sweeps_a_spoiled_corpse() {
+    let mut s = spoiler(false);
+    let rat = spoiled_corpse(&mut s, 150, 0, ME);
+    assert!(s.world.is_sweep_active(rat));
+    assert_eq!(s.world.target_of(ME), None);
+    s.say(".play start");
+    s.advance(5_000);
+    assert!(!s.world.is_sweep_active(rat), "the corpse was swept");
+    assert_eq!(spoil_items(&s), 1);
+    assert!(skills_cast(&s.me.take()).contains(&42));
+}
+
+/// Two corpses: Sweeper on each, no festival (it is for more than two).
+#[test]
+fn two_corpses_are_swept_one_by_one() {
+    let mut s = spoiler(true);
+    let a = spoiled_corpse(&mut s, 150, 0, ME);
+    let b = spoiled_corpse(&mut s, 170, 60, ME);
+    s.say(".play start");
+    s.advance(6_000);
+    assert!(!s.world.is_sweep_active(a) && !s.world.is_sweep_active(b));
+    assert_eq!(spoil_items(&s), 2);
+    let cast = skills_cast(&s.me.take());
+    assert!(cast.contains(&42) && !cast.contains(&444), "{cast:?}");
+}
+
+/// Three corpses close together: one Sweeper Festival sweeps them all.
+#[test]
+fn three_corpses_bring_sweeper_festival() {
+    let mut s = spoiler(true);
+    let corpses = [
+        spoiled_corpse(&mut s, 250, 0, ME),
+        spoiled_corpse(&mut s, 300, 60, ME),
+        spoiled_corpse(&mut s, 280, -60, ME),
+    ];
+    s.say(".play start");
+    s.advance(6_000);
+    assert!(corpses.iter().all(|c| !s.world.is_sweep_active(*c)));
+    assert_eq!(spoil_items(&s), 3);
+    let cast = skills_cast(&s.me.take());
+    assert_eq!(cast.iter().filter(|id| **id == 444).count(), 1, "{cast:?}");
+    assert!(!cast.contains(&42), "{cast:?}");
+}
+
+/// Three corpses without Sweeper Festival: Sweeper three times.
+#[test]
+fn without_the_festival_three_corpses_are_swept_one_by_one() {
+    let mut s = spoiler(false);
+    let corpses = [
+        spoiled_corpse(&mut s, 150, 0, ME),
+        spoiled_corpse(&mut s, 170, 60, ME),
+        spoiled_corpse(&mut s, 160, -60, ME),
+    ];
+    s.say(".play start");
+    s.advance(8_000);
+    assert!(corpses.iter().all(|c| !s.world.is_sweep_active(*c)));
+    assert_eq!(spoil_items(&s), 3);
+    let cast = skills_cast(&s.me.take());
+    assert_eq!(cast.iter().filter(|id| **id == 42).count(), 3, "{cast:?}");
+}
+
+/// A corpse somebody else spoiled is not the player's to sweep; a character without Sweeper
+/// never tries.
+#[test]
+fn other_spoils_and_non_spoilers_are_left_alone() {
+    let mut s = spoiler(true);
+    let rat = spoiled_corpse(&mut s, 150, 0, ObjectId(0x1000_0099));
+    s.say(".play start");
+    s.advance(3_000);
+    assert!(s.world.is_sweep_active(rat));
+    assert!(skills_cast(&s.me.take()).is_empty());
+
+    let mut s = Scene::new(Switches {
+        auto_play: Some(auto_play_on()),
+        ..Switches::default()
+    });
+    let rat = spoiled_corpse(&mut s, 150, 0, ME);
+    s.say(".play start");
+    s.advance(3_000);
+    assert!(s.world.is_sweep_active(rat));
+}
+
+const PLAIN_RAT: i32 = 20001;
+
+fn is_corpse_lying(s: &Scene, corpse: ObjectId) -> bool {
+    s.world.npc(corpse).is_some_and(|n| !n.decayed)
+}
+
+/// The owner's complaint: a live monster near does not draw the spoiler away from its corpse.
+#[test]
+fn sweeping_comes_before_hunting_on() {
+    let mut s = spoiler(false);
+    let corpse = spoiled_corpse(&mut s, 150, 0, ME);
+    let live = s.world.spawn_npc_at(PLAIN_RAT, X + 300, Y, Z, 0).unwrap();
+    let full = s.world.npc(live).unwrap().core.cur_hp;
+    s.say(".play start");
+    s.advance(1_400);
+    assert_eq!(s.world.target_of(ME), Some(corpse));
+    assert_eq!(s.world.npc(live).unwrap().core.cur_hp, full);
+    s.advance(4_000);
+    assert_eq!(spoil_items(&s), 1);
+    assert_eq!(s.world.target_of(ME), Some(live), "then it hunts on");
+}
+
+/// A sweep that fails (no MP) is tried again the next passes, until it works.
+#[test]
+fn a_failed_sweep_is_tried_again() {
+    let mut s = spoiler(false);
+    s.world.set_current_mp(ME, 1.0, false);
+    let corpse = spoiled_corpse(&mut s, 150, 0, ME);
+    s.say(".play start");
+    s.advance(2_000);
+    assert!(s.world.is_sweep_active(corpse));
+    s.world.set_current_mp(ME, 50.0, false);
+    s.advance(2_000);
+    assert!(!s.world.is_sweep_active(corpse));
+    assert_eq!(spoil_items(&s), 1);
+}
+
+/// A corpse that cannot be swept is left after its passes (about 10 s), and the hunt goes on.
+#[test]
+fn an_unsweepable_corpse_is_given_up() {
+    let mut s = spoiler(false);
+    s.world.set_current_mp(ME, 0.0, false);
+    let corpse = spoiled_corpse(&mut s, 150, 0, ME);
+    let live = s.world.spawn_npc_at(PLAIN_RAT, X + 300, Y, Z, 0).unwrap();
+    s.say(".play start");
+    s.advance(3_000);
+    assert_eq!(s.world.target_of(ME), Some(corpse));
+    s.advance(9_000);
+    assert!(s.world.is_sweep_active(corpse), "never swept");
+    assert_eq!(s.world.target_of(ME), Some(live));
+}
+
+/// While the festival is on reuse, more corpses are swept with Sweeper.
+#[test]
+fn sweeper_while_the_festival_is_on_reuse() {
+    let mut s = spoiler(true);
+    let first = [
+        spoiled_corpse(&mut s, 250, 0, ME),
+        spoiled_corpse(&mut s, 300, 60, ME),
+        spoiled_corpse(&mut s, 280, -60, ME),
+    ];
+    s.say(".play start");
+    s.advance(4_000);
+    assert!(first.iter().all(|c| !s.world.is_sweep_active(*c)));
+    let cast = skills_cast(&s.me.take());
+    assert_eq!(cast.iter().filter(|id| **id == 444).count(), 1, "{cast:?}");
+    // Three more right next to the player, within the festival's 3 s reuse.
+    let (px, py, _) = s.world.position_of(ME).unwrap();
+    let second = [
+        spoiled_corpse(&mut s, px - X + 20, py - Y, ME),
+        spoiled_corpse(&mut s, px - X - 20, py - Y + 20, ME),
+        spoiled_corpse(&mut s, px - X, py - Y - 25, ME),
+    ];
+    s.advance(2_500);
+    assert!(second.iter().all(|c| !s.world.is_sweep_active(*c)));
+    assert_eq!(spoil_items(&s), 6);
+    let cast = skills_cast(&s.me.take());
+    assert_eq!(cast.iter().filter(|id| **id == 42).count(), 3, "{cast:?}");
+    assert!(!cast.contains(&444), "{cast:?}");
+}
+
+/// A full inventory: Sweeper would consume the corpse without its loot, so the corpse is left
+/// lying (for the player to make room and sweep it by hand).
+#[test]
+fn a_full_inventory_leaves_the_corpse_lying() {
+    let junk: Vec<ItemData> = (0..150).map(|i| item(0x1000_1000 + i, 1542, 1)).collect();
+    let mut s = spoiler_with(true, junk);
+    let corpses = [
+        spoiled_corpse(&mut s, 150, 0, ME),
+        spoiled_corpse(&mut s, 170, 60, ME),
+        spoiled_corpse(&mut s, 160, -60, ME),
+    ];
+    s.say(".play start");
+    s.advance(3_000);
+    assert!(
+        corpses
+            .iter()
+            .all(|c| s.world.is_sweep_active(*c) && is_corpse_lying(&s, *c))
+    );
+    assert!(skills_cast(&s.me.take()).is_empty());
+}
+
+/// Another spoiler's corpse among them: no festival (it would consume that corpse), Sweeper
+/// on each own one, and the other's spoil stays.
+#[test]
+fn no_festival_next_to_somebody_elses_spoil() {
+    let mut s = spoiler(true);
+    let own = [
+        spoiled_corpse(&mut s, 150, 0, ME),
+        spoiled_corpse(&mut s, 170, 60, ME),
+        spoiled_corpse(&mut s, 160, -60, ME),
+    ];
+    let other = spoiled_corpse(&mut s, 190, 20, ObjectId(0x1000_0099));
+    s.say(".play start");
+    s.advance(8_000);
+    assert!(own.iter().all(|c| !s.world.is_sweep_active(*c)));
+    assert!(s.world.is_sweep_active(other) && is_corpse_lying(&s, other));
+    let cast = skills_cast(&s.me.take());
+    assert!(!cast.contains(&444), "{cast:?}");
+}
+
+/// While a monster attacks the player, it fights back instead of walking to a corpse; the corpse
+/// is swept afterwards.
+#[test]
+fn fighting_back_comes_before_walking_to_a_corpse() {
+    let mut s = spoiler(false);
+    let corpse = spoiled_corpse(&mut s, 300, 0, ME);
+    let attacker = s.world.spawn_npc_at(PLAIN_RAT, X + 40, Y, Z, 0).unwrap();
+    s.world.add_damage_hate(attacker, ME, 1, 100);
+    s.world.set_intention_attack(attacker, ME);
+    s.say(".play start");
+    s.advance(1_400);
+    assert_eq!(s.world.target_of(ME), Some(attacker));
+    assert!(s.world.is_sweep_active(corpse));
+    // The attacker dies: the corpse is swept.
+    s.world.do_die(attacker, Some(ME));
+    s.advance(4_000);
+    assert!(!s.world.is_sweep_active(corpse));
+}
+
+/// A corpse with less than `CorpseConsumeSkillAllowedTimeBeforeDecay` (2 s) left is too old for
+/// Sweeper: it is not tried (no "too old" message each pass, no lost hunting time).
+#[test]
+fn a_corpse_too_old_is_not_tried() {
+    let mut s = spoiler(false);
+    let corpse = spoiled_corpse(&mut s, 20, 0, ME);
+    while s.world.decay_remaining_ms(corpse) > 1_800 {
+        s.advance(100);
+    }
+    s.me.take();
+    s.say(".play start");
+    s.advance(1_000);
+    assert!(is_corpse_lying(&s, corpse) && s.world.is_sweep_active(corpse));
+    let out = s.me.take();
+    assert!(!skills_cast(&out).contains(&42));
+    let messages: Vec<SystemMessage> = of(&out, ServerOpcode::SystemMessage);
+    assert!(
+        messages
+            .iter()
+            .all(|m| m.id != SystemMessageId::TheCorpseIsTooOldTheSkillCannotBeUsed)
+    );
+}
+
+/// A dead spoiler on auto play does not sweep.
+#[test]
+fn a_dead_spoiler_does_not_sweep() {
+    let mut s = spoiler(false);
+    let corpse = spoiled_corpse(&mut s, 20, 0, ME);
+    assert!(s.world.do_die(ME, None));
+    s.world.start_auto_play(ME);
+    s.me.take();
+    s.advance(1_500);
+    assert!(s.world.is_sweep_active(corpse));
+    assert!(!skills_cast(&s.me.take()).contains(&42));
 }
