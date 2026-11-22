@@ -34,8 +34,8 @@ async fn setup() -> Option<(TestDb, Pool)> {
             .filter(|line| !line.trim_start().starts_with('#'))
             .collect::<Vec<_>>()
             .join("\n");
-        for statement in text.split(';').map(str::trim).filter(|s| !s.is_empty()) {
-            db.exec(statement).await;
+        for statement in l2_db::script_statements(&text) {
+            db.exec(&statement).await;
         }
     }
     let (user, password, host, port) = db.parts();

@@ -93,7 +93,7 @@ impl TestDb {
         .unwrap();
         let mut setup = Self::connect_to(&url, &name).await;
         for file in SCHEMA {
-            for statement in file.split(';').map(str::trim).filter(|s| !s.is_empty()) {
+            for statement in l2_db::script_statements(file) {
                 sqlx::query(AssertSqlSafe(statement))
                     .execute(&mut setup)
                     .await

@@ -2465,6 +2465,7 @@ dependencies = [
  "eframe",
  "egui",
  "l2-config",
+ "l2-db",
  "sqlx",
  "tempfile",
  "thiserror 2.0.21",

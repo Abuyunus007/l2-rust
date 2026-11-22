@@ -1,3 +1,5 @@
 [toolchain]
-channel = "stable"
+# Pinned: a newer rustfmt formats macro bodies differently, so CI and every developer use this one.
+# Raise it on purpose (then run cargo fmt --all and cargo clippy once) and in .github/workflows/ci.yml.
+channel = "1.99.0"
 components = ["rustfmt", "clippy"]

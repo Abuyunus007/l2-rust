@@ -71,7 +71,7 @@ the global jobs (daily reset, Olympiad, Seven Signs, sieges, boss states).
 
 | What | Version / notes |
 |---|---|
-| Rust | stable, 1.85 or newer (edition 2024); `rustup` installs the right toolchain from `rust-toolchain.toml` |
+| Rust | 1.99.0 (edition 2024), pinned in `rust-toolchain.toml`: `rustup` installs it by itself |
 | MariaDB or MySQL | a database with the **L2JMobius H5 schema** (created with the L2JMobius DB installer) |
 | Geodata | L2J geodata (`.l2j` files) for movement and line of sight (a separate download, too big for the repo) |
 | Client | a Lineage 2 High Five client |

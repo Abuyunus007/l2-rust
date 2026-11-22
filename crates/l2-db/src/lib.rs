@@ -10,6 +10,7 @@ mod game;
 mod login;
 mod pool;
 mod schema;
+mod script;
 
 pub use error::{DbError, Result};
 pub use game::PetitionFeedbackRepository;
@@ -91,3 +92,4 @@ pub use login::{
 };
 pub use pool::{Pool, connect, connect_options, connect_with, pool_max_size, pool_min_idle};
 pub use schema::GAME_SCHEMA;
+pub use script::{script_statements, split_statements};

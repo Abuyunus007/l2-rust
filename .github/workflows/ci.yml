@@ -26,8 +26,10 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@master
         with:
+          # The version of rust-toolchain.toml: fmt and clippy must judge as they do locally.
+          toolchain: 1.99.0
           components: rustfmt, clippy
 
       - name: Cache
@@ -66,13 +68,15 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: 1.99.0
 
       - name: Cache
         uses: Swatinem/rust-cache@v2
 
-      - name: Database tests of l2-db, login-server and game-server (unit + integration)
-        run: cargo test --no-fail-fast -p l2-db -p login-server -p game-server -- --nocapture
+      - name: Database tests of l2-db, login-server, game-server and l2-setup (unit + integration)
+        run: cargo test --no-fail-fast -p l2-db -p login-server -p game-server -p l2-setup -- --nocapture
 
   hygiene:
     name: Repo hygiene
@@ -85,5 +89,6 @@ jobs:
           if [ -n "$bad" ]; then echo "Forbidden files committed:"; echo "$bad"; exit 1; fi
       - name: Line endings are LF
         run: |
-          crlf=$(git ls-files --eol | awk '$1 ~ /crlf/ {print $NF}' | grep -vE '\.(bat|cmd|ps1)$' || true)
+          # dist/ keeps the line endings of the L2JMobius datapack (`dist/** -text` in .gitattributes).
+          crlf=$(git ls-files --eol | awk '$1 ~ /crlf/ {print $NF}' | grep -vE '\.(bat|cmd|ps1)$' | grep -v '^dist/' || true)
           if [ -n "$crlf" ]; then echo "Files with CRLF in the index:"; echo "$crlf"; exit 1; fi

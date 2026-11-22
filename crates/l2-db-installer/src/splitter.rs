@@ -1,38 +1,6 @@
 //! Splits an SQL script into statements exactly like the Java installer.
 
-/// Statements of one script, in file order, each without its trailing newline.
-///
-/// Rules (all taken from Java, not from the SQL grammar):
-/// - every line is trimmed; empty lines and lines starting with `--` are skipped;
-/// - a `--` inside a line cuts the rest of the line off;
-/// - a line starting with `#` is a comment too;
-/// - the remaining lines are joined with one space until a line ends with `;`, which closes the
-///   statement (the `;` stays in the text);
-/// - text after the last `;` is dropped.
-pub fn split_statements(script: &str) -> Vec<String> {
-    let mut statements = Vec::new();
-    let mut current = String::new();
-    for raw in script.lines() {
-        let mut line = raw.trim();
-        // DEVIATION from Java: `#` comment lines are skipped too (see the doc above).
-        if line.starts_with("--") || line.starts_with('#') || line.is_empty() {
-            continue;
-        }
-        if let Some(at) = line.find("--") {
-            line = line[..at].trim();
-        }
-        current.push_str(line);
-        current.push(' ');
-        if line.ends_with(';') {
-            let sql = current.trim();
-            if !sql.is_empty() {
-                statements.push(sql.to_owned());
-            }
-            current.clear();
-        }
-    }
-    statements
-}
+pub use l2_db::split_statements;
 
 #[cfg(test)]
 mod tests {

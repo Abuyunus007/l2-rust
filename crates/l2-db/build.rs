@@ -8,10 +8,17 @@
 use std::fmt::Write as _;
 use std::path::PathBuf;
 
+// The splitter of the crate itself: `custom_mail.sql` has `;` inside a column comment, which a
+// plain split at `;` cut in the middle of its CREATE TABLE.
+#[allow(dead_code)]
+#[path = "src/script.rs"]
+mod script;
+
 fn main() {
     let manifest = PathBuf::from(std::env::var_os("CARGO_MANIFEST_DIR").unwrap());
     let dir = manifest.join("../../dist/db_installer/sql/game");
     println!("cargo:rerun-if-changed={}", dir.display());
+    println!("cargo:rerun-if-changed=src/script.rs");
 
     let mut files: Vec<PathBuf> = std::fs::read_dir(&dir)
         .map(|d| {
@@ -35,17 +42,11 @@ fn main() {
         println!("cargo:rerun-if-changed={}", file.display());
         let text = std::fs::read_to_string(file).unwrap();
         let mut kept = String::new();
-        let without_comments: String = text
-            .replace("\r\n", "\n")
-            .lines()
-            .filter(|l| !l.trim_start().starts_with("--"))
-            .map(|l| format!("{l}\n"))
-            .collect();
-        for statement in without_comments.split(';').map(str::trim) {
+        for statement in script::split_statements(&text) {
             let head = statement.to_ascii_uppercase();
             if head.starts_with("CREATE") || head.starts_with("DROP") {
-                kept.push_str(statement);
-                kept.push_str(";\n");
+                kept.push_str(&statement);
+                kept.push('\n');
             }
         }
         writeln!(out, "    {kept:?},").unwrap();

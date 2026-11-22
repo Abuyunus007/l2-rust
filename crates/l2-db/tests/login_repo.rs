@@ -80,7 +80,7 @@ impl TestDb {
         let options = admin_options.database(&name);
         let pool = connect_with(options.clone(), 10).await.unwrap();
         for file in SCHEMA {
-            for statement in file.split(';').map(str::trim).filter(|s| !s.is_empty()) {
+            for statement in l2_db::script_statements(file) {
                 sqlx::query(AssertSqlSafe(statement))
                     .execute(&pool)
                     .await

@@ -9,6 +9,7 @@ repository.workspace = true
 
 [dependencies]
 l2-config.workspace = true # Interface.ini (EnableGUI, DarkTheme)
+l2-db.workspace = true # the SQL script splitter, shared with the setup and the database tests
 sqlx.workspace = true
 tokio.workspace = true
 clap.workspace = true
