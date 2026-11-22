@@ -748,3 +748,62 @@ fn level_of_last(t: &mut ScriptTest) -> i32 {
     let mob = last_stage(t)[0];
     t.world.stats(mob).unwrap().level()
 }
+
+fn gm_name(t: &ScriptTest) -> String {
+    t.world.player(ObjectId(GM)).unwrap().data.name.clone()
+}
+
+/// `//rift_start here`: the rift opens where the GM stands, with the monsters of the zone that
+/// fits the players near him; the messages name him instead of a zone.
+#[test]
+fn a_gm_opens_a_rift_where_he_stands() {
+    let mut t = scene_full(rift_settings(), vec![zone(), high_zone()], 82, vec![]);
+    admin_rift(&mut t.world, ObjectId(GM), "admin_rift_start here").unwrap();
+    t.ticks(2);
+    let out = t.take();
+    let name = gm_name(&t);
+    assert!(
+        texts_to(&out, GM).contains(&format!("has opened near {name}")),
+        "{}",
+        texts_to(&out, GM)
+    );
+    assert!(texts_to(&out, GM).contains("A rift (High Field) opened near"));
+    // The marker stands on the GM's spot, not on the zone's point (X + 300).
+    let marker = t.npcs_of(MARKER_NPC)[0];
+    let (mx, my, _) = t.world.position_of(marker).unwrap();
+    assert!((mx - X).abs() <= 1 && (my - Y).abs() <= 1, "{mx},{my}");
+    // The monsters of the zone the GM (level 82) fits, around him.
+    let wave = last_stage(&mut t);
+    assert_eq!(t.world.stats(wave[0]).unwrap().level(), 80);
+    for mob in &wave {
+        let (x, y, _) = t.world.position_of(*mob).unwrap();
+        let d = f64::from((x - X).pow(2) + (y - Y).pow(2)).sqrt();
+        assert!(d <= f64::from(RING.1) + 1.0, "{d}");
+    }
+    assert!(status_of(&mut t).contains(&format!("A rift is open near {name}")));
+    // The end names him too, and the next rift is a normal one again.
+    let mut stopped = false;
+    t.world.run_as_script(NAME, |ctx| stopped = stop(ctx));
+    assert!(stopped);
+    assert!(texts_to(&t.take(), GM).contains(&format!("the rift near {name} was closed")));
+    assert!(start_rift(&mut t, "1"));
+    assert!(texts_to(&t.take(), GM).contains("has opened in Test Field"));
+}
+
+/// `//rift_start here <zone>`: that zone's monsters at the GM's spot.
+#[test]
+fn a_gm_rift_here_can_name_its_zone() {
+    let mut t = scene_full(rift_settings(), vec![zone(), high_zone()], 82, vec![]);
+    admin_rift(&mut t.world, ObjectId(GM), "admin_rift_start here 1").unwrap();
+    t.ticks(2);
+    assert!(texts_to(&t.take(), GM).contains("A rift (Test Field) opened near"));
+    assert_eq!(level_of_last(&mut t), 40);
+    let marker = t.npcs_of(MARKER_NPC)[0];
+    assert_eq!(t.world.position_of(marker).map(|p| (p.0, p.1)), Some((X, Y)));
+}
+
+fn status_of(t: &mut ScriptTest) -> String {
+    let mut text = String::new();
+    t.world.run_as_script(NAME, |ctx| text = status_text(ctx));
+    text
+}

@@ -80,6 +80,8 @@ struct RiftState {
     merchant: Option<(ObjectId, i32, (i32, i32, i32))>,
     /// The last reason the rifts could not run (logged once each time it changes).
     problem: Option<String>,
+    /// `//rift_start here`: the rift opens at this spot (the GM's), named after him.
+    here: Option<((i32, i32, i32), String)>,
 }
 
 /// The rift invasions.
@@ -307,17 +309,19 @@ fn skip_unfitting_rift(ctx: &mut ScriptCtx<'_>, s: &RiftInvasionSettings) {
 
 /// How many players online fit each zone (`RiftZoneLevelMargin`).
 fn fitting_zone_weights(ctx: &mut ScriptCtx<'_>, s: &RiftInvasionSettings) -> Vec<usize> {
+    let players = ctx.online_players();
+    zone_weights_of(ctx, s, &players)
+}
+
+/// How many of `players` fit each zone (`RiftZoneLevelMargin`).
+fn zone_weights_of(ctx: &ScriptCtx<'_>, s: &RiftInvasionSettings, players: &[ObjectId]) -> Vec<usize> {
     let ranges: Vec<(i32, i32)> = ctx
         .world()
         .rift_invasion_zones()
         .iter()
         .map(|z| (z.min_level, z.max_level))
         .collect();
-    let levels: Vec<i32> = ctx
-        .online_players()
-        .into_iter()
-        .map(|p| ctx.player_level(p))
-        .collect();
+    let levels: Vec<i32> = players.iter().map(|p| ctx.player_level(*p)).collect();
     level::zone_weights(&ranges, &levels, s.zone_level_margin)
 }
 
@@ -327,16 +331,22 @@ fn pick_zone(ctx: &mut ScriptCtx<'_>, s: &RiftInvasionSettings) -> usize {
     let zones = ctx.world().rift_invasion_zones().len();
     if s.zone_choice == RiftZoneChoice::ByPlayers {
         let weights = fitting_zone_weights(ctx, s);
-        let total: usize = weights.iter().sum();
-        if total > 0 {
-            let roll = usize::try_from(ctx.get_random(i32::try_from(total).unwrap_or(i32::MAX))).unwrap_or(0);
-            if let Some(zone) = level::pick_weighted(&weights, roll) {
-                debug!("RiftInvasion: zone weights by players online: {weights:?}.");
-                return zone;
-            }
+        if let Some(zone) = pick_by_weights(ctx, &weights) {
+            debug!("RiftInvasion: zone weights by players online: {weights:?}.");
+            return zone;
         }
     }
     usize::try_from(ctx.get_random(i32::try_from(zones).unwrap_or(1))).unwrap_or(0)
+}
+
+/// A zone with odds by `weights`; `None` when every weight is 0.
+fn pick_by_weights(ctx: &mut ScriptCtx<'_>, weights: &[usize]) -> Option<usize> {
+    let total: usize = weights.iter().sum();
+    if total == 0 {
+        return None;
+    }
+    let roll = usize::try_from(ctx.get_random(i32::try_from(total).unwrap_or(i32::MAX))).unwrap_or(0);
+    level::pick_weighted(weights, roll)
 }
 
 /// The level of a wave (`n`, 1 is the first) or of the boss (`None`): the zone's levels, or with
@@ -463,9 +473,9 @@ fn perform(ctx: &mut ScriptCtx<'_>, s: &RiftInvasionSettings, actions: Vec<Actio
         match action {
             Action::Announce => announce(ctx, s),
             Action::Remind => {
-                let zone = zone_name(ctx);
+                let place = place(ctx);
                 ctx.broadcast_to_all_online_players(&format!(
-                    "Rift Invasion: the rift in {zone} opens in 1 minute!"
+                    "Rift Invasion: the rift {place} opens in 1 minute!"
                 ));
             }
             Action::Open => open(ctx, s),
@@ -483,7 +493,7 @@ fn announce(ctx: &mut ScriptCtx<'_>, s: &RiftInvasionSettings) {
         let pick = pick_zone(ctx, s);
         ctx.state::<RiftState>().zone = Some(pick);
     }
-    let zone = zone_name(ctx);
+    let place = place(ctx);
     let minutes = ctx
         .state::<RiftState>()
         .machine
@@ -492,8 +502,16 @@ fn announce(ctx: &mut ScriptCtx<'_>, s: &RiftInvasionSettings) {
     if minutes > 0 && s.announce_lead_ms > 0 {
         let plural = if minutes == 1 { "" } else { "s" };
         ctx.broadcast_to_all_online_players(&format!(
-            "Rift Invasion: a rift is about to open in {zone} in {minutes} minute{plural}!"
+            "Rift Invasion: a rift is about to open {place} in {minutes} minute{plural}!"
         ));
+    }
+}
+
+/// Where the rift is, for the messages: `in <zone>`, or `near <GM>` for `//rift_start here`.
+fn place(ctx: &mut ScriptCtx<'_>) -> String {
+    match &ctx.state::<RiftState>().here {
+        Some((_, name)) => format!("near {name}"),
+        None => format!("in {}", zone_name(ctx)),
     }
 }
 
@@ -516,8 +534,13 @@ fn open(ctx: &mut ScriptCtx<'_>, s: &RiftInvasionSettings) {
     else {
         return;
     };
-    let pick = usize::try_from(ctx.get_random(i32::try_from(points.len()).unwrap_or(1))).unwrap_or(0);
-    let (x, y, z) = points.get(pick).copied().unwrap_or_default();
+    let (x, y, z) = match ctx.state::<RiftState>().here.as_ref().map(|(spot, _)| *spot) {
+        Some(spot) => spot,
+        None => {
+            let pick = usize::try_from(ctx.get_random(i32::try_from(points.len()).unwrap_or(1))).unwrap_or(0);
+            points.get(pick).copied().unwrap_or_default()
+        }
+    };
     let z = ctx.geo_height(x, y, z);
     {
         let state = ctx.state::<RiftState>();
@@ -532,10 +555,11 @@ fn open(ctx: &mut ScriptCtx<'_>, s: &RiftInvasionSettings) {
         None => warn!("RiftInvasion: the rift marker (NPC {MARKER_NPC}) cannot be spawned."),
     }
     ctx.world_mut().set_heal_ledger(true);
-    let name = zone_name(ctx);
-    info!("RiftInvasion: a rift opened in {name} at {x}, {y}, {z}.");
+    let place = place(ctx);
+    let zone = zone_name(ctx);
+    info!("RiftInvasion: a rift ({zone}) opened {place} at {x}, {y}, {z}.");
     ctx.broadcast_to_all_online_players(&format!(
-        "Rift Invasion: a rift has opened in {name}! Invaders pour out of it."
+        "Rift Invasion: a rift has opened {place}! Invaders pour out of it."
     ));
 }
 
@@ -623,13 +647,10 @@ fn spawn_boss(ctx: &mut ScriptCtx<'_>, s: &RiftInvasionSettings) {
                 .map(|t| t.name.clone())
         })
         .unwrap_or_else(|| "The rift boss".to_owned());
-    info!(
-        "RiftInvasion: the boss {name} (level {level}) came out in {}.",
-        zone.name
-    );
+    let place = place(ctx);
+    info!("RiftInvasion: the boss {name} (level {level}) came out {place}.");
     ctx.broadcast_to_all_online_players(&format!(
-        "Rift Invasion: {name} has come out of the rift in {}!",
-        zone.name
+        "Rift Invasion: {name} has come out of the rift {place}!"
     ));
     screen_message(ctx, s, &format!("Rift Invasion: {name} has appeared!"));
 }
@@ -687,7 +708,7 @@ fn forget_mob(ctx: &mut ScriptCtx<'_>, mob: ObjectId) {
 
 /// The rift is over: the rewards, the announcement, and nothing of it left in the world.
 fn finish(ctx: &mut ScriptCtx<'_>, s: &RiftInvasionSettings, outcome: Outcome) {
-    let zone = zone_name(ctx);
+    let place = place(ctx);
     let opened = ctx.state::<RiftState>().marker.is_some() || !ctx.state::<RiftState>().stages.is_empty();
     // Nothing of the rift stays.
     let mobs: Vec<ObjectId> = ctx.state::<RiftState>().mobs.keys().copied().collect();
@@ -712,8 +733,8 @@ fn finish(ctx: &mut ScriptCtx<'_>, s: &RiftInvasionSettings, outcome: Outcome) {
         next.problem = state.problem.clone();
     }
     if !opened {
-        info!("RiftInvasion: the rift announced in {zone} was called off.");
-        ctx.broadcast_to_all_online_players(&format!("Rift Invasion: the rift in {zone} will not open."));
+        info!("RiftInvasion: the rift announced {place} was called off.");
+        ctx.broadcast_to_all_online_players(&format!("Rift Invasion: the rift {place} will not open."));
         return;
     }
     let stages: Vec<Stage> = state.stages.into_iter().map(|r| r.stage).collect();
@@ -740,18 +761,18 @@ fn finish(ctx: &mut ScriptCtx<'_>, s: &RiftInvasionSettings, outcome: Outcome) {
     }
     let beaten = stages.iter().filter(|s| s.cleared && !s.boss).count();
     info!(
-        "RiftInvasion: the rift in {zone} ended {outcome:?}: {beaten}/{} waves beaten, {} participants, {} rewarded, {given} shards given.",
+        "RiftInvasion: the rift {place} ended {outcome:?}: {beaten}/{} waves beaten, {} participants, {} rewarded, {given} shards given.",
         s.wave_count,
         state.participants.len(),
         awards.len()
     );
     let text = match outcome {
         Outcome::Completed => format!(
-            "Rift Invasion: the rift in {zone} is closed, its boss is slain! {} defenders were rewarded.",
+            "Rift Invasion: the rift {place} is closed, its boss is slain! {} defenders were rewarded.",
             awards.len()
         ),
-        Outcome::Failed => format!("Rift Invasion: the rift in {zone} collapsed, the invaders got away."),
-        Outcome::Stopped => format!("Rift Invasion: the rift in {zone} was closed."),
+        Outcome::Failed => format!("Rift Invasion: the rift {place} collapsed, the invaders got away."),
+        Outcome::Stopped => format!("Rift Invasion: the rift {place} was closed."),
     };
     ctx.broadcast_to_all_online_players(&text);
 }
@@ -862,7 +883,7 @@ fn status_text(ctx: &mut ScriptCtx<'_>) -> String {
     if let Some(reason) = problem(ctx, &s) {
         return format!("Rift invasions are off ({reason}).");
     }
-    let zone = zone_name(ctx);
+    let zone = place(ctx);
     let machine = ctx.state::<RiftState>().machine.clone();
     match machine.phase() {
         Phase::Idle => match machine.until_open() {
@@ -873,7 +894,7 @@ fn status_text(ctx: &mut ScriptCtx<'_>) -> String {
             None => "No rift is open.".to_owned(),
         },
         Phase::Announced => format!(
-            "A rift opens in {zone} in {} seconds.",
+            "A rift opens {zone} in {} seconds.",
             machine.until_open().unwrap_or(0) / 1000
         ),
         Phase::Open | Phase::Boss => {
@@ -887,14 +908,16 @@ fn status_text(ctx: &mut ScriptCtx<'_>) -> String {
             let alive = state.mobs.len();
             let participants = state.participants.len();
             format!(
-                "A rift is open in {zone}: {what}, {alive} invaders alive.\nParticipants: {participants} ({near} near the rift).\nTime left: {} seconds.",
+                "A rift is open {zone}: {what}, {alive} invaders alive.\nParticipants: {participants} ({near} near the rift).\nTime left: {} seconds.",
                 machine.time_left(&timing(&s)) / 1000
             )
         }
     }
 }
 
-/// Starts a rift now, in `zone` (a name or its number) or a random one.
+/// Starts a rift now, in `zone` (a name or its number) or a random one. `here [zone]` (from a
+/// GM) opens it at the GM's spot; without a zone the monsters are those of the zone that fits the
+/// players near him (the usual choice when nobody there fits).
 fn start(ctx: &mut ScriptCtx<'_>, zone: Option<&str>, gm: Option<ObjectId>) -> bool {
     let tell = |ctx: &mut ScriptCtx<'_>, text: &str| {
         if let Some(gm) = gm {
@@ -910,7 +933,20 @@ fn start(ctx: &mut ScriptCtx<'_>, zone: Option<&str>, gm: Option<ObjectId>) -> b
         tell(ctx, "A rift is already open (//rift_stop ends it).");
         return false;
     }
-    if let Some(wanted) = zone.map(str::trim).filter(|z| !z.is_empty()) {
+    let mut zone = zone.map(str::trim).unwrap_or("");
+    let mut here = None;
+    if let Some(gm) = gm
+        && let Some(rest) = zone
+            .strip_prefix("here")
+            .filter(|r| r.is_empty() || r.starts_with(' '))
+    {
+        let Some(spot) = ctx.world().position_of(gm) else {
+            return false;
+        };
+        here = Some((spot, ctx.player_name(gm)));
+        zone = rest.trim();
+    }
+    if let Some(wanted) = Some(zone).filter(|z| !z.is_empty()) {
         let zones = ctx.world().rift_invasion_zones();
         let by_number = wanted
             .parse::<usize>()
@@ -932,14 +968,39 @@ fn start(ctx: &mut ScriptCtx<'_>, zone: Option<&str>, gm: Option<ObjectId>) -> b
             return false;
         };
         ctx.state::<RiftState>().zone = Some(found);
+    } else if let Some((spot, _)) = &here {
+        let spot = *spot;
+        let radius = f64::from(s.participation_radius);
+        let near: Vec<ObjectId> = ctx
+            .online_players()
+            .into_iter()
+            .filter(|p| {
+                ctx.world()
+                    .position_of(*p)
+                    .is_some_and(|q| distance(spot, q) <= radius)
+            })
+            .collect();
+        let weights = zone_weights_of(ctx, &s, &near);
+        let pick = match pick_by_weights(ctx, &weights) {
+            Some(zone) => zone,
+            None => pick_zone(ctx, &s),
+        };
+        ctx.state::<RiftState>().zone = Some(pick);
     } else if ctx.state::<RiftState>().machine.phase() == Phase::Idle {
         ctx.state::<RiftState>().zone = None;
     }
+    ctx.state::<RiftState>().here = here;
     let actions = ctx.state::<RiftState>().machine.start_now();
     perform(ctx, &s, actions);
+    let place = place(ctx);
     let zone = zone_name(ctx);
-    tell(ctx, &format!("A rift opened in {zone}."));
+    tell(ctx, &format!("A rift ({zone}) opened {place}."));
     true
+}
+
+fn distance(a: (i32, i32, i32), b: (i32, i32, i32)) -> f64 {
+    let (dx, dy, dz) = (f64::from(a.0 - b.0), f64::from(a.1 - b.1), f64::from(a.2 - b.2));
+    (dx * dx + dy * dy + dz * dz).sqrt()
 }
 
 fn stop(ctx: &mut ScriptCtx<'_>) -> bool {
@@ -952,7 +1013,7 @@ fn stop(ctx: &mut ScriptCtx<'_>) -> bool {
     true
 }
 
-/// `//rift_start [zone]`, `//rift_stop`, `//rift_status`, `//rift_cap_reset [player]`.
+/// `//rift_start [here] [zone]`, `//rift_stop`, `//rift_status`, `//rift_cap_reset [player]`.
 fn admin_rift(world: &mut World, gm: ObjectId, command: &str) -> Result<(), JavaException> {
     let (word, rest) = command.split_once(' ').unwrap_or((command, ""));
     let word = word.to_owned();
