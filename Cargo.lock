@@ -2597,6 +2597,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "l2-setup"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "clap",
+ "l2-config",
+ "l2-db-installer",
+ "l2-supervisor",
+ "l2-testkit",
+ "sqlx",
+ "tempfile",
+ "thiserror 2.0.21",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "l2-supervisor"
 version = "0.1.0"
 dependencies = [

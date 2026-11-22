@@ -83,6 +83,42 @@ L2JMobius install is needed. Only the geodata and the client come from elsewhere
 
 ## Installation
 
+### Easiest: the setup script
+
+```bash
+git clone https://github.com/Abuyunus007/l2-rust.git
+cd l2-rust
+setup.cmd          # Windows (double-click works too)
+./setup.sh         # Linux
+```
+
+The script checks the tools and offers to install what is missing (Rust; on Windows the C++
+build tools and MariaDB through `winget`; on Linux it shows the packages and can create a
+database user for the server), builds everything, then runs `l2-setup`, which asks a few
+questions and makes a ready-to-run server folder (default `release/L2RustServer`, git-ignored):
+
+1. **Server folder**: the programs, the datapack and the settings of `dist/`, the start
+   scripts. Run the setup again to update it: programs and datapack are replaced (files a newer
+   datapack dropped are removed), your settings (`config/`, `supervisor.ini`, ...) are kept.
+2. **Geodata**: a folder with `*.l2j` files (optional; without it monsters walk through walls).
+3. **Database**:
+   - **new database**: the schema is installed (an existing database of that name is only
+     deleted after you type `RESET`);
+   - **existing L2JMobius H5 database (migration)**: your accounts, characters and everything
+     else stay. The setup first makes a backup (`mysqldump`, into `backups/`), shows what it will
+     change, and then only adds what the database lacks: missing tables (with their default rows)
+     and missing columns. It never drops, empties or overwrites a table, and default rows go only
+     into empty tables (a raid boss you removed stays removed). Login and game tables in two
+     databases work too (`--login-db`). Give it your old Java game server folder and it takes over
+     `hexid.txt` (the server keeps its id at the login server) and `ipconfig.xml`.
+   - **skip**: set it up later.
+4. **Address**: the address players connect to (written into `game/config/ipconfig.xml`;
+   without one only this PC can enter the game).
+
+Then start `Start-AdminGUI.cmd` (or `Start-Servers.cmd` / `start-servers.sh` without the GUI) in
+the server folder. Every question has a flag for unattended runs (`l2-setup --help`; the password
+from `L2_DB_PASSWORD`). The steps below are the same thing done by hand.
+
 ### 1. Get the code and build
 
 ```bash

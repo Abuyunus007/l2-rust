@@ -39,6 +39,7 @@ The Java custom features (`config/Custom/*.ini`, the custom events) are there an
 | **AI admin chat** (D-63) | GUI view "AI assistant", `l2-ai` (terminal) and `l2-mcp` (MCP bridge for Claude Desktop and others): a local model (Ollama, llama.cpp) runs admin commands; bans, kicks and shutdowns only after you confirm; audit log |
 | **Admin API** | WebSocket + JSON, localhost by default, with a token (D-30) |
 | **Database installer** (`l2-db-installer`) | Creates the L2JMobius schema (GUI and console) |
+| **Setup** (`setup.cmd`, `setup.sh`, `l2-setup`) | Builds and sets up a server folder in one go; migrates an existing L2JMobius H5 database without losing data (backup first, only adds what is missing) (D-65) |
 | **Geodata tool** (`l2-geotool`), **load test** (`l2-loadtest`), **proxy** (`l2-proxy`) | Geodata statistics and checks; a load test for test setups only; a recording proxy |
 
 ## 4. Technical differences (not visible in play)

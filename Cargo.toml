@@ -17,6 +17,7 @@ members = [
     "crates/l2-protocol-login",
     "crates/l2-proxy",
     "crates/l2-scripts",
+    "crates/l2-setup",
     "crates/l2-supervisor",
     "crates/l2-testkit",
     "crates/l2-util",
@@ -50,6 +51,8 @@ l2-world = { path = "crates/l2-world" }
 l2-scripts = { path = "crates/l2-scripts" }
 l2-protocol-login = { path = "crates/l2-protocol-login" }
 l2-proxy = { path = "crates/l2-proxy" }
+l2-db-installer = { path = "crates/l2-db-installer" }
+l2-supervisor = { path = "crates/l2-supervisor" }
 
 # Async, networking
 tokio = { version = "1.53", features = ["full"] }
