@@ -103,7 +103,11 @@ fn write_game_config(config_dir: &Path, ls_port: u16) {
     std::fs::write(config_dir.join("Server.ini"), game_server_ini(ls_port)).unwrap();
     std::fs::write(
         config_dir.join("Player.ini"),
-        format!("ForbiddenNames = annou\nStartingAdena = {START_ADENA}\nMaxFreeTeleportLevel = 0\n"),
+        // `DisableTutorial`: the scenario predates the scripts; Q00255 would send a new character a
+        // QuestList at login and a page, a voice and an item 5 s later.
+        format!(
+            "ForbiddenNames = annou\nStartingAdena = {START_ADENA}\nMaxFreeTeleportLevel = 0\nDisableTutorial = True\n"
+        ),
     )
     .unwrap();
     std::fs::write(

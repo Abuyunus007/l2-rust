@@ -112,7 +112,9 @@ impl HeroRepository {
                 hero.clan_id = clan
                     .try_get::<Option<u32>, _>("clanid")?
                     .map_or(0, |v| i32::try_from(v).unwrap_or(i32::MAX));
-                hero.ally_id = int(&clan, "allyId")?;
+                // `clan_data.ally_id` is a signed INT, so the coalesce is signed: the `u64` of `int`
+                // cannot decode it (every hero failed to load on MariaDB). `rs.getInt` clamps.
+                hero.ally_id = i32::try_from(clan.try_get::<i64, _>("allyId")?).unwrap_or(i32::MAX);
             }
             heroes.push(hero);
         }

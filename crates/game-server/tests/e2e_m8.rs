@@ -491,7 +491,7 @@ impl Seed {
                 auction.state_id
             ),
             format!(
-                "UPDATE seven_signs_status SET current_cycle = 1, active_period = {PERIOD_COMPETITION}, `date` = {} WHERE id = 0",
+                "REPLACE INTO seven_signs_status (id, current_cycle, active_period, `date`) VALUES (0, 1, {PERIOD_COMPETITION}, {})",
                 self.now
             ),
         ]

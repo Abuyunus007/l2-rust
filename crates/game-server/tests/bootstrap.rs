@@ -16,6 +16,9 @@ use l2_testkit::test_db::{SAMPLE_HEXID, TestDb};
 use l2_world::{ObjectId, RUST_FIRST_OBJECT_ID};
 use tokio::net::TcpStream;
 
+/// The ids the world takes at startup: five boats and the Gludio-Gracia air ship.
+const STARTUP_VEHICLES: u32 = 6;
+
 /// The id tables the startup scan reads (Java `DatabaseIdManager`).
 const ID_TABLES: [&str; 5] = [
     l2_db::game_sql!("characters"),
@@ -78,11 +81,12 @@ async fn starts_reaches_ready_and_shuts_down_with_exit_code_0() {
     assert_ne!(addr.port(), 0);
     TcpStream::connect(addr).await.unwrap();
 
-    // Ids: only the two Rust-range ids count, Java's is left alone.
-    assert_eq!(state.ids.used_count(), 2);
+    // Ids: only the two Rust-range ids count, Java's is left alone; plus the five boats and the
+    // Gludio-Gracia air ship the world creates at startup (M8-VEHICLE-01).
+    assert_eq!(state.ids.used_count(), 2 + STARTUP_VEHICLES);
     assert!(state.ids.is_allocated(ObjectId(RUST_FIRST_OBJECT_ID + 5)));
     assert!(!state.ids.is_allocated(ObjectId(268_435_500)));
-    assert_eq!(state.ids.available_count(), 0x2000_0000 - 2);
+    assert_eq!(state.ids.available_count(), 0x2000_0000 - 2 - STARTUP_VEHICLES);
 
     assert!(state.datapack.class_list.is_empty());
     assert_eq!(state.config.server.maximum_online_users, 5);
@@ -113,7 +117,7 @@ async fn missing_hexid_file_still_starts() {
     };
     let server = Server::start(&paths(root.path())).await.unwrap();
     assert!(server.state().hexid.is_none());
-    assert_eq!(server.state().ids.used_count(), 0);
+    assert_eq!(server.state().ids.used_count(), STARTUP_VEHICLES);
     server.shutdown(false).await;
     db.drop_db().await;
 }

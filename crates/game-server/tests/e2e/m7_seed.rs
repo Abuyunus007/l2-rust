@@ -270,6 +270,12 @@ impl Seed {
                  VALUES ({HALL}, 0, 'NPC', 'NPC Clan', 'ClanHall', {HALL}, 0, '{HALL_NAME}', 1, {HALL_STARTING_BID}, 0, {})",
                 self.auction_end()
             ),
+            // The bare world's neutral Seven Signs state (seal validation, no seal owned): mercenary
+            // tickets are posted only in that period (`MercTicket`). The test schema has no row.
+            format!(
+                "REPLACE INTO seven_signs_status (id, current_cycle, active_period, `date`) VALUES (0, 1, {}, 1)",
+                l2_world::sevensigns::PERIOD_SEAL_VALIDATION
+            ),
         ];
         for row in self.fort_spawn_rows() {
             sql.push(format!(

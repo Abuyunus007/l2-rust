@@ -351,14 +351,15 @@ pub fn replay_in_database(
         }
 
         let quests: BTreeMap<(i32, String, String), String> =
-            sqlx::query_as::<_, (i32, String, String, Option<String>)>(
+            // `charId` is INT UNSIGNED (as in Java's schema).
+            sqlx::query_as::<_, (u32, String, String, Option<String>)>(
                 "SELECT charId, name, var, value FROM character_quests",
             )
             .fetch_all(&pool)
             .await
             .unwrap()
             .into_iter()
-            .map(|(c, n, v, value)| ((c, n, v), value.unwrap_or_default()))
+            .map(|(c, n, v, value)| ((i32::try_from(c).unwrap(), n, v), value.unwrap_or_default()))
             .collect();
         assert_eq!(quests, model.quests, "character_quests");
         let globals: BTreeMap<String, String> =

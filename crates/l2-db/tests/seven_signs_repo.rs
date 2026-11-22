@@ -92,6 +92,17 @@ async fn the_status_row_is_read_and_written() {
     let Some(db) = TestDb::create().await else {
         return;
     };
+    // GAME_SCHEMA keeps only CREATE and DROP (T-DIST-01); the installer's status row comes from dist/.
+    for statement in l2_db::script_statements(include_str!(
+        "../../../dist/db_installer/sql/game/seven_signs_status.sql"
+    )) {
+        if statement.to_ascii_uppercase().starts_with("INSERT") {
+            sqlx::query(AssertSqlSafe(statement))
+                .execute(&db.pool)
+                .await
+                .unwrap();
+        }
+    }
     let repo = SevenSignsRepository::new(db.pool.clone());
     let start = repo.load_status().await.unwrap().unwrap();
     assert_eq!(

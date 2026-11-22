@@ -53,7 +53,7 @@ const RUST_ID_START: i32 = 0x6000_0000;
 
 /// The packets the Rust game server sends after `EnterWorld` (the closing `SKILL_LIST` is the
 /// last). Java sends the same ones in this order, with others in between (see the module docs).
-const ENTER_WORLD_PACKETS: [&str; 26] = [
+const ENTER_WORLD_PACKETS: [&str; 27] = [
     "USER_INFO",
     "EX_VOTE_SYSTEM_INFO",
     "MACRO_LIST",
@@ -69,6 +69,9 @@ const ENTER_WORLD_PACKETS: [&str; 26] = [
     "ETC_STATUS_UPDATE",
     "EX_STORAGE_MAX_COUNT",
     "L2_FRIEND_LIST",
+    // The welcome, then the Seven Signs period (`sendCurrentPeriodMsg`, M8-SS-01), as the Java
+    // captures show.
+    "SYSTEM_MESSAGE",
     "SYSTEM_MESSAGE",
     "SKILL_COOL_TIME",
     "EX_VOTE_SYSTEM_INFO",

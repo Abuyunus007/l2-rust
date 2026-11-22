@@ -201,6 +201,8 @@ async fn store_writes_the_snapshot_and_keeps_what_java_owns() {
     data.profile.fame = 321;
     // Java writes `getPcCafePoints()`: hunting, the retail timer and multisell change it.
     data.profile.pccafe_points = 77;
+    // Java writes `_lang` (`ps.setString(49, _lang)`), loaded at enter and changed by `.lang` (M9-L02).
+    data.profile.language = Some("en".to_owned());
     store.store_player(&data).await.unwrap();
 
     let row = characters.restore_character(CHAR_ID).await.unwrap().unwrap();
