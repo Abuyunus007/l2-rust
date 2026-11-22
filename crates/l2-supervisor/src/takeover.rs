@@ -100,6 +100,8 @@ fn port_owner(port: u16) -> Option<u32> {
 }
 
 /// `netstat -ano` lines look like `  TCP    127.0.0.1:7900   0.0.0.0:0   LISTENING   1234`.
+// Used on Windows; its test runs everywhere.
+#[cfg_attr(not(windows), allow(dead_code))]
 fn parse_netstat_owner(text: &str, port: u16) -> Option<u32> {
     let suffix = format!(":{port}");
     text.lines().find_map(|line| {
