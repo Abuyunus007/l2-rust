@@ -34,7 +34,7 @@ const SERVER_INI: &str =
 async fn setup(tag: &str, root: &Path, admin_ini: Option<&str>) -> Option<TestDb> {
     let db = TestDb::create(tag).await?;
     for file in ID_TABLES {
-        for statement in l2_db::script_statements(&file) {
+        for statement in l2_db::script_statements(file) {
             db.exec(&statement).await;
         }
     }
