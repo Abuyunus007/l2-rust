@@ -60,6 +60,7 @@ tokio-util = { version = "0.7", features = ["codec"] }
 bytes = "1.12"
 futures-util = { version = "0.3", features = ["sink"] }
 tokio-tungstenite = "0.30"
+if-addrs = "0.15" # the network interfaces of the automatic ipconfig (D-66)
 
 # Errors, logging
 thiserror = "2.0"

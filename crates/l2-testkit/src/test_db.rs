@@ -164,6 +164,11 @@ impl TestDb {
         )
         .unwrap();
         std::fs::write(config.join("Server.ini"), server_ini).unwrap();
+        // Without it a game server lists the network interfaces and asks checkip.amazonaws.com.
+        let ipconfig = config.join("ipconfig.xml");
+        if !ipconfig.exists() {
+            std::fs::write(ipconfig, r#"<gameserver address="127.0.0.1"/>"#).unwrap();
+        }
         std::fs::write(data.join("servername.xml"), SERVER_NAMES_XML).unwrap();
     }
 }

@@ -112,8 +112,9 @@ questions and makes a ready-to-run server folder (default `release/L2RustServer`
      databases work too (`--login-db`). Give it your old Java game server folder and it takes over
      `hexid.txt` (the server keeps its id at the login server) and `ipconfig.xml`.
    - **skip**: set it up later.
-4. **Address**: the address players connect to (written into `game/config/ipconfig.xml`;
-   without one only this PC can enter the game).
+4. **Address**: leave it empty and the game server finds its addresses at every start (each
+   network of the PC gets its address there, everybody else the internet address); an address
+   you give is written into `game/config/ipconfig.xml` and used instead.
 
 Then start `Start-AdminGUI.cmd` (or `Start-Servers.cmd` / `start-servers.sh` without the GUI) in
 the server folder. Every question has a flag for unattended runs (`l2-setup --help`; the password

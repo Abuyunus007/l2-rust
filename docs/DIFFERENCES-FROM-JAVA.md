@@ -66,8 +66,6 @@ systems around them and may be outdated; a checked list needs a review pass.
 
 - HWID punishments and `MaxPlayersPerHWID` (no hardware id from the client).
 - The item audit log (`LogItems`) and the Olympiad fight log (`OlympiadLogFights`).
-- `default-ipconfig.xml` auto-detection of the network interfaces (the address comes from the
-  config instead).
 - Seed of Infinity spawn/stop functions of the Energy Seeds script; parts of some instance and
   boss scripts (Pailaka Injured Dragon, Beleth, Last Imperial Tomb: see the notes in their files).
 - A few effect handlers run as stand-ins (their stat parts work, their action does nothing; the

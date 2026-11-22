@@ -21,6 +21,7 @@ l2-util.workspace = true
 l2-world.workspace = true
 l2-scripts.workspace = true
 clap.workspace = true
+if-addrs.workspace = true
 quick-xml.workspace = true
 rand.workspace = true
 thiserror.workspace = true

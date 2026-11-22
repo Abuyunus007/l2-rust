@@ -4,7 +4,10 @@
 // first match wins (`GameServerInfo.getServerAddress`), so the order of the pairs matters.
 
 use std::borrow::Cow;
+use std::io::{Read, Write};
+use std::net::{Ipv4Addr, TcpStream, ToSocketAddrs};
 use std::path::Path;
+use std::time::Duration;
 
 use quick_xml::events::{BytesStart, Event};
 use quick_xml::{Reader, XmlVersion};
@@ -18,6 +21,12 @@ pub const IPCONFIG_FILE: &str = "ipconfig.xml";
 const ANY_SUBNET: &str = "0.0.0.0/0";
 const LOCALHOST: &str = "127.0.0.1";
 
+/// Where Java asks for the external address (`autoIpConfig`).
+const CHECKIP_HOST: &str = "checkip.amazonaws.com";
+/// Connect, read and write limit (the name lookup keeps the resolver's own limits). Java waits as
+/// long as the socket does; a server without internet should not stall its startup for long.
+const CHECKIP_TIMEOUT: Duration = Duration::from_secs(5);
+
 /// The parallel lists `GAME_SERVER_SUBNETS` and `GAME_SERVER_HOSTS`. `subnets[i]` belongs to
 /// `hosts[i]`.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -27,22 +36,28 @@ pub struct IpConfig {
 }
 
 impl IpConfig {
-    /// Reads `ipconfig.xml` from `config_dir`; without the file Java configures itself from
-    /// the network interfaces ([`IpConfig::automatic`]).
+    /// Reads `ipconfig.xml` from `config_dir`; without the file the server configures itself
+    /// from the network interfaces and the external address, as Java does
+    /// ([`IpConfig::automatic`]).
     pub fn load(config_dir: &Path) -> Self {
+        Self::read(config_dir).unwrap_or_else(Self::automatic)
+    }
+
+    /// The manual configuration of `config_dir`, `None` when there is no `ipconfig.xml`.
+    fn read(config_dir: &Path) -> Option<Self> {
         let path = config_dir.join(IPCONFIG_FILE);
         if !path.is_file() {
             info!("Network Config: ipconfig.xml does not exist, using automatic configuration...");
-            return Self::automatic();
+            return None;
         }
         info!("Network Config: ipconfig.xml exists, using manual configuration...");
-        match std::fs::read(&path) {
+        Some(match std::fs::read(&path) {
             Ok(bytes) => Self::parse(&String::from_utf8_lossy(&bytes)),
             Err(e) => {
                 warn!("Could not read file {}: {e}", path.display());
                 Self::from_lists(Vec::new(), Vec::new())
             }
-        }
+        })
     }
 
     /// The manual configuration: one `<define subnet=".." address=".."/>` per network, then
@@ -87,23 +102,31 @@ impl IpConfig {
         Self::from_lists(lists.subnets, lists.hosts)
     }
 
-    /// What Java builds from the network interfaces and `checkip.amazonaws.com` when there is
-    /// no `ipconfig.xml`.
-    ///
-    /// NOTE: not ported. Std cannot list interfaces and an HTTP call at startup is not wanted,
-    /// so this gives the result Java reaches on a machine with only a loopback interface and no
-    /// internet: the loopback network gets 127.0.0.1, and so does everybody else. Real setups
-    /// must provide `ipconfig.xml` (see `default-ipconfig.xml`).
+    /// Java `autoIpConfig`: every IPv4 network of the interfaces that are up gets this server's
+    /// address in it, everybody else the external address from `checkip.amazonaws.com`
+    /// (127.0.0.1 without internet).
     pub fn automatic() -> Self {
-        warn!(
-            "Network Config: automatic configuration is not supported by the Rust game server; \
-             only 127.0.0.1 is announced. Create {IPCONFIG_FILE} (see default-ipconfig.xml) to \
-             serve other networks."
-        );
-        Self {
-            subnets: vec!["127.0.0.0/8".to_owned(), ANY_SUBNET.to_owned()],
-            hosts: vec![LOCALHOST.to_owned(), LOCALHOST.to_owned()],
+        Self::from_networks(interface_networks(), external_address())
+    }
+
+    /// The lists of [`IpConfig::automatic`]: one entry per network in interface order (the first
+    /// address of a network wins), then the external address for `0.0.0.0/0`.
+    fn from_networks(networks: impl IntoIterator<Item = (Ipv4Addr, u8)>, external: Ipv4Addr) -> Self {
+        let (mut subnets, mut hosts) = (Vec::new(), Vec::new());
+        for (address, prefix) in networks {
+            let prefix = prefix.min(32);
+            let mask = u32::MAX.checked_shl(32 - u32::from(prefix)).unwrap_or(0);
+            let subnet = format!("{}/{prefix}", Ipv4Addr::from(u32::from(address) & mask));
+            if subnet != ANY_SUBNET && !subnets.contains(&subnet) {
+                info!("Network Config: Adding new subnet: {subnet} address: {address}");
+                subnets.push(subnet);
+                hosts.push(address.to_string());
+            }
         }
+        info!("Network Config: Adding new subnet: {ANY_SUBNET} address: {external}");
+        subnets.push(ANY_SUBNET.to_owned());
+        hosts.push(external.to_string());
+        Self { subnets, hosts }
     }
 
     /// `getSubnets()` / `getHosts()`: an empty list becomes the catch-all entry.
@@ -151,6 +174,62 @@ impl Lists {
         self.hosts.push(address);
         self.subnets.push(ANY_SUBNET.to_owned());
     }
+}
+
+/// The IPv4 networks of this machine's interfaces, as `(address, prefix length)`.
+fn interface_networks() -> Vec<(Ipv4Addr, u8)> {
+    let interfaces = match if_addrs::get_if_addrs() {
+        Ok(interfaces) => interfaces,
+        Err(e) => {
+            // Java exits here; the server can still serve the external address.
+            warn!("Network Config: Configuration failed please configure manually using ipconfig.xml: {e}");
+            return Vec::new();
+        }
+    };
+    // Java skips interfaces that are down and those without a 6-byte hardware address except
+    // the loopback (tunnels, PPP); `is_p2p` is the closest the interface list tells.
+    interfaces
+        .iter()
+        .filter_map(|interface| match &interface.addr {
+            if_addrs::IfAddr::V4(v4) if interface.is_oper_up() && !interface.is_p2p() => {
+                Some((v4.ip, v4.prefixlen))
+            }
+            _ => None,
+        })
+        .collect()
+}
+
+/// The external address as `checkip.amazonaws.com` sees this server; 127.0.0.1 when it cannot
+/// be asked or answers something that is not an IPv4 address.
+fn external_address() -> Ipv4Addr {
+    ask_checkip().unwrap_or_else(|| {
+        info!("Failed to connect to {CHECKIP_HOST} please check your internet connection using 127.0.0.1!");
+        Ipv4Addr::LOCALHOST
+    })
+}
+
+// shortcut: plain HTTP/1.0 over std (no HTTP client dependency), like Java's `URL.openStream`;
+// the answer is validated, so a wrong one only costs the external entry.
+fn ask_checkip() -> Option<Ipv4Addr> {
+    let address = (CHECKIP_HOST, 80).to_socket_addrs().ok()?.find(|a| a.is_ipv4())?;
+    let mut stream = TcpStream::connect_timeout(&address, CHECKIP_TIMEOUT).ok()?;
+    stream.set_read_timeout(Some(CHECKIP_TIMEOUT)).ok()?;
+    stream.set_write_timeout(Some(CHECKIP_TIMEOUT)).ok()?;
+    let request = format!("GET / HTTP/1.0\r\nHost: {CHECKIP_HOST}\r\nConnection: close\r\n\r\n");
+    stream.write_all(request.as_bytes()).ok()?;
+    let mut response = Vec::new();
+    stream.take(4096).read_to_end(&mut response).ok()?;
+    parse_checkip_response(&response)
+}
+
+/// The address in an HTTP answer of `checkip.amazonaws.com`: status 200, the first body line.
+fn parse_checkip_response(response: &[u8]) -> Option<Ipv4Addr> {
+    let text = std::str::from_utf8(response).ok()?;
+    let (head, body) = text.split_once("\r\n\r\n")?;
+    if head.lines().next()?.split_whitespace().nth(1) != Some("200") {
+        return None;
+    }
+    body.lines().next()?.trim().parse().ok()
 }
 
 fn is(element: &BytesStart<'_>, name: &str) -> bool {
@@ -249,16 +328,77 @@ mod tests {
     #[test]
     fn load_reads_the_file_and_falls_back_without_it() {
         let dir = tempfile::tempdir().unwrap();
-        assert_eq!(IpConfig::load(dir.path()), IpConfig::automatic());
+        // `None`: `load` configures itself (`automatic`, not called here: it asks the internet).
+        assert_eq!(IpConfig::read(dir.path()), None);
         std::fs::write(dir.path().join(IPCONFIG_FILE), DEFAULT).unwrap();
         assert_eq!(IpConfig::load(dir.path()), IpConfig::parse(DEFAULT));
+    }
+
+    #[test]
+    fn automatic_lists_one_entry_per_network_then_the_external_address() {
+        let config = IpConfig::from_networks(
+            [
+                (Ipv4Addr::LOCALHOST, 8),
+                (Ipv4Addr::new(192, 168, 178, 145), 24),
+                // A second address of the same network: the first one stays.
+                (Ipv4Addr::new(192, 168, 178, 146), 24),
+                (Ipv4Addr::new(172, 18, 112, 1), 20),
+                (Ipv4Addr::new(10, 1, 2, 3), 32),
+                // A default-route prefix would shadow the external entry: Java skips it.
+                (Ipv4Addr::new(100, 64, 0, 1), 0),
+            ],
+            Ipv4Addr::new(203, 0, 113, 7),
+        );
+        assert_eq!(
+            config.subnets,
+            [
+                "127.0.0.0/8",
+                "192.168.178.0/24",
+                "172.18.112.0/20",
+                "10.1.2.3/32",
+                "0.0.0.0/0"
+            ]
+        );
+        assert_eq!(
+            config.hosts,
+            [
+                "127.0.0.1",
+                "192.168.178.145",
+                "172.18.112.1",
+                "10.1.2.3",
+                "203.0.113.7"
+            ]
+        );
+    }
+
+    #[test]
+    fn no_interfaces_leave_only_the_external_address() {
+        let config = IpConfig::from_networks([], Ipv4Addr::LOCALHOST);
+        assert_eq!(config.subnets, ["0.0.0.0/0"]);
+        assert_eq!(config.hosts, ["127.0.0.1"]);
+    }
+
+    #[test]
+    fn checkip_answers_are_read_only_when_they_are_an_address() {
+        let ok = b"HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n203.0.113.7\n";
+        assert_eq!(parse_checkip_response(ok), Some(Ipv4Addr::new(203, 0, 113, 7)));
+        for bad in [
+            &b"HTTP/1.1 503 Service Unavailable\r\n\r\n203.0.113.7\n"[..],
+            b"HTTP/1.1 200 OK\r\n\r\n<html>captive portal</html>",
+            b"HTTP/1.1 200 OK\r\n\r\n",
+            b"HTTP/1.1 200 OK\r\n",
+            b"",
+            b"\xff\xfe",
+        ] {
+            assert_eq!(parse_checkip_response(bad), None, "{bad:?}");
+        }
     }
 
     #[test]
     fn lists_stay_parallel() {
         for config in [
             IpConfig::parse(DEFAULT),
-            IpConfig::automatic(),
+            IpConfig::from_networks([(Ipv4Addr::LOCALHOST, 8)], Ipv4Addr::LOCALHOST),
             IpConfig::parse(""),
         ] {
             assert_eq!(config.subnets.len(), config.hosts.len());

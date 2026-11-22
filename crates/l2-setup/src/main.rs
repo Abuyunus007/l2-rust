@@ -58,7 +58,8 @@ struct Cli {
     /// database, as in L2JMobius).
     #[arg(long, value_name = "NAME")]
     login_db: Option<String>,
-    /// The address players connect to (written into game/config/ipconfig.xml); none: this PC only.
+    /// The address players connect to (written into game/config/ipconfig.xml); none: the game
+    /// server finds its addresses itself at every start.
     #[arg(long, value_name = "ADDRESS")]
     address: Option<String>,
     /// Migration: the old (Java) game server folder; its config/hexid.txt keeps the server's id,
@@ -679,8 +680,9 @@ fn java_server_files(out: &Path, prompt: &Prompt, java_server: Option<&Path>) ->
     Ok(())
 }
 
-/// `game/config/ipconfig.xml`: without it the game server tells every client 127.0.0.1, so only
-/// this PC can enter the game.
+/// `game/config/ipconfig.xml`: an address that overrides the automatic configuration (without
+/// the file the game server finds its network addresses and its internet address at every
+/// start, D-66).
 fn network_address(out: &Path, prompt: &Prompt, address: Option<&str>) -> anyhow::Result<()> {
     let path = out.join("game/config/ipconfig.xml");
     if path.exists() && address.is_none() {
@@ -689,7 +691,7 @@ fn network_address(out: &Path, prompt: &Prompt, address: Option<&str>) -> anyhow
     let address = match address {
         Some(a) => a.to_owned(),
         None => prompt.ask(
-            "Address players connect to: this PC's LAN address, or the internet address (empty: only this PC)",
+            "Address players connect to (empty: found automatically at every start)",
             "",
         ),
     };
