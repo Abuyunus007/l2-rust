@@ -1,6 +1,8 @@
 //! Packet inspector: runs the decrypting proxy in-process (D-35), lists the packets live, and
-//! shows the selected one as decoded fields plus a hex dump. Captures can be saved to and
-//! opened from JSON-lines files (the format of `l2_proxy::capture`).
+//! shows the selected one as decoded fields plus a hex dump. While the proxy runs every packet is
+//! recorded to `<run folder>/log/packets-<UTC time>.jsonl`, next to the other logs. Captures can
+//! also be saved to and opened from JSON-lines files (the format of `l2_proxy::capture`); a
+//! relative file name counts from the run folder.
 //!
 //! ```text
 //!   proxy_control.rs   start/stop, the runtime the proxy runs on
@@ -17,7 +19,7 @@ mod detail;
 mod list;
 mod proxy_control;
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::Context as _;
 use l2_proxy::capture::{CaptureReader, CaptureWriter};
@@ -100,7 +102,12 @@ impl PacketsView {
             ControlAction::Start => match proxy_control::parse_config(&cx.settings.packets) {
                 Ok(config) => {
                     self.settings_error = None;
-                    self.controller.start(config, Some(ui.ctx().clone()));
+                    let name = format!("log/packets-{}.jsonl", chrono::Utc::now().format("%Y%m%d-%H%M%S"));
+                    let recording = resolve(&name, cx.launch.run_folder.as_deref());
+                    // Open shows the recording without typing its name.
+                    cx.settings.packets.capture_path = recording.display().to_string();
+                    self.controller
+                        .start(config, Some(ui.ctx().clone()), Some(recording));
                 }
                 Err(e) => self.settings_error = Some(e),
             },
@@ -116,6 +123,19 @@ impl PacketsView {
                 ui.label(self.proxy_status(cx));
             }
         });
+        if self.controller.state() != RunState::Stopped || self.controller.recording_error().is_some() {
+            ui.horizontal_wrapped(|ui| {
+                match (self.controller.recording_error(), self.controller.recording()) {
+                    (Some(error), _) => {
+                        ui.colored_label(ui.visuals().error_fg_color, error);
+                    }
+                    (None, Some(path)) => {
+                        ui.label(format!("Recording every packet to {}", path.display()));
+                    }
+                    (None, None) => {}
+                }
+            });
+        }
     }
 
     fn proxy_status(&self, cx: &AppCtx<'_>) -> String {
@@ -234,8 +254,21 @@ impl PacketsView {
             }
         });
 
-        let path = cx.settings.packets.capture_path.trim().to_string();
-        if save {
+        let typed = cx.settings.packets.capture_path.trim();
+        let path = if typed.is_empty() {
+            String::new()
+        } else {
+            resolve(typed, cx.launch.run_folder.as_deref())
+                .display()
+                .to_string()
+        };
+        // Also after Stop: the list may be cleared or capped, the recording has every packet.
+        let is_recording = self.controller.recording() == Some(Path::new(&path));
+        if save && is_recording {
+            self.notice = Some(Notice::error(format!(
+                "{path} is the proxy's recording and holds every packet already; give Save another name"
+            )));
+        } else if save {
             self.notice = Some(match save_capture(&path, self.shown_store().records()) {
                 Ok(count) => Notice::info(format!("Saved {count} packets to {path}")),
                 Err(e) => Notice::error(format!("Cannot save {path}: {e:#}")),
@@ -328,6 +361,15 @@ impl View for PacketsView {
     }
 }
 
+/// `path` as typed; a relative one counts from the run folder (where the other logs are), else
+/// from the working directory.
+fn resolve(path: &str, run_folder: Option<&Path>) -> PathBuf {
+    match run_folder {
+        Some(folder) if Path::new(path).is_relative() => folder.join(path),
+        _ => PathBuf::from(path),
+    }
+}
+
 /// Serializes `records` into the capture format and writes them to `path` (parent folders are
 /// created). Returns how many were written. The records of a live proxy are already free of
 /// credentials, so nothing is filtered here.
@@ -416,6 +458,22 @@ mod tests {
         .unwrap();
         let error = format!("{:#}", load_capture(foreign.to_str().unwrap()).unwrap_err());
         assert!(error.contains("not an l2-capture file"), "{error}");
+    }
+
+    #[test]
+    fn relative_capture_names_count_from_the_run_folder() {
+        let run = Path::new("run");
+        assert_eq!(
+            resolve("log/capture.jsonl", Some(run)),
+            run.join("log/capture.jsonl")
+        );
+        assert_eq!(
+            resolve("log/capture.jsonl", None),
+            PathBuf::from("log/capture.jsonl")
+        );
+        let absolute = std::env::temp_dir().join("c.jsonl");
+        let text = absolute.display().to_string();
+        assert_eq!(resolve(&text, Some(run)), absolute);
     }
 
     #[test]

@@ -51,8 +51,10 @@ pub const DEFAULT_PROXY_UPSTREAM: &str = "127.0.0.1:2106";
 /// Packets that are sent constantly and drown out everything else (Java constant names, comma
 /// or space separated). Entries may also be hex opcodes like `0x59`.
 pub const DEFAULT_NOISY: &str = "MOVE_TO_LOCATION, VALIDATE_POSITION, VALIDATE_LOCATION, NET_PING";
-/// Under `captures/`, which git ignores (captures may hold session data).
-pub const DEFAULT_CAPTURE_PATH: &str = "captures/capture.jsonl";
+/// Next to the other logs (`<run folder>/log`; a relative path counts from the run folder).
+pub const DEFAULT_CAPTURE_PATH: &str = "log/capture.jsonl";
+/// The default before the logs folder; stored settings with it move to [`DEFAULT_CAPTURE_PATH`].
+const OLD_DEFAULT_CAPTURE_PATH: &str = "captures/capture.jsonl";
 
 /// Settings of the packet inspector (`views/packets`).
 #[derive(Clone, PartialEq, Eq, Debug, Serialize, Deserialize)]
@@ -165,8 +167,13 @@ impl Settings {
         let Some(raw) = storage.and_then(|s| s.get_string(STORAGE_KEY)) else {
             return Self::default();
         };
-        match serde_json::from_str(&raw) {
-            Ok(settings) => settings,
+        match serde_json::from_str::<Self>(&raw) {
+            Ok(mut settings) => {
+                if settings.packets.capture_path == OLD_DEFAULT_CAPTURE_PATH {
+                    settings.packets.capture_path = DEFAULT_CAPTURE_PATH.to_string();
+                }
+                settings
+            }
             Err(e) => {
                 tracing::warn!("ignoring unreadable stored settings: {e}");
                 Self::default()
@@ -299,6 +306,19 @@ mod tests {
             settings.datapack_path.is_empty(),
             "no datapack until the user sets one"
         );
+    }
+
+    #[test]
+    fn the_old_capture_default_moves_to_the_logs_folder_and_own_names_stay() {
+        let mut storage = MemStorage::default();
+        storage.set_string(
+            STORAGE_KEY,
+            r#"{"packets":{"capture_path":"captures/capture.jsonl"}}"#.into(),
+        );
+        let settings = Settings::load(Some(&storage));
+        assert_eq!(settings.packets.capture_path, DEFAULT_CAPTURE_PATH);
+        storage.set_string(STORAGE_KEY, r#"{"packets":{"capture_path":"mine.jsonl"}}"#.into());
+        assert_eq!(Settings::load(Some(&storage)).packets.capture_path, "mine.jsonl");
     }
 
     #[test]

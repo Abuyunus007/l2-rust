@@ -194,6 +194,11 @@ impl<W: Write> CaptureWriter<W> {
         write_json_line(&mut self.out, record)
     }
 
+    /// Pushes buffered lines to `out` (a recording that is read while it is written).
+    pub fn flush(&mut self) -> Result<(), CaptureError> {
+        Ok(self.out.flush()?)
+    }
+
     /// Gives the underlying writer back.
     pub fn into_inner(self) -> W {
         self.out

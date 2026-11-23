@@ -10,6 +10,7 @@
 
 # Local runtime data and secrets
 /logs/
+/log/
 /captures/
 *.local.ini
 .env

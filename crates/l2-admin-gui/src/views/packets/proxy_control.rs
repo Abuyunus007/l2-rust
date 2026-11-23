@@ -10,12 +10,16 @@
 //! a single thread that is busy with the supervisor connection, and the proxy needs
 //! `spawn_blocking` (RSA key generation) plus a task per connection. Nothing here blocks the UI:
 //! every call returns at once and the results come back through [`ProxyController::poll`], which
-//! the view calls once per frame. The drain task wakes the UI with `request_repaint`.
+//! the view calls once per frame. The drain task wakes the UI with `request_repaint`. It also
+//! writes every record to the recording file (`<run folder>/log/packets-*.jsonl`), so a session
+//! is on disk even if nobody presses Save.
 
 use std::io;
 use std::net::{Ipv4Addr, SocketAddr};
+use std::path::{Path, PathBuf};
 use std::sync::mpsc;
 
+use l2_proxy::capture::CaptureWriter;
 use l2_proxy::{Proxy, ProxyConfig, ProxyError, Record};
 use tokio::runtime::{Builder, Handle, Runtime};
 
@@ -30,6 +34,7 @@ enum ProxyMsg {
     StartFailed(String),
     Stopped,
     Records(Vec<Record>),
+    RecordingFailed(String),
 }
 
 /// What the proxy is doing, as the control row shows it.
@@ -48,6 +53,10 @@ pub struct ProxyController {
     state: RunState,
     /// The last start failure, until the next start.
     error: Option<String>,
+    /// The file the current (or last) run records to.
+    recording: Option<PathBuf>,
+    /// Why the recording stopped or never started, until the next start.
+    recording_error: Option<String>,
     tx: mpsc::Sender<ProxyMsg>,
     rx: mpsc::Receiver<ProxyMsg>,
 }
@@ -60,6 +69,8 @@ impl Default for ProxyController {
             proxy: None,
             state: RunState::Stopped,
             error: None,
+            recording: None,
+            recording_error: None,
             tx,
             rx,
         }
@@ -85,14 +96,25 @@ impl ProxyController {
         self.error.as_deref()
     }
 
+    /// The file the current (or last) run records every packet to.
+    pub fn recording(&self) -> Option<&Path> {
+        self.recording.as_deref()
+    }
+
+    /// Why the recording failed, in words for the user.
+    pub fn recording_error(&self) -> Option<&str> {
+        self.recording_error.as_deref()
+    }
+
     /// `(server id, local port, real address)` of the game relays opened so far.
     pub fn game_relays(&self) -> Vec<(u8, u16, SocketAddr)> {
         self.proxy.as_ref().map(|p| p.game_relays()).unwrap_or_default()
     }
 
     /// Starts the proxy. Does nothing unless it is stopped. `ctx` is repainted whenever the
-    /// proxy has news (`None` in tests).
-    pub fn start(&mut self, config: ProxyConfig, ctx: Option<egui::Context>) {
+    /// proxy has news (`None` in tests). `record_to`: the capture file every packet is written
+    /// to while the proxy runs (its folder is created).
+    pub fn start(&mut self, config: ProxyConfig, ctx: Option<egui::Context>, record_to: Option<PathBuf>) {
         if self.state != RunState::Stopped {
             return;
         }
@@ -104,6 +126,8 @@ impl ProxyController {
             }
         };
         self.error = None;
+        self.recording_error = None;
+        self.recording.clone_from(&record_to);
         self.state = RunState::Starting;
         let tx = self.tx.clone();
         let listen = config.listen;
@@ -125,9 +149,24 @@ impl ProxyController {
                     return;
                 }
             }
+            let mut recorder = match record_to.as_deref().map(open_recording).transpose() {
+                Ok(recorder) => recorder,
+                Err(e) => {
+                    let _ = tx.send(ProxyMsg::RecordingFailed(e));
+                    None
+                }
+            };
             // Ends when the proxy and every connection of it have dropped their senders.
             let mut batch = Vec::new();
             while records_rx.recv_many(&mut batch, BATCH).await > 0 {
+                // shortcut: buffered file writes on the proxy's runtime (a batch is a few KB);
+                // move them to `spawn_blocking` if a slow disk ever delays the relays.
+                if let Some(writer) = recorder.as_mut()
+                    && let Err(e) = record(writer, &batch)
+                {
+                    recorder = None;
+                    let _ = tx.send(ProxyMsg::RecordingFailed(format!("Recording stopped: {e}")));
+                }
                 if tx.send(ProxyMsg::Records(std::mem::take(&mut batch))).is_err() {
                     return;
                 }
@@ -169,6 +208,7 @@ impl ProxyController {
                 }
                 ProxyMsg::Stopped => self.state = RunState::Stopped,
                 ProxyMsg::Records(mut batch) => records.append(&mut batch),
+                ProxyMsg::RecordingFailed(error) => self.recording_error = Some(error),
             }
         }
         records
@@ -189,6 +229,28 @@ impl ProxyController {
             None => Err(io::Error::other("runtime missing")),
         }
     }
+}
+
+/// Creates the recording file (and its folder) with the capture header.
+fn open_recording(path: &Path) -> Result<CaptureWriter<io::BufWriter<std::fs::File>>, String> {
+    let fail = |e: &dyn std::fmt::Display| format!("Cannot record to {}: {e}", path.display());
+    if let Some(parent) = path.parent().filter(|p| !p.as_os_str().is_empty()) {
+        std::fs::create_dir_all(parent).map_err(|e| fail(&e))?;
+    }
+    let mut writer = CaptureWriter::create(path).map_err(|e| fail(&e))?;
+    writer.flush().map_err(|e| fail(&e))?;
+    Ok(writer)
+}
+
+/// Appends `batch` and flushes, so the file can be opened while the proxy runs.
+fn record<W: io::Write>(
+    writer: &mut CaptureWriter<W>,
+    batch: &[Record],
+) -> Result<(), l2_proxy::capture::CaptureError> {
+    for record in batch {
+        writer.write_record(record)?;
+    }
+    writer.flush()
 }
 
 /// The proxy configuration for what the user typed.
@@ -317,7 +379,7 @@ mod tests {
     fn starts_and_stops_the_proxy() {
         let mut controller = ProxyController::default();
         assert_eq!(controller.state(), RunState::Stopped);
-        controller.start(test_config(), None);
+        controller.start(test_config(), None, None);
         assert_eq!(controller.state(), RunState::Starting);
         poll_until(&mut controller, |c| matches!(c.state(), RunState::Running { .. }));
         let RunState::Running { local_addr } = controller.state() else {
@@ -327,7 +389,7 @@ mod tests {
         assert!(controller.error().is_none());
 
         // A second start while running changes nothing.
-        controller.start(test_config(), None);
+        controller.start(test_config(), None, None);
         assert!(matches!(controller.state(), RunState::Running { .. }));
 
         controller.stop(None);
@@ -336,7 +398,7 @@ mod tests {
         assert!(controller.game_relays().is_empty());
 
         // And it can start again.
-        controller.start(test_config(), None);
+        controller.start(test_config(), None, None);
         poll_until(&mut controller, |c| matches!(c.state(), RunState::Running { .. }));
         controller.stop(None);
         poll_until(&mut controller, |c| c.state() == RunState::Stopped);
@@ -349,7 +411,7 @@ mod tests {
         let mut config = test_config();
         config.listen = taken.local_addr().unwrap();
         let mut controller = ProxyController::default();
-        controller.start(config, None);
+        controller.start(config, None, None);
         poll_until(&mut controller, |c| c.error().is_some());
         assert_eq!(controller.state(), RunState::Stopped);
         let error = controller.error().unwrap();
@@ -361,8 +423,57 @@ mod tests {
 
         // Freeing the port and starting again clears the error.
         drop(taken);
-        controller.start(test_config(), None);
+        controller.start(test_config(), None, None);
         assert!(controller.error().is_none());
+        poll_until(&mut controller, |c| matches!(c.state(), RunState::Running { .. }));
+        controller.stop(None);
+        poll_until(&mut controller, |c| c.state() == RunState::Stopped);
+    }
+
+    #[test]
+    fn the_recording_file_is_created_with_its_folder_and_takes_every_batch() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("log").join("packets-test.jsonl");
+        let mut controller = ProxyController::default();
+        controller.start(test_config(), None, Some(path.clone()));
+        poll_until(&mut controller, |c| matches!(c.state(), RunState::Running { .. }));
+        assert_eq!(controller.recording(), Some(path.as_path()));
+        assert!(controller.recording_error().is_none());
+        // The header is on disk at once: Open works before the first packet.
+        let reader = l2_proxy::capture::CaptureReader::open(&path).unwrap();
+        assert!(reader.read_all().unwrap().is_empty());
+        controller.stop(None);
+        poll_until(&mut controller, |c| c.state() == RunState::Stopped);
+
+        let mut writer = open_recording(&path).unwrap();
+        let batch = vec![Record::new(
+            1,
+            l2_proxy::Dir::C2s,
+            l2_proxy::Channel::Game,
+            0x59,
+            "X",
+            None,
+            &[1, 2],
+        )];
+        record(&mut writer, &batch).unwrap();
+        // Readable without closing the writer.
+        let read = l2_proxy::capture::CaptureReader::open(&path)
+            .unwrap()
+            .read_all()
+            .unwrap();
+        assert_eq!(read, batch);
+    }
+
+    #[test]
+    fn a_recording_that_cannot_be_created_is_reported_and_the_proxy_still_runs() {
+        let dir = tempfile::tempdir().unwrap();
+        // A file where the folder should be.
+        let blocker = dir.path().join("log");
+        std::fs::write(&blocker, "").unwrap();
+        let mut controller = ProxyController::default();
+        controller.start(test_config(), None, Some(blocker.join("packets.jsonl")));
+        poll_until(&mut controller, |c| c.recording_error().is_some());
+        assert!(controller.recording_error().unwrap().contains("Cannot record to"));
         poll_until(&mut controller, |c| matches!(c.state(), RunState::Running { .. }));
         controller.stop(None);
         poll_until(&mut controller, |c| c.state() == RunState::Stopped);
